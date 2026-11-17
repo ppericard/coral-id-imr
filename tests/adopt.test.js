@@ -1237,7 +1237,7 @@ test('a replay made with another first-launch history is not adopted; the next s
 test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async t => {
   const s = loadCodeGs(withData()),
     TOK = 'ghp_write000000000000000000',
-    fish = C.SUBJECTS.find(S => S.beta);
+    fish = C.subjectOf('fish');
   // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
   // back to 'group' here, in the app (it shares core.js's objects) and in the sheet.
   fish.open = 'group';

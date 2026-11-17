@@ -3919,15 +3919,11 @@ const CORE_ = (function () { const module = {exports: {}};
       zoom: 'the markings and the fins',
       // A word a typed name may leave out (core.js fishTypeNames): "trigger" for Triggerfish.
       typeDrop: 'fish',
-      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
-      // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
-      beta: {
-        kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the reef fish families, iNaturalist photos for now. Feedback welcome.'
-      },
-      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
-      // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
-      // it to that group again (the sheet keeps the Groups tab's rows).
+      // Out of beta (Pierre, 2026-11-17 ~19:10 Manila: "les poissons on peut les sortir du mode bêta, parce que c'est plus
+      // vraiment une bêta … à peu près stable"; in beta from 2026-11-04, "Something fishy…"): no beta label.
+      // Opens to every player, signed out included (Pierre, 2026-11-06, Q158: "open fish to everyone now"; it opened to the
+      // admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close it to that group again
+      // (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
       // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
@@ -4127,9 +4123,11 @@ const CORE_ = (function () { const module = {exports: {}};
         kick: 'Sea slugs…',
         line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
       },
-      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
-      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
-      open: 'group',
+      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-17 ~19:10 Manila: "on peut laisser
+      // les nudibranches ouverts à tous mais en gardant le mot bêta dedans"; the admin and its beta group only from
+      // 2026-11-16). 'group' would close it to that group again (the sheet keeps the Groups tab's rows). sheet: the sync
+      // script version that knows this subject (Code.gs groupIds_: its group can be set while it opens to a group; D4).
+      open: 'all',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
       // No opt-in set: its genera are its units from the start.
