@@ -305,7 +305,8 @@ function autoWorld() {
   w('curation.json', cur);
   w('suggest.json', AUTO_SUG);
   fs.mkdirSync(path.join(dir, 'tools'));
-  // 308: a cover judged 4, one point more for being one (reference level); 309: judged 4, no rep (below it, in like a
+  // 308: a cover judged 4, no point more for being one (Pierre, 2026-11-17) but reference level by its rep (core.js
+  // refLevel's first case); 309: judged 4, no rep (below it, in like a
   // candidate: Q212); 310, 314, 315: on candidate 301's observation (Q218: in once judged against it, so 310, not judged
   // against it yet, out; 314, judged alt, in; 315, judged dup, out); 311: other kinds of fish too (P3: out); 312: out
   // of the water (out); 313: a hard one, head-on, dim and soft, judged 2 (in, as a candidate would be).
@@ -394,7 +395,7 @@ test(
     assert.deepStrictEqual([by['fish-s003-cand-301'].cr, by['fish-s003-cand-301'].ar], [[0, 0, 0.5, 1], 0.67]);
     assert.deepStrictEqual(
       [by.fi308.auto, by.fi308.e, by.fi308.jt, by.fi308.rep, by.fi308.from, !!by.fi308.r],
-      ['ref', 5, 'p1g0sl1r', 'inaturalist', 'cover', false]
+      ['ref', 4, 'p1g0sl1r', 'inaturalist', 'cover', false]
     );
     // Below the reference level, in with its judged ease and tags, as a candidate judged the same.
     assert.deepStrictEqual([by.fi309.auto, by.fi309.e, by.fi309.jt, C.refLevel(by.fi309)], ['ref', 4, 'p1g0sl1', false]);

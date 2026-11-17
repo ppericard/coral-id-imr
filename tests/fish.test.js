@@ -900,8 +900,9 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       const L = g.views.wide,
         top = Math.max(...L.map(p => p.e || 3));
       // Reference level (core.js refLevel): a source's reference photo judged very easy, or ease 5 with the reference look.
+      // Below it, the flag r no longer picks the cover among the easiest (Pierre, 2026-11-17: refScore reads the photo).
       if (L.some(p => C.refLevel(p))) assert.ok(C.refLevel(L.find(p => p.f === g.cover)), `${g.id}: its cover is not reference level`);
-      else if (L.some(p => p.rep && (p.e || 3) === top)) assert.ok(L.find(p => p.f === g.cover).rep, `${g.id}: its cover`);
+      else assert.strictEqual(L[0].e || 3, top, `${g.id}: the easiest first`);
     })
   );
 });
