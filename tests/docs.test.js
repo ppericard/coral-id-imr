@@ -401,7 +401,8 @@ const ID_ALLOW = [
   {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
   {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
-  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
+  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),

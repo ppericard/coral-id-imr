@@ -7454,6 +7454,135 @@ const darkCards = (p, sel) =>
         if (se.length) fails.push(`Structure: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
+      // Photos › Tree on the corals' side (design note v2, step 8; admin-coraltree.js, the same admin-content.js editors): a
+      // genus page has a Structure box with its look-alikes and no circle, and a Sheet box with the corals' slots. A starred
+      // genus's only surveyed look-alike cannot be withdrawn (the ★ rule, L5: Withdraw off, titled "★ rule"); a held
+      // withdrawal reaching the draft (a merge) is counted to check in the bar. On Acropora: Withdraw a pair (its line
+      // leaves the Sheet), ↺; add a look-alike (the source asked once); ✎ its plain words; Publish confirms once and counts
+      // the coral sheet and pair edits, published at the curation's top; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [],
+          dlg = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        const cont = () => sq.evaluate(() => DRAFT.content || {}),
+          pair = async k => ((await cont()).pairs || {})[k] || null,
+          box = '#view .adm-cstruct[data-stid]',
+          prow = k => `${box} [data-stp="${k}"]`,
+          has = s => sq.evaluate(s => !!document.querySelector(s), s),
+          wideAt = async what => {
+            for (const w of [1280, 390]) {
+              await sq.setViewportSize({width: w, height: 900});
+              const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+              if (wide > 0) se.push(`${w}px, ${what}: ${wide}px too wide`);
+            }
+            await sq.setViewportSize({width: 1280, height: 900});
+          };
+        await sq.goto(base + 'admin.html?demo#photos/tree/key/Halomitra');
+        await swait(() => document.querySelector('#view .adm-cstruct[data-stid="Halomitra"] [data-stp]'));
+        if (await has('#view .adm-cstruct [data-stc]')) se.push('a circle on a coral genus');
+        const held = await sq.evaluate(
+          s => (b => (b ? [b.disabled, b.title] : null))(document.querySelector(s + ' [data-sta="withdraw"]')),
+          prow('Halomitra|Herpolitha')
+        );
+        if (!held || !held[0] || held[1] !== '★ rule') se.push(`Halomitra's Withdraw ${JSON.stringify(held)}`);
+        // a held withdrawal from a merge: listed with its why, counted to check, then removed (his entry goes)
+        await sq.evaluate(() => {
+          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Halomitra|Herpolitha', null, 1, null, 3);
+          saveDraft();
+          render();
+        });
+        await swait(() => document.querySelector('#view .adm-csw'));
+        const hw = await sq.evaluate(
+          s =>
+            ((document.querySelector(s) || {}).textContent || '') +
+            ' / ' +
+            ((document.querySelector('#view .adm-csw') || {}).textContent || ''),
+          prow('Halomitra|Herpolitha')
+        );
+        if (!/★ rule/.test(hw) || !/1 sheet edit to check/.test(hw)) se.push(`held ${JSON.stringify(hw)}`);
+        await sq.click(`${prow('Halomitra|Herpolitha')} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-csw'));
+        if (await pair('Halomitra|Herpolitha')) se.push('Remove left the held entry');
+        // Acropora: Withdraw Montipora, its line leaves the Sheet; ↺ brings it back.
+        await sq.goto(base + 'admin.html?demo#photos/tree/key/Acropora');
+        await swait(
+          () => document.querySelector('#view .adm-cstruct[data-stid="Acropora"]') && document.querySelector('#view .adm-csheet')
+        );
+        const K = 'Acropora|Montipora';
+        await sq.click(`${prow(K)} [data-sta="withdraw"]`);
+        await swait(() => document.querySelector('#view .adm-cstruct .is-fresh.is-out'));
+        let x = await pair(K);
+        if (!x || x.v !== null || x.was !== 1) se.push(`withdraw ${JSON.stringify(x)}`);
+        if (await has('#view .adm-csheet [data-cs="lsrc/Montipora"]:not(.is-orphan)')) se.push('a withdrawn pair keeps its line');
+        await sq.click(`${prow(K)} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-cstruct .is-out'));
+        if (await pair(K)) se.push('↺ left the withdrawal');
+        // Add a look-alike: the box names the genus; the source asked once, then saved without one; its line in the Sheet.
+        await sq.selectOption(`${box} [data-stadd]`, 'Porites');
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await wideAt("the page's add box");
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        x = await pair('Acropora|Porites');
+        if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`add ${JSON.stringify(x)}`);
+        if (!(await has('#view .adm-csheet [data-cs="lsrc/Porites"]'))) se.push("the added pair's line in the Sheet box");
+        // The Look-alikes filter offers the pair he added (admin-coraltree.js ctFilters rows; Codex review #988): chosen,
+        // its tools are in the bar (structBar), then the tag is put back.
+        const opt = await sq.evaluate(
+          () => (document.querySelector('#view [data-tttag] option[value="look:Acropora|Porites"]') || {}).textContent || ''
+        );
+        if (!/^Acropora · Porites \(added\) · 2 genera$/.test(opt)) se.push(`the Tree filter's added pair ${JSON.stringify(opt)}`);
+        else {
+          await sq.selectOption('#view [data-tttag]', 'look:Acropora|Porites');
+          await swait(() => document.querySelector('#view .adm-filter [data-stp="Acropora|Porites"]'));
+          await sq.selectOption('#view [data-tttag]', '');
+          await swait(() => !document.querySelector('#view .adm-filter [data-stp]'));
+        }
+        // The Sheet: the corals' slots; ✎ the plain words, Save: one entry, the original in was.
+        if (!(await sq.evaluate(() => document.querySelector('#view .adm-csheet').open))) await sq.click('#view .adm-csheet > summary');
+        const slots = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));
+        ['plain', 'qt', 'mn', 'imr', 'sum', 'crit', 'lsrc/Montipora'].forEach(k => slots.includes(k) || se.push('no slot ' + k));
+        await sq.click('#view .adm-csheet [data-cs="plain"] [data-csa="edit"]');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="plain"] textarea'));
+        await sq.fill('#view .adm-csheet [data-cs="plain"] textarea', 'Made-up plain words.');
+        await sq.click('#view .adm-csheet [data-cs="plain"] [data-csa="save"]');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="plain"].is-fresh'));
+        const pe = await sq.evaluate(() => [((DRAFT.content || {}).nodes || {}).Acropora, DATA.gen.Acropora.plain]);
+        if (!pe[0] || !pe[0].plain || pe[0].plain.v !== 'Made-up plain words.' || pe[0].plain.was !== pe[1])
+          se.push(`plain ${JSON.stringify(pe[0])}`);
+        await wideAt('the coral Sheet and Structure');
+        const dk = await darkCards(sq, '#view .adm-cstruct .adm-cslot, #view .adm-csheet .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        // Publish: one confirmation; the coral sheet and pair edits counted; published at the curation's top.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 coral genus sheet edit$/m.test(sum) || !/^1 coral look-alike pair edit$/m.test(sum))
+          se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => SAVED.content);
+        if (
+          !pub ||
+          JSON.stringify(Object.keys(pub)) !== '["nodes","pairs"]' ||
+          JSON.stringify(Object.keys(pub.nodes)) !== '["Acropora"]' ||
+          JSON.stringify(Object.keys(pub.pairs)) !== '["Acropora|Porites"]'
+        )
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (se.length) fails.push(`Coral Tree editors: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
       // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.

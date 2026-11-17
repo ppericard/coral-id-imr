@@ -423,11 +423,11 @@ LAB.add({
             .join('')}</div></article>`;
       };
       // Opened genus: photos dominate; a narrow side column holds the name, the IMR cue, the tools and (folded) the
-      // Coral ID Key criteria (the Coral Finder book's text, cited by page).
+      // Coral ID Key criteria (the Coral Finder book's text, cited by page; an edit of them by its source: app.js critRef).
       const big = (n, off) => {
         const g = G[n];
         return `<article class="ikbig${off ? ' off' : ''}"><div class="ikinfo ikbigside">${head(n)}${off ? `<small class="ikmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
-          <p class="ikcue iktip">${gloss(tipsText(g))}</p><details class="ikcrit"${notIMR(n) ? ' open' : ''}><summary>Criteria <small>· Coral Finder p. ${g.pages.join(', ')}</small></summary><ul>${glossAll(
+          <p class="ikcue iktip">${gloss(tipsText(g))}</p><details class="ikcrit"${notIMR(n) ? ' open' : ''}><summary>Criteria <small>· ${critRef(g, false)}</small></summary><ul>${glossAll(
             g.crit
           )
             .map(c => `<li>${c}</li>`)

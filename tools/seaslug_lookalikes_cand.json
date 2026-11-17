@@ -1,5 +1,5 @@
 {
- "_doc": "Built by tools/seaslug_lookalikes.py (its doc says what each field is) from tools/seaslug_lookalikes_pull.json, tools/seaslug_lookalikes_source.json, tools/seaslugs.json and seaslug.json; the survey: docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Candidates only: not read by the app nor the game.",
+ "_doc": "Built by tools/seaslug_lookalikes.py (its doc says what each field is) from tools/seaslug_lookalikes_pull.json, tools/seaslug_lookalikes_source.json, tools/seaslugs.json and seaslug.json; the survey: docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Candidates: tools/seaslug_game.py genus_looks writes the genus look-alikes into seaslug.json (Q390 D); the species pairs wait.",
  "v": 1,
  "pulled": "2026-11-17",
  "place": 6873,

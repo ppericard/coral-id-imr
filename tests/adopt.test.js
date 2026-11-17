@@ -14,10 +14,17 @@ const {loadCodeGs, bodyOf} = require('./gas.js');
 
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
-  DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8');
-// data.json from GitHub, as the script reads it (Code.gs gen_).
+  DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
+  CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8');
+// data.json from GitHub, as the script reads it (Code.gs gen_), and curation.json, whose look-alike pairs the coral
+// replay lays over it (Code.gs subjRpl_; design note v2, step 8).
 const withData = () => ({
-  fetch: url => (/\/main\/data\.json$/.test(url) ? {getResponseCode: () => 200, getContentText: () => DJSON} : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? {getResponseCode: () => 200, getContentText: () => DJSON}
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON}
+        : null
 });
 
 function storage(init = {}) {

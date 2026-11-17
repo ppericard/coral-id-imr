@@ -662,10 +662,23 @@ let RAW,
 // Identify > Coral ID Key only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('reefid-idkey-x', true);
+// data.json with the content editor's edits laid over it (core.js contentApply; design note v2, step 8; Pierre,
+// 2026-11-15, Q359): the text slots always; his look-alike pairs only once the sync script replays the progress under them
+// (rule D4: structOn, core.js SUBJECTS structure sheet), before which the base's pairs, as before. DATAST: the structure
+// stamp of the units made (core.js structStamp, '' without the structure), DATAON: whether they were made under it.
+let DATAST = '',
+  DATAON = false;
 function build() {
   GDIFF = {};
   NEXTQ = null; // a question planned on the old curation could show a photo it now excludes or moves
-  const d = structuredClone(RAW);
+  // the subject whose first pool file is data.json (SUBJECTS pool), whose content slots apply to it
+  const S = SUBJECTS.find(x => x.pool.files[0] === 'data.json'),
+    on = structOn(S),
+    d = structuredClone(contentApply(S, RAW, CUR, {structure: on}));
+  DATAON = on;
+  DATAST = on ? structStamp(S, RAW, CUR) : '';
+  // An edited ID tip's source, shown under the tips wherever they are (tipsList qsrc; Q359 e, rule C2).
+  [d.gen, (d.x || {}).gen].forEach(G => Object.values(G || {}).forEach(g => g && g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
   applyCuration(d, CUR);
   applyForms(d, CUR);
   applySlots(d, CUR, {picks: PICKS, autoq: AUTOQ});
@@ -781,12 +794,19 @@ function fishGenera(X, F) {
           group: E.group,
           ig: E.ig,
           forms: E.forms,
-          look: ids.filter(o => o !== id),
+          // Its sibling genera, and the genera a specialist source names as its look-alikes (the tree's genus look: the sea
+          // slugs', tools/seaslug_game.py genus_looks; Pierre, 2026-11-17, Q390 D), across families too.
+          look: [...new Set([...ids.filter(o => o !== id), ...(G.look || []).filter(o => X.gen[o])])],
           // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
-          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling.
-          decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
+          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling;
+          // and those a specialist source names (Q390 D: they stay look-alikes whatever the players answer).
+          decl: [...(G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : []), ...(G.look || []).filter(o => X.gen[o])],
           lk: [],
-          lsrc: {},
+          // each look-alike's sources in a line (the tree's genus lsrc: [{t, u}] by the other genus's id)
+          lsrc: Object.fromEntries(Object.entries(G.lsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')])),
+          // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
+          // look-alikes the players' answers can drop (model.js dataSeed).
+          ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
           qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
           tl: cues
@@ -1137,7 +1157,7 @@ const fishBuild = () => {
   // the tree subject in force (TREE_AT): its content slots apply to it, and its part of the curation (core.js treeCur)
   const S = SUBJECTS.find(x => x.id === TREE_AT),
     {ph, gm} = FISHRAW,
-    on = structOn(),
+    on = structOn(S),
     C = treeCur(S, CUR),
     f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
   FISHON = on;
@@ -1189,18 +1209,18 @@ function treeBuildAll() {
     } else if (T.FISHRAW) T.stale = true;
   });
 }
-const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
+// Whether the script replays subject S's progress under its structure (core.js structSheet: the corals' and the fish's
+// own versions).
+const structOn = S => typeof sheetV === 'function' && sheetV() >= structSheet(S);
 // A reply from the script that replays under the structure, the units made before it without the structure the curation
-// holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
+// holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW). The corals' (data.json:
+// build) and the fish's (fishBuild) each against their own version.
 function structSeen() {
-  if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
-  if (
-    structFp(
-      SUBJECTS.find(x => x.id === TREE_AT),
-      CUR
-    )
-  )
-    CUR_NEW = CUR;
+  if (CUR_NEW) return;
+  // the corals' against their version, the tree subject in force (TREE_AT) against its own
+  const K = SUBJECTS.find(x => x.pool.files[0] === 'data.json'),
+    F = SUBJECTS.find(x => x.id === TREE_AT);
+  if ((RAW && DATAON !== structOn(K) && structFp(K, CUR)) || (F && FISHRAW && FISHON !== structOn(F) && structFp(F, CUR))) CUR_NEW = CUR;
 }
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
@@ -1319,7 +1339,8 @@ const treeLoad = id => {
           // next try fetches it again and start-up falls back on the corals (Codex review #987), as fishHome refuses fish.json.
           if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
+          // game: whether fish-game.json came (without it the units play on their first photos: UNITS fish vars waits).
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true, game: !!(gm && gm.photos)});
           // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
           // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
           // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
@@ -1964,18 +1985,30 @@ addEventListener(
   },
   true
 );
+// A source the content editor gave with an edit ({t, u}: core.js contentApply esrc; Q359 e, rule C2), as HTML: its words,
+// a link when it has an address. esrcTag: the source of his edit of slot k of record g, a few words after its text ('' when
+// he gave none).
+const esrcHtml = s => (s.u ? `<a href="${esc(safeUrl(s.u))}" target="_blank" rel="noopener">${esc(s.t)}</a>` : esc(s.t));
+const esrcTag = (g, k) => {
+  const s = ((g && g.esrc) || {})[k];
+  return s && s.t ? ` <small class="esrc">(${esrcHtml(s)})</small>` : '';
+};
+// What a genus's Coral ID Key criteria are cited by, wherever they are shown (the genus sheet, the quiz's answer, the
+// Coral ID Key): the source the content editor gave with his edit of them, else the Coral Finder pages of the book's own
+// text (rule C2; Codex review #988). link false: its words only (inside a summary).
+const critRef = (g, link = true) => {
+  const s = ((g && g.esrc) || {}).crit;
+  return s && s.t ? (link ? esrcHtml(s) : esc(s.t)) : `Coral Finder p. ${((g && g.pages) || []).join(', ')}`;
+};
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
-// source (qsrc: core.js fishGen, app.js fishGenera; Q359 e, rule C2) show it under them, wherever they are shown.
+// source (qsrc: core.js fishGen, app.js fishGenera and build; Q359 e, rule C2) show it under them, wherever they are
+// shown; a summary he reworded with one, after it.
 const tipsList = (g, cls = '') =>
   g.qt
     ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
         .map(x => `<li>${x}</li>`)
-        .join('')}</ul>${
-        g.qsrc && g.qsrc.t
-          ? `<p class="note esrc">Source: ${g.qsrc.u ? `<a href="${esc(safeUrl(g.qsrc.u))}" target="_blank" rel="noopener">${esc(g.qsrc.t)}</a>` : esc(g.qsrc.t)}</p>`
-          : ''
-      }`
-    : `<p class="keyid">${gloss(g.sum)}</p>`;
+        .join('')}</ul>${g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
+    : `<p class="keyid">${gloss(g.sum)}${esrcTag(g, 'sum')}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
 // [spelling, source]; Pierre, 2026-11-04: "show both, the IMR one first"). Plain text: escape it where it is shown.
@@ -2230,6 +2263,9 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
+    // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
+    // with the requests so the sheet replays under the pairs in force (sync.js stsAsk; design note v2, step 8).
+    st: () => DATAST,
     // Who sees the "mystery" tiles on My progress (progress.js mysteryOn; Pierre, 2026-11-04): from the player's first-launch
     // answer c (null before any), only "I'm new to corals"; RAs who had the IMR course and players who know corals well
     // see every genus as before.
@@ -2374,6 +2410,15 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // Its variant table as the sheet's replay reads it (core.js SUBJECTS replayed vars: fishVarTable on its pool files,
+    // the units with the content in force, FISHF, as the sheet reads them), for this device’s answers replayed on top of
+    // the sheet’s (sync.js rpVars). Null until the whole game pool is in (FISHRAW game: fish-game.json): a table made on
+    // the first photos alone lacks variant photos, so a queued right answer would clear a group the sheet left; the
+    // adoption waits for it instead (sync.js replayAdoptS; Codex review #953).
+    vars: S =>
+      FISHRAW && FISHRAW.game && S && S.replayed && S.replayed.vars
+        ? S.replayed.vars(FISHF || FISHRAW.f, [FISHRAW.f, FISHRAW.ph, FISHRAW.gm, CUR], S)
+        : null,
     // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
     // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
     st: () => (FISH ? FISHST : ''),
@@ -2623,12 +2668,34 @@ const UNITS = {
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
     norm: typeNormAll,
     typeOther: rk => treeTypeOther(rk),
-    // No sourced look-alike pair between genera yet (study §6.3: the two Spanish dancers are one genus); a genus's sibling
-    // genera are its traps (app.js fishGenera look).
-    pairs: () => [],
+    // The look-alike pairs a specialist source names (seaslug.json genus look: the Sea Slug Forum, Nudi Pixel, the papers;
+    // Pierre, 2026-11-17, Q390 D), each pair once: the duels. A genus's other sibling genera stay its traps (app.js
+    // fishGenera look); the pairs only iNaturalist shows are data look-alikes (model.js dataSeed, dataLooks).
+    pairs: () =>
+      Object.values(FISH ? FISH.gen : {})
+        .filter(g => g.rank === 'genus')
+        .flatMap(g =>
+          (g.decl || []).filter(o => FISH.gen[o] && (g.id < o || !(FISH.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
+        ),
     winks: () => [],
     tiles: () => [],
     list: () => viewFishList(),
+    // Its sheets in its own words (learn.js sheetWord; study §9 step 7: no fish word on a sea-slug sheet): each sheet's ?
+    // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
+    // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
+    // drawing. Its ID marks are its own, sourced (tools/seaslug_cues.json): shown on the sheets and in the quiz feedback.
+    words: {
+      famLede: () =>
+        'One family on one page, under its scientific name and its English names where a source gives one. <b>ID marks</b> are what to look at, in our words from the sources numbered after each line: the rhinophores, the gills or the cerata, the mantle and its edge, the body shape. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. Tap a photo to enlarge it.',
+      genLede: f =>
+        `One genus of the ${esc(f.name)} on one page: its <b>ID marks</b>, in our words from the sources numbered after each line, then its species, one photo each, the most recorded in the Philippines first. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. <b>Don't confuse with</b> shows the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`,
+      spLede:
+        'One species on one page: its scientific name, its English names where a source gives one, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.',
+      met: {v: s => (s.present || {}).area || 0, where: 'in the Philippines, by how many observers recorded it'},
+      links: () => [],
+      nophoto:
+        '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M5 31c4-8 14-12 27-12s22 4 27 12c-7 3-16 4-27 4S12 34 5 31z"/><path d="M15 21l-3-9M20 20l1-9M45 20c0-4 2-7 6-8M45 20c3-3 6-4 9-3"/><circle class="eye" cx="13" cy="11" r="1.5"/><circle class="eye" cx="21" cy="10" r="1.5"/></svg>'
+    },
     sheet: id => viewFishSheet(id),
     bar: id => fishBar(id),
     // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; Pierre, 2026-11-16 ~15:42:
@@ -2747,8 +2814,10 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
-// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
-const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
+// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera; a bonus genus's
+// tips the content editor reworded with a source, plain (the source shows under them: tipsList; Codex review #988).
+const tipsLabel = g =>
+  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
