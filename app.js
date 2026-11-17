@@ -781,12 +781,19 @@ function fishGenera(X, F) {
           group: E.group,
           ig: E.ig,
           forms: E.forms,
-          look: ids.filter(o => o !== id),
+          // Its sibling genera, and the genera a specialist source names as its look-alikes (the tree's genus look: the sea
+          // slugs', tools/seaslug_game.py genus_looks; Pierre, 2026-11-17, Q390 D), across families too.
+          look: [...new Set([...ids.filter(o => o !== id), ...(G.look || []).filter(o => X.gen[o])])],
           // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
-          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling.
-          decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
+          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling;
+          // and those a specialist source names (Q390 D: they stay look-alikes whatever the players answer).
+          decl: [...(G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : []), ...(G.look || []).filter(o => X.gen[o])],
           lk: [],
-          lsrc: {},
+          // each look-alike's sources in a line (the tree's genus lsrc: [{t, u}] by the other genus's id)
+          lsrc: Object.fromEntries(Object.entries(G.lsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')])),
+          // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
+          // look-alikes the players' answers can drop (model.js dataSeed).
+          ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
           qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
           tl: cues
@@ -1319,7 +1326,8 @@ const treeLoad = id => {
           // next try fetches it again and start-up falls back on the corals (Codex review #987), as fishHome refuses fish.json.
           if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
+          // game: whether fish-game.json came (without it the units play on their first photos: UNITS fish vars waits).
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true, game: !!(gm && gm.photos)});
           // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
           // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
           // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
@@ -2374,6 +2382,15 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // Its variant table as the sheet's replay reads it (core.js SUBJECTS replayed vars: fishVarTable on its pool files,
+    // the units with the content in force, FISHF, as the sheet reads them), for this device’s answers replayed on top of
+    // the sheet’s (sync.js rpVars). Null until the whole game pool is in (FISHRAW game: fish-game.json): a table made on
+    // the first photos alone lacks variant photos, so a queued right answer would clear a group the sheet left; the
+    // adoption waits for it instead (sync.js replayAdoptS; Codex review #953).
+    vars: S =>
+      FISHRAW && FISHRAW.game && S && S.replayed && S.replayed.vars
+        ? S.replayed.vars(FISHF || FISHRAW.f, [FISHRAW.f, FISHRAW.ph, FISHRAW.gm, CUR], S)
+        : null,
     // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
     // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
     st: () => (FISH ? FISHST : ''),
@@ -2627,12 +2644,34 @@ const UNITS = {
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
     norm: typeNormAll,
     typeOther: rk => treeTypeOther(rk),
-    // No sourced look-alike pair between genera yet (study §6.3: the two Spanish dancers are one genus); a genus's sibling
-    // genera are its traps (app.js fishGenera look).
-    pairs: () => [],
+    // The look-alike pairs a specialist source names (seaslug.json genus look: the Sea Slug Forum, Nudi Pixel, the papers;
+    // Pierre, 2026-11-17, Q390 D), each pair once: the duels. A genus's other sibling genera stay its traps (app.js
+    // fishGenera look); the pairs only iNaturalist shows are data look-alikes (model.js dataSeed, dataLooks).
+    pairs: () =>
+      Object.values(FISH ? FISH.gen : {})
+        .filter(g => g.rank === 'genus')
+        .flatMap(g =>
+          (g.decl || []).filter(o => FISH.gen[o] && (g.id < o || !(FISH.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
+        ),
     winks: () => [],
     tiles: () => [],
     list: () => viewFishList(),
+    // Its sheets in its own words (learn.js sheetWord; study §9 step 7: no fish word on a sea-slug sheet): each sheet's ?
+    // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
+    // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
+    // drawing. Its ID marks are its own, sourced (tools/seaslug_cues.json): shown on the sheets and in the quiz feedback.
+    words: {
+      famLede: () =>
+        'One family on one page, under its scientific name and its English names where a source gives one. <b>ID marks</b> are what to look at, in our words from the sources numbered after each line: the rhinophores, the gills or the cerata, the mantle and its edge, the body shape. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. Tap a photo to enlarge it.',
+      genLede: f =>
+        `One genus of the ${esc(f.name)} on one page: its <b>ID marks</b>, in our words from the sources numbered after each line, then its species, one photo each, the most recorded in the Philippines first. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. <b>Don't confuse with</b> shows the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`,
+      spLede:
+        'One species on one page: its scientific name, its English names where a source gives one, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.',
+      met: {v: s => (s.present || {}).area || 0, where: 'in the Philippines, by how many observers recorded it'},
+      links: () => [],
+      nophoto:
+        '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M5 31c4-8 14-12 27-12s22 4 27 12c-7 3-16 4-27 4S12 34 5 31z"/><path d="M15 21l-3-9M20 20l1-9M45 20c0-4 2-7 6-8M45 20c3-3 6-4 9-3"/><circle class="eye" cx="13" cy="11" r="1.5"/><circle class="eye" cx="21" cy="10" r="1.5"/></svg>'
+    },
     sheet: id => viewFishSheet(id),
     bar: id => fishBar(id),
     // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; Pierre, 2026-11-16 ~15:42:

@@ -272,7 +272,31 @@
     "worms": 23093,
     "wiki": "Phyllidiidae"
    },
-   "tgroup": 1
+   "tgroup": 1,
+   "marks": [
+    "Tough, flat oval body, its back covered in hard tubercles or ridges",
+    "No gill tuft on the back: the gills lie in a groove under the mantle edge",
+    "Usually bold, contrasting colours and patterns"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, General features, p. 9",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Discodorididae",
@@ -393,7 +417,28 @@
     "g:Plakobranchus"
    ],
    "look": [],
-   "tgroup": 3
+   "tgroup": 3,
+   "marks": [
+    "Wing-like flaps (parapodia) along the sides, often edged in bright colours"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Thuridilla lineolata fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/thurline"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Elysia marginata species page, the parapodia",
+     "u": "https://en.seaslug.world/species/elysia_marginata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "f:Pleurobranchidae",
@@ -424,7 +469,23 @@
     "worms": 1755,
     "wiki": "Pleurobranchidae"
    },
-   "tgroup": 6
+   "tgroup": 6,
+   "marks": [
+    "A large gill on the right side, in the gap between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill, as in all notaspids",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Flabellinidae",
@@ -827,7 +888,53 @@
     "s199473",
     "s504373",
     "s1115871"
-   ]
+   ],
+   "dlook": [
+    "g:Nembrotha",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Dark, often black lines running lengthwise along the back",
+    "The lines on a bluish or white ground, often with an orange or yellow rim"
+   ],
+   "msrc": [
+    {
+     "t": "Johnson and Gosliner 2012, A new classification of the chromodorid nudibranchs (PLoS ONE), Chromodoris, the black-lined species",
+     "u": "https://doi.org/10.1371/journal.pone.0033479"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris annae fact sheet, the quadricolor colour group",
+     "u": "https://www.seaslugforum.net/find/chroanna"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris willani fact sheet, the colour group",
+     "u": "https://www.seaslugforum.net/find/chrowill"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Nembrotha",
@@ -842,7 +949,44 @@
     "s142953",
     "s468034",
     "s418431"
-   ]
+   ],
+   "dlook": [
+    "g:Chromodoris",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Often seen feeding on sea squirts (ascidians)"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Nembrotha kubaryana fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembkuba"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Nembrotha chamberlaini fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembcham"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Hypselodoris",
@@ -869,7 +1013,77 @@
     "s469461",
     "s878721",
     "s781482"
-   ]
+   ],
+   "look": [
+    "g:Goniobranchus",
+    "g:Hexabranchus",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ],
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Nembrotha"
+   ],
+   "marks": [
+    "A tall body whose mantle barely overhangs the foot, as in H. tryoni",
+    "Some, as H. tryoni, crawl in pairs, one close behind the other"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, the body shape, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, trailing in Risbecia, now Hypselodoris",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidia",
@@ -884,7 +1098,46 @@
     "s207581",
     "s467978",
     "s120983"
-   ]
+   ],
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Cream to yellow rhinophores",
+    "Hard tubercles, often capped in yellow, many joined into ridges"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 5, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Phyllidia against Reticulidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Halgerda",
@@ -917,6 +1170,40 @@
     "inat": 48754,
     "worms": 206296,
     "wiki": "Pteraeolidia"
+   },
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A long aeolid that farms algae in its cerata and body, so adults look brown",
+    "Young ones are white until they take up their algae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, the white juvenile",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -938,7 +1225,79 @@
     "s1354147",
     "s505174",
     "x:goniobranchus-sp5"
-   ]
+   ],
+   "look": [
+    "g:Hypselodoris",
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dermatobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Dermatobranchus",
+    "g:Hexabranchus",
+    "g:Phyllidia"
+   ],
+   "marks": [
+    "A broad mantle that overhangs the foot widely",
+    "Some wave the mantle edge as they crawl, as G. kuniei and G. geometricus"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet, the mantle overlap, now Goniobranchus kuniei",
+     "u": "https://www.seaslugforum.net/find/chrokuni"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, now Goniobranchus kuniei and G. geometricus",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllodesmium",
@@ -957,7 +1316,53 @@
     "s346900",
     "s496578",
     "s548307"
-   ]
+   ],
+   "dlook": [
+    "g:Favorinus",
+    "g:Marioniopsis",
+    "g:Pteraeolidia"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Marioniopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pteraeolidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Feeds on soft corals and hides among their polyps",
+    "Many keep algae in their cerata, seen as rows of brown specks"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, like other species of Phyllodesmium",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Jorunna",
@@ -968,7 +1373,33 @@
     "s50300",
     "s548348",
     "s467976"
-   ]
+   ],
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A velvety back, covered all over in tiny spiky papillae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Jorunna funebris fact sheet, the papillate surface of the back",
+     "u": "https://www.seaslugforum.net/find/jorufune"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Ardeadoris",
@@ -990,7 +1421,50 @@
     "s199475",
     "s56646",
     "s63087"
-   ]
+   ],
+   "look": [
+    "g:Tubulophilinopsis"
+   ],
+   "lsrc": {
+    "g:Tubulophilinopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Tambja": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Tambja"
+   ],
+   "marks": [
+    "A smooth body in two shields, a head shield and a back shield",
+    "Side flaps (parapodia) fold up over the body"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the head and posterior shields",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Elysia",
@@ -1000,7 +1474,17 @@
    "species": [
     "s546397",
     "s50550"
-   ]
+   ],
+   "dlook": [
+    "g:Aplysia"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Doriprismatica",
@@ -1009,7 +1493,27 @@
    "circle": 1,
    "species": [
     "s468042"
-   ]
+   ],
+   "marks": [
+    "A very wavy mantle edge, rimmed with a thin black line",
+    "Black rhinophore tips and black-edged gills, which wave as it crawls"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Glossodoris atromarginata fact sheet, now Doriprismatica atromarginata",
+     "u": "https://www.seaslugforum.net/find/glosatro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Caloria",
@@ -1018,7 +1522,17 @@
    "circle": 1,
    "species": [
     "s119425"
-   ]
+   ],
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Thecacera",
@@ -1029,7 +1543,23 @@
     "s468030",
     "s142790",
     "s1679552"
-   ]
+   ],
+   "marks": [
+    "Large finger-like appendages flank the gills, as in T. pacifica"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Thecacera pacifica species page, Description",
+     "u": "https://en.seaslug.world/species/thecacera_pacifica"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tambja",
@@ -1039,7 +1569,42 @@
    "species": [
     "s120948",
     "s504449"
-   ]
+   ],
+   "look": [
+    "g:Tyrannodoris"
+   ],
+   "lsrc": {
+    "g:Tyrannodoris": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chelidonura": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chelidonura"
+   ],
+   "marks": [
+    "Feeds on branching, plant-like bryozoans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Tambja morosa fact sheet, the food of every Tambja",
+     "u": "https://www.seaslugforum.net/find/tambmoro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Pleurobranchus",
@@ -1051,7 +1616,39 @@
     "s123404",
     "s548297",
     "s418506"
-   ]
+   ],
+   "dlook": [
+    "g:Asteronotus",
+    "g:Dendrodoris"
+   ],
+   "lsrc": {
+    "g:Asteronotus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A large gill on the right side, between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Coryphellina",
@@ -1062,6 +1659,31 @@
     "s871903",
     "s1375852",
     "s873747"
+   ],
+   "look": [
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Samla": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Caloria": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phestilla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Caloria",
+    "g:Phestilla"
    ]
   },
   {
@@ -1084,7 +1706,32 @@
    "species": [
     "s120989",
     "s120988"
-   ]
+   ],
+   "marks": [
+    "Orange rhinophores",
+    "A smooth network of ridges on the back, with no tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Reticulidia against Phyllidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Hexabranchus",
@@ -1114,6 +1761,68 @@
     "inat": 49745,
     "worms": 206859,
     "wiki": "Hexabranchus"
+   },
+   "look": [
+    "g:Hypselodoris",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Jorunna": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Platydoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Goniobranchus",
+    "g:Jorunna",
+    "g:Platydoris"
+   ],
+   "marks": [
+    "Gills set one by one into the back, never pulled into a pocket",
+    "Grows very large, and can swim"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its gills",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its size and swimming",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -1124,7 +1833,23 @@
    "species": [
     "s469221",
     "s470152"
-   ]
+   ],
+   "marks": [
+    "Smooth, simple rhinophores with blunt tips"
+   ],
+   "msrc": [
+    {
+     "t": "Wikipedia, Costasiella (after Swennen 2007's diagnosis of the genus), the genus's features",
+     "u": "https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1384690062"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phestilla",
@@ -1134,7 +1859,33 @@
    "species": [
     "s50528",
     "s50534"
-   ]
+   ],
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A coral eater; P. melanobrachia lives on sun corals (Tubastraea)"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Phestilla melanobrachia species page, food and host corals; the genus",
+     "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Melibe",
@@ -1146,7 +1897,33 @@
     "s50551",
     "s779446",
     "s467983"
-   ]
+   ],
+   "dlook": [
+    "g:Cyerce"
+   ],
+   "lsrc": {
+    "g:Cyerce": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A wide oral hood, spread like a net to trap small crustaceans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Melibe viridis fact sheet, the oral veil",
+     "u": "https://www.seaslugforum.net/find/meliviri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Favorinus",
@@ -1157,7 +1934,29 @@
     "s389587",
     "s147944",
     "s120967"
-   ]
+   ],
+   "dlook": [
+    "g:Aegires",
+    "g:Phyllodesmium",
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Aegires": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Samla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dolabella",
@@ -1201,7 +2000,26 @@
     "inat": 49734,
     "worms": 138348,
     "wiki": "Phyllidiopsis"
-   }
+   },
+   "look": [
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chromodoris"
+   ]
   },
   {
    "id": "g:Aegires",
@@ -1210,7 +2028,17 @@
    "circle": 2,
    "species": [
     "s467975"
-   ]
+   ],
+   "dlook": [
+    "g:Favorinus"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Ceratosoma",
@@ -1232,7 +2060,41 @@
     "s49728",
     "s50552",
     "s319334"
-   ]
+   ],
+   "look": [
+    "g:Goniobranchus",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   },
+   "marks": [
+    "Black rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Glossodoris",
@@ -1278,7 +2140,29 @@
     "s349039",
     "s355499",
     "s121317"
-   ]
+   ],
+   "look": [
+    "g:Hexabranchus",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ]
+   }
   },
   {
    "id": "g:Discodoris",
@@ -1317,7 +2201,18 @@
    "species": [
     "s823909",
     "s823908"
-   ]
+   ],
+   "look": [
+    "g:Chelidonura"
+   ],
+   "lsrc": {
+    "g:Chelidonura": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Samla",
@@ -1328,6 +2223,25 @@
     "s696622",
     "s778294",
     "s778296"
+   ],
+   "look": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Favorinus"
    ]
   },
   {
@@ -1410,6 +2324,22 @@
     "inat": 48657,
     "worms": 137654,
     "wiki": "Aplysia"
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Elysia"
+   ],
+   "lsrc": {
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Elysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
    }
   },
   {
@@ -1440,7 +2370,17 @@
     "s1623585",
     "s1623583",
     "s549234"
-   ]
+   ],
+   "dlook": [
+    "g:Melibe"
+   ],
+   "lsrc": {
+    "g:Melibe": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Taringa",
@@ -1505,7 +2445,17 @@
    "circle": 3,
    "species": [
     "s52961"
-   ]
+   ],
+   "dlook": [
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Trapania",
@@ -1619,7 +2569,29 @@
    "circle": 3,
    "species": [
     "s50430"
-   ]
+   ],
+   "dlook": [
+    "g:Aplysia",
+    "g:Goniobranchus",
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dermatobranchus",
@@ -1629,7 +2601,17 @@
    "species": [
     "s495412",
     "s626349"
-   ]
+   ],
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Mariaglaja",
@@ -1647,7 +2629,17 @@
    "circle": 3,
    "species": [
     "s1491723"
-   ]
+   ],
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Tyrannodoris",
@@ -1656,7 +2648,18 @@
    "circle": 3,
    "species": [
     "s699008"
-   ]
+   ],
+   "look": [
+    "g:Tambja"
+   ],
+   "lsrc": {
+    "g:Tambja": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Odontoglaja",
@@ -1701,7 +2704,17 @@
    "circle": 3,
    "species": [
     "s559946"
-   ]
+   ],
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Pelagella",

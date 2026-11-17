@@ -145,7 +145,8 @@ annotated:
 - **Kept, judged as an animal photo**: the recognisable animal with its eggs beside it. The eggs are background; the count
   reads the sea slugs only.
 - Rule P4: the egg-only photo goes, not the observation's other photos. `tools/fetch_seaslugs.py` takes one photo per
-  observation and never takes an observation twice, so its other photos do not come in by themselves (ROADMAP).
+  observation; at its next run, an observation whose every candidate is judged an egg mass brings its next usable photo
+  as a new candidate (`eggs_back`), judged like any other, and the egg-mass one counts nothing against the target.
 
 ## Watermark
 

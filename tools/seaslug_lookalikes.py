@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""The sea slugs' look-alike candidates (a survey, nothing enters the game): docs/reviews/2026-11-17-seaslug-lookalikes-survey.md.
+"""The sea slugs' look-alike candidates (a survey): docs/reviews/2026-11-17-seaslug-lookalikes-survey.md.
 
 Pierre, 2026-11-17: had we looked at every look-alike and confusion group already published online? This tool gathers
-them from two kinds of source and writes one file of candidates, tools/seaslug_lookalikes_cand.json, that the game does
-not read (the decided pairs stay in tools/seaslugs.json lookalikes, read by tools/seaslug_game.py).
+them from two kinds of source and writes one file of candidates, tools/seaslug_lookalikes_cand.json. Pierre, 2026-11-17,
+Q390 D: tools/seaslug_game.py genus_looks reads its genus pairs into seaslug.json, those a literature set names as
+declared look-alikes, those only iNaturalist shows as data look-alikes; the species pairs wait for the species level (the
+decided species pair stays in tools/seaslugs.json lookalikes).
 
 Sources:
   - iNaturalist's "similar species" (v1/identifications/similar_species): for a taxon, the taxa of the same rank that its
@@ -581,8 +583,9 @@ def dump(o):
     lines = ['{', ' "_doc": ' + json.dumps('Built by tools/seaslug_lookalikes.py (its doc says what each field is) from '
                                            'tools/seaslug_lookalikes_pull.json, tools/seaslug_lookalikes_source.json, '
                                            'tools/seaslugs.json and seaslug.json; the survey: '
-                                           'docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Candidates only: '
-                                           'not read by the app nor the game.') + ',']
+                                           'docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Candidates: '
+                                           'tools/seaslug_game.py genus_looks writes the genus look-alikes into '
+                                           'seaslug.json (Q390 D); the species pairs wait.') + ',']
     keys = [k for k in o if k not in ('pairs', 'groups', 'others')]
     lines += [f' {json.dumps(k)}: {json.dumps(o[k], ensure_ascii=False)},' for k in keys]
     for j, k in enumerate(('pairs', 'groups', 'others')):

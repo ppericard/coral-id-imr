@@ -197,6 +197,21 @@ test('tools/seaslugs.json derives as written (build_seaslugs.py --check, offline
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
 
+// The photo target and look-alikes are copied from the source (--target rewrites only them, offline): the committed file
+// is the source's copy, and a changed source shows in the copy and nowhere else.
+test('build_seaslugs.py --target: the source photo target and look-alikes copied in, nothing else changed', () => {
+  const o = py(`
+from pathlib import Path
+text = b.OUT.read_text(encoding='utf-8')
+src = json.loads(b.SRC.read_text(encoding='utf-8'))
+same = b.recopy(src, text) == text
+src['photos'] = {**src['photos'], 'maxGenera': ['Slugus']}
+new = b.recopy(src, text)
+diff = [i for i, (x, y) in enumerate(zip(text.split('\\n'), new.split('\\n'))) if x != y]
+print(json.dumps([same, len(diff), json.loads(new)['photoTarget']['maxGenera'], json.loads(text)['photoTarget']['maxGenera']]))`);
+  assert.deepStrictEqual(o, [true, 1, ['Slugus'], ['Chromodoris', 'Phyllidia']]);
+});
+
 test('tools/seaslugs.json holds no observer id and every species passes rule C8', () => {
   const d = require('../tools/seaslugs.json');
   for (const s of d.species) {

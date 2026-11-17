@@ -221,13 +221,72 @@ test('the fish board: the replay of the log as the app adopts it, no floor (Q330
   const high = FIX.fish.saved,
     rec = C.replayProgress(
       FIX.fish.answers('anafish').map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(JSON.parse(FJSON))}
+      // the variant table the sheet made and keeps (Code.gs subjVar_, from the cache: nothing fetched again)
+      {gen: C.fishReplayGen(JSON.parse(FJSON)), vars: s.ctx.subjVar_('fish')}
     ).ana.P,
     M = C.replayAdopted(rec, high, C.rvOf('fish'));
   assert.deepStrictEqual(keptOf(s, 'fish', 'Ana'), rec, "the sheet's replay, not floored");
   assert.deepStrictEqual(board(s, S), [['Ana', C.pctOf(M, FUNITS), null]]);
   // A unit the log has no answer on, with answers saved (the Angelfishes): its answers go (rule D9).
   FUNITS.filter(u => high[u] && !rec[u] && (high[u].ok || high[u].ko)).forEach(u => assert.ok(!M[u], u));
+});
+
+// "Learned" asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b; fish rules version 3): the sheet's replay
+// decides from the answer log (rule D9) with the variant table it makes (Code.gs subjVar_, core.js fishVarTable), so the
+// fish board follows for every player at once (rule D8), whoever never reconnects.
+test('Learned and the variant groups on the fish board: a mark without each group right in the log goes, for every player at once', () => {
+  const S = C.subjectOf('fish'),
+    f = withAll(),
+    s = loadCodeGs({fetch: f.fetch}),
+    T = s.ctx.subjVar_('fish'),
+    U = T['f:Damselfishes'],
+    juv = U.v.find(x => x[1] !== 'ph')[0],
+    phs = U.v.find(x => x[1] === 'ph')[0],
+    at = Date.UTC(2026, 10, 8), // learned after every answer of the log: no miss after it takes the mark (replayedOf lm)
+    learned = {...FIX.fish.saved, 'f:Damselfishes': {...FIX.fish.saved['f:Damselfishes'], mx: at}},
+    // Ana's answers on photos with no variant; Ben's the same, his first two right ones on a juvenile and a male photo.
+    send = (name, pin, A) => {
+      const r = s.post({
+        name,
+        pin,
+        data: dataOf({...allSaved(), fish: learned}, {fish: C.rvOf('fish') - 1}),
+        summary: FIX.fish.summary,
+        answers: A
+      });
+      assert.ok(r.ok, JSON.stringify(r).slice(0, 200));
+    };
+  assert.deepStrictEqual(C.varLeftOf(U, 1, {}), ['juv', 'ph'], 'the Damselfishes have both groups');
+  send('Ana', '1234', FIX.fish.answers('anafish'));
+  send(
+    'Ben',
+    '1111',
+    FIX.fish.answers('benfish').map((a, i) => (i < 2 ? {...a, ph: i ? phs : juv} : a))
+  );
+  // Before the trigger: both learned on the board, as their saved copies (behind fish rules version 3) say.
+  const pct = P => C.pctOf(P, FUNITS);
+  assert.deepStrictEqual(
+    board(s, S).map(r => r[1]),
+    [pct(learned), pct(learned)]
+  );
+  // The trigger makes the replays: neither player reconnects.
+  s.ctx.autoUpdate();
+  clearBoards(s);
+  const M = name => C.replayAdopted(keptOf(s, 'fish', name), learned, C.rvOf('fish')),
+    rows = Object.fromEntries(board(s, S).map(r => [r[0], r[1]]));
+  assert.deepStrictEqual(keptOf(s, 'fish', 'Ana')['f:Damselfishes'].vl, ['juv', 'ph'], 'no group right in her log');
+  assert.ok(!M('Ana')['f:Damselfishes'].mx, 'Ana: the mark taken away by the replay');
+  assert.deepStrictEqual(
+    M('Ana')['f:Damselfishes'].ex,
+    {k: C.MX_EXAM.n, t: C.MX_EXAM.typed, v: [], ts: at, at: 0},
+    'her exam kept as passed but for the groups'
+  );
+  assert.strictEqual(rows.Ana, pct(M('Ana')), 'her board follows without her reconnecting');
+  assert.ok(!('vl' in keptOf(s, 'fish', 'Ben')['f:Damselfishes']), 'each group right in his log');
+  assert.strictEqual(M('Ben')['f:Damselfishes'].mx, at, 'Ben keeps his mark');
+  assert.strictEqual(rows.Ben, pct(M('Ben')));
+  // The same answers but for the photos: only her learned mark makes the difference.
+  assert.strictEqual(M('Ben')['f:Damselfishes'].ok, M('Ana')['f:Damselfishes'].ok);
+  assert.ok(rows.Ana < rows.Ben, `Ana ${rows.Ana} under Ben ${rows.Ben}`);
 });
 
 test('the opt-out, an admin hide and an archive hold on every board; such a player gets no replay made', () => {

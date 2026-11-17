@@ -96,6 +96,11 @@ function makeSheet(name) {
   return sheet;
 }
 
+// The fish photo files of GitHub main as the repository holds them, read once (Code.gs subjVar_: the variant table the
+// fish replay reads, Q391 b): served to every test whose own fetch does not, so a test that serves fish.json gets its
+// fish replay as on the live sheet. A test that serves fish.json alone, before this, needs nothing more.
+const POOLF = {};
+const poolFile = name => (POOLF[name] = POOLF[name] || require('fs').readFileSync(require('path').join(__dirname, '..', name), 'utf8'));
 // Loads Code.gs in a fresh context with fresh services; returns the script's globals and the fake spreadsheet.
 function loadCodeGs(opts = {}) {
   const sheets = {},
@@ -196,6 +201,11 @@ function loadCodeGs(opts = {}) {
             fetched.push(url);
             return r;
           }
+        }
+        const pf = /^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/main\/(fish-photos\.json|fish-game\.json)$/.exec(url);
+        if (pf) {
+          fetched.push(url);
+          return {getResponseCode: () => 200, getContentText: () => poolFile(pf[1])};
         }
         const t = (o.headers.Authorization || '').slice(7),
           w = t.startsWith('ghp_write');

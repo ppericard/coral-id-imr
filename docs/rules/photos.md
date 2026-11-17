@@ -21,6 +21,8 @@ mixes sources on purpose for variety.
   included in the fish photo pool. Never left out, never boosted (the candidates: `tools/fetch_fish.py` `select` takes his
   observations first, within the species' room, then the judging puts them in play; the stopgap's `tools/fish_photos.py`
   `his_ok` until 2026-11-15).
+- **Sea slugs: the fish's rule**, his own photos included (Pierre, 2026-11-16, Q386; `tools/fetch_seaslugs.py`
+  `--own`, then the judging rubric like any candidate).
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
   judged sure on the rubric and the reference photos judged sure on the same rubric, whatever their reference level, enter
   the same way (`tools/fish_game.py`,
