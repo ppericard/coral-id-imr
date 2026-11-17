@@ -102,6 +102,9 @@
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
   function fishSure(j) {
     if (!j || fishUnsure(j).length) return null;
+    // An egg mass (the sea slugs' egg rule, judging/SEASLUG.md: {egg: 1}, never a code): never a candidate, set aside as
+    // a near-duplicate is (tools/seaslug_game.py sure never puts one in play). The fish's judgements carry no egg.
+    if (j.egg) return {keep: 'reject', why: 'egg'};
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
     if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};

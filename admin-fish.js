@@ -403,20 +403,22 @@ function renderFishCand() {
     live = Q1.filter(shown),
     c = live.find(x => x.p.f === FPIN) || live[0],
     nx = live.find(x => x !== c);
-  const cnt = L => L.filter(shown).length;
+  const cnt = L => L.filter(shown).length,
+    aq = !!FISHS.admin.autosort || chks.length > 0;
   const seg =
-    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count alone
-    (FISHS.admin.autosort || chks.length
+    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a
+    // chip beside the others
+    (aq
       ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>`
-      : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} candidate${cnt(Q0) === 1 ? '' : 's'}</span>`) +
+      : '') +
     candFlags(
-      `${
+      `${aq ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
         nFull
           ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHS.admin.target > 0 ? `${FISHS.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`}): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
       }${
         nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
           : ''
       }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the ${esc(FISHS.what.toLowerCase())} candidate pass (judging/)">${nJ} not judged yet</span>` : ''}`,
       fishAutoBlock(false, true)

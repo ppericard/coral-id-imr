@@ -125,3 +125,10 @@ test("the sea slugs' sheet slots: declared at every rank of their tree, their ID
   assert.ok(!SS.structure);
   assert.strictEqual(C.structApply(SS, R, {seaslug: {content: {pairs: {'g:Chromodoris|g:Phyllidia': {v: 1}}}}}), R);
 });
+
+test("fishSure: an egg-mass judgement (the sea slugs' egg rule) is set aside, never added", () => {
+  assert.deepStrictEqual(A.fishSure({egg: 1, n: 'a made-up egg ribbon'}), {keep: 'reject', why: 'egg'});
+  const L = [{f: 'seaslug-1-cand-1', o: 'o1', t: 'X'}],
+    Q = A.fishQueue({s1: L}, {'seaslug-1-cand-1': {egg: 1}}, A.fishSpecies({species: [{id: 's1'}]}, 12), {}, []);
+  assert.ok(Q[0].aside, 'shown on demand only, with the set-aside ones');
+});
