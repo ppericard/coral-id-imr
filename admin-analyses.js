@@ -1824,6 +1824,9 @@ const AN_PART = {
 };
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
+// The mix-up rate a pair's odds ratio is read on (Pairs most mixed up): its own rank's rate where the ranks are told
+// apart (analysis.js confusions rkp; Codex review #1058), else the pooled rate.
+const anPairP = (a, p) => (a && a.rkp && p && a.rkp[p.rk] != null ? a.rkp[p.rk] : anTyp(a).p);
 // A unit's seconds (Answer time's list by unit): from the reference rank's typical time where the units carry their
 // rank's effect (analysis.js rt s0: the fish's ranks told apart), else the typical answer's.
 const anSu = (a, u) => (a && a.s0 ? a.s0 : anTyp(a).s) * Math.exp(u);
@@ -2038,7 +2041,7 @@ const ANV = {
           ],
           PL.map(p => {
             // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
-            const fr = u => ANALYSIS.freqRatio(anTyp(a).p, u),
+            const fr = u => ANALYSIS.freqRatio(anPairP(a, p), u),
               v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
             return `<tr><td>${p.k
               .split('|')

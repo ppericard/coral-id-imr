@@ -2045,6 +2045,22 @@
       mixed,
       players: players(E),
       typ: {p: mixed / n},
+      // each rank's own mix-up rate per offer (a subject whose ranks are told apart; Codex review #1058): the baseline a
+      // pair's odds ratio, against a typical pair of its rank, is read on (admin-analyses.js anPairP), as the pooled rate
+      // (typ) is for a subject with one rank
+      // (the reference rank and each rank the model fits)
+      ...(RK.length
+        ? {
+            rkp: Object.fromEntries(
+              [E[0].rk0, ...RK]
+                .map(r => {
+                  const S = E.filter(e => e.rk === r);
+                  return S.length ? [r, sum(S.map(e => e.y)) / S.length] : null;
+                })
+                .filter(Boolean)
+            )
+          }
+        : {}),
       effects,
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),

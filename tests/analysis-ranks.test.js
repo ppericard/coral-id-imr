@@ -165,3 +165,30 @@ test('Answer time by unit: each unit from the reference rank’s typical time (f
   // a report without ranks: the typical answer's time, as before
   assert.strictEqual(anSu({typ: {s: 7.5}}, 0), 7.5);
 });
+
+// Codex review #1058: a pair's odds ratio against a typical pair of its rank is read on its own rank's mix-up rate, not
+// the pooled one: doubling the odds on a rank at 10% is ×1.82, where the pooled 25% read ×1.60.
+test('Pairs most mixed up: each pair against its own rank’s mix-up rate', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    anPairP = vm.runInNewContext(block(src, 'const anTyp = ', '\nconst ANV', {file: 'admin-analyses.js'}) + ';anPairP'),
+    a = {typ: {p: 0.25}, rkp: {family: 0.3, genus: 0.1}};
+  near(A.freqRatio(anPairP(a, {rk: 'genus'}), Math.log(2)), 1.82, 0.005, 'a genus pair');
+  near(A.freqRatio(anPairP({typ: {p: 0.25}}, {}), Math.log(2)), 1.6, 0.005, 'one rank: the pooled rate');
+  assert.strictEqual(anPairP(a, {rk: 'species'}), 0.25, 'a rank with no rate of its own: the pooled one');
+  // confusions gives each rank's rate, its mix-ups over its offers
+  const {rows, meta} = fishRanked({rk: {genus: [0.8, 0.3], species: [1.4, 0.5]}}),
+    D = A.prep(rows, meta),
+    c = A.confusions(D, 0, 1),
+    E = [];
+  D.forEach(x => !x.typed && x.ch.length > 1 && x.ch.forEach(o => o !== x.g && E.push([x.rk, x.a === o ? 1 : 0])));
+  ['family', 'genus', 'species'].forEach(r => {
+    const S = E.filter(e => e[0] === r);
+    near(c.rkp[r], S.reduce((t, e) => t + e[1], 0) / S.length, 1e-12, `${r}: its own rate`);
+  });
+  assert.ok(c.rkp.species > c.rkp.family, 'species pairs mixed up more often');
+  assert.ok(!('rkp' in A.confusions(A.prep(rows, {...meta, rk: undefined}), 0, 1)), 'no rank: no rates by rank');
+});
