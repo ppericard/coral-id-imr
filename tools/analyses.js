@@ -4,8 +4,9 @@
 // the primary source. The admin's "Recompute here" runs the same code in its own tab, on any device (Pierre,
 // 2026-11-05), and keeps its result there.
 //   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): one report per
-//                                             subject (core.js SUBJECTS analyses: the corals, then the fish; Pierre,
-//                                             2026-11-08), each from its own answers (core.js subjRows): reads the log
+//                                             subject (core.js SUBJECTS analyses: the corals, then the fish and the
+//                                             sea slugs; Pierre, 2026-11-08), each from its own answers (core.js
+//                                             subjRows): reads the log
 //                                             with readAnswers and stores the report with analysesPut (sheet v35; one
 //                                             stored report per subject from v113, AN_SUBJ_SHEET), both with the admin
 //                                             token in ANALYSES_ADMIN_TOKEN; does nothing for a subject until the log
@@ -33,17 +34,18 @@ const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
 const SHEET_V = 35; // analysesGet / analysesPut
 
 // The photos' features from the public files of this checkout, for a subject whose analyses read them (core.js SUBJECTS
-// analyses photos): true, the corals' view, quality, sharpness and source (analysis.js photoMeta); 'judged', the fish
-// photos' judged ease, phase and framing from fish-game.json (photoMetaFish, kept apart in fph: the other analyses read
-// ph as the corals' views); none for another subject. rk: the reference rank of a subject whose ranks the models tell
-// apart (analysis.js rankRef: the fish's families, genera and species units), none for the corals.
+// analyses photos): true, the corals' view, quality, sharpness and source (analysis.js photoMeta); 'judged', its photos'
+// judged ease, phase and framing from its game file (SUBJECTS admin files gm: fish-game.json, seaslug-game.json;
+// photoMetaFish, kept apart in fph: the other analyses read ph as the corals' views); none for another subject. rk: the
+// reference rank of a subject whose ranks the models tell apart (analysis.js rankRef: the fish's family, the sea slugs'
+// genus), none for the corals.
 const metaOf = (subject = C.replaySubject()) => {
   const S = C.subjectOf(subject),
     k = (S.analyses || {}).photos,
     rk = A.rankRef(S),
     m =
       k === 'judged'
-        ? {ph: {}, fph: A.photoMetaFish(rd('fish-game.json'))}
+        ? {ph: {}, fph: A.photoMetaFish(C.fishGameRead(rd(S.admin.files.gm)))}
         : k
           ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))}
           : {ph: {}};

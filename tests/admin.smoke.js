@@ -2866,7 +2866,7 @@ const darkCards = (p, sel) =>
               .waitForFunction(
                 h =>
                   location.hash === '#' + h &&
-                  cur === h.replace(/^fish\//, '') &&
+                  cur === subjOfHash(h)[1] &&
                   /fitted on|No report yet|Not for /.test(document.getElementById('view').textContent),
                 h,
                 {timeout: 90000}
@@ -2983,6 +2983,51 @@ const darkCards = (p, sel) =>
               )
                 fe.push("the corals' Speed tells ranks apart");
             }
+          }
+          // The sea slugs' report on their side (SUBJECTS seaslug analyses, 2026-11-17): its status line, every view the
+          // fish have, drawn from its report (the demo's made-up answers on its genera), never a coral genus nor a raw id;
+          // What makes a photo hard on its judged ease, phase and framing (its game file). Its units are genera: the
+          // words stay. At 1280 from the script that stores one report per subject.
+          if (v >= GATE && vw === 1280) {
+            at = await look('seaslug/analyses/overview');
+            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || at.not)
+              fe.push(`sea slug Overview ${JSON.stringify(at)}`);
+            const [H, LV] = await fq.evaluate(() => [
+              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),
+              LIVE_STATS
+            ]);
+            if (H.length !== 15) fe.push(`sea slug views ${H.join(' ')}`);
+            for (const h of H.filter(h => !LV.includes(h))) {
+              at = await look('seaslug/' + h);
+              if (at.none || !/^Sea slugs: /.test(at.badge) || at.ids.length || at.coral || at.wide > 0)
+                fe.push(`#seaslug/${h} ${JSON.stringify({...at, views: undefined})}`);
+            }
+            // the views drawn live from its answers (LIVE_STATS: Pairs, Heatmap, Answer log, Stops): drawn, no page error
+            for (const h of H.filter(h => LV.includes(h))) {
+              await fq.evaluate(h => (location.hash = h), 'seaslug/' + h);
+              const lv = await fq
+                .waitForFunction(
+                  h =>
+                    cur === h &&
+                    document.getElementById('view').textContent.trim().length > 40 &&
+                    !/Loading/.test(document.getElementById('view').textContent),
+                  h,
+                  {timeout: 60000}
+                )
+                .then(() => fq.evaluate(() => document.getElementById('view').textContent.slice(0, 120)))
+                .catch(() => null);
+              if (!lv || /Not for sea slugs yet/.test(lv)) fe.push(`#seaslug/${h}: ${lv === null ? 'nothing drawn' : lv}`);
+            }
+            at = await look('seaslug/analyses/difficulty/photos');
+            const ph = await fq.evaluate(() => {
+              const V = document.getElementById('view');
+              return {
+                h: [...V.querySelectorAll('.adm-an-card h3, .adm-an-card summary')].map(e => e.textContent.trim()).join(' | '),
+                t: V.textContent
+              };
+            });
+            if (/IMR lecture|Corallites|quality photo/i.test(ph.t) || !/\bEase\b/.test(ph.h))
+              fe.push(`#seaslug/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
           }
           // the corals' report on the corals' side, as before
           at = await look('analyses/overview');
@@ -6251,8 +6296,8 @@ const darkCards = (p, sel) =>
       }
       // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
       // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
-      // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
-      // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
+      // the Analyses views the fish have (SUBJECTS analyses, #1060), its Heatmap among them; every genus of its game on
+      // the map in italics, by name, in its family's block, the families in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
       // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
       // at all, Not enough data yet. No raw unit id, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
@@ -6297,6 +6342,9 @@ const darkCards = (p, sel) =>
             );
             return {
               views: TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              fishViews: TABS.filter(t => t[3] === 'analyses').flatMap(t =>
+                t[2].map(([h]) => h).filter(h => hasPage(subjectOf('fish'), h))
+              ),
               sw: !!V.querySelector('[data-sf="hr"]'),
               rows: T.querySelectorAll('tbody tr').length,
               cols: T.querySelectorAll('thead .hm-col').length,
@@ -6316,7 +6364,8 @@ const darkCards = (p, sel) =>
           });
           if (
             !hs ||
-            hs.views.join() !== 'analyses/difficulty/heatmap' ||
+            hs.views.join() !== hs.fishViews.join() ||
+            !hs.views.includes('analyses/difficulty/heatmap') ||
             hs.sw ||
             hs.rows !== hs.slate ||
             hs.cols !== hs.rows ||
@@ -6331,7 +6380,7 @@ const darkCards = (p, sel) =>
             hs.ids.length ||
             hs.wide > 0
           )
-            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined})}`);
+            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined, fishViews: undefined})}`);
           // Mara's few answers do not count yet: her map says so
           const mara = hs && hs.players.find(p => p[1] === 'Mara Demo');
           if (!mara) ge.push('Mara not in the picker');
