@@ -120,6 +120,13 @@ def use(subject):
     else:
         src = load(os.path.join("tools", "seaslugs.json"), {"species": []}) or {"species": []}
         SP = {str(s["inat"]): {"id": str(s["inat"]), "name": s["name"]} for s in src.get("species", []) if s.get("inat")}
+        # The species with no name yet (tools/seaslug_informal.json, Q389 (2)) by their key, and the genus units'
+        # genus-level candidates (tools/fetch_seaslugs.py --genus-level, Q389 (1)) by their genus's name: the same rubric,
+        # each list its own judging file (judging/seaslug/<key>.json).
+        inf = load(os.path.join("tools", "seaslug_informal.json"), {"species": []}) or {"species": []}
+        SP.update({s["key"]: {"id": s["key"], "name": s["name"]} for s in inf.get("species", [])})
+        gen = dict.fromkeys(s.get("genus") for s in src.get("species", []) if s.get("genus"))
+        SP.update({g: {"id": g, "name": g + " (genus level)"} for g in gen})
         TEACH, ENTRY = {}, {}
 
 

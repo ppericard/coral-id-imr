@@ -264,3 +264,136 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// The sea slugs without a species name (Pierre, 2026-11-17, Q389): the genus-level observations agreed by 2 current
+// identifications become candidates of their genus unit (gl), and a species with no name yet (tools/seaslug_informal.json)
+// gets its presence (3 observers with its label) and its candidates from the observations carrying its label.
+test('agreement: identifications at the genus or below agree, off its line disagree, a coarser one on its line neither', () => {
+  const out = J(`
+G = {'id': 50, 'ancestor_ids': [1, 2, 3, 50]}
+idf = lambda t, anc, cur=True: {'current': cur, 'taxon': {'id': t, 'ancestor_ids': anc}}
+o = lambda *ids: {'taxon': G, 'identifications': list(ids)}
+print(json.dumps([
+  agreement(o(idf(50, [1, 2, 3]), idf(51, [1, 2, 3, 50]))),           # the genus and a species of it
+  agreement(o(idf(50, [1, 2, 3]), idf(3, [1, 2]))),                   # a coarser one on its line: neither
+  agreement(o(idf(50, [1, 2, 3]), idf(60, [1, 2, 3]))),               # another genus: disagrees
+  agreement(o(idf(50, [1, 2, 3]), idf(60, [1, 2, 3], cur=False))),    # withdrawn: not counted
+  [agreed(x) for x in ({'rk': 'genus', 'g': 'needs_id', 'ag': 2, 'dg': 0}, {'rk': 'genus', 'g': 'needs_id', 'ag': 1, 'dg': 0},
+                       {'rk': 'genus', 'g': 'needs_id', 'ag': 3, 'dg': 1}, {'rk': 'genus', 'g': 'research', 'ag': 1, 'dg': 0},
+                       {'rk': 'species', 'g': 'research', 'ag': 2, 'dg': 0})]]))`);
+  assert.deepStrictEqual(out, [
+    [2, 0],
+    [1, 0],
+    [1, 1],
+    [1, 0],
+    [true, false, false, true, false]
+  ]);
+});
+
+test('fetch_seaslugs.py --informal --genus-level offline: the label presence, its candidates first, the genus units’ gl candidates', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sluggl-'));
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  const src = {
+    photoTarget: {...T, candidates: 2, max: 30, perJuvenileForm: 0, juvenile: {}},
+    species: [
+      {name: 'Slugus slugii', genus: 'Slugus', inat: 601, circle: 1},
+      {name: 'Limax limacis', genus: 'Limax', inat: 701, circle: 3},
+      {name: 'Outus outi', genus: 'Outus', inat: 801, circle: 4}
+    ]
+  };
+  const inf = {
+    species: [
+      {
+        key: 'slugus-sp1',
+        name: 'Slugus sp. 1',
+        genus: 'Slugus',
+        src: 'A 2020',
+        cite: 'A',
+        field: {id: 5, name: 'Slugus sp. 1?', value: 'Yes'}
+      },
+      {key: 'limax-sp9', name: 'Limax sp. 9', genus: 'Limax', src: 'B 2021', cite: 'B', field: {id: 6, name: 'Limax sp. 9?', value: 'Yes'}}
+    ]
+  };
+  fs.writeFileSync(at('src.json'), JSON.stringify(src));
+  fs.writeFileSync(at('inf.json'), JSON.stringify(inf));
+  py(
+    `${OBS}
+import inat
+import urllib.parse as U
+from fetch_fish import API, TAXA
+from presence import NEAR_AREA
+d = sys.argv[1]
+INF = json.load(open(d + '/inf.json'))['species']
+c = {}
+def gl(i, ag=2, dg=0, g='needs_id', tid=60, **k):
+    o = ob(i, g=g, rk='genus', **k)
+    o.update({'t': {60: 'Slugus', 70: 'Limax'}[tid], 'tid': tid, 'ag': ag, 'dg': dg})
+    return o
+def put(url, results): c[url] = {'total': len(results), 'results': results}
+anc = lambda gid, name: [[1, 'Animalia', 'kingdom'], [gid, name, 'genus']]
+# the genus ids: one species of each genus and its ancestors, in one request (by genus name: Limax, then Slugus)
+c[TAXA + '701,601?fields=id,ancestors.id,ancestors.name,ancestors.rank'] = {'results': [{'id': 601, 'anc': anc(60, 'Slugus')}, {'id': 701, 'anc': anc(70, 'Limax')}]}
+# presence: Slugus sp. 1 by 3 observers (in), Limax sp. 9 by 2 (out: never asked for candidates); 1 near Dauin each
+for gid, f, n, u in ((60, INF[0]['field'], 4, 3), (70, INF[1]['field'], 2, 2)):
+    for near, nn, nu in ((False, n, u), (True, 1, 1)):
+        ff = 'field:' + U.quote(f['name']) + '=' + U.quote(f['value'])
+        base = f'taxon_id={gid}&verifiable=true&{ff}&' + (NEAR_AREA if near else 'place_id=6873')
+        c[inat.V1 + 'observations?' + base + '&per_page=0'] = {'total': nn}
+        c[inat.V1 + 'observations/observers?' + base + '&per_page=1'] = {'total': nu}
+# Slugus sp. 1's observations: 3 usable (an egg one and one not agreed left out); 2 taken (its target 2)
+put(API + label_query(60, INF[0]['field']) + '&fields=' + GL_FIELDS, [gl(10), gl(11), gl(12), gl(13, an=[(1, 7)]), gl(14, ag=1)])
+# genus level, both genera in one search: Slugus 10-12 again (the two the species took never twice), 20 (disagreed),
+# 21 share-alike only, 22 abroad, 23 Research Grade with 1 agreeing; Limax 30, 31 (Dead), 32
+put(API + gl_query([60, 70]) + '&fields=' + GL_FIELDS,
+    [gl(10), gl(11), gl(12), gl(20, dg=1), gl(21, lic='cc-by-sa'), gl(22, inph=False, ll=(-8.5, 115.2)), gl(23, g='research', ag=1),
+     gl(30, tid=70), gl(31, tid=70, an=[(17, 19)]), gl(32, tid=70)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = (...more) =>
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_seaslugs.py',
+        '--offline',
+        '--src',
+        at('src.json'),
+        '--informal-src',
+        at('inf.json'),
+        '--cand',
+        at('cand.json'),
+        '--cache',
+        at('cache.json'),
+        ...more
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    );
+  const log = run('--informal', '--genus-level');
+  const C = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand,
+    ids = L => L.map(p => +p.o.split('/').pop()).sort((a, b) => a - b);
+  assert.deepStrictEqual(Object.keys(C), ['slugus-sp1', 'Slugus', 'Limax'], 'the species with no name, then the genera in list order');
+  assert.strictEqual(C['slugus-sp1'].length, 2);
+  assert.ok(ids(C['slugus-sp1']).every(i => [10, 11, 12].includes(i)));
+  assert.ok(C['slugus-sp1'].every(p => !p.gl && p.f.startsWith('seaslug-slugus-sp1-cand-')));
+  // Slugus: the one of 10-12 left, then 23 (Research Grade); never 20 (disagreed), 21, 22 or the species' two
+  assert.strictEqual(C.Slugus.length, 2);
+  assert.ok(ids(C.Slugus).includes(23) && !ids(C.Slugus).some(i => [20, 21, 22].includes(i) || ids(C['slugus-sp1']).includes(i)));
+  assert.deepStrictEqual(ids(C.Limax), [30, 32], 'Dead left out');
+  for (const p of [...C.Slugus, ...C.Limax]) assert.deepStrictEqual([p.gl, p.f.split('-')[1]], [1, p.t]);
+  const I = JSON.parse(fs.readFileSync(at('inf.json'), 'utf8')).species;
+  assert.deepStrictEqual(
+    I.map(s => s.presence),
+    [
+      {obs: 4, observers: 3, nearObs: 1, nearObservers: 1, near: false, confirmed: true},
+      {obs: 2, observers: 2, nearObs: 1, nearObservers: 1, near: false, confirmed: false}
+    ]
+  );
+  assert.match(log, /Limax sp\. 9: 2 observers .* no candidates/);
+  assert.match(log, /genus level: 4 candidates added over 2 of 2 genera/);
+  // A rerun adds nothing and writes the same file.
+  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  run('--informal', '--genus-level');
+  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
+  fs.rmSync(dir, {recursive: true, force: true});
+});

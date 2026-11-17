@@ -916,11 +916,14 @@
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
       : L;
   };
+  // The genus a genus-level photo belongs to (gl: its observation agreed at the genus only, sp its genus id; the sea
+  // slugs, Pierre, 2026-11-17, Q389 (1)), '' for any other photo: a photo of the genus, never counted for a species.
+  const fishGlOf = p => (p && p.gl && p.sp) || '';
   // The genera of a subject played at the genus from the start (fishGen unit 'genus'): [record] in F.genera's order, each
   // {id, name, rank 'genus', one, parent (its family), fam (its family's line), circle (its best species' in a circle),
-  // species (those in a circle), look (its sibling genera of the list), views {wide: its family's photos of its species},
-  // cover}. gen: fishGen's families by id; sp: F's species by id. A genus whose family is not in gen, or a surprise
-  // card's, or with no species in a circle, is none.
+  // species (those in a circle), look (its sibling genera of the list), views {wide: its family's photos of its species
+  // and its own genus-level photos (gl, sp its id: fishGlOf)}, cover}. gen: fishGen's families by id; sp: F's species by
+  // id. A genus whose family is not in gen, or a surprise card's, or with no species in a circle, is none.
   function fishGenUnits(F, gen, sp) {
     const inC = id => [1, 2, 3].includes((sp.get(id) || {}).circle),
       L = (F.genera || [])
@@ -928,7 +931,7 @@
         .filter(([G, E, S]) => G && G.id && E && !E.wink && S.length);
     return L.map(([G, E, S]) => {
       const set = new Set(S),
-        wide = E.views.wide.filter(p => set.has(p.sp)),
+        wide = E.views.wide.filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
         g = {
           id: G.id,
           name: G.name,
@@ -970,8 +973,11 @@
     Object.entries(photos || {}).forEach(([tid, L]) =>
       (L || []).forEach(p => {
         // its entry's family only for a species fish.json does not know: a species out of the game (its family in no
-        // circle by the content editor: core.js fishStructure) never lends its photos to the other family of its entry
-        const fid = famOf.get(p && p.sp) || (sp.has(p && p.sp) ? null : FISH_RENAMED.ids[tid]);
+        // circle by the content editor: core.js fishStructure) never lends its photos to the other family of its entry.
+        // A genus-level photo (gl, sp its genus id: the sea slugs' observations agreed at the genus, Pierre, 2026-11-17,
+        // Q389 (1)) goes to its genus's family, and plays for its genus unit only (fishGenUnits), never for a species.
+        const gl = p && p.gl && gens.get(p.sp),
+          fid = gl ? gl.family : famOf.get(p && p.sp) || (sp.has(p && p.sp) ? null : FISH_RENAMED.ids[tid]);
         if (fid) (byFam[fid] = byFam[fid] || []).push(p);
       })
     );
@@ -6415,6 +6421,7 @@
     subjKey,
     subjDev,
     fishGen,
+    fishGlOf,
     fishReplayGen,
     fishBoardTree,
     easyRank,
