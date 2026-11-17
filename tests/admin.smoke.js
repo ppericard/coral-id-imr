@@ -6961,7 +6961,10 @@ const darkCards = (p, sel) =>
         await sq.click('.adm-csheet [data-cs="note"] [data-csa="save"]');
         const sn = await sq.evaluate(() => ((((DRAFT.seaslug || {}).content || {}).nodes || {})['g:Chromodoris'] || {}).note || null);
         if (!sn || sn.v !== 'A made-up note' || !sn.src || sn.src.t !== 'Made-up source') se.push(`the sheet note ${JSON.stringify(sn)}`);
+        // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
         const cf = await sq.evaluate(() => {
           const S = document.querySelector('#view .adm-fsw');
