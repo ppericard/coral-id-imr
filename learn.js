@@ -704,7 +704,7 @@ function viewCompare(a, b) {
     B = gameGenus(b) && GX(b);
   if (!A || !B) return viewLookalikes();
   const col = (n, g) =>
-    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="${esc(hr('g-' + n))}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="${esc(hr('g-' + n))}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => {
