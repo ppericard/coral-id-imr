@@ -4060,6 +4060,28 @@ time). Level 1 now (the practice pools about 14% smaller with the same draw rule
 - **What the worlds cannot show**: neither shows a photo outside the quiz, so held-out and practice photos are alike
   there; the transfer itself waits for the real log (exam answers logged `|h|x`).
 
+**Results** (2026-11-18, `main` cbbe5724 against d5abfef4, the final set of 2,476; about 30 minutes of machine time
+with a first try stopped when the set's rule changed):
+- **Rated world, primary `learned@3000:down`: no difference** (T +1.44, p 0.72; beginner 22.8 → 24.4, strongRA 29.4 →
+  29.4, expert 25.4 → 24.2 units learned). Exam questions: 132-211 per 3,000 answers, nearly all on held-out photos
+  (130-207), 86-99% right. True knowledge held at 300, 1,000 and 3,000 for every profile; **the families at Advanced
+  breach of the first run is gone** (beginner at 1,000: 5.8 → 5.4, unclear). The share under ease 4, the plateau, units
+  met, the score at 3,000 held.
+- **Two breaches in the rated world, one in the app world**, all on how soon units reach Open Water:
+  - rated, the first unit at Open Water, beginner: 231 → 295 answers (margin +46), per seed 301, 144, 191, 289, 232 →
+    575, 110, 201, 359, 228: one seed drives it;
+  - rated, units at Open Water at 1,000, strongRA: 39.2 → 36.2 (margin 2), per seed 29, 43, 42, 37, 45 → 31, 39, 40, 31,
+    40;
+  - app world, units at Open Water at 300, strongRA: 23.0 → 18.7 (per seed 23, 24, 22 → 18, 21, 17; beginner 6, 4, 7 →
+    3, 3, 6, unclear).
+  No exam comes before 300 questions, so only the withheld practice photos can move these (the practice pools without
+  ordinary, non-reference photos). The first run, which withheld more photos (3,232, 10% of every species), read the
+  same two in the other direction or unclear (app world strongRA 23.0 → 23.7; rated 39.2 → 37.6). Not settled at these
+  seeds: rule L11 says one level up (the rated world at 10 seeds for beginner and strongRA, about 10 minutes) before
+  it goes to Pierre; left to the integrator, as the 30-minute budget was spent.
+- **App world**: true knowledge, E, the plateau, the share under ease 4, units met held; exams started by 600 in the
+  strong profiles only, their questions all on held-out photos when the unit had some.
+
 **First run** (2026-11-17, with silent probes in practice, `HELD.p` 0.1; removed on 2026-11-18): rated world, primary
 `score@3000:up` no difference (p 0.85); one breach, families at Advanced at 1,000 answers for a beginner, 5.8 → 3.6
 (margin 2; on 5 fresh seeds, exploratory, −1.8), caught up by 3,000: the probes were harder photos and their misses
