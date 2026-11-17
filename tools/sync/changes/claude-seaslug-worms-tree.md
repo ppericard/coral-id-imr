@@ -1,0 +1,1 @@
+The sea slugs' admin Photos › Tree gets its WoRMS view (core.js `SUBJECTS` seaslug `admin.pages` `photos/tree/worms`; Pierre, 2026-11-17: "on garde WoRMS", after Q340's Key | WoRMS views for the fish): an admin page list only, copied in with core.js; nothing the script reads or writes changes.

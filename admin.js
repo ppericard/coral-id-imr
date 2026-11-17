@@ -2387,22 +2387,41 @@ function fuTreeOf(U) {
 // five of the key's Chromis). A w: node stores nothing yet (no data shape without Pierre's decision): its page is
 // read-only, its cover the default by the rule. Its tags are read in the Key (fuFilters): a filter passes the Key's leaves
 // (taxtree.js ttPass), shown here with their WoRMS ancestors (ttReach), so the same species in both views. Its problems (a
-// reference or a parent missing, a cycle) are the tree's.
+// reference or a parent missing, a cycle) are the tree's. A leaf with no reference of its own (a genus's genus-level
+// photos, gl; a species with no published name yet) sits under its genus's WoRMS node (fuGenusRef), its id the Key's.
 let TW = null; // {units, T}
+// The WoRMS node of a genus of the tree (gid): its own reference (seaslug.json genera ref), else the WoRMS genus above the
+// first of its species with a reference; '' for none.
+const fuGenusRef = gid => {
+  const g = FISHC.genera[gid] || {},
+    R = FISHC.ref || {};
+  if (g.ref != null) return g.ref;
+  for (const s of g.species || []) {
+    for (let x = (FISHC.species[s] || {}).ref; x != null && R[x]; x = R[x].parent)
+      if (String(R[x].rank).toLowerCase() === 'genus') return x;
+  }
+  return '';
+};
 function fuWormsOf(U) {
   if (TW && TW.units === U) return TW.T;
   const K = fuTreeOf(U),
     L = [...K.node.values()]
-      .filter(n => n.sid && !n.gl)
-      .map(n => ({
-        id: n.id,
-        name: n.name,
-        sci: n.sci,
-        rank: n.rank,
-        it: false,
-        sid: n.sid,
-        ref: FISHC.species[n.sid].ref
-      })),
+      .filter(n => n.sid)
+      .map(n => {
+        const s = n.gl ? null : FISHC.species[n.sid],
+          ref = s ? s.ref : null;
+        return {
+          id: n.id,
+          name: n.name,
+          sci: n.sci,
+          rank: n.rank,
+          it: !!n.it,
+          sid: n.sid,
+          ...(n.gl ? {gl: true} : {}),
+          ref,
+          ...(ref == null || ref === '' ? {at: fuGenusRef(n.gl ? n.sid : s.genus)} : {})
+        };
+      }),
     {nodes, problems} = ttFromRef(L, FISHC.ref || {}, {id: k => 'w:' + k, rank: r => String(r).toLowerCase()});
   nodes.forEach(n => n.ref && !n.sid && n.rank === 'genus' && (n.it = true));
   const T = ttBuild(nodes);

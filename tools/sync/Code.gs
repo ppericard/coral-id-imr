@@ -4310,9 +4310,10 @@ const CORE_ = (function () { const module = {exports: {}};
           'inbox/todo/points',
           'players/list',
           // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
-          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus. No WoRMS view:
-          // its tree carries no reference taxonomy (seaslug.json ref).
+          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus. WoRMS: the
+          // reference taxonomy's tree (seaslug.json ref, tools/seaslug_worms.py; admin.js fuWormsOf), as the fish's.
           'photos/tree/key',
+          'photos/tree/worms',
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
           // at their genus, never as a species (autosort.js fishCov)
           'photos/stats/overview',
