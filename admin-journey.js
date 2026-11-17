@@ -960,6 +960,7 @@ function sessProg(id, all, L, S, PG) {
     o = {
       gen: M.gen,
       ...statsFor(ASUBJ),
+      ...(M.vars ? {vars: M.vars} : {}),
       since: reset ? {[id]: reset} : {},
       starts: ok && S.start ? {[id]: S.start} : {}
     },
@@ -978,12 +979,12 @@ function sessProg(id, all, L, S, PG) {
     },
     Pa = marked(A.P, t0 - 1),
     Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
-    slate = M.slate,
     prog = {};
   new Set(L.flatMap(r => [r[2], r[3]])).forEach(
     g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g], Pa, g), scoreOf(Pb[g], Pb, g)])
   );
-  const v = {prog, pct: [pctOf(Pa, slate), pctOf(Pb, slate)]};
+  // the % before and after as the player's app shows it (admin.js unitPct: the fish % over its tree)
+  const v = {prog, pct: [unitPct(ASUBJ, M, Pa), unitPct(ASUBJ, M, Pb)]};
   SPROG.set(key, {ans: ANS, S, PG, mem: SMEM, n: L.length, v});
   return v;
 }

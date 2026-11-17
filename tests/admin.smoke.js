@@ -3922,6 +3922,21 @@ const darkCards = (p, sel) =>
           });
           if (L.groups.length !== L.n || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
           await q.click('[data-uopen="Ben Demo"]');
+          // His bar gives his fish Progress and Learned too, as his Journey does (admin.js uprogHtml: his saved copy read
+          // when the row opens).
+          const fb = await q
+            .waitForFunction(
+              () => {
+                const S = SUBJECTS.find(x => !x.replay),
+                  t = (document.querySelector('.adm-ubar') || {}).innerText || '';
+                return new RegExp(S.name + ': Progress \\d+%').test(t) && t;
+              },
+              null,
+              {timeout: 15000}
+            )
+            .then(h => h.jsonValue())
+            .catch(() => '');
+          if (!fb) fails.push(`${w}px two subjects: Ben's bar without his ${L.F} Progress`);
           const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
           if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
           await q.click('.adm-ubar a.next');
@@ -3951,6 +3966,34 @@ const darkCards = (p, sel) =>
             !/ 48$/.test(j.seg[1][1])
           )
             fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+          // His Progress is the % his app shows and his leaderboard ranks by: the subject's global score over the tree the
+          // sheet makes under the published curation (core.js treeScore, SUBJECTS replayed tree), not the families' mean;
+          // his bar on Players says the same.
+          const fx = await q.evaluate(() => {
+            const S = SUBJECTS.find(x => !x.replay && x.score),
+              PG = progOf(
+                USERS.users.find(u => u.name === 'Ben Demo'),
+                true,
+                S
+              ),
+              T = S.replayed.tree(contentApply(S, FISHA.raw.f, SAVED));
+            return {
+              kpi: (/(\d+)%(?: ↻ saved \d+%)? Progress/i.exec(document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')) || [])[1],
+              pct: PG && PG.pct,
+              board: PG && treeScore(PG.G, T, S.score).pct,
+              mean: PG && pctOf(PG.G, unitsOf(S).slate),
+              learned: PG && PG.learned,
+              name: S.name
+            };
+          });
+          if (
+            !fx.pct ||
+            String(fx.pct) !== fx.kpi ||
+            fx.board !== fx.pct ||
+            fx.mean === fx.pct ||
+            !new RegExp(`${fx.name}: Progress ${fx.pct}%[^·]*· Learned ${fx.learned}`).test(fb)
+          )
+            fails.push(`${w}px two subjects: Ben's ${L.F} Progress is not the % his app shows ${JSON.stringify({...fx, fb})}`);
           // A session of the Journey unfolds, with the progress it brought.
           await q.click('.adm-journey [data-recent] [data-sopen]');
           await calm();
