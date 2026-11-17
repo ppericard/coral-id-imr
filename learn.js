@@ -1278,7 +1278,10 @@ function fishFamily(f) {
             .filter(o => T.fam[o] && !said.some(x => x[0] === o))
             .map(o => [o, '', 'Often mixed up by players'])
         : [],
-    looks = [...said, ...mixed];
+    looks = [...said, ...mixed],
+    // its one genus's look-alikes, this sheet standing for that genus (fishGenusLooksOn; Q390 D)
+    one = (f.genera || []).length === 1 ? T.gen[f.genera[0]] : null,
+    glooks = fishGenusLooksOn(one, T, f.id);
   const lookCard = ([o, t, src]) => {
     const p = cover(o),
       m = u ? mixedUp(u, o) : 0;
@@ -1332,13 +1335,40 @@ function fishFamily(f) {
         </details>
       </div>
     </div>
-    ${looks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow"><div class="lt self">${hero ? `<img ${thumb(hero, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(f.name)}" loading="lazy">` : noFish()}<span><b>${esc(f.name)}</b><small>this family</small></span></div>${looks.map(lookCard).join('')}</div></section>` : ''}
+    ${looks.length || glooks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow"><div class="lt self">${hero ? `<img ${thumb(hero, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(f.name)}" loading="lazy">` : noFish()}<span><b>${esc(f.name)}</b><small>this family</small></span></div>${looks.map(lookCard).join('')}${glooks.map(L => fishGenusLookCard(one, T, L)).join('')}</div></section>` : ''}
     ${gsec}
     ${jsec}
     <p class="repline">${repBtn({k: 'sheet', g: f.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
   fishBind(flat, () => fishFamily(f));
 }
+// A genus's look-alikes for its sheet, [[genus id, its source line]] (Pierre, 2026-11-17, Q390 D): the genera a specialist
+// source names (the tree's genus look, lsrc: the sea slugs', tools/seaslug_game.py genus_looks), then its look-alikes from
+// the data (model.js dataLooks) while the players' answers keep them: those only iNaturalist's identifications show (the
+// tree's dlook, with their counts) and those the players mix it up with, said as such. T: the tree (ftree).
+function fishGenusLooks(g, T) {
+  const line = o => ((g.lsrc || {})[o] || []).map(x => x.t).join('; '),
+    own = (g.look || []).filter(o => T.gen[o]),
+    data =
+      GX(g.id) && typeof dataLooks === 'function'
+        ? dataLooks()
+            .filter(p => p.includes(g.id))
+            .map(p => (p[0] === g.id ? p[1] : p[0]))
+            .filter(o => T.gen[o] && !own.includes(o))
+        : [];
+  return [...own.map(o => [o, line(o)]), ...data.map(o => [o, line(o) || 'Often mixed up by players'])];
+}
+// One look-alike genus's card on genus g's sheets: its cover, its name, its species count and family, the pair's source
+// line, and the mix-up count once the game asks them.
+function fishGenusLookCard(g, T, [o, src]) {
+  const x = T.gen[o],
+    p = genCover(x) || nodeCover(genSpecies(x)),
+    m = GX(g.id) ? mixedUp(g.id, o) : 0;
+  return `<a class="lt" href="${esc(hr('g-' + o))}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species · ${esc((T.fam[x.family] || {}).name || '')}</small><small class="lsrc">${esc(src)}</small><b class="cmpgo">Open →</b></span></a>`;
+}
+// The look-alikes of a genus with no page of its own (fishTree go: the sheet it opens is page, its family's or its one
+// species'), shown on that sheet: [[genus id, source line]], none for a genus with its own page.
+const fishGenusLooksOn = (g, T, page) => (g && T.go(g.id) === page ? fishGenusLooks(g, T) : []);
 // The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under it
 // (its source under More details; a name inferred from its species' names, no reference naming the genus, says so beside
 // it: fish.json genera cinf, Pierre, 2026-11-15, Q376 (d)), its family and its IMR entry name; my progress on it once met (the Scientific names set); the IMR sub-entry's cues; the species WoRMS now puts
@@ -1358,7 +1388,9 @@ function fishGenus(g) {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}${esc(esrcT(x, 'cues'))}</small><b class="cmpgo">Open →</b></span></a>`;
   };
-  $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
+  // Its look-alikes beyond those (fishGenusLooks), each with its source.
+  const looks = fishGenusLooks(g, T).filter(([o]) => !sib.some(x => x.id === o));
+  $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
@@ -1368,7 +1400,7 @@ function fishGenus(g) {
     ${fishRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
     <h3>Species <small>${L.length}</small></h3>${fishTiles(L, flat)}
-    ${sib.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}</div></section>` : ''}
+    ${sib.length || looks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}${looks.map(L => fishGenusLookCard(g, T, L)).join('')}</div></section>` : ''}
     ${g.common ? `<details class="more sheetmore"><summary>More details</summary><p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p></details>` : vernOf(g.id).length ? `<details class="more sheetmore"><summary>More details</summary>${vernMore(g.id)}</details>` : ''}
     <p class="repline">${repBtn({k: 'sheet', g: g.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
@@ -1401,7 +1433,9 @@ function fishSpecies(s) {
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
     sib = g ? genSpecies(g).filter(x => x !== s) : [],
-    gto = g ? fishGo(g.id) : '';
+    gto = g ? fishGo(g.id) : '',
+    // its genus's look-alikes when its genus opens this sheet (one species: fishGenusLooksOn; Q390 D)
+    glooks = fishGenusLooksOn(g, T, 's:' + s.name);
   const fig = (p, i, big) =>
     `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
   const links = spLinks(s);
@@ -1431,6 +1465,7 @@ function fishSpecies(s) {
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
     ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
+    ${glooks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${glooks.map(L => fishGenusLookCard(g, T, L)).join('')}</div></section>` : ''}
     <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p></details>
     <p class="repline">${repBtn({k: 'sheet', g: s.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
