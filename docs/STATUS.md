@@ -5,52 +5,57 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-18, about 05:50 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-18, about 08:00 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).**
 
 Last checked: reports and events: 2026-11-17 ~06:15 Manila (none needing action).
 
 ## Now
 
-Main: sheet script **v165** (#1047). Every PR merges through a train, even alone (#1001). Machine: `npx prettier` here is
-3.8.1; CI uses 3.10.1: always `npx --yes prettier@3.10.1`.
+Main: sheet script **v168** (#1061). Every PR merges through a train, even alone (#1001). Machine: `npx prettier` here is
+3.8.1; CI uses 3.10.1: always `npx --yes prettier@3.10.1`. Local unit tests can wait long for a slot
+(`tests/slot.js`) when agents run checks: CI runs the same suite.
 
-- **Merged 11-17 evening** (Pierre: "Fais les choix tout seul si ils sont facile à revenir dessus", 18:49): #953
-  variants on their unit's mastery, Learned asks each variant group (v162; Q391, Q392); #988 coral content in the editor
-  (v163); #1043 sea slug leaderboard, 15 achievements, sheet replay (v164); #1047 sea slug admin photo pages (v165);
-  #1040 sea slug curation reaches the game; #1042 sea slug look-alikes (Q390 D); #1046, #1048 the 30 ceiling, 148 photos
-  judged; #1052 sourced cues; #1055 literature points; #1056, #1058, #1059 fish admin (pairs, Analyses by rank, Journey
-  %); #1037, #1038, #1039, #1044, #1054.
-- **The night stalled from 22:40**: the integrator ended a turn waiting on a background notification that never woke it.
-  On a night of work, schedule a check-in (`send_later`, ~30 min) before ending a turn.
-- **Version queue** (one at a time: merge `main`, `--assign`, CI, Codex, train): #1051 (v166 assigned: fish out of beta,
-  sea slugs open to all in beta, Remove all; fixing Codex's smoke ask) → #1060 (sea slug stats and Analyses) → #1061
-  (sea slug Candidates, tags, content editor, Health) → #1062 (sea slug WoRMS view) → #1053 (log keeps "sp. 5") → #1050
-  (staff and cohort boards) → #1049 (live mode; fixing CodeQL).
-- **Next after the queue**: the fish read their own statistics in the app (#1060's mechanism; ROADMAP admin plan PR 11).
+- **Merged 11-18 morning**: #1051 fish out of beta, sea slugs open to all in beta, Remove all (v166); #1060 sea slug
+  statistics and Analyses (v167); #1061 sea slug Candidates, tags, content editor, Health (v168); #1063 STATUS; the three
+  reviews Pierre asked for (06:38): #1064 [app gaps](reviews/2026-11-18-app-gaps-review.md), #1065
+  [backlog inventory](reviews/2026-11-18-backlog-inventory.md) (151 items, 17 doc contradictions, studies not fully acted
+  on), #1066 [architecture and code review](reviews/2026-11-18-architecture-code-review.md) (target: one tree engine for
+  every subject, ES modules, the log as the only state that travels, an API contract; 15 steps).
+- **Version queue** (one at a time: merge `main`, `--assign`, CI, Codex, train): #1062 (v169 assigned: sea slug WoRMS
+  view) → #1053 (log keeps "sp. 5") → #1050 (staff and cohort boards) → #1049 (live mode; fixing CodeQL).
+- **#1057** held-out set: Pierre (06:48): "Si on n'a pas assez de photos, ben on privilégie l'apprentissage". A unit
+  holds photos back only from a real surplus; the agent simulates two variants (practice ≥ 2× held; a practice floor
+  per unit), 40 min cap, and keeps the one that clears both breaches.
+- **Agents**: fish genera of circles 2-3 (Q397: units, then their content); the "What I learn" card study (Q396; with
+  Pierre's note: no sea slug course, but an "open everything" control per subject, worded per subject); minify at deploy
+  (architecture step 1).
 - Branches: fish-todo-wip and photo-genus-ability superseded (can be deleted); admin-signout-seal waits for Pierre.
 
 ## Next
 
-1. The version queue above; then the fish's own statistics.
-2. On Pierre's answers: species step 2 (#1041) built for fish and sea slugs together, its check ~40 min (Pierre: "6h de
-   calcul ne devrait JAMAIS arriver"); #1057 and #1045 as he decides.
-3. Proposal owed to Pierre: keep every L11 check short (fewer profiles and seeds, the rated world only where it matters,
+1. The version queue; the fish read their own statistics in the app (#1060's mechanism).
+2. Architecture steps 2-4 (integrator's calls, no player-visible change) once the queue is empty, each alone on its
+   train: a gate floor at a version **already confirmed live** (never the build's), `fish*` renamed `tree*`, `core.js`
+   split. Then the 17 doc contradictions of the inventory (§3) in one docs PR.
+3. Species step 2 (#1041; Q394-Q398 answered) built for fish and sea slugs together: the `sci:` key and one levels
+   table, the family checklist exam, the ultimate exam, the "What I learn" card; its check ~40 min (Pierre: "6h de
+   calcul ne devrait JAMAIS arriver").
+4. Proposal owed to Pierre: keep every L11 check short (fewer profiles and seeds, the rated world only where it matters,
    no level 3 runs without his go), the power given up stated.
 
 ## Questions for Pierre
 
-Answered 11-17 evening: Q390 D; Q392 a, b; L9; C8, D3, P1; #988; #942 A ("référence … déduit des caractéristiques de la
-photo, pas un tag"); Learn page; Cladobranchia WoRMS; licences not now; Pikachu (shared, several species); Q393 live mode
-(sheet, speed bonus, counts, trainer role, nickname + invite to sign in); Q399 staff = trainer role, cohort boards,
-others' boards discreet; fish out of beta, sea slugs open to all, Remove all.
+Answered 11-18 morning: #1057 exam only, no probes, reserve only from a surplus ("on privilégie l'apprentissage");
+Q394 A; Q395 family checklist exam, ultimate exam 100-200 questions at 95%; Q396 a per-subject "What I learn" card;
+Q397 genera of circles 2-3; Q398 integrator's call.
 
 Still open:
 
-- **Q394-Q398** species step 2 (#1041): half fault for a common name typed, species exams, the names choice, what a
-  species' scientific name comes after, the progress key. Costly to undo: nothing built before the answers.
-- **#1057** held-out set wired (Q385): beginners' families at Advanced at 1,000 answers 5.8 → 3.6 (−2.2, margin 2; none
-  at 3,000). A keep (rec.), B no probe before Open Water, C probe chance 0.05; and confirm the `|h` tag in the log.
+- **Synthesis of the three reviews** (asked 07:00): (1) start with the domain and the professionalise study (the
+  rename is planned before December 2026; signed-out players lose local progress without a hand-over)? (2) the target
+  architecture in principle (corals on the tree engine, curation split, one id scheme, sync by answers, then D1)?
+  The reviews' own questions (gaps a-j, architecture a-i, professionalise a-e) get numbers once he picks the direction.
 - **#1045** reference tag: the point removed for all reference photos (1,184, as built, rec.) or added to the
   candidates' (108); P1's new wording "reference = judged very easy with the reference look, whatever the route".
 - **#1049** a live answer on a unit not unlocked: counts in nothing (as built, rec.) or opens it.
@@ -68,8 +73,8 @@ Last question number: Q399
 
 - **Roles**: grant himself the trainer role to host a live game (#1049) and to be on the staff board (#1050).
 - **pCloud backup**: Script properties › `PCLOUD_UPLOAD_CODE`; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
-- **In the admin**: Light and Cover proposals, then Publish; Points (the 7 literature points of #1055); the Q354
-  points for an IMR trainer.
+- **In the admin**: Light and Cover proposals, then Publish; Points (47 open, incl. the 7 literature points of #1055);
+  the Q354 points for an IMR trainer.
 - Check the "Coral ID analyses" token's type and the R2 token's scope; protect `main`; renew the admin GitHub token
   before late January 2027.
 
@@ -79,5 +84,5 @@ Last question number: Q399
 
 ## Last stop
 
-2026-11-18 ~05:50 Manila: morning checkpoint after a night that stalled at 22:40. Old player-data extracts may remain in
-the session scratchpad (`data/`): delete them, never commit them.
+2026-11-18 ~08:00 Manila: checkpoint after the three reviews. Old player-data extracts may remain in the session
+scratchpad (`data/`): delete them, never commit them.
