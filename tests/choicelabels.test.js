@@ -297,3 +297,63 @@ test('an Again never asks a unit the other choice names: the Forcipiger pair, ou
   const run = againOf({A: {name: 'Alpha', also: ['Alpha', 'Beta']}, B: {name: 'Beta', also: ['Beta', 'Alpha']}});
   assert.strictEqual(run(['A', 'B']), null);
 });
+// A duel never pairs two units one label names (quiz.js duelPick and planDuel's link, model.js choiceNames): outside IMR,
+// Pomacentrus armillatus and P. opisthostigma both show "Brown damsel" (Q381), a duel "Brown damsel or Brown damsel?"
+// either answer of which is right (Q319). quiz.js's own duelPick and planDuel run here on the real fish species.
+function duelOf(GEN, pairs) {
+  const src = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
+    ctx = {
+      GX: n => GEN[n],
+      UNITS: {fish: {pairs: () => pairs}},
+      SUBJ: {id: 'fish'},
+      dataLooks: () => [],
+      weight: () => 1,
+      mixedUp: () => 0,
+      confusable: () => false,
+      isClassic: () => false,
+      unlocked: () => Object.keys(GEN),
+      photoSet: () => ({shown: [1]}),
+      pick: L => L[0],
+      introduced: () => true,
+      holdEase: () => 0,
+      cover: () => null,
+      uname: n => GEN[n].name
+    };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src('model.js'), "// A choice's label as its button shows it", '// The units of L whose label') +
+      block(src('quiz.js'), 'function duelPick(list', '\n}\n', {through: 1, file: 'quiz.js'}) +
+      block(src('quiz.js'), 'function planDuel(a, b)', '\n}\n', {through: 1, file: 'quiz.js'}) +
+      '\nthis.M = {duelPick, planDuel};',
+    ctx
+  );
+  return ctx.M;
+}
+test('a duel never pairs two units one label names: the Brown damsel pair, outside IMR and at IMR', () => {
+  const [ar, op, mo] = ['Pomacentrus armillatus', 'Pomacentrus opisthostigma', 'Pomacentrus moluccensis'].map(id),
+    units = imr =>
+      Object.fromEntries(
+        [ar, op, mo].map(n => {
+          const s = F.species.find(x => x.id === n);
+          return [n, {name: cnShow(s, imr), also: (s.cn || []).flat()}];
+        })
+      );
+  // Outside IMR: the shared-label pair never comes, by the draw or by a link; another pair still does.
+  const out = duelOf(units(false), [
+    [ar, op],
+    [ar, mo]
+  ]);
+  for (let i = 0; i < 40; i++) assert.deepStrictEqual(out.duelPick([ar, op, mo]), [ar, mo]);
+  assert.strictEqual(duelOf(units(false), [[ar, op]]).duelPick([ar, op, mo]), null);
+  assert.deepStrictEqual(out.planDuel(ar, op)[2], [ar, mo], 'a link to the pair gets a normal duel');
+  assert.strictEqual(out.planDuel(ar, op)[0], 'quiz-duel');
+  // At IMR, P. armillatus shows its own IMR name (Borneo damsel), but "Brown damsel" is one of its listed names, so the
+  // choice names it too (choiceNames, as an Again): still no duel of the two. Its pair with P. moluccensis duels.
+  const imr = duelOf(units(true), [
+    [ar, op],
+    [ar, mo]
+  ]);
+  assert.notStrictEqual(units(true)[ar].name, units(true)[op].name);
+  for (let i = 0; i < 40; i++) assert.deepStrictEqual(imr.duelPick([ar, op, mo]), [ar, mo]);
+  assert.strictEqual(imr.planDuel(ar, mo)[0], `quiz-duel|${ar}|${mo}`);
+});
