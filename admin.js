@@ -9540,7 +9540,7 @@ function unitsOf(S) {
 // replay units: begin
 // The units subject S's replay reads in the admin, as the sync sheet's replay of S reads them (Code.gs subjRpl_,
 // rplMake_), so a player's replayed progress here is the one their app adopts (sync.js replayAdoptS): for a subject the
-// sheet replays from its own answers (SUBJECTS replayed: the fish; the sea slugs once the sheet replays them), its file f
+// sheet replays from its own answers (SUBJECTS replayed: the fish, the sea slugs), its file f
 // with the structure and content in force laid over it (core.js contentApply under cur, the published curation.json),
 // then rgen, the replay's units (replayed gen: the fish's families, scientific genera and species units, fishReplayGen;
 // gen stays the registry's records, their circles and names);

@@ -150,3 +150,18 @@ test('unitRpl: only a subject the sheet replays from its own answers; one with n
   assert.strictEqual(M.tree, null);
   assert.strictEqual(X.unitPct({...S, score: null}, M, P), C.pctOf(P, M.slate));
 });
+
+test('a subject the sheet replays with no global score (the sea slugs): its replay units, its % over its genera', () => {
+  const T = C.SUBJECTS.find(x => !x.replay && x.replayed && !x.score && x.admin && x.admin.files);
+  if (!T) return; // none on this branch
+  const f = JSON.parse(src(T.admin.files.f)),
+    A = C.contentApply(T, f, CUR),
+    X = admin([], {}, CUR),
+    M = X.unitRpl(T, f, null, null, CUR),
+    G = C.fishGen(A, {}, undefined, C.unitRankOf(T));
+  assert.strictEqual(JSON.stringify(M.rgen), JSON.stringify(T.replayed.gen(A)), "the sheet's replay units");
+  assert.strictEqual(JSON.stringify(M.slate), JSON.stringify([...G.c1, ...G.c2, ...G.c3]), 'the app slate (its genera)');
+  assert.strictEqual(M.tree, null);
+  const P = {[M.slate[0]]: {ok: 9, ko: 0, ds: 0.9, mx: 1}, [M.slate[1]]: {ok: 3, ko: 1, ds: 0.4}};
+  assert.strictEqual(X.unitPct(T, M, P), C.pctOf(P, M.slate), "its headline %: the genera's mean, as its app's progPct");
+});
