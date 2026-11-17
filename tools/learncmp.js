@@ -79,6 +79,18 @@ const genShare = (run, cp) => {
     E = (run.expo || []).slice(0, cp);
   return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'genus').length / E.length : null;
 };
+// The fish species level (2026-11-15, #892): the families at Advanced (kind family: the slate's), the measure of "the
+// families' pace not slowed" while species share the draw; the share of answers 1..cp on the species units. None for the
+// corals (no unit of either kind).
+const famAdv = (run, cp) => {
+  const K = (rowAt(run, cp) || {}).kinds;
+  return K && K.family ? (K.family.adv ?? null) : null;
+};
+const spShare = (run, cp) => {
+  const K = run.kinds || {},
+    E = (run.expo || []).slice(0, cp);
+  return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'species').length / E.length : null;
+};
 const hardShare = (run, cp) => {
   const P = (run.preOW || []).slice(0, cp);
   if (!P.length || !P.some(x => x[1] > 0)) return null;
@@ -128,6 +140,8 @@ const MEASURES = {
   hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
   perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)},
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
+  famAdv: {label: 'Families at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => famAdv(r, cp)},
+  spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
   // After a break (learnsim --breaks, --after N): the comeback and the N questions after it.
   cbLen: {label: 'Comeback questions after the break', kind: 'break', dg: 1, get: brkGet(x => x.cbLen)},
   cbLong: {label: 'Comebacks of 40 questions or more (a whole visit)', kind: 'break', dg: 2, get: brkGet(x => (x.cbLen >= 40 ? 1 : 0))},
@@ -165,8 +179,15 @@ const GUARDRAILS = [
   {m: 'unitsOW', cps: [300, 1000], harm: -1, abs: 2, rel: 0.05},
   {m: 'plateau', cps: ['run'], harm: 1, abs: 0, rel: 0.2},
   {m: 'hard', cps: [300, 1000], harm: 1, abs: 0.05},
-  {m: 'met', cps: [100, 300], harm: -1, abs: 2, rel: 0.05, coralRel: 0}
+  {m: 'met', cps: [100, 300], harm: -1, abs: 2, rel: 0.05, coralRel: 0},
+  // The fish families' pace at Advanced (2026-11-15, the species level, #892: "the families' Advanced pace is not
+  // slowed"), with the margin of the units at Open Water; not measured for the corals.
+  {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05}
 ];
+// Also measured, no margin (exploratory unless a PR declares bounds for them before running): the right rate, the shares
+// of answers on the fish scientific genera and on the species, at each checkpoint both files reach, with the one-sided
+// bounds either side.
+const WATCH = {ms: ['right', 'genShare', 'spShare'], cps: [300, 600, 1000, 3000, 10000]};
 // The margin's size for a guardrail on the before mean b (the larger of abs and rel x |b|).
 function marginOf(g, b, subject) {
   const rel = subject === 'coral' && 'coralRel' in g ? g.coralRel : g.rel || 0;
@@ -349,7 +370,22 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
           })
         }))
     }));
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks};
+  // Also measured (WATCH): the paired difference and its one-sided bounds either side, where some profile has a pair.
+  const watch = WATCH.ms.flatMap(m =>
+    WATCH.cps
+      .filter(cp => reach(B, m, cp) && reach(A, m, cp))
+      .map(cp => ({
+        m,
+        cp,
+        per: profiles.map(prof => {
+          const lo = cell(m, cp, -1, prof),
+            hi = cell(m, cp, 1, prof);
+          return {profile: prof, ...lo, lo: lo.bound, hi: hi.bound, bound: undefined};
+        })
+      }))
+      .filter(x => x.per.some(p => p.n > 0))
+  );
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks, watch};
 }
 
 // The report, Markdown ready for a PR.
@@ -423,6 +459,17 @@ function report(R, nameB = 'before', nameA = 'after') {
         : 'Every guardrail measured is held.'
   );
   if (none.length) L.push(`Not measured by these files: ${none.join('; ')}.`);
+  if (R.watch && R.watch.length) {
+    L.push('');
+    L.push(`**Also measured** (cell: before -> after, paired difference [one-sided ${(100 * R.conf).toFixed(1)}% bounds either side]; no margin is set for these)`);
+    L.push('');
+    L.push(`| Measure | At | ${R.profiles.join(' | ')} |`);
+    L.push(`|---|---|${R.profiles.map(() => '---|').join('')}`);
+    R.watch.forEach(({m, cp, per}) => {
+      const dg = MEASURES[m].dg;
+      L.push(`| ${MEASURES[m].label} | ${cp} | ${per.map(x => (x.n ? `${v(x.before, dg)} -> ${v(x.after, dg)}, ${f(x.d, dg)} [${f(x.lo, dg)}, ${f(x.hi, dg)}]` : '-')).join(' | ')} |`);
+    });
+  }
   if (R.breaks && R.breaks.length) {
     L.push('');
     L.push(`**After a break** (cell: before -> after, paired difference [one-sided ${(100 * R.conf).toFixed(1)}% bounds either side]; no margin is set for these)`);
@@ -462,7 +509,27 @@ function list() {
   return L.join('\n');
 }
 
-module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto, genShare};
+module.exports = {
+  MEASURES,
+  GUARDRAILS,
+  WATCH,
+  marginOf,
+  paired,
+  verdict,
+  stratSignFlip,
+  parseAt,
+  compare,
+  report,
+  hardShare,
+  overOf,
+  levels,
+  firstOW,
+  hardAnswers,
+  perPhoto,
+  genShare,
+  famAdv,
+  spShare
+};
 
 if (require.main === module) {
   const args = process.argv.slice(2),

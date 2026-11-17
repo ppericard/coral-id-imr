@@ -464,7 +464,9 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
 // an empty one (nothing for time or for opening the app).
 test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
   const {ACH, FISH_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
-  assert.strictEqual(FISH_ACH.length, 24, String(FISH_ACH.length)); // the 33 of 2026-11-08 less the 9 that wait for the species level
+  // the 33 of 2026-11-08 less the 6 that wait for the scientific species names or Fish basics (fsp1, fsp10 and fsp50
+  // came with the species level's step 1)
+  assert.strictEqual(FISH_ACH.length, 27, String(FISH_ACH.length));
   const ids = [...ACH, ...FISH_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
@@ -510,8 +512,8 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
       {total: 4, adv: 4},
       {total: 35, adv: 35}
     ],
-    sets: {sci: 130},
-    setsAdv: {sci: 130},
+    sets: {sci: 130, sp: 659},
+    setsAdv: {sci: 130, sp: 659},
     fb: 0
   };
   assert.strictEqual(newAch(all, {}, FISH_ACH).length, FISH_ACH.length, 'every fish achievement is reachable');

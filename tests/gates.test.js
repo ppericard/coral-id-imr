@@ -74,6 +74,14 @@ const GATES = {
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
   TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
+  // The fish species level (sync.js speciesOn: its units open and count in the score's tree once the sheet replays them,
+  // core.js fishReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
+  SPECIES_SHEET: (v, N) =>
+    fn('sync.js', 'const speciesOn = ', '\n', 'speciesOn', {
+      treeOn: () => (v === undefined ? 0 : v) >= 143,
+      sheetV: () => v,
+      SPECIES_SHEET: N
+    })(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
