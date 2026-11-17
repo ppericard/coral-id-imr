@@ -246,7 +246,11 @@
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
   //           ACHK) under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
-  //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo
+  //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo; boardSheet, the
+  //           script version that serves it when later than BOARD_SHEET (progress.js boardLive; rule D4)
+  //   replayed  a subject other than replay's whose progress the sheet replays from its own answers: gen(F) its units
+  //           from its file (file, else its pool's first), rvs() its rules versions, tree(F) its board's tree (a subject
+  //           with a score), sheet the script version that replays it when later than REPLAYS_SHEET (sync.js rpOn)
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
   //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
@@ -389,6 +393,11 @@
   // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
   // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
   const SEASLUG_SHEET = 151;
+  // The sync script version that replays the sea slugs' progress from their answers and serves their leaderboard (rule
+  // D4; SUBJECTS seaslug replayed sheet, boardSheet): the app asks for and adopts their replay (sync.js rpOn) and shows
+  // their board (progress.js boardLive) only from it; before, the subject does exactly what it did (the plain merge, no
+  // board: an older script answers &s=seaslug with the corals' board, never shown as the sea slugs').
+  const SEASLUGRP_SHEET = 164;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -648,8 +657,12 @@
       admin: {
         cur: 'fish',
         // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
-        // its tree; ph, its first photos (none for a subject without); gm, its game photos.
-        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json'},
+        // its tree; ph, its first photos (none for a subject without); gm, its game photos; cand, its candidate photos
+        // (admin.js fishLoad: Photos › Tree's tools, Candidates).
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'fish-cand.json'},
+        // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
+        // the candidates judged sure that the game does not take in by itself.
+        autosort: true,
         // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
         // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
         todo: ['photos'],
@@ -741,9 +754,29 @@
       optin: [],
       rank: 'family',
       unitRank: 'genus',
-      // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
-      // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
+      // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_, replay_ per subject;
+      // rules D5, D8, D9): its units from seaslug.json (file: its pool has none yet), the genera played from the start
+      // (fishReplayGen at its unitRank), its own rules versions (SEASLUG_RVS), its records in the "Replayed Sea slugs"
+      // tab. sheet: the script version that replays it (SEASLUGRP_SHEET; rule D4), before which the app neither asks
+      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %. No Analyses report and no photo
+      // pool yet.
       replay: false,
+      replayed: {
+        file: 'seaslug.json',
+        sheet: SEASLUGRP_SHEET,
+        gen: F => fishReplayGen(F, 'genus'),
+        rvs: () => SEASLUG_RVS
+      },
+      // Its own leaderboard (Pierre, 2026-11-17: "le leaderboard ... pour les limaces de mer"; one per subject, Pierre,
+      // 2026-11-04), shown only to those who see the subject (its group and the admin), from the script that serves it
+      // (boardSheet; progress.js boardLive): by its % then its Elo, its players behind its rules ranked by their replay
+      // (Code.gs board_, boardWarm_; rule D8).
+      board: true,
+      boardSheet: SEASLUGRP_SHEET,
+      // Its own achievements (Pierre, 2026-11-17: "une première version des succès"; core.js SEASLUG_ACH), in the shared
+      // record under ids of their own (ss...), never counted in the corals' or the fish's.
+      ach: true,
+      achs: () => SEASLUG_ACH,
       // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
       // observations, the sea slugs' candidate count (Q377).
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
@@ -758,12 +791,14 @@
           know: ['I know sea slugs well', 'A diver or a photographer: you can already name many genera.']
         }
       },
-      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
-      // not about one subject's photos, its Players page holding its beta group.
+      // Its admin part: its own key in curation.json (Pierre's choices on its photos, applied by the app through treeCur
+      // and by tools/seaslug_game.py), the pages not about one subject's photos, its Players page holding its beta
+      // group, and its Photos › Tree with the fish's photo tools.
       admin: {
         cur: 'seaslug',
-        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
-        files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
+        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
+        // for Photos › Tree (its candidates: Not this, the candidates waiting).
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
@@ -774,10 +809,18 @@
           'inbox/todo/errors',
           'inbox/todo/points',
           'players/list',
+          // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
+          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus. No WoRMS view:
+          // its tree carries no reference taxonomy (seaslug.json ref).
+          'photos/tree/key',
+          // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
+          // at their genus, never as a species (autosort.js fishCov)
+          'photos/stats/overview',
           'analyses/difficulty/heatmap'
         ],
         obs: 'Observations',
         origins: [
+          ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
           ['world', 'iNat elsewhere', 'World']
@@ -1318,12 +1361,24 @@
   // app.js fishGenera (a circle-1 family's genera with species of circle 1, each with its sibling genera as look-alikes
   // and its family's name and line as its family), from fish.json alone (no photo changes them). The sync sheet builds it
   // from fish.json (Code.gs fishGen_); tests/fishreplay.test.js checks it against the app's units.
-  function fishReplayGen(F) {
-    const X = fishGen(F || {}, {}),
+  // unit: the rank of the subject's game units (SUBJECTS unitRank): 'genus' (the sea slugs) reads the units fishGen plays
+  // from the start (fishGenUnits: each genus with its sibling genera as look-alikes and its family's line), as the app's
+  // (app.js fishGenera keeps them); no circle-1 genera or species units are added then (the subject has neither).
+  function fishReplayGen(F, unit) {
+    const X = fishGen(F || {}, {}, undefined, unit),
       out = {},
       sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
       gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
     Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
+    if (X.unit === 'genus') {
+      // and the genera a specialist source names as its look-alikes (the tree's genus look, across families: Q390 D), as
+      // app.js fishGenera adds them, so the sheet's replay reads the app's units
+      Object.keys(out).forEach(id => {
+        const G = gens.get(id);
+        if (G && Array.isArray(G.look)) out[id].look = [...new Set([...out[id].look, ...G.look.filter(o => X.gen[o])])];
+      });
+      return out;
+    }
     ((F && F.families) || [])
       .filter(f => f.circle === 1 && X.gen[f.id])
       .forEach(f => {
@@ -3926,10 +3981,69 @@
       s => ((s.setsAdv || {}).sp || 0) >= 50
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
+  // The sea slug achievements, a first version (Pierre, 2026-11-17: "une première version des succès pour les limaces de
+  // mer"), modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level, families with every
+  // genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
+  // Learning milestones only, never time (rule L8), tested on the sea slug snapshot (progress.js achSnap: met, q, learned
+  // over its genera; circ, each circle's genera; fam, its families with every genus at Advanced or above; tax, each
+  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %), in the shared record
+  // under ids starting with ss. SEA_NUDI: the nudibranchs' taxonomic groups (seaslug.json taxa groups 1 and 2,
+  // Nudibranchia · Doridina and · Cladobranchia; tests/seaslugach.test.js checks it against the file).
+  const SEA_NUDI = [1, 2],
+    seaTax = (s, f) => ((s && s.tax) || []).filter(f),
+    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p];
+  const SEASLUG_ACH = [
+    ['ssmet5', 'Slug spotter', 'Met 5 sea slug genera', 1, '🧭', s => s.met >= 5],
+    ['ssmetall', 'Muck stick', 'Met every sea slug genus in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['ssq50', 'Rhinophore reader', '10 genera at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 10],
+    ['ssq80', 'Macro lens', '10 genera at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 10],
+    ['ssq95', 'Slug guide', '5 genera at Divemaster level or above (95%: their mastery exam is on)', 2, '🐌', s => s.q[2] >= 5],
+    ['sslearn1', 'Slug whisperer', "You passed a genus's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['ssfam5', 'Family portraits', '5 families with every genus at Advanced level or above (80%+)', 2, '🌳', s => (s.fam || 0) >= 5],
+    [
+      'ssc1adv',
+      'Greatest hits',
+      'Every genus the quiz opens first (the most seen in the Philippines) at Advanced level or above',
+      2,
+      '🗺️',
+      s => !!(s.circ && s.circ[0] && s.circ[0].total && s.circ[0].adv >= s.circ[0].total)
+    ],
+    [
+      'ssnudi',
+      'Naked gills',
+      'Every nudibranch genus (Doridina and Cladobranchia) at Advanced level or above',
+      3,
+      '🔬',
+      s => {
+        const L = seaTax(s, t => SEA_NUDI.includes(t.n));
+        return L.length > 0 && L.every(t => t.total && t.adv >= t.total);
+      }
+    ],
+    [
+      'ssother',
+      'Beyond nudibranchs',
+      'A genus of each other group (Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida) at Advanced level or above',
+      2,
+      '🔬',
+      s => {
+        const L = seaTax(s, t => !SEA_NUDI.includes(t.n) && t.total);
+        return L.length > 0 && L.every(t => t.adv >= 1);
+      }
+    ],
+    seaPct('sspct10', 10, 'Slow and steady', 1),
+    seaPct('sspct20', 20, 'Slime trail', 1),
+    seaPct('sspct30', 30, 'Colour chart', 2),
+    seaPct('sspct40', 40, 'Torch light', 2),
+    seaPct('sspct50', 50, 'Half the reef', 3)
+  ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
-  // subject's page; achFind: an achievement of any list by its id.
+  // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
   const ACH_CONTRIB = ACH.filter(a => a.kind === 'contrib');
-  const achFind = id => ACH.find(a => a.id === id) || FISH_ACH.find(a => a.id === id) || null;
+  const achFind = id =>
+    [ACH, ...SUBJECTS.filter(S => S.ach && S.achs() !== ACH).map(S => S.achs())].reduce(
+      (x, L) => x || L.find(a => a.id === id) || null,
+      null
+    );
   // Reports that count for the Contributions (Pierre, 2026-11-05, Q65): every report sent (game, enlarged photo, genus
   // sheet, Send feedback), signed in or not; one per photo: a report on photos already in a counted report does not count
   // again (several reports on one photo count once); an "Other" report counts only with a note. A counted report goes into
@@ -3988,7 +4102,19 @@
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearn30', 'flearncore'];
+  const ACH_LEARN = [
+    'learn1',
+    'learn5',
+    'learn10',
+    'learn20',
+    'learnall',
+    'group',
+    'flearn1',
+    'flearn10',
+    'flearn30',
+    'flearncore',
+    'sslearn1'
+  ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
@@ -5539,6 +5665,16 @@
       msg: null
     }
   ];
+  // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
+  // numbered from 1, as FISH_RVS is. No card (rules D5, D6).
+  const SEASLUG_RVS = [
+    {
+      v: 1,
+      at: '2026-11-17',
+      why: "The sea slugs' progress replayed from the answer log, as the fish's (rules D8, D9; their leaderboard, Pierre, 2026-11-17): a player's sea slug progress is replayed by the sheet from their sea slug answers with the same engine; the log is the only reference, a bar may go down.",
+      msg: null
+    }
+  ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
   const rvsOf = id => {
     const S = subjectOf(id);
@@ -6796,6 +6932,7 @@
     SCORE_SHEET,
     LOG_SHEET,
     REPLAYS_SHEET,
+    SEASLUGRP_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,
@@ -6832,6 +6969,8 @@
     pagesOwn,
     ACH,
     FISH_ACH,
+    SEASLUG_ACH,
+    SEA_NUDI,
     ACH_CONTRIB,
     achFind,
     newAch,
@@ -6967,6 +7106,7 @@
     fishObs,
     fishGlOf,
     fishReplayGen,
+    SEASLUG_RVS,
     fishSpUnits,
     fishBoardTree,
     easyRank,

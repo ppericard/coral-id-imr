@@ -1036,19 +1036,42 @@
         ph: [...new Set(rows.flatMap(r => r.ph))],
         wait: rows.reduce((a, r) => a + r.wait, 0)
       }),
-      out = {fam: [], gen: [], sp: []};
+      out = {fam: [], gen: [], sp: []},
+      // A genus's genus-level photos (gl: in play under its own id, the sea slugs' observations agreed at the genus only;
+      // Pierre, 2026-11-17, Q389 (1)): counted in its genus's and its family's photos, observations, easy and reference
+      // photos, phases and candidates waiting (gl, their number), never as a species (of, ok: its species alone).
+      withGl = (r, G) =>
+        G.reduce(
+          (a, g) => ({
+            ...a,
+            n: a.n + g.n,
+            obs: a.obs + g.obs,
+            easy: a.easy + g.easy,
+            ref: a.ref + g.ref,
+            ph: [...new Set([...a.ph, ...g.ph])],
+            wait: a.wait + g.wait,
+            gl: (a.gl || 0) + g.n
+          }),
+          r
+        );
     U.forEach(u => {
       const S = u.species.filter(s => species[s] && !species[s].out).map(s => spRow(s, u.id)),
-        by = Object.fromEntries(S.map(r => [r.id, r]));
+        by = Object.fromEntries(S.map(r => [r.id, r])),
+        GL = Object.fromEntries(
+          u.genera.filter(g => (play[g.id] || []).length || (waiting[g.id] || []).length).map(g => [g.id, spRow(g.id, u.id)])
+        );
       out.sp.push(...S);
       u.genera.forEach(g => {
         const R = g.species.map(s => by[s]).filter(Boolean);
-        if (!R.length) return;
-        const r = sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr});
+        if (!R.length && !GL[g.id]) return;
+        const r = withGl(sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr}), GL[g.id] ? [GL[g.id]] : []);
         r.need = [...(r.of - r.ok ? [`${r.of - r.ok} species under target`] : []), ...(r.n ? [] : ['No photo in play'])];
         out.gen.push(r);
       });
-      const r = sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle});
+      const r = withGl(
+        sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle}),
+        Object.values(GL)
+      );
       r.want = fishUnitPhases(u);
       r.need = fishNeeds(u, play, species, F, j);
       out.fam.push(r);

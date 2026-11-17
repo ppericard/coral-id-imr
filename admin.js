@@ -268,7 +268,7 @@ let SHOWN_COVER = null,
   PRES = {}, // presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
   NAMES = {}, // names.json, the first subject's section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
   NAMEJ = {}, // names.json by subject id: every subject's section (nameTag)
-  FISHA = null, // the fish entries and their photos, for the fish beta's reports (fishAdmin)
+  FISHA = null, // the tree subject in force's entries and photos, for its reports (fishAdmin; UNITA's, by subject)
   KNOWN = new Set(),
   DATA,
   SAVED = {v: 1, genera: {}},
@@ -279,6 +279,18 @@ let SHOWN_COVER = null,
   AUTOQ = {},
   AUTOF = {},
   lastGenus = null;
+// The tree subjects (core.js SUBJECTS with their own part of curation.json and sheets at several ranks, never named: rule
+// S1), and the one in force (FISHS, TK its part's key: SUBJECTS admin.cur): the one on screen when it is one, else the last
+// one on screen, as the app's tree in force (app.js treeAt; treeIn below). Photos › Tree, the photo tools (fishTile,
+// bindFishTiles), the family pages' data (FISHC, fishLoad) and the registry of its reports (FISHA, fishAdmin) are the one
+// in force's, and every read or write of "its part" is DRAFT[TK] (the sea slugs' admin photo pages, 2026-11-17).
+// The auto-sort's subject (SUBJECTS admin autosort; AK its part's key): its part is stamped and sorted at each load,
+// whatever the subject on screen (autoWhen, fishAutoRun).
+const TREES = SUBJECTS.filter(S => S.admin.cur && S.sheets),
+  ASORT = TREES.find(S => S.admin.autosort) || null,
+  AK = ASORT ? ASORT.admin.cur : '';
+let FISHS = TREES[0] || null,
+  TK = FISHS ? FISHS.admin.cur : '';
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [
@@ -449,20 +461,20 @@ function autoWhen() {
   if (ASIG_OF !== snap) {
     const S = JSON.parse(snap);
     ASIG = autoSigs(S);
-    FSIG = fishSigs((S || {}).fish);
+    FSIG = fishSigs((S || {})[AK]);
     FSIG_F = null;
     ASIG_OF = snap;
   }
   const t = Date.now() / 1000,
-    same = !!DRAFT.fish && DRAFT.fish === FSIG_F,
+    same = !!DRAFT[AK] && DRAFT[AK] === FSIG_F,
     A = autoStamp(DRAFT, ASIG, t),
-    FA = DRAFT.fish && !same && fishStamp(DRAFT.fish, FSIG, t);
+    FA = DRAFT[AK] && !same && fishStamp(DRAFT[AK], FSIG, t);
   if (A) DRAFT.auto = A;
-  if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
+  if (FA) DRAFT[AK] = {...DRAFT[AK], auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
   if (!same) {
-    FSIG = fishSigs(DRAFT.fish);
-    FSIG_F = DRAFT.fish;
+    FSIG = fishSigs(DRAFT[AK]);
+    FSIG_F = DRAFT[AK];
   }
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
@@ -1418,7 +1430,7 @@ function status0() {
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
-      fiChanged() ? 'fish curation' : '',
+      ...fiChanged(),
       coChanged() ? 'sheet edits' : '',
       ptChanged() ? 'points to handle' : '',
       rpChanged() ? 'report statuses' : ''
@@ -1765,6 +1777,7 @@ function readHash() {
   if (shared(q) && !pre) S = subjRead ? ASUBJ : SUBJECTS.find(x => x.id === store.get('reefid-admin-nav-subj', '')) || ADM0;
   subjRead = true;
   ASUBJ = S;
+  treeIn(S);
   cur = q;
   if (cur !== p || (shared(cur) && pre)) history.replaceState(null, '', '#' + (shared(cur) ? '' : ASUBJ.hash) + admAddr(cur));
   store.set('reefid-admin-nav-subj', ASUBJ.id);
@@ -1938,7 +1951,7 @@ const modeKey = () =>
 // outside suggest.json; fish-game.json keeps its e and jt).
 const fuJ = f => {
   const g = ((FISHC && FISHC.gj) || {})[f],
-    j = ((SUG && SUG.fish) || {})[f];
+    j = ((SUG && SUG[TK]) || {})[f];
   return g && j ? {...g, ...j} : j || g || null;
 };
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
@@ -1952,8 +1965,9 @@ const fuRankOf = (S, id) => {
   return R.find(r => (S.sheets || {})[r] && String(id).startsWith(S.sheets[r])) || R[R.length - 1];
 };
 // The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
+// The sea slugs' own letters (judging/SEASLUG.md: v ventral, f features hidden; never in a fish code) read the same way.
 const FU_TAGS = [
-  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
+  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above', v: 'ventral'},
   {0: 'partial'},
   {d: 'dim light', n: 'night livery'},
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
@@ -1967,7 +1981,7 @@ const FU_TAGS = [
     x: 'subject not obvious'
   }
 ];
-const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark'};
+const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark', f: 'features hidden'};
 const fuTags = jt =>
   !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
 // A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
@@ -1981,7 +1995,7 @@ const fuImr = u =>
 // [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655); and his rotation (fish rot).
 const fuP = p =>
   p
-    ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT.fish || {}).rot || {})[p.f])}}
+    ? {...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}}
     : p;
 // A node's page in the Key view (where the other pages send a family: Coverage, reports, Pairs), and in the Tree view on
 // screen (TT_VIEW: its tree, its crumbs, its cards and selects).
@@ -1993,8 +2007,8 @@ const tvHref = id => '#' + ASUBJ.hash + TT_VIEW + '/' + encodeURIComponent(id);
 // An add with other species one could take for its subject, or not sorted yet (core.js fishOther: his tag, his legacy m
 // refined by the pass's o or k; Pierre, 2026-11-09, Q323) is out of play: listed apart (other), never counted in play.
 function fuData() {
-  const F = DRAFT.fish || {},
-    S0 = SAVED.fish || {},
+  const F = DRAFT[TK] || {},
+    S0 = SAVED[TK] || {},
     play = {},
     other = [],
     gone = [];
@@ -2010,7 +2024,7 @@ function fuData() {
       .flat()
       .map(p => fishPid(p.f))
   );
-  fishGameIn(FISHC.plays, DRAFT).forEach(p => {
+  fishGameIn(FISHC.plays, treeCur(FISHS, DRAFT)).forEach(p => {
     if (seen.has(fishPid(p.f))) return;
     seen.add(fishPid(p.f));
     (play[p.sp] = play[p.sp] || []).push(p);
@@ -2039,15 +2053,17 @@ function fuData() {
 function fuFam(u, D) {
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
-    rows = Object.fromEntries(u.species.filter(ok).map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
+    // its species', then its genera's genus-level photos (gl: the genus's own row, under its id)
+    ids = [...u.species.filter(ok), ...u.genera.map(g => g.id).filter(g => (D.play[g] || []).length)],
+    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
-    all = u.species.filter(ok).flatMap(s => [...rows[s].feat, ...rows[s].rest]),
+    all = ids.flatMap(s => [...rows[s].feat, ...rows[s].rest]),
     // his pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
     // as the game's card cover: reference-level first; Codex review #655)
     cover = fishCoverOf(all, D.F, u.id, fuJ);
   return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
 }
-const fuName = sid => (FISHC.species[sid] || {}).name || sid;
+const fuName = sid => (FISHC.species[sid] || {}).name || (FISHC.genera[sid] ? FISHC.genera[sid].name + ' sp.' : sid);
 // A species whose candidate photos come from another iNaturalist taxon (fish.json photoTaxon; Pierre, 2026-11-14, Q354 b:
 // the Pacific form iNaturalist splits off): one short line where the admin shows its photos (its section on the family's
 // page, its Candidates card); the IMR name stays the species' own. '' for every other species.
@@ -2075,20 +2091,24 @@ let FT_REC = {}, // the records of the fish tiles drawn, by photo (for Enlarge a
 // for a few photos of many families.
 let FUD = null;
 const fuDataM = () =>
-  FUD && FUD.fish === DRAFT.fish && FUD.saved === SAVED && FUD.plays === FISHC.plays
+  FUD && FUD.k === TK && FUD.fish === DRAFT[TK] && FUD.saved === SAVED && FUD.plays === FISHC.plays
     ? FUD
-    : (FUD = {fish: DRAFT.fish, saved: SAVED, plays: FISHC.plays, D: fuData(), E: {}});
+    : (FUD = {k: TK, fish: DRAFT[TK], saved: SAVED, plays: FISHC.plays, D: fuData(), E: {}});
 const fuFamM = u => {
   const M = fuDataM();
   return (M.E[u.id] = M.E[u.id] || fuFam(u, M.D));
 };
 // The family (Photos › Tree page) of species sid: fish.json's, else the unit that lists it.
 const fishFamOf = sid =>
-  !sid || !FISHC ? '' : (FISHC.species[sid] || {}).family || ((FISHC.units || []).find(u => u.species.includes(sid)) || {}).id || '';
+  !sid || !FISHC
+    ? ''
+    : (FISHC.species[sid] || FISHC.genera[sid] || {}).family ||
+      ((FISHC.units || []).find(u => u.species.includes(sid) || u.genera.some(g => g.id === sid)) || {}).id ||
+      '';
 // The state of photo f in the draft: 'excluded', 'not this', 'removed', or '' (in play or undecided). A photo moved with
 // Not this and then added under its corrected species is in play there (core.js fishOn), not "not this" (Codex review #823).
 const fishState = f => {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     o = (F.out || {})[f];
   return (F.exclude || {})[f]
     ? 'excluded'
@@ -2114,7 +2134,7 @@ const fuJt = (F, f) => {
 // last), open (an Open in Tree link), extra (more actions), flag (a flag's key: the tools that take the photo out
 // also clear it)}.
 function fishTile(p, o) {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     f = p.f,
     sid = o.sid,
     out = o.play ? '' : fishState(f),
@@ -2194,7 +2214,7 @@ function bindFishTiles(scope, o = {}) {
     if (!f) return;
     // One change to the fish part; one that takes the photo out of play also clears its flag (To do's flags).
     const fx = (fn, msg, gone) => {
-      DRAFT.fish = fn(DRAFT.fish || {});
+      DRAFT[TK] = fn(DRAFT[TK] || {});
       if (gone && tl.dataset.fflag) {
         const L = {...flagsOf(DRAFT)};
         delete L[tl.dataset.fflag];
@@ -2213,7 +2233,7 @@ function bindFishTiles(scope, o = {}) {
       }
       if (!FISHC) return;
       if (a === 'feat') {
-        const r = fishFeat(DRAFT.fish, fam, sid, f);
+        const r = fishFeat(DRAFT[TK], fam, sid, f);
         if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
         return fx(() => r.F);
       }
@@ -2276,10 +2296,10 @@ function bindFishTiles(scope, o = {}) {
     bindFishRows(
       R,
       f,
-      () => fishTagsMine(DRAFT.fish || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
+      () => fishTagsMine(DRAFT[TK] || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
       (fn, w) => {
         const off = play && w && w.pos === 6 && (w.v === 'k' || w.v === 'x');
-        DRAFT.fish = off ? fishReject(fishDrop(fn(DRAFT.fish || {}), fam, f), f) : fn(DRAFT.fish || {});
+        DRAFT[TK] = off ? fishReject(fishDrop(fn(DRAFT[TK] || {}), fam, f), f) : fn(DRAFT[TK] || {});
         if (off && tl.dataset.fflag) {
           const L = {...flagsOf(DRAFT)};
           delete L[tl.dataset.fflag];
@@ -2309,6 +2329,10 @@ const fuWink = (u, cover) =>
 // family: its page holds the choices of everything under it, featured photos and ✓ Validated, curation.json fish genera
 // under its id); sci, its scientific name or names; it, a name set in italics (a genus); tag, its IMR tag.
 let TT = null; // {units, T}
+// The leaf of a genus's genus-level photos (fuTreeOf), and the unit a leaf's photos are in play for (its sid: a species,
+// or the genus of a genus-level leaf; the node's own id for any other).
+const glId = g => 'gl:' + g,
+  leafSid = (T, x) => (T.node.get(x) || {}).sid || x;
 function fuTreeOf(U) {
   if (TT && TT.units === U) return TT.T;
   const sp = FISHC.species,
@@ -2317,7 +2341,10 @@ function fuTreeOf(U) {
     // another subject's page may build it first: Covers, a third subject)
     R = Object.keys((FISHS || ASUBJ).sheets || {}),
     N = [],
-    K = new Set();
+    K = new Set(),
+    // the genera with genus-level photos (gl: sp the genus's id; the sea slugs' observations agreed at the genus only,
+    // Pierre, 2026-11-17, Q389 (1)), in play or candidates
+    GL = new Set([...(FISHC.plays || []).filter(p => p && p.gl).map(p => p.sp), ...Object.keys(FISHC.cand).filter(k => FISHC.genera[k])]);
   U.forEach(u => {
     const k = u.group == null ? 'k:none' : 'k:' + u.group;
     if (!K.has(k)) {
@@ -2329,7 +2356,22 @@ function fuTreeOf(U) {
       const S = g.species.filter(ok);
       if (!S.length) return;
       N.push({id: g.id, name: g.name, it: true, rank: R[1], up: u.id, tag: fuImr(g), g});
-      S.forEach(s => N.push({id: s, name: sp[s].common || sp[s].name, sci: sp[s].name, rank: R[2], up: g.id, sid: s}));
+      // a species with no common name (the sea slugs: Q369 d) by its scientific name alone, in italics
+      S.forEach(s =>
+        N.push({
+          id: s,
+          name: sp[s].common || sp[s].name,
+          sci: sp[s].common ? sp[s].name : '',
+          it: !sp[s].common,
+          rank: R[2],
+          up: g.id,
+          sid: s
+        })
+      );
+      // its genus-level photos: a leaf of their own after its species (glId), its photos the genus's (sid its id), never
+      // a species (core.js fishGlOf)
+      if (GL.has(g.id))
+        N.push({id: glId(g.id), name: `${g.name} sp.`, sci: '', it: true, rank: 'genus level', up: g.id, sid: g.id, gl: true});
     });
   });
   TT = {units: U, T: ttBuild(N)};
@@ -2351,7 +2393,7 @@ function fuWormsOf(U) {
   if (TW && TW.units === U) return TW.T;
   const K = fuTreeOf(U),
     L = [...K.node.values()]
-      .filter(n => n.sid)
+      .filter(n => n.sid && !n.gl)
       .map(n => ({
         id: n.id,
         name: n.name,
@@ -2417,7 +2459,11 @@ const ttName = n => (n.it ? `<i>${esc(n.name)}</i>` : esc(n.name));
 // in fish.json's order), else its leaves' in the tree's order, each featured first, then the game's order. The node
 // pages, their headings and Cover proposals (admin-covers.js coverList) read the same list, so they agree on a cover.
 const fuNodePhotos = (T, u, e, id) =>
-  id === u.id ? e.all : ttLeaves(T, id).flatMap(s => (e.rows[s] ? [...e.rows[s].feat, ...e.rows[s].rest] : []));
+  id === u.id
+    ? e.all
+    : ttLeaves(T, id)
+        .map(x => leafSid(T, x))
+        .flatMap(s => (e.rows[s] ? [...e.rows[s].feat, ...e.rows[s].rest] : []));
 // What is unfolded, per subject and view (a convenience of this browser): the ids of the open nodes; none saved yet = the
 // roots open (the Key's groups with their families, as the list was; WoRMS's classes with their orders).
 let TT_OPEN = null,
@@ -2513,8 +2559,8 @@ const fuCircle = x => {
 };
 function fuRow(T, E, D) {
   const F = D.F,
-    S0 = SAVED.fish || {},
-    nSp = ttRoll(T, n => (n.sid ? 1 : 0)),
+    S0 = SAVED[TK] || {},
+    nSp = ttRoll(T, n => (n.sid && !n.gl ? 1 : 0)),
     nPh = ttRoll(T, n => (n.sid ? (D.play[n.sid] || []).length : 0)),
     ph = id => `${nPh[id]} photo${nPh[id] === 1 ? '' : 's'}`,
     // a node's own choices changed since the published file (its cover at any rank: curation.json fish genera by node id)
@@ -2527,12 +2573,12 @@ function fuRow(T, E, D) {
         dirty = [x.id, ...x.genera.map(g => g.id), ...x.species].some(mine) || x.species.some(s => D.dirty.has(s)),
         nd = E[x.id].needs;
       return `<span class="adm-g">${c && c.src ? `<img ${crSrc(fuP(c), 1)} alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)} ${fuImr(x)}
-      <small>${ttRank(n)}<i>${esc(x.sci.join(', '))}</i> · ${x.wink ? 'wink' : fuCircle(x) == null ? 'no circle' : `circle ${fuCircle(x)}`} ·${E[x.id].n} sp. · ${ph(x.id)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
+      <small>${ttRank(n)}${x.sci.length ? `<i>${esc(x.sci.join(', '))}</i> · ` : ''}${x.wink ? 'wink' : fuCircle(x) == null ? 'no circle' : `circle ${fuCircle(x)}`} · ${E[x.id].n} sp. · ${ph(x.id)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
     }
     if (n.sid)
-      return `<span class="adm-ttn">${esc(n.name)}<small>${ttRank(n)}<i>${esc(n.sci)}</i> · ${ph(n.id)}</small></span>${D.dirty.has(n.sid) || mine(n.sid) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
+      return `<span class="adm-ttn">${n.gl ? ttName(n) : esc(n.name)}<small>${ttRank(n)}${n.sci ? `<i>${esc(n.sci)}</i> · ` : ''}${ph(n.id)}</small></span>${D.dirty.has(n.sid) || mine(n.sid) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
     // a key genus, a key group, or a WoRMS taxon (n.ref: its draft's dot from its species, as a genus's)
-    return `<span class="adm-ttn${n.g || n.ref ? '' : ' adm-ttk'}">${n.g ? `<i>${esc(n.name)}</i> ${fuImr(n.g)}` : ttName(n)}<small>${ttRank(n)}${nSp[n.id]} sp. · ${ph(n.id)}</small></span>${(n.g && mine(n.id)) || ((n.g || n.ref) && ttLeaves(T, n.id).some(s => D.dirty.has(s) || mine(s))) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
+    return `<span class="adm-ttn${n.g || n.ref ? '' : ' adm-ttk'}">${n.g ? `<i>${esc(n.name)}</i> ${fuImr(n.g)}` : ttName(n)}<small>${ttRank(n)}${nSp[n.id]} sp. · ${ph(n.id)}</small></span>${(n.g && mine(n.id)) || ((n.g || n.ref) && ttLeaves(T, n.id).some(s => D.dirty.has(leafSid(T, s)) || mine(s))) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
   };
   return {row, nSp, ph};
 }
@@ -2547,7 +2593,7 @@ function fuRow(T, E, D) {
 // photos featured for it). [{k, grp, t, on(node)}]; T the Key's tree, E each unit's fuFam, D fuData.
 function fuFilters(T, U, E, D) {
   const F = D.F,
-    S0 = SAVED.fish || {},
+    S0 = SAVED[TK] || {},
     ent = (X, k) => (X.genera || {})[k],
     mine = k => !same(ent(F, k), ent(S0, k)),
     // a unit's own choices but the photos it features for its species (each counted on its species)
@@ -2694,7 +2740,9 @@ function renderFishUnits(id, view = TREE) {
     E = Object.fromEntries(U.map(x => [x.id, fuFam(x, D)])),
     F = D.F,
     XI = fishIdx(F),
-    imrOn = FU_IMR === 'imr',
+    // All | IMR only for a tree some of whose families or genera the IMR course names (none for the sea slugs)
+    imrAny = U.some(x => x.imr || x.imrWith || x.genera.some(g => g.imr)),
+    imrOn = imrAny && FU_IMR === 'imr',
     // The filters: All | IMR (the IMR course's tag) and the tag chosen (fuFilters; one no longer offered reads as none),
     // read in the Key (T) through its leaves; shown, the leaves that pass both and what leads to them in the view on
     // screen (taxtree.js ttPass, ttReach), the node on screen always.
@@ -2728,12 +2776,16 @@ function renderFishUnits(id, view = TREE) {
   // on while a tag is chosen.
   const tagSel = ttTagSel(FL, tag, f => ttPass(T, [imrOn && imrF, f.on].filter(Boolean)).size, 'sp.');
   // All | IMR in the sticky bar, at every width (the side list is hidden on phones).
-  const imrSeg = `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
-    ['all', 'All'],
-    ['imr', 'IMR']
-  ]
-    .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
-    .join('')}</span>${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, FISHC.raw, tag && tag.k) : ''}`;
+  const imrSeg = `${
+    imrAny
+      ? `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
+          ['all', 'All'],
+          ['imr', 'IMR']
+        ]
+          .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
+          .join('')}</span>`
+      : ''
+  }${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, FISHC.raw, tag && tag.k) : ''}`;
   // The Look-alikes filter's + Pair box (admin-content.js structAdd), under the bar of every Tree page.
   const nameOf = x => (T.node.get(x) || {}).name || x,
     stAdd = typeof structAdd === 'function' ? structAdd(ASUBJ, FISHC.raw, nameOf) : '';
@@ -2832,11 +2884,13 @@ function renderFishUnits(id, view = TREE) {
     lv = ttPath(T, sel).length - 1 - base,
     pathOf = x => ttPath(T, x).slice(base),
     photosOf = x => fuNodePhotos(T, u, e, x),
-    cvOf = x => nodeCover(x, photosOf(x), F, fuJ, leafOf(x)),
+    // a genus-level leaf's cover is kept under its genus's id, as its ★ Cover writes it (Codex review #1047)
+    cvOf = x => nodeCover((T.node.get(x) || {}).gl ? leafSid(T, x) : x, photosOf(x), F, fuJ, leafOf(x)),
     C = cvOf(sel),
     cv = C.p,
     P = photosOf(sel),
-    LV = new Set(ttLeaves(T, sel)),
+    // the units its leaves' photos are in play for (a genus-level leaf's: its genus, leafSid)
+    LV = new Set(ttLeaves(T, sel).map(x => leafSid(T, x))),
     // the candidates still waiting in each of its leaves (autosort.js fishWaiting: not in play, by photo id, rejected nor
     // gone), as Coverage counts them
     W = fishWaiting(FISHC.cand, F, D.play),
@@ -2851,22 +2905,28 @@ function renderFishUnits(id, view = TREE) {
   // photos, candidates waiting) and its photos in play, featured first, then the game's order. A wink family's species
   // (met only on the surprise cards: docs/ROADMAP.md "Surprise-only species") shows FISHT.wink of them, the surprise card's
   // own first (autosort.js fishWinkFold), the rest behind its "N more" chip (FU_WALL); every photo still counts.
-  const sect = sid => {
-    const {feat} = e.rows[sid],
+  // x: the leaf's node id; its photos' unit, sid (leafSid: a genus-level leaf's photos are its genus's, its ★ Cover the
+  // genus's: its path stops at the genus).
+  const sect = x => {
+    const sid = leafSid(T, x),
+      gl = !!T.node.get(x).gl,
+      {feat} = e.rows[sid],
       all = [...feat, ...e.rows[sid].rest],
       wf = u.wink ? fishWinkFold(e.rows[sid], u.wink.photos) : null,
       rest = wf ? (FU_WALL ? [...wf.show, ...wf.fold] : wf.show) : e.rows[sid].rest,
       more = wf ? wf.fold.length : 0,
-      s = sp[sid],
+      s = sp[sid] || {name: T.node.get(x).name},
       nPh = all.length,
       obs = new Set(all.map(p => p.o || p.f)).size,
       tg = fishTarget(s),
       out = all.filter(p => !shown(p)).length,
       nc = (W[sid] || []).length,
-      c = cvOf(sid),
-      path = pathOf(sid),
-      nm = esc(s.common || s.name);
-    return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(c.p && {...c.p, sid}, c.by === 'mine', `${cap1(RK[path.length - 1] || '')} cover`)}${sid === sel ? nm : `<a class="adm-nlink" href="${esc(tvHref(sid))}">${nm}</a>`} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${nPh} photo${nPh === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}${nc ? ` · <span title="Candidates waiting (Photos › Candidates)">${nc} candidate${nc === 1 ? '' : 's'}</span>` : ''}</small>${more ? ` <button type="button" class="adm-chip adm-fwall" data-fuwall aria-pressed="${FU_WALL}" title="Photos in play beyond the ${FISHT.wink} shown: ${FU_WALL ? 'tap to hide them' : 'tap to show them'}">${more} more</button>` : ''}${fishPtx(s)}</h3>
+      c = cvOf(x),
+      path = gl ? pathOf(x).slice(0, -1) : pathOf(x),
+      // its common name, its scientific name below; a species with none (the sea slugs: scientific names only, Q369 d)
+      // its scientific name once
+      nm = gl || !s.common ? `<i>${esc(s.name)}</i>` : esc(s.common);
+    return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(c.p && {...c.p, sid}, c.by === 'mine', `${cap1(RK[path.length - 1] || '')} cover`)}${x === sel ? nm : `<a class="adm-nlink" href="${esc(tvHref(x))}">${nm}</a>`} <small>${gl ? 'genus level · ' : s.common ? `<i>${esc(s.name)}</i> · ` : ''}<b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${nPh} photo${nPh === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}${nc ? ` · <span title="Candidates waiting (Photos › Candidates)">${nc} candidate${nc === 1 ? '' : 's'}</span>` : ''}</small>${more ? ` <button type="button" class="adm-chip adm-fwall" data-fuwall aria-pressed="${FU_WALL}" title="Photos in play beyond the ${FISHT.wink} shown: ${FU_WALL ? 'tap to hide them' : 'tap to show them'}">${more} more</button>` : ''}${fishPtx(s)}</h3>
       <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, XI, path, lv) : '')).join('')}${rest
         .filter(shown)
         .map(p => fuTile(sid, p, {}, cv, XI, path, lv))
@@ -2875,12 +2935,12 @@ function renderFishUnits(id, view = TREE) {
   // The subtree under the page's node, any depth: a leaf its section; a node between, a block with its heading (its cover,
   // its name opening its page, its leaves' count) around its children's; the page's node itself, its children's alone.
   const block = x => {
-    if (leafOf(x)) return e.rows[x] ? sect(x) : '';
+    if (leafOf(x)) return e.rows[leafSid(T, x)] ? sect(x) : '';
     const inner = T.kids.get(x).map(block).join('');
     if (x === sel || !inner) return inner;
     const m = T.node.get(x),
       c = cvOf(x),
-      nS = ttLeaves(T, x).filter(s => e.rows[s]).length;
+      nS = ttLeaves(T, x).filter(s => e.rows[s] && !T.node.get(s).gl).length;
     return `<section class="adm-fgen" data-gen="${esc(x)}"><h3 class="adm-fgenh">${hThumb(c.p, c.by === 'mine', `${cap1(m.rank || '')} cover`)}<a class="adm-nlink" href="${esc(tvHref(x))}">${ttName(m)}</a> ${m.tag || ''} <small>${nS} species</small></h3>${inner}</section>`;
   };
   const body = block(sel);
@@ -2925,7 +2985,7 @@ function renderFishUnits(id, view = TREE) {
     askW = C.wm && !askJ,
     why = `<small class="adm-cvwhy">${esc(nodeCoverWhy(C, (FISHC.centre || {}).name))}${pr && !askW ? ` · <a href="#${esc(ASUBJ.hash + COVER_PAGE)}">the rule proposes another</a>` : ''}</small>${askJ ? `<button type="button" class="chip warnc adm-fjok" data-fjok>${esc(JUV_ASK)}</button>` : ''}${askW ? `<b class="warnc adm-fwmq">${esc(WM_ASK)}</b><span class="adm-qseg adm-lvseg adm-fwm" role="group" aria-label="${esc(WM_ASK)}"><button type="button" data-fwok>${esc(WM_KEEP)}</button>${pr ? `<button type="button" data-fwcp>${esc(WM_OTHER)}</button>` : ''}</span>` : ''}`,
     cnt = o => P.filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky">${crumbs}${cv && cv.src ? `<button type="button" class="adm-sthumb${C.by === 'mine' ? ' mine' : ''}" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid || cv.sp || '')}" data-fu="zoom" title="${esc(cap1(n.rank || ''))} cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(n.name)} cover"></button>` : ''}<b class="adm-sname">${ttName(n)} ${n.tag || ''}<small>${n.sci && !n.it ? `<i>${esc(n.sci)}</i> · ` : ''}${LV.size} sp. · ${P.length} photo${P.length === 1 ? '' : 's'}${nC ? ` · ${nC} candidate${nC === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}${kidSel}${unitPage ? `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}` : ''}${jw}${cw}${probs}${why}${FB.origins({cnt})}</div>`;
+  const filter = `<div class="adm-filter adm-sticky">${crumbs}${cv && cv.src ? `<button type="button" class="adm-sthumb${C.by === 'mine' ? ' mine' : ''}" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid || cv.sp || '')}" data-fu="zoom" title="${esc(cap1(n.rank || ''))} cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(n.name)} cover"></button>` : ''}<b class="adm-sname">${ttName(n)} ${n.tag || ''}<small>${n.sci && !n.it ? `<i>${esc(n.sci)}</i> · ` : ''}${n.gl ? 'genus level' : `${[...LV].filter(x => sp[x]).length} sp.`} · ${P.length} photo${P.length === 1 ? '' : 's'}${nC ? ` · ${nC} candidate${nC === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}${kidSel}${unitPage ? `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}` : ''}${jw}${cw}${probs}${why}${FB.origins({cnt})}</div>`;
   // Its sheet's text and the content editor's edits (admin-content.js sheetBox: a node the app gives a sheet), above its
   // photos.
   const sbox = typeof sheetBox === 'function' ? sheetBox(ASUBJ, FISHC.raw, sel, nameOf) : '';
@@ -2947,14 +3007,14 @@ function renderFishUnits(id, view = TREE) {
   const jok = $v.querySelector('[data-fjok]');
   if (jok)
     jok.onclick = () => {
-      DRAFT.fish = fishCoverJOk(DRAFT.fish || {}, sel);
+      DRAFT[TK] = fishCoverJOk(DRAFT[TK] || {}, sel);
       saveDraft();
       render();
     };
   const wok = $v.querySelector('[data-fwok]');
   if (wok)
     wok.onclick = () => {
-      DRAFT.fish = coverWKeep(DRAFT.fish || {}, sel, pr ? prX : null);
+      DRAFT[TK] = coverWKeep(DRAFT[TK] || {}, sel, pr ? prX : null);
       saveDraft();
       render();
     };
@@ -2964,7 +3024,7 @@ function renderFishUnits(id, view = TREE) {
   if (okb)
     okb.onclick = () => {
       if (!e.k.ok && e.needs.length) return toast('Not ready: ' + e.needs.join(' · '));
-      DRAFT.fish = fishOk(DRAFT.fish || {}, u.id);
+      DRAFT[TK] = fishOk(DRAFT[TK] || {}, u.id);
       saveDraft();
       render();
     };
@@ -3108,15 +3168,15 @@ function fishTodoLines() {
   const M = fuDataM(),
     k = [FU_IMR, SUG, LIGHT];
   if (!(M.todo && M.todo.k.every((x, i) => x === k[i]))) {
-    const F = DRAFT.fish || {},
+    const F = DRAFT[TK] || {},
       UB = Object.fromEntries(FISHC.units.map(u => [u.id, u])),
       C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, M.D.F, fuJ),
-      Q = fishQueue(FISHC.cand, (SUG && SUG.fish) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+      Q = fishQueue(FISHC.cand, (SUG && SUG[TK]) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
       pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
       L = [
         ['photos/candidates', fishCandTodo(Q), n => pl(n, 'candidate')],
-        [COVER_PAGE, coverOpen(coverList(), DRAFT.fish).length, n => pl(n, 'cover proposal')],
-        [LIGHT_PAGE, LIGHT ? lightOpen(LIGHT, DRAFT.fish).length : 0, n => pl(n, 'light proposal')]
+        [COVER_PAGE, coverOpen(coverList(), DRAFT[TK]).length, n => pl(n, 'cover proposal')],
+        [LIGHT_PAGE, LIGHT ? lightOpen(LIGHT, DRAFT[TK]).length : 0, n => pl(n, 'light proposal')]
       ]
         .filter(x => x[1])
         .map(([h, n, w]) => ({h, n, t: w(n)})),
@@ -3424,14 +3484,14 @@ function renderFishReview(kind) {
   $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
   $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
   const fx = fn => {
-    DRAFT.fish = fn(DRAFT.fish || {});
+    DRAFT[TK] = fn(DRAFT[TK] || {});
     saveDraft();
     render();
   };
   $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
     const f = tl.dataset.f,
       p = L.find(x => x.f === f),
-      base = () => fishTagsMine(DRAFT.fish, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
+      base = () => fishTagsMine(DRAFT[TK], f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
     tl.querySelector('[data-frz]').onclick = () =>
       zoomSet(
         L.map(fuP),
@@ -3539,10 +3599,10 @@ function renderFishMont() {
         }).join('')
       : '<p class="note">No look-alike pairs.</p>'
   }</section>`;
-  const curE = k => ({...((DRAFT.fish || {}).mont || {})[k]});
+  const curE = k => ({...((DRAFT[TK] || {}).mont || {})[k]});
   const keep = e2 => {
     const y = window.scrollY;
-    DRAFT.fish = fishMontSet(DRAFT.fish, e2[0], e2[1]);
+    DRAFT[TK] = fishMontSet(DRAFT[TK], e2[0], e2[1]);
     saveDraft();
     renderFishMont();
     window.scrollTo(0, y);
@@ -4306,7 +4366,7 @@ const HEAT_WHO_HELP = `<p><b>Player</b> (the list over the map; Everyone by defa
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. Every subject's progress is replayed here from its answers with today's rules (the corals' as the sheet does, the other subjects' in this page, without the sheet's photo memory and confusion numbers it does not compute for them yet), with the cards and mastery exams of the player's saved copy; <b>↻ saved</b> beside a number = what that copy says when it differs. The Elo, the genus sheets table and To review are the corals' only. <b>On the Fish side</b>: families and genera by name (a genus in italics, one the IMR course names otherwise with its IMR name), each opening its family in Tree; <b>Cards and steps</b> adds the genus cards and the steps of the path, also marked on the chart: <b>Circle 2</b> and <b>Circle 3</b> (the first family asked of each: circle 2 opens by itself after the IMR course's families, circle 3 once the player says yes), <b>Genus</b> (the first scientific genus asked); <b>Games</b> also counts Find the X and the family and genus questions (no Custom quiz or Duel tab on the fish side); the family, genus and species sheets are logged as one page, so their card gives the times and the time only. Progress and Learned are the families' bars over every circle, not the fish % players see (which also counts genera and species). <b>Sessions</b>: the player's last ${RECENT.OWN} sessions in this subject, as on Activity (tap one to unfold its summary). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). The times of <b>Cards and steps</b> are the player's own local time: the UTC offset their device logged with their answer nearest in time (hover or tap a time for it); your clock when none is logged. <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered; <b>Heatmap ›</b> opens Analyses › Difficulty › Heatmap for them alone. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. Every subject's progress is replayed here from its answers with today's rules, as the sheet replays it (the fish's with the units, variant photos and circles the sheet's fish replay reads), with the cards and mastery exams of the player's saved copy; <b>↻ saved</b> beside a number = what that copy says when it differs. The Elo, the genus sheets table and To review are the corals' only. <b>On the Fish side</b>: families and genera by name (a genus in italics, one the IMR course names otherwise with its IMR name), each opening its family in Tree; <b>Cards and steps</b> adds the genus cards and the steps of the path, also marked on the chart: <b>Circle 2</b> and <b>Circle 3</b> (the first family asked of each: circle 2 opens by itself after the IMR course's families, circle 3 once the player says yes), <b>Genus</b> (the first scientific genus asked); <b>Games</b> also counts Find the X and the family and genus questions (no Custom quiz or Duel tab on the fish side); the family, genus and species sheets are logged as one page, so their card gives the times and the time only. <b>Progress</b> on the fish side is the fish % the player sees (My progress, the fish leaderboard): the families, the scientific genera and the species, each weighted as the app weighs them; <b>Learned</b>, the families learned out of every circle, as My progress counts them. <b>Sessions</b>: the player's last ${RECENT.OWN} sessions in this subject, as on Activity (tap one to unfold its summary). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). The times of <b>Cards and steps</b> are the player's own local time: the UTC offset their device logged with their answer nearest in time (hover or tap a time for it); your clock when none is logged. <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered; <b>Heatmap ›</b> opens Analyses › Difficulty › Heatmap for them alone. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // A getter: EV_DAYS is declared further down this file.
@@ -4328,7 +4388,7 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet vNEXT): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet vNEXT): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -4339,10 +4399,10 @@ const HELP = {
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>
     <p>The Fish side reads the fish answers: Families and genera (a genus the IMR course names otherwise shows its IMR name), the questions on each rank and, once players type, typed against picked; no Elo column (the sheet sends the corals' levels only) and no comparison page: a name opens its family in Tree.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Typed: mix-ups typed (no choices offered). Before v10: mix-ups logged without their choices.</p>
-    <p>The Fish side reads the fish answers: Look-alike = the families' declared look-alikes, or two genera of one family; the game also starts two families of one key group a little higher, which this page leaves out. A name opens its family in Tree; a photo enlarges; Observations are the iNaturalist observations.</p>`,
+    <p>The Fish side reads the fish answers and starts each pair as the game does: Look-alike = the families' declared look-alikes, two genera of one family or two species of one family; Key group = two families in one group of the identification key (or their genera, or their species), a little above Other. A name opens its family in Tree; a photo enlarges; Observations are the iNaturalist observations.</p>`,
   statsheat: `<p>Every genus against every genus, read live from the answer log as Pairs is. <b>Rows</b>: the genus shown (the photo's); <b>columns</b>: the genus answered. The number in a cell: the times the column was answered for the row when it was among the choices (mix-ups). Its colour: that mix-up rate in this one direction, starting from the pair's start (Look-alike ${Math.round(CONF.LOOK * 100)}%, Family ${Math.round(CONF.FAM * 100)}%, Other ${Math.round(CONF.BASE * 100)}%, worth ${CONF.W} offers) and following the answers, the way Pairs' Score does; the legend gives each colour's range. The quiz's traps read the pair both ways together, never one cell: a pair is a trap from ${Math.round(CONF.TRAP * 100)}% on its two-way score (Pairs' Score, then each player's own answers), so a cell past ${Math.round(CONF.TRAP * 100)}% alone does not make one. An empty cell: never offered together. <b>Hatched</b>: under ${CONF.N} offers, the colour still mostly its start (not enough data yet). <b>Outlined</b>: a declared look-alike (IMR lecture or Coral Finder book); <b>dashed</b>: a look-alike from the data (as on Pairs). The genera sit in blocks of their family (lines between them), the biggest first; inside a block, the genera mixed up most sit side by side, so a run of look-alikes reads as a dark patch along the diagonal. The number and the colour carry the reading on a phone as on a computer; with a mouse, a cell's title adds its offers, rate and score. A cell opens the two genera on the site's compare page. <b>Typed</b>: the mix-ups typed (no choices, so no rate), apart. <b>Not enough data yet</b> (a line over the map, rule A5): while most cells offered are under ${CONF.N} offers, with about the answers with choices it would take to bring them there (at the offers an answer has brought a cell so far, every new offer on one of them). Difficulty › Mix-ups is another reading: the analysis report's fit every 1000 answers, only the genera mixed up, grouped by their mix-ups rather than their family.</p>${HEAT_WHO_HELP}`,
   // The heatmap of a subject with units at several ranks (the fish, the sea slugs): its ranks, its blocks and its starts in its words.
-  fishheat: `<p>Every unit against every unit, one map per rank the questions asked (<b>Families</b>, <b>Genera</b>, later <b>Species</b>: the switch shows a rank once one of its questions is logged; a question's choices are of its rank, so no pair crosses two ranks), read live from the answer log as Pairs is. <b>Rows</b>: the unit shown (the photo's); <b>columns</b>: the unit answered. The number in a cell: the times the column was answered for the row when it was among the choices (mix-ups). Its colour: that mix-up rate in this one direction, starting from the pair's start (Look-alike ${Math.round(CONF.LOOK * 100)}%: two families declared look-alikes, or two genera of one family, as the game declares them; Other ${Math.round(CONF.BASE * 100)}%; worth ${CONF.W} offers) and following the answers, the way Pairs' Score does; the legend gives each colour's range. The quiz's traps read the pair both ways together, never one cell. An empty cell: never offered together. <b>Hatched</b>: under ${CONF.N} offers, the colour still mostly its start (not enough data yet). <b>Outlined</b>: a declared look-alike; <b>dashed</b>: a look-alike from the data (as on Pairs). <b>Blocks</b> (lines between them), the biggest first: the families in their group of the identification key (its number and title), where there is one; the genera in their family, a species in its genus. Every unit the game plays is on the map, answered or not (its families, or its genera where it plays genera); the other ranks once met. Where the families sit in taxonomic groups (the Learn page's headings), the groups in a column of their own beside the families', the biggest first. Inside a block, the units mixed up most sit side by side. <b>Not enough data yet</b> (a line over the map, rule A5): while most cells offered are under ${CONF.N} offers, with about the answers with choices at this rank it would take (at the offers an answer has brought a cell so far); with no answer yet, or none with choices that counts yet (a player's count once they are ${TRUST.N} or more and clearly above chance), it says so. With a mouse, a cell's title adds its offers, rate and score. <b>Typed</b>: the mix-ups typed (no choices, so no rate), apart.</p>${HEAT_WHO_HELP}`,
+  fishheat: `<p>Every unit against every unit, one map per rank the questions asked (<b>Families</b>, <b>Genera</b>, later <b>Species</b>: the switch shows a rank once one of its questions is logged; a question's choices are of its rank, so no pair crosses two ranks), read live from the answer log as Pairs is. <b>Rows</b>: the unit shown (the photo's); <b>columns</b>: the unit answered. The number in a cell: the times the column was answered for the row when it was among the choices (mix-ups). Its colour: that mix-up rate in this one direction, starting from the pair's start (Look-alike ${Math.round(CONF.LOOK * 100)}%: two families declared look-alikes, two genera of one family or two species of one family, as the game declares them; Key group ${Math.round(CONF.FORM * 100)}%: two units whose families share a group of the identification key; Other ${Math.round(CONF.BASE * 100)}%; worth ${CONF.W} offers) and following the answers, the way Pairs' Score does; the legend gives each colour's range. The quiz's traps read the pair both ways together, never one cell. An empty cell: never offered together. <b>Hatched</b>: under ${CONF.N} offers, the colour still mostly its start (not enough data yet). <b>Outlined</b>: a declared look-alike; <b>dashed</b>: a look-alike from the data (as on Pairs). <b>Blocks</b> (lines between them), the biggest first: the families in their group of the identification key (its number and title), where there is one; the genera in their family, a species in its genus. Every unit the game plays is on the map, answered or not (its families, or its genera where it plays genera); the other ranks once met. Where the families sit in taxonomic groups (the Learn page's headings), the groups in a column of their own beside the families', the biggest first. Inside a block, the units mixed up most sit side by side. <b>Not enough data yet</b> (a line over the map, rule A5): while most cells offered are under ${CONF.N} offers, with about the answers with choices at this rank it would take (at the offers an answer has brought a cell so far); with no answer yet, or none with choices that counts yet (a player's count once they are ${TRUST.N} or more and clearly above chance), it says so. With a mouse, a cell's title adds its offers, rate and score. <b>Typed</b>: the mix-ups typed (no choices, so no rate), apart.</p>${HEAT_WHO_HELP}`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected. <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
     <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from; <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
@@ -5331,51 +5391,44 @@ function bindAlerts() {
 // fish-photos.json and fish-game.json: the curated photos on R2, admin plan PR 7) are read once, when To do first shows,
 // into FISHA (reports.js repReg: its units, its photos each with the unit showing it, its slate as the app's UNITS slate,
 // a report's unit to its family's page and its photos for Attach, its IMR sub-entries' names).
-let FISHP_ADM = null;
 // Subject S's files (SUBJECTS admin files) read into its registry (reports.js repReg); null when a file it names is missing.
 const unitRead = S => {
   const W = (S && S.admin.files) || {},
     k = ['f', 'ph', 'gm'].filter(x => W[x]);
   return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
     const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
-    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
+    const R = !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
+    // the files as read, for the units of the sheet's replay (unitsOf, unitRpl)
+    if (R) R.raw = J;
+    return R;
   });
 };
-function fishAdmin() {
-  return (FISHP_ADM =
-    FISHP_ADM ||
-    unitRead(FISHS)
-      .then(R => {
-        if (!R) return;
-        FISHA = R;
-        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
-      })
-      .catch(() => {}));
-}
-// The subject whose photos and units fishAdmin reads (its own part of curation.json, sheets at several ranks), and a
-// family's page (Photos › Tree) under its prefix (or under another subject S's).
-const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
+// The tree subject in force's (FISHS: FISHA is its registry in UNITA).
+const fishAdmin = () => unitAdmin(FISHS);
+// A family's page (Photos › Tree) under the prefix of the tree subject in force (FISHS, above), or of another subject S.
 const famHref = (id, S = FISHS || ASUBJ) => '#' + S.hash + TREE + '/' + encodeURIComponent(id);
-// Every other subject with sheets at several ranks (Codex review #987: the reports of a third subject), read the same way
-// once one of its reports or flags shows (unitAdmin), its registry by subject id (UNITA): its reports' photos, with their
-// credits and the identification they carry, keep their source (a remote original stays remote); its units' names; Attach.
-// Its tiles carry no tool: fishTile's act on FISHS's part of curation.json.
+// Every subject with sheets at several ranks (Codex review #987: the reports of a third subject), read once one of its
+// reports or flags shows (unitAdmin), its registry by subject id (UNITA): its reports' photos, with their credits and the
+// identification they carry, keep their source (a remote original stays remote); its units' names; Attach. The tree
+// subject in force's is FISHA too; its tiles carry the photo tools (fishRepTile), another's none (unitTile): fishTile's
+// act on the part of the subject in force.
 const UNITA = {},
   UNITP = {};
 function unitAdmin(S) {
-  if (!S || S === FISHS) return fishAdmin();
+  if (!S) return Promise.resolve();
   return (UNITP[S.id] =
     UNITP[S.id] ||
     unitRead(S)
       .then(R => {
         if (!R) return;
         UNITA[S.id] = R;
+        if (S === FISHS) FISHA = R;
         if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       })
       .catch(() => {}));
 }
-// Subject S's registry once read (FISHA for FISHS), else null.
-const unitRegOf = S => (!S ? null : S === FISHS ? FISHA : UNITA[S.id] || null);
+// Subject S's registry once read, else null.
+const unitRegOf = S => (S && UNITA[S.id]) || null;
 // A photo of another subject unitAdmin read (not FISHS's: fishRepTile): {S, p}, else null.
 const unitPhOf = f => {
   const S = SUBJECTS.find(x => x !== FISHS && UNITA[x.id] && UNITA[x.id].ph[f]);
@@ -5392,7 +5445,8 @@ const repUnit = (x, bare, S0) => {
   const R = unitRegOf(S),
     fam = R && hasPage(S, TREE) && R.fam[x],
     nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
-  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
+  // its family's page, or its own node when the subject's units are narrower than the tree's families (a sea-slug genus)
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(unitRankOf(S) === S.rank ? fam : x, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there (Q309), without the drag handle, its genus first; bound by bindTiles,
@@ -5423,7 +5477,7 @@ function fishRepTile(fp, o = {}) {
   }
   // Its species: the one it is in play for (a photo moved with Not this and added under its corrected species, maybe in
   // another family), else its record's; its family: that species' (Codex review #823), else the record's.
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     sid = F.add && F.add[f] && fishOn(F, f, F.add[f]) ? F.add[f] : fp.sp,
     fam = fishFamOf(sid) || fp.entry,
     lead = lead0(fam),
@@ -5457,7 +5511,8 @@ function repUnitPhotos(u, R) {
   const fam = R.fam[u],
     L = (fam && R.gen[fam] && R.gen[fam].views.wide) || [],
     sid = R.spid[u],
-    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => R.spg[p.sp] === u) : L;
+    // a genus: its species' photos and its own genus-level ones (gl, sp its id: core.js fishGlOf)
+    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => R.spg[p.sp] === u || fishGlOf(p) === u) : L;
   return M.length ? M : L;
 }
 function repPicker(c, S) {
@@ -5679,8 +5734,13 @@ function renderTriage() {
       // the page it was sent from, a photo to attach when it has none.
       u = !gone && !arch && c.who && USERS && (USERS.users || []).find(x => x.name.toLowerCase() === c.who.toLowerCase()),
       // its family's page when its subject has the family pages (Photos › Tree), its genus page for a coral
+      // (its family's page; the unit's own node when its units are narrower than the tree's families: a sea-slug genus)
       fam = S.sheets && hasPage(S, TREE) && (unitRegOf(S) || {fam: {}}).fam[c.unit],
-      unitHref = fam ? famHref(fam, S) : !S.sheets && c.unit && DATA.gen[c.unit] ? genusHref(c.unit) : '',
+      unitHref = fam
+        ? famHref(unitRankOf(S) === S.rank ? fam : c.unit, S)
+        : !S.sheets && c.unit && DATA.gen[c.unit]
+          ? genusHref(c.unit)
+          : '',
       att = !c.photos.length && REP_ATT[c.id],
       shown = c.photos.length ? c.photos : att ? [att] : [],
       acts = ['done', 'wait', 'drop', ...(st === 'open' ? [] : ['open'])].map(k => REP_STATUS.find(x => x[0] === k)),
@@ -6401,7 +6461,8 @@ const aIdx = () => MEMO.aidx || (MEMO.aidx = autoIdx(DRAFT)),
     return x && !x.d.check && !x.d.undone ? x.d : null;
   },
   auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {}),
-  fiChanged = () => !same(fishOut(DRAFT.fish), fishOut(SAVED.fish));
+  // the tree subjects whose part changed, in their words ("fish curation", "sea slug curation")
+  fiChanged = () => TREES.filter(S => !same(fishOut(DRAFT[S.admin.cur]), fishOut(SAVED[S.admin.cur]))).map(S => `${S.card} curation`);
 const localDay = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -6489,76 +6550,112 @@ function autoRun() {
   return R;
 }
 // The fish auto-sort (admin plan PR 4; autosort.js fishRun): the same path for the fish candidates (fish-cand.json,
-// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT.fish, one Undo step, sent by Publish. Runs
+// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs
 // only when the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out"
 // (Pierre's Not this) and never touches a photo he decided. Its keep agreement (fishCompare, autoState) turns it off.
-let FISHC = null; // {cand, species} once loaded
-// The fish candidates and species, fetched once (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, or an
-// Undo needs a candidate's species).
-// withGame (the fish pages): also the photos the game plays (fish-game.json, 3 MB), so that counts and lists show every photo
-// in play whatever its route (Pierre's adds, the sure candidates and the reference photos that enter by themselves),
-// not curation.json's adds alone. Not fetched for the auto-sort's own use of FISHC.
-let FISHL = null, // the one initial load, shared by every caller (the auto-sort's and a page's)
-  FISHG = null;
-async function fishLoad(withGame) {
-  const get = u =>
-    fetch(u, {cache: 'no-cache'})
-      .then(r => (r.ok ? r.json() : {}))
-      .catch(() => ({}));
-  if (!FISHC)
-    await (FISHL =
-      FISHL ||
-      Promise.all([get('fish-cand.json'), get('fish.json')]).then(([C, F]) => {
-        FISHC = {
-          units: fishUnits(F),
-          // fish.json as built: the base of the content editor's edits (admin-content.js, the node pages' Sheet box).
+let FISHC = null; // the tree subject in force's family pages' data, once loaded (TLOAD's, by subject)
+// The candidates and units of tree subject S (SUBJECTS admin files: its tree f and its candidates cand), fetched once
+// (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, an Undo needs a candidate's species, or a page shows
+// them). withGame (the family pages): also the photos the game plays (its files gm: fish-game.json, 3 MB), so that counts
+// and lists show every photo in play whatever its route (Pierre's adds, the sure candidates and the reference photos that
+// enter by themselves), not curation.json's adds alone. Not fetched for the auto-sort's own use. Each subject's loads and
+// data are its own (TLOAD: {C its data, L its first load, G its game load}), so a load still on its way when the subject
+// on screen changes lands in its own subject; FISHC is the one in force's (treeIn).
+const TLOAD = {};
+async function fishLoad(withGame, S = FISHS) {
+  if (!S) return null;
+  const T = (TLOAD[S.id] = TLOAD[S.id] || {}),
+    W = S.admin.files || {},
+    get = u =>
+      fetch(u, {cache: 'no-cache'})
+        .then(r => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+  if (!T.C)
+    await (T.L =
+      T.L ||
+      Promise.all([get(W.cand), get(W.f)]).then(([C, F]) => {
+        // Its candidate lists by the unit they are candidates of (tools/fetch_fish.py keys them by species id;
+        // tools/fetch_seaslugs.py by iNaturalist taxon id, genus name for a genus-level list, an informal species' key):
+        // each key read through the tree's own ids (a species' inat, a genus's name, an id's part after its prefix).
+        const unit = {};
+        (F.species || []).forEach(x => {
+          unit[x.id] = x.id;
+          if (x.inat != null) unit[String(x.inat)] = x.id;
+          const m = /^[a-z]+:(.+)$/.exec(x.id);
+          if (m) unit[m[1]] = unit[m[1]] || x.id;
+        });
+        (F.genera || []).forEach(g => (unit[g.name] = unit[g.name] || g.id));
+        const cand = Object.fromEntries(Object.entries(C.cand || {}).map(([k, L]) => [unit[k] || k, L])),
+          // its families' groups: the identification key's (fish.json key), else the taxonomic groups its tree sits in
+          // (seaslug.json taxa, each family's tgroup), in their order
+          G = (F.key || F.taxa || {}).groups || [],
+          tg = Object.fromEntries((F.families || []).filter(f => f.tgroup != null).map(f => [f.id, f.tgroup]));
+        T.C = {
+          units: fishUnits(F)
+            .map(u => (u.group == null && u.id in tg ? {...u, group: tg[u.id]} : u))
+            .sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group)),
+          // the tree file as built: the base of the content editor's edits (admin-content.js, the node pages' Sheet box).
           raw: F,
           // The instance's centre (fish.json centre: tools/instance.json), named in Cover proposals' why line (admin-covers.js).
           centre: F.centre || null,
-          groups: Object.fromEntries(((F.key || {}).groups || []).map(g => [g.n, g.title])),
-          cand: C.cand || {},
+          groups: Object.fromEntries(G.map(g => [g.n, g.title])),
+          cand,
           // {id: species record}, a wink family's species marked wink (autosort.js fishSpecies: its own target, FISHT.wink).
           species: fishSpecies(F),
+          // {id: genus record}: a genus-level photo's unit (gl, sp its genus id), named by its genus (fuName).
+          genera: Object.fromEntries((F.genera || []).map(g => [g.id, g])),
           // The reference taxonomy (WoRMS: {AphiaID: {name, rank, parent}}), the Tree's WoRMS view (fuWormsOf).
           ref: F.ref || {},
           // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
           entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
           game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
-          byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
+          byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
         };
+        if (S === FISHS) FISHC = T.C;
       }));
-  if (withGame && !FISHC.plays)
-    await (FISHG =
-      FISHG ||
-      get('fish-game.json').then(G0 => {
+  if (withGame && !T.C.plays)
+    await (T.G =
+      T.G ||
+      get(W.gm).then(G0 => {
         const G = fishGameRead(G0), // its records whole (core.js: the file's short form)
           L = Object.values((G && G.photos) || {}).flat();
         // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
-        FISHC.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
-        FISHC.plays = L;
+        T.C.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
+        T.C.plays = L;
       }));
-  return FISHC;
+  return T.C;
+}
+// Tree subject S in force (readHash: the subject on screen, when it is one; rule S1, never named): its family pages' data
+// (FISHC), its registry (FISHA), its part's key (TK); the memos of the page drawn from the other's are dropped.
+function treeIn(S) {
+  if (!S || S === FISHS || !TREES.includes(S)) return;
+  FISHS = S;
+  TK = S.admin.cur;
+  FISHC = (TLOAD[S.id] || {}).C || null;
+  FISHA = UNITA[S.id] || null;
+  FUD = null;
+  FT_LOAD = null;
 }
 async function fishAutoRun() {
-  if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;
-  await fishLoad();
-  const keepOn = autoState(fishCompare(DRAFT.fish)).keep.on,
-    {F, R} = fishRun(FISHC.cand, SUG.fish, FISHC.species, DRAFT.fish, localDay(), keepOn);
-  if (F === DRAFT.fish) return R;
-  DRAFT.fish = F;
+  if (!TOKEN || !DRAFT || !ASORT || !Object.keys((SUG && SUG[AK]) || {}).length) return null;
+  const C = await fishLoad(false, ASORT);
+  const keepOn = autoState(fishCompare(DRAFT[AK])).keep.on,
+    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn);
+  if (F === DRAFT[AK]) return R;
+  DRAFT[AK] = F;
   saveDraft();
   render();
   return R;
 }
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
 async function fishAutoUndo(f) {
-  const p = (await fishLoad()).byF[f];
+  const p = ASORT && (await fishLoad(false, ASORT)).byF[f];
   // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to Pierre.
   if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
-  const F = fishUndo(DRAFT.fish, f, p.sid);
-  if (F === DRAFT.fish) return;
-  DRAFT.fish = F;
+  const F = fishUndo(DRAFT[AK], f, p.sid);
+  if (F === DRAFT[AK]) return;
+  DRAFT[AK] = F;
   saveDraft();
   render();
   toast('Fish auto decision undone: the photo waits for you as a candidate.');
@@ -7429,7 +7526,8 @@ const output = () => {
       if (Object.keys(DRAFT.auto[d] || {}).length) auto[d] = sorted(DRAFT.auto[d]);
     });
   const retest = sorted(DRAFT.retest);
-  const fish = fishOut(DRAFT.fish);
+  // each tree subject's part (SUBJECTS admin.cur: "fish", "seaslug"), as published (fishOut)
+  const trees = TREES.map(S => [S.admin.cur, fishOut(DRAFT[S.admin.cur])]).filter(([, v]) => Object.keys(v).length);
   // The content editor's edits of the subject whose part is the top level (core.js contentOut: sorted, no empty map).
   const content = contentOut(DRAFT.content);
   // Pierre's state of the points to handle (To do › Points): by point id, each point's fields sorted.
@@ -7459,7 +7557,7 @@ const output = () => {
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
-    ...(Object.keys(fish).length ? {fish} : {}),
+    ...Object.fromEntries(trees),
     ...(Object.keys(content).length ? {content} : {}),
     ...(Object.keys(points).length ? {points} : {}),
     ...(Object.keys(reps).length ? {reps} : {})
@@ -7512,6 +7610,30 @@ const author = async () =>
 // touched with what changed in each.
 const nDiff = (a, b) =>
   [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])].filter(k => !same((a || {})[k], (b || {})[k])).length;
+// Tree subject S's part in the publish summary (pubSummary), in its words (SUBJECTS card: "fish", "sea slug"): the photos
+// in play, set aside or marked Not this; each rank of its tree apart (fuRanks, fuRankOf: from SUBJECTS sheets), its unit's
+// own choices (Photos › Tree: cover, featured, Validated; its part's genera), then the covers of the narrower ranks ("fish
+// family", "fish genus cover", "fish species cover"), picked on the same page (the same map, under the genus's 'g:' id or
+// the species' id); its flags, rotations, look-alike pairs (Photos › Look-alikes: its part's mont) and auto-sort decisions.
+const treeSummary = S => {
+  const k = S.admin.cur,
+    D = DRAFT[k] || {},
+    V = SAVED[k] || {},
+    w = S.card;
+  return [
+    [nDiff(D.add, V.add), `${w} photo in play`, `${w} photos in play`],
+    [nDiff(D.seen, V.seen) + nDiff(D.exclude, V.exclude), `${w} photo set aside`, `${w} photos set aside`],
+    [nDiff(D.out, V.out), `${w} photo not this species`, `${w} photos not this species`],
+    ...fuRanks(S).map((r, i) => {
+      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([x]) => fuRankOf(S, x) === r));
+      return [nDiff(pick(D.genera), pick(V.genera)), i ? `${w} ${r} cover` : `${w} ${r}`, i ? '' : `${w} ${r.replace(/y$/, 'ie')}s`];
+    }),
+    [nDiff(D.flag, V.flag), `${w} triage flag`],
+    [nDiff(D.rot, V.rot), `${w} photo rotation`],
+    [nDiff(D.mont, V.mont), `${w} look-alike pair`],
+    [nDiff(...[D, V].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), `${w} auto-sort decision`]
+  ];
+};
 function pubSummary() {
   const W = {
     feat: 'featured',
@@ -7540,30 +7662,10 @@ function pubSummary() {
     // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
     [nDiff(DRAFT.retest, SAVED.retest), 'retest'],
-    // Fish (curation.json "fish"): the photos in play, set aside or marked Not this, and the fish auto-sort's decisions.
-    [nDiff((DRAFT.fish || {}).add, (SAVED.fish || {}).add), 'fish photo in play'],
-    [
-      nDiff((DRAFT.fish || {}).seen, (SAVED.fish || {}).seen) + nDiff((DRAFT.fish || {}).exclude, (SAVED.fish || {}).exclude),
-      'fish photo set aside'
-    ],
-    [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
-    // A fish family's own choices (Photos › Tree: cover, featured, Validated; curation.json fish genera), and the
-    // genus and species covers picked on the same page (the same map, under the genus's 'g:' id or the species' id).
-    // Each rank of the subject's tree apart (fuRanks, fuRankOf: from SUBJECTS sheets): its unit's own choices, then the
-    // covers of the narrower ranks ("fish family", "fish genus cover", "fish species cover").
-    ...(FISHS ? fuRanks(FISHS) : []).map((r, i) => {
-      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([k]) => fuRankOf(FISHS, k) === r));
-      return [
-        nDiff(pick((DRAFT.fish || {}).genera), pick((SAVED.fish || {}).genera)),
-        i ? `fish ${r} cover` : `fish ${r}`,
-        i ? '' : `fish ${r.replace(/y$/, 'ie')}s`
-      ];
-    }),
-    [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
-    [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],
-    // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).
-    [nDiff((DRAFT.fish || {}).mont, (SAVED.fish || {}).mont), 'fish look-alike pair'],
-    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
+    // Each tree subject's part (curation.json "fish", "seaslug": SUBJECTS admin.cur), in its words (SUBJECTS card): the
+    // photos in play, set aside or marked Not this, its choices per rank, its flags, rotations, look-alike pairs, and the
+    // auto-sort's decisions.
+    ...TREES.flatMap(treeSummary),
     // The light re-judge's proposals answered (Photo review › Light proposals, admin-light.js): accepted, kept.
     ...(typeof lightSummary === 'function' ? lightSummary() : []),
     // The cover proposals answered Keep mine (Photo review › Cover proposals, admin-covers.js); an Accept is a cover above.
@@ -7611,7 +7713,7 @@ async function save() {
     pt = ptChanged(),
     rp = rpChanged(),
     co = coChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp || co) || !TOKEN) return;
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi.length || pt || rp || co) || !TOKEN) return;
   // One confirmation, saying so when the structure changes (stChanged): never a second dialog.
   if (!confirm(`Publish to the public site?\n\n${stChanged() ? ST_PUBLISH + '\n\n' : ''}${pubSummary()}`)) return;
   const b = $('save');
@@ -7628,7 +7730,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(co ? ['sheet edits'] : []), ...(stChanged() ? ['circles and look-alike pairs'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...fi, ...(co ? ['sheet edits'] : []), ...(stChanged() ? ['circles and look-alike pairs'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -8174,7 +8276,7 @@ function renderFishDiff() {
     fishAdmin().then(() => here() && FISHA && render());
     return;
   }
-  const FD = DRAFT.fish || {},
+  const FD = DRAFT[TK] || {},
     done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
     PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
     L = diffByAnswers(PH, SF.min, DIFF_ORDER);
@@ -8424,8 +8526,11 @@ function pstatsFish(S, here) {
     F = D.F,
     sp = FISHC.species,
     C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
-    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out)
-    play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => (D.play[s] || []).map(p => ({p, u})))),
+    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out, and its
+    // genera's genus-level photos, gl)
+    play = FISHC.units.flatMap(u =>
+      [...u.species.filter(s => sp[s] && !sp[s].out), ...u.genera.map(g => g.id)].flatMap(s => (D.play[s] || []).map(p => ({p, u})))
+    ),
     PA = answersBy(photoAnswers(rowsOf(S)), fishPid),
     ans = x => PA[fishPid(x.p.f)];
   // Every photo the fish data hold, by state, each counted once (by fishPid), in play first; then, the first that applies:
@@ -8450,15 +8555,22 @@ function pstatsFish(S, here) {
   ['exclude', 'out', 'seen', 'add'].forEach(k => Object.keys(F[k] || {}).forEach(f => one(f, !!FISHC.byF[f])));
   Object.values(FISHC.cand).forEach(L => (L || []).forEach(p => one(p.f, true)));
   (FISHC.plays || []).forEach(p => p && p.f && one(p.f, false));
-  const famRows = C.fam,
+  // Its units' rows: the families (fishCov's), or its genera when its game units are its genera (SUBJECTS unitRank: the
+  // sea slugs), each photo then counted at its genus (its species', or its own for a genus-level photo, gl: fishGlOf),
+  // its circle its genus's.
+  const byGen = unitRankOf(S) === 'genus' && S.rank !== 'genus',
+    famRows = byGen ? C.gen.map(r => ({...r, circle: (FISHC.genera[r.id] || {}).circle})) : C.fam,
+    unitOfX = x => (byGen ? fishGlOf(x.p) || (sp[x.p.sp] || {}).genus : x.u.id),
     by = Object.fromEntries(famRows.map(r => [r.id, {r, s: {}}])),
     far = Object.fromEntries(famRows.map(r => [r.id, {k: 0, a: 0, f: 0}])),
     fam = r => `<a class="adm-gen" href="${esc(fuHref(r.id))}">${esc(r.name)}</a>`,
-    circles = (S.structure && S.structure.circle && S.structure.circle.of) || [];
+    // the circles of its structure, else those its units carry
+    circles =
+      (S.structure && S.structure.circle && S.structure.circle.of) || [...new Set(famRows.map(r => r.circle).filter(Boolean))].sort();
   play.forEach(x => {
     const o = origin(x.p),
-      b = by[x.u.id],
-      c = far[x.u.id],
+      b = by[unitOfX(x)],
+      c = far[unitOfX(x)],
       a = ans(x);
     if (b) b.s[o] = (b.s[o] || 0) + 1;
     if (!c) return;
@@ -8471,9 +8583,9 @@ function pstatsFish(S, here) {
     many: S.many,
     obs: S.admin.obs || 'Observations',
     units: famRows.map(r => ({n: r.name, k: r.n, obs: r.obs, html: fam(r)})),
-    // the ranks under the family, each one's photos in play (fishCov's genus and species rows)
+    // the other ranks, each one's photos in play (fishCov's family, genus and species rows)
     spread: [
-      ['Photos per genus', distOf(C.gen.map(r => r.n))],
+      byGen ? ['Photos per family', distOf(C.fam.map(r => r.n))] : ['Photos per genus', distOf(C.gen.map(r => r.n))],
       ['Photos per species', distOf(C.sp.map(r => r.n))]
     ],
     kpis: [['Candidates', st.wait]],
@@ -9512,21 +9624,58 @@ const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
 const savedFor = (name, S) => (x => (!x || x.err ? x : x.by[S.id]))(savedOf(name));
 // A subject's units for a replay in the admin (Pierre, 2026-11-06: follow every subject's progress on the Journey): the
 // replayed subject's from data.json; another's from its own registry (unitRegOf: fishAdmin for the fish, unitAdmin for
-// another tree subject; fishGen, its circles as the app's slate: the sea slugs' genera), once read; null before. stats:
-// the sheet's photo numbers the replay reads (?stats=1, the replayed subject's only for now: another subject replays
-// without memory offsets, pooled confusions or format offsets).
-let UNITM = {d: null, by: {}};
+// another tree subject; fishGen, its circles as the app's slate: the sea slugs' genera), once read; null before. A
+// subject the sheet replays from its own answers (SUBJECTS replayed) replays with the sheet's units, variant table, slate
+// and tree (unitRpl, from its registry's files under the published curation, SAVED), so its replayed progress and %
+// are the ones its players' apps adopt and show (unitPct). stats: the sheet's photo numbers the replay reads (?stats=1,
+// the replayed subject's only for now: another subject replays without memory offsets, pooled confusions or format
+// offsets).
+let UNITM = {d: null, c: null, by: {}};
 function unitsOf(S) {
-  if (UNITM.d !== DATA) UNITM = {d: DATA, by: {}};
+  if (UNITM.d !== DATA || UNITM.c !== SAVED) UNITM = {d: DATA, c: SAVED, by: {}};
   const R = S.replay ? null : unitRegOf(S),
     o = UNITM.by[S.id];
   if (!o || o.R !== R)
     UNITM.by[S.id] = {
       R,
-      v: S.replay ? DATA && {gen: DATA.gen, slate: slateOf(DATA)} : R && R.slate ? {gen: R.gen, slate: R.slate} : null
+      v: S.replay
+        ? DATA && {gen: DATA.gen, slate: slateOf(DATA)}
+        : R && R.slate
+          ? {gen: R.gen, slate: R.slate, ...((R.raw && unitRpl(S, R.raw.f, R.raw.ph, R.raw.gm, SAVED)) || {})}
+          : null
     };
   return UNITM.by[S.id].v;
 }
+// replay units: begin
+// The units subject S's replay reads in the admin, as the sync sheet's replay of S reads them (Code.gs subjRpl_,
+// rplMake_), so a player's replayed progress here is the one their app adopts (sync.js replayAdoptS): for a subject the
+// sheet replays from its own answers (SUBJECTS replayed: the fish, the sea slugs), its file f
+// with the structure and content in force laid over it (core.js contentApply under cur, the published curation.json),
+// then rgen, the replay's units (replayed gen: the fish's families, scientific genera and species units, fishReplayGen;
+// gen stays the registry's records, their circles and names);
+// vars, its variant table over its pool files [f, ph, gm, cur] when it has one (replayed vars: the learned marks the log
+// takes away, Q391 b); slate, its units as the app's UNITS slate under that structure (the % and Learned of a subject with
+// no tree, the units met); tree, for a subject with a global score (SUBJECTS score), the tree its leaderboard ranks by
+// (replayed tree: fishBoardTree, the app's own UNITS tree, tests/structure.test.js). null for any other subject.
+function unitRpl(S, f, ph, gm, cur) {
+  const Y = S && !S.replay && S.replayed;
+  if (!f || !Y || typeof Y.gen !== 'function') return null;
+  const A = contentApply(S, f, cur || {}),
+    X = fishGen(A, {}, undefined, unitRankOf(S)),
+    V = typeof Y.vars === 'function' ? Y.vars(A, [f, ph, gm, cur], S) : null;
+  return {
+    rgen: Y.gen(A),
+    slate: [...X.c1, ...X.c2, ...X.c3],
+    tree: S.score && typeof Y.tree === 'function' ? Y.tree(A) || null : null,
+    vars: V && Object.keys(V).length ? V : null
+  };
+}
+// A progress record P's headline % in subject S as the player's app shows it (model.js headPct, sync.js headOf) and its
+// leaderboard ranks by it (Code.gs board_): its global score over the tree (core.js treeScore with SUBJECTS score: the
+// fish %, every family, genus and species unit weighted) when M (unitsOf) has one, else the mean of its units' bars over
+// the slate (core.js pctOf: the corals, a subject with no tree).
+const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.slate));
+// replay units: end
 // The registry a page of subject S waits for before its units are read (unitsOf): its own for a tree subject, else the
 // fish's, as before.
 const unitWait = S => (S && S.sheets ? S : FISHS);
@@ -9562,17 +9711,20 @@ function progOf(u, full, S = replayS()) {
   });
   const reset = !X.err && X.reset ? Date.parse(X.reset) : 0,
     rep = replayProgress(BY[u.id] || [], {
-      gen: M.gen,
+      gen: M.rgen || M.gen, // the sheet's replay units (unitRpl), else the registry's
       ...statsFor(S),
+      ...(M.vars ? {vars: M.vars} : {}), // the variant table, as the sheet's replay (Code.gs rplMake_)
       since: reset ? {[u.id]: reset} : {},
       starts: X.err ? {} : {[u.id]: X.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],
-    L = M.slate, // the slate as the app counts it (core.js slateOf; another subject's circles): the % and Learned are over it
+    // the slate as the app counts it (core.js slateOf; another subject's circles): Learned is over it, and the % too
+    // for a subject with no global score (unitPct; the fish's over its tree, as players see it)
+    L = M.slate,
     G = replayedOf(rep, X.err ? {} : X.P),
-    v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: X.err};
+    v = {G, pct: unitPct(S, M, G), learned: learnedOf(G, L), total: L.length, err: X.err};
   if (!u.anon && !X.err) {
     // The sheet's Learned column is the replayed subject's (RAs); another's, from its copy.
-    v.saved = {pct: pctOf(X.P, L), learned: S.replay ? u.learned : learnedOf(X.P, L)};
+    v.saved = {pct: unitPct(S, M, X.P), learned: S.replay ? u.learned : learnedOf(X.P, L)};
     v.stale = v.saved.pct !== v.pct || v.saved.learned !== v.learned;
   }
   PROGM.set(key, {ans: ANS, S: X, M, mem: SMEM, learned: u.learned, v});
@@ -9582,6 +9734,23 @@ function progOf(u, full, S = replayS()) {
 const staleTip =
   'Replayed from every answer in the log with the current rules. The copy saved in the sheet says otherwise: the player has not opened the app since.';
 const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="adm-saved" title="${staleTip}">↻ saved ${sv}</small>`);
+// A player's replayed Progress and Learned in one subject, in their bar on Players (progOf): the replayed subject's from
+// the list (the sheet's rp); every other subject they answered in that the admin replays (unitsOf: the fish, as their app
+// shows them, unitPct) from their saved copy, read when the row opens (one sheet call: never for the whole list).
+const UPWAIT = new Set(); // the subjects whose units a bar is waiting for (read once, the list drawn again then)
+function uprogHtml(u, S) {
+  if (S.replay ? !u.pg : !sxOf(u, S).n || !replayOn()) return '';
+  if (!S.replay && !unitsOf(S) && !UPWAIT.has(S.id)) {
+    UPWAIT.add(S.id);
+    unitAdmin(unitWait(S)).then(() => cur === 'players/list' && render());
+  }
+  const pg = S.replay ? u.pg : unitsOf(S) && progOf(u, false, S);
+  return `<span class="adm-uprog">${esc(S.name)}: ${
+    !pg
+      ? '…'
+      : `Progress ${withSaved(pg.pct + '%', pg.saved && pg.saved.pct + '%')} · Learned ${withSaved(`${pg.learned}`, pg.saved && `${pg.saved.learned}`)}${pg.err ? ` <small title="Their saved copy could not be read (${esc(pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}`
+  }</span>`;
+}
 // Players page (Pierre, 2026-11-01: "one page, sort the players by name or by score, and act on them there"): the Users
 // list (names, from the token-guarded sheet call, v11) joined with the anonymous answer stats (?answers=1, ?stats=1) by
 // each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
@@ -9855,7 +10024,7 @@ function renderUsers() {
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
   const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
-      ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
+      ${SUBJECTS.map(S => uprogHtml(u, S)).join('')}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
       ${u.id ? `<span>${isExcl(u.id) ? 'Out of the statistics' : 'In the statistics'} ${exclBtn(u.id)}</span>` : ''}
       ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
@@ -10478,23 +10647,38 @@ function logConds(R, S) {
     })
     .filter(c => c[1]);
 }
-// A pair's start on Pairs (core.js CONF, as model.js pooledConf starts it): [its name, its prior rate] from the two units'
-// records {look, fam}: a declared look-alike, the same family, else neither.
+// A pair's start on Pairs (core.js CONF, as model.js confPrior starts it): [its name, its prior rate] from the two units'
+// records {look, fam, forms}: a declared look-alike, the same family, a shared group, else neither. forms: a tree subject's
+// group of its identification key (core.js fishGen forms, its units' "growth form" in the game: a family's, its genera's
+// and species'); the coral records carry none, so the corals' shared growth form (app.js imrFormsOf) is not read here.
 const pairPrior = (a, b, ra, rb) =>
   (ra.look || []).includes(b) || (rb.look || []).includes(a)
     ? ['Look-alike', CONF.LOOK]
     : ra.fam && ra.fam === rb.fam
       ? ['Family', CONF.FAM]
-      : ['Other', CONF.BASE];
+      : (ra.forms || []).some(f => (rb.forms || []).includes(f))
+        ? ['Key group', CONF.FORM]
+        : ['Other', CONF.BASE];
 // A unit's record for pairPrior from another subject's data as fishAdmin reads them (FA: FISHA; gp: its genus prefix,
-// SUBJECTS sheets genus): a family its declared look-alikes (core.js fishGen look); a genus every other genus of its
-// family, as the game declares them (app.js fishGenera look), so two genera of one family start as look-alikes.
+// SUBJECTS sheets genus), as the game builds its units (fish admin at parity: Pairs' Starts as is the game's start):
+// a family (a unit of FA.gen) its own record (core.js fishGen: its declared look-alikes, its line, its key group); a genus
+// every other genus of its family, as the game declares them (app.js fishGenera look), so two genera of one family start
+// as look-alikes; a species unit (s:s091) the other species units of its family (FA.spu, core.js fishSpUnits look); a
+// genus or a species with its family's line and key group (app.js fishGenera: fam, forms).
 function fishUnitRec(FA, n, gp) {
-  const g = FA && FA.gen[n];
-  if (g) return {look: g.look || [], fam: ''};
-  const f = FA && FA.fam[n];
-  if (!f || !gp || !String(n).startsWith(gp)) return {look: [], fam: ''};
-  return {look: Object.keys(FA.fam).filter(k => k !== n && k.startsWith(gp) && FA.fam[k] === f), fam: f};
+  const none = {look: [], fam: '', forms: []},
+    g = FA && FA.gen[n];
+  if (!FA) return none;
+  if (g) return {look: g.look || [], fam: g.fam || '', forms: g.forms || []};
+  const u = (FA.spu || {})[n],
+    f = u ? u.family : gp && String(n).startsWith(gp) ? FA.fam[n] : '',
+    E = (f && FA.gen[f]) || {};
+  if (!f) return none;
+  return {
+    look: u ? u.look || [] : Object.keys(FA.fam).filter(k => k !== n && k.startsWith(gp) && FA.fam[k] === f),
+    fam: E.fam || f,
+    forms: E.forms || []
+  };
 }
 // The mix-ups logged with no other unit among the choices, as core.js confusionOf counts them (a trusted player's wrong
 // answer, its old), split by format: typed answers (core.js fmtOf: a typed question offers no choice) and the others,
@@ -10875,7 +11059,7 @@ function healthBad(R, S = ASUBJ) {
   // from the photo Elo against the median of the genus's rated photos.
   const PS = S.sheets ? {} : photoStats(),
     META = Object.create(null);
-  const FD = (DRAFT && DRAFT.fish) || {},
+  const FD = (DRAFT && DRAFT[TK]) || {},
     done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f];
   if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => done(p.f) || (META[p.f] = META[p.f] || {...p, genus: p.entry}));
   else

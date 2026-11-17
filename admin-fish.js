@@ -6,7 +6,7 @@
 // with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's judgment
 // (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species' photos in
 // play beside the card (most of them the auto-sort's proposals, which Pierre can take out of play), the fish auto-sort's
-// agreement and decisions (each undoable) below it. Every click goes into DRAFT.fish (autosort.js fishAdd, fishReject,
+// agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd, fishReject,
 // fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
 //
 // PR 5b, on the same card: the rubric's tags as rows (ease always, the phase for an entry whose phases differ, the seven
@@ -212,7 +212,7 @@ function bindFishRows(S, f, base, edit) {
 // rot) with it, one Undo step for both, through edit(fn).
 const fishCrop = (p, start, sug, edit) =>
   cropEditor(p, {
-    start: ((DRAFT.fish || {}).crop || {})[p.f] || start || null,
+    start: ((DRAFT[TK] || {}).crop || {})[p.f] || start || null,
     rot: fishRot(p.f),
     save: (v, full, ro) =>
       edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
@@ -229,9 +229,9 @@ const fishJudged = j =>
 // the family pages (fuP): a candidate (remote) gets both drawn on its original; a photo in play from fish-game.json, whose
 // R2 file has its published crop and rotation baked in (cr, ro), is shown as it is while the draft keeps them, else from
 // its original with the draft's (Codex review #793: drawn over the baked file, a published 90° showed as 180°).
-const fishRot = f => rotNorm(((DRAFT.fish || {}).rot || {})[f]);
+const fishRot = f => rotNorm(((DRAFT[TK] || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
-  crSrc({...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
+  crSrc({...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
 // its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
@@ -248,8 +248,8 @@ const fishName = sid => {
 // fishOther, Q323), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
   const L = Object.entries(F.add || {})
-      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG.fish || {})[f] || {}).jt))
-      .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG.fish || {})[f]}) || {f}),
+      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
+      .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG[TK] || {})[f]}) || {f}),
     seen = new Set(L.map(p => fishPid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
   fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(fishPid(p.f)) && seen.add(fishPid(p.f)) && L.push(p));
@@ -288,7 +288,7 @@ function fishZoom(p, sid, inPlay, blind) {
 }
 // One click on the fish part of the draft: one Undo step.
 function fishEdit(fn) {
-  DRAFT.fish = fn(DRAFT.fish || {});
+  DRAFT[TK] = fn(DRAFT[TK] || {});
   saveDraft();
   render();
 }
@@ -297,7 +297,7 @@ function fishEdit(fn) {
 // Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
 // every decision still standing, each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det, chip) {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     I = Object.entries(fishIdx(F)),
     FA = I.filter(([, x]) => !x.d.check && !x.d.undone),
     nIn = FA.filter(([, x]) => x.d.kind === 'a').length,
@@ -370,8 +370,8 @@ function renderFishCand() {
     fishLoad(true).then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
     return;
   }
-  const F = DRAFT.fish || {},
-    SF = (SUG && SUG.fish) || {},
+  const F = DRAFT[TK] || {},
+    SF = (SUG && SUG[TK]) || {},
     Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
     Q1 = FQ === 'chk' ? chks : Q0,
@@ -442,17 +442,17 @@ function renderFishCand() {
       // After his answer to a Check: what the auto-sort had said.
       told = () => {
         if (!chk) return;
-        const x = fishIdx(DRAFT.fish)[f];
+        const x = fishIdx(DRAFT[TK])[f];
         if (x)
           toast(
-            `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT.fish, f) === 'add') ? ' (same)' : ' (differs)'}.`
+            `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], f) === 'add') ? ' (same)' : ' (differs)'}.`
           );
       };
     S.querySelector('[data-add]').onclick = () => {
       FSKIP.delete(f);
       FPIN = null;
       fishEdit(G => fishAdd(G, f, sid, j, p));
-      if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT.fish, sid).map(q => q.o || q.f)).size}/${c.target}).`);
+      if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT[TK], sid).map(q => q.o || q.f)).size}/${c.target}).`);
       told();
     };
     S.querySelector('[data-rej]').onclick = () => {
@@ -479,14 +479,14 @@ function renderFishCand() {
       FPIN = f;
       fishEdit(fn);
     };
-    bindFishRows(S, f, () => fishTagsMine(DRAFT.fish, f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
+    bindFishRows(S, f, () => fishTagsMine(DRAFT[TK], f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
     S.querySelector('[data-ftags]').onclick = () => {
       FTAGS_OPEN = !FTAGS_OPEN;
       store.set('reefid-admin-ftags', FTAGS_OPEN);
       render();
     };
     // The crop (fishCrop): Pierre's, else the pass's (never on a Check).
-    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG.fish || {})[f] || {}).c, fishPin);
+    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG[TK] || {})[f] || {}).c, fishPin);
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;
       if (!to) return;

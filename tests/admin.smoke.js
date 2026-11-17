@@ -2885,7 +2885,9 @@ const darkCards = (p, sel) =>
                   .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
                   .join(' ')
                   .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
-                  .join(' ');
+                  .join(' ')
+                  // the rank asked (analysis.js rkName, admin-analyses.js anRkWord: "a genus question", "Genus questions")
+                  .replace(/\b(?:family|genus|species) questions?/gi, ' '); // no \b after: textContent runs cells together
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -2893,6 +2895,7 @@ const darkCards = (p, sel) =>
                 note: (document.querySelector('#view > .note') || {}).textContent || '',
                 views: [...document.querySelectorAll('#subnav .adm-views a, #subnav .adm-subtabs a')].map(a => a.textContent),
                 words: (t.match(/\b(genus|genera|Genus|Genera)\b/g) || []).length,
+                wctx: (t.match(/.{0,60}\b(?:genus|genera|Genus|Genera)\b.{0,30}/) || [''])[0],
                 ids: (t.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
                 coral: Object.keys(DATA.gen).some(g => new RegExp(`\\b${g}\\b`).test(V.textContent)),
                 cards: V.querySelectorAll('.adm-an-card').length,
@@ -2947,6 +2950,38 @@ const darkCards = (p, sel) =>
                 !/\bEase\b/.test(ph.h)
               )
                 fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
+              // the rank asked (the fish parity review, #1056: a rank effect in the models): its effect in the results, its
+              // own table on Formats and on What makes a photo hard, and the views that list units drawn one rank at a time
+              const rk = {};
+              for (const [h, k] of [
+                ['photos', 'ph'],
+                ['formats', 'fmt']
+              ]) {
+                await look('fish/analyses/difficulty/' + h);
+                rk[k] = await fq.evaluate(() => document.getElementById('view').textContent);
+              }
+              await look('fish/analyses/speed/answer-time');
+              // the units by rank (the rank effects themselves may read "not enough data" there, folded away)
+              rk.rt = await fq.evaluate(() =>
+                [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, '')).join()
+              );
+              const ok = {
+                tab: /Rank asked/.test(rk.ph),
+                eff: /A (genus|species) question instead of a family question/.test(rk.ph),
+                fmt: /By the rank asked/.test(rk.fmt),
+                rt: rk.rt === 'Family questions,Genus questions,Species questions'
+              };
+              if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
+              // the corals' views: no rank
+              await look('analyses/speed/answer-time');
+              if (
+                await fq.evaluate(
+                  () =>
+                    !!document.querySelector('#view .adm-an-rk') ||
+                    /instead of a family question/.test(document.getElementById('view').textContent)
+                )
+              )
+                fe.push("the corals' Speed tells ranks apart");
             }
           }
           // the corals' report on the corals' side, as before
@@ -3922,6 +3957,21 @@ const darkCards = (p, sel) =>
           });
           if (L.groups.length !== L.n || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
           await q.click('[data-uopen="Ben Demo"]');
+          // His bar gives his fish Progress and Learned too, as his Journey does (admin.js uprogHtml: his saved copy read
+          // when the row opens).
+          const fb = await q
+            .waitForFunction(
+              () => {
+                const S = SUBJECTS.find(x => !x.replay),
+                  t = (document.querySelector('.adm-ubar') || {}).innerText || '';
+                return new RegExp(S.name + ': Progress \\d+%').test(t) && t;
+              },
+              null,
+              {timeout: 15000}
+            )
+            .then(h => h.jsonValue())
+            .catch(() => '');
+          if (!fb) fails.push(`${w}px two subjects: Ben's bar without his ${L.F} Progress`);
           const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
           if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
           await q.click('.adm-ubar a.next');
@@ -3951,6 +4001,34 @@ const darkCards = (p, sel) =>
             !/ 48$/.test(j.seg[1][1])
           )
             fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+          // His Progress is the % his app shows and his leaderboard ranks by: the subject's global score over the tree the
+          // sheet makes under the published curation (core.js treeScore, SUBJECTS replayed tree), not the families' mean;
+          // his bar on Players says the same.
+          const fx = await q.evaluate(() => {
+            const S = SUBJECTS.find(x => !x.replay && x.score),
+              PG = progOf(
+                USERS.users.find(u => u.name === 'Ben Demo'),
+                true,
+                S
+              ),
+              T = S.replayed.tree(contentApply(S, unitRegOf(S).raw.f, SAVED));
+            return {
+              kpi: (/(\d+)%(?: ↻ saved \d+%)? Progress/i.exec(document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')) || [])[1],
+              pct: PG && PG.pct,
+              board: PG && treeScore(PG.G, T, S.score).pct,
+              mean: PG && pctOf(PG.G, unitsOf(S).slate),
+              learned: PG && PG.learned,
+              name: S.name
+            };
+          });
+          if (
+            !fx.pct ||
+            String(fx.pct) !== fx.kpi ||
+            fx.board !== fx.pct ||
+            fx.mean === fx.pct ||
+            !new RegExp(`${fx.name}: Progress ${fx.pct}%[^·]*· Learned ${fx.learned}`).test(fb)
+          )
+            fails.push(`${w}px two subjects: Ben's ${L.F} Progress is not the % his app shows ${JSON.stringify({...fx, fb})}`);
           // A session of the Journey unfolds, with the progress it brought.
           await q.click('.adm-journey [data-recent] [data-sopen]');
           await calm();
@@ -4550,11 +4628,17 @@ const darkCards = (p, sel) =>
       }
       // Codex review #987: a reported photo of another subject with its own files (core.js SUBJECTS admin files; the sea
       // slugs) showed as "missing". On its side, at every width: its tile with the photo from its game file's source (a remote
-      // original stays remote), its family, the species it is identified as and its credits, no tool (they act on the fish
-      // part of the curation), no link to family pages it does not have, its reporter's Journey under its prefix; Enlarge
+      // original stays remote), its family, the species it is identified as and its credits; with its Photos › Tree (the sea
+      // slugs' since 2026-11-17) every photo tool of its Tree (they act on its own part of the curation) and its unit's link
+      // and Open, else no tool and no link to pages it does not have; its reporter's Journey under its prefix; Enlarge
       // shows the identification and the credits; the report on no other side; no sideways scroll.
       const MORE = await p.evaluate(() =>
-        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({id: S.id, hash: S.hash, one: S.one}))
+        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({
+          id: S.id,
+          hash: S.hash,
+          one: S.one,
+          tree: hasPage(S, TREE)
+        }))
       );
       if (!MORE.length) fails.push(`${w}px To do › Reports: no third subject with its files to check`);
       for (const X of MORE) {
@@ -4595,20 +4679,21 @@ const darkCards = (p, sel) =>
         if (
           !r ||
           !r.want ||
-          r.src !== r.want ||
+          // with its Tree, the tile of its Tree (its file on R2, else its original; its credits on Enlarge, below)
+          (X.tree ? !r.src : r.src !== r.want) ||
           !r.cap.includes(r.fam) ||
           !r.cap.includes(r.t) ||
-          !r.cap.includes(r.a) ||
+          (!X.tree && !r.cap.includes(r.a)) ||
           !r.head.includes(r.fam) ||
-          r.tools ||
+          !r.tools !== !X.tree ||
           r.missing ||
-          r.unit ||
-          r.links ||
+          r.unit !== X.tree ||
+          !r.links !== !X.tree ||
           r.journey !== '#' + X.hash + 'players/list/journey/Ana%20Demo'
         )
           fails.push(`${w}px To do › Reports, ${X.id}: its reported photo ${JSON.stringify(r)}`);
         else {
-          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile [data-act="zoomx"]`);
+          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile :is([data-act="zoomx"], [data-fu="zoom"])`);
           const lb = await p
             .waitForFunction(() => {
               const l = document.getElementById('lightbox');
@@ -5796,10 +5881,11 @@ const darkCards = (p, sel) =>
       }
       // Fish admin at parity, the next step: Analyses › Learning › Answer log and Analyses › Difficulty › Pairs follow the
       // Corals | Fish switch (rule A4). The demo's fish answers are family questions picked from choices; a few genus
-      // questions, typed answers and a mix-up of two genera of one family are added to its log (as the fresh Health block
-      // below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
+      // questions, typed answers, a mix-up of two genera of one family and one of two families of one key group are added
+      // to its log (as the fresh Health block below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
       // with its IMR name), the questions on each rank and typed against picked, no Elo column (the sheet sends the corals'
-      // levels), no compare page; Pairs: the two genera start as look-alikes, the fish photos and observations, the typed
+      // levels), no compare page; Pairs: the two genera start as look-alikes, the two families as Key group (the game's
+      // start, model.js confPrior), the fish photos and observations, the typed
       // mix-ups apart; no raw unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -5843,6 +5929,18 @@ const darkCards = (p, sel) =>
                 )
               );
             for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+            // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
+            for (let i = 0; i < 3; i++)
+              add.push(
+                mk(
+                  id,
+                  'f:Surgeonfishes',
+                  i ? 'f:Surgeonfishes' : 'f:Rabbitfishes',
+                  i ? 1 : 0,
+                  'quiz',
+                  'f:Surgeonfishes f:Rabbitfishes f:Wrasses f:Gobies'
+                )
+              );
           });
           ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
           render();
@@ -5872,6 +5970,9 @@ const darkCards = (p, sel) =>
               pair: [...V.querySelectorAll('tr')]
                 .filter(tr => /Amphiprion · Chromis/.test(tr.textContent))
                 .map(tr => tr.cells[1].textContent),
+              key: [...V.querySelectorAll('tr')]
+                .filter(tr => /Rabbitfishes · Surgeonfishes|Surgeonfishes · Rabbitfishes/.test(tr.textContent))
+                .map(tr => tr.cells[1].textContent),
               zo: V.querySelectorAll('[data-zo]').length,
               wide: document.documentElement.scrollWidth - innerWidth
             };
@@ -5899,6 +6000,7 @@ const darkCards = (p, sel) =>
         if (
           pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
           pr.pair.join() !== 'Look-alike' ||
+          pr.key.join() !== 'Key group' ||
           !pr.zo ||
           pr.cmp ||
           pr.ids.length ||
@@ -6841,6 +6943,76 @@ const darkCards = (p, sel) =>
           le.push(`published ${JSON.stringify({kept: pub.kept, tags: LP.map(x => pub.tags[x.photo])})}`);
         if (le.length) fails.push(`Light proposals: ${le.slice(0, 4).join(' | ')}`);
         await lc.close();
+      }
+      // The sea slugs' admin photo pages (2026-11-17; Pierre: "Tu peux compléter tout ce qui manque pour les
+      // nudibranches?"): Photos › Tree on their tree, the fish's photo tools on their own part of the curation (admin.js
+      // TK, treeIn), their genus-level photos a leaf of their genus (gl), Publish sending their part beside the fish's, a
+      // reported sea-slug photo with its tools and its genus's page, Photo stats by genus. In a context of its own.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        const swait = (fn, what) => sq.waitForFunction(fn, null, {timeout: 60000}).catch(() => se.push(`timed out: ${what}`));
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AChromodoris');
+        await swait(() => document.querySelectorAll('#view .adm-ftile [data-fu="remove"]').length > 4, 'the genus page');
+        const s0 = await sq.evaluate(() => ({
+          gl: !!document.querySelector('#view section.adm-row[data-sid="g:Chromodoris"] .adm-ftile'),
+          leaf: !!tvTree(TREE).node.get('gl:g:Chromodoris'),
+          imr: !!document.querySelector('[data-fuimr]')
+        }));
+        if (!s0.gl || !s0.leaf) se.push(`no genus-level section or leaf ${JSON.stringify(s0)}`);
+        if (s0.imr) se.push('All | IMR shown on a tree the IMR course does not name');
+        const [f0, f1] = await sq.$$eval('#view section.adm-row:not([data-sid^="g:"]) .adm-ftile', L =>
+          L.slice(0, 2).map(t => t.dataset.f)
+        );
+        await sq.click(`.adm-ftile[data-f="${f0}"] [data-fu="remove"]`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] [data-fu="feat"]`);
+        const fg = await sq.$eval('#view section.adm-row[data-sid="g:Chromodoris"] .adm-ftile', t => t.dataset.f).catch(() => '');
+        if (fg) await sq.click(`.adm-ftile[data-f="${fg}"] [data-fu="cover"]`);
+        const s1 = await sq.evaluate(
+          ([f0, f1, fg]) => ({
+            seen: ((DRAFT.seaslug || {}).seen || {})[f0],
+            feat: JSON.stringify(((DRAFT.seaslug || {}).genera || {})['f:Chromodorididae']),
+            cover: (((DRAFT.seaslug || {}).genera || {})['g:Chromodoris'] || {}).cover === fg,
+            fish: JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish),
+            out: Object.keys(output()).includes('seaslug'),
+            sum: String(pubSummary())
+          }),
+          [f0, f1, fg]
+        );
+        if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
+          se.push(`the tools ${JSON.stringify(s1)}`);
+        // the genus-level leaf's page reads that cover under its genus's id, as ★ Cover writes it (Codex review #1047)
+        if (fg) {
+          await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/gl%3Ag%3AChromodoris');
+          await swait(() => !!document.querySelector('#view .adm-sthumb'), 'the genus-level page');
+          const hc = await sq.$eval('#view .adm-sthumb', t => [t.dataset.f, t.classList.contains('mine')]).catch(() => []);
+          if (hc[0] !== fg || !hc[1]) se.push(`the genus-level page's cover ${JSON.stringify(hc)} (chosen ${fg})`);
+        }
+        // The fish's Tree after the switch: its own part, its own data; back on the sea slugs, the draft as it was.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(
+          () =>
+            document.querySelectorAll('#view .adm-ftile').length > 4 &&
+            /^fish-|^f[ib]/.test(document.querySelector('#view .adm-ftile').dataset.f),
+          'the fish Tree'
+        );
+        await sq.goto(base + 'admin.html?demo#seaslug/inbox/todo/reports');
+        await swait(() => !!document.querySelector('.adm-rep .adm-ftile [data-fu="remove"]'), 'a sea-slug report with its tools');
+        const s2 = await sq.evaluate(() => ({
+          seen: Object.keys((DRAFT.seaslug || {}).seen || {}).length,
+          open: [...document.querySelectorAll('.adm-rep a[data-ru]')].map(a => a.getAttribute('href'))
+        }));
+        if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
+        await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
+        if (se.length) fails.push(`Sea slugs' photo pages: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
       }
       // Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864): in a context of its own.
       // Pierre's published fish part first with no node cover: no proposal, the view not in the switch. Then three family
