@@ -81,8 +81,8 @@ Two more kinds of candidate (Pierre, 2026-11-17, Q389; study docs/reviews/2026-1
   `agreed`: Research Grade at the genus, or at least AGREE (2) current identifications at the genus or below it and none
   that disagrees (a current identification off the genus's line; a coarser one on its line, the observer's "Nudibranchs",
   does not disagree, as rule P1's trusted identifications read). The species' photo target per genus (photoTarget
-  `candidates`, 20, never above `max`, 30: Q377; the very variable genera's 30, maxGenera, is a species' target and is
-  not applied to a genus's genus-level list: Q377 set it per species), the same order, licences, egg and Dead filters,
+  `candidates`, 20, never above `max`, 30: Q377; the very variable genera's 30, maxGenera, also
+  applies to their own genus-level list: the integrator's call of 2026-11-17, the colours vary there as much), the same order, licences, egg and Dead filters,
   one photo per observation. Keyed by the genus's name ("Goniobranchus"; the species are keyed by taxon id), each record marked
   `gl: 1`: a photo of the genus, never counted for a species (tools/seaslug_game.py puts it in play for its genus unit,
   sp "g:<genus>"). Pierre's own observations follow the same rule (no own search: the species' Q386 rule is about photos
@@ -365,6 +365,15 @@ def informal_run(net, src, inf, have, T, pairs, used, taken, report, egg=frozens
               f"presence: {u} observers in the Philippines, {nu} near Dauin)", flush=True)
 
 
+def gl_target(g, T):
+    """A genus's genus-level list target: the species' candidates (20, never above max), the ceiling max (30) for a very
+    variable genus (maxGenera, Q377) as its species have (the integrator's call, 2026-11-17, on Pierre's "fais les choix
+    tout seul si ils sont faciles à revenir dessus": the colours vary in its genus-level photos as much)."""
+    if g in (T.get("maxGenera") or ()):
+        return int(T.get("max", T["candidates"]))
+    return int(min(T.get("max", 1e9), T["candidates"]))
+
+
 def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), egg=frozenset()):
     """--genus-level: the genus-level candidates of each genus unit (game_genera; --only: some of them), keyed by genus
     name, marked gl."""
@@ -377,8 +386,8 @@ def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), egg=
             g = by_id.get(o.get("tid"))
             if g:
                 pool[g].append(o)
-    cap = int(min(T.get("max", 1e9), T["candidates"]))
     for g in names:
+        cap = gl_target(g, T)
         L = have.setdefault(g, [])
         n = Counter()
         for p in L:
