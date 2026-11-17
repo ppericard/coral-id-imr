@@ -64,6 +64,9 @@ jobs:
           - name: seaslug
             smoke: seaslug
             what: Sea slug subject test (its beta gate both ways, the admin's quiz, pages and switch on seaslug.json)
+          - name: live
+            smoke: live
+            what: Live mode test (a trainer and three students on the in-memory sheet, the role check, every phase, the logged answers)
           - name: admin 390
             smoke: admin
             w: '390'

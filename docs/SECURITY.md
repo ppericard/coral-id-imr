@@ -162,7 +162,8 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 - **Grants**: the Roles tab, one row a grant (Account, Role, Scope, Since, Code hash). Roles and what they give:
   `admin` at `platform` (the code, the base database, creating instances; it may grant any role at any scope), `owner`
   at an instance (its players, its settings, granting its roles), `editor` at an instance (its content), `trainer` at
-  an instance (its cohorts, from roles step 2). The player role is every account's and is not stored. This sheet serves
+  an instance (`live`: hosting a live game, sheet vNEXT; its cohorts, from roles step 2). The player role is every
+  account's and is not stored. This sheet serves
   one instance, `instance:imr` (`Code.gs` `INSTANCE_`; Q343, one shared sheet for now).
 - **One check**: every privileged endpoint calls `gate_(token, right, action)`, which asks `can_(caller, right,
   scope)`. Today's endpoints need the `players` right on `instance:imr`; the roles list and `roleGrant` / `roleRevoke`
@@ -170,9 +171,18 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 - **The admin token is the platform admin, with every right.** A token that can push to the repository can change this
   script, so no right is withheld from it. Q364's separation holds for the grants an account holds: an account holding
   only `admin` is refused an instance's players and content until it holds that instance's role.
-- **Callers today: the token only** (`caller_`). `can_` already answers for an account (its name and its code hash), but
-  no endpoint takes an account's name and code as its caller yet, so who may do what is unchanged. Letting a granted
-  account act with its name and code is a later step (the editors' relay, the trainer view).
+- **Callers today: the token** (`caller_`), **and one account endpoint**: starting a live game (sheet vNEXT, below)
+  takes the account's name and code (`lname`, `lpin`) and asks `can_` for its `live` right. Letting a granted account
+  act with its name and code elsewhere is a later step (the editors' relay, the trainer view).
+- **Live games** (sheet vNEXT; Pierre, 2026-11-17, Q393; [the design note](reviews/2026-11-18-live-mode-design.md)): a
+  session is started only by an account holding the trainer role (`lvTrainer_`: its code checked against the RAs tab,
+  a wrong one counting towards the name's 10-minute lock as a load's does, an archived account refused, then
+  `can_(…, 'live', 'instance:imr')`); one Audit row a start (`live start`), refusals capped as every refusal. The
+  trainer's later calls carry the session's random key, the students' calls their own; a code is 6 random digits, and
+  a guessed one only lets someone join that game with a nickname (40 a session, 400 joins every 6 hours: `lvjoin`).
+  What a student is sent never holds the right answer before the reveal, nor another student's key or answers; what
+  the trainer sends is filtered (photo addresses by pattern, labels as plain text). Sessions live in the script cache
+  only (6 hours at most), never in a sheet tab: nothing to clean when an account goes (rule D7).
 - **Pierre's grants**: platform admin, and owner and content editor of `instance:imr`. Given once, as self-grants by
   the token, to the admin's account (`ADMIN_ACCT`) the first time the admin page reads the answer log signed in to it
   (`rolesSeed_`). A property marks it done, so a revoke or a delete is never silently granted again. It is marked done

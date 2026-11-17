@@ -288,6 +288,7 @@ function doPost_(e){
   if (p && typeof p.z === 'string') { try { p = JSON.parse(unzip_(p.z)); } catch (err) { return json_({ok: false, error: 'zip'}); } }
   else if (p && p.lt && typeof p.lt === 'object') p = p.lt;
   if (!p || typeof p !== 'object' || Array.isArray(p)) return json_({ok: false, error: 'input'});
+  if (typeof p.lv === 'string') return json_(lv_(p));  // vNEXT: the live mode (lv_), never a progress save
   if (Array.isArray(p.anonAnswers) && !p.av) oldApp_('anonymous answers', '~anon ' + String(p.anon || '').slice(0, 16));
   if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
@@ -1561,7 +1562,8 @@ const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code h
     admin: {at: 'platform', rights: ['platform', 'grant']},  // the code, the base database, creating instances
     owner: {at: 'instance', rights: ['players', 'settings', 'grant']},  // grants roles in the instance, its players and settings
     editor: {at: 'instance', rights: ['content']},  // every right on the instance's content, no code, no players' data
-    trainer: {at: 'instance', rights: ['cohorts']}  // creates cohorts and follows them (roles step 2); no content
+    // creates cohorts and follows them (roles step 2); hosts a live game (vNEXT, lvStart_; Pierre, 2026-11-17, Q393 d); no content
+    trainer: {at: 'instance', rights: ['cohorts', 'live']}
   },
   // Pierre today (the task of 2026-11-15): platform admin, and owner and content editor of the IMR instance. Given once
   // to the admin's account (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
@@ -1718,6 +1720,205 @@ function roles_(p){
     audit_(who.id, 'revoke ' + role + (self ? ' (self)' : ''), scope, n ? 'ok' : 'none', aid_(row[0]));
     return {ok: true, result: n ? 'ok' : 'none'};
   } finally { lock.releaseLock(); }
+}
+
+// The live mode (vNEXT; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): a trainer and a group of
+// students answer the same photo questions at the same time, through this script, polled (Q393 a). Everything lives in
+// the script cache, never in a sheet tab: the session (LV key lv:<code>, written by the trainer's calls only), the roster
+// (lv:<code>:r, written by joins only, under the script lock) and one value per student (lv:<code>:p:<pid>, written by
+// that student's calls only, which the app sends one at a time), so two writers never race on one value. Each value is
+// kept LV.TTL seconds from its last write (the cache's most: 6 hours); a session older than LV.MAX counts as ended.
+// POST {lv: 'start', lname, lpin, s, t, n, lim} (the trainer's account in lname / lpin, never name / pin: a script before
+// vNEXT answers 'input' and never takes it for a progress save) → {ok, code, tk}; {lv: 'host', code, tk, act?, q?} →
+// the trainer's view (lvHostView_); {lv: 'join', code, nick} → {ok, pid, pk, name}; {lv: 'poll', code, pid, pk} → the
+// student's view (lvView_); {lv: 'answer', code, pid, pk, qi, c} → {ok}. Errors: input, role, pin, wait, archived, user,
+// gone (no such session, or ended), phase, full, busy, lock.
+const LV = {TTL: 21600, MAX: 6 * 3600e3, PLAYERS: 40, JOINS: 400, GRACE: 3000, QMAX: 30, LIM: [5, 120], BASE: 100, BONUS: 100, TOP: 5};
+const lvKey_ = (code, k) => 'lv:' + code + (k ? ':' + k : '');
+const lvCode_ = x => (/^\d{6}$/.test(String(x || '')) ? String(x) : '');
+const lvId_ = x => (/^[a-z0-9]{8,24}$/.test(String(x || '')) ? String(x) : '');
+const lvRand_ = n => Utilities.getUuid().replace(/-/g, '').slice(0, n);
+function lvGet_(k){ try { const v = CacheService.getScriptCache().get(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lvPut_(k, o){ CacheService.getScriptCache().put(k, JSON.stringify(o), LV.TTL); }
+// The session of a code, null when there is none or it is older than LV.MAX.
+function lvSession_(code){ const S = code && lvGet_(lvKey_(code)); return S && Date.now() - S.at < LV.MAX ? S : null; }
+// Plain text as shown: no control character or angle bracket, spaces folded, at most n characters (never written to a
+// sheet). A nickname: 1 to 20 of them.
+const lvText_ = (x, n) => String(x == null ? '' : x).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
+const lvNick_ = x => lvText_(x, 20);
+// The points of an answer (Q393 b): a right one LV.BASE plus up to LV.BONUS for the time left (ms used of limMs), else 0.
+function lvPoints_(ok, ms, limMs){
+  if (!ok) return 0;
+  const f = Math.max(0, Math.min(1, 1 - ms / limMs));
+  return LV.BASE + Math.round(LV.BONUS * f);
+}
+// A question as the trainer's page sends it, filtered: {ph: [{f, u, v}] (1-3 photos: the file stem, the address to show,
+// the view), ch: [[id, label]] (exactly 4, ids distinct), k: the right choice's index}; null when anything does not fit.
+// An address is the site's img/, or https on a host name, with no quote, space, bracket or backslash.
+const LV_U = /^(img\/|https:\/\/[A-Za-z0-9.-]+\/)[A-Za-z0-9_.\/%~+=&?:-]{1,400}$/, LV_F = /^[A-Za-z0-9_. -]{1,120}$/, LV_ID = /^[A-Za-z][A-Za-z0-9: -]{0,39}$/;
+function lvQ_(q){
+  if (!q || typeof q !== 'object' || !Array.isArray(q.ph) || !Array.isArray(q.ch)) return null;
+  const ph = q.ph.slice(0, 3).map(p => (p && LV_F.test(String(p.f)) && LV_U.test(String(p.u)) ? {f: String(p.f), u: String(p.u), v: word_(p.v, /^[a-z]{1,12}$/, 12)} : null));
+  const ch = q.ch.map(c => (Array.isArray(c) && LV_ID.test(String(c[0])) && !protoWord_(String(c[0])) ? [String(c[0]), lvText_(c[1], 60)] : null));
+  if (!ph.length || ph.some(p => !p) || ch.length !== 4 || ch.some(c => !c || !c[1]) || new Set(ch.map(c => c[0])).size !== 4) return null;
+  if (!Number.isInteger(q.k) || q.k < 0 || q.k > 3) return null;
+  return {ph: ph, ch: ch, k: q.k};
+}
+// The students' values of a session, {pid: record}, in roster order: [[pid, name, record or null]].
+function lvPlayers_(code){
+  const R = lvGet_(lvKey_(code, 'r')) || [];
+  if (!R.length) return [];
+  const got = CacheService.getScriptCache().getAll(R.map(r => lvKey_(code, 'p:' + r[0])));
+  return R.map(r => { let o = null; try { o = JSON.parse(got[lvKey_(code, 'p:' + r[0])] || 'null'); } catch (e) {} return [r[0], r[1], o]; });
+}
+// Standings: [[name, points, right]] by points, then right answers, then the order of joining.
+const lvStand_ = L => L.map((x, i) => [x[1], (x[2] && x[2].s) || 0, (x[2] && x[2].r) || 0, i]).sort((a, b) => b[1] - a[1] || b[2] - a[2] || a[3] - b[3]).map(x => x.slice(0, 3));
+// The trainer's account checked (its code, not locked, not archived) and its right: {name, h, id} or {error}.
+function lvTrainer_(p){
+  const name = String(p.lname || '').trim().slice(0, 40), pin = String(p.lpin || '').trim();
+  if (!name || !/^\d{4}$/.test(pin)) return {error: 'input'};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = sh ? find_(sh, name) : 0;
+  if (!r) return {error: 'user'};
+  if (blocked_(name)) return {error: 'wait'};
+  const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0], h = hash_(name, pin);
+  if (row[6] !== h) { failed_(name); return {error: 'pin'}; }
+  if (archived_(row)) return {error: 'archived'};
+  const who = {name: String(row[0]), h: h, id: aid_(String(row[0]))};
+  if (!can_(who, 'live', INST_SCOPE_)) {
+    if (!over_('auditdeny', AUDIT.DENY)) audit_(who.id, 'live start', INST_SCOPE_, 'denied', '');
+    return {error: 'role'};
+  }
+  return who;
+}
+function lvStart_(p){
+  const who = lvTrainer_(p);
+  if (who.error) return {ok: false, error: who.error};
+  const n = Math.round(Number(p.n)), lim = Math.round(Number(p.lim)), sid = String(p.s || '');
+  if (!(n >= 1 && n <= LV.QMAX) || !(lim >= LV.LIM[0] && lim <= LV.LIM[1]) || !CORE_.SUBJECTS.some(S => S.id === sid)) return {ok: false, error: 'input'};
+  let code = '';
+  for (let i = 0; i < 20 && !code; i++) { const c = String(100000 + Math.floor(Math.random() * 900000)); if (!lvGet_(lvKey_(c))) code = c; }
+  if (!code) return {ok: false, error: 'busy'};
+  const S = {code: code, tk: lvRand_(18), at: Date.now(), s: sid, t: lvText_(p.t, 80),
+    n: n, lim: lim, ph: 'lobby', qi: -1, q: null, op: 0, ends: 0, rev: null, hist: []};
+  lvPut_(lvKey_(code), S);
+  lvPut_(lvKey_(code, 'r'), []);
+  audit_(who.id, 'live start', INST_SCOPE_, 'ok', '');
+  return {ok: true, code: code, tk: S.tk};
+}
+// The trainer's action on session S (players L): 'q' opens the next question (q, lvQ_), 'rev' reveals it, 'end' ends.
+// Returns an error word, or '' once S is changed.
+function lvAct_(S, act, q, L, now){
+  if (act === 'q') {
+    if (S.ph !== 'lobby' && S.ph !== 'rev' || S.qi + 1 >= S.n) return 'phase';
+    const Q = lvQ_(q);
+    if (!Q) return 'input';
+    Object.assign(S, {ph: 'q', qi: S.qi + 1, q: Q, op: now, ends: now + S.lim * 1000, rev: null});
+    return '';
+  }
+  if (act === 'rev') {
+    if (S.ph !== 'q') return 'phase';
+    const d = [0, 0, 0, 0];
+    L.forEach(x => { const a = x[2] && x[2].a && x[2].a[S.qi]; if (a) d[a[0]]++; });
+    const tot = d.reduce((t, x) => t + x, 0);
+    S.ph = 'rev';
+    S.rev = {k: S.q.k, d: d, tot: tot, top: lvStand_(L).slice(0, LV.TOP)};
+    S.hist = S.hist.concat([{qi: S.qi, t: S.q.ch[S.q.k][1], k: S.q.k, d: d, n: L.length, ch: S.q.ch.map(c => c[1]), f: S.q.ph[0].u}]).slice(-LV.QMAX);
+    return '';
+  }
+  if (act === 'end') {
+    if (S.ph === 'end') return 'phase';
+    S.ph = 'end';
+    return '';
+  }
+  return 'input';
+}
+function lvHost_(p){
+  const code = lvCode_(p.code), S = lvSession_(code);
+  if (!S) return {ok: false, error: 'gone'};
+  if (String(p.tk || '') !== S.tk) return {ok: false, error: 'input'};
+  const now = Date.now(), L = lvPlayers_(code);
+  if (p.act) {
+    const e = lvAct_(S, String(p.act), p.q, L, now);
+    if (e) return {ok: false, error: e};
+    lvPut_(lvKey_(code), S);
+  }
+  return lvHostView_(S, L, now);
+}
+// What the trainer's page shows: the phase, the roster's names, how many answered the question open, its right answer
+// (the trainer's own), the reveal, the standings (every student: the podium and the list at the end) and the summary.
+function lvHostView_(S, L, now){
+  const cnt = S.ph === 'q' || S.ph === 'rev' ? L.filter(x => x[2] && x[2].a && x[2].a[S.qi]).length : 0;
+  return {ok: true, ph: S.ph, qi: S.qi, n: S.n, lim: S.lim, s: S.s, t: S.t, names: L.map(x => x[1]), cnt: cnt,
+    left: S.ph === 'q' ? Math.max(0, S.ends - now) : 0, q: S.ph === 'q' || S.ph === 'rev' ? S.q : null, rev: S.rev,
+    stand: lvStand_(L), hist: S.ph === 'end' ? S.hist : undefined};
+}
+function lvJoin_(p){
+  const code = lvCode_(p.code), nick = lvNick_(p.nick);
+  if (!code || !nick) return {ok: false, error: 'input'};
+  if (!lvSession_(code)) return {ok: false, error: 'gone'};
+  const lock = lock_(5000);
+  try {
+    const S = lvSession_(code);
+    if (!S || S.ph === 'end') return {ok: false, error: 'gone'};
+    const R = lvGet_(lvKey_(code, 'r')) || [];
+    if (R.length >= LV.PLAYERS) return {ok: false, error: 'full'};
+    if (over_('lvjoin', LV.JOINS)) return {ok: false, error: 'busy'};
+    const taken = new Set(R.map(r => r[1].toLowerCase()));
+    let name = nick;
+    for (let i = 2; taken.has(name.toLowerCase()); i++) name = nick.slice(0, 17) + ' ' + i;
+    const pid = lvRand_(10), pk = lvRand_(16);
+    lvPut_(lvKey_(code, 'p:' + pid), {k: pk, n: name, s: 0, r: 0, a: {}, sq: -1, st: 0});
+    lvPut_(lvKey_(code, 'r'), R.concat([[pid, name]]));
+    return {ok: true, pid: pid, pk: pk, name: name};
+  } finally { lock.releaseLock(); }
+}
+// A student's record, checked with their key: [S, record] or {error}.
+function lvMe_(p){
+  const code = lvCode_(p.code), pid = lvId_(p.pid), S = lvSession_(code);
+  if (!S) return {error: 'gone'};
+  const me = pid && lvGet_(lvKey_(code, 'p:' + pid));
+  if (!me || String(p.pk || '') !== me.k) return {error: 'input'};
+  return {S: S, me: me, code: code, pid: pid};
+}
+function lvPoll_(p){
+  const x = lvMe_(p);
+  if (x.error) return {ok: false, error: x.error};
+  const {S, me, code, pid} = x, now = Date.now();
+  // The question first served to this student now: its clock starts here (lvAnswer_), whatever the poll's lag.
+  if (S.ph === 'q' && me.sq !== S.qi) { me.sq = S.qi; me.st = now; lvPut_(lvKey_(code, 'p:' + pid), me); }
+  return lvView_(S, me, now, S.ph === 'rev' || S.ph === 'end' ? lvPlayers_(code) : null);
+}
+// What a student's page shows: never the right answer before the reveal, never another student's key or answers.
+function lvView_(S, me, now, L){
+  const a = me.a[S.qi], out = {ok: true, ph: S.ph, qi: S.qi, n: S.n, lim: S.lim, s: S.s, me: {n: me.n, s: me.s, r: me.r}};
+  if (S.ph === 'q' || S.ph === 'rev') out.q = {ph: S.q.ph, ch: S.q.ch};
+  if (S.ph === 'q') { out.left = Math.max(0, S.ends - now); out.mine = a ? a[0] : -1; }
+  if (L) {
+    const st = lvStand_(L), i = st.findIndex(r => r[0] === me.n);
+    out.rank = i + 1;
+    out.of = st.length;
+    out.top = st.slice(0, LV.TOP);
+  }
+  if (S.ph === 'rev') out.rev = {k: S.rev.k, d: S.rev.d, tot: S.rev.tot, mine: a ? a[0] : -1, pts: a ? a[1] : 0};
+  return out;
+}
+function lvAnswer_(p){
+  const x = lvMe_(p);
+  if (x.error) return {ok: false, error: x.error};
+  const {S, me, code, pid} = x, now = Date.now(), c = Number(p.c);
+  if (S.ph !== 'q' || Number(p.qi) !== S.qi || now > S.ends + LV.GRACE) return {ok: false, error: 'phase'};
+  if (!Number.isInteger(c) || c < 0 || c > 3) return {ok: false, error: 'input'};
+  if (me.a[S.qi]) return {ok: true, mine: me.a[S.qi][0]};
+  const limMs = S.lim * 1000, ms = Math.max(0, Math.min(limMs, now - (me.sq === S.qi ? me.st : S.op))), ok = c === S.q.k, pts = lvPoints_(ok, ms, limMs);
+  me.a[S.qi] = [c, pts, ms];
+  me.s += pts;
+  me.r += ok ? 1 : 0;
+  lvPut_(lvKey_(code, 'p:' + pid), me);
+  return {ok: true, mine: c};
+}
+function lv_(p){
+  const k = p.lv;
+  return k === 'start' ? lvStart_(p) : k === 'host' ? lvHost_(p) : k === 'join' ? lvJoin_(p) : k === 'poll' ? lvPoll_(p) : k === 'answer' ? lvAnswer_(p) : {ok: false, error: 'input'};
 }
 
 function reports_(token){
@@ -9198,7 +9399,11 @@ const CORE_ = (function () { const module = {exports: {}};
     'delete-account': 'about/delete-account',
     lab: 'tools',
     idkey: 'identify/key',
-    fishkey: 'identify/key'
+    fishkey: 'identify/key',
+    // The live mode (live.js; Pierre, 2026-11-17, Q393): a student's join page, its session code as a filter
+    // (#live?code=123456, the address the trainer's lobby shows), and the trainer's page.
+    live: 'live',
+    'live-host': 'live/host'
   };
   const routeEnc = x => encodeURIComponent(x).replace(/%2C/g, ',');
   const routeSubj0 = () => SUBJECTS.find(s => !s.hash) || SUBJECTS[0];
@@ -9222,6 +9427,9 @@ const CORE_ = (function () { const module = {exports: {}};
       p = ROUTE_FIXED[b];
       // The Key's clues (form=B;box=B1;not=wall.plo) as filters, kept as they are (the Key encodes its free text).
       if (a[0]) q = a[0].split(';').filter(Boolean).join('&');
+    } else if (b === 'live' && (!a.length || (a.length === 1 && /^\d{6}$/.test(a[0])))) {
+      p = 'live';
+      if (a[0]) q = 'code=' + a[0];
     } else if (b === 'basics') {
       // Coral basics: its step, glossary term or view as segments, its editing switch (|edit) as a filter.
       const e = a[a.length - 1] === 'edit';
@@ -9290,6 +9498,10 @@ const CORE_ = (function () { const module = {exports: {}};
       else if (s0 === 'about' && s1 === 'delete-account' && (n === 2 || (n === 3 && r[0] === 'done')))
         return ['delete-account', ...r].join('|');
       else if (s0 === 'tools') return n === 1 ? 'lab' : ['lab-' + s1, ...r].join('|');
+      else if (s0 === 'live' && n === 1) {
+        const c = /^code=(\d{6})$/.exec(kv.find(x => /^code=/.test(x)) || '');
+        return c ? 'live|' + c[1] : 'live';
+      } else if (s0 === 'live' && s1 === 'host' && n === 2) return 'live-host';
       return null;
     })();
     // A section that follows the subject is the only place a subject prefix means something.
