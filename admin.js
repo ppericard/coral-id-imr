@@ -1982,8 +1982,29 @@ const FU_TAGS = [
   }
 ];
 const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark', f: 'features hidden'};
-const fuTags = jt =>
-  !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
+// A subject's words for the tags: base (one map per position, as FU_TAGS) and its flags', with the rows its SUBJECTS admin
+// tags replace ([value, name, words] by position; flags alike), words '' leaving a value unsaid. full: the Candidates'
+// judged line (admin-fish.js fishTagText), which names the good views too: a replaced row's empty words then its name.
+// juvenile (j) is never among the flags' words where base leaves it out (the phase says it: fishPhase).
+function tagWords(S, base, flags, full) {
+  const T = (S && S.admin && S.admin.tags) || {},
+    // full: a row whose good values the base names (the views: "profile") names them; else its empty words stay unsaid
+    all = i => full && T[i].some(([v, , x]) => !x && v in base[i]),
+    w =
+      i =>
+      ([v, n, x]) => [v, x || (all(i) ? n.toLowerCase() : '')];
+  return {
+    pos: base.map((m, i) => (T[i] ? Object.fromEntries(T[i].map(w(i))) : m)),
+    flags: {
+      ...flags,
+      ...Object.fromEntries((T.flags || []).filter(([k]) => k in flags || k !== 'j').map(([k, n, x]) => [k, x || n.toLowerCase()]))
+    }
+  };
+}
+const tagText = (jt, W) =>
+  !jt ? '' : [...W.pos.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => W.flags[c])].filter(Boolean).map(esc).join(' · ');
+// The tags of a photo of the tree subject in force (FISHS) in words: only what makes a photo harder.
+const fuTags = (jt, S = FISHS) => tagText(jt, tagWords(S, FU_TAGS, FU_FLAGS));
 // A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
 const fuImr = u =>
   u.imr
@@ -4445,6 +4466,12 @@ const HELP = {
   fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species, ${FISHT.wink} for a species met only on the surprise cards), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count: <i>One fish</i>, <i>Same species</i> (several of it), <i>Other species in view</i> (several species on one photo), <i>Unclear</i> (which fish is asked about?); hover a button for its meaning) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals, with ⟲ ⟳ to turn the photo. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
+// The Candidates' help for a subject whose swiper differs from the fish's (core.js SUBJECTS admin): its own target, no
+// auto-sort (no Checks, no Auto line), its rubric's rows (admin-fish.js tagRows). '' for the fish.
+const candHelpOf = S =>
+  S.admin.target > 0 || !S.admin.autosort
+    ? `<p><b>${esc(S.name)}</b>: ${S.admin.target > 0 ? `the target is ${S.admin.target} photos in play for each species and each genus-level list (a genus's own photos, "<i>Genus</i> sp."), the game's cap; ` : ''}${S.admin.autosort ? '' : 'no auto-sort, so no Checks and no Auto line: the sure photos the judging pass keeps enter the game by themselves, up to the cap; '}${S.admin.tags ? `the Tags rows are its rubric's (${(S.admin.tags[0] || []).map(x => esc(x[1])).join(', ')}${S.admin.tags.flags ? '; ' + S.admin.tags.flags.map(x => esc(x[1])).join(', ') : ''}). ` : ''}The rest as below.</p>`
+    : '';
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
 function toggleHelp() {
   let h = $('admhelp');
@@ -4477,7 +4504,7 @@ function toggleHelp() {
   let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
     if (tab === 'start') store.set('reefid-admin-started', true);
-    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : HELP[m] + (REC_PAGES.has(m) ? REC_HELP : '')}`;
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + HELP[m] + (REC_PAGES.has(m) ? REC_HELP : '')}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
       b =>
@@ -6601,7 +6628,7 @@ async function fishLoad(withGame, S = FISHS) {
           groups: Object.fromEntries(G.map(g => [g.n, g.title])),
           cand,
           // {id: species record}, a wink family's species marked wink (autosort.js fishSpecies: its own target, FISHT.wink).
-          species: fishSpecies(F),
+          species: fishSpecies(F, S.admin.target),
           // {id: genus record}: a genus-level photo's unit (gl, sp its genus id), named by its genus (fuName).
           genera: Object.fromEntries((F.genera || []).map(g => [g.id, g])),
           // The reference taxonomy (WoRMS: {AphiaID: {name, rank, parent}}), the Tree's WoRMS view (fuWormsOf).
