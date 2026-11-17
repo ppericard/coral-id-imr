@@ -434,3 +434,49 @@ test('the replay takes a learned mark away when a variant group has no right ans
   // The record a device holds never carries vl: the replay's own mark, read by replayedOf only.
   assert.ok(!('vl' in A) && !('vl' in adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars})));
 });
+
+// This device's answers replayed on top of the sheet's (sync.js replayAdoptS) recompute the variant groups left with the
+// table when the replay's rules version reads it (core.js rvVars; Codex review #953): a queued right answer on the last
+// group keeps the learned mark; without the table the sheet's vl stays as it came.
+test('a queued right answer on the last variant group keeps the mark when this device adopts the replay', () => {
+  assert.strictEqual(C.rvVars('fish', 2), false);
+  assert.strictEqual(C.rvVars('fish', 3), true);
+  assert.strictEqual(C.rvVars('coral', 99), false);
+  const L = examPool(),
+    vars = {'f:X': C.varUnit(L, {cls: 'C'})},
+    gen = {'f:X': {look: [], fam: 'X'}, 'f:Y': {look: [], fam: 'Y'}},
+    t0 = Date.UTC(2026, 10, 10),
+    row = (i, f, who) =>
+      C.logRow(
+        {
+          id: 'a' + i,
+          t: new Date(t0 + i * 1000).toISOString(),
+          g: 'f:X',
+          a: 'f:X',
+          ok: 1,
+          m: 'quiz|c',
+          ph: f,
+          ch: 'f:X f:Y',
+          e: 0.8,
+          th: 1,
+          sc: {d: 0, r: 1}
+        },
+        who
+      ),
+    mx = t0 + 60000,
+    saved = {'f:X': {ok: 5, ko: 0, h: '11111', ds: 1, dp: [1, 1], mx}},
+    // The sheet's replay: adults only, both groups left.
+    rec = C.replayProgress(
+      [0, 1, 2, 3].map(i => row(i, `a${i}`, 'p')),
+      {gen, vars}
+    ).p.P,
+    queued = [row(4, 'j1', '~me'), row(5, 'm2', '~me')],
+    onTop = o => C.replayProgress(queued, {gen, start: {'~me': {P: rec, n: 0, used: 0, rep: 0}}, ...o})['~me'].P;
+  assert.deepStrictEqual(rec['f:X'].vl, ['juv', 'ph']);
+  assert.ok(!('vl' in onTop({vars})['f:X']));
+  assert.strictEqual(C.replayAdopted(onTop({vars}), saved, 3)['f:X'].mx, mx);
+  assert.ok(!C.replayAdopted(onTop({}), saved, 3)['f:X'].mx, 'without the table, the sheet’s vl as it came');
+  // sync.js replayAdoptS passes the table (rpVars: app.js UNITS vars) under such a version.
+  const sync = require('fs').readFileSync(require('path').join(__dirname, '..', 'sync.js'), 'utf8');
+  assert.match(sync, /vars: rvVars\(S\.id, rp\.rv\) \? rpVars\(S\) \|\| undefined : undefined/);
+});

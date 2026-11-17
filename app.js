@@ -2374,6 +2374,13 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // Its variant table as the sheet's replay reads it (core.js SUBJECTS replayed vars: fishVarTable on its pool files,
+    // the units with the content in force, FISHF, as the sheet reads them), for this device’s answers replayed on top of
+    // the sheet’s (sync.js rpVars).
+    vars: S =>
+      FISHRAW && S && S.replayed && S.replayed.vars
+        ? S.replayed.vars(FISHF || FISHRAW.f, [FISHRAW.f, FISHRAW.ph, FISHRAW.gm, CUR], S)
+        : null,
     // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
     // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
     st: () => (FISH ? FISHST : ''),

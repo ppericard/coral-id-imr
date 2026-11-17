@@ -270,6 +270,10 @@ const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
 // subject), null before they are in.
 const rpUnits = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].gen ? UNITS[S.id].gen() : null);
+// Its variant table (core.js fishVarTable, as the sheet's replay reads it: SUBJECTS replayed vars; app.js UNITS vars), for
+// this device's answers replayed on top of the sheet's under a rules version that reads it (core.js rvVars): a queued
+// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in.
+const rpVars = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].vars ? UNITS[S.id].vars(S) : null);
 // The other subjects' versions a request says, each only once a reply said the script replays it (sheetV), so an older
 // script is never asked for a replay the app would not adopt, and once its units are in (the replay waits for them).
 const rvsAsk = () =>
@@ -425,7 +429,9 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
             dom: Number(v) >= DOM_SHEET,
             gd: st.gd,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
-            starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
+            starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {},
+            // The variant groups left (vl) recomputed with this device's answers, as the sheet's replay (rules D8, D9).
+            vars: rvVars(S.id, rp.rv) ? rpVars(S) || undefined : undefined
           })[me].P
         : rp.rec,
       before = copy(P),

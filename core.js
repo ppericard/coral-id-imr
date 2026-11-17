@@ -3876,7 +3876,7 @@
     const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
       ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
       w = new Array(c.length);
-    for (let a = 0; a < ord.length;) {
+    for (let a = 0; a < ord.length; ) {
       let b = a;
       while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
       const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1
@@ -5283,6 +5283,8 @@
       at: '2026-11-17',
       why: "Learned asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): a unit's mastery exam is passed only once each variant group it has (its juveniles; its sexes and colour phases), released by its own mastery, has a right answer, its exam drawing that group's photo while one is left (model.js varLeft, examPassed); a learned mark whose unit has a variant group with no right answer in the answer log is taken away by the sheet's replay for every player at once, the leaderboards included (rules D8, D9: replayProgress vars, fishVarTable, replayedOf; Code.gs subjVar_), silently (rule D6), its exam kept as passed but for that group",
       // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330; a learned mark taken away silent too, Q332).
+      // The replay reads the variant table from this version (vars: replayProgress vars; sync.js replayAdoptS).
+      vars: true,
       msg: null
     }
   ];
@@ -5292,6 +5294,9 @@
     return S.replay ? RVS : S.replayed && typeof S.replayed.rvs === 'function' ? S.replayed.rvs() : [];
   };
   const rvOf = id => (L => (L.length ? L[L.length - 1].v : 0))(rvsOf(id));
+  // Whether a replay under rules version rv of subject id reads the variant table (FISH_RVS vars; Q391 b): this device's
+  // answers replayed on top of the sheet's then recompute a unit's variant groups left (vl) with them (Codex review #953).
+  const rvVars = (id, rv) => rvsOf(id).some(e => e && e.vars && e.v <= rv);
   // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
   // script (rule D4, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
@@ -5715,7 +5720,8 @@
       });
     // vars (a subject's variant table, fishVarTable; Code.gs rplMake_): each unit's variant groups with no photo answered
     // right in the log (vl: varLeftOf at a full bar, a learned unit's), which take a learned mark away (replayedOf; Q391 b,
-    // rules D8, D9). Without vars (the corals; this device's answers replayed on top of the sheet's), vl stays as it came.
+    // rules D8, D9). This device's answers replayed on top of the sheet's pass the same table (sync.js rpVars); without vars
+    // (the corals; an app without its table yet), vl stays as it came.
     if (o.vars)
       Object.values(out).forEach(pl =>
         Object.keys(pl.P).forEach(g => {
@@ -6678,6 +6684,7 @@
     replayedSubjects,
     rvsOf,
     rvOf,
+    rvVars,
     LOG_SUBJ,
     LOG_SC,
     ansSubject,

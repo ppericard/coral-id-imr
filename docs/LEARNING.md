@@ -3758,7 +3758,9 @@ is (`SHARE`, `sharesNow`, `shareW`).
   replay (`sync.js` `replayAdoptS`). The app's exam uses the same functions (`model.js` `varLeft`: `varUnit`,
   `varLeftOf`), so app and sheet agree (`tests/phasepath.test.js`); no device takes a mark away on its own. A replay is
   made only with the table (`Code.gs` `rplMake_`: none without it; the app keeps its own and asks again). This device's
-  answers replayed on top of the sheet's keep the sheet's `vl` until the next replay.
+  answers replayed on top of the sheet's recompute `vl` with the same table (`app.js` `UNITS` `vars`, `sync.js`
+  `rpVars`, from the rules version that reads it: `core.js` `rvVars`, `FISH_RVS` `vars`), so a queued right answer on a
+  unit's last variant group keeps its mark (Codex review #953).
 - **The card** stays as built (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph` condition, `TOLD`,
   the sign-out clear): it comes with the first variant photo a player meets.
 
