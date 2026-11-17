@@ -4654,7 +4654,8 @@ progress (fish)"):
 - Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
   species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
 - Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
-  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
+  genus credit alone, for the genera a player has (circle 1 only then: families and every genus of the game reached 67%;
+  every circle since 2026-11-18: 74%, the anchor).
 
 **Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool, since retired, kept the formula of 2026-11-04,
 unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
@@ -6289,7 +6290,7 @@ expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
-cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
+cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
 A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
 the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific

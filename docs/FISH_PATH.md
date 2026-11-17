@@ -65,6 +65,15 @@ is the design's shorthand, and internal identifiers may keep it.
   its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
+- **Every circle's genera** (Pierre, 2026-11-18 ~06:32 Manila: "lance"): built for circle 1 alone (130 genera) when only
+  circle 1 was on the path, the genera of the families of circles 2 and 3 (107 more, 237 in all; a surprise card's genus
+  none) are units as circle 1's: the same opening (the family's Advanced, the offer or the switch), sibling genera as
+  look-alikes, the family's line and circle, the genus credit in the score, the replay, the board and the achievements that
+  count genera (`core.js` `fishGenSets`, read by `app.js` `fishGenera`, `fishReplayGen`, `fishVarTable`; fish rules
+  version 4; opened from the sheet that replays them, `sync.js` `GENERA_SHEET`). No IMR genus outside circle 1 (the IMR
+  sub-entries are circle 1's), and none of them has a presentation or ID marks yet, so their cards show their species
+  (ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
+  name comes after its genus, in every circle (Q397). docs/LEARNING.md "Fish: scientific genera".
 - **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase
   sur les familles, il faut déjà inclure, sans avoir besoin de leur demander, les genres ... qui sont dans la liste du cours d'IMR"):
   for a player who answered "I'm at IMR", each genus an IMR sub-entry names alone (Chromis, Dascyllus, Pomacentrus, Amphiprion,
@@ -607,7 +616,8 @@ on families only to an IMR RA with every species open:
       its species' weights. The Entries part and the species credit are these weighted means.
     - **Square-root display (B)**: the % shown is 100 × √raw. Anchors: families only **50%**, families and every genus
       **74%**, every common name **89%**, every scientific name **92%**, every common name and every genus **95%**,
-      everything **100%**. Today the genera exist for circle 1 only, so families and every genus of the game reach 67% (after #727).
+      everything **100%**. The genera exist in every circle since 2026-11-18, so families and every genus reach that anchor,
+      74% (67% while they existed for circle 1 only, after #727).
     - Not C (circle weights).
     - **A species with no common name at all** (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la branche nom
       commun"; 5 since #727, more with the nudibranchs): no common-name unit, out of the
