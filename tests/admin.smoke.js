@@ -6158,8 +6158,8 @@ const darkCards = (p, sel) =>
       }
       // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
       // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
-      // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
-      // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
+      // the Analyses views the fish have (SUBJECTS analyses, #1060), its Heatmap among them; every genus of its game on
+      // the map in italics, by name, in its family's block, the families in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
       // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
       // at all, Not enough data yet. No raw unit id, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
@@ -6204,6 +6204,9 @@ const darkCards = (p, sel) =>
             );
             return {
               views: TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              fishViews: TABS.filter(t => t[3] === 'analyses').flatMap(t =>
+                t[2].map(([h]) => h).filter(h => hasPage(subjectOf('fish'), h))
+              ),
               sw: !!V.querySelector('[data-sf="hr"]'),
               rows: T.querySelectorAll('tbody tr').length,
               cols: T.querySelectorAll('thead .hm-col').length,
@@ -6223,7 +6226,8 @@ const darkCards = (p, sel) =>
           });
           if (
             !hs ||
-            hs.views.join() !== 'analyses/difficulty/heatmap' ||
+            hs.views.join() !== hs.fishViews.join() ||
+            !hs.views.includes('analyses/difficulty/heatmap') ||
             hs.sw ||
             hs.rows !== hs.slate ||
             hs.cols !== hs.rows ||
@@ -6238,7 +6242,7 @@ const darkCards = (p, sel) =>
             hs.ids.length ||
             hs.wide > 0
           )
-            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined})}`);
+            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined, fishViews: undefined})}`);
           // Mara's few answers do not count yet: her map says so
           const mara = hs && hs.players.find(p => p[1] === 'Mara Demo');
           if (!mara) ge.push('Mara not in the picker');
