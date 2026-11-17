@@ -82,6 +82,9 @@ const GATES = {
       sheetV: () => v,
       SPECIES_SHEET: N
     })(),
+  // The scientific genera of circles 2 and 3 (sync.js generaOn: they open and count among the genera a question offers
+  // once the sheet replays them, core.js fishGenSets; app.js sciNow reads it): from the version that holds them.
+  GENERA_SHEET: (v, N) => fn('sync.js', 'const generaOn = ', '\n', 'generaOn', {sheetV: () => v, GENERA_SHEET: N})(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
