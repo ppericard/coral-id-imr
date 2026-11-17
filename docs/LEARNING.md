@@ -4074,11 +4074,22 @@ with a first try stopped when the set's rule changed):
     40;
   - app world, units at Open Water at 300, strongRA: 23.0 → 18.7 (per seed 23, 24, 22 → 18, 21, 17; beginner 6, 4, 7 →
     3, 3, 6, unclear).
-  No exam comes before 300 questions, so only the withheld practice photos can move these (the practice pools without
-  ordinary, non-reference photos). The first run, which withheld more photos (3,232, 10% of every species), read the
-  same two in the other direction or unclear (app world strongRA 23.0 → 23.7; rated 39.2 → 37.6). Not settled at these
-  seeds: rule L11 says one level up (the rated world at 10 seeds for beginner and strongRA, about 10 minutes) before
-  it goes to Pierre; left to the integrator, as the 30-minute budget was spent.
+  No exam comes before 300 questions, so only the withheld practice photos can move these.
+- **One level up** (2026-11-18, asked by the integrator): the rated world, beginner and strongRA × seeds 1-10 (seeds 6-10
+  run on the same pair, cbbe5724 against d5abfef4, the same measuring tools), read at two looks (95% bounds, the primary
+  at 0.025). Primary `learned@3000:down`: no difference (p 0.65; beginner 24.1 → 24.1, strongRA 30.5 → 31.1). Held:
+  true knowledge at 300, 1,000, 3,000; E; the score at 3,000; the share under ease 4; the plateau; families at Advanced
+  at 300 and 3,000 (unclear at 1,000 for beginner, −0.6). **Two breaches confirmed**:
+  - the first unit at Open Water, beginner: 184 → 238 answers (+54, bound +106; margin +37), later in 7 of 10 seeds
+    (301, 144, 191, 289, 232, 111, 202, 87, 133, 150 → 575, 110, 201, 359, 228, 153, 178, 180, 142, 253): a family-level
+    delay, one seed (301 → 575) the largest part;
+  - units at Open Water at 1,000, strongRA: 40.4 → 37.3 (−3.1, bound −5.2; margin 2), down in 8 of 10 seeds; by kind,
+    mostly the scientific genera (8.4 → 6.2), families 31.2 → 30.7, species 0.8 → 0.4: the genera lose practice photos
+    to the 15 each is topped up to, where they do not have "assez de photos par ailleurs".
+  The app world's breach (units at Open Water at 300, strongRA) is all families there (23, 24, 22 → 18, 21, 17), while
+  the rated world reads that measure unclear at 10 seeds (16.6 → 16.5); not re-run at the higher level. Rule L11: a
+  confirmed breach goes to Pierre, with the choices it leaves: keep it; top a genus up only where practice stays well
+  supplied (a larger keep for a genus's species); or hold out per family only, the genera taking what their species give.
 - **App world**: true knowledge, E, the plateau, the share under ease 4, units met held; exams started by 600 in the
   strong profiles only, their questions all on held-out photos when the unit had some.
 
