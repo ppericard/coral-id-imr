@@ -1015,7 +1015,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     asrc = apart ? ((own ? g.lksrc : C.lksrc) || {})[own ? c : target] : null;
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt && C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : ''}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt ? (C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : '') : esrcTag(C, 'sum')}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling. A unit's
   // English name given as information (app.js vernFirst, UNITS vern: the sea slugs'; Pierre, 2026-11-17) follows its
@@ -1038,12 +1038,14 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
         : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
-      : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
+      : // the criteria cited by the source the content editor gave with his edit of them, else the Coral Finder pages
+        // (app.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2, Codex review #988)
+        `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length && g.sum ? `<p class="vs">${esc(g.sum)}${esrcTag(g, 'sum')}</p>` : ''}${(g.crit || []).length ? `<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">${critRef(g)}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
   // empty box drew a bare rounded bar, Pierre 2026-11-07, Barracudas).
   return `<div class="fb">
     <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}
-    ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}${vs}
+    ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
 // An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
