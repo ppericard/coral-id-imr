@@ -1085,6 +1085,7 @@ async function freshPlayers(b, base, errs) {
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
+    store.set(SHEETV, gv0); // the version the smoke runs at (no species unit in the draw below)
     FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
     // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
@@ -1178,7 +1179,7 @@ async function freshPlayers(b, base, errs) {
     pgAt('f:Butterflyfishes', 0.2);
     pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play: ' + pl);
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -1236,7 +1237,7 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
     // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
     ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
-    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw: ' + pool().filter(n => GX(n).rank));
     // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
     quizBoard();
     const so = document.querySelector('#view [data-seton="sci"]');
@@ -1245,7 +1246,6 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
     bonusSet(false, 'sci');
     route();
-    store.set(SHEETV, gv0);
     // The species level, step 1 (Pierre, 2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md):
     // off below SPECIES_SHEET (rule D4); on, a family at Advanced (the Spadefishes, above) brings its species one at a
     // time, the first in its order, labelled by the player's first common name, the scientific name under each choice.
