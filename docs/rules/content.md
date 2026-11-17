@@ -80,10 +80,13 @@ Research Grade observation in the country **and** an independent checklist that 
 (fish: FishBase country checklist, Table 1 "present"; corals: Corals of the World, a Philippine ecoregion;
 `tools/presence_checklists.json`): a checklist alone never brings in a species nobody observed; (3) **confirmed near
 Dauin**: Research Grade observations within 40 km of Dauin by at least 2 distinct observers, or the IMR reference list
-(fish: the EventMeasure PDF). Pierre (`ppericard`) is one observer like anyone else: his Research Grade observations
+(fish: the EventMeasure PDF). **A species with no published name yet** (a guide's or an article's "*Genus* sp. N";
+Pierre, 2026-11-17, Q389 (2)) is present when at least 3 distinct observers in the Philippines carry the same label at
+its genus, the label sourced by an article (`tools/presence.py` `label_confirmed`, `tools/seaslug_informal.json`). Pierre (`ppericard`) is one observer like anyone else: his Research Grade observations
 count, his Needs ID ones confirm nothing, here or near Dauin (his species-level photos stay usable, rule S2). Defined
 once in `tools/presence.py` and used everywhere presence is decided: `tools/build_fish.py` (`fish.json` `present`: in
 the game or out), `tools/fetch_fish.py` and `tools/fetch_local.py` (photos from abroad only of confirmed species),
 `tools/coral_presence.py` (`presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
 rule" in the admin, never removed automatically: Pierre decides). Change the rule there, not in a tool.
-*Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04.
+*Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04;
+the species with no name yet, 2026-11-17 (this wording approved 17:40 Manila).
