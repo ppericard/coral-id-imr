@@ -84,6 +84,7 @@ const fresh = () => path.join(TMP, `w${++n}`);
     'cand.json',
     'excluded.json',
     'fish-game.json',
+    'fish-holdout.json',
     'fish-photos.json',
     'fish-cand.json',
     'tools/fish_refill.json',

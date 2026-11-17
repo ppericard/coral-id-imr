@@ -6009,6 +6009,120 @@ const darkCards = (p, sel) =>
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
+      // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
+      // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
+      // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
+      // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
+      // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
+      // at all, Not enough data yet. No raw unit id, no sideways scroll. Once, at 1280 and 390 px.
+      for (const vw of [1280, 390]) {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          gc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+        await gc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const gq = await gc.newPage(),
+          ge = [];
+        gq.on('pageerror', e => ge.push(e.message));
+        await gq.goto(base + `admin.html?demo&v=${VER}`);
+        const at = await gq
+          .waitForFunction(
+            () => typeof SUBJECTS !== 'undefined' && (SUBJECTS.find(S => S.sheets && unitRankOf(S) === 'genus') || {}).hash,
+            null,
+            {
+              timeout: 60000
+            }
+          )
+          .then(h => h.jsonValue())
+          .catch(() => null);
+        if (!at) ge.push('no subject played at the genus');
+        else {
+          await gq.evaluate(h => (location.hash = '#' + h + 'analyses/difficulty/heatmap'), at);
+          await gq
+            // drawn once its tree is read (unitAdmin: the units' names, blocks and groups)
+            .waitForFunction(
+              () => cur === 'analyses/difficulty/heatmap' && unitRegOf(ASUBJ) && document.querySelector('#view .adm-hmt .hm-sup'),
+              null,
+              {timeout: 90000}
+            )
+            .catch(() => ge.push('Heatmap not drawn'));
+          const hs = await gq.evaluate(() => {
+            const V = document.getElementById('view'),
+              T = V.querySelector('.adm-hmt'),
+              FA = unitRegOf(ASUBJ);
+            if (!T || !FA) return null;
+            const kp = Object.fromEntries(
+              [...V.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+            );
+            return {
+              views: TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              sw: !!V.querySelector('[data-sf="hr"]'),
+              rows: T.querySelectorAll('tbody tr').length,
+              cols: T.querySelectorAll('thead .hm-col').length,
+              slate: FA.slate.length,
+              it: T.querySelectorAll('tbody .hm-row.hm-it').length,
+              fams: [...T.querySelectorAll('.hm-fam:not(.hm-sup)')].map(th => th.title),
+              famsWant: [...new Set(FA.slate.map(g => FA.gen[FA.fam[g]].name))].sort(),
+              sups: [...T.querySelectorAll('.hm-sup')].map(th => th.title),
+              supsWant: FA.taxa.groups.map(g => g.title).sort(),
+              sum: [...T.querySelectorAll('td')].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+              mix: kp['Mix-ups'],
+              note: (V.querySelector('p.note') || {}).textContent || '',
+              players: [...V.querySelectorAll('[data-hmwho] option')].filter(o => o.value).map(o => [o.value, o.textContent]),
+              ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+          if (
+            !hs ||
+            hs.views.join() !== 'analyses/difficulty/heatmap' ||
+            hs.sw ||
+            hs.rows !== hs.slate ||
+            hs.cols !== hs.rows ||
+            hs.it !== hs.rows ||
+            [...hs.fams].sort().join() !== hs.famsWant.join() ||
+            [...hs.sups].sort().join() !== hs.supsWant.join() ||
+            String(hs.sum) !== hs.mix ||
+            !hs.sum ||
+            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; about \d+ more answers with choices to bring them there\.$/.test(
+              hs.note
+            ) ||
+            hs.ids.length ||
+            hs.wide > 0
+          )
+            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined})}`);
+          // Mara's few answers do not count yet: her map says so
+          const mara = hs && hs.players.find(p => p[1] === 'Mara Demo');
+          if (!mara) ge.push('Mara not in the picker');
+          else {
+            await gq.evaluate(h => (location.hash = h), `#${at}analyses/difficulty/heatmap?player=${encodeURIComponent(mara[0])}`);
+            await gq.waitForFunction(id => hashQuery().get('player') === id && document.querySelector('#view .adm-hmt'), mara[0], {
+              timeout: 30000
+            });
+            const mn = await gq.evaluate(() => (document.querySelector('#view p.note') || {}).textContent || '');
+            if (!/^Not enough data yet: their answers count in the mix-ups once they are \d+ or more/.test(mn)) ge.push(`Mara: ${mn}`);
+            await gq.evaluate(h => (location.hash = h), `#${at}analyses/difficulty/heatmap`);
+            await gq.waitForFunction(() => !hashQuery().get('player') && document.querySelector('#view .adm-hmt'), null, {timeout: 30000});
+          }
+          // no answer at all in this subject (one just opened to its group): one line, no map
+          const none = await gq.evaluate(() => {
+            const keep = ANS;
+            ANS = {...ANS, all: (ANS.all || ANS.rows).filter(r => rowSubject(r) !== ASUBJ.id)};
+            render();
+            const o = {
+              map: !!document.querySelector('#view .adm-hmt, #view .adm-kpis'),
+              note: [...document.querySelectorAll('#view p.note')].map(e => e.textContent)
+            };
+            ANS = keep;
+            render();
+            return o;
+          });
+          if (none.map || none.note.join() !== 'Not enough data yet: no answers yet.') ge.push(`no answers ${JSON.stringify(none)}`);
+        }
+        if (ge.length) fails.push(`${vw}px Heatmap of a subject played at the genus: ${ge.slice(0, 4).join(' | ')}`);
+        await gc.close();
+      }
       // Fish admin at parity, Journey details: a fish Journey names its units as the Answer log does (a family by name, a
       // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
       // steps say the subject's words (Open all families), the genus cards (admin-demo.js: Ben's fish saved copy) and the

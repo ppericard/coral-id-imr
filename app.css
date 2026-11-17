@@ -7594,6 +7594,23 @@ a.frow:hover {
   margin-top: 2px;
   font-size: var(--fs-xs);
 }
+/* A unit's English name given as information (app.js vernFirst: the sea slugs' common names and nicknames, Pierre
+   2026-11-17): under its scientific name on a Learn tile, beside it in a family's heading and in the answer's verdict;
+   lighter than the scientific name, which stays the name learned. */
+.tipsheet .ven,
+.fb h3 .ven {
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.fb h3 .ven {
+  color: var(--muted);
+}
+.gdiv .ven {
+  font-family: var(--body);
+  font-size: var(--fs-s);
+  font-weight: 400;
+  color: var(--muted);
+}
 a.ftile {
   display: block;
   color: inherit;

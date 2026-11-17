@@ -60,10 +60,10 @@ test('core.js fishGen unit genus: every genus of the circles a unit, in its best
     const g = X.gen[G.id],
       sp = new Set(G.species);
     assert.deepStrictEqual([g.rank, g.name, g.parent, g.circle, g.species], ['genus', G.name, G.family, G.circle, G.species], G.id);
-    // its family's photos of its species, every one of them
+    // its family's photos of its species, every one of them, and its own genus-level photos (gl, Q389 (1))
     assert.deepStrictEqual(
       g.views.wide.map(p => p.f),
-      X.gen[G.family].views.wide.filter(p => sp.has(p.sp)).map(p => p.f),
+      X.gen[G.family].views.wide.filter(p => sp.has(p.sp) || (p.gl && p.sp === G.id)).map(p => p.f),
       G.id
     );
     // its look-alikes: its sibling genera
@@ -231,6 +231,15 @@ test('the admin registry: the sea slugs’ slate is their genera, the fish’s t
     F0 = R.repReg(FJ, json('fish-photos.json'), json('fish-game.json'));
   assert.deepStrictEqual(Fi.slate, F0.slate);
   assert.ok(Fi.slate.every(n => n.startsWith('f:')));
+  // the taxonomic groups the Heatmap's families sit in (admin-heatmap.js supOf): every genus's family has one; the fish none
+  assert.deepStrictEqual(S.taxa.groups, F.taxa.groups);
+  S.slate.forEach(g =>
+    assert.ok(
+      S.taxa.groups.some(x => x.n === S.gen[S.fam[g]].tg),
+      g
+    )
+  );
+  assert.strictEqual(Fi.taxa, undefined);
 });
 
 // The Journey's rank steps (admin-journey.js jSteps): a question below the units' rank, never the units themselves.
