@@ -1798,15 +1798,22 @@ const C = require('../core.js'),
   vm = require('vm'),
   {execFileSync} = require('child_process');
 const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
+  CJSON0 = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
   GEN = (d => {
     const out = {};
     [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
     return out;
   })(JSON.parse(DJSON));
-// data.json from GitHub, served here (counted); anything else is the default stub.
+// data.json from GitHub, served here (counted), and curation.json, whose look-alike pairs the coral replay lays over it
+// (Code.gs subjRpl_; design note v2, step 8); anything else is the default stub.
 const withData = (n = {c: 0}) => ({
   n,
-  fetch: url => (/\/main\/data\.json$/.test(url) ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON}) : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON})
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON0}
+        : null
 });
 const qa = (id, i, x = {}) =>
   ans(id, {
@@ -1994,8 +2001,9 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
-  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
+  // Three times in all: once for the replay's units under the content editor's pairs (subjRpl_, design note v2 step 8),
+  // once for the slate (dataJson_), once for the photo pool of the list (v81 pools_), each then cached.
+  assert.strictEqual(f.n.c, 3, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});

@@ -228,10 +228,11 @@ test('orphans: a node the base lacks, a circle not declared, a bad pair key or v
   const st = C.structEntries(S, F, {nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}}).circles[0];
   assert.strictEqual(st.state, 'stale');
   assert.strictEqual(fam(C.contentApply(S, F, cur({nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}})), 'f:Damselfishes').circle, 2);
-  // A subject with no structure declared (the corals): nothing applies, the stamp is empty.
+  // A subject with no circle declared (the corals: pairs only, design note v2 step 8): a circle slot applies nothing, the
+  // stamp is empty.
   const K = C.subjectOf('coral');
-  assert.ok(!K.structure);
-  assert.strictEqual(C.structStamp(K, {}, {content: {nodes: {Acropora: circ(2)}}}), '');
+  assert.ok(K.structure && !K.structure.circle);
+  assert.strictEqual(C.structStamp(K, {gen: {Acropora: {look: []}}}, {content: {nodes: {Acropora: circ(2)}}}), '');
 });
 
 // ---- The stamp ----
