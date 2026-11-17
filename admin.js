@@ -9516,8 +9516,8 @@ const savedFor = (name, S) => (x => (!x || x.err ? x : x.by[S.id]))(savedOf(name
 // A subject's units for a replay in the admin (Pierre, 2026-11-06: follow every subject's progress on the Journey): the
 // replayed subject's from data.json; another's from its own registry (unitRegOf: fishAdmin for the fish, unitAdmin for
 // another tree subject; fishGen, its circles as the app's slate: the sea slugs' genera), once read; null before. A
-// subject the sheet replays from its own answers (SUBJECTS replayed) takes the sheet's units, variant table, slate and
-// tree instead (unitRpl, from its registry's files under the published curation, SAVED), so its replayed progress and %
+// subject the sheet replays from its own answers (SUBJECTS replayed) replays with the sheet's units, variant table, slate
+// and tree (unitRpl, from its registry's files under the published curation, SAVED), so its replayed progress and %
 // are the ones its players' apps adopt and show (unitPct). stats: the sheet's photo numbers the replay reads (?stats=1,
 // the replayed subject's only for now: another subject replays without memory offsets, pooled confusions or format
 // offsets).
@@ -9542,7 +9542,8 @@ function unitsOf(S) {
 // rplMake_), so a player's replayed progress here is the one their app adopts (sync.js replayAdoptS): for a subject the
 // sheet replays from its own answers (SUBJECTS replayed: the fish; the sea slugs once the sheet replays them), its file f
 // with the structure and content in force laid over it (core.js contentApply under cur, the published curation.json),
-// then gen, the replay's units (replayed gen: the fish's families, scientific genera and species units, fishReplayGen);
+// then rgen, the replay's units (replayed gen: the fish's families, scientific genera and species units, fishReplayGen;
+// gen stays the registry's records, their circles and names);
 // vars, its variant table over its pool files [f, ph, gm, cur] when it has one (replayed vars: the learned marks the log
 // takes away, Q391 b); slate, its units as the app's UNITS slate under that structure (the % and Learned of a subject with
 // no tree, the units met); tree, for a subject with a global score (SUBJECTS score), the tree its leaderboard ranks by
@@ -9554,7 +9555,7 @@ function unitRpl(S, f, ph, gm, cur) {
     X = fishGen(A, {}, undefined, unitRankOf(S)),
     V = typeof Y.vars === 'function' ? Y.vars(A, [f, ph, gm, cur], S) : null;
   return {
-    gen: Y.gen(A),
+    rgen: Y.gen(A),
     slate: [...X.c1, ...X.c2, ...X.c3],
     tree: S.score && typeof Y.tree === 'function' ? Y.tree(A) || null : null,
     vars: V && Object.keys(V).length ? V : null
@@ -9601,7 +9602,7 @@ function progOf(u, full, S = replayS()) {
   });
   const reset = !X.err && X.reset ? Date.parse(X.reset) : 0,
     rep = replayProgress(BY[u.id] || [], {
-      gen: M.gen,
+      gen: M.rgen || M.gen, // the sheet's replay units (unitRpl), else the registry's
       ...statsFor(S),
       ...(M.vars ? {vars: M.vars} : {}), // the variant table, as the sheet's replay (Code.gs rplMake_)
       since: reset ? {[u.id]: reset} : {},

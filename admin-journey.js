@@ -958,7 +958,7 @@ function sessProg(id, all, L, S, PG) {
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
     M = unitsOf(ASUBJ),
     o = {
-      gen: M.gen,
+      gen: M.rgen || M.gen,
       ...statsFor(ASUBJ),
       ...(M.vars ? {vars: M.vars} : {}),
       since: reset ? {[id]: reset} : {},
