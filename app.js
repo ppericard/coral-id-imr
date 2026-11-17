@@ -1326,7 +1326,8 @@ const treeLoad = id => {
           // next try fetches it again and start-up falls back on the corals (Codex review #987), as fishHome refuses fish.json.
           if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
+          // game: whether fish-game.json came (without it the units play on their first photos: UNITS fish vars waits).
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true, game: !!(gm && gm.photos)});
           // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
           // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
           // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
@@ -2381,6 +2382,15 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // Its variant table as the sheet's replay reads it (core.js SUBJECTS replayed vars: fishVarTable on its pool files,
+    // the units with the content in force, FISHF, as the sheet reads them), for this device’s answers replayed on top of
+    // the sheet’s (sync.js rpVars). Null until the whole game pool is in (FISHRAW game: fish-game.json): a table made on
+    // the first photos alone lacks variant photos, so a queued right answer would clear a group the sheet left; the
+    // adoption waits for it instead (sync.js replayAdoptS; Codex review #953).
+    vars: S =>
+      FISHRAW && FISHRAW.game && S && S.replayed && S.replayed.vars
+        ? S.replayed.vars(FISHF || FISHRAW.f, [FISHRAW.f, FISHRAW.ph, FISHRAW.gm, CUR], S)
+        : null,
     // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
     // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
     st: () => (FISH ? FISHST : ''),
