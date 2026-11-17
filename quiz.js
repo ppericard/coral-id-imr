@@ -778,7 +778,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // (exq, above: never from the custom quiz.)
   EXAMQ = null;
   // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
-  // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
+  // typed questions may take one more, its count held at EXAM.n so its % never passes 100), and a right answer on each
+  // variant group the unit has (model.js varLeft, examPassed; Q391 b: the exam asks them, its count held the same way).
   if (!good) delete s.ex;
   else if (exq) {
     const ex = s.ex || {k: 0, v: [], ts: Date.now()}; // ts: its start, which places it among the logged answers (core.js replayedOf)
@@ -786,7 +787,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
     ex.at = answersSoFar();
-    if (ex.k >= EXAM.n && ex.t >= TYPED.exam) {
+    if (examPassed(target, ex)) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
@@ -1325,8 +1326,8 @@ function allMetShow(r, brk) {
 }
 // Juveniles and colour phases (Pierre, 2026-11-04: "when a juvenile, a colour phase or a strongly dimorphic species first
 // comes in, a card explains it, with photos side by side"; 2026-11-07: they come in stages, with the card, at the right
-// moment; docs/LEARNING.md "Juveniles and colour phases in stages"). The draw holds them back at the start of each unit
-// (model.js photoSet, core.js phaseStage); the first question that shows one (core.js phaseKind: a juvenile, or a sex or
+// moment; docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"). The draw brings them in with each
+// unit's own mastery (model.js photoSet, varOf; Q391 a); the first question that shows one (core.js phaseKind: a juvenile, or a sex or
 // colour phase) brings its card at the break at Next: the photo beside one of the same species in another phase (core.js
 // phasePair: a juvenile beside an adult, a male beside a female), the photo's taxon, and the unit's own phase lines (the
 // IMR presentation's, fishGen phase). Once per kind and subject: on this device (PHASEC.KEY) and, signed in, on the

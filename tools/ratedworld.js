@@ -202,7 +202,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -460,7 +460,10 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0,
       Math.min(...ph.map(p => p.e || 0)),
       ph.some(p => C.phaseOf(p)) ? 1 : 0,
-      ((P()[t] || {}).ok || 0) + ((P()[t] || {}).ko || 0)
+      ((P()[t] || {}).ok || 0) + ((P()[t] || {}).ko || 0),
+      // the variant kind shown (core.js VAR_KINDS: 0 none, 1 an early-class juvenile, 2 another, 3 a late-class one, 4 a
+      // sex or colour phase; model.js varKind), for learncmp's phEasy and phOther
+      Math.max(0, ...ph.map(p => C.VAR_KINDS.indexOf(M.varKind(t, p))))
     ]);
     const q = C.scoreIn({
       t,
@@ -489,7 +492,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     });
     const res = C.scoreAnswer(P(), q);
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)
-    // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed passes it.
+    // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed, and each variant group right
+    // (model.js examPassed, Q391 b), passes it.
     const s = P()[t];
     noteRecent(s, ph);
     if (!ok) delete s.ex;
@@ -499,7 +503,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       ex.t = (ex.t || 0) + (typed ? 1 : 0);
       ex.v = [...new Set([...(ex.v || []), ph[0].view].filter(Boolean))]; // the views the exam showed (examSet)
       ex.at = M.answersSoFar();
-      if (ex.k >= M.EXAM.n && ex.t >= M.TYPED.exam) ((s.mx = 1), delete s.ex);
+      if (M.examPassed(t, ex)) ((s.mx = 1), delete s.ex);
       else s.ex = ex;
     }
     if (!ok && G[c] && P()[c]) delete P()[c].ex;

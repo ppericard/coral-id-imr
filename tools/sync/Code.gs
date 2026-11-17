@@ -3703,9 +3703,7 @@ const CORE_ = (function () { const module = {exports: {}};
   //           u, how unsure the difficulty of a photo nobody has answered is (variance, model.js calSd: the targeting is
   //           that much wider for it, narrowing as answers come); pool, the number of observations a unit's draw floor
   //           is shared over (model.js photoSet: each observation keeps PICKD.FLOOR of the best one's weight, times
-  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's);
-  //           phase, the answers on a unit during which its juveniles and sex or colour phases are held back from its
-  //           draw before they come in, step by step, over as many again (core.js phaseOf, phaseStage; 0: none held).
+  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's).
   //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before; no u,
   //           model.js CAL.U, and an unbounded pool: their draw as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
@@ -3976,10 +3974,8 @@ const CORE_ = (function () { const module = {exports: {}};
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
       // CALIB.ease squared: every fish photo carries a judged ease); pool 30, the floor shared over 30 observations (a
       // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
-      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools"). phase 10: the juveniles and the sex or
-      // colour phases never in a family's or genus's first 10 answers, then in stages, at full weight from its 20th
-      // (Pierre, 2026-11-07; docs/LEARNING.md "Juveniles and colour phases in stages").
-      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30, phase: 10},
+      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
       pages: ['genera', 'sheet', 'quiz'],
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
@@ -4190,8 +4186,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
   // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
   // early 0, no lean at the start; u unset, a photo nobody answered as unsure as model.js CAL.U says; pool unbounded,
-  // every observation keeps the whole floor (model.js PICKD.FLOOR); phase 0, no phase photo held back (core.js phaseStage).
-  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity, phase: 0};
+  // every observation keeps the whole floor (model.js PICKD.FLOOR).
+  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   // The rank subject s's game units are at (SUBJECTS unitRank, else its rank): what an answer on one of them logs, and the
   // rank app.js rankOf reads as the subject's own.
@@ -4344,12 +4340,41 @@ const CORE_ = (function () { const module = {exports: {}};
   // photo among them. The tags' phase flag p marks every photo of an entry whose sexes differ, not the photo's own phase.
   const PHASE_JUV = 'juvenile';
   const phaseOf = p => (!p ? '' : p.ph ? String(p.ph) : /j/.test(String(p.jt || '').slice(7)) ? PHASE_JUV : '');
-  // How much a phase photo weighs in a unit's draw (model.js photoSet) after m answers on that unit, N being its
-  // subject's calibration phase (SUBJECTS calib; 0, the default, holds nothing back: 1): nothing during the unit's first
-  // N answers (never at the very start of a unit), then one step more at each answer, (m - N + 1) / N, the full weight
-  // from its 2N-th question on (m = 2N - 1). Keyed on the unit's own answers, which only go up: a phase photo is never held back for good
-  // (no wall, Pierre 2026-11-06).
-  const phaseStage = (N, m) => (!(N > 0) ? 1 : m < N ? 0 : Math.min(1, (m - N + 1) / N));
+  // The photo variants on their unit's mastery (Pierre, 2026-11-17 10:52 Manila, Q391 a: one rule for every level;
+  // docs/reviews/2026-11-17-levels-and-shares-study.md §3, §4, §9; docs/LEARNING.md "Juveniles and colour phases on their
+  // unit's mastery"). A variant is a slice of a unit's photos asking the same name (its juveniles, its sexes and colour
+  // phases), with no progress of its own: it comes as the unit asked is mastered. Its kind (VAR_KINDS; '' none):
+  // jE an early-class juvenile (its family's juvenile class A, or a genus or species named in its early list: they help
+  // learn the family early, Pierre 2026-11-04), jL a late-class one (class B, or named in late: taught later), j any other
+  // juvenile, ph a sex or colour phase. juv: the family's juvenile classes (fish.json juv: cls, early, late; none for a
+  // subject or family without them, every juvenile then j). A name in early or late is a genus or a species: the photo's
+  // taxon t is that name or starts with it and a space.
+  const VAR_KINDS = ['', 'jE', 'j', 'jL', 'ph'];
+  const varKindOf = (p, juv) => {
+    const w = phaseOf(p);
+    if (!w) return '';
+    if (w !== PHASE_JUV) return 'ph';
+    const J = juv || {},
+      t = String(p.t || ''),
+      hit = L => (L || []).some(x => t === x || t.startsWith(x + ' '));
+    return J.cls === 'A' || hit(J.early) ? 'jE' : J.cls === 'B' || hit(J.late) ? 'jL' : 'j';
+  };
+  // Each kind's thresholds [from, full] on the bar of the unit asked (model.js genScore): a variant photo weighs 0 below
+  // from, then rises in a straight line to its full weight at full (a step when they are equal). The defaults, one table
+  // for every subject: an early-class juvenile from the unit's first question (Q384 "très rapidement"); another juvenile
+  // and a sex or colour phase from Open Water (0.5) to Advanced (0.8) (2026-11-07: never at the very start, then in
+  // stages); a late-class juvenile at Advanced (Q391 b: a = b = 0.8, so every variant group is in before the mastery
+  // exam opens at 0.85). A family overrides any kind on its record (fish.json varAt, beside juv: tools/fish_source.json),
+  // read for its own units and those hanging from it (model.js varAtOf).
+  const VAR_AT = {jE: [0, 0], j: [0.5, 0.8], jL: [0.8, 0.8], ph: [0.5, 0.8]};
+  const varRamp = (x, at) => {
+    const [a, b] = at || [0, 0];
+    return x + 1e-9 < a ? 0 : b > a ? Math.min(1, (x - a) / (b - a)) : 1;
+  };
+  // The variant group a kind belongs to (Q391 b: "Learned" asks a right answer on each group a unit has): its juveniles
+  // ('juv', every class), its sexes and colour phases ('ph'); '' none.
+  const VAR_GROUPS = ['juv', 'ph'];
+  const varGroup = v => (!v ? '' : v === 'ph' ? 'ph' : 'juv');
   // The explanation card a phase photo brings (quiz.js phaseArm): 'juvenile', 'phase' for a sex or colour phase, '' none.
   // A sex or colour phase only on a photo whose tags carry the phase flag p: its entry is marked dimorph, the IMR
   // presentation saying its sexes or colour phases look different (judging/FISH.md "Tags"; the Parrotfishes, the Anthias),
@@ -4524,6 +4549,10 @@ const CORE_ = (function () { const module = {exports: {}};
         // heading above its block (learn.js viewFishList); display only
         ...(t.tgroup ? {tg: t.tgroup} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
+        // Its juvenile classes and its variant thresholds, when it has them (fish.json juv, varAt): the kind of each
+        // variant photo of its units and when it comes in (varKindOf, VAR_AT; model.js varKind, varAtOf; Q391 a).
+        ...(t.juv ? {juv: t.juv} : {}),
+        ...(t.varAt ? {varAt: t.varAt} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
         // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
         // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
@@ -8580,6 +8609,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a unit and its answer count win over the saved copy, also when the copy holds more answers there (counted twice, or played before the fish log began: in no log, so dropped), and no floor any more: a unit's bar may go down.",
       // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
       msg: null
+    },
+    {
+      v: 3,
+      at: '2026-11-17',
+      why: "Learned asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): a unit's mastery exam is passed only once each variant group it has (its juveniles; its sexes and colour phases), released by its own mastery, has a right answer, its exam drawing that group's photo while one is left (model.js varLeft, examPassed); a learned mark whose unit lacks one is taken away silently on the device that holds the photos (model.js varRecalcAll, rule D6), its exam kept as passed but for that group",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330; a learned mark taken away silent too, Q332).
+      msg: null
     }
   ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
@@ -9979,7 +10015,12 @@ const CORE_ = (function () { const module = {exports: {}};
     refScore,
     PHASE_JUV,
     phaseOf,
-    phaseStage,
+    VAR_KINDS,
+    varKindOf,
+    VAR_AT,
+    varRamp,
+    VAR_GROUPS,
+    varGroup,
     phaseKind,
     phaseCardOf,
     phasePair,

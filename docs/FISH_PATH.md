@@ -473,12 +473,14 @@ Decided from the admin pooling study:
   draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
   photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
   ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw.
-- **In stages** (Pierre, 2026-11-07: "we must put back a progressive path that presents juveniles and sexual dimorphism";
-  built 2026-11-15): every photo with a judged phase (a juvenile, a male, a female, an intermediate phase) is held back
-  from a unit's draw during its first 10 answers, then comes in a step at each answer, in full from its 20th (`SUBJECTS`
-  `calib` `phase`, `model.js` `photoSet`, `core.js` `phaseStage`; never a wall: keyed on the unit's answers, and nothing
-  held back on a unit with too few other photos). It overrides, for a unit's first answers, the two lines of 2026-11-04
-  below (the show-early juveniles, and phases kept back no longer). docs/LEARNING.md "Juveniles and colour phases in
+- **On the unit's own mastery** (Pierre, 2026-11-07: "we must put back a progressive path that presents juveniles and
+  sexual dimorphism"; 2026-11-17, Q391 a: one rule for every level): each juvenile, sex or colour phase photo comes into
+  its unit's draw on a ramp of that unit's bar, by the juvenile classes below (`core.js` `varKindOf`, `VAR_AT`;
+  `model.js` `photoSet`): class A and the early genera and species from the unit's first question, class B and the late
+  ones at Advanced, every other juvenile and every sex or colour phase from Open Water to Advanced; a family may set its
+  own thresholds (`fish.json` `varAt`). Never a wall: nothing held back on a unit with too few other photos. "Learned"
+  asks a right answer on each group a unit has, its juveniles and its sexes and colour phases (Q391 b). The first build
+  (2026-11-15, a stage of 10 answers for every phase photo) is in docs/LEARNING.md "Juveniles and colour phases in
   stages".
 - **Juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `fish.json` `juv`, from
   `tools/fish_source.json`, per entry and per genus or species for mixed entries; judging/FISH.md):

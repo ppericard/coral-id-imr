@@ -3714,7 +3714,59 @@ every answer came from players under Open Water: either way the pool is far larg
 photos get rated where players meet them, past Open Water. A separate exploration share before Open Water (1%) would
 add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
 
-### Juveniles and colour phases in stages (2026-11-15; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
+### Juveniles and colour phases on their unit's mastery (2026-11-17; Q391; #953 rebuilt)
+
+Pierre, 2026-11-17 10:52 Manila, on the levels study ([2026-11-17-levels-and-shares-study](reviews/2026-11-17-levels-and-shares-study.md),
+its question Q391): "Q391 a oui, b oui". (a) One rule for every level (the study's C0): whatever depends on something
+comes as that thing is mastered; a unit's photo variants (its juveniles, its sexes and colour phases) come on a ramp of
+**that unit's own** bar, thresholds per kind in the data. (b) "Learned" (the silent mastery exam, rule L9) asks a right
+answer on each variant group a unit has, once released. The fixed stage of 10 answers of the first build (below, kept as
+the record of what was measured) is gone (`phaseStage`, `SUBJECTS` `calib` `phase`); the ranks keep #975's share as it
+is (`SHARE`, `sharesNow`, `shareW`).
+
+- **The kinds** (`core.js` `varKindOf`, `VAR_KINDS`): a photo with a judged phase (`phaseOf`) is a sex or colour phase
+  (`ph`) unless it is a juvenile; a juvenile is early-class (`jE`: its family's `fish.json` `juv` class A, or its genus or
+  species named in `early`), late-class (`jL`: class B, or named in `late`), or another (`j`). A subject or a family
+  with no juvenile classes has only `j` and `ph`; the corals have none (no coral photo carries a phase).
+- **The ramp** (`core.js` `VAR_AT`, `varRamp`; `model.js` `varOf`, `varAtOf`): each variant photo's draw weight is
+  multiplied by its kind's ramp on the bar of the unit asked (`genScore`): 0 below `from`, a straight line to 1 at
+  `full`. Defaults, one table: `jE` [0, 0] (from the unit's first question, Q384 "très rapidement"), `j` and `ph`
+  [0.5, 0.8] (Open Water to Advanced), `jL` [0.8, 0.8] (at Advanced, so every group is in before the exam opens at
+  0.85, Q391 b). A family overrides a kind on its record (`fish.json` `varAt`, beside `juv`, from
+  `tools/fish_source.json`; none set yet), read for its own units and those hanging from it (`varHome`: a genus's or a
+  species' family). Weights only, never the prior (`photoDiff`); the variety and the floor lift an observation by its
+  best photo's factor only (`phMul`), so neither brings a held-back photo back; the cap under ease 4 (`RARE`) comes after.
+  **Never a wall**: a unit with fewer than `PICKD.VARIETY` observations at full weight among all its photos holds nothing
+  back (a Find the X counts the whole unit, not its tiles). No cap for the variants: they take no question from another
+  unit, only change which photo of the unit is shown (the study §4).
+- **"Learned" and the variants** (`model.js` `varLeft`, `examSet`, `examPassed`; `quiz.js` answer; the rated world): a
+  group (`VAR_GROUPS`: the juveniles, every class; the sexes and colour phases) is left while it has a released photo
+  (weight above 0, or every photo under the fallback) and no photo of it answered right (`s.ps`). While one is left, the
+  exam's next question draws among that group's released photos (the hardest never seen, as `examSet` always chose),
+  and the exam is not passed: its count held at `EXAM.n` until the group is right. A miss restarts it as any miss does.
+  No new threshold.
+- **Existing learned marks** (fish rules version 3, `core.js` `FISH_RVS`; rules D5, D6): the sheet's replay keeps the
+  device's learned marks (`replayedOf`) and has no photo phases, so the device takes them away: at load and after each
+  pull, once the subject's whole data is in (`model.js` `varRecalcAll`, from `domRecalcAll`), a learned unit with a
+  variant group left loses its mark silently (`mxRecalc`, the achievements kept, Q332), its exam kept as passed but for
+  that group (`s.ex` at `EXAM.n` right and `TYPED.exam` typed, started then): its next exam question asks the group, and
+  a right answer there makes it learned again. The leaderboards follow when that player's device next saves.
+- **The card** stays as built (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph` condition, `TOLD`,
+  the sign-out clear): it comes with the first variant photo a player meets.
+
+**The check (rule L11, level 2), declared before running; results pending, run by the integrator.** Primary: the share
+of questions showing a variant photo other than an early-class juvenile within a unit's first 10 answers (learncmp
+`phOther`), the rated world, fish, normal photos, at 3,000 answers, pooled over the 5 profiles, down against `main`
+(the study's criterion 3). Watched: `phEasy` (early-class juveniles early, at least 90% of `main`'s: criterion 2),
+`phLate`, `phAns`, every guardrail, `famAdv`, `spShare`. Costs declared (the study §8, Q391's question): the answers to
+the first unit at Open Water may rise for a slower profile (the lecture RA in the rated world, about +18 answers; the
+casual diver in the app world, about +12), and the units at Open Water at 300 for the strong RA; "Learned" later on
+units whose variant groups come late (the study: a median 5-8 more answers on the unit). Runs: the rated world, 5
+profiles × 10 seeds × 3,000 answers, this branch and `main` (and the study's C0 prototype, `scratch/levels-proto`, as
+a reference); then the app world, 5 profiles × 5 seeds × 600 questions, two looks (95% bounds); each through
+`node tests/slot.js`; compared with `tools/learncmp.js` against `main`. Unclear goes to 20 seeds, then level 3.
+
+### Juveniles and colour phases in stages (2026-11-15, the first build, replaced on 2026-11-17 by the section above; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
 
 Pierre, 2026-11-07: "we may have removed things (the very-easy-first wall), but we must put back a progressive path that
 presents juveniles and sexual dimorphism". His rules: juvenile and phase photos never at the very start of a unit; they
@@ -6742,6 +6794,11 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-17, Q391 (Pierre, 10:52 Manila: "Q391 a oui, b oui"), #953 rebuilt ("Juveniles and colour phases on their
+  unit's mastery"): the fixed stage of 2026-11-15 replaced by a ramp of each unit's own bar per variant kind (`core.js`
+  `VAR_AT`: early-class juveniles from the start, the other juveniles and the sexes and colour phases from Open Water to
+  Advanced, late-class juveniles at Advanced; a family's own thresholds in `fish.json` `varAt`), and "Learned" asking a
+  right answer on each variant group (fish rules version 3). Its level 2 check declared there, results pending.
 - 2026-11-15, the ROADMAP row of 2026-11-07 (Pierre: "we must put back a progressive path that presents juveniles and
   sexual dimorphism"), built in #953 ("Juveniles and colour phases in stages"): phase photos held back from a unit's
   first `SUBJECTS` `calib` `phase` answers (fish 10), then in stages; two cards per subject. Checked at level 2: the

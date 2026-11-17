@@ -660,9 +660,7 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
 // draw bonus, the measured ease spread), fish favour reference-level photos in the draw.
 test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.deepStrictEqual(C.calibOf(C.subjectOf('coral')), C.CALIB);
-  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0, pool: Infinity, phase: 0});
-  // Juveniles and colour phases in stages (Pierre, 2026-11-07; tests/phasepath.test.js): 10 answers for the fish.
-  assert.strictEqual(C.calibOf(C.subjectOf('fish')).phase, 10);
+  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0, pool: Infinity});
   // Q186 (Pierre, 2026-11-06 15:33): the fish draw in big pools (tests/drawcalib.test.js).
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).u, 0.25);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).pool, 30);
