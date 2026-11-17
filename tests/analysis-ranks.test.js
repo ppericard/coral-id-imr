@@ -139,3 +139,29 @@ test('the corals (one rank): the same models, the same results', () => {
   assert.ok(!/"rk_|"rk0?"|"ranks"/.test(s), 'no rank in the corals’ report');
   assert.ok(!plain.A.photo.tabs, "the corals' photo tables as before");
 });
+
+// Codex review #1058: a unit's seconds carry its rank's effect, so they are read from the reference rank's typical time,
+// not the median of every rank's answers. 480 answers, family questions at exactly 5 s, genus questions at exactly 10 s:
+// every family reads 5 s and every genus 10 s (the pooled median, 7.5 s, read 7.5 s and 15 s).
+test('Answer time by unit: each unit from the reference rank’s typical time (family 5 s, genus 10 s)', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    F = ['f:A', 'f:B', 'f:C', 'f:D'],
+    G = ['g:A', 'g:B', 'g:C', 'g:D'],
+    rows = [];
+  for (let i = 0; i < 480; i++) {
+    const L = i % 2 ? G : F,
+      g = L[(i >> 1) % 4];
+    rows.push(['p' + (i % 4), i * 60e3, g, g, i % 3 ? 1 : 0, 'quiz', '', 0.6, 0, 0, L.join(' '), 0, i % 2 ? 10 : 5, 0]);
+  }
+  const r = A.rt(A.prep(rows, {rk: 'family'}), 0, 1),
+    src = fs.readFileSync(path.join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    anSu = vm.runInNewContext(block(src, 'const anTyp = ', '\nconst ANV', {file: 'admin-analyses.js'}) + ';anSu');
+  near(r.effects.find(e => e.k === 'rk_genus').est, Math.log(2), 0.01, 'the genus coefficient');
+  assert.strictEqual(r.s0, 5);
+  r.genus.forEach(g => near(anSu(r, g.u), g.rk === 'genus' ? 10 : 5, 0.05, `${g.k}'s seconds`));
+  // a report without ranks: the typical answer's time, as before
+  assert.strictEqual(anSu({typ: {s: 7.5}}, 0), 7.5);
+});

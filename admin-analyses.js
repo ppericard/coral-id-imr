@@ -1824,6 +1824,9 @@ const AN_PART = {
 };
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
+// A unit's seconds (Answer time's list by unit): from the reference rank's typical time where the units carry their
+// rank's effect (analysis.js rt s0: the fish's ranks told apart), else the typical answer's.
+const anSu = (a, u) => (a && a.s0 ? a.s0 : anTyp(a).s) * Math.exp(u);
 const ANV = {
   // Time and difficulty (analysis.js tdiff): right answers by how fast other players answered the photo right; time
   // intensity beside difficulty, for the genera and the slowest and fastest photos.
@@ -1884,12 +1887,12 @@ const ANV = {
         forest(
           L.map(g => ({
             label: g.k,
-            est: anS(a, g.u),
-            lo: anS(a, g.lo),
-            hi: anS(a, g.hi),
-            title: `${g.k}: about ${anSec(anS(a, g.u))} (${g.n} answers)`
+            est: anSu(a, g.u),
+            lo: anSu(a, g.lo),
+            hi: anSu(a, g.hi),
+            title: `${g.k}: about ${anSec(anSu(a, g.u))} (${g.n} answers)`
           })),
-          {nul: anTyp(a).s, tf: anSec, title: 'Seconds to answer a typical photo of each genus'}
+          {nul: a.s0 || anTyp(a).s, tf: anSec, title: 'Seconds to answer a typical photo of each genus'}
         )
       ),
       'wide'

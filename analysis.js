@@ -893,6 +893,17 @@
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
       ...(rks ? {rk0: D[0].rk0} : {}),
+      // the units' baseline once their rank's effect is folded in (Codex review #1058): the reference rank's typical
+      // seconds, so a reference unit reads its own time and another rank's its time times exp(its coefficient), not the
+      // median of every rank's answers (admin-analyses.js anSu)
+      ...(RK.length
+        ? {
+            s0: q(
+              D.filter(a => a.rk === D[0].rk0).map(a => a.s),
+              0.5
+            )
+          }
+        : {}),
       ent: entOf(M.V, X, [null, ...KX.map(x => x[0])], [], bi),
       chk: checkLmm(
         M,

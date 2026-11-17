@@ -2887,7 +2887,7 @@ const darkCards = (p, sel) =>
                   .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
                   .join(' ')
                   // the rank asked (analysis.js rkName, admin-analyses.js anRkWord: "a genus question", "Genus questions")
-                  .replace(/\b(?:family|genus|species) questions?\b/gi, ' ');
+                  .replace(/\b(?:family|genus|species) questions?/gi, ' '); // no \b after: textContent runs cells together
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -2895,6 +2895,7 @@ const darkCards = (p, sel) =>
                 note: (document.querySelector('#view > .note') || {}).textContent || '',
                 views: [...document.querySelectorAll('#subnav .adm-views a, #subnav .adm-subtabs a')].map(a => a.textContent),
                 words: (t.match(/\b(genus|genera|Genus|Genera)\b/g) || []).length,
+                wctx: (t.match(/.{0,60}\b(?:genus|genera|Genus|Genera)\b.{0,30}/) || [''])[0],
                 ids: (t.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
                 coral: Object.keys(DATA.gen).some(g => new RegExp(`\\b${g}\\b`).test(V.textContent)),
                 cards: V.querySelectorAll('.adm-an-card').length,
@@ -2959,24 +2960,20 @@ const darkCards = (p, sel) =>
                 await look('fish/analyses/difficulty/' + h);
                 rk[k] = await fq.evaluate(() => document.getElementById('view').textContent);
               }
-              await look('fish/analyses/speed');
-              rk.rt = await fq.evaluate(() => ({
-                t: document.getElementById('view').textContent,
-                sub: [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, ''))
-              }));
-              if (
-                !/Rank asked/.test(rk.ph) ||
-                !/A genus question instead of a family question/.test(rk.ph) ||
-                !/By the rank asked/.test(rk.fmt) ||
-                !/Genus questions: right answers against the app’s expectation/.test(rk.fmt) ||
-                !/A genus question instead of a family question/.test(rk.rt.t) ||
-                rk.rt.sub.join() !== 'Family questions,Genus questions,Species questions'
-              )
-                fe.push(
-                  `the rank asked: ${JSON.stringify({sub: rk.rt.sub, fmt: /By the rank asked/.test(rk.fmt), ph: /Rank asked/.test(rk.ph)})}`
-                );
+              await look('fish/analyses/speed/answer-time');
+              // the units by rank (the rank effects themselves may read "not enough data" there, folded away)
+              rk.rt = await fq.evaluate(() =>
+                [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, '')).join()
+              );
+              const ok = {
+                tab: /Rank asked/.test(rk.ph),
+                eff: /A (genus|species) question instead of a family question/.test(rk.ph),
+                fmt: /By the rank asked/.test(rk.fmt),
+                rt: rk.rt === 'Family questions,Genus questions,Species questions'
+              };
+              if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
               // the corals' views: no rank
-              await look('analyses/speed');
+              await look('analyses/speed/answer-time');
               if (
                 await fq.evaluate(
                   () =>
