@@ -345,7 +345,8 @@ from its pooling.
   ("par espèce ou par genre ou par famille"). A also needs one cap per variant kind and level; C0 only the ramp.
 - **C0's costs**: those of #975 (Q388), and three more cells, all on the variant side: the lecture RA's first family at
   Open Water 18 answers later (confirmed on 20 seeds, and #953 as built does it too: 24; in the app world the casual
-  diver's, 12 later), the strong RA's units at Open
+  diver's, 12 later; with heavy-tailed photos the beginner's and the casual diver's, 66 and 96 later), the strong RA's
+  units at Open
   Water at 300 answers (16.2 → 13.8) and the lecture RA's longest plateau (462 with 975 → 557), the last two on 5 seeds
   only. And by design: a slow player meets a unit's other juveniles and phases later than #953 would show them (the
   beginner at about the unit's 38th answer instead of its 19th), never before Open Water on that unit.
@@ -372,7 +373,14 @@ the first-Open-Water cost of holding the variants falls on the casual diver, whe
 lecture RA (and the casual diver's came sooner there): a real cost of the same size, on whichever profile meets the
 held photos first, the cause not measured.
 
-**Heavy-tailed photos** (rated world, 3,000 answers, 15% of the photos +1.5): TAIL_TEXT
+**Heavy-tailed photos** (rated world, 3,000 answers, 15% of the photos 1.5 harder, 5 seeds, one look). The ranks read as
+under normal photos: families at Advanced 30.4-31.0 for C0 (975: 30.0-31.4, main 22.8-32.0), the fish % within half a
+point of 975's for every profile, the variants as above (easy juveniles early 0.19-0.23, the others 0.00-0.02). Against
+975 C0 breaches **only the first family at Open Water, now for the beginner (186 → 252 answers) and the casual diver
+(189 → 285)**, five seeds, wide spreads, the cause not measured. With heavy tails the photos left once the variants are
+held are harder on average, which may slow a slow player's first Open Water; it is the largest cost this study found,
+and the first thing the #953 rebuild must look at (more seeds, and the variant thresholds a = Open Water read on
+answers too, e.g. "Open Water or 30 answers on the unit", if it holds).
 
 **10,000 answers**: not rerun. C0's rank part is #975's cap, whose 10,000-answer check against main is in #975 (the
 families all at Advanced in both arms; the fish % −1.8 to +9.8 points by profile; species at Advanced 5-51). Its variant
@@ -424,8 +432,9 @@ juveniles, they take questions away from the other families: without it the fami
 
 **Question.** Do we build every level on this one rule (C0: #975 as it is for the genera and species, and #953 rebuilt
 so that juveniles, sexes and phases follow their own unit's mastery, the easy juveniles from the start), accepting its
-one new cost: for some players the first family at Open Water comes 12-18 answers later (a lecture RA in one simulated
-world, a casual diver in the other; #953 as built does the same, 24 later)?
+one new cost: for a slower player the first family at Open Water comes later, 12-24 answers in the usual simulations
+(#953 as built does the same) and up to 60-100 answers when many photos are hard (5 seeds; to be checked again in the
+#953 rebuild)?
 
 **Recommendation: yes, C0.** The same yes answers Q388: #975 ships at m².
 
