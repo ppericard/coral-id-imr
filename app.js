@@ -781,12 +781,19 @@ function fishGenera(X, F) {
           group: E.group,
           ig: E.ig,
           forms: E.forms,
-          look: ids.filter(o => o !== id),
+          // Its sibling genera, and the genera a specialist source names as its look-alikes (the tree's genus look: the sea
+          // slugs', tools/seaslug_game.py genus_looks; Pierre, 2026-11-17, Q390 D), across families too.
+          look: [...new Set([...ids.filter(o => o !== id), ...(G.look || []).filter(o => X.gen[o])])],
           // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
-          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling.
-          decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
+          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling;
+          // and those a specialist source names (Q390 D: they stay look-alikes whatever the players answer).
+          decl: [...(G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : []), ...(G.look || []).filter(o => X.gen[o])],
           lk: [],
-          lsrc: {},
+          // each look-alike's sources in a line (the tree's genus lsrc: [{t, u}] by the other genus's id)
+          lsrc: Object.fromEntries(Object.entries(G.lsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')])),
+          // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
+          // look-alikes the players' answers can drop (model.js dataSeed).
+          ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
           qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
           tl: cues
@@ -2623,9 +2630,15 @@ const UNITS = {
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
     norm: typeNormAll,
     typeOther: rk => treeTypeOther(rk),
-    // No sourced look-alike pair between genera yet (study §6.3: the two Spanish dancers are one genus); a genus's sibling
-    // genera are its traps (app.js fishGenera look).
-    pairs: () => [],
+    // The look-alike pairs a specialist source names (seaslug.json genus look: the Sea Slug Forum, Nudi Pixel, the papers;
+    // Pierre, 2026-11-17, Q390 D), each pair once: the duels. A genus's other sibling genera stay its traps (app.js
+    // fishGenera look); the pairs only iNaturalist shows are data look-alikes (model.js dataSeed, dataLooks).
+    pairs: () =>
+      Object.values(FISH ? FISH.gen : {})
+        .filter(g => g.rank === 'genus')
+        .flatMap(g =>
+          (g.decl || []).filter(o => FISH.gen[o] && (g.id < o || !(FISH.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
+        ),
     winks: () => [],
     tiles: () => [],
     list: () => viewFishList(),

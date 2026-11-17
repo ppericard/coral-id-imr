@@ -257,6 +257,44 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     const gs = await p.evaluate(g => hr('g-' + g), F.genera[0].id);
     await p.goto(base + gs);
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), F.genera[0].name, {timeout: 15000});
+    // The genus look-alikes (seaslug.json genus look, dlook, lsrc; Pierre, 2026-11-17, Q390 D): a declared pair across two
+    // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
+    // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
+    // its genus.
+    const lk = await p.evaluate(() => ({
+      pairs: UNITS[SUBJ.id].pairs().map(x => x.join('|')),
+      data: dataLooks().map(x => x.join('|')),
+      trap: ['g:Phyllidiella', 'g:Hexabranchus'].every(o => pooledConf('g:Goniobranchus', o) >= CONF.TRAP)
+    }));
+    check(lk.pairs.includes('g:Goniobranchus|g:Phyllidiella'), '2: Goniobranchus / Phyllidiella (Nudi Pixel) is not a duel pair');
+    check(!lk.pairs.includes('g:Goniobranchus|g:Hexabranchus'), '2: an iNaturalist-only pair is a declared duel pair');
+    check(lk.data.includes('g:Goniobranchus|g:Hexabranchus'), '2: Goniobranchus / Hexabranchus (iNaturalist) is not a data look-alike');
+    check(!lk.data.includes('g:Goniobranchus|g:Phyllidiella'), '2: a declared pair is also a data look-alike');
+    check(lk.trap, '2: the look-alikes across families are not traps');
+    for (const [g, o, src] of [
+      ['g:Goniobranchus', 'Phyllidiella', /Nudi Pixel.*Goniobranchus geometricus, Phyllidiella pustulosa/],
+      ['g:Goniobranchus', 'Hexabranchus', /iNaturalist identifications/],
+      ['g:Hexabranchus', 'Hypselodoris', /Sea Slug Forum message 'Juvenile Hexabranchus from Philippines'/]
+    ]) {
+      await p.goto(base + (await p.evaluate(x => hr('g-' + fishGo(x)), g)));
+      const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .hubsec .lt')].map(a => a.innerText.replace(/\s+/g, ' '))),
+        ok = await p
+          .waitForFunction(
+            ([o, s]) =>
+              [...document.querySelectorAll('#view .hubsec .lt')].some(a => {
+                // the mix-up count of this player may come first (learn.js lookCard: "you mixed them up ×N")
+                const t = a.innerText.replace(/\s+/g, ' ').replace(/^you mixed them up ×\d+ /, '');
+                return t.startsWith(o) && new RegExp(s).test(t);
+              }),
+            [o, src.source],
+            {timeout: 15000}
+          )
+          .then(
+            () => true,
+            () => false
+          );
+      check(ok, `2: ${g}'s sheet: no ${o} card with its source (${(await cards()).join(' | ')})`);
+    }
     // A species with English names: its sheet gives them, with their sources under More details.
     const spn = F.species.find(s => (s.en || []).length > 1);
     if (spn) {

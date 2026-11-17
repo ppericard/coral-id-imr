@@ -2,8 +2,9 @@ require('./slot.js').testGuard();
 // The sea slugs' look-alike candidates (tools/seaslug_lookalikes.py; Pierre, 2026-11-17: had we looked at the look-alikes
 // and confusion groups already published?): the parsing of the replies, the build's rules (rules C6, C8: a partner in the
 // subject or confirmed in the Philippines, the others apart; the floors; the literature, WoRMS and text sources; the
-// iNaturalist groups) on made-up data with a stubbed network, the committed file as the tool builds it, and nothing of
-// it in the game (the decided pairs stay in tools/seaslugs.json lookalikes).
+// iNaturalist groups) on made-up data with a stubbed network, the committed file as the tool builds it, and only its genus
+// pairs in the game, through tools/seaslug_game.py genus_looks (Q390 D; the decided pairs stay in tools/seaslugs.json
+// lookalikes).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -200,10 +201,12 @@ test('the committed tools/seaslug_lookalikes_cand.json is what the tool builds (
   assert.strictEqual(r.status, 0, r.stderr);
 });
 
-test('candidates only: neither the app nor the game tools read them; the decided pairs stay where they were', () => {
+test('the app never reads them; the game build takes their genus pairs (Q390 D); the decided pairs stay where they were', () => {
   const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
-  for (const f of ['app.js', 'core.js', 'learn.js', 'quiz.js', 'admin.js', 'tools/seaslug_game.py', 'tools/build_seaslugs.py'])
+  for (const f of ['app.js', 'core.js', 'learn.js', 'quiz.js', 'admin.js', 'tools/build_seaslugs.py'])
     assert.ok(!read(f).includes('seaslug_lookalikes'), f);
+  // tools/seaslug_game.py genus_looks (tests/seaslug-looks.test.js)
+  assert.ok(read('tools/seaslug_game.py').includes("'seaslug_lookalikes_cand.json'"));
   const C = JSON.parse(read('tools/seaslug_lookalikes_cand.json'));
   // every species of the tree with an iNaturalist taxon (a species with no name yet has none: Q389 (2))
   assert.ok(C.pairs.length > 0 && C.counts.asked.species === JSON.parse(read('seaslug.json')).species.filter(s => s.inat).length);

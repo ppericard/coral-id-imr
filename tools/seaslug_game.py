@@ -14,16 +14,21 @@ Inputs, all in the repository (no network but --r2's downloads):
   - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
   - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
     order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order);
-  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources.
+  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources;
+  - tools/seaslug_lookalikes_cand.json (tools/seaslug_lookalikes.py): the look-alike survey's literature sets and genus
+    pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D).
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
-    circle, as a fish family's), species, genera, look (none sourced yet: study §9 step 8), cues (none: no IMR content,
+    circle, as a fish family's), species, genera, look (none: the look-alikes are the genera's, below), cues (none: no IMR content,
     study §8), tgroup (its taxonomic group's number in taxa)}, in the order of their first species (by circle, then by
     commonness rank);
   - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
     shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
-  - genera {id g:<genus>, name, family, circle (its best species'), species};
+  - genera {id g:<genus>, name, family, circle (its best species'), species, look, dlook, lsrc}: look, the other genera
+    a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
+    those only iNaturalist's identifications show (data look-alikes: the players' answers can drop them), lsrc each
+    one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D);
   - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
     differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
     tools/seaslugs.json rank), group (the iNaturalist order: Nudibranchia, Sacoglossa...), star (the stars set, Q369 (c),
@@ -110,6 +115,54 @@ def load(p, default=None):
         return json.load(fh)
 
 
+def genus_looks(cand, genera):
+    """The genus look-alikes from the survey's candidates cand (tools/seaslug_lookalikes_cand.json; Pierre, 2026-11-17,
+    Q390 D) between the genera of the tree, {genus id: {look, dlook, lsrc}}, both ways:
+      - look (declared): two genera whose species a literature set names together (the Sea Slug Forum, Nudi Pixel's
+        look-alike index, the papers: tools/seaslug_lookalikes_source.json), its members those rule C6 keeps (the set's
+        members, its outside left out); each source {t: the source and the two genera's species it names, u: its page};
+      - dlook (data): a genus pair of iNaturalist's identifications (the file's listed pairs, its floor) across two
+        families that no set names and with a species pair of the subject under it (not genusOnly: a pair the photos the
+        game shows were never mixed up on, a rename or a slip at the genus rank, says nothing of their look); its source
+        the counts. A pair inside one family is left out: the family's genera are already each other's look-alikes
+        (core.js fishGenUnits).
+    The species pairs wait for the species level (Q390 D)."""
+    gid = {g['name']: g['id'] for g in genera}
+    fam = {g['name']: g['family'] for g in genera}
+    decl, data = {}, {}
+    for s in (cand or {}).get('groups') or []:
+        if s.get('kind') != 'literature':
+            continue
+        by = {}
+        for m in s.get('members') or []:
+            if m.split()[0] in gid:
+                by.setdefault(m.split()[0], []).append(m)
+        src = str(s.get('source') or '')
+        u = re.search(r'https?://[^\s,)]+', src)
+        title = src.split(', http')[0].strip()
+        G = sorted(by)
+        for i, a in enumerate(G):
+            for b in G[i + 1:]:
+                decl.setdefault((a, b), []).append({'t': title + ': ' + ', '.join(by[a] + by[b]),
+                                                    **({'u': u.group(0)} if u else {})})
+    for p in (cand or {}).get('pairs') or []:
+        a, b = sorted((p.get('a') or '', p.get('b') or ''))
+        if p.get('rank') != 'genus' or p.get('genusOnly') or a not in gid or b not in gid or fam[a] == fam[b] \
+                or (a, b) in decl:
+            continue
+        n = lambda k: (p.get(k) or {}).get('n') or 0
+        data[(a, b)] = [{'t': f'iNaturalist identifications, one genus taken for the other: {n("ph")} in the '
+                              f'Philippines, {n("world")} worldwide ({cand.get("pulled")})'}]
+    out = {}
+    for kind, D in (('look', decl), ('dlook', data)):
+        for (a, b), S in sorted(D.items()):
+            for x, y in ((a, b), (b, a)):
+                o = out.setdefault(gid[x], {})
+                o.setdefault(kind, []).append(gid[y])
+                o.setdefault('lsrc', {})[gid[y]] = S
+    return out
+
+
 def sure(j):
     """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric)."""
     if not j or j.get('egg') or j.get('u') or j.get('k', 'best') not in ('best', 'alt'):
@@ -182,13 +235,14 @@ def names_of(N):
     return out
 
 
-def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
     circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
     tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. inf: tools/seaslug_informal.json,
     the species with no name yet. names: tools/seaslug_names.json, the English names each family, genus and species
-    carries (en, ensrc: names_of), none without it (a species with no name yet has none)."""
+    carries (en, ensrc: names_of), none without it (a species with no name yet has none). looks:
+    tools/seaslug_lookalikes_cand.json, the genus look-alikes (genus_looks), none without it."""
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
@@ -258,6 +312,8 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
                         'nearN': P.get('nearObs', 0)},
         })
         extra.append((s['key'], s['name']))
+    for k, o in genus_looks(looks, list(gens.values())).items():
+        gens[k].update(o)
     tx, tof = taxa(groups, [f['name'] for f in fams.values()])
     for f in fams.values():
         if f['name'] in tof:
@@ -420,7 +476,8 @@ def inputs(root=ROOT):
     return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
             j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
-            j(os.path.join('tools', 'seaslug_names.json'), {}) or None)
+            j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None)
 
 
 def write(root, tree, game):

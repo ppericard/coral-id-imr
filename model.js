@@ -1714,8 +1714,15 @@ const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
 // Performance only, never time.
 // The pair's score over every player (pooled answers on top of the declared prior), before this player's own record.
 // confPrior: the prior of a pair, look the declared test (isLook here; the confusion groups' own, declared, above).
+// A data look-alike seeded by the subject's data (dataSeed, below) starts from the declared look-alikes' prior.
 const confPrior = (t, n, look) =>
-  look ? CONF.LOOK : GX(n).fam === GX(t).fam ? CONF.FAM : imrFormsOf(n).some(f => imrFormsOf(t).includes(f)) ? CONF.FORM : CONF.BASE;
+  look || dataSeed(t, n)
+    ? CONF.LOOK
+    : GX(n).fam === GX(t).fam
+      ? CONF.FAM
+      : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
+        ? CONF.FORM
+        : CONF.BASE;
 function pooledConf(t, n) {
   return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, isLook(t, n)));
 }
@@ -1740,17 +1747,30 @@ const confTerm = (t, chs, k) =>
 // together CONF.N times or more and mixed up so often that its pooled score (pooledConf) reaches CONF.TRAP. Such pairs
 // join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus sheet's "Don't confuse with"
 // (learn.js lookHub); the traps and the progress's look-alike weight already follow the same pooled score.
+// A seeded pair (dataSeed: one no specialist source names that iNaturalist's identifications show) is one from the start,
+// on the declared look-alikes' prior (confPrior), and stays one while its pooled score does: the players' answers drop it
+// as they would any data look-alike (Pierre, 2026-11-17, Q390 D: "data" look-alikes, unlike the declared ones).
 const isDataLook = (a, b) => {
+  if (a === b || !GX(a) || !GX(b) || isLook(a, b)) return false;
+  if (dataSeed(a, b)) return pooledConf(a, b) >= CONF.TRAP;
   const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
-  return !!c && c[0] >= CONF.N && a !== b && !!GX(a) && !!GX(b) && !isLook(a, b) && dataLook(c, pooledConf(a, b));
+  return !!c && c[0] >= CONF.N && dataLook(c, pooledConf(a, b));
 };
-// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order (the pooled pairs only:
-// a pair never offered together cannot qualify).
-const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
-  Object.keys(PCONF)
+// The data look-alikes a subject's data seeds (app.js fishGenera dl: the sea slug genera only iNaturalist's
+// identifications show as look-alikes, tools/seaslug_game.py genus_looks; Q390 D), either way round.
+function dataSeed(a, b) {
+  return ((GX(a) || {}).dl || []).includes(b) || ((GX(b) || {}).dl || []).includes(a);
+}
+// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order: the pooled pairs (a pair
+// never offered together cannot qualify) and the seeded ones (dataSeed).
+const dataLooks = (L = [...slateGenera(), ...bonusList()]) => {
+  const K = new Set(Object.keys(PCONF));
+  L.forEach(a => ((GX(a) || {}).dl || []).forEach(b => K.add(a < b ? a + '|' + b : b + '|' + a)));
+  return [...K]
     .map(k => k.split('|'))
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
+};
 // A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
 // typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
 // two fish species may share a common name), but a question never shows two choices of one label (distractors).
