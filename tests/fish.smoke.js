@@ -466,9 +466,99 @@ async function freshPlayers(b, base, errs) {
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
         P[n] = s0;
       });
+      // Juveniles and colour phases on their unit's mastery (Pierre, 2026-11-07; 2026-11-17, Q391 a; docs/LEARNING.md
+      // "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
+      // early-class juveniles (model.js varKind, core.js VAR_AT), which do come; past Advanced they all come (no wall),
+      // checked on the entries with 20 easy phase photos or more.
+      let easyJ = 0;
+      FISH.c1.forEach(n => {
+        const L = GX(n).views.wide,
+          s0 = JSON.parse(JSON.stringify(st(n)));
+        if (!L.some(p => phaseOf(p))) return;
+        P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+        let early = 0;
+        for (let k = 0; k < 60; k++)
+          photoSet(n).shown.forEach(x => {
+            const v = varKind(n, x);
+            early += v && v !== 'jE' ? 1 : 0;
+            easyJ += v === 'jE' ? 1 : 0;
+          });
+        ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
+        if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
+          P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+          let late = 0;
+          for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
+          ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
+        }
+        P[n] = s0;
+      });
+      ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
+      // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
+      const nJ = FISH.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
+        pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
+      ok(!!pJ, 'a juvenile with an adult of its species in play');
+      if (pJ) {
+        ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
+        const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+        ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
+        ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
+        ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+        const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
+        ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
+        d.close(1);
+        ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
+        ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      }
       return {fails, gated};
     }, 15);
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
+    // The card through the game's own path, once (quiz.js phaseArm): an answer whose photo has a sex or colour phase
+    // (core.js phaseKind) arms the break; Next shows the card over the question answered; Got it marks it shown and goes on
+    // to the next question. Every unit opened first, so the next question brings no unit's card (which the break waits for).
+    if (seed === 11) {
+      const a = await q.evaluate(() => {
+        document.querySelectorAll('.unlock, .achpop').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        if (typeof achQ !== 'undefined') achQ.length = 0;
+        if (typeof achBusy !== 'undefined') achBusy = false;
+        introAll('progress');
+        dropPlans();
+        NEXTQ = null;
+        route();
+        const n = FISH.c1.find(n => GX(n).views.wide.some(p => phaseKind(p) === 'phase')),
+          p = n && GX(n).views.wide.find(x => phaseKind(x) === 'phase');
+        if (!p || !document.querySelector('#view .q')) return {why: `no question or no phase photo (${n})`};
+        smokeAnswer();
+        const nb = document.getElementById('next');
+        nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
+        return {armed: phaseArm(nb, 'quiz', [{n, p}], false), seen: phaseSeen('phase')};
+      });
+      if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
+      else {
+        // An achievement toast the answer brought would hold the card back (overlayBusy): gone, as a player waits it out.
+        await q.evaluate(() => {
+          document.querySelectorAll('.achpop').forEach(d => d.remove());
+          if (typeof achQ !== 'undefined') achQ.length = 0;
+          if (typeof achBusy !== 'undefined') achBusy = false;
+        });
+        await q.click('#next');
+        const shown = await q.waitForSelector('.unlock.phasecard', {timeout: 5000}).catch(() => null);
+        if (!shown)
+          fresh.push(
+            `new player ${seed}: Next showed no phase card (${await q.evaluate(() => [...document.querySelectorAll('.unlock, .achpop, #tour')].map(d => d.className).join() || 'nothing over the page')})`
+          );
+        else {
+          await q.click('.unlock.phasecard [data-b]');
+          const on = await q
+            .waitForFunction(() => !document.querySelector('.unlock.phasecard') && document.querySelector('#view .q:not(.done)'), null, {
+              timeout: 5000
+            })
+            .then(() => true)
+            .catch(() => false);
+          if (!on) fresh.push(`new player ${seed}: Got it did not go on to the next question`);
+          if (!(await q.evaluate(() => phaseSeen('phase')))) fresh.push(`new player ${seed}: the phase card not marked shown`);
+        }
+      }
+    }
     await c6.close();
   }
   return fresh;

@@ -165,11 +165,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
-  const pics = v =>
+  // all: every photo the unit may show, before keep (the variants' count of observations at full weight, below).
+  const pics = (v, all = false) =>
     [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(ok(v))
       .filter(gameOk)
-      .filter(p => p.f !== skip && (!keep || keep(p)));
+      .filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
@@ -186,6 +187,16 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
     tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
     pm = pmem();
+  // The photo variants on the unit's own mastery (Pierre, 2026-11-17, Q391 a; 2026-11-07: never at the very start of a
+  // unit, then in stages; no wall, 2026-11-06): each juvenile, sex or colour phase photo weighs its kind's ramp on this
+  // unit's bar (varOf: core.js varKindOf, VAR_AT, varRamp), 1 for every other photo. Weights only: its prior (photoDiff)
+  // and the answer's scoring are untouched. Nothing held back on a unit with fewer than PICKD.VARIETY observations at full
+  // weight among all its photos (keep aside: a Find the X draws among its tiles only): it would show the same few photos
+  // again and again.
+  const V = varOf(
+    n,
+    need.flatMap(v => pics(v, true))
+  );
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
@@ -206,6 +217,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
+    if (V.on) r *= V.f(p);
     return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
@@ -217,6 +229,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   );
   const keys = Object.keys(obs);
   if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
+  // The variety and the floor below lift an observation only by its best photo's variant factor (V above), so neither
+  // brings a held-back photo back.
+  const vObs = V.on ? Object.fromEntries(keys.map(k => [k, Math.min(1, Math.max(...Object.values(obs[k]).flat().map(V.f)))])) : null;
+  const phMul = k => (V.on ? vObs[k] : 1);
   // A colony counts as seen whatever view of it was shown (Pierre, 2026-11-06, Q190): every photo of an observation
   // takes the memory of its most remembered photo (memBucket, then the most shown), so a close-up never shown of a
   // colony already met is no new photo, and it loses the never-seen bonus. For fish, an observation's other photos of
@@ -276,11 +292,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     .sort((a, b) => sc[b] - sc[a])
     .slice(0, PICKD.VARIETY)
     .forEach(k => {
-      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top);
+      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top * phMul(k));
     });
   const floor = drawFloor(keys.length);
   keys.forEach(k => {
-    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
+    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top * phMul(k));
   });
   // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
   if (rare) {
@@ -327,22 +343,91 @@ function photoAny(n) {
     )
   );
 }
-// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
-// right before (else the least seen), the hardest of them. Null when the genus has no game photo.
-function examSet(n) {
+// The photo variants of unit n (Q391 a; core.js varKindOf, VAR_AT): a unit's home, the record at its subject's unit rank
+// it hangs from (itself for a family; a fish genus's or species' family), holds its juvenile classes (juv) and its
+// thresholds' overrides (varAt); a unit's own varAt wins over its home's for a kind, the default table VAR_AT last.
+const varHome = n => {
+  const g = GX(n) || {};
+  return (typeof rankOf === 'function' ? rankOf(n) : '') === '' ? n : g.parent || g.family || n;
+};
+const varAtOf = (n, v) => ((GX(n) || {}).varAt || {})[v] || ((GX(varHome(n)) || {}).varAt || {})[v] || VAR_AT[v] || [0, 0];
+const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
+// The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
+// kind's ramp on the unit's bar (genScore), 1 for a photo with no variant; on, whether anything is held back: false when
+// nothing is, or when fewer than PICKD.VARIETY observations of L are at full weight (the fallback: nothing held back, f
+// then 1 everywhere).
+function varOf(n, L) {
+  const juv = (GX(varHome(n)) || {}).juv,
+    F = {},
+    kind = p => varKindOf(p, juv),
+    f0 = p => {
+      const v = kind(p);
+      if (!v) return 1;
+      if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));
+      return F[v];
+    };
+  const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
+  return {on, kind, f: on ? f0 : () => 1};
+}
+// The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several.
+function examPics(n) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
-    s = P[n] || {},
-    ps = s.ps || {},
-    done = (s.ex || {}).v || [];
-  const oneForm = imrFormsOf(n).length === 1,
+    oneForm = imrFormsOf(n).length === 1,
     gameOk = p => gamePhotoOk(n, p) && !p.multi;
-  const lab = v => (two && v === 'macro' ? 'close' : v);
   const pics = v =>
     [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
       .filter(gameOk);
+  return {two, need, pics};
+}
+// "Learned" asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): the groups of unit n (core.js
+// VAR_GROUPS: its juveniles, its sexes and colour phases) that have a photo released by its mastery (varOf: weight above
+// 0, or every photo under the fallback) and no photo of the group answered right yet (s.ps). While one is left, the
+// exam's next question draws its photo (examSet) and the exam is not passed (examPassed). [] for a unit with no variant
+// (the corals). Through core.js varUnit and varLeftOf, the functions the sheet's replay takes a learned mark away with
+// (rules D8, D9: core.js fishVarTable, replayProgress vars, replayedOf), so the app and the sheet decide alike.
+function varUnitOf(n) {
+  if (!GX(n)) return null;
+  const {need, pics} = examPics(n);
+  return varUnit(need.flatMap(pics), (GX(varHome(n)) || {}).juv, v => varAtOf(n, v));
+}
+// A group the answer log left (s.vl: core.js replayProgress vars, kept by replayedOf) stays left, though s.ps, merged
+// with this device's saved copy, holds a right answer the log lacks (rule D9; Codex review #953), until a right answer
+// on it here (varRight): the same groups as the sheet's replay.
+function varLeft(n) {
+  if (!GX(n)) return [];
+  const U = varUnitOf(n),
+    x = genScore(n),
+    s = P[n] || {},
+    left = varLeftOf(U, x, s.ps),
+    log = Array.isArray(s.vl) ? s.vl : [];
+  return log.length ? varLeftOf(U, x, {}).filter(g => left.includes(g) || log.includes(g)) : left;
+}
+// A right answer on unit n's photos L (quiz.js answer) clears their variant groups from those the log left (s.vl).
+function varRight(n, L) {
+  const s = P[n];
+  if (!s || !Array.isArray(s.vl)) return;
+  const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
+  s.vl = s.vl.filter(g => !got.has(g));
+  if (!s.vl.length) delete s.vl;
+}
+// The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
+const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
+// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
+// right before (else the least seen), the hardest of them; while a variant group of the unit is left (varLeft, Q391 b),
+// among that group's released photos (the first group left). Null when the genus has no game photo.
+function examSet(n) {
+  const s = P[n] || {},
+    ps = s.ps || {},
+    done = (s.ex || {}).v || [],
+    {two, need, pics: all} = examPics(n);
+  const lab = v => (two && v === 'macro' ? 'close' : v);
+  const left = varLeft(n),
+    V = left.length ? varOf(n, need.flatMap(all)) : null,
+    inG = p => varGroup(V.kind(p)) === left[0] && V.f(p) > 0,
+    pics = V && need.some(v => all(v).some(inG)) ? v => all(v).filter(inG) : all;
   const vs = need.filter(v => pics(v).length),
     todo = vs.filter(v => !done.includes(lab(v)));
   if (!vs.length) return null;
@@ -1422,6 +1507,10 @@ function memRecalcAll() {
 // Nothing before data.json is in (DATA, which GX reads first): a link straight to a quiz page brings this file before it
 // (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
 // it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
+// "Learned" asks each variant group (Q391 b; fish rules version 3, core.js FISH_RVS): a learned mark whose unit has a
+// variant group with no right answer in the answer log is taken away by the sheet's replay (core.js replayProgress vars,
+// replayedOf; rules D8, D9), which every device adopts once (sync.js replayAdoptS, silently through mxRecalc: rule D6) and
+// the leaderboard ranks a player by until then; never by a device on its own.
 function domRecalcAll() {
   // Nor while the subject's data is still partial (app.js dataPartial: the fish units on their first photos only, before
   // fish-game.json): the rebuild reads the units' photo difficulties, and runs once the whole data is in (fishLoad).
@@ -1545,7 +1634,8 @@ function pgWeight(t, chs, k) {
 // away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
 // Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
 // of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
-// right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
+// right, and a right answer on each variant group the unit has (its juveniles; its sexes and colour phases: varLeft,
+// examPassed; Pierre, 2026-11-17, Q391 b): the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
 // is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when the genus is back at the entry.
 const EXAM = {n: 5, gap: 8};
 // Typed questions (Pierre, 2026-11-03; docs/ROADMAP.md "Free-text answers"): the player types the genus instead of picking
@@ -1618,6 +1708,10 @@ function missing(n) {
     m.push(
       `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
+  // Its variant groups not answered right yet (varLeft, Q391 b): the exam asks them.
+  const VW = {juv: 'its juveniles', ph: 'its sexes or colour phases'},
+    vl = varLeft(n);
+  if (vl.length) m.push(`a right answer on ${vl.map(g => VW[g]).join(' and on ')}`);
   return m;
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): the domain score up to 95% (barOf), each exam question passed fills a
