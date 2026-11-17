@@ -3762,7 +3762,7 @@ is (`SHARE`, `sharesNow`, `shareW`).
 - **The card** stays as built (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph` condition, `TOLD`,
   the sign-out clear): it comes with the first variant photo a player meets.
 
-**The check (rule L11, level 2), declared before running; results pending, run by the integrator.** Primary: the share
+**The check (rule L11, level 2), declared before running.** Primary: the share
 of questions showing a variant photo other than an early-class juvenile within a unit's first 10 answers (learncmp
 `phOther`), the rated world, fish, normal photos, at 3,000 answers, pooled over the 5 profiles, down against `main`
 (the study's criterion 3). Watched: `phEasy` (early-class juveniles early, at least 90% of `main`'s: criterion 2),
@@ -3773,6 +3773,26 @@ units whose variant groups come late (the study: a median 5-8 more answers on th
 profiles × 10 seeds × 3,000 answers, this branch and `main` (and the study's C0 prototype, `scratch/levels-proto`, as
 a reference); then the app world, 5 profiles × 5 seeds × 600 questions, two looks (95% bounds); each through
 `node tests/slot.js`; compared with `tools/learncmp.js` against `main`. Unclear goes to 20 seeds, then level 3.
+
+**Results** (2026-11-17, the integrator). The first look (the rated world 10 seeds, the app world 5) left cells unclear,
+so a second look followed: the rated world 20 seeds and the app world 10, this branch and `main`, both read at 95%
+bounds (two looks). The study's C0 prototype matched this branch within noise on every cell at the first look.
+- **Primary: clear (down) in both worlds.** In the rated world, 100 of 100 pairs went down (sign-flip p 1e-5) and
+  `phOther` fell from 0.140-0.157 to 0.000-0.018 per profile. In the app world, 50 of 50 pairs went down, from
+  0.068-0.103 to 0.001-0.019.
+- **Held**: true knowledge, the score shown, families at Advanced at 3,000 and the share under ease 4.
+- **The declared cost**: the answers to the first unit at Open Water, lecture RA, rated world, went from 52.4 to 70.3
+  (+17.9; about +18 declared). The casual diver's in the app world held at the second look.
+- **Not declared**: E = bar - D* at 300, beginner, app world, went from -0.372 to -0.342 (+0.031 [+0.054] against
+  +0.030). The bar stays well below true knowledge and comes closer to it; it is not overstated. Accepted by Pierre,
+  2026-11-17 (Q392 a: "ok").
+- **Unclear at the second look**:
+  - the rated world: units at Open Water at 1,000, beginner (25.4 to 23.9); the longest plateau, beginner (411 to
+    438); units met at 100, casual diver (13.3 to 12.7);
+  - the app world: units at Open Water at 300, casual diver (6.3 to 5.6); families at Advanced at 600, expert (12.1
+    to 10.9).
+  - Level 3 (about 6 hours of machine time) was declined by Pierre, 2026-11-17 (Q392 b: "6h de calcul ne devrait
+    JAMAIS arriver"). The cells are accepted as they stand.
 
 ### Juveniles and colour phases in stages (2026-11-15, the first build, replaced on 2026-11-17 by the section above; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
 
