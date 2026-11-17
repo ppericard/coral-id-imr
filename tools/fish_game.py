@@ -793,7 +793,7 @@ def watermarked(r):
 
 # core.js refLevel's and refScore's copies (the reference level and the reference look of a judged photo).
 REF_LOOK = re.compile(r'^p1g0s[lm][1s]$')
-REF_GOOD, REF_REP = 'p1g0sl1', 8
+REF_GOOD = 'p1g0sl1'
 
 
 def ref_level(r):
@@ -805,12 +805,13 @@ def ref_level(r):
 
 
 def ref_score(jt):
-    """core.js refScore: how much a judged photo looks like a reference photo (the r flag, the field-guide traits)."""
+    """core.js refScore: how much a judged photo looks like a reference photo (the field-guide traits; the flag r weighs
+    nothing since 2026-11-17, Pierre)."""
     c = str(jt or '')
     if len(c) < 7:
         return 0
     fl = re.sub(r'\d+$', '', c[7:])
-    return (REF_REP if 'r' in fl else 0) + sum(c[i] == v for i, v in enumerate(REF_GOOD)) - sum(x in fl for x in 'jca')
+    return sum(c[i] == v for i, v in enumerate(REF_GOOD)) - sum(x in fl for x in 'jca')
 
 
 def first_photos(game, cur=None, fish=None, n=FIRST):

@@ -462,8 +462,9 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     checked++;
   });
   assert.ok(checked > 27, `${checked} entries checked`);
-  // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the reference photo, then the one
-  // with more field-guide traits (profile, whole, good light...), then the list's order; the source never counts.
+  // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the one with more field-guide traits
+  // (profile, whole, good light...; the flag r weighs nothing since 2026-11-17), then the list's order; the source never
+  // counts.
   const T = {families: [{id: 'f:X', name: 'X', sci: ['Xidae'], circle: 1, species: ['s1']}]},
     Y = C.fishGen(T, {
       t99: [
@@ -529,7 +530,11 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
     ['b', 'c', 'a']
   );
   assert.strictEqual(C.refScore('p1g0sl1'), 7);
-  assert.strictEqual(C.refScore('p1g0sl1r'), 15);
+  assert.strictEqual(
+    C.refScore('p1g0sl1r'),
+    7,
+    'the flag r weighs nothing: the reference look is read from the photo (Pierre, 2026-11-17)'
+  );
   assert.strictEqual(C.refScore('o1g2mm1j'), 2);
   assert.strictEqual(C.refScore(''), 0);
   assert.strictEqual(C.refScore(undefined), 0);

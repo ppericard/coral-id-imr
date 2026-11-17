@@ -3465,7 +3465,10 @@ changes, all data the engine reads generically (the corals have none of these fi
   among; with fewer, the stopgap's photos (minus those Pierre rejected) join its curated ones. Their ease is Pierre's
   (`fish.ease`, written with the pass's value when he or the auto-sort adds a photo), so the prior and `easyFirst` read
   it unchanged.
-- **Reference photos one ease point easier** (2026-11-05, Pierre: a photo a reference source uses to represent the
+- **Reference photos one ease point easier, until 2026-11-17** (then gone: one judgement per photo, whatever its route
+  in, Pierre's A on #942's question; "'référence' devrait être déduit des caractéristiques de la photo, pas un tag"; the
+  flag `r` stays, with no ease point; judging/FISH.md "Reference photos". The record below is how it worked)
+  (2026-11-05, Pierre: a photo a reference source uses to represent the
   species, FishBase's main picture or iNaturalist's taxon cover, "is easy to identify, so it should come early in the quiz
   for a beginner"): such a candidate carries `rep`, and its judged ease gets `REP_BONUS` = 1 (`tools/fish_judge.py`
   `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a fish in its night livery stays capped). Why one point:
@@ -3550,7 +3553,8 @@ the database, never forced or boosted, in the games or on the sheets. What had f
 One order instead (`core.js` `easyRank`): the easiest first by the photo's difficulty, which is its judged ease
 (judging/FISH.md; the curated ease once the game reads Pierre's curation) until fish answers are logged, then
 `photoDiff`'s rating as the answers come (`app.js` `rankPhotos`, run at load and with each photo stats reply); among
-equals the most reference-like (`refScore`: the reference flag `r` first, then a point for each field-guide trait:
+equals the most reference-like (`refScore`: a point for each field-guide trait (the reference flag `r` came first,
+  8 points, until 2026-11-17: Pierre, "'référence' devrait être déduit des caractéristiques de la photo, pas un tag"):
 profile, whole fish, good light, no colour loss, sharp, large, one fish; a point off for a juvenile, camouflage or out of
 water); then a fixed hash of the photo's name (the list's order, Pierre's photos first, never decides). It decides the card's photo, the first photo of each list (the families list, Home) and
 the order the auto-sort fills a species. The draw itself is unchanged: the very easy photos of an entry's first

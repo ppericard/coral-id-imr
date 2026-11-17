@@ -4289,20 +4289,18 @@ const CORE_ = (function () { const module = {exports: {}};
     return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
   }
   const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
-  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
-  // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
-  // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
-  // juvenile, camouflage or out of the water. 0 for a photo with no tags. Ties only: the ease ranks first (easyRank).
-  const REF = {rep: 8, good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
+  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): a point for each field-guide
+  // trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a juvenile,
+  // camouflage or out of the water. Read from what the photo shows, never from its route in: the flag r (a reference
+  // source shows it for the species) weighs nothing here (Pierre, 2026-11-17: "'référence' devrait être déduit des
+  // caractéristiques de la photo, pas un tag"; it weighed 8 before). 0 for a photo with no tags. Ties only: the ease
+  // ranks first (easyRank).
+  const REF = {good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
   function refScore(jt) {
     const c = String(jt || '');
     if (c.length < 7) return 0;
     const fl = c.slice(7).replace(/\d+$/, '');
-    return (
-      (fl.includes('r') ? REF.rep : 0) +
-      REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) -
-      [...REF.bad].filter(x => fl.includes(x)).length
-    );
+    return REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) - [...REF.bad].filter(x => fl.includes(x)).length;
   }
   // The order a unit's photos are met in when the order matters (the card's photo, the list's first photo, the sheets),
   // Pierre, 2026-11-06: "the first photos a player sees, by whatever mechanism, must be easy, near-reference photos";

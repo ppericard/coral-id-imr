@@ -65,17 +65,16 @@ EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entr
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 # A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
-# iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
-# for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a fish in its
-# night livery stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
-REP_BONUS = 1
+# iNaturalist's taxon photo) gets the flag r and nothing else: its ease is its judgement's, as on every other route
+# (Pierre, 2026-11-17, on #942: one judgement per photo, whatever its route in; until then it took one ease point more).
 
 
 def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
     juv_ok: the photo's juveniles show early (juv_early: its entry's class A, or its species in the entry's early list), so
     the juvenile flag caps nothing. rep: the photo's `rep` (a reference source shows it for the species: FishBase's main
-    picture, iNaturalist's taxon photo), which adds the flag r and REP_BONUS to the ease, the caps applied after it.
+    picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement per photo,
+    whatever its route in: Pierre, 2026-11-17).
     subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": the same caps, but a dorsal view caps nothing."""
     R = RUBRICS[subject]
     m = R["code"].match(code)
@@ -83,7 +82,7 @@ def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
         raise ValueError(f"bad code {code!r}")
     v, w, light, loss, _c, _z, n, fl, e = m.groups()
     fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
-    e = min(5, int(e) + (REP_BONUS if rep else 0))
+    e = int(e)
     if ("j" in fl and not juv_ok) or n == "x" or loss == "3":
         e = min(e, 2)
     # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
