@@ -27,9 +27,10 @@ In `localStorage` `reefid-sync-coral-progress` (per subject, `sKey('progress')`)
 
 `P['~level']` (`core.js` `LEVEL`) is the pseudo-unit of the global level: `ok`, `ko`, `th` like a unit,
 `P['~level'].at` the player's last answer, `h` the recent results over every game (which `model.js` `openRight`
-reads), and `rt`, the player's answer times ([sync.md › Answer time and
-enlargement](sync.md#answer-time-and-enlargement)). It syncs and merges like a unit and appears in the sheet's per-unit abilities under its key. `core.js` `mergeProgress` keeps the latest
-`at` / `dl`, the larger `dd`, and takes `pg`, `ds`, `mx` and `ex` from the device that played.
+reads), and `rt`, the player's answer times
+([sync.md › Answer time and enlargement](sync.md#answer-time-and-enlargement)). It syncs and merges like a unit and
+appears in the sheet's per-unit abilities under its key. `core.js` `mergeProgress` keeps the latest `at` / `dl`, the
+larger `dd`, and takes `pg`, `ds`, `mx` and `ex` from the device that played.
 
 **A wrong answer is a failed observation for the unit shown and the unit given** (rule L2): the unit wrongly given
 counts it in its progress, recent results and runs, but gets no Elo step (below).
@@ -93,10 +94,10 @@ step has no `kmin` floor; LEARNING.md "Global level and genus").
 
 **The global level**: the same Elo step runs over every answer into `P['~level']`, so strong players meet look-alike
 traps early. A unit never answered starts from `playerStart(P, n)` (`core.js`, `START`): `START.W` (0.8) × the
-global ability × M / (M + `START.N`) (M = its answers), clamped to [`START.LO`, `START.HI`] = [−0.5, 1.5]; progress saved before the
-level falls back on the answer-weighted mean of the units' abilities, and the record is made at the next answer from
-that history (`levelSeed()`), so earlier answers keep counting. Taken once: the first answer saves the unit's own `th`.
-The progress itself is not carried over: each unit is proven by its own answers.
+global ability × M / (M + `START.N`) (M = its answers), clamped to [`START.LO`, `START.HI`] = [−0.5, 1.5];
+progress saved before the level falls back on the answer-weighted mean of the units' abilities, and the record is made
+at the next answer from that history (`levelSeed()`), so earlier answers keep counting. Taken once: the first answer
+saves the unit's own `th`. The progress itself is not carried over: each unit is proven by its own answers.
 
 **The aim.** The success the photos aim for follows the global level (`aimP`, `core.js` `aimOf` and `AIM`: 85% up to a
 level of 0.5, 75% from 1.5, linear between), and so does the shaky bar of the opening (`OPEN.P` + aimed − `PICKD.P`;

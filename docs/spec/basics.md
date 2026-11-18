@@ -25,7 +25,8 @@ ones). A prototype marked `admin: true` (the cards gallery) is listed in the hub
 files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried again, `labLoad`).
 
 A static mock-up for one of Pierre's decisions may also sit in `proto/` as a standalone `.html` page: not a Lab tool (not
-in `LAB.files`, not cached by the service worker, nothing links to it), borrowing `../app.css` for the tokens and fonts.
+in `LAB.files`, not cached by the service worker, nothing links to it), borrowing the app's `app.css` (a relative link
+from `proto/`) for the tokens and fonts.
 `fish-sheets.html` shows the fish sheets' genus as a block or a page (Q2 of
 [the fish sheets study](../reviews/2026-11-05-fish-sheets-study.md)); it is removed once he has chosen and the real
 sheet is built.

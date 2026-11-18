@@ -69,8 +69,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   - **Achievements**, **Contributions**, **Your feedback helped**, **Never again and again**, **Never for an account the
     admin deleted**: [achievements.md](spec/achievements.md#achievements),
     [Your feedback helped](spec/achievements.md#your-feedback-helped).
-  - **One leaderboard per subject**, **The admin's 🌱**, **Staff and cohort boards**, **All players**, **Other groups**,
-    **Other cohorts**: [achievements.md › The leaderboard](spec/achievements.md#the-leaderboard).
+  - **Leaderboard**, **One leaderboard per subject**, **The admin's 🌱**, **Staff and cohort boards**, **All players**,
+    **Other groups**, **Other cohorts**: [achievements.md › The leaderboard](spec/achievements.md#the-leaderboard).
   - The **mystery tile** of My progress: [front-end.md › The pages](spec/front-end.md#the-pages).
 - **Game genera, defined once**, and the other shared helpers: [front-end.md](spec/front-end.md#shared-helpers-appjs).
 - **Settings** (⚙), **Depth default**, **Bonus genera On / Off**:
