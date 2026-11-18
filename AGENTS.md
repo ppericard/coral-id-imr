@@ -70,6 +70,11 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   words), never the project's data, and every source used is cited (rule C2).
 - **Estimates are in agent time**: the hours of agent work a task takes, reviews and checks included, never human days
   or weeks. A study or a PR that quotes an estimate from elsewhere converts it first (Pierre, 2026-11-18).
+- **Model choice by measurement**: a task handed to a lighter model (framing, sorting photos, conversions) is first run
+  on a sample of 50-100 items by the strongest model and by the candidates; the cheapest candidate that meets a
+  threshold set beforehand (agreement and serious errors) does the bulk, a small random sample of the bulk is redone by
+  the strong model to catch drift, and the PR reports the figures (Pierre, 2026-11-18: "A valider en comparant avec un
+  modèle fort sur un échantillon").
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
