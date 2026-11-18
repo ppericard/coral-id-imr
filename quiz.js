@@ -661,7 +661,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
   // the opening hold is the one the question really had.
   const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-    seenPh = ph.filter(p => p !== unseen);
+    seenPh = ph.filter(p => p !== unseen),
+    // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
+    mu = mimUnit(target, seenPh[0]);
   // One scorer (core.js scoreAnswer; docs/LEARNING.md "One scorer"): the question as the game had it, logged as its
   // scoring record (sc, core.js scoreLog) so the full replay meets this very state. d0: the photo difficulty (photoDiff);
   // fam: the memory of the photos seen before this answer (famOf; a hint left closed unseen; pgMemW, pgMissW); cf: the
@@ -704,7 +707,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     d0: solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length),
     fam: famOf(target, seenPh),
     cf: confTerm(target, chs, k),
-    look: () => pgLook(target, chs),
+    look: () => pgLook(target, chs, mu),
     R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
     Rc: warm && !good && GX(c) ? recallAt(c) : 1,
     p: startP(),
@@ -890,7 +893,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       fitStage();
     }
     // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1);
+    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1, mu && mu === c ? mimOf(target, seenPh[0]).pair.id : '');
   }
   // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
   // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
@@ -1771,12 +1774,18 @@ let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answe
 // "This pair comes back as a duel in a moment": said the first 3 times only (else it comes with nearly every wrong
 // answer); the pair still comes back every time.
 // Queues the pair of a mix-up (CONTRAST.Q at most, a pair already waiting not twice). True when it is in the queue.
-const rematchAdd = (pair, at) => {
+// mim: the id of the mimicry pair when the photo missed was of the class and the answer the unit it resembles, kept on
+// the entry (a string, as the planner's snapshots copy it) so its Again shows the pair's species.
+const rematchAdd = (pair, at, mim = '') => {
   if (!Array.isArray(rematch)) rematch = rematch ? [rematch] : [];
-  const k = pair.slice().sort().join('|');
-  if (rematch.some(r => r.pair.slice().sort().join('|') === k)) return true;
+  const k = pair.slice().sort().join('|'),
+    r = rematch.find(x => x.pair.slice().sort().join('|') === k);
+  if (r) {
+    if (mim && !r.mim) rematch = rematch.map(x => (x === r ? {...x, mim} : x));
+    return true;
+  }
   if (rematch.length >= CONTRAST.Q) return false;
-  rematch = [...rematch, {pair, at}];
+  rematch = [...rematch, {pair, at, ...(mim ? {mim} : {})}];
   return true;
 };
 // It sits behind More on the short feedback sheet: it counts as told once More is opened (fbMoreBind), never for a sheet that
@@ -2280,7 +2289,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   // A contrast question (CONTRAST): the oldest pair a mix-up queued, CONTRAST.GAP questions after it and after the last one.
   const gap = at - twoAt >= CONTRAST.GAP;
   if (rematch.length && gap && at - rematch[0].at >= CONTRAST.GAP) {
-    const pair = rematch[0].pair,
+    const {pair, mim} = rematch[0],
       // The custom quiz asks only its own genera; and never a genus not met yet (one offered to make up the choices and
       // picked would be opened by the side door, with no card). Nor a unit the other choice names (model.js choiceNames:
       // outside IMR, "Longnose butterflyfish" is a listed name of F. flavissimus, so its Again asks F. longirostris
@@ -2297,13 +2306,15 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       // During a comeback an Again still follows a miss (it corrects it), as a comeback question.
       rustNow();
       const R = cbIn(cur) ? recallAt(t) : 1;
+      // The Again of a mix-up on a photo of the mimicry class (rematchAdd mim) shows the pair's species on either side
+      // (model.js mimKeep), when that side's draw holds one now.
       return Object.assign(
         [
           cur,
           t,
           shuffle(pair.slice()),
           `Again: ${uname(pair[0])} or ${uname(pair[1])}?`,
-          photoSet(t, null, Math.log(R) + ease, 2, 'again')
+          photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))
         ],
         {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
@@ -2354,11 +2365,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     if (pair) {
       twoAt = at;
       twoPair = key(pair);
-      const t = pick(pair);
+      const t = pick(pair),
+        k = mimKeep(pair.mim, pair, t); // a pair of the mimicry class (duelPick): its species
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel')],
+        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel', k)],
         {auto: twoPair, ...(sel ? {custom: 1} : {})}
       );
     }
@@ -2401,14 +2413,21 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, pfmt).
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
+    // The mimicry class drilled (model.js mimUnit, mimTrap): a photo of the class makes the unit of the species it
+    // resembles a trap, once met and in play, in the place of the weakest trap; only on a question that has a trap at
+    // all (traps, the exam's included), never typed or on its unit's own card. It counts as plausible (k) there.
+    mu0 = typed || !traps || cards.includes(t) ? null : mimUnit(t, (set.shown || [])[0]),
+    mu = mu0 && known(mu0) && (sel || list.filter(n => !cards.includes(n))).includes(mu0) && !choiceNames(mu0, t) ? mu0 : null,
+    chm = mimTrap(t, ch, mu),
+    fewm = sel ? chm.filter(n => n !== t && (n === mu || confusable(t, n))).length < 2 : few,
     // The question asked with its genus's card never shows the card's own photo again.
     q = [
       cur,
       t,
-      ch,
+      chm,
       typed ? `Which ${GX(t).one || SUBJ.one}? Type it` : `Which ${GX(t).one || SUBJ.one}?`,
       typed ? {...set, typed: 1} : set,
-      few ? plausibleK(t, ch) : 0
+      fewm ? plausibleK(t, chm, mu) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
   if (typed) q.typed = 1;
@@ -2441,14 +2460,18 @@ function duelPick(list, keep = () => true) {
   // look-alike the Coral Finder names) and the look-alikes from the data (model.js dataLooks), when both are in the list.
   // Never two units one label names (model.js choiceNames: two fish species may share a common name): such a duel would
   // read "Brown damsel or Brown damsel?", and either answer is right.
-  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(
+  // The pairs of the mimicry class too (model.js mimPairs: once their card was shown, mimSeen), each carrying its pair's
+  // id (mim), so the duel shows the pair's species (mimKeep).
+  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list), ...mimPairs(list, m => mimSeen(m.pair.id))].filter(
     ([x, y]) => list.includes(x) && list.includes(y) && !choiceNames(x, y) && !choiceNames(y, x) && keep([x, y])
   );
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
-  // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
+  // the classic look-alikes (compared in the IMR lecture or the Coral Finder text), the mimicry class's among them.
   const w = ps.map(
-      ([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)
+      p =>
+        (weight(p[0]) + weight(p[1])) *
+        (mixedUp(p[0], p[1]) && confusable(p[0], p[1]) ? 3 : confusable(p[0], p[1]) || isClassic(p[0], p[1]) || p.mim ? 2 : 1)
     ),
     t0 = w.reduce((p, q) => p + q, 0);
   let r = Math.random() * t0;
@@ -2486,7 +2509,7 @@ function planDuel(a, b) {
   // hold is on (model.js holdEase), as every question of the photo quiz but an exam: the photo and the single views aim
   // lower (photoSet's shift; a duel has its two choices, no traps). The expectation logged is the photo's own (answer),
   // so it stays that of the photo shown.
-  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel');
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel', mimKeep(pair.mim, pair, t));
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `${uname(pair[0])} or ${uname(pair[1])}?`, set];
 }
 // The Duel tab's relief card (docs/ARCHITECTURE.md "The Duel tab's relief card"): the Duel tab keeps drilling one pair
