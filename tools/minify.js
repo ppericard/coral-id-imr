@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Minifies the deploy's staged copy of the site (architecture review of 2026-11-18, R4, migration step 1: phones
-// downloaded the comments, about 474 KB of gzipped JavaScript where terser leaves about 180 KB, at the field's 86 kbit/s).
+// Minifies the deploy's staged copy of the site (phones
+// would download the comments, about 474 KB of gzipped JavaScript where terser leaves about 180 KB, at the field's 86 kbit/s).
 // Run by tools/build_site.py on the staged copy only, never on the source (development keeps no build step):
 //
 //   NODE_PATH=<folder>/node_modules node tools/minify.js DIR

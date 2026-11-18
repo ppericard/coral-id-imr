@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// A surprise card's answer (quiz.js winkShow, winkAnswer; Pierre, 2026-11-08: "il faut l'enregistrer bien sûr") is
+// A surprise card's answer (quiz.js winkShow, winkAnswer) is
 // logged like every other answer, marked by its mode (core.js WINK_MODE), and no reader of the log counts it: the app's
 // own readers of its queue, core.js subjRows / subjEntries (the admin's pages, the analyses, the evaluation tools), the
 // sheet's readers (Code.gs replayed_: hold, replay, photo ratings, confusions, the player list; answers_: readAnswers;
@@ -120,7 +120,7 @@ test('core: the marker and the subject readers', () => {
   assert.deepStrictEqual(C.subjEntries([{...wk, s: ''}, cq]), [cq], 'never in the replayed one either');
   assert.deepStrictEqual(C.subjRows([wk, fq, cq].map(row), 'fish'), [row(fq)]);
   assert.deepStrictEqual(C.subjRows([{...wk, s: ''}, cq].map(row)), [row(cq)]);
-  // Sent as they come: the readers leave it out from v98, below the gate floor (core.js SHEET_FLOOR).
+  // Sent as they come: the gate floor (core.js SHEET_FLOOR) is at the sheet version whose readers leave it out.
   assert.ok(C.SHEET_FLOOR >= 98);
 });
 
@@ -223,13 +223,13 @@ test('the Activity tab counts no wink answer: its formula leaves them out, the o
     f(),
     /^=QUERY\(Answers!A:F, "select A, count\(E\), sum\(E\), max\(B\) where A is not null and \(F is null or F <> 'wink'\) group by A/
   );
-  // A tab made before v98 keeps its formula until a wink answer comes, then takes the new one.
+  // A tab made with the older formula keeps it until a wink answer comes, then takes the new one.
   s.sheets.Activity.rows[0][0] = {formula: run('ACTIVITY_V1')};
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [GAME[1]], at: 1});
   assert.strictEqual(f(), run('ACTIVITY_V1'), 'no wink: untouched');
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [WINKS[0]], at: 2});
   assert.strictEqual(f(), run('ACTIVITY'), 'replaced at the first wink answer');
-  // A formula Pierre wrote himself is his.
+  // A formula the admin wrote by hand is left alone.
   s.sheets.Activity.rows[0][0] = {formula: '=QUERY(Answers!A:B, "select A")'};
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [{...WINKS[0], id: 'w9'}], at: 3});
   assert.strictEqual(f(), '=QUERY(Answers!A:B, "select A")');

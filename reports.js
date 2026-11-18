@@ -146,7 +146,8 @@
   // its identification key in force, {n, title} (core.js treeGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
   // where its tree has them, the taxonomic groups its families sit in (core.js treeGen taxa, each family's tg; the
   // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js treeSpUnits, s:s091) to
-  // {family, look: the other species units of its family}, as the game starts its pairs (admin.js fishUnitRec)}; null
+  // {family, look: the other species units of its family (admin.js fishUnitRec: as the game starts its pairs), name: its
+  // scientific name, genus: its genus unit (the Heatmap's block, admin-heatmap.js heatUp)}}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
   // slugs), each photo then shown by its genus. S, cur: the subject and the published curation (curation.json), the
   // content editor's structure and text laid over f as the app lays them (core.js contentApply: a circle, a look-alike
@@ -191,7 +192,9 @@
       spg,
       imr,
       groups: F.groups || [],
-      spu: Object.fromEntries(C.treeSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look}])),
+      spu: Object.fromEntries(
+        C.treeSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look, name: u.s.name, genus: u.s.genus || ''}])
+      ),
       ...(F.taxa ? {taxa: F.taxa} : {})
     };
   }

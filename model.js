@@ -327,6 +327,50 @@ function varOf(n, L) {
   const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
 }
+// The mimicry class drilled (docs/LEARNING.md "The mimicry class"). mimUnit: on a question about unit t, the unit at t's
+// rank of the species a photo p of the class resembles (its entry's m), the trap that photo sets; null for a photo of no
+// class, or when the pair sits inside t (two blennies asked as their family).
+const mimUnit = (t, p) => {
+  const m = p ? mimOf(t, p) : null,
+    u = m ? m.m.find(x => GX(x) && rankOf(x) === rankOf(t)) : null;
+  return u && u !== t ? u : null;
+};
+// Whether unit n's draw gives some photo keep accepts a weight now (varOf: the variants' and the class's ramps), so a
+// drill kept to such photos never shows one its unit still holds back (photoSet draws at random when all weigh 0).
+const drawHas = (n, keep) => {
+  const L = ['wide', 'medium', 'macro'].flatMap(v => gamePics(n, v)).filter(p => gamePhotoOk(n, p)),
+    V = varOf(n, L);
+  return L.some(p => keep(p) && V.f(p) > 0);
+};
+// The photos a pair's drill shows on its unit n (photoSet keep): on the resembling side's units (app.js mimLay u) the
+// photos of the class, on the side resembled (m) its species at the stage that is resembled; never, as on the card, a
+// photo taken outside the region of a species whose look varies by region (ra, rb: loc world); null for another unit.
+const mimSide = (m, n) =>
+  m.u.includes(n)
+    ? p => mimIn([m], p) === m && !(m.ra && p.loc === 'world')
+    : m.m.includes(n)
+      ? p => p.sp === m.pair.b && ((m.pair.st || {}).b !== 'juvenile' || phaseOf(p) === 'juvenile') && !(m.rb && p.loc === 'world')
+      : null;
+// The keep of pair id's drill on unit n of the two units asked (an Again or a duel), when that side's draw holds such a
+// photo now; null otherwise (any photo of n, as for every pair).
+const mimKeep = (id, pair, n) => {
+  const m = id ? pair.flatMap(x => (GX(varHome(x)) || {}).mim || []).find(e => e.pair.id === id) : null,
+    k = m ? mimSide(m, n) : null;
+  return k && drawHas(n, k) ? k : null;
+};
+// The class's duels among the units of list, at the subject's own rank as every duel: [a, b] for each entry of a family a
+// whose species resembled is of another family b of list, its pair's id in mim, once ok(m) holds and both sides' draws
+// hold their photos now (drawHas), so its two sides take turns as in any duel.
+function mimPairs(list, ok = () => true) {
+  const out = [];
+  for (const a of list.filter(x => !rankOf(x)))
+    for (const m of (GX(a) || {}).mim || []) {
+      const b = m.fb;
+      if (b !== a && list.includes(b) && ok(m) && drawHas(a, mimSide(m, a)) && drawHas(b, mimSide(m, b)))
+        out.push(Object.assign([a, b], {mim: m.pair.id}));
+    }
+  return out;
+}
 // The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several, its held-out
 // photos (g.held) among them: the exam draws from those first, and the variant groups (varUnitOf) read the unit's
 // photos whole, as the sheet's replay does (core.js treeVarTable, made without the set).
@@ -1443,8 +1487,10 @@ function photoDiff(n, p) {
 // typed, in full) and the look-alikes (in full when a genus it gets confused with is among the choices, PROG.LOOK
 // otherwise). A miss weighs in full on a photo at the player's level, less on a harder one; a right answer on a known
 // photo, only what memory does not explain. Photo difficulty is left out of a right answer's weight (docs/LEARNING.md).
-// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look).
-const pgLook = (t, chs) => chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
+// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look), or
+// also, the unit the photo of the mimicry class resembles (mimUnit).
+const pgLook = (t, chs, also = null) =>
+  chs.some(n => n !== t && GX(n) && (n === also || pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
 function pgWeight(t, chs, k) {
   return pgRightW(k, pgLook(t, chs));
 }
@@ -1754,10 +1800,23 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
 // Elo, the progress and the photo's aim (aimOff) count a guess as 1 in (target + the plausible wrong choices) while traps
 // are few (0 or 1): easy choices from other growth forms are not plausible, so such a question is scored as a 2- or
 // 3-choice one (a right answer there proves less, and its photo is harder). From 2 traps on, every choice counts.
-const plausibleK = (t, choices) => {
+// also: the unit a photo of the mimicry class makes a trap (mimUnit), plausible on that photo whatever its scores.
+const plausibleK = (t, choices, also = null) => {
   const tf = imrFormsOf(t);
-  return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
+  return Math.max(2, choices.filter(n => n === t || n === also || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
 };
+// The choices ch of a question on t with u, the unit its photo of the mimicry class resembles (mimUnit), among them: in
+// the place of the wrong choice that carries u's label, else of the weakest look-alike among them (the traps trapsFor
+// gave, as distractors finds them), so the question keeps its number of traps, else of the one least confused with t;
+// ch itself when u is there.
+function mimTrap(t, ch, u) {
+  const W = ch.filter(n => n !== t);
+  if (!u || ch.includes(u) || !W.length) return ch;
+  const look = W.filter(n => confusable(t, n) || pooledConf(t, n) >= CONF.TRAP),
+    least = L => L.reduce((a, n) => (confOf(t, n) < confOf(t, a) ? n : a)),
+    out = W.find(n => choiceKey(n) === choiceKey(u)) || least(look.length ? look : W);
+  return ch.map(n => (n === out ? u : n));
+}
 // Custom quiz (docs/LEARNING.md "Custom quiz: the photo quiz on the genera the player picks"): the photo quiz limited to
 // the genera the player picks (quiz.js quizCustom, planPhoto), with all its rules but the mastery exam (rule L9: the
 // selection may hold no look-alike); only the genus asked and the wrong choices change:

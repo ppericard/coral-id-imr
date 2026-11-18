@@ -153,13 +153,14 @@ clears it) and preselected next time.
 the selection with the usual `weight()` and no opening path (no first cards, no opening chance, `openChance`, no hold,
 no visit floor; a unit not met yet is asked with its card, `introShow(L, true, 'c', false)`: ready at once, no Open all
 box), and the wrong choices from the selection first (`distractors` on it), topped up from the other units in play only
-under 4. Again (its selected unit), duels slipped in (pairs of the selection), typed questions, calibration and the
-comeback (only with 2 or more selected units answered right, else left to the photo quiz: `cbIn`) work as in the photo
-quiz; the offers about the units in play (Open all, the back card, the bonus genera) are not made there. No mastery
-exam question there (rule L9: the selection may hold no look-alike), and a question is scored with the look-alikes its
-choices really hold (fewer than 2: `plausibleK`, as the photo quiz scores easy choices). Planned questions are keyed on
-the selection too (`planPool`). Every answer is a photo-quiz answer (the progress, the Elo, the hold, the achievements
-but the runs and Sharp eye, the sheet), logged `quiz|s` first (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`), which the sheet
+under 4; the unit a photo of the mimicry class resembles is its trap only when selected ([model.md](model.md)). Again
+(its selected unit), duels slipped in (pairs of the selection), typed questions, calibration and the comeback (only
+with 2 or more selected units answered right, else left to the photo quiz: `cbIn`) work as in the photo quiz; the offers
+about the units in play (Open all, the back card, the bonus genera) are not made there. No mastery exam question there
+(rule L9: the selection may hold no look-alike), and a question is scored with the look-alikes its choices really hold
+(fewer than 2: `plausibleK`, as the photo quiz scores easy choices). Planned questions are keyed on the selection too
+(`planPool`). Every answer is a photo-quiz answer (the progress, the Elo, the hold, the achievements but the runs and
+Sharp eye, the sheet), logged `quiz|s` first (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`), which the sheet
 stores and rates as a photo-quiz answer (`guess_` reads `|kN` at the end and `|t` anywhere; the mode split `quiz`). The
 admin: Activity's Recent sessions count it as **custom**, the player journey has a "Custom quiz (genera picked)" row
 under Games and the sessions with it in "When they played". Its reminder of the units waiting in the Quiz:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The photos on Cloudflare R2 (Photos out of the repo; Pierre, 2026-11-03 and his rule of 2026-11-05; docs/ROADMAP.md,
+# The photos on Cloudflare R2 (Photos out of the repo; docs/ROADMAP.md,
 # docs/ARCHITECTURE.md "Photos"): the app reads every photo from the bucket, same img/ paths. Credentials come from the
-# repo's GitHub secrets, set by Pierre; agents never see them.
+# repo's GitHub secrets, set by the admin; agents never see them.
 #
 #   tools/r2_sync.sh        copy img/ (the photos git keeps: IMR lecture photos, page art) to
 #                           the bucket, then check the bucket holds the four files of every photo that lives on R2 only
@@ -25,8 +25,8 @@ if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_S
   echo "R2 credentials or bucket not set: nothing synced"
   exit 0
 fi
-# rclone: the official release, pinned and checked, never the runner's apt package (stack audit 2026-11-05: apt gave
-# 1.60.1 from 2022, and its version changed with the runner image). The run stops before anything reaches the bucket
+# rclone: the official release, pinned and checked, never the runner's apt package (apt gives
+# an old 1.60.1 from 2022, and its version changes with the runner image). The run stops before anything reaches the bucket
 # if the download does not match the hash. To move to a newer release: take the linux-amd64.zip line of
 # https://downloads.rclone.org/vX.Y.Z/SHA256SUMS (PGP-signed by Nick Craig-Wood, key
 # FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA; the GitHub release carries the same file), check its signature, read the
@@ -66,7 +66,7 @@ copy img
 # (the app would show that photo from its online original, core.js photoAway).
 want=$(mktemp) have=$(mktemp)
 {
-  # An empty name (no photo, no tile yet) adds no file (Codex review #826).
+  # An empty name (no photo, no tile yet) adds no file.
   python3 tools/photos.py --r2-list | while read -r f; do [ -z "$f" ] || printf '%s\n' "$f.webp" "$f-m.webp" "$f-s.webp" "$f-t.webp"; done
   # The fish tiles (fish-game.json xc: tools/fish_game.py), a fifth file of those photos.
   python3 tools/photos.py --r2-tiles | while read -r f; do [ -z "$f" ] || printf '%s\n' "$f-x.webp"; done

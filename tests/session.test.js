@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// Players › Activity › Recent sessions: a session unfolded (Pierre, 2026-11-05: "what the player made of the session").
+// Players › Activity › Recent sessions: a session unfolded: what the player made of the session.
 // admin-journey.js sessionFacts, the facts the summary is drawn from, on made-up rows: [id, time, genus shown, answered,
 // right, mode, photos, expected].
 const test = require('node:test'),
@@ -117,7 +117,7 @@ test('from the saved copy: cards, the offer and achievements within SESS.EDGE of
   assert.strictEqual(sessionFacts(L, [], {saved: {}}).offer, null);
 });
 
-// Pierre, 2026-11-05: a photo's difficulty shown as the share of starting players (Elo 1000) who recognise it without
+// A photo's difficulty shown as the share of starting players (Elo 1000) who recognise it without
 // guessing, 1 / (1 + e^d), one helper for the admin (admin.js recognised, recPct).
 test('recognised: the share of starting players who recognise a photo, from its difficulty', () => {
   const asrc = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8'),

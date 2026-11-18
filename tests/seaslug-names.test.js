@@ -1,7 +1,6 @@
 require('./slot.js').testGuard();
-// The sea slugs' English common names and nicknames (Pierre, 2026-11-17: "apporter cette information de nom commun quand
-// elle existe", at the family, genus and species level, nicknames too; information only, never an answer choice, Q369 (d)
-// stands): tools/seaslug_names.py reads the sources (made-up replies here, nothing leaves the machine) and merges them,
+// The sea slugs' English common names and nicknames (at the family, genus and species level, nicknames too;
+// information only, never an answer choice): tools/seaslug_names.py reads the sources (made-up replies here, nothing leaves the machine) and merges them,
 // each name with its sources (rule C2), a name on two taxa listed (rule C5); tools/seaslug_game.py copies them into
 // seaslug.json; app.js gives them through UNITS vern, the photo's taxon line after the answer and the typed-name nudge.
 const test = require('node:test'),
@@ -141,7 +140,7 @@ test('tools/seaslug_names.json derives as written and holds every family, genus 
       (x.web || []).forEach(w => assert.match(w.u, /^https:\/\//, `${t.name}: ${x.n}'s page`));
     })
   );
-  // A name on two taxa is a point for Pierre (rule C5): each in points.json.
+  // A name on two taxa is a point for the admin (rule C5): each in points.json.
   const P = read('points.json').points.filter(p => p.subj === 'seaslug'),
     said = P.map(p => p.title + ' ' + p.q + ' ' + (p.ctx || []).join(' '))
       .join(' ')

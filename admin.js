@@ -5576,8 +5576,10 @@ const unitPhOf = f => {
   const S = SUBJECTS.find(x => x !== FISHS && UNITA[x.id] && UNITA[x.id].ph[f]);
   return S ? {S, p: UNITA[S.id].ph[f]} : null;
 };
-// A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
-// species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
+// repunit: begin
+// A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus in
+// italics (its id's prefix off), a fish species unit (s:s091) by its scientific name in italics (FA.spu), each with its
+// family's page once the fish data are read (fishAdmin).
 // bare: without the subject's name after it (a page that is that subject's already: its Stops). S0: the report's subject
 // (a unit id two subjects' prefixes fit: reports.js repCtx), else the unit's (unitSubj); its family's page only when the
 // subject has the family pages (Photos › Tree).
@@ -5585,11 +5587,13 @@ const repUnit = (x, bare, S0) => {
   const S = S0 && S0.sheets ? S0 : unitSubj(x);
   if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
   const R = unitRegOf(S),
-    fam = R && hasPage(S, TREE) && R.fam[x],
-    nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
+    sp = R && R.spu && R.spu[x],
+    fam = R && hasPage(S, TREE) && (R.fam[x] || (sp && sp.family)),
+    nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(sp ? sp.name : String(x).replace(/^[a-z]:/, ''))}</i>`;
   // its family's page, or its own node when the subject's units are narrower than the tree's families (a sea-slug genus)
   return `${fam ? `<a class="adm-gen" href="${esc(famHref(unitRankOf(S) === S.rank ? fam : x, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
+// repunit: end
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there, without the drag handle, its genus first; bound by bindTiles,
 // bindF and bindQ as on the genus page. o: {lead (after the genus), cap (caption last), extra (more actions)}. null for a

@@ -87,6 +87,7 @@ function session(seed, n) {
       k,
       chs: choices,
       seenPh: phAll.filter(p => p !== unseen),
+      mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
       unseen,
       ph: phAll,
       solo: phAll.length === 1 ? 0.5 : 0,
