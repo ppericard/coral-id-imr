@@ -212,8 +212,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     // offsets of 2026-11-03, about x 0.64 shown never right, x 0.33 right once, x 0.18 right twice or more (it was x 0.6
     // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
     // It matters most in a genus with few photos, where repeats come soonest.
-    // A reference-level photo never seen (core.js refLevel: a reference source's own, or judged ease 5 with the
-    // reference look; Pierre, 2026-11-06) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
+    // A reference-level photo never seen (core.js refLevel: judged ease 4 or 5 with the reference look, whatever its
+    // source; Pierre, 2026-11-06 and 2026-11-18) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);

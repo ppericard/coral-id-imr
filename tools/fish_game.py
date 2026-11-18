@@ -473,7 +473,8 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
 def tier(fish):
     """The download order when a run cannot take every photo (--max): the reference photos first, then the starter
     entries' photos (fish.json start), circle 1's, then the rest (Pierre, 2026-11-06, Q199: starters and reference photos
-    first). (record, route) -> a sort key."""
+    first; 2026-11-18: the reference route keeps this priority for entry into the base, never for placement: a photo's
+    place reads ref_level, from the photo). (record, route) -> a sort key."""
     of, _ = entries(fish)
     start = set(fish.get('start') or [])
     circle = {t['id']: t.get('circle') or 9 for t in fish.get('teach') or []}
@@ -798,11 +799,11 @@ REF_GOOD = 'p1g0sl1'
 
 
 def ref_level(r):
-    """core.js refLevel: one kind of fish (count 1 or s), and a reference source's photo (rep) judged very easy, or any
-    photo judged ease 5 with the reference look (no juvenile, camouflage or out of the water)."""
+    """core.js refLevel: a photo judged very easy (ease 4 or 5) with the reference look (its last letter is the count: one
+    kind of fish, 1 or s; no juvenile, camouflage or out of the water). Read from the photo alone, never from its route in
+    (rep, the flag r: Pierre, 2026-11-18)."""
     jt, e = str(r.get('jt') or ''), r.get('e') or 0
-    return (len(jt) >= 7 and jt[6] in '1s'
-            and ((e >= 4 and bool(r.get('rep'))) or (e == 5 and bool(REF_LOOK.match(jt[:7])) and not set(jt[7:]) & set('jca'))))
+    return e >= 4 and bool(REF_LOOK.match(jt[:7])) and not set(jt[7:]) & set('jca')
 
 
 def ref_score(jt):

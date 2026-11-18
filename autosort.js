@@ -735,7 +735,7 @@
   };
   // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
   // ones first, in his order; then the game's order (core.js easyRank, #635, #660): reference-level photos first (his
-  // ease and tags, else the pass's; a reference source, rep or the flag r), the easiest, the most reference-like
+  // ease and tags, else the pass's; read from the photo, never from its source: Pierre, 2026-11-18), the easiest, the most reference-like
   // (refScore), an open licence or his own before CC BY-NC (rightsRank, Q270), then a fixed hash. Never by who took them
   // (Pierre, 2026-11-06: his own photos are never boosted; the easy and reference photos come first, whoever took them).
   // A photo as core.js easyRank and refLevel read it: his ease and tags, else the pass's (j).
@@ -746,7 +746,6 @@
       f: p.f,
       jt,
       e: fishEase(p, F, j) || undefined,
-      rep: p.rep || jt.slice(7).includes('r') || undefined,
       lic: p.lic,
       own: p.own,
       a: p.a,

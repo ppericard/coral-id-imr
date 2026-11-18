@@ -1083,16 +1083,17 @@
     return h;
   };
   // Reference level (Pierre, 2026-11-06 14:02: "reference photos" are every photo of reference quality, whoever took
-  // it, not only a source's cover): a reference source's own photo (rep) judged very easy, or any photo judged ease 5
-  // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
-  // school of it; no juvenile, camouflage or out of water).
+  // it; 2026-11-18: "La source ne devrait pas être le critère principal de 'référence' même si ça peut être un fort
+  // indice. L'ensemble des photos de référence doit avoir des qualités intrinsèques, basées sur des critères
+  // objectifs"): a photo judged very easy (ease 4 or 5) whose tags read the reference look (profile, whole, good light,
+  // true colours, sharp, large or medium, one fish or a school of it; no juvenile, camouflage or out of water). Read
+  // from the photo alone: the route it came in by (rep, the flag r) is a hint that lets a photo into the base first
+  // (tools/fish_game.py tier), never a reason to place it.
   const REF_LOOK = /^p1g0s[lm][1s]$/;
-  // In both cases one kind of fish (count 1 or s): never a photo with other species in view (o, k, the legacy m) or an
-  // unclear subject (x), rule P3 (Codex review #660; o is in play, not a reference: Q323).
+  // The look's last letter is the count: one kind of fish (1 or s), never a photo with other species in view (o, k, the
+  // legacy m) or an unclear subject (x), rule P3 (Codex review #660; o is in play, not a reference: Q323).
   const refLevel = p =>
-    !!p &&
-    /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
-    (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
+    !!p && (p.e || 0) >= 4 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7));
   const refFirst = p => (refLevel(p) ? 0 : 1);
   // A photo's judged phase (Pierre, 2026-11-07: a progressive path that presents juveniles, colour phases and sexual
   // dimorphism; docs/LEARNING.md "Juveniles and colour phases in stages"): its record's phase word ph (juvenile, male,
