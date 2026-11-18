@@ -8987,6 +8987,22 @@ const CORE_ = (function () { const module = {exports: {}};
   // Every R2 address in a string (an src, a srcset, an inline style) replaced so.
   const R2_ADDR = PHOTO_BASE ? new RegExp(PHOTO_BASE.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + 'img/[^\\s"\'(),]+', 'g') : null;
   const photoAwayAll = (s, look) => (R2_ADDR && typeof s === 'string' ? s.replace(R2_ADDR, u => photoAway(u, look)) : s);
+  // Whether one address is on R2: parsed as a URL, its origin (scheme, host and port, compared whole) is PHOTO_BASE's and
+  // its path is under PHOTO_BASE's. An address that only names R2 elsewhere (in its path or query, before an @, inside a
+  // longer host) is not on R2, nor is a relative or unparsable one. The URLs are parsed here, never when the file loads:
+  // the sheet script's copy of this file (Code.gs) runs where URL does not exist.
+  function photoOnR2(u) {
+    if (!PHOTO_BASE || typeof u !== 'string') return false;
+    try {
+      const a = new URL(u),
+        b = new URL(PHOTO_BASE);
+      return a.origin === b.origin && a.pathname.startsWith(b.pathname);
+    } catch (e) {
+      return false;
+    }
+  }
+  // Whether a string (an src, a srcset, an inline style) holds an R2 address: each absolute address in it tested whole.
+  const photoHasR2 = s => typeof s === 'string' && (s.match(/https?:\/\/[^\s"'(),]+/g) || []).some(photoOnR2);
   // An element whose R2 photo failed (an <img>, or the figure holding a game photo's backdrop): its src, srcset, data-lo
   // (the 480 px fallback) and inline style point at the photo's online original, or at the site's copies for a photo with
   // none (no look: the site for every photo). keepLo: data-lo stays on R2 (under the service worker, which keeps photos
@@ -8997,7 +9013,7 @@ const CORE_ = (function () { const module = {exports: {}};
     if (PHOTO_BASE && el && el.getAttribute)
       for (const a of ['data-lo', 'style', 'srcset', 'src']) {
         const v = a === 'data-lo' && keepLo ? null : el.getAttribute(a);
-        if (v && v.includes(PHOTO_BASE)) {
+        if (photoHasR2(v)) {
           el.setAttribute(a, photoAwayAll(v, look));
           hit = true;
         }
@@ -9046,7 +9062,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const src = el.getAttribute('src') || '',
       set = el.getAttribute('srcset') || '',
       u = el.currentSrc || src;
-    if (!u.includes(PHOTO_BASE)) return false;
+    if (!photoOnR2(u)) return false;
     el.dataset.r2try = '1';
     setTimeout(() => {
       const t = new Image();
@@ -11138,6 +11154,8 @@ const CORE_ = (function () { const module = {exports: {}};
     starWaits,
     PHOTO_BASE,
     photoLocal,
+    photoOnR2,
+    photoHasR2,
     photoFallback,
     photoOnline,
     photoFileOf,
