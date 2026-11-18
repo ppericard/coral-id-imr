@@ -43,7 +43,7 @@ function loadStats() {
         statsJoin(st);
         PMEM = memOf(j.mem); // photo memory offsets
         if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
-        PFMT = fmtsOf(j); // per-format offsets (core.js fmtOffsetsOf)
+        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf)
         store.set('reefid-photo-stats', st);
       }
       loadOwnStats();
