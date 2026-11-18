@@ -85,7 +85,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
 | [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
 | [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/spec/](docs/spec/sync.md) | The map of the system (files, data, admin, sync, photos, deploy); the specification of each part it points to (so far the sync and the sheet script, the cards and prompts, the data files, the fish content and photos, the content editor's edits, the admin) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/spec/](docs/spec/sync.md) | The map of the system (files, data, admin, sync, photos, deploy); the specification of each part it points to (so far the sync and sheet script, the cards and prompts, the data files, the fish content and photos, the content editor's edits, the admin, the front end) |
 | [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
