@@ -344,7 +344,7 @@ test('the sheet: a pair Publish replays a sea-slug player under the pairs in for
   const r2 = save({sts: {seaslug: st1}});
   assert.ok(r2.replays && !('st' in r2.replays.seaslug));
   assert.deepStrictEqual(plain(r2.replays.seaslug.rec), plain(want0));
-  assert.strictEqual(s.ctx.subjSt_('seaslug'), '');
+  assert.strictEqual(s.ctx.subjRpl_('seaslug').st, '');
   // seaslug.json read once per structure (the units under the curation's fingerprint), the curation at each refresh
   assert.ok(m.n.f <= 3 && m.n.cur >= 2, JSON.stringify(m.n));
 });
