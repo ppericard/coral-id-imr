@@ -9,6 +9,9 @@ checks that the app builds the same games from both files and that no player scr
 
 Left out (none of them read by any script index.html loads, nor by the Lab):
 - auto: the coral auto-sort's log (autosort.js, the admin's agreement window);
+- retest, flag: the admin's blind retests and the players' "Bad photo" flags he picks up (flag.js), here and in every
+  tree subject's part;
+- seen, but its 'rep:<id>' marks (the reports thanked): the Candidates' reject marks 'cand:<photo>' are the admin's;
 - fish.tags, fish.ease: the fish judging pass's tags and ease as Pierre corrected them (the admin's review pages; the
   game reads a photo's ease and tags from fish-game.json);
 - fish.kept: the proposals Pierre answered Keep mine (the re-judge's, by photo: admin-light.js, the admin's Light
@@ -26,8 +29,12 @@ import json
 import os
 import sys
 
-DROP = ('auto',)
-FISH_DROP = ('tags', 'ease', 'kept')
+DROP = ('auto', 'retest', 'flag')
+FISH_DROP = ('tags', 'ease', 'kept', 'retest', 'flag')
+# The one kind of mark the app reads in the coral top-level seen: the reports thanked, 'rep:<id>' (core.js handledSeen);
+# the rest is the Candidates' reject marks, 'cand:<photo>', which only the admin reads. A tree subject's seen stays whole
+# (core.js treePhotoOn, treeGone: its keys are photo names).
+SEEN_KEEP = 'rep:'
 # Every tree subject's part of curation.json (core.js SUBJECTS admin.cur: the fish's, the sea slugs'), slimmed alike
 # (tests/curplay.test.js holds the list to core.js).
 TREE_PARTS = ('fish', 'seaslug')
@@ -54,6 +61,12 @@ def slim_content(c):
 
 def slim(cur):
     out = {k: v for k, v in cur.items() if k not in DROP}
+    if isinstance(out.get('seen'), dict):
+        seen = {k: v for k, v in out['seen'].items() if str(k).startswith(SEEN_KEEP)}
+        if seen:
+            out['seen'] = seen
+        else:
+            del out['seen']
     if 'content' in out:
         out['content'] = slim_content(out['content'])
     for key in TREE_PARTS:
