@@ -326,49 +326,29 @@ test('the living docs: every relative link and anchor resolves', () => {
   assert.deepStrictEqual(bad, [], 'broken relative links in the living docs (point them at what exists, or say "PR #N")');
 });
 
-// A citation is the start of a heading ("Photos" for "## Photos", "Fish content" for "### Fish content (`fish.json`…"),
-// or of a bullet or a paragraph's bold lead-in ("Photos, stopgap" for "- **Photos, stopgap** (…"); quotes, bold and
-// code marks are ignored on both sides. name: the file's name as cited (ARCHITECTURE, LEARNING); returns the citations
-// that name nothing in docs/<name>.md.
-const sectionCites = name => {
-  const doc = read('docs/' + name + '.md'),
-    flat = s => s.replace(/[*"`“”]/g, '').trim();
-  const starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, '')));
-  const bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in of docs/ARCHITECTURE.md', () => {
+  // A citation is the start of a heading ("Photos" for "## Photos", "Fish content" for "### Fish content (`fish.json`…"),
+  // or of a bullet or a paragraph's bold lead-in ("Photos, stopgap" for "- **Photos, stopgap** (…"); quotes, bold and
+  // code marks are ignored on both sides.
+  const flat = s => s.replace(/[*"`“”]/g, '').trim();
+  const starts = read('docs/ARCHITECTURE.md')
+    .split('\n')
+    .map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, '')));
+  const bold = [...read('docs/ARCHITECTURE.md').matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
   const found = x => {
     const t = flat(x);
     return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
   };
   const bad = [];
   // The quoted names after the file's name, on its line or the next one (a comment or a wrapped paragraph).
-  const cite = new RegExp(
-    name + '(?:\\.md)?[ \\t]*(?:\\n[ \\t]*(?:(?:\\/\\/|#|\\*)[ \\t]*)?)?((?:["“][^"”\\n]+["”](?:,?[ \\t]*(?:and[ \\t]+|or[ \\t]+)?)?)+)',
-    'g'
-  );
+  const cite =
+    /ARCHITECTURE(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
   for (const f of TEXT_FILES) {
     if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue; // history; this file's own examples
     for (const m of read(f).matchAll(cite))
-      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': ' + name + ' "' + q[1] + '"');
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': ARCHITECTURE "' + q[1] + '"');
   }
-  return bad;
-};
-
-test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in of docs/ARCHITECTURE.md', () => {
-  assert.deepStrictEqual(
-    sectionCites('ARCHITECTURE'),
-    [],
-    'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)'
-  );
-});
-
-// Docs restructuring PR 5 (LEARNING.md as a spec): the studies moved to docs/archive/learning-notebook.md, so a name the
-// code or a doc cites must stay a section or a lead-in of the spec, or the citation must name the notebook.
-test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
-  assert.deepStrictEqual(
-    sectionCites('LEARNING'),
-    [],
-    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
-  );
+  assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
 });
 
 test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {

@@ -86,12 +86,12 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
 | [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Files, data, admin, sync, photos, deploy |
-| [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it; its studies and measurements in [docs/archive/learning-notebook.md](docs/archive/learning-notebook.md) |
+| [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
 | [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
-| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history |
+| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history (with [the learning notebook](docs/archive/learning-notebook.md), the studies behind LEARNING.md) |
 | [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos |
 | [privacy.html](privacy.html) | The privacy notice players see |
 

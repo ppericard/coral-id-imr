@@ -124,7 +124,8 @@ coral genus, a fish family, genus or species, a sea slug genus); the code says "
   floor (it settles as its answers build up) and kept to 4 decimals. It is made at the first answer from the player's
   history (`core.js` `levelSeed`). The players see one level, this one, as an Elo of 1000 + 200 × th (`progress.js`
   `eloScore`), and only from `ELO_MIN` = 200 answers (`progress.js` `ELO_MIN`): before, it is not settled. The
-  leaderboard ranks the level of each player's saved progress, or the replayed one their app will adopt (rule D8).
+  leaderboard ranks by the subject's % and then by this level, read from each player's saved progress or from the replay
+  their app will adopt (rule D8).
 - **The sheet's own chain** (`core.js` `eloReplay`, run by the sync sheet's `stats_`): a separate player rating that
   starts every player at `PLAYER0` = −1 (`core.js` `PLAYER0`) and steps by 0.6 / (1 + n / 40), with no answer time, no
   mix-up term and no first-launch prior. It is the player term of the photo ratings and the admin's level (with
@@ -205,8 +206,9 @@ Two levers, one target (after Papoušek, Pelánek & Stanislav 2014):
 
 1. **The format** follows the unit's ability (`model.js` `FORMAT`, `formatAt`, linear between the points
    [ability, look-alike traps, share of single-view questions] `[0, 0, 0]`, `[0.54, 3, 0]`, `[1.8, 3, 0.85]`, flat
-   outside): no trap on a unit's first question, then up to all three of the wrong choices as look-alike traps by an
-   ability of 0.54 (about 5 right answers), rounded at random between (`model.js` `trapsFor`); single-view questions
+   outside): no trap at an ability of 0 or below (a beginner's first question on a unit), then up to all three of the
+   wrong choices as look-alike traps by an ability of 0.54 (about 5 right answers from 0), rounded at random between
+   (`model.js` `trapsFor`); single-view questions
    from none at 0.54 to 85% at 1.8 (`model.js` `singleP`), so each view is learned on its own (rule L3). Typed questions
    are a third lever with their own rule ("Typed questions").
 2. **The photo** makes up the rest: it is aimed `aimOff(k, df)` = logit((aim − 1/k) / (1 − 1/k)) − df below the
@@ -311,7 +313,7 @@ Which unit a question asks (`model.js` `drawW`, `weight`): drawW = 1 − x · c,
 to recognise an average photo of it, c = m / (m + `ELO.n`) how sure the Elo is after m answers. Never asked: 1; badly
 known or barely measured: near 1; known and measured: near 1 − x. A unit ready for its next exam question weighs 1, one
 whose exam waits between two questions × 0.05; one asked in the last 4 questions × 0.1, and the same unit never twice
-in a row while others exist (`model.js` `nextTarget`).
+in a row while others exist, short of ten draws in a row falling on it (`model.js` `nextTarget`).
 
 **"Review"** (`model.js` `level`, `shownLevel`): a shaky unit is marked Review, with an amber dot, only once it has
 `REVIEW_MIN` (5) answers; before, it is still Learning, so a first session's misses do not read as failures. The game
@@ -702,14 +704,14 @@ progress of its own: it comes as the unit asked is mastered.
   player at once (rules D8, D9), silently.
 
 **Juveniles and colour phases in stages** was the first build of this path, replaced by the ramp above; its measured
-record is in the notebook.
+record is in the [notebook](archive/learning-notebook.md).
 
 ### The held-out photos in the game
 
 Some fish observations are kept out of practice for an honest mastery exam (rule L9): never shown in a game, a card, a
 sheet or a list, asked only by the mastery exam, first, unannounced and counted like any answer, logged `|h`
 (`core.js` `fishHeld`, `model.js` `examSet`). The set is `fish-holdout.json`, written by `tools/holdout.py`: per exam
-unit (every family in play, every scientific genus), 15 observations (three exams), never leaving a species with fewer
+unit (every family in play, and the scientific genera of the circle-1 families), 15 observations (three exams), never leaving a species with fewer
 than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in practice, else holds back
 nothing (learning first). Never Pierre's own photos, a reference source's or a reference-level one. Deterministic and
 sticky. A unit's difficulty counts its held-out photos, so withholding them moves nothing.
@@ -757,7 +759,8 @@ credit; shown as 100 × raw^`pow`. `core.js` `score: {entries: 0.25, a: 11 / 15,
 with no common name at all counts its scientific value alone. Every unit keeps its own bar; this only adds them up. The
 leaderboard ranks by it, and the circle-3 gate reads its circle-1 Entries component.
 
-**Fish: the global score, simulated**: the simulations that set its entries' share and its pace are in the notebook.
+**Fish: the global score, simulated**: the simulations that set its entries' share and its pace are in the
+[notebook](archive/learning-notebook.md).
 
 ### Fish: the progress replayed from the answer log
 
@@ -772,7 +775,7 @@ Learning milestones only, never time (rule L8), in each subject's own list (`cor
 corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 60%,
 the scientific genera, the species named by their common names. Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
-their timing was simulated with the real game; the runs are in the notebook.
+their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 
 **Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
 their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`).
@@ -2534,7 +2537,7 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
   its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky",
   "Calibrated, not adopted"). Q338 (b), N 10 only above a global level L (0.25, 0.5 or 0.75) once it rests on 200
   answers: calibrated, none passed (the simulated beginner's level is past every L from about answer 200, so it pays the same cost), nothing
-  changed; back to Pierre ("Above a level"). Q338, decided: "option a, B10 après 200 réponses": N 10 from 200 answers,
+  changed; back to Pierre (the notebook's "Above a level"). Q338, decided: "option a, B10 après 200 réponses": N 10 from 200 answers,
   no level (the arm "N 10, floor alone"), the beginner's shown-score cost accepted; adopted ("A unit stuck shaky").
 - 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
   with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
@@ -2745,7 +2748,7 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
   offer (Coral basics or "No thanks, I know the basics"; Coral basics also moves the start variables one band down,
   silently, the answer given kept); "higher" unchanged; the open-all offer card shows the step as a big one ("Not now"
   on top). 36 of 40 wrong answers caught, 7 of 20 gentle offers to truthful answers; 40-60 adaptive answers cannot tell
-  a beginner who said "IMR course" from a lecture RA: a placement test is the follow-up ("The rule since 2026-11-04").
+  a beginner who said "IMR course" from a lecture RA: a placement test is the follow-up (the notebook's "The rule since 2026-11-04").
 - 2026-11-04, Pierre (on #428): the fallback test redesigned: checked at 20, 40 and 60 answers; "lower" from the level
   of the first answers on each genus (or the opening hold fired), "higher" only from 40 answers and 10 genera met, from
   the global level and the first answers together; no move back after a change made on its card; 35 of 40 wrong answers
