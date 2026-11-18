@@ -9,7 +9,7 @@
 # current identification disagrees with (expert_ok). Abroad: Research Grade only.
 # Licences: CC0, CC BY, CC BY-NC, never share-alike (it would block a later commercial reuse), checked photo by photo.
 # drop_share_alike takes the waiting share-alike candidates out of cand.json at each run (never one curation.json names);
-# the share-alike photos already on the site are Pierre's to keep or remove (admin To do › Share-alike), never here.
+# the share-alike photos already on the site are the admin's to keep or remove (admin To do › Share-alike), never here.
 # Caps, so the pile to sort stays small: at most DAUIN_CAP Dauin observations waiting per genus, Philippines ones only
 # while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings all its photos
 # (PER_OBS guards against an odd one with dozens; a game question shows the views of one colony); sorting by view,
@@ -17,13 +17,13 @@
 # Key-only genera (data.json "x" genera no game asks, tools/genera.py): a sheet and the Coral ID Key show at most
 # CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter, so such a genus keeps at most as many
 # observations waiting, over all sources, as the colonies it still lacks (key_need); one that lacks none gets nothing.
-# Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them
-# in data.json "cand"; the app ignores it, Pierre approves candidates in admin.html. Run from the repo root.
-# New candidates are not downloaded (r: 1 = shown straight from iNaturalist): only those Pierre adds are, by
+# Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what the admin sorted. Lists them
+# in data.json "cand"; the app ignores it, the admin approves candidates in admin.html. Run from the repo root.
+# New candidates are not downloaded (r: 1 = shown straight from iNaturalist): only those the admin adds are, by
 # tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
-# --tidy: offline, refills nothing: only puts back the photos Pierre restored, drops the excluded photos and the waiting
+# --tidy: offline, refills nothing: only puts back the photos the admin restored, drops the excluded photos and the waiting
 # share-alike candidates, and re-splits data.json / cand.json (tidy(), which every refill ends with), so the lists follow
 # a Publish without asking iNaturalist.
 import json, re, sys, urllib.request
@@ -44,7 +44,7 @@ LICS = set(LIC.split(','))
 EXPERTS = {'thamnasteroid'}
 # The iNaturalist taxon searched for a genus is the one tools/taxonomy.json gives it (gen.<genus>.inat.id): no search by name, so no homonym guard (the Astrea snail and plant, the
 # fire, blue and organ pipe corals off Scleractinia). A genus the file does not hold (new in data.json: run
-# tools/taxonomy.py) or whose taxon is inactive is skipped and said so. Another taxon only by Pierre's decision.
+# tools/taxonomy.py) or whose taxon is inactive is skipped and said so. Another taxon only by the admin's decision.
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
 REGION_KM = 250  # the second ring around Dauin, then all the Philippines
 REGION = f'lat=9.19&lng=123.26&radius={REGION_KM}'
@@ -253,13 +253,13 @@ def main():
     usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
     cand = d.get("cand") or {}
     usedp |= {p['f'].split('-')[-1] for L in cand.values() for p in L}
-    # A photo Pierre restored comes back under its own name at the end (tidy), never as a new candidate.
+    # A photo the admin restored comes back under its own name at the end (tidy), never as a new candidate.
     usedp |= {re.sub(r'\D', '', f.split('-')[-1]) for f in load_gone()}
-    # Pierre's decisions on candidates (curation.json): added, rejected (seen 'cand:f'), sent to another genus, excluded.
+    # The admin's decisions on candidates (curation.json): added, rejected (seen 'cand:f'), sent to another genus, excluded.
     CUR = json.load(open('curation.json'))
     ADDED = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('add') or {})}
     GONE = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('out') or {})} | {k[5:] for k in (CUR.get('seen') or {}) if k.startswith('cand:')}
-    # Candidates still waiting for Pierre: the caps count only these, so each run refills what he has sorted.
+    # Candidates still waiting for the admin: the caps count only these, so each run refills what he has sorted.
     waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f']) and not set_aside(p['f']) and not p.get('skel')
     def dauin_n(g):
         x = GEN[g]
@@ -317,9 +317,9 @@ def main():
             # Research Grade first, then genus-level community IDs and expert IDs (votes order within each); abroad
             # Research Grade only (the query asks for nothing else).
             obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, tid)]
-            # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
+            # Shortlist that varies: pick one by one the observation whose species and observer are least represented
             # so far (votes order breaks ties), and take all its photos. Between observations of as many votes, one with an
-            # open licence (CC0, CC BY) or Pierre's own before CC BY-NC (tie_key: rights_rank of its best photo, a
+            # open licence (CC0, CC BY) or the admin's own before CC BY-NC (tie_key: rights_rank of its best photo, a
             # tie-break only), then the votes order.
             pool = []
             for rank, o in enumerate(obs):
