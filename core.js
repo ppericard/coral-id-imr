@@ -6425,7 +6425,11 @@
     'delete-account': 'about/delete-account',
     lab: 'tools',
     idkey: 'identify/key',
-    fishkey: 'identify/key'
+    fishkey: 'identify/key',
+    // The live mode (live.js; Pierre, 2026-11-17, Q393): a student's join page, its session code as a filter
+    // (#live?code=123456, the address the trainer's lobby shows), and the trainer's page.
+    live: 'live',
+    'live-host': 'live/host'
   };
   const routeEnc = x => encodeURIComponent(x).replace(/%2C/g, ',');
   const routeSubj0 = () => SUBJECTS.find(s => !s.hash) || SUBJECTS[0];
@@ -6449,6 +6453,9 @@
       p = ROUTE_FIXED[b];
       // The Key's clues (form=B;box=B1;not=wall.plo) as filters, kept as they are (the Key encodes its free text).
       if (a[0]) q = a[0].split(';').filter(Boolean).join('&');
+    } else if (b === 'live' && (!a.length || (a.length === 1 && /^\d{6}$/.test(a[0])))) {
+      p = 'live';
+      if (a[0]) q = 'code=' + a[0];
     } else if (b === 'basics') {
       // Coral basics: its step, glossary term or view as segments, its editing switch (|edit) as a filter.
       const e = a[a.length - 1] === 'edit';
@@ -6517,6 +6524,10 @@
       else if (s0 === 'about' && s1 === 'delete-account' && (n === 2 || (n === 3 && r[0] === 'done')))
         return ['delete-account', ...r].join('|');
       else if (s0 === 'tools') return n === 1 ? 'lab' : ['lab-' + s1, ...r].join('|');
+      else if (s0 === 'live' && n === 1) {
+        const c = /^code=(\d{6})$/.exec(kv.find(x => /^code=/.test(x)) || '');
+        return c ? 'live|' + c[1] : 'live';
+      } else if (s0 === 'live' && s1 === 'host' && n === 2) return 'live-host';
       return null;
     })();
     // A section that follows the subject is the only place a subject prefix means something.
