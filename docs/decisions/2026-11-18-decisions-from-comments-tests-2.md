@@ -22,6 +22,9 @@ are found nowhere in `docs/` is kept here, one line each: the date, Pierre's wor
 - 2026-11-13: "il faut que tes propositions marchent aussi pour les coraux, ou les nudibranches ou les plantes". Decided
   that the ranks the admin's ★ Cover can set are read from the subject (`admin.js` `fuRanks`, `fuRankOf`), never fixed
   to the fish's. Checked by `tests/fishcovers.test.js`.
+- 2026-11-15 (Q381): "the base name is the right one for everyone outside IMR". Decided that iNaturalist's default
+  English name comes first whenever it exists, even when it is another species' name, and that no listed name is dropped
+  as shared (`tools/fish_common.py`). Checked by `tests/fishcommon.test.js`.
 
 ## Consequences
 
