@@ -413,7 +413,7 @@
   // from seaslug.json with curation.json's seaslug pairs laid over it, keyed by the structure stamp (Code.gs vNEXT:
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
-  const SEASLUGPAIRS_SHEET = 172;
+  const SEASLUGPAIRS_SHEET = 173;
   const SUBJECTS = [
     {
       id: 'coral',
