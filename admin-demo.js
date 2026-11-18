@@ -1251,7 +1251,7 @@
         reports: 0,
         size: JSON.stringify(u.data).length,
         ...(V >= 48 ? {groups: (u.groups || []).slice()} : {}),
-        // sheet vNEXT (Code.gs users_): the player's cohort and the staff mark (the trainer role)
+        // sheet v171 (Code.gs users_): the player's cohort and the staff mark (the trainer role)
         ...(V >= COHORT_SHEET ? {cohort: u.cohort || '', ...(u.staff ? {staff: 1} : {})} : {})
       };
     });
@@ -1331,7 +1331,7 @@
     };
   }
   function users(p) {
-    // Sheet vNEXT: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
+    // Sheet v171: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
     if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
       const c = String(p.cohort).replace(/\s+/g, ' ').trim(),
         L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
@@ -1346,7 +1346,7 @@
       });
       return {ok: true, cohort: c, n, members: Object.values(S.users).filter(u => u.cohort === c).length};
     }
-    // Sheet vNEXT: the staff, the trainer role (Code.gs roles_ roleGrant, roleRevoke).
+    // Sheet v171: the staff, the trainer role (Code.gs roles_ roleGrant, roleRevoke).
     if (p.roleGrant || p.roleRevoke) {
       const g = p.roleGrant || p.roleRevoke,
         u = S.users[lc(g.account || '')];

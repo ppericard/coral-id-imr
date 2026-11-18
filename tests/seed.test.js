@@ -191,7 +191,7 @@ test("the app shows the 🌱 after the admin's name, outside its text, from a sc
   [undefined, C.MARK_SHEET - 1].forEach(v => assert.ok(!paint(rows, v).includes(SEED), String(v)));
 });
 
-test("the staff and cohort boards (sheet vNEXT): the mark on every board, a cohort's name escaped as a player's", () => {
+test("the staff and cohort boards (sheet v171): the mark on every board, a cohort's name escaped as a player's", () => {
   const N = Number(/const SCOPES_SHEET = (\d+);/.exec(read('progress.js'))[1]),
     html = paint([['Cy', 60, null]], N, {staff: [['Ana B.', 80, 1.2, 1]], cohorts: [{n: '<i>RA</i> & co', rows: [['Cy', 60, null]]}]}),
     mark = C.markHtml();

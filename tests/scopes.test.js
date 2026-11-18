@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Staff and cohort leaderboards (sheet vNEXT; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque
+// Staff and cohort leaderboards (sheet v171; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque
 // nouvelle cohorte aurait un leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"): every
 // subject's board reply splits its one ranking (Code.gs board_) into the general board without the staff (rows), the
 // staff's (the trainer role, roles step 1: staff) and each cohort's (the admin's cohorts in the Groups tab: cohorts),

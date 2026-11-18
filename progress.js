@@ -268,7 +268,7 @@ function quizBoard() {
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
-  // vNEXT: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one).
+  // v171: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one).
   const rank = B => {
     const a = document.getElementById('pbrank'),
       L = B && B.rows ? boardScopes(B).top.find(x => boardMe(x.rows) >= 0) : null,
@@ -502,13 +502,13 @@ const loadBoard = (S = boardSubj()) => {
   return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
-// Staff and cohort boards (sheet vNEXT; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle
+// Staff and cohort boards (sheet v171; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle
 // cohorte aurait un leaderboard indépendant"; "ça serait rigolo que les étudiants voient le leaderboard du staff et
 // inversement"): a reply from SCOPES_SHEET splits the one ranking (Code.gs board_): rows, the general board without the
 // staff; staff, the trainers'; cohorts, [{n, rows}] each cohort's, its members but the staff. The page shows the
 // player's own cohort's first, then the staff's, then the general one; the other cohorts behind a discreet "Other
 // cohorts" (Pierre: "éventuellement mais pas forcément en priorité ou mis en avant"). An older reply: one board, as before.
-const SCOPES_SHEET = 162;
+const SCOPES_SHEET = 171;
 // The player's cohort: its display name, '' for none, null when this account was never told (sync.js groupsSeen).
 const myCohort = () => {
   const o = store.get(COHORT_KEY, null);

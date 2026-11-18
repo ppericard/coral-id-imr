@@ -1566,7 +1566,7 @@ let pvLast = null,
 // account's name (app.js GROUPS_KEY, subjOpen). A change shows at once: the switches follow (showSubj, the page drawn
 // again), and a subject on screen that this player may no longer have reloads the app on the corals (subjAt), their
 // saved choice and its progress kept. live: false when the app reloads anyway (signIn).
-// Sheet vNEXT: the reply names the player's cohort too ('' for none), kept under the account's name (COHORT_KEY), its
+// Sheet v171: the reply names the player's cohort too ('' for none), kept under the account's name (COHORT_KEY), its
 // board shown first on the Leaderboard (progress.js myCohort). An older script names none and nothing changes.
 const COHORT_KEY = 'reefid-cohort';
 function groupsSeen(j, name, live = true) {
