@@ -37,6 +37,7 @@ function copy(files = {}) {
     'proto/idkey.js': CODE,
     'proto/idkey.js.map': JSON.stringify(MAP),
     'sw.js': "const V = 'x';\n",
+    'proto/lab.js': "const LAB = {\n  files: [\n    'idkey'\n  ]\n};\n",
     ...files
   };
   for (const [f, s] of Object.entries(all)) {
@@ -145,6 +146,26 @@ test("a frame's own ?v= is checked against its file", async () => {
   assert.strictEqual(other.code, 2);
   assert.match(other.lines[0], /another build/);
   assert.strictEqual((await run(`at a (https://h/app.js?v=0123456789:${at})`, {force: true})).code, 0);
+});
+
+// Codex review #1106: every Lab module is loaded with the one LAB_V, a hash of the names and hashes of all the Lab files
+// (tools/stamp_versions.py), not the hash of its own bytes.
+test("a Lab module's ?v= is the Lab's version, not its own file's hash", async () => {
+  const at = `1:${col('new Error')}`,
+    labV = U.h10(Buffer.from('idkey' + HASH)); // proto/lab.js `files` lists idkey alone in the test copy
+  const ok = await run(`at a (https://h/coral-id-imr/proto/idkey.js?v=${labV}:${at})`, {av: `982-${HASH}`});
+  assert.strictEqual(ok.code, 0);
+  assert.doesNotMatch(ok.lines[0], /another build|not verified/);
+  const own = await run(`at a (https://h/coral-id-imr/proto/idkey.js?v=${HASH}:${at})`);
+  assert.strictEqual(own.code, 2, 'the file own hash is not what the Lab is loaded with');
+  assert.match(own.lines[0], /another build/);
+  const d = copy();
+  try {
+    assert.strictEqual(await U.versionOf(U.fromDir(d), 'proto/idkey.js'), labV);
+    assert.strictEqual(await U.versionOf(U.fromDir(d), 'proto/nothing.js'), null);
+  } finally {
+    fs.rmSync(d, {recursive: true, force: true});
+  }
 });
 
 test('what cannot be mapped is said, and the exit code is 1', async () => {

@@ -235,6 +235,10 @@ async function maps(dir, fails) {
     served = U.h10(fs.readFileSync(path.join(dir, 'app.js')));
   if (named !== served)
     fails.push(`maps: index.html names app.js ${named}, the file served is ${served} (the report's av check relies on it)`);
+  // The Lab's modules are loaded with one LAB_V: the tool's version of a module is that value (Codex review, #1106).
+  const labV = (/const LAB_V = '([0-9a-f]{10})';/.exec(fs.readFileSync(path.join(dir, 'proto/lab.js'), 'utf8')) || [])[1],
+    labMine = await U.versionOf(U.fromDir(dir), 'proto/idkey.js');
+  if (labV !== labMine) fails.push(`maps: proto/lab.js LAB_V is ${labV}, the tool computes ${labMine} for a Lab module`);
   let checked = 0;
   for (const f of scripts) {
     const code = fs.readFileSync(path.join(dir, f), 'utf8'),

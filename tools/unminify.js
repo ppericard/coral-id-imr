@@ -63,6 +63,27 @@ const candidates = f => (f.proto ? ['proto/' + f.base] : [f.base, 'proto/' + f.b
 
 const h10 = b => crypto.createHash('sha256').update(b).digest('hex').slice(0, 10);
 
+// What a frame's ?v= is the hash of: its own file's bytes; but every Lab module (proto/*.js, but lab.js itself) is loaded
+// with the one LAB_V, a hash of the names and hashes of all the Lab files (tools/stamp_versions.py, proto/lab.js `files`).
+// Returns the hash the frame's file should carry in src's copy, or null when it cannot be computed.
+async function versionOf(src, rel) {
+  if (!rel.startsWith('proto/')) {
+    const raw = await src.read(rel);
+    return raw ? h10(raw) : null;
+  }
+  if (!(await src.read(rel))) return null;
+  const lab = await src.read('proto/lab.js'),
+    list = lab && /files: \[([^\]]*)\]/.exec(lab.toString('utf8'));
+  if (!list) return null;
+  let all = '';
+  for (const n of [...list[1].matchAll(/'(\w+)'/g)].map(m => m[1])) {
+    const raw = await src.read(`proto/${n}.js`);
+    if (!raw) return null;
+    all += n + h10(raw);
+  }
+  return h10(Buffer.from(all));
+}
+
 // A source of files, by path in the built copy: read(rel) -> Buffer, or null when there is none. dir: a folder; site: the
 // published files (a plain GET; a 404 is none, anything else is an error).
 const fromDir = dir => ({
@@ -159,14 +180,19 @@ async function unminify(src, text, opts = {}) {
   for (const f of fs_) {
     let own = false;
     if (f.hash) {
-      const rel = candidates(f).find(c => !KEEP.has(c)),
-        raw = rel && (await src.read(rel));
-      if (raw && h10(raw) !== f.hash && !opts.force) {
-        out.push(`${f.text}: this frame is ${f.base} ${f.hash}, ${src.name} has ${h10(raw)}: another build (--force to map anyway)`);
+      // The first candidate the copy has (a Lab module's ?v= is the Lab's: versionOf).
+      let mine = null;
+      for (const c of candidates(f)) {
+        if (KEEP.has(c)) continue;
+        mine = await versionOf(src, c);
+        if (mine) break;
+      }
+      if (mine && mine !== f.hash && !opts.force) {
+        out.push(`${f.text}: this frame is ${f.base} ${f.hash}, ${src.name} has ${mine}: another build (--force to map anyway)`);
         wrong = true;
         continue;
       }
-      own = !!raw && h10(raw) === f.hash;
+      own = !!mine && mine === f.hash;
     }
     const r = await mapFrame(src, f, cache),
       lines = r.text.split('\n');
@@ -256,5 +282,5 @@ async function main(argv) {
   }
 }
 
-module.exports = {SITE, frames, candidates, parseAv, unminify, fromDir, fromSite, h10};
+module.exports = {SITE, frames, candidates, parseAv, unminify, fromDir, fromSite, h10, versionOf};
 if (require.main === module) main(process.argv.slice(2)).then(c => process.exit(c));
