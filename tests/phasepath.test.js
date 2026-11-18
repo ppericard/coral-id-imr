@@ -317,7 +317,7 @@ test('the exam is passed only with each variant group right; a miss restarts it'
 });
 
 // The sheet's replay decides from the answer log (rules D8, D9; fish rules version 3): core.js varUnit and varLeftOf are
-// what model.js varLeft runs, and what the replay reads through the variant table (fishVarTable, replayProgress vars,
+// what model.js varLeft runs, and what the replay reads through the variant table (treeVarTable, replayProgress vars,
 // replayedOf). App and sheet agree.
 test('varUnit and varLeftOf: model.js varLeft runs them, its constants are the app’s', () => {
   const L = examPool(),
@@ -360,24 +360,24 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
     ctx = {
       DOM: {EX: 0.9},
       easyCover: C.easyCover,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights
     };
   vm.createContext(ctx);
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   vm.runInContext(
-    require('./block.js')(app, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    require('./block.js')(app, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  // The app's units (app.js fishBuild: fishGen over fishPhotos with the held-out set, then fishGenera), and the sheet's
+  // The app's units (app.js treeBuild: treeGen over treePhotos with the held-out set, then treeGenera), and the sheet's
   // table from the same files, made without the set (the sheet never reads it): its photos withheld from the views, the
   // app's exam photos (views and held) are the sheet's.
   const cur = C.treeCur(S, Fs[3]),
-    gm = C.fishGameRead(Fs[2]).photos,
-    held = C.fishHeld(json('fish-holdout.json'), gm, cur),
-    X = ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur, held), Fs[1].sheet, C.unitRankOf(S)), Fs[0]),
+    gm = C.treeGameRead(Fs[2]).photos,
+    held = C.treeHeld(json('fish-holdout.json'), gm, cur),
+    X = ctx.treeGenera(C.treeGen(Fs[0], C.treePhotos(Fs[1].photos, gm, cur, held), Fs[1].sheet, C.unitRankOf(S)), Fs[0]),
     T = S.replayed.vars(Fs[0], Fs, S),
     // the same table whatever the order its photos come in (the app's views, then its held-out photos)
     canon = U => U && {n: U.n, at: U.at, v: U.v.map(([f, k, i]) => [f, k, i < 0]).sort((a, b) => (a[0] < b[0] ? -1 : 1))};
@@ -529,7 +529,7 @@ test('a right variant answer the log lacks does not bring the mark back: the exa
 });
 
 // The phase card (quiz.js phaseShow) names the source of its lines: the one the content editor gave with an edit of
-// them (app.js fishGenera psrc), else IMR's.
+// them (app.js treeGenera psrc), else IMR's.
 test('the phase card shows its lines under their recorded source, else IMR', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
     fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
@@ -626,7 +626,7 @@ test('the variant table waits for the whole game pool: a partial one would clear
   assert.deepStrictEqual(groups(full['f:Morays']), ['juv', 'ph']);
   assert.deepStrictEqual(groups(part['f:Morays']), ['ph'], 'the first photos alone: no juvenile');
   const male = part['f:Morays'].v.find(x => x[1] === 'ph')[0],
-    gen = C.fishReplayGen(Fs[0]),
+    gen = C.treeReplayGen(Fs[0]),
     t0 = Date.UTC(2026, 10, 10),
     row = (i, f, who) =>
       C.logRow(
@@ -650,14 +650,14 @@ test('the variant table waits for the whole game pool: a partial one would clear
   assert.deepStrictEqual(rec['f:Morays'].vl, ['juv', 'ph']);
   assert.deepStrictEqual(onTop(full)['f:Morays'].vl, ['juv'], 'the whole table: the juveniles still left');
   assert.ok(!('vl' in onTop(part)['f:Morays']), 'a partial table would clear them');
-  // The hook: null until fish-game.json is in (FISHRAW game, app.js treeLoad).
+  // The hook: null until fish-game.json is in (TREERAW game, app.js treeLoad).
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
     hook = require('./block.js')(app, '    vars: S =>\n', '\n    // The structure stamp', {file: 'app.js'}).trim().replace(/,$/, ''),
-    vars = FISHRAW => new Function('FISHRAW', 'FISHF', 'CUR', `return {${hook}};`)(FISHRAW, null, Fs[3]).vars(S);
+    vars = TREERAW => new Function('TREERAW', 'TREEF', 'CUR', `return {${hook}};`)(TREERAW, null, Fs[3]).vars(S);
   assert.match(app, /full: true, game: !!\(gm && gm\.photos\)/);
   assert.strictEqual(vars({f: Fs[0], ph: Fs[1], gm: {photos: {}}, full: true, game: false}), null);
   assert.deepStrictEqual(
-    Object.keys(vars({f: Fs[0], ph: Fs[1], gm: C.fishGameRead(Fs[2]), full: true, game: true})).sort(),
+    Object.keys(vars({f: Fs[0], ph: Fs[1], gm: C.treeGameRead(Fs[2]), full: true, game: true})).sort(),
     Object.keys(full).sort()
   );
 });

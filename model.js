@@ -310,7 +310,7 @@ function varOf(n, L) {
 }
 // The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several, its held-out
 // photos (g.held) among them: the exam draws from those first, and the variant groups (varUnitOf) read the unit's
-// photos whole, as the sheet's replay does (core.js fishVarTable, made without the set).
+// photos whole, as the sheet's replay does (core.js treeVarTable, made without the set).
 function examPics(n) {
   const g = GX(n),
     two = g.levels === 2,
@@ -327,7 +327,7 @@ function examPics(n) {
 // of unit n (core.js VAR_GROUPS: juveniles, sexes and colour phases) with a photo released by its mastery (varOf) and
 // none answered right yet (s.ps). While one is left, the exam's next question draws its photo (examSet) and the exam is
 // not passed (examPassed); [] for a unit with no variant (the corals). Through core.js varUnit and varLeftOf, as the
-// sheet's replay (rules D8, D9: core.js fishVarTable, replayedOf), so the app and the sheet decide alike.
+// sheet's replay (rules D8, D9: core.js treeVarTable, replayedOf), so the app and the sheet decide alike.
 function varUnitOf(n) {
   if (!GX(n)) return null;
   const {need, pics} = examPics(n);
@@ -355,8 +355,8 @@ function varRight(n, L) {
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
-// The held-out photos (the fish: fish-holdout.json, core.js fishHeld; docs/LEARNING.md "The held-out photos in the
-// game"): a unit's held list (g.held, core.js fishGen), never in its views, so no game, card, sheet or list shows them.
+// The held-out photos (the fish: fish-holdout.json, core.js treeHeld; docs/LEARNING.md "The held-out photos in the
+// game"): a unit's held list (g.held, core.js treeGen), never in its views, so no game, card, sheet or list shows them.
 // Only the mastery exam asks them (examSet), unannounced and counted like any answer, logged |h (quiz.js answer).
 // shownAll: the photos this player was ever shown, on any unit of the subject (each unit's s.ps: {file: [shown, right]}).
 const shownAll = () =>
@@ -603,7 +603,7 @@ const laterWaits = fresh => {
 // A unit in no group is a lone unit; a declared pair the cap kept apart pulls nothing. MAX 3: the size of the
 // interleaving studies.
 const GROUP = {MAX: 3};
-// A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js fishGenera: a fish scientific
+// A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js treeGenera: a fish scientific
 // genus's `look` holds every sibling genus by construction, its `decl` the genera of its IMR sub-entry), else `look`.
 const declaredOf = n => (GX(n) || {}).decl || (GX(n) || {}).look || [];
 const declared = (t, n) => declaredOf(t).includes(n) || declaredOf(n).includes(t);
@@ -798,7 +798,7 @@ const introReady = n => {
 // "I've had the IMR lecture": an RA has seen every genus in the lecture, so one card at a time would hold them back. On
 // the first cards and in My progress, one tap opens at once, without cards, every unit the lecture teaches (app.js
 // UNITS core: the fish circle 1; the corals' whole slate). The bonus genera (opt-in, app.js BONUS) and the later fish
-// circles (app.js fishGate) still open one at a time.
+// circles (app.js treeGate) still open one at a time.
 const unitsNow = () => (typeof UNITS === 'object' && UNITS[SUBJ.id]) || {};
 const slateCore = () => (unitsNow().core || slateGenera)();
 const introLeft = () => slateCore().filter(n => !introduced(n));
@@ -1255,7 +1255,7 @@ const misses = h => [...h].filter(x => x === '0').length;
 // first-launch answer's level (startV().p, core.js playerStart); the sheet replays that prior too, so an adopted replay
 // never takes back what the game did live.
 const startP = () => startV().p;
-// A unit whose record names the unit it starts from (from: a fish species, its family; core.js fishSpUnits) starts from
+// A unit whose record names the unit it starts from (from: a fish species, its family; core.js treeSpUnits) starts from
 // that unit's ability when never answered (core.js abilityOf).
 const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
@@ -1628,7 +1628,7 @@ const isDataLook = (a, b) => {
   const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
   return !!c && c[0] >= CONF.N && dataLook(c, pooledConf(a, b));
 };
-// The data look-alikes a subject's data seeds (app.js fishGenera dl: the sea slug genera only iNaturalist's
+// The data look-alikes a subject's data seeds (app.js treeGenera dl: the sea slug genera only iNaturalist's
 // identifications show as look-alikes, tools/seaslug_game.py genus_looks), either way round.
 function dataSeed(a, b) {
   return ((GX(a) || {}).dl || []).includes(b) || ((GX(b) || {}).dl || []).includes(a);
@@ -1653,7 +1653,7 @@ const labelKey = x =>
     .replace(/[^a-z]/g, '');
 const choiceKey = n => labelKey((GX(n) || {}).name || n);
 // The labels a choice must not carry on a question about unit t: its own, and every other name its record lists (also:
-// a fish species' listed common names with their spellings, app.js fishGenera), since each of them names t too
+// a fish species' listed common names with their spellings, app.js treeGenera), since each of them names t too
 // (typed, any of them is right). Outside IMR, "Longnose butterflyfish" is the main name of F. longirostris and
 // a listed name of F. flavissimus: never a wrong choice on a photo of F. flavissimus.
 const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map(labelKey)].filter(Boolean));

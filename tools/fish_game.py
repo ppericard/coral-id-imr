@@ -264,7 +264,7 @@ def entries(fish):
     return of, order
 
 
-# core.js FISH_COUNT (judging/FISH.md "Tags", count): the counts an automatic route may put in play (one fish, several of its
+# core.js TREE_COUNT (judging/FISH.md "Tags", count): the counts an automatic route may put in play (one fish, several of its
 # kind, other species in view with no risk of confusion) and the counts never in play, whatever the route (other species
 # one could take for the subject at the game's rank, rule P3; m, an older code not sorted yet: as k until sorted).
 PLAY_COUNT, OTHER_COUNT = '1so', 'km'

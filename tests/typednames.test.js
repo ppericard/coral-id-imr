@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // through quiz.js's own typeBind, typeUnit, typeRead and typeStep on stubs, as the game reads a typed answer.
 // - singular and plural are one name ("Grouper" is the Groupers, exactly: no "So close!" step);
 // - a name below the family (a species' listed or scientific name, a genus's, a kind word its species carry: core.js
-//   fishNameIndex) is read as that family, what it is said after the answer; a word known to be no family's (one
+//   treeNameIndex) is read as that family, what it is said after the answer; a word known to be no family's (one
 //   species' only) is said so; never a slip of another family (anglerfish is not the Angelfishes);
 // - Pierre's exceptions (curation.json fish.names): off, on, often;
 // - a name several families share (Holocentridae) is right for each of them, and otherwise a wrong answer that counts
@@ -20,15 +20,15 @@ const C = require('../core.js');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const quiz = read('quiz.js');
 const F = JSON.parse(read('fish.json'));
-const X = C.fishGen(F, {}, {});
+const X = C.treeGen(F, {}, {});
 const sp = new Map(F.species.map(s => [s.id, s]));
-// a genus unit per fish.json genus of circle 1, as tests/typedrej.test.js builds them (app.js fishGenera)
+// a genus unit per fish.json genus of circle 1, as tests/typedrej.test.js builds them (app.js treeGenera)
 F.genera.forEach(G => {
   const L = (G.species || []).map(id => sp.get(id)).filter(s => s && s.circle === 1);
   if (L.length && X.gen[G.family] && X.gen[G.family].circle === 1) X.gen[G.id] = {id: G.id, name: G.name, rank: 'genus', names: [G.name]};
 });
 const FISH = C.subjectOf('fish');
-const NAMES = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F));
+const NAMES = C.treeTypeNames(X.gen, FISH.typeDrop, C.treeNameIndex(F));
 const rankOf = g => (X.gen[g] || {}).rank || '';
 const first = x => String(x || '').split(/\s+/)[0];
 const OTHER = {
@@ -302,10 +302,10 @@ test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a p
 });
 
 test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
-  const N = C.fishTypeNames(
+  const N = C.treeTypeNames(
     X.gen,
     FISH.typeDrop,
-    C.fishNameIndex(F, {
+    C.treeNameIndex(F, {
       razorfish: {'f:Wrasses': 'off', 'f:Shrimpfishes': 'often'},
       Tuskfish: {'f:Wrasses': 'on'},
       'sea pig': {'f:Wrasses': 'on'}
@@ -320,7 +320,7 @@ test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
   assert.strictEqual(family('sea pig', 'f:Wrasses', N).read, '“sea pig” is a name of the Wrasses.');
   // Off holds whatever else brings the name, in both numbers (Hogfishes, the genus's common name;
   // Chromis, one of the Damselfishes' own names)
-  const O = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F, {Hogfish: {'f:Wrasses': 'off'}, Chromis: {'f:Damselfishes': 'off'}})),
+  const O = C.treeTypeNames(X.gen, FISH.typeDrop, C.treeNameIndex(F, {Hogfish: {'f:Wrasses': 'off'}, Chromis: {'f:Damselfishes': 'off'}})),
     o = t =>
       C.typeMatchIn(
         O.filter(x => !rankOf(x.g)),
@@ -330,10 +330,10 @@ test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
   ['Hogfish', 'hogfishes', 'Chromis'].forEach(t => assert.deepStrictEqual([t, !!(o(t) && o(t).known)], [t, true]));
   assert.strictEqual(o('Dascyllus').g, 'f:Damselfishes'); // the family's other names stay
   // "often" on a name the family already has (Tang, an aka; Chromis, an IMR sub-entry) gives its line
-  const T = C.fishTypeNames(
+  const T = C.treeTypeNames(
     X.gen,
     FISH.typeDrop,
-    C.fishNameIndex(F, {Tang: {'f:Surgeonfishes': 'often'}, Chromis: {'f:Damselfishes': 'often'}})
+    C.treeNameIndex(F, {Tang: {'f:Surgeonfishes': 'often'}, Chromis: {'f:Damselfishes': 'often'}})
   );
   const tang = family('Tang', 'f:Surgeonfishes', T),
     chr = family('Chromis', 'f:Damselfishes', T);
@@ -342,7 +342,7 @@ test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
   // On or often gives the name to the whole family: Chromis on a Dascyllus is then right
   const dasc = [F.species.find(x => x.name === 'Dascyllus aruanus').id];
   assert.strictEqual(family('Chromis', 'f:Damselfishes', T, dasc).got.c, 'f:Damselfishes');
-  const On = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F, {Chromis: {'f:Damselfishes': 'on'}}));
+  const On = C.treeTypeNames(X.gen, FISH.typeDrop, C.treeNameIndex(F, {Chromis: {'f:Damselfishes': 'on'}}));
   assert.strictEqual(family('Chromis', 'f:Damselfishes', On, dasc).got.c, 'f:Damselfishes');
   assert.strictEqual(family('Chromis', 'f:Damselfishes', NAMES, dasc).got.c, ''); // without it, a mistake
 });

@@ -80,7 +80,7 @@
   // - the subject not obvious (count x), other species one could take for it at the game's rank (count k: rule P3) or
   //   out of the water (flag a): rejected;
   // - other species in view, not sorted yet (count m): his, never added; other species with no risk of confusion (count
-  //   o): added like one fish. The counts it may add are core.js FISH_COUNT.play, as tools/fish_game.py judged_sure.
+  //   o): added like one fish. The counts it may add are core.js TREE_COUNT.play, as tools/fish_game.py judged_sure.
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames).
   // tools/fetch_fish.py sure_out mirrors the rejects. Flags after the seven tags: j c a w typed by the judge (w: a
   // watermark or text, which only Home skips), p (phase) and r (a reference photo) added by the tool. The sea slugs'
@@ -99,7 +99,7 @@
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
     if (j.jt[6] === 'k') return {keep: 'reject', why: 'other species'};
     if (j.jt.slice(7).includes('a')) return {keep: 'reject', why: 'out of water'};
-    if (!FISH_COUNT.play.includes(j.jt[6])) return null;
+    if (!TREE_COUNT.play.includes(j.jt[6])) return null;
     if (j.k === 'best' || j.k === 'alt') return {keep: 'add', tags: j.jt, ease: j.e, phase: j.ph || null, crop: j.c || null};
     return null;
   }
@@ -174,7 +174,7 @@
   // questions need easy photos), then the most reference-like (core.js refScore), then an open licence before CC BY-NC
   // (core.js rightsRank, a tie-break only: docs/rules/photos.md), then a fixed order, whoever took the photo (his own are
   // never forced). The rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, refLevel, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid, FISH_COUNT, fishOther} =
+  const {refScore, refLevel, easyRank, rightsRank, treePhotoOn, treePhotoIn, treeGone, treePid, TREE_COUNT, treeOther} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -201,11 +201,11 @@
     const obsOf = {};
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
     const room = {};
-    // In play as the swiper counts it (fishOn): a photo moved with Not this and added to its new species counts there
+    // In play as the swiper counts it (treePhotoOn): a photo moved with Not this and added to its new species counts there
     // (fishMine reads its first species, where it is a reject). An add with other species one could take for its subject
-    // (core.js fishOther) is out of play, so it holds no room.
+    // (core.js treeOther) is out of play, so it holds no room.
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt)) return;
+      if (!treePhotoOn(F, f, sid) || treeOther((F.tags || {})[f], ((sug || {})[f] || {}).jt)) return;
       (room[sid] = room[sid] || new Set()).add(obsOf[f] || f);
     });
     const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
@@ -300,14 +300,14 @@
   // ---- Fish Candidates ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
   // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (suggest.json
-  // "fish"): an add held out for other species one could take for its subject (core.js fishOther) counts nowhere.
+  // "fish"): an add held out for other species one could take for its subject (core.js treeOther) counts nowhere.
   function fishPlay(cands, F, game, sug) {
     F = F || {};
     const obsOf = {},
       out = {};
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && p.f && (obsOf[p.f] = p.o || p.f)));
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt))
+      if (treePhotoOn(F, f, sid) && !treeOther((F.tags || {})[f], ((sug || {})[f] || {}).jt))
         (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
     });
     (game || []).forEach(p => p && p.sp && (out[p.sp] = out[p.sp] || new Set()).add(p.o || p.f));
@@ -315,12 +315,12 @@
   }
   // The photos the game plays (fish-game.json records, the published state) that are in play in the draft cur
   // (curation.json): the admin's adds and the photos that entered by themselves (auto "cand" and "ref": docs/rules/photos.md)
-  // that he has not rejected, excluded or moved (core.js fishIn, as tools/fish_game.py in_play). The admin counts these,
+  // that he has not rejected, excluded or moved (core.js treePhotoIn, as tools/fish_game.py in_play). The admin counts these,
   // not the adds alone; the auto-sort's own target (fishRun) is apart.
   function fishGameIn(game, cur) {
     const F = (cur && cur.fish) || {},
-      gone = fishGone(cur || {}, F);
-    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone, (F.tags || {})[p.f])).map(p => ({...p, sid: p.sp}));
+      gone = treeGone(cur || {}, F);
+    return (game || []).filter(p => p && p.f && p.sp && treePhotoIn(F, p, gone, (F.tags || {})[p.f])).map(p => ({...p, sid: p.sp}));
   }
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
@@ -359,21 +359,21 @@
       byF = {},
       out = [];
     Object.entries(cands || {}).forEach(([sid, L]) => (L || []).forEach(p => p && p.f && (byF[p.f] = p)));
-    // The phases each species' photos in play show (an add held out for other species shows none: fishOther).
+    // The phases each species' photos in play show (an add held out for other species shows none: treeOther).
     const shows = {};
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], (sug[f] || {}).jt)) return;
+      if (!treePhotoOn(F, f, sid) || treeOther((F.tags || {})[f], (sug[f] || {}).jt)) return;
       const ph = fishPhase(byF[f] || {f}, sug[f], F);
       if (ph) (shows[sid] = shows[sid] || new Set()).add(ph);
     });
     // Photos the game already plays by itself (the sure candidates) are not offered again, but for a blind Check.
-    const playing = new Set((game || []).map(p => fishPid(p.f)));
+    const playing = new Set((game || []).map(p => treePid(p.f)));
     Object.entries(cands || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
         const {sid, st} = fishState(F, p.f, orig);
         if (st) return;
-        if (playing.has(fishPid(p.f)) && !(I[p.f] && I[p.f].d.check && !fishMine(F, p.f))) return;
+        if (playing.has(treePid(p.f)) && !(I[p.f] && I[p.f].d.check && !fishMine(F, p.f))) return;
         const inP = play[sid] || new Set(),
           target = fishTarget((species || {})[sid]),
           x = I[p.f],
@@ -503,7 +503,7 @@
   // Not this: out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
   // now; out {f: 'x'} = no game species (or unknown): gone. Only the admin's click writes it (fishNotThis). A photo is in
   // play for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same
-  // species (core.js fishOn, as the game reads it). fishMine stays the keep on its first species, for the agreement.
+  // species (core.js treePhotoOn, as the game reads it). fishMine stays the keep on its first species, for the agreement.
   // A photo's species now (orig: its fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
   // (excluded, or Not this with no game species), or null (a candidate waiting).
   function fishState(F, f, orig) {
@@ -617,7 +617,7 @@
   // Only the featured photos still in play count towards FISHFEAT (one that left play elsewhere frees its slot); a click
   // on one cleans the list of the others.
   function fishFeat(F, tid, sid, f) {
-    const L = (((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || []).filter(x => x === f || fishOn(F || {}, x, sid));
+    const L = (((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || []).filter(x => x === f || treePhotoOn(F || {}, x, sid));
     if (!L.includes(f) && L.length >= FISHFEAT) return {F, full: true};
     return {
       F: fishPick(F, tid, k => {
@@ -627,10 +627,10 @@
       full: false
     };
   }
-  // Photo f among the photos L: under its name, else the same photo under another name (core.js fishPid: a reference
+  // Photo f among the photos L: under its name, else the same photo under another name (core.js treePid: a reference
   // photo fi<id> and its candidate copy fish-<species>-cand-<id> are one photo, and the game plays one copy), as the app
   // finds his picks (app.js fishCurate); null when it is not there.
-  const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => fishPid(p.f) === fishPid(f)))) || null;
+  const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => treePid(p.f) === treePid(f)))) || null;
   // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
   // confirmation of a juvenile cover (coverJ, below) or of a watermarked one (coverW) goes with the old pick: a new pick on
   // a juvenile asks again.
@@ -638,19 +638,19 @@
     fishPick(F, tid, k => {
       delete k.coverJ;
       delete k.coverW;
-      if (k.cover && fishPid(k.cover) === fishPid(f)) delete k.cover;
+      if (k.cover && treePid(k.cover) === treePid(f)) delete k.cover;
       else k.cover = f;
     });
   // A juvenile is never a cover, but for the admin's own ★ cover on one, once he confirmed it (docs/ARCHITECTURE.md;
   // admin-covers.js JUV_Q). The confirmation sits next to the cover: curation.json fish genera {node id: {cover: f,
-  // coverJ: f}}, through the draft and Publish (rule A1). It holds while it names the cover's photo (core.js fishPid),
+  // coverJ: f}}, through the draft and Publish (rule A1). It holds while it names the cover's photo (core.js treePid),
   // whatever the photo's tags say since. The default cover rule never takes a juvenile. fishCoverJ: tid's ★ cover is
   // this photo, confirmed; fishCoverYes: photo f as tid's cover, confirmed; fishCoverJOk: the confirmation alone, on the
   // cover already there (the Tree page's one click).
   const fishCoverJ = (F, tid, p) => {
     const k = ((F || {}).genera || {})[tid] || {},
       f = p && (p.f || p);
-    return !!(f && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(f) === fishPid(k.cover));
+    return !!(f && k.cover && k.coverJ && treePid(k.coverJ) === treePid(k.cover) && treePid(f) === treePid(k.cover));
   };
   const fishCoverYes = (F, tid, f) =>
     fishPick(F, tid, k => {
@@ -670,7 +670,7 @@
   const fishCoverW = (F, tid, p) => {
     const k = ((F || {}).genera || {})[tid] || {},
       f = p && (p.f || p);
-    return !!(f && k.cover && k.coverW && fishPid(k.coverW) === fishPid(k.cover) && fishPid(f) === fishPid(k.cover));
+    return !!(f && k.cover && k.coverW && treePid(k.coverW) === treePid(k.cover) && treePid(f) === treePid(k.cover));
   };
   const fishCoverWOk = (F, tid) =>
     fishPick(F, tid, k => {
@@ -917,8 +917,8 @@
   function fishWinkFold(row, photos, n = FISHT.wink) {
     const feat = (row && row.feat) || [],
       rest = (row && row.rest) || [],
-      want = (photos || []).map(fishPid),
-      at = p => want.indexOf(fishPid(p.f)),
+      want = (photos || []).map(treePid),
+      at = p => want.indexOf(treePid(p.f)),
       card = rest.filter(p => at(p) >= 0).sort((a, b) => at(a) - at(b)),
       ord = [...card, ...rest.filter(p => at(p) < 0)],
       k = Math.max(0, n - feat.length);
@@ -932,19 +932,19 @@
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
   // waitObs, the new observations they hold), need (fishNeeds words), imr}.
   // fishWaiting: the candidates waiting, by the species they wait in now (one sent elsewhere with Not this waits there:
-  // fishState); one in play (play, by photo id: core.js fishPid, a blind Check included), rejected or gone does not wait.
+  // fishState); one in play (play, by photo id: core.js treePid, a blind Check included), rejected or gone does not wait.
   // Read by Coverage and the Tree's node pages.
   function fishWaiting(cand, F, play) {
     const waiting = {},
       inPlay = new Set(
         Object.values(play || {})
           .flat()
-          .map(p => p && p.f && fishPid(p.f))
+          .map(p => p && p.f && treePid(p.f))
       );
     Object.entries(cand || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         const x = fishState(F || {}, p.f, orig);
-        if (x.st === null && !inPlay.has(fishPid(p.f))) (waiting[x.sid] = waiting[x.sid] || []).push(p);
+        if (x.st === null && !inPlay.has(treePid(p.f))) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
     return waiting;
@@ -1398,7 +1398,7 @@
     fishOwn,
     fishSigs,
     fishStamp,
-    fishOn,
+    treePhotoOn,
     fishState,
     fishPlay,
     fishGameIn,

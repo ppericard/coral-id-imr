@@ -20,7 +20,7 @@ const {
   fishMine,
   fishNotThis,
   fishState,
-  fishOn,
+  treePhotoOn,
   fishPhase,
   fishSet,
   fishTag,
@@ -202,7 +202,7 @@ test("Not this (5b): the photo waits as the other species' candidate, marked fro
   assert.strictEqual(m.sid, 's2');
   assert.strictEqual(m.from, 's1');
   F = fishAdd(F, ids[0], 's2', sug[ids[0]]);
-  assert.ok(fishOn(F, ids[0], 's2'));
+  assert.ok(treePhotoOn(F, ids[0], 's2'));
   assert.strictEqual(fishPlay(cands, F).s2.size, 1);
   assert.ok(!fishPlay(cands, F).s1, 'nothing in play on its first species');
   assert.ok(!fishQueue(cands, sug, {s1: {}, s2: {}}, F).some(x => x.p.f === ids[0]));
@@ -219,7 +219,7 @@ test("Not this (5b): the photo waits as the other species' candidate, marked fro
   assert.strictEqual(fishState(X, ids[1], 's1').st, 'gone');
   assert.ok(!fishQueue(cands, {}, {}, X).some(x => x.p.f === ids[1]));
   // An add that names another species than the out (a stale add) is not in play.
-  assert.ok(!fishOn({add: {[ids[1]]: 's1'}, out: {[ids[1]]: 's2'}}, ids[1], 's1'));
+  assert.ok(!treePhotoOn({add: {[ids[1]]: 's1'}, out: {[ids[1]]: 's2'}}, ids[1], 's1'));
 });
 
 test("missing phases first (5b): a phase none of the species' photos in play shows comes first in its species", () => {

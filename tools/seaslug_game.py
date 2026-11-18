@@ -125,7 +125,7 @@ CUR = 'seaslug'
 CIRCLES = (1, 2, 3)
 # The sea slugs' rubric code without its ease digit, as suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
 TAGS = re.compile(r'^[pohtdv][01][gd][0-3][smb][lms][1sokx][jcawf]*$')
-# The counts an automatic route may put in play (core.js FISH_COUNT.play): one sea slug, several of its kind, another
+# The counts an automatic route may put in play (core.js TREE_COUNT.play): one sea slug, several of its kind, another
 # species that cannot be taken for it (rule P3).
 PLAY_COUNT = '1so'
 # At most this many downloads a run (--max; the fish's FISH_MAX), circle 1 first.
@@ -467,7 +467,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
                 todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0, ro))
         photos.setdefault(fid, []).extend(keep)
 
-    # Pierre's adds (curation.json seaslug add {photo: unit}: core.js fishOn, tools/fish_game.py fish_on): a candidate he
+    # Pierre's adds (curation.json seaslug add {photo: unit}: core.js treePhotoOn, tools/fish_game.py fish_on): a candidate he
     # put in play for a species, or for a genus (a genus-level photo), there whatever its judgement, never one excluded for
     # good nor one whose count in force is other species one could take for its subject (rule P3); by unit.
     by_f = {p['f']: p for P in C.values() for p in P if p.get('f') and p.get('src')}
@@ -492,7 +492,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         if len(keep) >= start:
             place(keep, me['family'])
     # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level): the sure
-    # ones of each genus, sp its genus id and gl 1 (core.js fishGenUnits plays them for the genus, never for a species),
+    # ones of each genus, sp its genus id and gl 1 (core.js treeGenUnits plays them for the genus, never for a species),
     # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
     for gid, G in gens.items():
         keep = kept(judged(G['name'], gid, gl=True), False)

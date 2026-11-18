@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B): their addresses in the
 // words on screen (core.js SUBJECTS sheets, routeOut, routeIn), a sheet id in its one spelling (sheetIdOf: an old unit id
-// renamed since), and the sheet each family, genus or species opens (fishTree go) on the real fish.json.
+// renamed since), and the sheet each family, genus or species opens (treeSheets go) on the real fish.json.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -41,8 +41,8 @@ test('sheetIdOf: a sheet id in its one spelling; an id with no sheet prefix is n
   assert.strictEqual(C.sheetIdOf(CORAL, 'Acropora'), 'Acropora', 'the corals: any name is a genus sheet');
 });
 
-test('fishTree: option B, every family, genus and species reaches a sheet', () => {
-  const T = C.fishTree(F);
+test('treeSheets: option B, every family, genus and species reaches a sheet', () => {
+  const T = C.treeSheets(F);
   assert.strictEqual(Object.keys(T.fam).length, F.families.length);
   assert.strictEqual(T.order.length, F.families.length);
   // The key's order: the group numbers rise, a family with no group last.
@@ -96,7 +96,7 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
 
 // The families IMR gives no cue for (circles 2-3, the Soapfishes): each
 // has its own ID marks, checked against two sources at least, and the app shows them where it shows IMR's cues (app.js
-// fishGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
+// treeGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
 test('every family of the game has ID cues to show: IMR’s, or its own ID marks with two sources at least', () => {
   const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families;
   const bare = F.families.filter(f => !(f.cues || []).length);
@@ -114,17 +114,17 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
     ctx = {
       DOM: {EX: 0.9},
       easyCover: C.easyCover,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights
     };
   vm.createContext(ctx);
   vm.runInContext(
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const X = ctx.fishGenera(C.fishGen(F, PH.photos), F);
+  const X = ctx.treeGenera(C.treeGen(F, PH.photos), F);
   for (const f of bare) {
     const g = X.gen[f.id];
     assert.deepStrictEqual([...g.qt], f.marks, `${f.id}: its marks are its tips`);

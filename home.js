@@ -10,7 +10,7 @@
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP: a juvenile is never a cover), but the admin's ★ Cover on one he confirmed (cj: app.js
-  // fishCurate). Never a photo tagged with a visible watermark or text (its judged flag w: Home skips them, the games
+  // treeCurate). Never a photo tagged with a visible watermark or text (its judged flag w: Home skips them, the games
   // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js fishCoverW: the Keep holds the
   // cover elsewhere, never on Home): homeOk.
   const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
@@ -19,7 +19,7 @@
   // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
   const onR2 = p => !(p.r && p.src),
     landR2 = p => landOk(p) && onR2(p);
-  // A unit's photo on a Home tile. Landscape tiles (UNITS land): the admin's ★ Cover (coverP, app.js fishCurate) when it
+  // A unit's photo on a Home tile. Landscape tiles (UNITS land): the admin's ★ Cover (coverP, app.js treeCurate) when it
   // suits the tile (docs/ARCHITECTURE.md "Fish content": the cover first, if it fits a landscape tile),
   // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it, one
   // on R2 first (before fish-game.json is in, app.js fishHome, every photo is remote: then one that suits it all the same),

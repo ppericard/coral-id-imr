@@ -47,7 +47,7 @@ let TYPEDQ = null,
   TYPEN = null;
 const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind rj)
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
-// For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
+// For fish, every teaching entry and the other names it goes by (core.js treeTypeNames), read as whole names.
 const typeNames = () => {
   // read again when the data, the subject, Pierre's curation (its names: curation.json fish.names) or the subject's own
   // key (UNITS namesKey: the fish genera in the game, app.js sciNow) changes
@@ -216,7 +216,7 @@ const namesLine = (t, c) => {
 const typeUnit = (m, t, sp) => (!m ? '' : typeFits(m, t, sp) ? t : m.shared || m.g === t ? '' : m.g || '');
 // Units as a list in a sentence: "A", "A and B", "A, B and C".
 const unameList = L => L.join(', ').replace(/, ([^,]*)$/, ' and $1');
-// A unit as a name typed reaches it (core.js fishNameIndex: r = {vr, n, of}, its role and how many of its species carry
+// A unit as a name typed reaches it (core.js treeNameIndex: r = {vr, n, of}, its role and how many of its species carry
 // the name): "some Wrasses" for a word only some of its species carry, else "the Shrimpfishes".
 const typeWhose = (g, r = {}) => `${['k', 'gc'].includes(r.vr) && !(r.n && r.n === r.of) ? 'some' : 'the'} ${uname(g)}`;
 // What a name below the family says of unit g (r: its reading, as typeWhose's): "“Iniistius” is a genus of the Wrasses."
@@ -683,7 +683,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
-    // |h: a held-out photo shown (core.js fishHeld: only the mastery exam asks them, so …|h|x),
+    // |h: a held-out photo shown (core.js treeHeld: only the mastery exam asks them, so …|h|x),
     // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
     // any answer.
     (ph.some(p => p && p.ho) ? '|h' : '') +
@@ -721,7 +721,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     mu: genusDiff(target),
     ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
     // A unit never answered starts from the unit its record names (a fish species: its family; core.js abilityOf), as the
-    // sheet's replay does (fishReplayGen from).
+    // sheet's replay does (treeReplayGen from).
     ...(GX(target).from ? {from: GX(target).from} : {}),
     ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
   });
@@ -1015,7 +1015,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
 }
 // The line unit a's record gives for its look-alike b, which names and describes b ("Angelfish: spine on the gill cover"):
 // {t, s} with its source, or null. Any subject's record may hold such lines (rule S1): lk, IMR's own for the pairs it
-// declares (a fish family's: core.js fishGen), else ap, ours for the pairs it does not (app.js fishGenera), each with its
+// declares (a fish family's: core.js treeGen), else ap, ours for the pairs it does not (app.js treeGenera), each with its
 // source (rule C2: IMR, and the editor's source when he reworded the line, or the family's sources).
 function pairLine(a, b) {
   const g = GX(a) || {},
@@ -1156,11 +1156,11 @@ function winkDue() {
 }
 // The wink's photo, never a bad one: the unit's ★ Cover while in play (coverP; decision:
 // docs/decisions/2026-11-18-decisions-from-app-comments.md), else one of its chosen photos (wink.photos) still in the
-// game, by photo id (fishPid), else its best (easyRank).
+// game, by photo id (treePid), else its best (easyRank).
 function winkPhoto(g) {
   if (g.coverP) return g.coverP;
-  const want = new Set((g.wink.photos || []).map(fishPid)),
-    L = g.views.wide.filter(p => want.has(fishPid(p.f)));
+  const want = new Set((g.wink.photos || []).map(treePid)),
+    L = g.views.wide.filter(p => want.has(treePid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
 }
 // A surprise card's answer for the log: a game answer's fields for what was shown and answered (ch: renamed ids,
@@ -1311,7 +1311,7 @@ function breakArm(nb, show) {
 // visit's first answers (noOpen), before the first sync, a prompt too close or a card due; leaving it unseen: it returns.
 const ALLMET = {KEY: 'allmet-'};
 // Pure on its inputs (tests call it): L the units in play (pool); met, asked, may (mayOpen) on a unit. A unit met but
-// not asked yet is still opening (app.js fishGate's circle 2 waits for it).
+// not asked yet is still opening (app.js treeGate's circle 2 waits for it).
 const allMetNone = (L, met, asked, may) => L.length > 0 && L.every(n => (met(n) ? asked(n) : !may(n)));
 const allMetTok = k => `allmet:${SUBJ.id}-${k}`;
 const allMetSeen = k => !!store.get(subjDev(SUBJ.id, ALLMET.KEY + k), null) || toldHas(allMetTok(k));
@@ -1386,7 +1386,7 @@ function phaseShow({p, k}, n, brk) {
       ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
     ),
     tx = photoTaxon([p], n),
-    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js fishGenera psrc,
+    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js treeGenera psrc,
     // core.js contentApply esrc; rule C2), else IMR's, the presentation's own words.
     lines = g.phase || [],
     w = phaseOf(p),

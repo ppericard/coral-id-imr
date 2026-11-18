@@ -11,7 +11,7 @@
 //   he answers. One the base now says (absorbed): Remove. An entry never applied (orphaned: core.js
 //   contentEntries) shows its text with Remove; one whose node is gone is counted in the bar.
 // - Each click one draft step, undone and redone as any (rule A2); his Publish sends them (rule A1), counted per rank.
-// - Only a node the app gives a sheet (core.js fishTree go): never a genus the app sends to its species or its family, a
+// - Only a node the app gives a sheet (core.js treeSheets go): never a genus the app sends to its species or its family, a
 //   wink family (its surprise card) or a WoRMS taxon (design note, call (f)).
 // - Who may edit: mayContent, the one place the content right is asked (today the token that can publish, phase 0 of the
 //   design; roles step 1 puts can_(account, 'content', instance) there), for the controls and for every write.
@@ -88,7 +88,7 @@
     );
     return rows;
   }
-  // Whether node id of fish file R has a sheet of its own in the app (core.js fishTree go, learn.js viewFishSheet): a family
+  // Whether node id of fish file R has a sheet of its own in the app (core.js treeSheets go, learn.js viewFishSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
   // viewFishSheet sends to the families list (the whale and thresher sharks' species). A subject with
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
@@ -99,7 +99,7 @@
   let OWN = null;
   function sheetOwn(R, id, S) {
     if (S && S.content && !S.sheets) return C.contentNodes(S, R).has(id);
-    if (!OWN || OWN.R !== R) OWN = {R, T: C.fishTree(R)};
+    if (!OWN || OWN.R !== R) OWN = {R, T: C.treeSheets(R)};
     const T = OWN.T,
       wink = fid => !T.fam[fid] || !!T.fam[fid].wink;
     if (T.fam[id]) return !T.fam[id].wink;
