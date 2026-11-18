@@ -931,7 +931,8 @@ const noFish = () => `<span class="nofish">${sheetWord('nophoto') || NOFISH}<spa
 // sheet), k one of: famLede(f), genLede(f), spLede, the ? text of each sheet; met {v(s), where}, what a species' rank
 // in its family on its sheet counts and where (fish.json cmi around Dauin by default); links(s), its species links
 // beyond iNaturalist and WoRMS (FishBase by default), [] for none; nophoto, its "No photo yet" drawing. undefined when
-// the subject gives none: the sheet keeps its default words.
+// the subject gives none: the sheet keeps its default words. sibMarks false: no sibling genus for its marks alone on a
+// genus page (treeGenusSibs).
 const sheetWord = k => ((UNITS[SUBJ.id] || {}).words || {})[k];
 // The unit the player's progress keeps a family under: the family once the game asks the families, else the IMR entry
 // that was renamed into it (SUBJECTS renamed), '' when none.
@@ -1420,6 +1421,34 @@ function treeGenusLookCard(g, T, [o, src]) {
 // The look-alikes of a genus with no page of its own (treeSheets go: the sheet it opens is page, its family's or its one
 // species'), shown on that sheet: [[genus id, source line]], none for a genus with its own page.
 const treeGenusLooksOn = (g, T, page) => (g && T.go(g.id) === page ? treeGenusLooks(g, T) : []);
+// A genus's sibling genera for its page's "Don't confuse with": the genera of its family IMR gives cues for (cues), then
+// those that have only our marks (marks: fish.json marks, tools/fish_genus_marks.json), the one with the most species
+// first; never the genus itself nor a genus without species. A subject whose sheet words say sibMarks false (the sea slugs')
+// has the first kind only. T: the tree (ftree).
+function treeGenusSibs(g, T) {
+  const L = ((T.fam[g.family] || {}).genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && genSpecies(x).length),
+    has = x => (x.cues || []).length;
+  return {
+    cues: L.filter(has),
+    marks:
+      sheetWord('sibMarks') === false
+        ? []
+        : L.filter(x => !has(x) && (x.marks || []).length)
+            .map(x => [x, genSpecies(x).length])
+            .sort((a, b) => b[1] - a[1] || (a[0].name < b[0].name ? -1 : 1))
+            .map(a => a[0])
+  };
+}
+// The sources a genus's marks rest on, by title (fish.json msrc, mby marks), each once: the line under its card.
+const treeMarkSrc = x =>
+  [
+    ...new Set(
+      ((x.mby || {}).marks || [])
+        .flat()
+        .map(i => ((x.msrc || [])[i] || {}).t)
+        .filter(Boolean)
+    )
+  ].join('; ');
 // The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under
 // it (its source under More details; a name inferred from its species' names says so: fish.json genera cinf), its
 // family and IMR entry name; my progress on it once met; the IMR sub-entry's cues; the species WoRMS now puts in another
@@ -1432,16 +1461,25 @@ function treeGenus(g) {
     flat = [],
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
-    sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
+    S = treeGenusSibs(g, T),
+    sib = S.cues,
     // A sibling genus's card: its picked genus cover, else the default (nodeCover).
     cover = x => genCover(x) || nodeCover(genSpecies(x));
   const card = x => {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}${esc(esrcT(x, 'cues'))}</small><b class="cmpgo">Open →</b></span></a>`;
   };
+  // A sibling genus that has only our marks: its marks with the sources they rest on, never IMR's (rule C1).
+  const markCard = x => {
+    const p = cover(x);
+    return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species</small><span class="psum">${esc(x.marks.join(' · '))}</span><small class="lsrc">ID marks: ${esc(treeMarkSrc(x))}</small><b class="cmpgo">Open →</b></span></a>`;
+  };
+  // The first few at once, the others of the family behind "More".
+  const MARKS_SHOWN = 4,
+    marksMore = S.marks.slice(MARKS_SHOWN);
   // Its look-alikes beyond those (treeGenusLooks), each with its source.
-  const looks = treeGenusLooks(g, T).filter(([o]) => !sib.some(x => x.id === o));
-  $v.innerHTML = `<p class="lede">${sheetWord('genLede') ? sheetWord('genLede')(f) : `One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
+  const looks = treeGenusLooks(g, T).filter(([o]) => ![...sib, ...S.marks].some(x => x.id === o));
+  $v.innerHTML = `<p class="lede">${sheetWord('genLede') ? sheetWord('genLede')(f) : `One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, then those with ID marks of our own (the first few, the rest behind More), and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
@@ -1451,7 +1489,7 @@ function treeGenus(g) {
     ${treeRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
     <h3>Species <small>${L.length}</small></h3>${treeTiles(L, flat)}
-    ${sib.length || looks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}${looks.map(L => treeGenusLookCard(g, T, L)).join('')}</div></section>` : ''}
+    ${sib.length || S.marks.length || looks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}${S.marks.slice(0, MARKS_SHOWN).map(markCard).join('')}${looks.map(L => treeGenusLookCard(g, T, L)).join('')}</div>${marksMore.length ? `<details class="more"><summary>${marksMore.length} more genera of the ${esc(f.name)}</summary><div class="lrow">${marksMore.map(markCard).join('')}</div></details>` : ''}</section>` : ''}
     ${g.common ? `<details class="more sheetmore"><summary>More details</summary><p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p></details>` : vernOf(g.id).length ? `<details class="more sheetmore"><summary>More details</summary>${vernMore(g.id)}</details>` : ''}
     <p class="repline">${repBtn({k: 'sheet', g: g.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;

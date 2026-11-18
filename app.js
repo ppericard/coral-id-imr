@@ -2592,7 +2592,10 @@ const UNITS = {
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
     // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
     // drawing. Its ID marks are its own, sourced (tools/seaslug_cues.json): shown on the sheets and in the quiz feedback.
+    // sibMarks false: a genus's page lists no sibling genus for its marks alone (the fish's "Don't confuse with" does,
+    // learn.js treeGenusSibs): its look-alikes are the pairs a source names.
     words: {
+      sibMarks: false,
       famLede: () =>
         'One family on one page, under its scientific name and its English names where a source gives one. <b>ID marks</b> are what to look at, in our words from the sources numbered after each line: the rhinophores, the gills or the cerata, the mantle and its edge, the body shape. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. Tap a photo to enlarge it.',
       genLede: f =>
