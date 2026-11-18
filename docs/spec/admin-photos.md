@@ -396,7 +396,7 @@ recorded**.
   - a species in the game, by the photos in play the family pages count (`autosort.js` `fishCov`): **No photo in play**,
     with the candidates waiting; **Under target**, with its observations in play against its target (`fishTarget`: it
     still plays).
-- **The corals' genera** (`taxaGenera`): **Key only**, a genus `data.json` holds for the Coral Finder key that no game
+- **The corals' genera** (`taxaGenera`): **Key only**, a genus `data.json` holds for the Coral ID Key that no game
   asks (`core.js` `gameOf`), and **No photo in play** for a game genus with nothing in play in any view (Coverage's `covOf`).
   Corals have no species rank to curate, so no species is listed.
 - Not listed: a taxon in play at its target. A species the build dropped altogether (`report["drop"]` of

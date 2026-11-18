@@ -11,7 +11,7 @@
 //     circle    the family is in no circle: fish.json `out` "family in no circle", or the draft's Structure › None
 //     ph        fish.json `out` "not confirmed in the Philippines" (tools/build_fish.py, the presence rule C8)
 //     dauin     fish.json `out` "not confirmed near Dauin" (circle 3 and species off the IMR list need `near`)
-//     keyonly   a coral genus data.json holds for the Coral Finder key only: no game asks it (core.js gameOf)
+//     keyonly   a coral genus data.json holds for the Coral ID Key only: no game asks it (core.js gameOf)
 //     recorded  any other `out` text: shown as written
 //     unknown   nothing records why
 //   in the game, but not ready
@@ -91,7 +91,7 @@
       })
     );
   }
-  // The coral genera the games do not ask (Key only: data.json holds them for the Coral Finder key; core.js gameOf) or
+  // The coral genera the games do not ask (Key only: data.json holds them for the Coral ID Key; core.js gameOf) or
   // cannot ask yet (no photo in play). genera: [{name, fam, game (a genus the games can ask), n (its photos in play)}].
   function taxaGenera({genera, link = () => ''}) {
     return order(
@@ -199,4 +199,4 @@ function renderTaxa() {
 }
 // "?": what the page lists and where each reason comes from (rule A2: no text on the page itself).
 if (typeof HELP !== 'undefined')
-  HELP.taxa = `<p>Every taxon that is out of play, or in the game but not ready to be asked, and why. A reason is always one somebody recorded; a taxon nothing explains says <b>Reason not recorded</b>.</p><p><b>Outside the circles</b>: its family is in no circle (the tree file's <code>out</code>, or your draft's Structure › None). <b>Not confirmed in the Philippines</b> and <b>Not confirmed near Dauin</b>: the presence rule (rule C8) found no confirmation when the file was built, which is not proof that it is absent. <b>Key only</b> (corals): the Coral Finder key holds the genus, no game asks it. <b>Out as recorded</b>: any other reason the file gives, as written. These are out of the game.</p><p><b>No photo in play</b>: nothing to ask it with yet, with the candidates waiting. <b>Under target</b>: fewer observations in play than its target; it still plays. A taxon that is in play and at its target is not listed. The name opens its page when it has one.</p>`;
+  HELP.taxa = `<p>Every taxon that is out of play, or in the game but not ready to be asked, and why. A reason is always one somebody recorded; a taxon nothing explains says <b>Reason not recorded</b>.</p><p><b>Outside the circles</b>: its family is in no circle (the tree file's <code>out</code>, or your draft's Structure › None). <b>Not confirmed in the Philippines</b> and <b>Not confirmed near Dauin</b>: the presence rule (rule C8) found no confirmation when the file was built, which is not proof that it is absent. <b>Key only</b> (corals): the Coral ID Key holds the genus, no game asks it. <b>Out as recorded</b>: any other reason the file gives, as written. These are out of the game.</p><p><b>No photo in play</b>: nothing to ask it with yet, with the candidates waiting. <b>Under target</b>: fewer observations in play than its target; it still plays. A taxon that is in play and at its target is not listed. The name opens its page when it has one.</p>`;
