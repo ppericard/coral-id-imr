@@ -308,10 +308,10 @@ const anchorsOf = (() => {
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
   const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`) and ### Fish photos (the sources and the area rule).
+  // ### Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
-  assert.ok(a.has('fish-photos-the-sources-and-the-area-rule'));
+  assert.ok(anchorsOf(path.join('docs', 'spec', 'fish-photos.md')).has('where-fish-photos-come-from-the-sources-and-the-area-rule'));
 });
 
 test('the living docs: every relative link and anchor resolves', () => {
