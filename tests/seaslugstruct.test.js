@@ -7,7 +7,7 @@ require('./slot.js').testGuard();
 // - their look-alike pairs between genera (SUBJECTS seaslug structure: srcsStructure), the stamp (structStamp), and the
 //   sheet's replay of a sea-slug player under the pairs in force (Code.gs subjRpl_, replays_), as the fish's and the
 //   corals' (tests/structure.test.js, tests/coralcontent.test.js). The edits here are made up: the real curation.json holds
-//   none (A1: only the curator's Publish writes it).
+//   none (A1: only the admin's Publish writes it).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

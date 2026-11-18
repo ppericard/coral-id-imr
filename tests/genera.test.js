@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The game genera, defined once (core.js BENTHIC, BONUS, slateOf, gameOf; no genus-specific case, rules/learning.md),
+// The game genera, defined once (core.js BENTHIC, BONUS, slateOf, gameOf; no genus-specific case, rule L6),
 // and the candidate refill for the Key-only genera (tools/fetch_local.py, offline: tools/genera.py reads the lists
 // from core.js; key_need, room and --plan never ask iNaturalist). Needs python3, like the other checks.
 const test = require('node:test'),

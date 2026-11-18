@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // another fish for the subject at the game's rank: in play) and k (confusion possible: never in play, rule P3); m, the
 // code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js fishSure,
 // tools/fish_game.py judged_sure) and the pre-fetch mirrors (tools/fetch_fish.py sure_add, sure_out) follow one rule;
-// the curator's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
+// the admin's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
 // re-judge of the photos with m lands where it was classified.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -160,7 +160,7 @@ test('the re-judge of 2026-11-09: every photo with other species is sorted, and 
     FC = CUR.fish || {},
     S = read('suggest.json').fish || {},
     J = read('tools/fish_judge.json');
-  // The curator's adds with the legacy m: every one sorted by the pass (o or k).
+  // The admin's adds with the legacy m: every one sorted by the pass (o or k).
   const legacy = Object.keys(FC.tags || {}).filter(x => FC.tags[x][6] === 'm' && C.treePhotoOn(FC, x, (FC.add || {})[x]));
   legacy.forEach(x => assert.match(String((S[x] || {}).jt || '').charAt(6), /^[ok]$/, `${x}: Pierre's add with m not sorted`));
   // The build plays the o ones and none of the k ones.

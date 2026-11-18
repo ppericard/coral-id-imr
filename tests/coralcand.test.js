@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // Coral candidates (docs/spec/data.md): no share-alike licences (as for the fish), the share-alike photos already on
-// the site left to the curator (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation whose
+// the site left to the admin (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation whose
 // identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the
 // Philippines tiers (tools/fetch_local.py expert_ok). Offline: iNaturalist is stubbed. Needs python3, like the other
 // checks.
@@ -82,7 +82,7 @@ print(json.dumps({'gone': g1, 'again': g2, 'left': {g: [p['f'] for p in L] for g
   assert.deepStrictEqual(R, {gone: ['a1', 'b1'], again: [], left: {A: ['a2', 'a3', 'a4']}}, 'a licence it cannot read is not dropped');
 });
 
-// A Publish with exclusions: the curator's exclusion takes a photo out of every list, kept in excluded.json with its
+// A Publish with exclusions: the admin's exclusion takes a photo out of every list, kept in excluded.json with its
 // place; Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
 const EXCL = `import excluded as X
 X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded', 'imrl-p1_i1': 'excluded'}

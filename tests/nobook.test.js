@@ -31,7 +31,7 @@ test('no crop file in the repository (img/<genus>-cf-<page>-<tag>)', () => {
 });
 
 // curation.json and the players' copy the deploy and the smokes write from it (curation-play.json, tools/curplay.py; a
-// smoke run leaves it in the checkout) keep the curator's old references, which the app ignores (core.js cfCrop).
+// smoke run leaves it in the checkout) keep the admin's old references, which the app ignores (core.js cfCrop).
 test('no crop record in the data files (every JSON but curation.json and its players copy)', () => {
   const files = [
     ...fs.readdirSync(ROOT).filter(f => f.endsWith('.json') && f !== 'curation.json' && f !== 'curation-play.json'),

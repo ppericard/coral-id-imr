@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The licence refresh (tools/licences.py): the licence and the credit of every iNaturalist photo listed, read again from
 // iNaturalist (an author can change them, in either direction) and brought up to date in place, no field added; a
 // photo whose new licence the rules refuse leaves play and is reported (fish: tools/fetch_fish.py lic_ok; corals:
-// tools/fetch_local.py LICS, share-alike kept in play for the curator, rule P1).
+// tools/fetch_local.py LICS, share-alike kept in play for the admin, rule P1).
 // Offline: a made-up fixture, iNaturalist answered by a stub (never the real API). Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -264,7 +264,7 @@ test('a photo made more open, or stricter but still accepted: its credit and lic
   assert.strictEqual(fp.sheet.s002[0].a, BY('Fay', 'CC BY'), 'wording alone never rewrites a credit');
   assert.deepStrictEqual(r.opener, {'fish-cand.json': 1, 'fish-game.json': 1});
   // Stricter: CC BY to CC BY-NC (12), his own CC BY to no licence (16, which stays: lic own), a coral photo to share-alike
-  // (21, which stays in play) and an excluded one to share-alike (25, which stays excluded, restorable by the curator).
+  // (21, which stays in play) and an excluded one to share-alike (25, which stays excluded, restorable by the admin).
   assert.deepStrictEqual(r.stricter, {'fish-cand.json': 2, 'fish-game.json': 1, 'data.json': 1, 'excluded.json': 1});
   assert.deepStrictEqual(r.nc[0]['fish-game.json'], 1);
   assert.deepStrictEqual(r.nc[1]['fish-game.json'], 0);
@@ -397,7 +397,7 @@ test('the workflow report: the summary lists what left play, each one also a war
 });
 
 // The sea slugs' candidates (seaslug-cand.json, tools/fetch_seaslugs.py: keyed by iNaturalist taxon id) follow the fish's
-// rule (CC0, CC BY, CC BY-NC; the curator's own without a licence): a candidate whose licence turns refused leaves the file,
+// rule (CC0, CC BY, CC BY-NC; the admin's own without a licence): a candidate whose licence turns refused leaves the file,
 // share-alike included (unlike a coral photo in play), and is reported; a species left with none is not listed.
 test('sea slugs: seaslug-cand.json follows the fish licence rule; a refused candidate leaves the file and is reported', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licences-slug-'));

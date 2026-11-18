@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // Photo review › Light proposals (admin-light.js): the light re-judge's proposals (judging/fish-light-q308.json
-// curation) go into the curator's fish draft only through Accept (the re-judged tags and ease, fishSet) or Keep mine
-// (fish.kept), and a proposal is open only while the curator's tags and ease are still the ones it was made against,
-// the photo still the curator's add in play and not kept; never written to curation.json by a tool (rule A1).
+// curation) go into the admin's fish draft only through Accept (the re-judged tags and ease, fishSet) or Keep mine
+// (fish.kept), and a proposal is open only while the admin's tags and ease are still the ones it was made against,
+// the photo still the admin's add in play and not kept; never written to curation.json by a tool (rule A1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -49,7 +49,7 @@ test('a proposal accepted into the draft sets its re-judged tags and ease, and i
   assert.deepStrictEqual(open(lightOpen(P, F).reduce(lightAccept, F)), []);
 });
 
-// A proposal that tags one of the curator's ★ covers juvenile: Accept asks whether to keep it as the cover (lightCovers
+// A proposal that tags one of the admin's ★ covers juvenile: Accept asks whether to keep it as the cover (lightCovers
 // names its nodes); kept, the confirmation goes with the tags in one step (the confirmed juvenile cover,
 // docs/spec/fish.md; autosort.js fishCoverJ); a cover already confirmed is not asked about again.
 test('a proposal that makes his ★ cover a juvenile: its nodes named, the cover kept with the Accept', () => {
@@ -145,7 +145,7 @@ function proposalsFile(s) {
       assert.ok(Number.isInteger(e) && e >= 1 && e <= 5);
     });
     assert.ok(lightDiff(x).length > 0, x.photo);
-    // never a move to a retired code (the retired count m): the curator's count is kept
+    // never a move to a retired code (the retired count m): the admin's count is kept
     assert.ok(!lightRetired(x), `${x.photo}: ${x.curated[0]} -> ${x.rejudged[0]}`);
   });
   assert.ok(lightRetired({curated: ['p1n0sms', 3], rejudged: ['p1g0smm', 3]}));

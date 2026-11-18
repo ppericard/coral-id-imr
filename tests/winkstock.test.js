@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // Surprise-only species at 5 photos in the game data (ROADMAP "Photos per species"): the whale shark and the thresher
 // sharks, met only on the surprise cards, keep their 5 best photos in fish-game.json (tools/fish_game.py wink_trim),
-// the curator's covers, featured photos and own adds and the surprise card's photos always among them; the candidate
+// the admin's covers, featured photos and own adds and the surprise card's photos always among them; the candidate
 // tools stop at 5 for them (tools/fetch_fish.py WINK_CAP: species_room for the refill and FishBase, --topup skips
 // them). The admin's side is tests/winkadmin.test.js. Offline: fixtures, and the repository's own files for the real
 // data.

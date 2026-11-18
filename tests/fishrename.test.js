@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish units renamed (the book's families, not the IMR entries, docs/FISH_PATH.md "Level 1"; what was logged or
+// The fish units renamed (the book's families, not the IMR entries, docs/FISH_PATH.md "Level 1, family"; what was logged or
 // saved under the old ids follows): core.js SUBJECTS renamed and its helpers, checked against fish.json.
 const test = require('node:test'),
   assert = require('node:assert'),

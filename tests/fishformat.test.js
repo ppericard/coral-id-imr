@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The per-format offsets of the subject in play (model.js pfmt): the sheet's PFMT (?stats=1 fmt) is fitted on the
 // corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is aimed and scored with
 // every format at 0 (the app's own expectation before any fit), never with a coral offset; the corals keep PFMT, the
-// very object. The photo memory is kept per subject the same way (tests/fishmemory.test.js). model.js and quiz.js run
+// very object. The photo memory's offsets follow the same rule (tests/fishmemory.test.js). model.js and quiz.js run
 // in a vm; the draw through tests/rareease.js.
 const test = require('node:test'),
   assert = require('node:assert'),
