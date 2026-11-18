@@ -88,6 +88,8 @@ replay"). Run `python3 tools/sync_core.py --fix` and add the sheet changes file 
   sheet, the leaderboards: rule D8). A rules version carries `msg: null`, and a jump to it shows no card, not even one of
   a version it skips (`core.js` `rvMsgs`). The standard card (`RV_CARD`) and the apology (`RV_SORRY`) stay only in the
   versions before rules version 10, for the record. *Source:* Pierre, 2026-11-09 ~14:45 Manila (Q330).
+- **A change to an instance's circles or look-alike pairs replays every player's progress as a rules version does, keyed
+  by the structure stamp instead of an RVS entry; rules D6 and D8 apply** (Pierre, 2026-11-18, "ok").
 - **The leaderboards follow on their own** (rule D8): nothing to add for them, whatever the subject; `tests/board.test.js`
   checks it for every subject with a board and rules versions.
 
