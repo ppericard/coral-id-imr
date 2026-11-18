@@ -28,14 +28,14 @@ checks; PRs merged since the inventory) between 06:30 and 07:00 Manila, and the 
 | Horizon | A | P | H | All |
 | --- | --- | --- | --- | --- |
 | Short (today, the next few days) | 14 | 3 | 0 | 17 |
-| Medium (the next weeks) | 19 | 9 | 0 | 28 |
+| Medium (the next weeks) | 20 | 10 | 0 | 30 |
 | Long (later, ROADMAP's far rows) | 5 | 7 | 0 | 12 |
-| **All** | **38** | **19** | **0** | **57** |
+| **All** | **39** | **20** | **0** | **59** |
 
 Rows marked "A, then P" count as A (ST8, ST11, MT8) and "P, then A" as P (ST15).
 
 Pierre's hands are counted apart (section 4: 8 items). The questions (section 3): 9 numbered and open, 6 unnumbered in
-STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradictions and stale records: 11 (section 5).
+STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradictions and stale records: 12 (section 5).
 
 ### 1.2 The things to do next, in order
 
@@ -101,6 +101,8 @@ STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradic
 | MT14 | IMR-owned content: P1 rest (`qt`, `sl`/`rsl`, names and tags, the slate; #1170 does the coral pairs); P3 lecture photos second pass; then P5 the calmer About text | ROADMAP | in that order | A | about 0.3 h, content+tooling S (#868, #894, #1011) |
 | MT15 | Recurring: P9 watermark pass after each refill (pass 4: #1174); P10 monthly taxonomy refresh (last: #1168); C11 near-duplicate re-run (#1180) | ROADMAP | as refills come | A | none (bulk work) |
 | MT16 | Infra: I2 tool and admin data into `data/` (Q265); I7's rest after #1177 | ROADMAP | one PR each | A | about 0.25 h, tooling M (#960, #1040, #1144) |
+| MT29 | I8: the files left unused on R2 cleaned up (nothing deletes from the bucket today) | ROADMAP "Photos out of the repo" | list them read-only; deleting is data: Pierre's plain OK first (AGENTS.md "Always ask first") | P | about 0.25 h, tooling M (#960, #1040, #1144) |
+| MT30 | C1: the corals' photo ranking still favours IMR and Pierre's own photos (`applySlots`, `cover`, `photoSet`) | ROADMAP:193 "for Pierre to decide"; rule P1 as reworded in #1086 | rule P1 now settles it (source a hint, never a placement criterion): the code follows P1, the row goes (section 5, X12) | A | about 1 h, engine M (#873, #938, #951) |
 | MT17 | The admin draft's one-time move out of `localStorage` removed (`draftMove`, `migrate`), from 2026-12-18 | ROADMAP "Sign out keeps the draft" (#1078) | one PR on that date | A | about 0.7 h, admin S (#908, #1059, #1166) |
 | MT18 | Architecture step 4: the `core.js` split and a `slow` test tag | ROADMAP "Architecture review, steps 3 and 4" | after #1121 and Q414 | P (Q414) | about 2.6 h per PR, engine L (#957, #1047, #1075) |
 | MT19 | #1099 per-player reserve: two rule L11 breaches on the corals; "never seen" by observation | #1099 "Choices" | Pierre's answers (3.2) | P | about 0.2 h to finish, fix S (#912, #1026, #1037) |
@@ -123,7 +125,7 @@ figures are there.
 | --- | --- | --- | --- | --- |
 | LT1 | Learning engine, waiting for data: L7 slope and per-format guess rates, L10 time in the photo rating, L11 response time and enlargement, L12 photo features, L15 level-dependent target, L17 first-launch recalibration, L20 fitted profiles, L21 lecture position | inventory 4.1 | re-measure at each row's threshold | A |
 | LT2 | Q351 (a) hold the uncertainty model, re-run at about 20 players; (b) the fish ease weight | ROADMAP "The expectation's slope" | Pierre's answer (3.3) | P |
-| LT3 | New modes and ideas: the seven modes of 2026-11-08 (L31, Pierre sets the order), L32-L35, L5 coral held-out set, L18, L23, L25, L26, L28, L36 (its placement phase is decided: MT28), L38, L40 | inventory 4.1; ROADMAP "Game modes" | Pierre picks | P |
+| LT3 | New modes and ideas: the seven modes of 2026-11-08 (L31, Pierre sets the order), L32-L35, L5 coral held-out set, L14 calibrated medium-size game photo sets, L18, L23, L25, L26, L28, L36 (its placement phase is decided: MT28), L38, L40 | inventory 4.1; ROADMAP "Game modes" | Pierre picks | P |
 | LT4 | Fish: F10 achievements after the species level, F25 the families left out, F26 Reef Life Survey counts, F27 more photos, F28 a juveniles card per species | inventory 4.2 | on their trigger | A |
 | LT5 | Corals: C3 Key photos as they come, C6 glossary, C7-C10, C12 small lecture photos, C13 *Astrea* in ReefCloud | inventory 4.3 | mostly an IMR trainer's or Pierre's input | P |
 | LT6 | Sea slugs: S8 look-alikes' rest, S10 achievements beyond the ladder (#1112), S11 an ID key | inventory 4.4 | after species step 2 | A |
@@ -204,6 +206,7 @@ No answer found in `docs/decisions/` nor in the merged PRs' bodies I read; the i
 | X9 | `tools/infra.json`, ROADMAP "Hosting capacity" | R2 6.3 GB on 2026-11-15 | The sea slug photos and the refills of 11-18 (#1070) came since: unmeasured (H7). |
 | X10 | Inventory D8 | splitting LEARNING and ARCHITECTURE is an idea | Done as maps and specs by the docs restructuring (#1123 to #1163). |
 | X11 | Inventory 1.3 "Basics" | Fish basics waits for the IMR presentation | #1108 built it from that presentation. |
+| X12 | ROADMAP:193 | the corals' photo source priority is "for Pierre to decide" | Rule P1, reworded with his words in #1086, decides it (MT30); my reading. |
 
 The inventory rows done since are named in this study's PR description, not here (rule W19).
 
@@ -224,4 +227,6 @@ Not checked:
 - The Codex thread counts, taken from the integrator's state.
 - The local clone is shallow, so its commit counts were not used.
 - The inventory's rows not re-checked by #1172 (ideas, waiting) were carried over as they were, not re-verified.
+- The mapping of the inventory's 151 rows onto these tables was not checked row by row. Codex's second round found
+  three missing (C1, L14, I8), now added; a row found in none of these tables nor done is an omission.
 - The estimates are my reading of each item's type and band.
