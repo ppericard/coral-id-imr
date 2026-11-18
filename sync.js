@@ -327,7 +327,12 @@ const stApplied = S => String(store.get(stKey(S), '') || '');
 // Each subject from its own script version (core.js structSheet: the fish's STRUCT_SHEET, the corals' PAIRS_SHEET, design
 // note v2 step 8).
 const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= structSheet(S);
-const stNow = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st ? String(UNITS[S.id].st() || '') : '');
+// Read with its own tree in force (app.js treeWith), whichever tree subject is on screen: a tree subject's st reads the
+// globals of the tree in force, so the fish's said the sea slugs' stamp while they were on screen.
+const stNow = S =>
+  typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st
+    ? String((typeof treeWith === 'function' ? treeWith(S.id, () => UNITS[S.id].st()) : UNITS[S.id].st()) || '')
+    : '';
 // {sts: {subject: stamp applied}, stn: {subject: stamp of the units here, when another}}, for the subjects asked (rvsAsk).
 // The stamp applied is then held as a key ('' when none yet), so this device's saves always say it: a whole copy saved
 // without it would keep another device's stamp beside this device's progress (core.js keepSubjectKeys), and the merge

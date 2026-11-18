@@ -4008,6 +4008,131 @@ unknown; the three versions of the file of 2026-11-06 to 2026-11-09 recover 54 s
   beyond it. Descriptive only: four players allow no test (the smallest two-sided sign-flip p is 0.125). It cannot
   show whether holding them back helps (what the card and the stage teach), only that the change moves few real answers.
 
+### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
+
+ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check
+(recognition of photos never seen, at the start and later) and an honest exam"); the design note
+[2026-11-15-held-out-photo-set-design.md](reviews/2026-11-15-held-out-photo-set-design.md), answered by Pierre on
+2026-11-16 (Q385: the size, never his own nor the reference photos, the held-out questions counted like the others and
+slipped in unannounced, a file of their own); the set, per species, in `fish-holdout.json` (#1023, `tools/holdout.py`).
+**Exam only** (Pierre, 2026-11-18 ~06:02 Manila, on the first build's silent probes in practice): "J'avais pas compris
+qu'on faisait ça. Je pensais qu'on gardait des photos pour la fin." The start is already covered by the draw: "Pour moi
+ce qui doit se passer au début c'est ce qu'on a déjà implémenté c'est d'introduire des photos pas ou peu notées" (the
+exploration share of photos with few answers, `model.js` `CAL`). So the held-out photos measure transfer at the exam only.
+
+**Its size, per exam unit** (Pierre, 2026-11-18 ~06:11 Manila, asked whether exam only needs fewer: "Il en faut
+suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"; and 06:48:
+"Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): up to 15 held-out observations per unit with a
+mastery exam (three exams of `EXAM.n` = 5: every family, each scientific genus), across its species in turn, never
+leaving a species with fewer than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in
+practice, a genus's floor bounding its family's take too (`tools/holdout.py` `FLOOR`). A thinner unit holds back
+little or nothing, and its exam falls back on today's rule. 1,946 observations of 23,383 in play (the first rule, per
+species, held 3,232): 52 of the 65 families reach 15, 11 hold fewer, 2 none; of the 130 scientific genera, 82, 33, 15.
+
+**What the game does with it** (the fish only; the sea slugs and the corals have no set):
+- **Withheld from practice.** `core.js` `fishPhotos` takes the set (`fishHeld`: its observations, less those of a photo
+  Pierre picked as a ★ cover or featured photo, which stay practice) and marks those photos `ho`; `fishGen` and the
+  genus and species units (`fishGenUnits`, `app.js` `fishGenera`) put them in the unit's `held` list, never in
+  `views.wide`. Every list built for the games and the pages (the draw, the cards and covers, the sheets, Learn, the
+  duels, Find the X, Memory, Home) reads `views.wide`, so none shows them. The unit's difficulty (`model.js` `genusDiff`)
+  and its variant groups (`varUnitOf`, the exam's photos) read `views.wide` and `held` together: the same as the sheet's
+  replay, whose variant table (`fishVarTable`) is made without the set (rules D8, D9).
+- **The mastery exam** (rule L9, "Learned = the silent mastery exam") draws from the unit's held-out photos this player
+  was never shown (on any unit), the hardest first, each variant group's own while one is left (Q391 b); none left,
+  today's rule (never shown, else never answered right, else the least seen).
+- **Logged** `|h` (after `|c`, before `|kN`, `|t` and `|x`) on every answer that showed a held-out photo: now only exam
+  questions, `…|h|x`, for the transfer measure at the exam. Counted like any answer (Q385 (c) A): no replay branch, no
+  rules version.
+
+**Check declared before running** (rule L11; Pierre, 2026-11-17: a whole check fits in about 30-40 minutes of machine
+time). Level 1 now (the practice pools about 14% smaller with the same draw rules, and the exam's photo choice: what
+"Learned" asks), at the same sizes as the first run below:
+- **Rated world**: fish, profiles beginner, strongRA, expert × seeds 1-5 × 3,000 answers. **Primary `learned@3000:down`**
+  (the units learned, `s.mx`, at 3,000 answers; a new learncmp measure, `learned`, read from a new `learned` field of
+  the rated world's rows): an exam on photos never seen anywhere is expected to be harder, so fewer units learned is
+  the direction looked for; a clear result is reported as the honest exam's cost, not as a breach.
+- **App world**: the same three profiles × seeds 1-3 × 600 questions, through `node tests/slot.js`. Guardrails only,
+  with the units learned at 600 beside them.
+- Both against `main` (cbbe5724, v165) run with this branch's measuring tools
+  (`tools/ratedworld.js`, `tools/learnsim.js`: the `learned` row field, the judge's population over each unit's whole
+  set; no change to the draw), the same seeds. One look each, `tools/learncmp.js`. Every guardrail of the table as before;
+  the families at Advanced breach of the first run should be gone, as the bar is no longer touched in practice.
+- **Power given up**: as below (3 and 5 seeds instead of 5 and 10): a guardrail moved by under about half its margin may
+  read "unclear"; and in 600 app-world questions only the strong profiles start exams, so the app world says little on
+  the exam itself.
+- **What the worlds cannot show**: neither shows a photo outside the quiz, so held-out and practice photos are alike
+  there; the transfer itself waits for the real log (exam answers logged `|h|x`).
+
+**Results** (2026-11-18, `main` cbbe5724 against d5abfef4, the final set of 2,476; about 30 minutes of machine time
+with a first try stopped when the set's rule changed):
+- **Rated world, primary `learned@3000:down`: no difference** (T +1.44, p 0.72; beginner 22.8 → 24.4, strongRA 29.4 →
+  29.4, expert 25.4 → 24.2 units learned). Exam questions: 132-211 per 3,000 answers, nearly all on held-out photos
+  (130-207), 86-99% right. True knowledge held at 300, 1,000 and 3,000 for every profile; **the families at Advanced
+  breach of the first run is gone** (beginner at 1,000: 5.8 → 5.4, unclear). The share under ease 4, the plateau, units
+  met, the score at 3,000 held.
+- **Two breaches in the rated world, one in the app world**, all on how soon units reach Open Water:
+  - rated, the first unit at Open Water, beginner: 231 → 295 answers (margin +46), per seed 301, 144, 191, 289, 232 →
+    575, 110, 201, 359, 228: one seed drives it;
+  - rated, units at Open Water at 1,000, strongRA: 39.2 → 36.2 (margin 2), per seed 29, 43, 42, 37, 45 → 31, 39, 40, 31,
+    40;
+  - app world, units at Open Water at 300, strongRA: 23.0 → 18.7 (per seed 23, 24, 22 → 18, 21, 17; beginner 6, 4, 7 →
+    3, 3, 6, unclear).
+  No exam comes before 300 questions, so only the withheld practice photos can move these.
+- **One level up** (2026-11-18, asked by the integrator): the rated world, beginner and strongRA × seeds 1-10 (seeds 6-10
+  run on the same pair, cbbe5724 against d5abfef4, the same measuring tools), read at two looks (95% bounds, the primary
+  at 0.025). Primary `learned@3000:down`: no difference (p 0.65; beginner 24.1 → 24.1, strongRA 30.5 → 31.1). Held:
+  true knowledge at 300, 1,000, 3,000; E; the score at 3,000; the share under ease 4; the plateau; families at Advanced
+  at 300 and 3,000 (unclear at 1,000 for beginner, −0.6). **Two breaches confirmed**:
+  - the first unit at Open Water, beginner: 184 → 238 answers (+54, bound +106; margin +37), later in 7 of 10 seeds
+    (301, 144, 191, 289, 232, 111, 202, 87, 133, 150 → 575, 110, 201, 359, 228, 153, 178, 180, 142, 253): a family-level
+    delay, one seed (301 → 575) the largest part;
+  - units at Open Water at 1,000, strongRA: 40.4 → 37.3 (−3.1, bound −5.2; margin 2), down in 8 of 10 seeds; by kind,
+    mostly the scientific genera (8.4 → 6.2), families 31.2 → 30.7, species 0.8 → 0.4: the genera lose practice photos
+    to the 15 each is topped up to, where they do not have "assez de photos par ailleurs".
+  The integrator's option B (2026-11-18: a unit takes only from species that keep 8 in practice after the take, one
+  helper for families and genera, `tools/holdout.py` `take`) is the rule already built: rebuilt with it, the file is the
+  same byte for byte, so these results stand for it and no new run was made. The pressure is per genus, not per species:
+  a genus topped up to 15 can keep as few as 8 practice observations (*Chaetodontoplus* 15 held, 9 left). Sizes of
+  variants that would change it (computed, not simulated): a per-species keep of 12 for the genus top-up, 2,448 held,
+  122 of 130 genera at 15, each genus with 12 or more in practice; a keep of 16, 2,407 held, 114 genera at 15; a unit's
+  practice at least twice its held-out ones, 2,267 held, 52 of 65 families and 82 genera at 15. Any genus-only change can
+  reach the strongRA loss (genera); the beginner delay and the app world's drop at 300 are family-level and would remain.
+- **Learning first** (Pierre, 2026-11-18 06:48, on the thin units: "ça c'est le problème que je veux éviter. Si on n'a
+  pas assez de photos, ben on privilégie l'apprentissage"): a unit holds back only from a real surplus; how many are
+  held back is no longer something to maximise. Built as `tools/holdout.py` `FLOOR` 30: a unit holds back only what
+  leaves it at least 30 observations in practice, and a genus's floor also bounds what its family takes from its
+  species (`take` guard). `RATIO` (practice at least twice the held-out ones) and `GENUS_KEEP` stay as parameters, off.
+  Variants against the same before arm (cbbe5724), rated world, beginner and strongRA × 10 seeds, two looks (95%
+  bounds); r, the before/after correlation over the seeds:
+
+  | Set | Held | First unit at Open Water, beginner (margin +37) | Units at Open Water at 1,000, strongRA (margin 2) |
+  | --- | --- | --- | --- |
+  | 15 per unit (as built before) | 2,476 | 184 → 238, +54 [+106] breached, r 0.80 | 40.4 → 37.3, −3.1 [−5.2] breached, r 0.79 |
+  | practice ≥ 2× held (`RATIO` 2) | 2,267 | 184 → 222, +38 [+91] breached, r 0.80 | 40.4 → 39.6, −0.8 [−3.4] unclear, r 0.60 |
+  | floor 30, no guard | 1,963 | 184 → 217, +33 [+78] unclear, r 0.76 | 40.4 → 40.2, −0.2 [−2.5] unclear, r 0.71 |
+  | **floor 30 with the guard (kept)** | **1,946** | 184 → 241, +57 [+114] breached, r 0.85 | 40.4 → 38.1, −2.3 [−4.4] breached, r 0.75 |
+  | A/A: floor 30 no guard → with guard | 23 observations apart | 217 → 241, +25 [+64] unclear | 40.2 → 38.1, −2.1 [−3.2] breached |
+
+  The last two sets differ by 23 observations (20 out, 3 in) yet read opposite verdicts, and the A/A row moves units at
+  Open Water by a breach-sized −2.1: at 10 seeds these two measures cannot tell the variants apart (any change to a
+  practice pool sends each run down another path), and the delay does not grow with how much is held back (1,946 to
+  2,476). So the variant was not picked on these verdicts: the guarded floor is kept as the faithful reading of Pierre's
+  principle (the guard is what keeps 11 thin genera from giving 22 observations through their family), and it holds
+  back the fewest. True knowledge held in every arm. Whether withholding moves these two measures at all needs more
+  seeds or a measure less sensitive to the run's path; it goes to Pierre with the PR. About 30 minutes of machine time
+  for the three variant arms.
+  The app world's breach (units at Open Water at 300, strongRA) is all families there (23, 24, 22 → 18, 21, 17), while
+  the rated world reads that measure unclear at 10 seeds (16.6 → 16.5); not re-run at the higher level. Rule L11: a
+  confirmed breach goes to Pierre, with the choices it leaves: keep it; top a genus up only where practice stays well
+  supplied (a larger keep for a genus's species); or hold out per family only, the genera taking what their species give.
+- **App world**: true knowledge, E, the plateau, the share under ease 4, units met held; exams started by 600 in the
+  strong profiles only, their questions all on held-out photos when the unit had some.
+
+**First run** (2026-11-17, with silent probes in practice, `HELD.p` 0.1; removed on 2026-11-18): rated world, primary
+`score@3000:up` no difference (p 0.85); one breach, families at Advanced at 1,000 answers for a beginner, 5.8 → 3.6
+(margin 2; on 5 fresh seeds, exploratory, −1.8), caught up by 3,000: the probes were harder photos and their misses
+set the bar back. App world: no breach. The probes are gone, and with them that cost.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a

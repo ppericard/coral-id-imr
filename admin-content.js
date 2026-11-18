@@ -91,7 +91,10 @@
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
   // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species). A subject with
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
-  // viewGenus; design note v2, step 8): every node its slots reach.
+  // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
+  // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a
+  // unit, its look-alikes and their lines shown on the page it opens (learn.js fishGenusLooksOn), its marks in the quiz
+  // feedback (app.js fishGenera qt).
   let OWN = null;
   function sheetOwn(R, id, S) {
     if (S && S.content && !S.sheets) return C.contentNodes(S, R).has(id);
@@ -99,13 +102,31 @@
     const T = OWN.T,
       wink = fid => !T.fam[fid] || !!T.fam[fid].wink;
     if (T.fam[id]) return !T.fam[id].wink;
-    if (T.gen[id]) return T.go(id) === id && !wink(T.gen[id].family);
+    if (T.gen[id]) return (T.go(id) === id || C.unitRankOf(S) === 'genus') && !wink(T.gen[id].family);
     return !!T.sp[id] && !wink(T.sp[id].family);
   }
-  // The text of the editor's box as the slot's value: a list one item per non-empty line; a text its words on one line;
-  // null when nothing is left (the slot hidden).
+  // A list of sources (a slot of type srcs: core.js contentVal) as the editor's box holds it: one source a line, its words
+  // then | and its web address when it has one; and back: a line's address is what follows its last | when that is a web
+  // address (http or https), or a web address that ends the line after a space, else none.
+  const srcsText = v => (Array.isArray(v) ? v : []).map(x => (x.u ? `${x.t} | ${x.u}` : x.t)).join('\n');
+  const srcOfLine = x => {
+    const m = x.match(/^(.*?)\s*\|\s*(https?:\/\/\S+)$/i) || x.match(/^(.*\S)\s+(https?:\/\/\S+)$/i);
+    if (m && m[1].trim()) return {t: m[1].trim(), u: m[2]};
+    const u = m ? m[2] : /^https?:\/\/\S+$/i.test(x) ? x : '';
+    return u ? {t: u, u} : {t: x};
+  };
+  // The text of the editor's box as the slot's value: a list one item per non-empty line; a list of sources one source per
+  // non-empty line (srcOfLine); a text its words on one line; null when nothing is left (the slot hidden).
   function sheetVal(sp, text) {
     const s = String(text || '');
+    if (sp.t === 'srcs') {
+      const L = s
+        .split('\n')
+        .map(x => x.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .map(srcOfLine);
+      return L.length ? L : null;
+    }
     if (sp.t === 'list') {
       const L = s
         .split('\n')
@@ -227,6 +248,7 @@
       sheetSlots,
       sheetOwn,
       sheetVal,
+      srcsText,
       sheetTodo,
       rowKey,
       contentShells,
@@ -263,28 +285,31 @@
   }
   const WHY = {node: 'node gone', slot: 'no such slot', value: 'not its type', shadow: 'old id', key: 'bad pair key'};
   const STATE = {fresh: 'Edited', stale: 'Base changed', absorbed: 'In the base'};
-  // A value as the sheet shows it: a list's lines, a text, a dash for none.
+  // A source's words, a link when its address is a web address (http or https: never a javascript: or data: link on the
+  // page that holds the publishing token, whoever typed it once editors publish through the relay).
+  const srcA = x => (x.u && /^https?:\/\//i.test(x.u) ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t));
+  // A value as the sheet shows it: a list's lines (a list of sources: each its words, linked), a text, a dash for none.
   const shVal = v =>
     v == null
       ? '<p class="adm-csv adm-csnone">—</p>'
       : Array.isArray(v)
-        ? `<ul class="adm-csv">${v.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+        ? `<ul class="adm-csv">${v.map(x => `<li>${isObj(x) ? srcA(x) : esc(x)}</li>`).join('')}</ul>`
         : `<p class="adm-csv">${esc(v)}</p>`;
-  // An edit's source under its text; its link only when it is a web address (http or https: never a javascript: or data:
-  // link on the page that holds the publishing token, whoever typed it once editors publish through the relay).
+  // An edit's source under its text; its link only when it is a web address (srcA).
   const shSrc = s => {
-    const x = C.contentSrc(s),
-      web = x && x.u && /^https?:\/\//i.test(x.u);
-    return x ? `<p class="adm-cssrc">${web ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</p>` : '';
+    const x = C.contentSrc(s);
+    return x ? `<p class="adm-cssrc">${srcA(x)}</p>` : '';
   };
   const shBox = r => {
     const s0 = C.contentSrc(r.e && r.e.src) || {t: '', u: ''},
-      // what was typed so far, else the text in force and its source
-      text = SH_ED.text != null ? SH_ED.text : r.v == null ? '' : Array.isArray(r.v) ? r.v.join('\n') : r.v,
+      srcs = r.sp.t === 'srcs',
+      // what was typed so far, else the text in force (a list of sources: srcsText) and its source
+      text = SH_ED.text != null ? SH_ED.text : r.v == null ? '' : srcs ? srcsText(r.v) : Array.isArray(r.v) ? r.v.join('\n') : r.v,
       s = {t: SH_ED.t != null ? SH_ED.t : s0.t, u: SH_ED.u != null ? SH_ED.u : s0.u || ''},
       ask = SH_ASK === rowKey(r);
-    return `<div class="adm-csed"><textarea data-cst rows="${r.sp.t === 'list' ? Math.max(3, (r.v || []).length + 1) : 2}" aria-label="${esc(r.name)}">${esc(text)}</textarea>
-      <span class="adm-cssrcs${ask ? ' need' : ''}"><input type="text" data-css value="${esc(s.t)}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-csu value="${esc(s.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>
+    // A list of sources is its own source: no Source and Link of the edit's (its lines are "words | link").
+    return `<div class="adm-csed"><textarea data-cst rows="${r.sp.t === 'list' || srcs ? Math.max(3, (r.v || []).length + 1) : 2}" aria-label="${esc(r.name)}"${srcs ? ' placeholder="One source a line: its words | its link"' : ''}>${esc(text)}</textarea>
+      ${srcs ? '' : `<span class="adm-cssrcs${ask ? ' need' : ''}"><input type="text" data-css value="${esc(s.t)}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-csu value="${esc(s.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>`}
       <span class="adm-acts"><button type="button" data-csa="save" class="on">${ask ? 'Save without source' : 'Save'}</button><button type="button" data-csa="cancel">Cancel</button></span></div>`;
   };
   function shRow(r, id, can) {
@@ -366,11 +391,14 @@
           if (a === 'keep') return shPut(S, c => C.contentSet(mv(c), id, r.slot, r.e.v, r.base, r.e.src, now));
           if (a === 'save') {
             const v = sheetVal(r.sp, el.querySelector('[data-cst]').value),
-              t = el.querySelector('[data-css]').value.trim(),
-              u = el.querySelector('[data-csu]').value.trim(),
+              si = el.querySelector('[data-css]'),
+              ui = el.querySelector('[data-csu]'),
+              t = si ? si.value.trim() : '',
+              u = ui ? ui.value.trim() : '',
               src = t || u ? {t: t || u, u} : null;
-            // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required).
-            if (r.base == null && v != null && !src && SH_ASK !== rowKey(r)) {
+            // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required). A list
+            // of sources is its own (no box to ask in).
+            if (r.base == null && v != null && !src && si && SH_ASK !== rowKey(r)) {
               SH_ASK = rowKey(r);
               const k = el.querySelector('.adm-cssrcs'),
                 sv = el.querySelector('[data-csa="save"]');
@@ -640,6 +668,7 @@
     sheetSlots,
     sheetOwn,
     sheetVal,
+    srcsText,
     sheetTodo,
     mayContent,
     contentShells,

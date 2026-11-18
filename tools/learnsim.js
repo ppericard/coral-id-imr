@@ -421,14 +421,14 @@ function play(cfg) {
   if (tg) {
     // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
     const ps = {};
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the exam's photos keep their own difficulty
+    // whether withheld or not (Codex review #1057)
     [...slateGenera(), ...BON].forEach(g =>
-      VIEWS.forEach(([v]) =>
-        gamePics(g, v).forEach(p => {
-          const d = muOf(g) + TSD * probit(hashU(p.f, 1));
-          GEN_D[p.f] = d;
-          ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
-        })
-      )
+      [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].forEach(p => {
+        const d = muOf(g) + TSD * probit(hashU(p.f, 1));
+        GEN_D[p.f] = d;
+        ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
+      })
     );
     PSTAT = ps;
   }
@@ -439,7 +439,9 @@ function play(cfg) {
   const distOf = g => {
     if (tg) return [muOf(g), TSD];
     if (truth) return [(truth.gd || {})[g] || 0, TSD];
-    const ds = VIEWS.flatMap(([v]) => gamePics(g, v).map(p => photoDiff(g, p)));
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the population is the unit's whole set, as before
+    // the set was withheld
+    const ds = [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => photoDiff(g, p));
     if (!ds.length) return [0, J.SD];
     const m = ds.reduce((a, x) => a + x, 0) / ds.length;
     return [m, Math.sqrt(ds.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, ds.length - 1)) || J.SD];
@@ -593,7 +595,9 @@ function play(cfg) {
     bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
-  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
+  const NPH = Object.fromEntries(
+      SL.map(g => [g, new Set([...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => p.f)).size])
+    ),
     // Photo exposure (2026-11-06, Q187-Q190): each question's unit, colony (observation) and photos shown, and the game
     // photos of each unit with their colony, for the repeat rate, the photos never shown and the answers per photo.
     okey = p => p.o || p.f,
@@ -670,6 +674,7 @@ function play(cfg) {
   let blk = {n: 0, ok: 0},
     opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
+    nHo = 0,
     nDuel = 0,
     nFind = 0, // Find the X questions (quiz.js FIND: fish only)
     nAgain = 0,
@@ -999,6 +1004,8 @@ function play(cfg) {
       if (early.n === 20) early.lvl = (P[LEVEL] || {}).th;
     }
     if (set.exam) nEx++;
+    // a held-out photo shown (model.js examSet: an exam question on one; logged |h)
+    if ((set.shown || []).some(p => p && p.ho)) nHo++;
     if (q.auto) nDuel++;
     if (q.findx) nFind++;
     if (q.again) nAgain++;
@@ -1065,6 +1072,7 @@ function play(cfg) {
         refEntry: mean(en.map(e => e.ref)),
         refLearned: mean(le.map(e => e.ref)),
         examQs: nEx,
+        heldQs: nHo,
         duels: nDuel,
         finds: nFind,
         agains: nAgain,

@@ -93,6 +93,22 @@ const GATES = {
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },
+  // The sea slugs' look-alike pairs under the content editor (core.js SUBJECTS seaslug structure sheet; Code.gs subjRpl_
+  // over seaslug.json; Pierre, 2026-11-18): the app lays the pairs over its units (app.js structOn) and says their stamp
+  // and adopts a replay under a new one (sync.js stOn) from the script that replays the sea slugs under them; before, the
+  // text slots alone, nothing sent. The fish and the corals keep their own versions.
+  SEASLUGPAIRS_SHEET: (v, N) => {
+    const C = require('../core.js'),
+      S = C.subjectOf('seaslug');
+    assert.strictEqual(C.structSheet(S), N);
+    assert.strictEqual(C.structSheet(C.subjectOf('fish')), C.STRUCT_SHEET, "the fish's own version");
+    assert.strictEqual(C.structSheet(C.SUBJECTS[0]), C.PAIRS_SHEET, "the corals' own version");
+    const rpOn = fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: C.REPLAYS_SHEET}),
+      on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {structSheet: C.structSheet, rpOn})(S, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {structSheet: C.structSheet, sheetV: () => (v === undefined ? 0 : v)})(S);
+    assert.strictEqual(on, app, 'the app and the sync agree');
+    return on;
+  },
   // The sea slugs' beta group (core.js SUBJECTS seaslug sheet; Code.gs groupIds_): the admin's Players page offers it from
   // the script that knows the subject; before, the line that says which version it needs.
   SEASLUG_SHEET: (v, N) =>

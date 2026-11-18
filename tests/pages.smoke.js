@@ -1517,6 +1517,11 @@ async function signin(base) {
         // and an offer card holds the sign-in card the same way.
         Q.sci = false;
         saveQ();
+        // The juvenile and colour-phase cards already seen: the first such photo (an angelfish juvenile, early class, can come
+        // at any answer) arms its card for the break at Next and that answer gives the sign-in card its turn (quiz.js answer,
+        // phaseArm). Leaving by route(), not Next, the phase card never showed, so the sign-in card came one answer late:
+        // CI saw it at 21, about 3 runs in 100 locally.
+        ['juvenile', 'phase'].forEach(k => store.set(subjDev(SUBJ.id, PHASEC.KEY + k), Date.now()));
         // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
         const at = [],
           until = async f => {

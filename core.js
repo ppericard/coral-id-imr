@@ -408,6 +408,12 @@
   // ?stats=1&s=seaslug serves their photo ratings, genus offsets and confusions, the reply naming its subject (s). The app
   // asks for and reads them only from it (sync.js loadOwnStats); an older script answers &s=seaslug with the corals'.
   const SEASLUGST_SHEET = 167;
+  // The sync script version that replays the sea slugs' progress under the content editor's look-alike pairs (rule D4;
+  // SUBJECTS seaslug structure sheet; Pierre, 2026-11-18: "Option 2 : on le construit maintenant"): its replay's units
+  // from seaslug.json with curation.json's seaslug pairs laid over it, keyed by the structure stamp (Code.gs v174:
+  // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
+  // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
+  const SEASLUGPAIRS_SHEET = 174;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -805,7 +811,11 @@
       // 2026-11-17: the sea slugs' admin at parity), laid over seaslug.json by core.js contentApply (app.js fishBuild, the
       // sheet's replay alike): a family's and a genus's ID marks (tools/seaslug_cues.json, each line with its sources'
       // numbers: contentPut keeps them on a line kept word for word) and the free note on every rank. No IMR slot (study §8).
-      // No structure: its genus look-alikes (look, lsrc: sources, not words) stay the build's (tools/seaslug_game.py).
+      // lsrc/<other genus>: a genus's look-alike line (Pierre, 2026-11-18, on #1061: "Option 2 : on le construit
+      // maintenant"), the sources that name the pair (seaslug.json genera lsrc, srcs: [{t, u}], tools/seaslug_game.py
+      // genus_looks: a specialist source's for a declared pair, iNaturalist's counts for a data one), shown under the other
+      // genus on the sheet's Don't confuse with (learn.js fishGenusLooks), at the pairs the base holds only (a new one is a
+      // new pair: structure, below).
       content: {
         family: {
           at: 'families',
@@ -818,10 +828,24 @@
           at: 'genera',
           slots: [
             {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'lsrc', n: 'Look-alike', t: 'srcs', map: 1},
             {k: 'note', n: 'Note', t: 'text', f: 'enote'}
           ]
         },
         species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
+      },
+      // The structure its content editor may change (Pierre, 2026-11-18, on #1061: "Option 2 : on le construit
+      // maintenant"; the corals' and the fish's above, Q359, Q363 h A): its declared look-alike pairs between genera, its
+      // units (look: the genera a specialist source names, Q390 D; the pair key a|b, v 1 or null), laid over seaslug.json by
+      // core.js structApply (srcsStructure: both genera's look and lsrc lines, an added pair out of dlook). The genera of a
+      // family stay each other's look-alikes whatever is withdrawn (fishGenUnits), and the data look-alikes (dlook) are the
+      // players' answers' to drop (model.js dataSeed); no circles (a genus's circle is its best species', from the build).
+      // sheet: the sync script that replays the progress under them (rule D4). A change to them replays every player's
+      // progress (Q363 h A: structStamp).
+      structure: {
+        pairs: {rank: 'genus', slot: 'look'},
+        apply: (F, X) => srcsStructure(F, X),
+        sheet: () => SEASLUGPAIRS_SHEET
       },
       progress: ['photos'],
       // No IMR content (study §8): no "I'm at IMR" answer.
@@ -1188,7 +1212,9 @@
         if (U) out[id] = U;
       };
     Object.values(X.gen).forEach(g => {
-      if (!g.wink && !g.rank && !g.parent) put(g.id, (g.views || {}).wide || [], g, g);
+      // the unit's photos whole, its held-out ones too (g.held: only when fishPhotos had the set; the sheet never has it),
+      // so the app's table is the sheet's (model.js examPics, varUnitOf)
+      if (!g.wink && !g.rank && !g.parent) put(g.id, [...((g.views || {}).wide || []), ...(g.held || [])], g, g);
     });
     ((F && F.families) || [])
       .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
@@ -1207,7 +1233,7 @@
             const set = new Set(L.map(s => s.id));
             put(
               G.id,
-              ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
+              [...((E.views || {}).wide || []), ...(E.held || [])].filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
               E
             );
           });
@@ -1283,6 +1309,7 @@
     return L.map(([G, E, S]) => {
       const set = new Set(S),
         wide = E.views.wide.filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
+        held = (E.held || []).filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
         g = {
           id: G.id,
           name: G.name,
@@ -1293,7 +1320,8 @@
           circle: Math.min(...S.map(id => sp.get(id).circle)),
           species: S,
           look: L.filter(([o, X]) => X === E && o !== G).map(([o]) => o.id),
-          views: {wide}
+          views: {wide},
+          ...(held.length ? {held} : {})
         };
       if (wide.length) g.cover = easyCover(wide).f;
       return g;
@@ -1377,12 +1405,22 @@
         views: {
           wide: easyRank(
             (byFam[t.id] || [])
-              .filter(p => p && p.f && p.src && !sheetOnly(p))
+              .filter(p => p && p.f && p.src && !sheetOnly(p) && !p.ho)
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p)),
             undefined,
             false
           )
         },
+        // its held-out photos (fishPhotos held: ho), never in its views; only the mastery exam asks them
+        ...((byFam[t.id] || []).some(p => p && p.ho)
+          ? {
+              held: easyRank(
+                (byFam[t.id] || []).filter(p => p && p.ho && p.f && p.src && !sheetOnly(p)),
+                undefined,
+                false
+              )
+            }
+          : {}),
         ...(start.has(t.id) ? {first: 1} : {}),
         // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
         // heading above its block (learn.js viewFishList); display only
@@ -1605,6 +1643,20 @@
   // the Coral Finder's words). A record held in both gen and x.gen (the admin's merged data) changes in both. A new object
   // sharing every record it does not change; R itself when X changes nothing.
   function genStructure(R, X) {
+    return lookStructure(R, X, GEN_AT, (old, s) => old || (s ? s.t : EDITOR_PAIR));
+  }
+  // The look-alike pairs in force written into built file R (SUBJECTS structure apply), for a subject whose pairs are a
+  // list of node ids in each record's look and whose lines sit in its lsrc by the other id (the corals' genera, by name in
+  // data.json gen and x.gen; the sea slugs' genera, by id in seaslug.json genera): the content editor's pairs X ({pairs:
+  // [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on both records of each pair. at: where the records
+  // sit (paths of lists by id or of maps by name, as contentRecs reads them); line(old, src): an added pair's lsrc line,
+  // from the line the record holds already for that other node (undefined: none) and the source the editor gave (null:
+  // none). One withdrawn leaves both looks and both lsrc lines (its words' text slots are then orphaned, kept and not
+  // applied); one added joins both looks after the base's look-alikes and leaves dlook (a data look-alike of the build,
+  // which the pair declared now is not: a pair is never both, tools/seaslug_game.py genus_looks). A record held at two
+  // paths (the admin's merged coral data) changes at both. A new object sharing every record it does not change; R itself
+  // when X changes nothing.
+  function lookStructure(R, X, at, line) {
     const P = (X && X.pairs) || [];
     if (!P.length) return R;
     const add = new Map(),
@@ -1617,27 +1669,46 @@
         const look = Array.isArray(g.look) ? g.look : [],
           ls = isObj(g.lsrc) ? g.lsrc : {},
           D = new Set(drop.get(id) || []),
-          A = (add.get(id) || []).filter(([o], i, L) => !look.includes(o) && L.findIndex(y => y[0] === o) === i);
+          A = (add.get(id) || []).filter(([o], i, L) => !look.includes(o) && L.findIndex(y => y[0] === o) === i),
+          now = new Set(A.map(([o]) => o));
         let r = g;
         if (A.length || look.some(o => D.has(o)) || Object.keys(ls).some(o => D.has(o))) {
           const l2 = Object.fromEntries(Object.entries(ls).filter(([o]) => !D.has(o)));
-          A.forEach(([o, s]) => !l2[o] && (l2[o] = s ? s.t : EDITOR_PAIR));
+          A.forEach(([o, s]) => (l2[o] = line(l2[o], s || null)));
           r = {...g, look: [...look.filter(o => !D.has(o)), ...A.map(([o]) => o)], lsrc: l2};
+          if (Array.isArray(g.dlook) && g.dlook.some(o => now.has(o))) {
+            const dl = g.dlook.filter(o => !now.has(o));
+            if (dl.length) r.dlook = dl;
+            else delete r.dlook;
+          }
         }
         made.set(g, r);
         return r;
       },
       out = {...R},
       done = new Set();
-    GEN_AT.forEach(at => {
-      const G = atPath(R, at);
-      Object.keys(isObj(G) ? G : {}).forEach(n => {
-        if (!isObj(G[n]) || (!add.has(n) && !drop.has(n))) return;
-        const r = one(n, G[n]);
-        if (r !== G[n]) contentBox(out, R, at, done)[n] = r;
+    (Array.isArray(at) ? at : [at]).forEach(a => {
+      const G = atPath(R, a),
+        L = Array.isArray(G)
+          ? G.map((g, i) => [isObj(g) && g.id != null ? String(g.id) : null, i])
+          : Object.keys(isObj(G) ? G : {}).map(n => [n, n]);
+      L.forEach(([n, i]) => {
+        if (n == null || !isObj(G[i]) || (!add.has(n) && !drop.has(n))) return;
+        const r = one(n, G[i]);
+        if (r !== G[i]) contentBox(out, R, a, done)[i] = r;
       });
     });
     return done.size ? out : R;
+  }
+  // The pairs of a subject whose lsrc lines are lists of sources [{t, u}] (the sea slugs' genera, seaslug.json genera,
+  // tools/seaslug_game.py genus_looks; SUBJECTS structure apply): an added pair's line is the sources its record holds
+  // already for it (a data look-alike's iNaturalist counts) with the editor's after them, else the editor's alone, else
+  // EDITOR_PAIR's words as its one source.
+  function srcsStructure(F, X) {
+    return lookStructure(F, X, 'genera', (old, s) => {
+      const L = Array.isArray(old) ? old : [];
+      return s ? [...L, s] : L.length ? L : [{t: EDITOR_PAIR}];
+    });
   }
   // The ★ rule under the content editor's pairs (rule L5; design note v2, step 8): a starred genus is on the slate because
   // it looks like surveyed genera, and opens only after the ones its card names (starRefs: its own look-alikes that are
@@ -1784,16 +1855,53 @@
     const k = S && S.admin && S.admin.cur;
     return cur && k ? {...cur, fish: cur[k]} : cur;
   };
-  function fishPhotos(first, game, cur) {
+  // held (the app's fishBuild, the rated world): the held-out set (fishHeld), whose photos come marked ho, a copy, which
+  // fishGen keeps out of every unit's views (its held list). Without it (the sheet's pools and replay, the admin, the
+  // tools) every photo as before.
+  function fishPhotos(first, game, cur, held) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
       gone = F ? fishGone(cur) : xid,
       G = game && Object.keys(game).length ? game : first || {},
+      H = held && held.size ? held : null,
       out = {};
     Object.entries(G).forEach(([t, L]) => {
-      out[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      out[t] = (L || [])
+        .filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)))
+        .map(p => (H && H.has(p.sp + ' ' + fishObs(p)) ? {...p, ho: 1} : p));
     });
+    return out;
+  }
+  // The held-out set (fish-holdout.json, tools/holdout.py; ROADMAP "A held-out photo set", Pierre, 2026-11-04 and
+  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only by the mastery
+  // exam, unannounced (model.js examSet; Pierre, 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"). fishObs(p): a game record's observation as the file
+  // names it (tools/holdout.py obs_of: fish-game.json's short o, an iNaturalist id or a FishBase page; else the file).
+  // fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists (H), less the observations of a photo
+  // Pierre picked as a ★ cover or a featured photo (cur: curation.json fish genera cover, feat; matched by fishPid, as
+  // fishCurate reads them), which count as practice (#1023: the tool does not read the curation, so a Publish never makes
+  // the file stale). An empty set without the file.
+  const fishObs = p => {
+    const o = p && p.o;
+    if (!o) return String((p && p.f) || '');
+    const s = String(o);
+    return s.startsWith(FISH_OBS) ? s.slice(FISH_OBS.length) : s;
+  };
+  function fishHeld(H, game, cur) {
+    const out = new Set();
+    Object.entries((H && H.held) || {}).forEach(([sp, L]) => (Array.isArray(L) ? L : []).forEach(o => out.add(sp + ' ' + o)));
+    const picks = new Set(
+      Object.values((cur && cur.fish && cur.fish.genera) || {})
+        .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
+        .filter(Boolean)
+        .map(fishPid)
+    );
+    if (out.size && picks.size)
+      Object.values(game || {}).forEach(L =>
+        (L || []).forEach(p => {
+          if (p && p.f && picks.has(fishPid(p.f))) out.delete(p.sp + ' ' + fishObs(p));
+        })
+      );
     return out;
   }
   // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
@@ -2134,21 +2242,31 @@
     const sp = L.find(x => (x.rows || x.map) && x.k === n.slice(0, j));
     return sp ? {sp, key: n.slice(j + 1)} : null;
   }
+  // A slot's types (SUBJECTS content slots t): text, one string; list, a list of strings replaced whole; srcs, a list of
+  // sources [{t, u}] replaced whole, t its words and u its web address when it has one (the sea slugs' look-alike lines,
+  // seaslug.json genera lsrc: the sources that name the pair, tools/seaslug_game.py genus_looks; Pierre, 2026-11-18).
+  const srcOk = x => isObj(x) && typeof x.t === 'string' && !!x.t.trim() && (x.u === undefined || typeof x.u === 'string');
   // A value of a slot's type, empty as null (an empty list or text is no value: the slot shows nothing).
   const contentVal = (sp, v) =>
     sp.t === 'list'
       ? Array.isArray(v) && v.length && v.every(x => typeof x === 'string')
         ? v
         : null
-      : typeof v === 'string' && v.trim()
-        ? v
-        : null;
+      : sp.t === 'srcs'
+        ? Array.isArray(v) && v.length && v.every(srcOk)
+          ? v
+          : null
+        : typeof v === 'string' && v.trim()
+          ? v
+          : null;
   // Whether v may stand in a slot: null (hidden), or a value of its type, every line with words in it.
   const contentOk = (sp, v) =>
     v === null ||
     (sp.t === 'list'
       ? Array.isArray(v) && !!v.length && v.every(x => typeof x === 'string' && !!x.trim())
-      : typeof v === 'string' && !!v.trim());
+      : sp.t === 'srcs'
+        ? Array.isArray(v) && !!v.length && v.every(srcOk)
+        : typeof v === 'string' && !!v.trim());
   // A slot's base value in record r (null: empty), or undefined when a keyed slot's key is not in the base (no such line).
   function contentBase(sp, r, key) {
     const f = sp.f || sp.k;
@@ -2176,7 +2294,8 @@
       r.mby = {...r.mby, [f]: (Array.isArray(val) ? val : []).map(x => (was.indexOf(x) >= 0 ? by[was.indexOf(x)] || [] : []))};
     }
     if (sp.rows) r[f] = r[f].map(y => (Array.isArray(y) && y[0] === key ? [y[0], val == null ? '' : val, ...y.slice(2)] : y));
-    else if (sp.map) r[f] = {...r[f], [key]: val == null ? '' : val};
+    // hidden, a line keeps its pair with no words: an empty text, or an empty list of sources (its readers map the list)
+    else if (sp.map) r[f] = {...r[f], [key]: val == null ? (sp.t === 'srcs' ? [] : '') : val};
     else {
       const P = f.split('.'),
         last = P.pop();
@@ -6956,6 +7075,7 @@
     MIN_SHEET,
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
+    SEASLUGPAIRS_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,
@@ -7120,6 +7240,8 @@
     subjKey,
     subjDev,
     fishGen,
+    fishHeld,
+    fishObs,
     fishGlOf,
     fishReplayGen,
     SEASLUG_RVS,
@@ -7188,6 +7310,8 @@
     structFp,
     fishStructure,
     genStructure,
+    lookStructure,
+    srcsStructure,
     genLooks,
     starHold,
     pairIdOf,

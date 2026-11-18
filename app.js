@@ -778,7 +778,9 @@ function fishGenera(X, F) {
           ].join(', '),
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
           // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
-          wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
+          wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
+          // its held-out photos the same way (core.js fishGen held; model.js examSet): never in its views
+          held = (E.held || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
         X.gen[id] = {
           id,
           name: g,
@@ -842,6 +844,7 @@ function fishGenera(X, F) {
           cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
           levels: 1,
           views: {wide},
+          ...(held.length ? {held} : {}),
           // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
           // never its IMR name (Anemonefish): a common name never advances a scientific name (docs/FISH_PATH.md; Codex
           // review #656), it is the family's
@@ -877,7 +880,8 @@ function fishGenera(X, F) {
   X.spl = fishSpUnits(F, X).map(u => {
     const E = X.gen[u.family],
       s = u.s,
-      wide = E.views.wide.filter(p => p.sp === s.id);
+      wide = E.views.wide.filter(p => p.sp === s.id),
+      held = (E.held || []).filter(p => p.sp === s.id);
     X.gen[u.id] = {
       id: u.id,
       get name() {
@@ -917,6 +921,7 @@ function fishGenera(X, F) {
       levels: 1,
       noex: 1,
       views: {wide},
+      ...(held.length ? {held} : {}),
       names: []
     };
     if (wide.length) X.gen[u.id].cover = easyCover(wide).f;
@@ -1157,13 +1162,15 @@ const TREE_OF = {};
 const fishBuild = () => {
   // the tree subject in force (TREE_AT): its content slots apply to it, and its part of the curation (core.js treeCur)
   const S = SUBJECTS.find(x => x.id === TREE_AT),
-    {ph, gm} = FISHRAW,
+    {ph, gm, ho} = FISHRAW,
     on = structOn(S),
     C = treeCur(S, CUR),
-    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
+    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on})),
+    // the held-out set (fish-holdout.json, the fish only: UNITS get ho; core.js fishHeld), out of every unit's views
+    held = fishHeld(ho, gm.photos && Object.keys(gm.photos).length ? gm.photos : ph.photos, C);
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet, unitRankOf(S)), f), C, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -1299,13 +1306,14 @@ const treeHome = id => {
     treeSet(
       id,
       'FISHH',
-      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}])
-        .then(([f, ph]) => {
+      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}, G.ho ? G.ho() : {}])
+        .then(([f, ph, ho]) => {
           // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
           // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
           // whole list is not required: without it every family plays on its first photos.
           if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, gm: {photos: {}}});
+          // ho: the held-out set (UNITS get ho, the fish only), {} when it cannot come (every photo then plays as practice)
+          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, ho: ho || {}, gm: {photos: {}}});
           return T.FISHRAW;
         })
         .catch(e => {
@@ -2220,7 +2228,8 @@ function treePhoto(f) {
   const id = fishPid(f),
     G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
   for (const g of G)
-    for (const [v, L] of Object.entries(g.views || {})) {
+    // its held-out photos too (shown by the mastery exam, model.js examSet: flagged like any other)
+    for (const [v, L] of [...Object.entries(g.views || {}), ['wide', g.held]]) {
       const p = (L || []).find(x => x && fishPid(x.f) === id);
       if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
     }
@@ -2352,7 +2361,13 @@ const UNITS = {
     land: true,
     // Its files (a tree subject, read through the fish engine: treeHome, treeLoad): f its tree, ph its first photos
     // (Home before the biggest file), gm its game photos.
-    get: {f: () => json('fish.json?v=6'), ph: () => json('fish-photos.json?v=6'), gm: () => json('fish-game.json?v=1')},
+    // ho: the held-out set (core.js fishHeld; ROADMAP "A held-out photo set"), with Home's files: never shown in practice.
+    get: {
+      f: () => json('fish.json?v=6'),
+      ph: () => json('fish-photos.json?v=6'),
+      ho: () => json('fish-holdout.json?v=1'),
+      gm: () => json('fish-game.json?v=1')
+    },
     load: S => treeLoad(S.id),
     // What start-up waits for: the files of Home (treeHome), and the curated photos too when this device holds them.
     home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),
@@ -2664,6 +2679,9 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from seaslug.json, core.js fishReplayGen at the genus); null before its data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the look-alike pairs in force are seaslug.json's),
+    // sent with the requests so the sheet replays under the pairs in force (sync.js stsAsk; Pierre, 2026-11-18).
+    st: () => (FISH ? FISHST : ''),
     gate: fishGate,
     species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and

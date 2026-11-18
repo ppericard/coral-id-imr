@@ -7271,6 +7271,70 @@ const darkCards = (p, sel) =>
         await sq.click('.adm-csheet [data-cs="note"] [data-csa="save"]');
         const sn = await sq.evaluate(() => ((((DRAFT.seaslug || {}).content || {}).nodes || {})['g:Chromodoris'] || {}).note || null);
         if (!sn || sn.v !== 'A made-up note' || !sn.src || sn.src.t !== 'Made-up source') se.push(`the sheet note ${JSON.stringify(sn)}`);
+        // Their Structure and look-alike lines (Pierre, 2026-11-18: "Option 2 : on le construit maintenant"): on a genus
+        // page, a declared pair withdrawn and back, one added from the select (the source asked once, then saved without
+        // one), a look-alike line edited as its sources (one a line, words | link); the Tag… filter lists the genus pairs.
+        // Then Hexabranchus's page, a genus the app opens as its family: its Structure box too.
+        {
+          const sbox = '#view .adm-cstruct[data-stid="g:Hypselodoris"]',
+            HG = 'g:Goniobranchus|g:Hypselodoris',
+            pairsNow = () => sq.evaluate(() => ((DRAFT.seaslug || {}).content || {}).pairs || {});
+          await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AHypselodoris');
+          await swait(() => !!document.querySelector('#view .adm-cstruct[data-stid="g:Hypselodoris"] [data-stp]'), 'their Structure box');
+          if (await sq.$(`${sbox} [data-stc]`)) se.push('a Circle on a sea-slug genus');
+          await sq.click(`${sbox} [data-stp="${HG}"] [data-sta="withdraw"]`);
+          await swait(() => !!document.querySelector('#view .adm-cstruct .is-fresh.is-out'), 'the pair withdrawn');
+          const w = (await pairsNow())[HG] || null;
+          if (!w || w.v !== null || w.was !== 1) se.push(`their withdraw ${JSON.stringify(w)}`);
+          await sq.click(`${sbox} [data-stp="${HG}"] [data-sta="drop"]`);
+          await swait(() => !document.querySelector('#view .adm-cstruct .is-out'), 'the pair back');
+          await sq.selectOption(`${sbox} [data-stadd]`, 'g:Nembrotha');
+          await swait(() => !!document.querySelector('#view [data-stbox]'), 'their add box');
+          await sq.click('#view [data-stbox] [data-sta="save"]');
+          await swait(() => !!document.querySelector('#view [data-stbox] .adm-cssrcs.need'), 'the source asked');
+          await sq.click('#view [data-stbox] [data-sta="save"]');
+          await swait(() => !document.querySelector('#view [data-stbox]'), 'their pair saved');
+          const ad = (await pairsNow())['g:Hypselodoris|g:Nembrotha'] || null;
+          if (!ad || ad.v !== 1 || ad.was !== null || ad.src) se.push(`their add ${JSON.stringify(ad)}`);
+          // the added pair's line in the Sheet box at once; a declared pair's line edited as its sources
+          await sq.evaluate(() => {
+            const d = document.querySelector('#view .adm-csheet[data-csid="g:Hypselodoris"]');
+            if (d) d.open = true;
+          });
+          const lk = '#view .adm-csheet [data-cs="lsrc/g:Goniobranchus"]';
+          await swait(() => !!document.querySelector('#view .adm-csheet [data-cs="lsrc/g:Nembrotha"]'), "the added pair's line");
+          await sq.click(`${lk} [data-csa="edit"]`);
+          await swait(() => !!document.querySelector('#view .adm-csheet [data-cs="lsrc/g:Goniobranchus"] [data-cst]'), 'the line box');
+          if (await sq.$(`${lk} [data-css]`)) se.push('a Source box on a list of sources');
+          await sq.fill(`${lk} [data-cst]`, 'A made-up guide | https://example.org/slugs\nA made-up forum message');
+          await sq.click(`${lk} [data-csa="save"]`);
+          const ln = await sq.evaluate(
+            () => ((((DRAFT.seaslug || {}).content || {}).nodes || {})['g:Hypselodoris'] || {})['lsrc/g:Goniobranchus'] || null
+          );
+          if (
+            !ln ||
+            JSON.stringify(ln.v) !== '[{"t":"A made-up guide","u":"https://example.org/slugs"},{"t":"A made-up forum message"}]' ||
+            !Array.isArray(ln.was)
+          )
+            se.push(`their look-alike line ${JSON.stringify(ln)}`);
+          const tg2 = await sq.evaluate(() => [...document.querySelectorAll('#view [data-tttag] option')].map(o => o.value));
+          if (!tg2.includes('look') || !tg2.includes('look:' + HG) || !tg2.includes('look:g:Hypselodoris|g:Nembrotha'))
+            se.push(`their Look-alikes filter ${JSON.stringify(tg2.filter(x => x.startsWith('look')))}`);
+          // Any look-alike: + Pair opens the box with both genera to choose; Cancel closes it, nothing written
+          await sq.selectOption('#view [data-tttag]', 'look');
+          await swait(() => !!document.querySelector('#view [data-stnew]'), 'their + Pair');
+          await sq.click('#view [data-stnew]');
+          await swait(() => !!document.querySelector('#view [data-stbox] [data-st-a] option[value="g:Phyllidia"]'), 'their pair box');
+          await sq.click('#view [data-stbox] [data-sta="cancel"]');
+          await swait(() => !document.querySelector('#view [data-stbox]'), 'their pair box closed');
+          await sq.selectOption('#view [data-tttag]', '');
+          await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AHexabranchus');
+          await swait(
+            () => !!document.querySelector('#view .adm-cstruct[data-stid="g:Hexabranchus"] [data-stp]'),
+            'a genus opened as its family'
+          );
+          if (Object.keys(await pairsNow()).length !== 1) se.push(`their pairs after the visits ${JSON.stringify(await pairsNow())}`);
+        }
         // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
