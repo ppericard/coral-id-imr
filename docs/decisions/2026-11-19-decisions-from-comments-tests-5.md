@@ -14,6 +14,10 @@ are found nowhere in `docs/` is kept here, one line each: the date, Pierre's wor
 - 2026-11-09, of the curation the app downloads: "a smaller curation file for players, built at deploy". Decided the
   players' copy `curation-play.json`, written by `tools/curplay.py` at deploy without what the app never reads
   (docs/DATA.md, docs/spec/data.md). Checked by `tests/curplay.test.js`.
+- 2026-11-08 (Q237), of the typed answers the form refuses before the answer: "c'est essentiel. Et c'est vrai pour tout
+  le jeu, partout". Decided that every refused text is logged with the answer, in every typed form of the game
+  (`quiz.js` `typeBind` rj, the sheet's Rejected tries; docs/spec/quiz.md, docs/spec/sync.md). Checked by
+  `tests/typedrej.test.js`.
 
 ## Consequences
 

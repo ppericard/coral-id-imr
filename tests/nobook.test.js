@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// No Coral Finder book crop anywhere (Pierre, 2026-11-08: the crops of the Coral Finder 2022 book, (c) R. Kelley /
-// BYOGUIDES, left the app and the repository; tools/apply_no_book.py). Its page citations ("Coral Finder p. N"), facts
+// No Coral Finder book crop anywhere (the crops of the Coral Finder 2022 book, (c) R. Kelley / BYOGUIDES, are out of
+// the app and the repository; tools/apply_no_book.py). Its page citations ("Coral Finder p. N"), facts
 // and look-alike sources stay. curation.json is never rewritten (rule A1): its old references to crops match no photo
 // and every step drops them, checked here on the real files.
 const test = require('node:test'),
@@ -30,8 +30,8 @@ test('no crop file in the repository (img/<genus>-cf-<page>-<tag>)', () => {
     );
 });
 
-// curation.json and the players' copy the deploy and the smokes write from it (curation-play.json, tools/curplay.py; Codex
-// review #818: a smoke run left it in the checkout) keep Pierre's old references, which the app ignores (core.js cfCrop).
+// curation.json and the players' copy the deploy and the smokes write from it (curation-play.json, tools/curplay.py; a
+// smoke run leaves it in the checkout) keep the curator's old references, which the app ignores (core.js cfCrop).
 test('no crop record in the data files (every JSON but curation.json and its players copy)', () => {
   const files = [
     ...fs.readdirSync(ROOT).filter(f => f.endsWith('.json') && f !== 'curation.json' && f !== 'curation-play.json'),

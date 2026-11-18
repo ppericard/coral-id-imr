@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// Other species in view, split in two (Pierre, 2026-11-09, Q323; judging/FISH.md "Tags", count): o (no risk of taking
+// Other species in view, split in two (judging/FISH.md "Tags", count): o (no risk of taking
 // another fish for the subject at the game's rank: in play) and k (confusion possible: never in play, rule P3); m, the
 // code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js fishSure,
 // tools/fish_game.py judged_sure) and the pre-fetch mirrors (tools/fetch_fish.py sure_add, sure_out) follow one rule;
-// Pierre's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
+// the curator's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
 // re-judge of the photos with m lands where it was classified.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -160,7 +160,7 @@ test('the re-judge of 2026-11-09: every photo with other species is sorted, and 
     FC = CUR.fish || {},
     S = read('suggest.json').fish || {},
     J = read('tools/fish_judge.json');
-  // Pierre's adds with the legacy m: every one sorted by the pass (o or k).
+  // The curator's adds with the legacy m: every one sorted by the pass (o or k).
   const legacy = Object.keys(FC.tags || {}).filter(x => FC.tags[x][6] === 'm' && C.treePhotoOn(FC, x, (FC.add || {})[x]));
   legacy.forEach(x => assert.match(String((S[x] || {}).jt || '').charAt(6), /^[ok]$/, `${x}: Pierre's add with m not sorted`));
   // The build plays the o ones and none of the k ones.
@@ -168,7 +168,7 @@ test('the re-judge of 2026-11-09: every photo with other species is sorted, and 
 fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs('.')
 todo, keep, _ = G.plan(fish, cur, cand, sug, G.load('.', 'fish-game.json', {'photos': {}}), refs, codes, crops, rkeep=rkeep)
 print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(keep.values())}))`);
-  // A species met only on the surprise cards keeps its 5 best (Q372: tools/fish_game.py wink_trim), so an o add of one
+  // A species met only on the surprise cards keeps its 5 best (tools/fish_game.py wink_trim), so an o add of one
   // may be out for that reason; a k one never plays.
   const wink = new Set(
     read('fish.json')
