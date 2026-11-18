@@ -16,7 +16,8 @@ Written only by `tools/datajson.py` `dump()` (rule W16): one top-level key per l
 different genera merge cleanly. `python3 tools/datajson.py` rewrites the file in that layout and `--check` (the PR
 check, run in CI) fails when it is not; the app only parses the file, so the layout does not matter to it. The IMR
 instance's fields (`imrg`, and each genus's `ig`, `imr` and `mn`) and its lecture's look-alike pairs (in `look` and
-`lsrc`) are a copy of its coral layer, laid on by `dump()` and by the rewrite; `--check` also fails when `data.json` is not as its layers give it ("The instance's layer", below).
+`lsrc`) are a copy of its coral layer, laid on by `dump()` and by the rewrite; `--check` also fails when `data.json`
+is not as its layers give it ("The instance's layer", below).
 
 ### A genus record (`gen{Genus}`)
 
@@ -412,5 +413,5 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the slide references (`sl`, `rsl`; fish `sl`); the IMR tag (`src: imr`, `sign`, the teaching
-  nodes' IMR names); the coral slate (`n`); and `deploy` (the key in force).
+- **Not in the layer yet** (easy to move later): the slide references (`sl`, `rsl`; fish `sl`); the IMR tag
+  (`src: imr`, `sign`, the teaching nodes' IMR names); the coral slate (`n`); and `deploy` (the key in force).
