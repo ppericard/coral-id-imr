@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// Analyses › Difficulty › Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): the matrix built from the answer log,
+// Analyses › Difficulty › Heatmap (admin-heatmap.js): the matrix built from the answer log,
 // as Pairs reads it (core.js confusionOf, admin.js pairPrior and noChoiceMixups between `// answerlog: begin` / `end`).
 // Made-up rows, the sheet's readAnswers shape: [id, time, shown, answered, right, mode, photos, expected, ability, new
 // photos, choices].
@@ -188,9 +188,8 @@ test('the admin loads the heatmap module after admin.js, and the view sits next 
   assert.ok(html.indexOf('src="admin.js?') < html.indexOf('src="admin-heatmap.js?'), 'admin-heatmap.js after admin.js');
   assert.match(js, /\['pairs', 'Pairs'\],\n\s*\/\/[^\n]*\n\s*\['heatmap', 'Heatmap'\]/);
   assert.match(block(js, 'const LIVE_STATS = [', '];', {file: 'admin.js'}), /'analyses\/difficulty\/heatmap'/);
-  // the corals' admin pages are every page; a subject with units at several ranks names it (Pierre, 2026-11-14, Q123 m:
-  // the fish once the corals' was built; the sea slugs once their genera were their units, #1020), and has the tree its
-  // map reads its units' names and blocks from (admin.js unitRegOf: its SUBJECTS admin files f)
+  // the corals' admin pages are every page; a subject with units at several ranks names it (the fish, the sea slugs),
+  // and has the tree its map reads its units' names and blocks from (admin.js unitRegOf: its SUBJECTS admin files f)
   const on = C.SUBJECTS.filter(S => S.sheets && S.admin.pages && S.admin.pages.includes('analyses/difficulty/heatmap'));
   assert.ok(on.length >= 2, 'the subjects at several ranks have the heatmap');
   on.forEach(S => assert.ok(S.admin.files && S.admin.files.f, S.id));
@@ -262,7 +261,7 @@ test('heatMatrix: blockOf puts a lower rank in blocks of the rank above (a genus
   );
   // the coral genera of the warm-up are another rank: not on the map
   assert.ok(M.units.every(u => u.startsWith('g:')));
-  // without blockOf the record's fam, as before
+  // without blockOf: the record's fam
   assert.deepStrictEqual(
     heatMatrix(P.C, P.typed, recF, pr).groups.map(g => g[0]),
     ['']
@@ -322,7 +321,7 @@ test('heatMatrix: supOf puts the families in their taxonomic group, each group i
   );
   // the groups cover the families' runs exactly
   M.groups.forEach(([, a, b]) => assert.ok(M.sups.some(([, x, y]) => x <= a && b <= y)));
-  // without supOf: no groups, the blocks as before (the biggest first)
+  // without supOf: no groups, the blocks the biggest first
   const B = heatMatrix({}, {}, recF, pr, Object.keys(FAM), u => FAM[u]);
   assert.deepStrictEqual(B.sups, []);
   assert.deepStrictEqual(
