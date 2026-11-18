@@ -601,6 +601,7 @@ const DOC_BUDGET = {
   'docs/spec/fish-game.md': [12, 130],
   'docs/spec/fish-sheets.md': [10, 130],
   'docs/spec/seaslugs.md': [12, 130],
+  'docs/spec/tools.md': [47, 130],
   'docs/decisions/README.md': [10, 200], // the index grows by a row per record
   'docs/rules/README.md': [1, 150],
   'docs/rules/admin.md': [5, 230],
