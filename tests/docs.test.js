@@ -398,26 +398,12 @@ const ID_ALLOW = [
   {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
+  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, tools/sync/HISTORY.md)'},
   {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
   {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"},
-  // the gates at or below the gate floor, deleted with it: only ARCHITECTURE's version history still names them
-  ...[
-    'analysis.js AN_SUBJ_SHEET',
-    'core.js REPLAYS_SHEET',
-    'admin.js LIVE_SHEET',
-    'sync.js DEV_SHEET',
-    'core.js logOk',
-    'core.js FMT_SHEET',
-    'core.js RT_SHEET',
-    'model.js PGD_SHEET'
-  ].map(key => ({
-    key,
-    why: 'removed with the gate floor (core.js SHEET_FLOOR, 2026-11-18); the version history tells its history'
-  }))
+  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
