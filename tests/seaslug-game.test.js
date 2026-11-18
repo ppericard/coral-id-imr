@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The sea-slug subject's game data (tools/seaslug_game.py; study docs/reviews/2026-11-15-nudibranch-mode-study.md §9,
-// step 5): the tree in fish.json's shape, scientific names only (Q369 d), its commonness over the Philippines (Q369 b),
-// the photos in play from the judged candidates under the photo target (Q377), and the committed files as the tool
+// step 5): the tree in fish.json's shape, scientific names only, its commonness over the Philippines, the photos in
+// play from the judged candidates under the photo target, and the committed files as the tool
 // writes them from tools/seaslugs.json, seaslug-cand.json and suggest.json "seaslug" (a re-judge must rebuild them).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -154,9 +154,9 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
   );
 });
 
-// The sea slugs without a species name (Pierre, 2026-11-17, Q389): (2) a species defined by a paper, present by its
-// label's observers (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; (1) the
-// genus-level photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
+// The sea slugs without a species name: a species defined by a paper, present by its label's observers
+// (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; and the genus-level
+// photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
 // Pierre's curation reaches the sea slugs' game (curation.json seaslug, core.js SUBJECTS seaslug admin.cur: the admin's
 // Photos › Tree and a report's photo tools write it), as the fish part reaches fish-game.json (tools/fish_game.py
 // in_play, record): what he removed, excluded or moved leaves and the next sure photo takes its place; his adds enter,
@@ -204,7 +204,7 @@ print(json.dumps([t, gm, todo]))`);
     G2.photos['f:Afam'].map(p => p.f.split('-').pop()),
     ['2', '3', '4']
   );
-  // No sea-slug part: the build as before (the fish part never read).
+  // No sea-slug part: the build without curation (the fish part never read).
   const [, G3] = py(
     `print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, cur=${arg({fish: cur.seaslug})})))`
   );
@@ -327,7 +327,8 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
   assert.strictEqual(pr.stdout.trim(), '[False, False, True, True]', pr.stderr);
 });
 
-// Circle 3's last part (#1002) enters by itself: its judgements in suggest.json "seaslug" are all the build needs.
+// A species judged later (as circle 3's last part) enters by itself: its judgements in suggest.json "seaslug" are all
+// the build needs.
 test('a species judged later enters at the next build, by the same rule as circle 1', () => {
   const C3 = {...CAND, cand: {...CAND.cand, 5: [20, 21, 22].map(n => cand(5, n))}},
     S3 = {...SUG, 'seaslug-5-cand-20': {jt: 'p1g0sl1', e: 5, k: 'best'}, 'seaslug-5-cand-21': {jt: 'o1g0sm1', e: 3, k: 'alt'}};
@@ -463,7 +464,7 @@ test('the R2 step takes at most --max a run, the rest remote until the next', {s
 test('--plan prints what the R2 step would download, by circle, and writes nothing', () => {
   const r = spawnSync('python3', [path.join(TOOLS, 'seaslug_game.py'), '--plan'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, r.stderr);
-  // circle 1: its 45 species, and Goniobranchus sp. 5 (tools/seaslug_informal.json, Q389 (2)) until its photos are judged
+  // circle 1: its 45 species, and Goniobranchus sp. 5 (tools/seaslug_informal.json) until its photos are judged
   assert.match(r.stdout, /^circle 1: \d+ photos in play over (45|46) of 46 species/m);
   assert.match(r.stdout, /^circle 2: /m);
   assert.match(r.stdout, /^circle 3: /m);
@@ -475,12 +476,12 @@ test('the committed files read through the fish engine: three circles, scientifi
     GM = C.fishGameRead(json('seaslug-game.json')),
     S = C.subjectOf('seaslug');
   assert.strictEqual(S.id, 'seaslug');
-  // As the app reads them: its genera the units (core.js SUBJECTS unitRank; Pierre, 2026-11-16; tests/seaslug-genera.test.js).
+  // As the app reads them: its genera the units (core.js SUBJECTS unitRank; tests/seaslug-genera.test.js).
   const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(S, json('curation.json'))), undefined, C.unitRankOf(S));
-  // The circles of tools/seaslugs.json 1 to 3 (Q377: 45, then 60 and 100 by commonness), circle 4 left out.
+  // The circles of tools/seaslugs.json 1 to 3 (45, then 60 and 100 by commonness), circle 4 left out.
   const L = json('tools/seaslugs.json').species,
     n = c => L.filter(s => s.circle === c).length;
-  // (the species with no name yet, tools/seaslug_informal.json, Q389 (2), apart: Goniobranchus sp. 5 in its genus's circle 1)
+  // (the species with no name yet, tools/seaslug_informal.json, apart: Goniobranchus sp. 5 in its genus's circle 1)
   assert.deepStrictEqual(
     [1, 2, 3, 4].map(c => F.species.filter(s => s.circle === c && !s.inf).length),
     [n(1), n(2), n(3), 0]
@@ -507,8 +508,8 @@ test('the committed files read through the fish engine: three circles, scientifi
   played.forEach(n =>
     X.gen[n].views.wide.forEach(p => assert.ok((p.r === 1 || (!p.r && p.ar > 0)) && /^https:\/\/inaturalist-open-data\./.test(p.src), p.f))
   );
-  // Every circle plays: circle 1 every species (Q377), circles 2 and 3 their species with enough sure photos. The species
-  // with no name yet (Goniobranchus sp. 5, Q389 (2)) counts apart: circle 1's 45 named species, plus it once judged.
+  // Every circle plays: circle 1 every species, circles 2 and 3 their species with enough sure photos. The species
+  // with no name yet (Goniobranchus sp. 5) counts apart: circle 1's 45 named species, plus it once judged.
   const circ = new Map(F.species.filter(s => !s.inf).map(s => [s.id, s.circle])),
     sp = c =>
       new Set(
@@ -524,7 +525,7 @@ test('the committed files read through the fish engine: three circles, scientifi
   Object.values(GM.photos)
     .flat()
     .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
-  // A genus's genus-level photos (sp its genus id, gl; Q389 (1)): at most the cap, in play once they and its species'
+  // A genus's genus-level photos (sp its genus id, gl): at most the cap, in play once they and its species'
   // photos reach the start (tools/seaslug_game.py), so a genus may hold fewer than the start of its own.
   const gen = new Map(F.genera.map(g => [g.id, g]));
   Object.entries(by).forEach(([sp, n]) =>
@@ -532,7 +533,7 @@ test('the committed files read through the fish engine: three circles, scientifi
       ? assert.ok(n <= T.gameCap && n + gen.get(sp).species.reduce((s, id) => s + (by[id] || 0), 0) >= T.start, `${sp}: ${n}`)
       : assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`)
   );
-  // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead the families,
+  // The commonness is the area's: the Chromodorididae, most observed in the Philippines, lead the families,
   // and one of its genera the genera.
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...F.families.map(f => X.gen[f.id].cm)));
   assert.strictEqual(X.gen[all.reduce((m, n) => (X.gen[n].cm > X.gen[m].cm ? n : m))].parent, 'f:Chromodorididae');
@@ -548,8 +549,8 @@ test('UNITS seaslug: the three circles on the path, opened by the fish gate', ()
 });
 
 // The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py
-// TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside (#987,
-// the integrator's review). The fish's rubric never writes v or f, so no fish judgement is read differently.
+// TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside. The
+// fish's rubric never writes v or f, so no fish judgement is read differently.
 test('a sure sea-slug code with f or v is kept by the sure rule; the fish judgements never carry either', () => {
   const {fishSure} = require('../autosort.js');
   ['d1g0sl1f', 'v1g0sl1', 'p1g0sm1jf', 'o1g0slo'].forEach(jt =>
@@ -576,7 +577,7 @@ print(json.dumps([[a.sure_add({'jt': x, 'e': 3, 'k': 'best'}), b.cand_sure({'jt'
 });
 
 // The licence refresh and each Publish rewrite seaslug-cand.json and suggest.json: the photos workflow builds the game
-// data again after them and commits it (Codex review #987), so a photo whose licence changed leaves the game too.
+// data again after them and commits it, so a photo whose licence changed leaves the game too.
 test('the photos workflow builds the sea-slug game data again and commits it', () => {
   const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
     at = s => W.indexOf(s);
@@ -585,7 +586,7 @@ test('the photos workflow builds the sea-slug game data again and commits it', (
   assert.ok(W.includes('seaslug\\.json|seaslug-game\\.json'), 'allowed in the commit job');
 });
 
-// The R2 step is on since Pierre's go (2026-11-16, Q387; off before it): its downloads go into the folder the upload
+// The R2 step is on (Pierre's go): its downloads go into the folder the upload
 // step sends to R2, before the commit that lists them; off, the build stays offline.
 test('the photos workflow: the sea slugs R2 step on, wired before the upload', () => {
   const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
