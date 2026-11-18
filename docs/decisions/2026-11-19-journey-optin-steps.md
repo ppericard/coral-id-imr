@@ -13,7 +13,8 @@ fish Journey did not say when a player turned the scientific names on or decline
 
 Integrator's call (wording and place; easy to correct): `admin-journey.js` `jOptin` lists each opt-in set of the
 subject (`SUBJECTS` `optin`) under Cards and steps, in time order, from the saved copy: on (by hand before it was due,
-or not), off, or the offer declined with the answer count of the last "Not now". Written in the admin's own words
+or not) or off, with the time of the latest choice, and the offer's declines as a line of their own with the answer count
+of the last "Not now" and no time (the saved time is the latest toggle's, so it is not the decline's). Written in the admin's own words
 (`JOPT`), not on the chart (the choice has a time, not an answer index). The corals' bonus genera come with it, the same
 code.
 

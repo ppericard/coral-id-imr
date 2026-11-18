@@ -273,13 +273,17 @@ const {jOptin} = new Function(cut('// joptin: begin', '// joptin: end') + '\nret
 test('jOptin: the fish opt-in choices of a saved copy: on, declined, never offered', () => {
   const FISH = C.subjectOf('fish'),
     q = {sci: true, sciT: 5000, sciH: true, beyond: false, beyondT: 9000, beyondN: 2, beyondA: 140};
+  // the current state with the time of the latest choice; the declines apart, with no time of their own (the time of the
+  // choice may be a later switch: Codex review #1166)
   assert.deepStrictEqual(jOptin(q, FISH), [
     [5000, 'Scientific names', 'on, by hand before it was due'],
-    [9000, 'Families beyond the IMR course', 'offer declined 2 times, the last after answer 140']
+    [9000, 'Families beyond the IMR course', 'off'],
+    [null, 'Families beyond the IMR course', 'offer declined 2 times, the last after answer 140']
   ]);
   // on after an offer declined once, off by hand, an offer declined and never answered, nothing saved
   assert.deepStrictEqual(jOptin({sci: true, sciT: 7, sciN: 1, sciA: 30}, FISH), [
-    [7, 'Scientific names', 'on (the offer was declined once before)']
+    [7, 'Scientific names', 'on'],
+    [null, 'Scientific names', 'offer declined once, the last after answer 30']
   ]);
   assert.deepStrictEqual(jOptin({sci: false, sciT: 7}, FISH), [[7, 'Scientific names', 'off']]);
   assert.deepStrictEqual(jOptin({beyondN: 1, beyondA: 12}, FISH), [
