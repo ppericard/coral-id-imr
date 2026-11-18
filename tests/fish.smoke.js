@@ -1815,6 +1815,45 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== CHROMIS || gp.sib < 2 || !/genus/.test(gp.bar))
       ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
     await wide('a genus page');
+    // "Don't confuse with" lists sourced pairs only (learn.js treeGenusSibs): every card is linked to its genus and carries
+    // its source line, none is a sibling that has only our own marks ("ID marks: …"), nothing hides behind "More". A genus
+    // whose siblings have no IMR cues and that has no look-alike (Parupeneus, Goatfishes) shows no section.
+    const dc = await q.evaluate(() => {
+      const cards = [...document.querySelectorAll('#view .hubsec a.lt')];
+      return {
+        h: (document.querySelector('#view .hubsec h3') || {}).textContent,
+        n: cards.length,
+        linked: cards.every(a => /^#fish\/learn\/genus\//.test(a.getAttribute('href'))),
+        src: cards.filter(
+          a => ((a.querySelector('.lsrc') || {}).textContent || '').length > 5 && !/^ID marks/.test(a.querySelector('.lsrc').textContent)
+        ).length,
+        more: !!document.querySelector('#view .hubsec details.more')
+      };
+    });
+    if (dc.h !== "Don't confuse with" || !dc.linked || dc.src !== dc.n || dc.more)
+      ui.push(`${width}px genus page's Don't confuse with: ${JSON.stringify(dc)}`);
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Parupeneus'));
+    await q.waitForFunction(
+      () => location.hash === '#fish/learn/genus/Parupeneus' && document.querySelector('#view .fsheet .fn-t i'),
+      null,
+      {
+        timeout: 15000
+      }
+    );
+    const dn = await q.evaluate(() => ({
+      sec: document.querySelectorAll('#view .hubsec').length,
+      name: (document.querySelector('#view .fn-t') || {}).textContent
+    }));
+    if (dn.sec || dn.name !== 'Parupeneus') ui.push(`${width}px a genus with no look-alike: ${JSON.stringify(dn)}`);
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Chromis'));
+    await q.waitForFunction(
+      () => location.hash === '#fish/learn/genus/Chromis' && document.querySelector('#view .seg [data-mine="0"]'),
+      null,
+      {
+        timeout: 15000
+      }
+    );
+    await q.evaluate(() => document.querySelector('#view .seg [data-mine="0"]').click());
     // A species tile opens its species sheet (scientific name first, its common name, badges, photos, the other species of
     // its genus); a genus with one species opens that species' sheet (option B).
     await q.click('#view .ftiles a.ftile');

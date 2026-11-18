@@ -1375,6 +1375,13 @@ function treeGenusLookCard(g, T, [o, src]) {
 // The look-alikes of a genus with no page of its own (treeSheets go: the sheet it opens is page, its family's or its one
 // species'), shown on that sheet: [[genus id, source line]], none for a genus with its own page.
 const treeGenusLooksOn = (g, T, page) => (g && T.go(g.id) === page ? treeGenusLooks(g, T) : []);
+// A genus's sibling genera for its page's "Don't confuse with": the genera of its family IMR gives cues for, never the
+// genus itself nor one without species. A sibling that has only our own ID marks is not listed: the page lists sourced
+// pairs only, the others come from the players' data (docs/decisions/2026-11-19-fish-genus-dont-confuse.md). T: the tree.
+const treeGenusSibs = (g, T) =>
+  ((T.fam[g.family] || {}).genera || [])
+    .map(id => T.gen[id])
+    .filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length);
 // The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under
 // it (its source under More details; a name inferred from its species' names says so: fish.json genera cinf), its
 // family and IMR entry name; my progress on it once met; the IMR sub-entry's cues; the species WoRMS now puts in another
@@ -1387,7 +1394,7 @@ function treeGenus(g) {
     flat = [],
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
-    sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
+    sib = treeGenusSibs(g, T),
     // A sibling genus's card: its picked genus cover, else the default (nodeCover).
     cover = x => genCover(x) || nodeCover(genSpecies(x));
   const card = x => {

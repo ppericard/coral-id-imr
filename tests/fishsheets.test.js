@@ -194,3 +194,36 @@ test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishB
   // Reef Life Survey first: FishBase only where it gives nothing.
   assert.ok(Object.values(X).some(x => x.lsrc === 'rls'));
 });
+
+// The genus page's "Don't confuse with" lists sourced pairs only (Pierre, 2026-11-19 05:13 Manila, Q418 (b)): learn.js
+// treeGenusSibs gives the sibling genera IMR gives cues for, never one that has only our own marks, on the real fish.json.
+test('genus page "Don\'t confuse with": sibling genera with IMR cues only, never a marks-only one', () => {
+  const vm = require('node:vm'),
+    block = require('./block.js'),
+    L = fs.readFileSync(path.join(__dirname, '..', 'learn.js'), 'utf8'),
+    T = C.treeSheets(F),
+    c = {genSpecies: g => (g.species || []).map(id => T.sp[id]).filter(Boolean)};
+  vm.createContext(c);
+  vm.runInContext(block(L, 'const treeGenusSibs = ', '\n// The short genus page', {file: 'learn.js'}) + '\nthis.sibs = treeGenusSibs;', c);
+  const sibs = id => [...c.sibs(T.gen[id], T)];
+  // Chromis (Damselfishes): the siblings IMR gives cues for, never itself
+  const ch = sibs('g:Chromis');
+  assert.ok(ch.length >= 2, 'Chromis has IMR-cue siblings');
+  assert.ok(ch.every(x => x.id !== 'g:Chromis' && (x.cues || []).length && c.genSpecies(x).length));
+  // a marks-only sibling is not listed, wherever the family has one
+  let marksOnly = 0;
+  for (const g of Object.values(T.gen)) {
+    const fam = ((T.fam[g.family] || {}).genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && c.genSpecies(x).length),
+      only = fam.filter(x => !(x.cues || []).length && (x.marks || []).length),
+      got = sibs(g.id);
+    marksOnly += only.length;
+    only.forEach(x => assert.ok(!got.includes(x), `${g.id}: ${x.id} has only our marks`));
+    assert.deepStrictEqual(
+      got,
+      fam.filter(x => (x.cues || []).length)
+    );
+  }
+  assert.ok(marksOnly > 100, 'the real data has many marks-only siblings to leave out');
+  // Heniochus: its siblings have marks and no IMR cues, so the page lists none of them
+  assert.deepStrictEqual(sibs('g:Heniochus'), []);
+});
