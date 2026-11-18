@@ -23,6 +23,7 @@ import re
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -214,8 +215,9 @@ def fetch_raw(n):
                     'conclusion': c.get('conclusion')}
                    for c in gh_pages('%s/commits/%s/check-runs' % (base, pr['head']['sha']))],
     }
-    tmp = f + '.tmp'
-    json.dump(raw, open(tmp, 'w'))
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(f), prefix='pr-%d.' % n, suffix='.tmp')  # one per writer
+    with os.fdopen(fd, 'w') as out:
+        json.dump(raw, out)
     os.replace(tmp, f)
     return raw
 
@@ -378,10 +380,10 @@ FIGURE_RES = [
     re.compile(r'(?<![\w.#])%s\s*(?:-|–|—|to)\s*%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|weeks?)\b' % (NUM, NUM), re.I),
     # 3 h, 3.5 hours, 2 agent days, 4 hours of agent
     re.compile(r'(?<![\w.#])%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|weeks?)\b' % NUM, re.I),
-    # N agent minutes
-    re.compile(r'(?<![\w.#])%s\s*(?:-\s*%s\s*)?agent[- ]minutes?\b' % (NUM, NUM), re.I),
+    # 30 min, 20-40 minutes, 30 agent minutes (the tool's own output says "N min")
+    re.compile(r'(?<![\w.#])%s\s*(?:(?:-|\u2013|\u2014|to)\s*%s\s*)?(?:agent[- ])?(?:minutes?|mins?)\b' % (NUM, NUM), re.I),
     # agent-day(s), agent day(s), agent-hour(s), agent-week(s)
-    re.compile(r'\bagent[- ](?:days?|hours?|weeks?)\b', re.I),
+    re.compile(r'\bagent[- ](?:days?|hours?|weeks?|minutes?)\b', re.I),
     # a few days, several weeks, one or two days
     re.compile(r'\b(?:a few|several|couple of|one or two|two or three)\s+(?:agent[- ])?(?:days?|weeks?|hours?)\b', re.I),
 ]

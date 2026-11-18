@@ -122,6 +122,39 @@ test('green time falls back to the head commit when a check failed or none exist
   assert.strictEqual(rec([{name: 'checks', start: '2026-11-10T09:31:00Z', end: '2026-11-10T09:40:00Z', conclusion: 'failure'}]), 90);
 });
 
+test('two writers of the same PR cache file do not collide (and gh is stubbed: no network)', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'effort-cache-'));
+  const code = `
+import sys, time, threading, json
+sys.path.insert(0, "tools")
+import effort
+def fake(path):
+    time.sleep(0.2)
+    if path.endswith("/pulls/5"):
+        return {"number": 5, "title": "t", "created_at": "2026-11-10T10:00:00Z", "merged_at": "2026-11-10T11:00:00Z", "additions": 1, "deletions": 0, "changed_files": 1, "commits": 1, "labels": [], "head": {"sha": "abc"}}
+    return []
+effort.gh = fake
+errs = []
+def work():
+    try:
+        effort.fetch_raw(5)
+    except Exception as e:
+        errs.append(repr(e))
+ts = [threading.Thread(target=work) for _ in range(4)]
+[t.start() for t in ts]; [t.join() for t in ts]
+print(json.dumps(errs))`;
+  const r = spawnSync('python3', ['-B', '-c', code], {
+    cwd: ROOT,
+    env: {...process.env, XDG_CACHE_HOME: home},
+    encoding: 'utf8',
+    timeout: 20000
+  });
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.deepStrictEqual(JSON.parse(r.stdout), []);
+  assert.deepStrictEqual(fs.readdirSync(path.join(home, 'coral-id-imr', 'effort')), ['pr-5.json'], 'no temporary file is left');
+  fs.rmSync(home, {recursive: true});
+});
+
 test('rounds fall back to Codex reviews when no one typed the ask', () => {
   const r = py(`print(json.dumps(effort.codex_rounds([], [{"user": "chatgpt-codex-connector[bot]"}, {"user": "ppericard"}])))`);
   assert.strictEqual(r, 1);
@@ -142,6 +175,7 @@ test('--check finds every kind of effort figure', () => {
   assert.deepStrictEqual(bad('Roughly 3 days.'), ['3 days']);
   assert.deepStrictEqual(bad('Two weeks at most, so 2 weeks.').length, 1, 'a figure is reported once, not once per pattern');
   assert.deepStrictEqual(bad('Several days of work, a few weeks of waiting.'), ['Several days', 'a few weeks']);
+  assert.deepStrictEqual(bad('Takes 30 min, or 20-40 minutes, or 20 to 40 mins.'), ['30 min', '20-40 minutes', '20 to 40 mins']);
   assert.deepStrictEqual(bad('1.5 h, then 0,5 hours'), ['1.5 h', '0,5 hours']);
 });
 
