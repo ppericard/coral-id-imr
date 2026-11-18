@@ -93,7 +93,14 @@ function appUnits() {
   if (APP) return APP;
   const Fs = ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(json),
     S = C.subjectOf('fish'),
-    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+    ctx = {
+      DOM: {EX: 0.9},
+      easyCover: C.easyCover,
+      fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
+      fishGenSets: C.fishGenSets,
+      rankWeights: C.rankWeights
+    };
   vm.createContext(ctx);
   vm.runInContext(
     cut(read('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

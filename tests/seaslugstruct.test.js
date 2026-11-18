@@ -247,7 +247,13 @@ test('the app: before the script that replays under the pairs, the text slots al
   assert.deepStrictEqual(gen(off, 'g:Hypselodoris').lsrc['g:Goniobranchus'], [], 'the text slot at once');
   assert.ok(!gen(on, 'g:Goniobranchus').look.includes('g:Phyllidiella'));
   // app.js fishGenera on the units made from it, as the app makes them (fishBuild)
-  const ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+  const ctx = {
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    fishGenSets: C.fishGenSets,
+    rankWeights: C.rankWeights
+  };
   vm.createContext(ctx);
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

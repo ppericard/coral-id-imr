@@ -117,7 +117,13 @@ test('seaslug.json: the declared genus pairs across families of the survey, each
 // app.js fishGenera as the app has it, on the real tree.
 const SEA = C.subjectOf('seaslug'),
   GM = C.fishGameRead(json('seaslug-game.json')),
-  ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+  ctx = {
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    fishGenSets: C.fishGenSets,
+    rankWeights: C.rankWeights
+  };
 vm.createContext(ctx);
 vm.runInContext(
   block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

@@ -117,6 +117,7 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
       easyCover: C.easyCover,
       fishScoreTree: C.fishScoreTree,
       fishSpUnits: C.fishSpUnits,
+      fishGenSets: C.fishGenSets,
       rankWeights: C.rankWeights
     };
   vm.createContext(ctx);
