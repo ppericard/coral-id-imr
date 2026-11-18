@@ -145,7 +145,8 @@
       busy: null,
       again: false,
       lost: false, // the last write failed (storage full, IndexedDB gone): beforeunload warns
-      out: null // the state that refused a write, or this tab's own sign-out: nothing is written any more
+      out: null, // the state that refused a write, or this tab's own sign-out: nothing is written any more
+      ready: false // load() done: before it, this tab knows no generation and writes nothing (Codex review #1078)
     };
     const keep = (rev, j) => {
       T.revs[rev] = j;
@@ -200,6 +201,7 @@
     // Writes the draft in memory (and the base when it changed), one write at a time: clicks made while one is on its way
     // go in the next. Resolves once what was in memory at the call is stored (or refused, or failed).
     T.sync = () => {
+      if (!T.ready) return Promise.resolve({early: true});
       if (T.out) return Promise.resolve({refused: T.out});
       if (T.busy) {
         T.again = true;
@@ -288,9 +290,11 @@
           T.seen = r.rev;
           T.storedJ = r.j;
           T.bid = r.bid;
+          T.ready = true;
           return {draft: r.d, plain: r.plain};
         }
         T.gen = S.gen || 0;
+        T.ready = true;
         T.bid = (v.base && v.base.id) || null;
         if (v.draft) {
           keep(v.draft.rev, v.draft.j);
@@ -381,10 +385,14 @@
       for (let i = 0; i < TRIES; i++) {
         const j = o.snap();
         if (j === T.storedJ) return {kept: true}; // all of it was stored before the seal, which holds it
-        const v = await ddbRead(o.db, [k]),
+        // Only this tab's changes since it last stored are carried: onto the seal, or with no seal (a sign out with nothing
+        // to seal, or one an unlock opened since) onto the plain draft stored now or else the published curation, never
+        // this tab's whole draft, which may hold a choice another tab undid since (Codex review #1078).
+        const v = await ddbRead(o.db, [k, 'draft']),
           cur = v[k] || null,
           p = cur ? await openRec(o.subtle, T.K, cur) : null,
-          d = p ? o.merge(parsed(T.seen) || o.saved(), o.draft(), JSON.parse(p.j)).draft : o.draft(),
+          onto = p ? JSON.parse(p.j) : v.draft ? JSON.parse(v.draft.j) : o.saved(),
+          d = o.merge(parsed(T.seen) || o.saved(), o.draft(), onto).draft,
           rec = await sealRec(o.subtle, T.K, {j: JSON.stringify(d), b: p ? p.b : JSON.stringify(o.saved())});
         const done = await ddbTx(o.db, 'readwrite', api =>
           api.get([k], x => {

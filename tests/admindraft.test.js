@@ -469,6 +469,41 @@ test('Codex #1078: a seal left from before is re-based on the published curation
   assert.strictEqual(s.quality.p1, 3); // never the old published value as an edit
 });
 
+test('Codex #1078: before its draft is loaded, a tab writes nothing and is never taken for signed out', async () => {
+  const idb = fakeIDB(),
+    A = await tab(idb, 'A', 'tok');
+  await A.click('p1', 3);
+  await A.T.seal(); // the store is in generation 1
+  const G = gates(),
+    h = G.hold('decrypt'),
+    Bp = tab(idb, 'B', 'tok', G); // unlocks: its seal held while it is decrypted
+  await h.hit;
+  // a visibility or channel event meanwhile: nothing written, nothing refused
+  const ghost = ddbTab({db: await ddbOpen(idb, 'reefid-admin-draft'), tab: 'X', snap: () => 'null', gone: () => assert.fail('gone')});
+  assert.deepStrictEqual(await ghost.sync(), {early: true});
+  G.release('decrypt');
+  const B = await Bp;
+  assert.strictEqual(B.gone.length, 0);
+  assert.strictEqual(q(B, 'p1'), 3);
+});
+
+test('Codex #1078: a tab locking after a clean sign out carries only its own pending change, never a choice undone since', async () => {
+  const idb = fakeIDB(),
+    A = await tab(idb, 'A', 'tok'),
+    B = await tab(idb, 'B', 'tok');
+  await A.click('p1', 3);
+  await B.T.sync(); // B holds p1: 3
+  A.draft = clone(A.saved); // A undoes it
+  await A.T.sync();
+  assert.deepStrictEqual(await A.T.seal(), {sealed: false}); // nothing to seal: no seal
+  B.set('p2', 1); // B's note, never stored, B never heard of the Undo
+  assert.ok((await B.T.sync()).refused);
+  await B.T.intoSeal();
+  const s = await sealOf(idb, 'tok');
+  assert.strictEqual(s.quality.p2, 1);
+  assert.strictEqual(s.quality.p1, 2); // the published value, not the choice undone
+});
+
 test('a second Sign out while the first seals leaves one seal and loses nothing', async () => {
   const idb = fakeIDB(),
     G = gates(),

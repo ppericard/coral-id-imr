@@ -247,6 +247,35 @@ async function sealPart(b, base, fails) {
   }));
   if (nb.dw !== null || !nb.lost || na.token !== 'demo' || !/could not be sealed/.test(na.toast) || na.layer)
     fails.push(F + `without IndexedDB, Sign out did not warn and stay with the visit's edit ${JSON.stringify({nb, na})}`);
+  // A draft from before the store whose move fails (Codex review #1078): it stays in localStorage, and Sign out warns
+  // and stays rather than reporting a seal while it is left there in plain
+  const M = await sc.newPage();
+  await M.addInitScript(f => {
+    localStorage.setItem('demo:reefid-curation-draft', JSON.stringify({v: 1, genera: {}, quality: {[f]: 1}}));
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.migrate = () => Promise.reject(new Error('storage full'));
+          return T;
+        })
+    });
+  }, P[4]);
+  await M.goto(base + 'admin.html?demo#photos/quality');
+  await M.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && !DW.busy, null, {timeout: 60000});
+  await M.evaluate(() => $('signout').click());
+  await M.waitForTimeout(800);
+  const mv = await M.evaluate(() => ({
+    token: TOKEN,
+    kept: !!localStorage.getItem('demo:reefid-curation-draft'),
+    out: !!DW.out,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+  }));
+  if (mv.token !== 'demo' || !mv.kept || mv.out || !/could not be sealed/.test(mv.toast))
+    fails.push(F + `a draft whose move failed was left in plain by a Sign out that did not warn ${JSON.stringify(mv)}`);
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }

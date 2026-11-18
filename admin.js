@@ -401,7 +401,7 @@ function putDraft() {
     }
   });
 }
-const draftBusy = () => draftLost || !!(DW && DW.busy);
+const draftBusy = () => draftLost || !!(DW && (DW.busy || DW.lost));
 function step(from, to, msg) {
   if (!from.length) return toast(msg[0]);
   to.push(snap);
@@ -8208,7 +8208,7 @@ async function draftMove() {
       await DW.migrate({d, b: b && b.genera ? b : null});
     }
   } catch (e) {
-    return;
+    return false; // kept; Sign out tries again, and warns while they stay (Codex review #1078)
   }
   ['reefid-curation-draft', 'reefid-curation-base'].forEach(k => {
     store.set(k, null);
@@ -8263,11 +8263,15 @@ async function signOut() {
   if (btn) ((btn.disabled = true), (btn.textContent = 'Sealing…'));
   sealing(true);
   ptFlush(); // a note being typed reaches the draft first
+  // A draft from before the store still in localStorage (its move failed at the start) is moved first; while it stays
+  // there in plain, Sign out cannot seal (Codex review #1078).
+  const legacy = () => !!(store.get('reefid-curation-draft', null) || store.get('reefid-curation-base', null));
+  if (DW && legacy()) await draftMove();
   // No store (IndexedDB unavailable): nothing was kept, so only a draft with nothing unpublished signs out at once
   // (Codex review #1078: the warning, not the edits made in this visit lost).
   let ok = !DW && draftClean(DRAFT, SAVED);
   try {
-    if (DW) ok = !!(await DW.seal());
+    if (DW && !legacy()) ok = !!(await DW.seal());
   } catch (e) {}
   if (!ok && Date.now() - soWarned > 15000) {
     sealing(false);
@@ -8296,7 +8300,9 @@ async function lockOther() {
   if (ok) return lockNow();
   sealing(false);
   signingOut = false;
-  DW.carryOn(DW.out);
+  DW.carryOn(DW.out).then(r => {
+    draftLost = !!r.err; // a failed write back keeps the unload warning (Codex review #1078)
+  });
   toast('Signed out in another tab, but the last changes of this one could not be sealed: Publish them, or Sign out here.', 15000);
 }
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
