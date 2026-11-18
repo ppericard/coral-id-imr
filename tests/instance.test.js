@@ -188,19 +188,19 @@ print(json.dumps([bare, coral_compose(bare, lay), coral_compose(bare, {})]))`)
   assert.strictEqual(JSON.stringify(looks(back)), JSON.stringify(looks(RAW)));
   const all = pairsOf(RAW),
     lecture = Object.keys(CL.pairs),
-    finder = Object.keys(pairsOf(bare));
+    book = Object.keys(pairsOf(bare));
   assert.deepStrictEqual(pairsOf(back), all);
   // The split: 84 pairs, 13 the lecture's (6 in its words, 7 from its groups), 71 the Coral Finder's.
   assert.deepStrictEqual(
-    [Object.keys(all).length, lecture.length, lecture.filter(k => /^IMR/.test(CL.pairs[k].src)).length, finder.length],
+    [Object.keys(all).length, lecture.length, lecture.filter(k => /^IMR/.test(CL.pairs[k].src)).length, book.length],
     [84, 13, 6, 71]
   );
   assert.deepStrictEqual(
-    [...lecture, ...finder].sort(),
+    [...lecture, ...book].sort(),
     Object.keys(all).sort(),
     'the lecture’s and the Coral Finder’s pairs are all the pairs'
   );
-  assert.ok(!lecture.some(k => finder.includes(k)), 'no pair in both');
+  assert.ok(!lecture.some(k => book.includes(k)), 'no pair in both');
   // Each lecture pair keeps its source on both genera and its directions; the sources hold no lecture line.
   lecture.forEach(k => {
     const [a, b] = k.split('|'),
@@ -213,7 +213,7 @@ print(json.dumps([bare, coral_compose(bare, lay), coral_compose(bare, {})]))`)
     Object.entries(ls || {}).forEach(([o, s]) => assert.doesNotMatch(s, LECTURE, `${g} lsrc ${o}: a lecture line left in the sources`))
   );
   // An edition without the IMR layer plays the Coral Finder's pairs alone, each with its Coral Finder line.
-  assert.deepStrictEqual(Object.keys(pairsOf(edition)).sort(), [...finder].sort());
+  assert.deepStrictEqual(Object.keys(pairsOf(edition)).sort(), [...book].sort());
   Object.entries(pairsOf(edition)).forEach(([k, s]) =>
     Object.values(s).forEach(
       ([, line]) => line && assert.match(line, /^(Coral Finder|Same Coral Finder box|IMR Lecture 6 and Coral Finder)/, k)
