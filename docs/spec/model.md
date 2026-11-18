@@ -190,8 +190,8 @@ in the draw (`model.js` `mimOf`, `mimAt`, `MIM_AT`: from Open Water once a unit 
 Advanced while none is); the draw only, its kind and group for "Learned" stay its phase's, so the replay is unchanged.
 Its first meeting brings its pair's card before the phase card (`quiz.js` `mimArm`, `mimShow`, `mimPics`: both species,
 the sourced marks, the sources of the resemblance; once per pair, `TOLD` `mim:<subject>-<pair>`, device key `mim`),
-never with a photo taken outside the region of a species whose look varies by region (`fish.json` species `region`).
-The pair drilled: such a photo makes the unit it resembles, at the rank asked, a trap counted plausible (`mimUnit`,
+never with a photo taken outside the region of a species whose look varies by region (its `region`). The pair
+drilled: such a photo makes the unit it resembles, at the rank asked, a trap counted plausible (`mimUnit`,
 `mimTrap`); once its card is shown the families duel (`mimPairs`), and a duel or an Again after its mix-up shows the
 pair's species (`mimKeep`). LEARNING.md "The mimicry class".
 
