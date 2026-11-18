@@ -518,7 +518,7 @@ test('every decision record has its date, its PR, a decision, working links and 
     const head = /^Date: (\d{4}-\d\d-\d\d)\b.*?\bPR: #(\d+)/ms.exec(text);
     assert.ok(head, f + ': no "Date: YYYY-MM-DD. PR: #N." line');
     assert.strictEqual(head[1], f.slice(0, 10), f + ': its Date is not the date in its name');
-    assert.match(text, /^(## Decision\b|.*\bDecision\b:)/m, f + ': no Decision section');
+    assert.match(text, /^(## Decisions?\b|.*\bDecisions?\b:)/m, f + ': no Decision section');
     for (const m of text.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
       if (/^[a-z]+:/i.test(m[1])) continue;
       assert.ok(fs.existsSync(path.resolve(dir, m[1])), f + ': the link ' + m[1] + ' does not resolve');
