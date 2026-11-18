@@ -36,7 +36,7 @@ admin.html ── Pierre's choices ──> curation.json on main ──> GitHub 
 
 No framework, no package manager, no build step while developing: the repository's files are what a local server
 shows. The deploy (`pages.yml`) stamps version numbers and minifies the staged copy. Content is JSON (`data.json` for
-corals, `fish.json` and `seaslug.json` with their photo files). The Apps Script updates itself from `main`.
+corals, `fish.json` and `seaslug.json` with their photo files). The Apps Script updates itself from the `release` branch, which only the merge train moves.
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PAGES.md](docs/PAGES.md).
 
 ## Run it locally

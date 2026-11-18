@@ -1,0 +1,62 @@
+# The hourly health check (Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4"; docs/PAGES.md "Infrastructure health"): the live
+# site answers (index.html and data.json with their stamps), the sync sheet script answers its public read-only request
+# and reports its VERSION, and the infrastructure numbers are measured (tools/health.py). A failed check fails the job, which
+# GitHub e-mails (to the account that last changed this schedule); the job then opens an issue labelled `health` unless
+# one is already open. The script takes a few seconds (2.4 s by hand against the live site, 2026-11-18); with the runner's
+# checkout and Python setup a run is well under a minute. Read-only: the token below reads the repository and writes issues only;
+# no secret is given to the job (INFRA_TOKEN, which would add the sheet's cells, timings and the backup's age, is not
+# passed: an access decision for Pierre, docs/PAGES.md). The log of a public repository is public: tools/health.py prints
+# statuses, versions and sizes only.
+name: Health
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: health
+  cancel-in-progress: false
+jobs:
+  health:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      # Only what the check reads (sparse, no history): the script, the hand-measured figures, SYNC_URL in app.js, the sheet
+      # script's VERSION and the export-ignore list.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            tools/health.py
+            tools/infra.json
+            tools/sync/Code.gs
+            app.js
+            .gitattributes
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      - name: Health check (a failed check fails the job)
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/health.py --md "$RUNNER_TEMP/health.md"
+      # A failure opens one issue, not one an hour: nothing is written while a `health` issue is open (close it once fixed).
+      - name: Open an issue unless one is open
+        if: failure() && steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          open=$(gh issue list --label health --state open --json number --jq length)
+          if [ "$open" != "0" ]; then
+            echo "A health issue is already open: nothing written."
+            exit 0
+          fi
+          gh label create health --color D93F0B --description "The hourly health check failed" 2>/dev/null || true
+          { echo "The hourly health check failed: $RUN_URL"; echo; cat "$RUNNER_TEMP/health.md" 2>/dev/null || echo "(no report: the script stopped before writing one; see the run)"; } > "$RUNNER_TEMP/issue.md"
+          gh issue create --label health --title "Health check failed" --body-file "$RUNNER_TEMP/issue.md"

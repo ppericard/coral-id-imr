@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 179 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 181 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 179;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 181;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -312,6 +312,7 @@ function doPost_(e){
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readAlerts) return json_(readAlerts_(p.token));  // admin (v152): POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
+  if (p.readInfra) return json_(readInfra_(p.token));  // admin (v180): POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // v156: roles step 1
     if (!who) return json_({ok: false, error: 'token'});
@@ -2329,6 +2330,66 @@ function alertIds_(salt){
   if (sh && sh.getLastRow() > 1) new Set(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(w => w.indexOf('~anon ') === 0)).forEach(w => ids.add(aid_(w, salt)));
   return ids;
 }
+// POST {readInfra: 1, token} (v180; Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4": the infrastructure dashboard, the numbers
+// to watch before the platform outgrows its free tiers; docs/PAGES.md "Infrastructure health") → {ok, cells, answers, tim,
+// backup}. The instance's players right (gate_), never public. Read-only, no script lock, nothing written (not even an
+// Audit row: reads are not audited), no player, name, id or answer in the reply: counts, tab names (fixed words) and times.
+// - cells: Google's limit counts every cell of every tab's grid (rows x columns as allocated, what getMaxRows and
+//   getMaxColumns say, not only the filled ones), INFRA.CELLS (10 million) for the spreadsheet; the five tabs holding the
+//   most. answers: the Answers tab's filled rows and columns, and its grid.
+// - tim: the Timings tab (TIM) of the last INFRA.DAYS days per operation: calls (the rows' weights summed), the weighted
+//   median, 90th percentile and maximum of Ms (timSum_), slowest p90 first. A row stands for Weight calls (TIM.EVERY).
+// - backup: the Deploy log's last "pCloud backup:" line (backupLog_): when, whether it saved, and its text (a file name
+//   or why not; the log never holds the token or the code: backup_ scrubs them), and the last one that saved.
+const INFRA = {CELLS: 10000000, TOP: 5, DAYS: 7, OPS: 8, LOG: 500};
+function readInfra_(token){
+  if (!gate_(token, 'players', 'readInfra')) return {ok: false, error: 'token'};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), now = Date.now(), tabs = [];
+  let total = 0, answers = {rows: 0, cols: 0, cells: 0};
+  ss.getSheets().forEach(sh => {
+    let r = sh.getMaxRows(), c = sh.getMaxColumns();
+    if (!isFinite(r) || !isFinite(c)) { r = sh.getLastRow(); c = sh.getLastColumn(); }  // a stand-in without a grid
+    total += r * c;
+    tabs.push([String(sh.getName()).slice(0, 40), r, c]);
+    if (sh.getName() === 'Answers') answers = {rows: Math.max(0, sh.getLastRow() - 1), cols: sh.getLastColumn(), cells: r * c};
+  });
+  tabs.sort((a, b) => b[1] * b[2] - a[1] * a[2]);
+  const out = {ok: true, cells: {total: total, limit: INFRA.CELLS, tabs: tabs.length, top: tabs.slice(0, INFRA.TOP)}, answers: answers,
+    tim: {days: INFRA.DAYS, ops: []}, backup: {saved: null, last: null}};
+  try {
+    const t = ss.getSheetByName(TIM.TAB), n = t ? t.getLastRow() - 1 : 0;
+    if (n > 0) out.tim.ops = timSum_(t.getRange(2, 1, n, 7).getValues(), now - INFRA.DAYS * 864e5).slice(0, INFRA.OPS);
+  } catch (e) {}
+  try {
+    const d = ss.getSheetByName('Deploy log'), n = d ? d.getLastRow() - 1 : 0;
+    if (n > 0) {
+      const from = Math.max(2, n + 2 - INFRA.LOG), rows = d.getRange(from, 1, n + 2 - from, 2).getValues();
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const s = String(rows[i][1]);
+        if (s.indexOf('pCloud backup: ') !== 0 || /weekly trigger/.test(s)) continue;
+        const e = {at: new Date(rows[i][0]).getTime() || 0, ok: /^pCloud backup: saved /.test(s), text: s.slice(15, 135)};
+        if (!out.backup.last) out.backup.last = e;
+        if (e.ok) { out.backup.saved = e.at; break; }
+      }
+    }
+  } catch (e) {}
+  return out;
+}
+// The Timings tab's rows [Time, Op, Ms, Rows, Cols, Version, Weight] since a time, per operation: {op, n: calls (weights
+// summed), p50, p90, max: ms, weighted by the rows' weights}, the slowest 90th percentile first.
+function timSum_(rows, since){
+  const by = {};
+  rows.forEach(r => {
+    const t = new Date(r[0]).getTime(), ms = Number(r[2]), w = Number(r[6]) || 1, op = String(r[1]);
+    if (!(t >= since) || !(ms >= 0) || !op) return;
+    (by[op] = by[op] || []).push([ms, w]);
+  });
+  return Object.keys(by).map(op => {
+    const v = by[op].sort((a, b) => a[0] - b[0]), n = v.reduce((s, x) => s + x[1], 0);
+    const q = f => { let c = 0; for (let i = 0; i < v.length; i++) { c += v[i][1]; if (c >= f * n) return v[i][0]; } return v[v.length - 1][0]; };
+    return {op: op, n: Math.round(n), p50: q(0.5), p90: q(0.9), max: v[v.length - 1][0]};
+  }).sort((a, b) => b.p90 - a.p90);
+}
 
 // Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence
 // review's F5, docs/reviews/2026-11-06-engine-coherence-review.md, two formulas drift apart): the domain-score bar of a
@@ -3497,15 +3558,22 @@ function replayedAll_(users, dcol){
   });
 }
 // Self-update from GitHub (v11; Pierre, 2026-11-01: "find a way to redeploy the script without me"). A time trigger
-// (installAutoUpdate, run once by hand in the editor) calls autoUpdate every 15 minutes: when tools/sync/Code.gs on main
-// carries a higher VERSION, the script replaces its own code with it (and its manifest with tools/sync/appsscript.json),
+// (installAutoUpdate, run once by hand in the editor) calls autoUpdate every 15 minutes: when tools/sync/Code.gs on the
+// release branch carries a higher VERSION, the script replaces its own code with it (and its manifest with tools/sync/appsscript.json),
 // saves a new version and points the existing web app deployment(s) at it, through the Apps Script API with the
 // script's own OAuth token. The /exec URL never changes. Needs, once: the Apps Script API switched on in
 // https://script.google.com/home/usersettings, the manifest's scopes accepted (running installAutoUpdate asks), and a
 // first manual deploy of this version. A newer file without autoUpdate is never installed (it would end the updates);
-// every attempt that does something is written to the "Deploy log" tab. Anyone who can push to main can change this
-// script, exactly as they can change the site.
-const SELF_RAW = 'https://raw.githubusercontent.com/' + REPO + '/main/tools/sync/';
+// every attempt that does something is written to the "Deploy log" tab. Anyone who can push to the release branch can
+// change this script, and only the merge train (tools/train.py, rule W26) pushes it (from v181; Pierre, 2026-11-18, review R5
+// question h): the script installs the code a green train tested, never a commit that reached main without the train
+// (the admin's Publish, the Candidate photos workflow). Until the branch exists (GitHub answers 404 for it, and only for
+// that) the script reads main as before, so the first update that reads release cannot lose its way; any other answer
+// (a 5xx, a rate limit, no network) is a failed read, never a reason to take main's code. One branch per run: the
+// manifest comes from the branch that answered for Code.gs. The data files the script reads (data.json, curation.json,
+// the fish files) stay on main: they are data, and the admin's Publish and the photo workflow are how they change.
+const SELF_BRANCH = 'release', SELF_FALLBACK = 'main';
+const selfRaw_ = branch => 'https://raw.githubusercontent.com/' + REPO + '/' + branch + '/tools/sync/';
 // Run once by hand: makes the trigger, then checks right away that the Apps Script API answers this script (a project
 // whose hidden Cloud project can't use the API fails here, with what to do, instead of at the first real update).
 function installAutoUpdate(){
@@ -3527,8 +3595,11 @@ function autoUpdate(){
 function autoUpdate_(){
   const log = m => sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), String(m).slice(0, 500)]);
   try {
-    const get = f => UrlFetchApp.fetch(SELF_RAW + f + '?t=' + Date.now(), {muteHttpExceptions: true});
-    const src = get('Code.gs'); if (src.getResponseCode() !== 200) return 'github ' + src.getResponseCode();
+    let branch = SELF_BRANCH;  // v181: the release branch, main only while that branch does not exist
+    const get = f => UrlFetchApp.fetch(selfRaw_(branch) + f + '?t=' + Date.now(), {muteHttpExceptions: true});
+    let src = get('Code.gs');
+    if (src.getResponseCode() === 404) { branch = SELF_FALLBACK; src = get('Code.gs'); }
+    if (src.getResponseCode() !== 200) return 'github ' + src.getResponseCode();
     const code = src.getContentText(), m = /const VERSION = (\d+);/.exec(code), v = m ? Number(m[1]) : 0;
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
@@ -3547,11 +3618,11 @@ function autoUpdate_(){
       api('put', '/content', {files: files.map(f => ({name: f.name, type: f.type,
         source: f.type === 'SERVER_JS' ? code : f.name === 'appsscript' && man.getResponseCode() === 200 ? man.getContentText() : f.source}))});
     }
-    const dv = Math.max(v, pending), ver = api('post', '/versions', {description: 'v' + dv + ' from GitHub main'});
+    const dv = Math.max(v, pending), ver = api('post', '/versions', {description: 'v' + dv + ' from GitHub ' + branch});
     const deps = (api('get', '/deployments').deployments || []).filter(d => d.deploymentConfig && d.deploymentConfig.versionNumber && (d.entryPoints || []).some(e => e.entryPointType === 'WEB_APP'));
     deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
     props.deleteProperty('AUTO_PENDING');
-    log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update'));
+    log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update') + ', from ' + branch);
     return 'deployed v' + dv;
   } catch (e) { log('error: ' + e.message); return 'error'; }
 }
@@ -3707,7 +3778,7 @@ function over_(key, limit, n){
 // Backup of the whole spreadsheet to Pierre's pCloud (v139; Pierre, 2026-11-15: "OK, launch the pCloud backup PR";
 // docs/BACKUP.md). Once a week (trigger backupWeekly) and from the sheet's menu (Reef ID > Back up to pCloud now): every
 // tab is read here (SpreadsheetApp, the scope the script already has), written as one .xlsx built in the script (no
-// Drive export: that needs a Drive scope the manifest does not hold, and autoUpdate installs main's manifest as it is: a
+// Drive export: that needs a Drive scope the manifest does not hold, and autoUpdate installs the manifest as it is: a
 // scope added there is expected to stop the web app and the 15-minute trigger until Pierre authorises it; not tried, so
 // avoided), and uploaded server to server to pCloud's HTTP API
 // (UrlFetchApp, script.external_request, already granted) as reef-id-sheet-YYYY-MM-DD.xlsx in the folder

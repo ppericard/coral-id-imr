@@ -1542,6 +1542,22 @@
       }
       return ok({sha: 'demo' + SHA, content: b64(CUR), ...((opts.method || 'GET') === 'PUT' ? {content: {sha: 'demo' + SHA}} : {})});
     }
+    // The infrastructure card's two repository numbers (admin.js infraRepo): main's tree with made-up sizes (a 42% site) and
+    // R2's figure measured by hand (51%, five days ago).
+    if (/^\/git\/trees\/main\?recursive=1$/.test(path))
+      return ok({
+        truncated: false,
+        tree: [
+          {path: 'index.html', type: 'blob', size: 1000},
+          {path: 'made-up/big.bin', type: 'blob', size: 420000000},
+          {path: 'made-up', type: 'tree'}
+        ]
+      });
+    if (/^\/contents\/tools\/infra\.json/.test(path))
+      return ok({
+        sha: 'demo',
+        content: b64(JSON.stringify({r2: {bytes: 5100000000, at: new Date(NOW - 5 * DAY).toISOString().slice(0, 10)}}))
+      });
     // Another repository file, read only (the judging package's proposals: admin-light.js): the local copy.
     const fp = /^\/contents\/([\w./-]+?)(\?|$)/.exec(path);
     if (fp && (opts.method || 'GET') === 'GET' && !fp[1].includes('..')) {
@@ -1611,6 +1627,25 @@
       if (p.readEvents) return ok({ok: true, rows: (p.pages ? S.pages : S.events).map(r => r.slice())});
       // The Alerts tab (admin.js ALERTS_SHEET): an older script takes it for a progress write without a name ('input').
       if (p.readAlerts) return ok(V >= ALERTS_SHEET ? {ok: true, rows: S.alerts.map(r => r.slice())} : {ok: false, error: 'input'});
+      // The infrastructure numbers (admin.js INFRA_SHEET, Code.gs readInfra_): made-up figures, one past 70% of its limit.
+      if (p.readInfra)
+        return ok(
+          V >= INFRA_SHEET
+            ? {
+                ok: true,
+                cells: {total: 7400000, limit: 10000000, tabs: 31, top: [['Answers', 150000, 26]]},
+                answers: {rows: 41000, cols: 18, cells: 3900000},
+                tim: {
+                  days: 7,
+                  ops: [
+                    {op: 'read Answers', n: 1200, p50: 1400, p90: 2100, max: 5200},
+                    {op: 'save', n: 9800, p50: 600, p90: 900, max: 4100}
+                  ]
+                },
+                backup: {saved: NOW - 3 * DAY, last: {at: NOW - 3 * DAY, ok: true, text: 'saved reef-id-sheet-2026-11-15.xlsx'}}
+              }
+            : {ok: false, error: 'input'}
+        );
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
       // The light read (sheet v110).
@@ -1655,11 +1690,13 @@
             : 'events'
           : p.readAlerts
             ? 'alerts'
-            : p.readReports
-              ? 'reports'
-              : Object.keys(p)
-                  .filter(k => k !== 'token')
-                  .join(',');
+            : p.readInfra
+              ? 'infra'
+              : p.readReports
+                ? 'reports'
+                : Object.keys(p)
+                    .filter(k => k !== 'token')
+                    .join(',');
   };
   window.fetch = async (u, opts = {}) => {
     window.DEMO_PENDING++;

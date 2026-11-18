@@ -5,7 +5,8 @@ bringing each one up to date. The integrator's tool, run from its checkout of th
     python3 tools/train.py --dry-run 801 803 805   # check the PRs and build the train locally; pushes and merges nothing
     python3 tools/train.py 801 803 805             # the real run: in the background, it waits for CI (about 4 min)
 
-In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, never a force-push; nothing is re-run):
+In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch and moves `release`, never a force-push;
+nothing is re-run):
 1. Each PR, in the order given: open, based on main, not a draft, no `needs-pierre` label, from this repository, every
    check green on its head, no file left in tools/sync/changes/ (a PR that changes Code.gs gets its VERSION first:
    tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). The rest of
@@ -23,6 +24,12 @@ In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, 
    another merge landed meanwhile, it stops, and the PRs not merged yet go in a new train.
 6. Checks that main's tree is the train's: what was tested is what went live. If not, it says so (exit 2): test main
    and fix forward.
+7. Only then moves the `release` branch to the commit main ended on after the last merge (the one whose tree the train
+   tested), creating `release` when it is missing: a plain push, so it can only fast-forward, never a force-push. The
+   sheet script (tools/sync/Code.gs `autoUpdate`) installs its code from `release`, not from `main`, so it only ever
+   takes code a green train tested (Pierre, 2026-11-18; docs/rules/sheet.md D3). The train is the only thing that
+   pushes `release`: nobody else does, by hand or from a workflow. If that push is refused it says so (exit 3): main
+   is merged and fine, `release` stays where it was and the next train moves it.
 Environment: TRAIN_REPO (default ppericard/coral-id-imr), TRAIN_POLL (seconds between two looks at CI, default 20),
 TRAIN_WAIT (seconds before giving up on CI, default 1800).
 """
@@ -35,6 +42,7 @@ WAIT = float(os.environ.get('TRAIN_WAIT', '1800'))
 WORKFLOWS = ('Checks', 'Smokes')  # the workflows a train push runs (.github/workflows/checks.yml, smokes.yml)
 GREEN = {'success', 'skipped', 'neutral'}
 CHANGES = 'tools/sync/changes'
+RELEASE = 'release'  # the branch the sheet script updates itself from; only this train moves it
 
 
 class Stop(Exception):
@@ -160,6 +168,19 @@ def merge(n, sha, title, expect):
             time.sleep(POLL)
 
 
+def move_release(top, sha):
+    """Moves `release` to sha (main's commit after the last merge, whose tree the train tested): creates it when missing,
+    else a fast-forward. A plain push, never forced; the remote refuses anything but a fast-forward. Returns what it did."""
+    git('fetch', '-q', 'origin', 'main', cwd=top)  # sha is on main: have its objects here to push it
+    git('cat-file', '-e', sha + '^{commit}', cwd=top)
+    old = git('ls-remote', 'origin', 'refs/heads/' + RELEASE, cwd=top).split()
+    old = old[0] if old else ''
+    if old == sha:
+        return '%s is already at %s.' % (RELEASE, sha[:7])
+    git('push', '-q', 'origin', '%s:refs/heads/%s' % (sha, RELEASE), cwd=top)
+    return '%s %s: the sheet script takes its code from here.' % (RELEASE, 'moved %s -> %s' % (old[:7], sha[:7]) if old else 'created at ' + sha[:7])
+
+
 def run(numbers, dry):
     top = git('rev-parse', '--show-toplevel')
     git('fetch', '-q', 'origin', 'main', cwd=top)
@@ -178,8 +199,8 @@ def run(numbers, dry):
         say('Train on main %s: %s' % (base[:7], ', '.join('#%s %s' % (n, sha[:7]) for n, sha, _ in prs)))
         say('Train %s, tree %s' % (train[:7], tree[:7]))
         if dry:
-            say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order and compare main\'s tree.'
-                % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs)))
+            say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order, compare main\'s tree and move %s to the commit main ends on.'
+                % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs), RELEASE))
             return 0
         git('push', '-q', 'origin', 'HEAD:refs/heads/' + branch, cwd=wt)
         say('Pushed %s; waiting for %s.' % (branch, ' and '.join(WORKFLOWS)))
@@ -205,6 +226,11 @@ def run(numbers, dry):
         say('✗ main %s has tree %s, the train tested %s: test main now and fix forward.' % (expect[:7], got[:7], tree[:7]))
         return 2
     say('main %s: its tree is the train\'s, what was tested is what went live.' % expect[:7])
+    try:
+        say(move_release(top, expect))
+    except Stop as e:
+        say('✗ %s not moved (%s). main is merged and fine; %s stays where it was: the next train moves it, or ask why the push was refused.' % (RELEASE, e, RELEASE))
+        return 3
     return 0
 
 
