@@ -4102,6 +4102,242 @@ async function basicsFit(b, base) {
   return fails;
 }
 
+// Fish basics (Pierre, 2026-11-04; proto/fishbasics.js), the fish twin of Coral basics on the same engine: the first Learn
+// tab on the fish, the "0" block of the families page with its six-stop trail, the Home line and the first-launch offer for
+// "new", every step and view drawn and fitting the screen (rule U2: the drawing at most 45% of the height, nothing wider
+// than the screen), the groups from the key with photos that enlarge, the checks, done = every step seen in its own record
+// and feat (the corals' untouched), the Home line gone once done, the corals' Coral basics unaffected. Photos are not
+// fetched (every other host is aborted): the logic and the layout. Returns the failures.
+async function fishBasicsCheck(b, base) {
+  const fails = [];
+  const STEPS = ['shape', 'groups', 'fins', 'tails', 'marks', 'features'];
+  for (const [w, h] of [
+    [390, 844],
+    [768, 1024],
+    [1280, 800]
+  ]) {
+    const W = `Fish basics ${w}px:`,
+      c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      try {
+        if (sessionStorage.getItem('fb-init')) return;
+        sessionStorage.setItem('fb-init', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+      } catch (e) {}
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    p.on('console', m => {
+      if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
+    });
+    await p.goto(base + '#home');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    // Home: the line for a player new to reef fish, in the fish's words.
+    const home = await p.evaluate(() => {
+      const a = document.querySelector('.hdoor.learn .hdnew a, .hdoor.learn .hdnewk');
+      return a ? {href: a.getAttribute('href'), text: a.textContent} : null;
+    });
+    if (!home || home.href !== '#fish/learn/basics' || !/New to reef fish\?/.test(home.text))
+      fails.push(`${W} Home's line ${JSON.stringify(home)}`);
+    // The families page: the "0" block, the trail from the first step, its card opening step 1.
+    await p.evaluate(() => (location.hash = 'fish/learn/families'));
+    await p.waitForSelector('.gbasics .bxcard, .gbasics .bxtip', {timeout: 20000}).catch(() => fails.push(`${W} no Fish basics block`));
+    const card = await p.evaluate(() => {
+      const s = document.querySelector('.gbasics');
+      return s
+        ? {
+            title: (s.querySelector('.gt') || {}).textContent,
+            stops: s.querySelectorAll('.bxt-stop').length,
+            next: (s.querySelector('.bxt-lab.is-next') || {}).textContent,
+            href: (s.querySelector('a[href*="basics"]') || {}).getAttribute && s.querySelector('a[href*="basics"]').getAttribute('href'),
+            first:
+              (document.querySelector('.tiplist .gblk') || {}).classList &&
+              document.querySelector('.tiplist .gblk').classList.contains('gbasics'),
+            tabs: [...document.querySelectorAll('#modes a')].map(a => a.getAttribute('href') + ' ' + a.textContent.trim())
+          }
+        : null;
+    });
+    if (
+      !card ||
+      card.title !== 'Fish basics' ||
+      card.stops !== STEPS.length ||
+      !/^Start: Body shape/.test(card.next || '') ||
+      card.href !== '#fish/learn/basics/shape' ||
+      !card.first ||
+      !/^#fish\/learn\/basics /.test(card.tabs[0] || '') ||
+      !/Fish basics|Basics/.test(card.tabs[0])
+    )
+      fails.push(`${W} the families page's block ${JSON.stringify(card)}`);
+    // Not done before any step was seen; then every step and every view: drawn, labelled, fitting, its check answered.
+    if (await p.evaluate(() => basicsDone() || !!localStorage.getItem(basicsKey()))) fails.push(`${W} done before any step was seen`);
+    for (const st of STEPS) {
+      await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
+      await p.waitForSelector('.bx .bx-picks button', {timeout: 15000}).catch(() => fails.push(`${W} ${st}: no picker`));
+      const n = await p.$$eval('.bx-picks button', L => L.length);
+      for (let k = 0; k < n; k++) {
+        await p.click(`.bx-picks button >> nth=${k}`);
+        const m = await p.evaluate(() => {
+          const f = document.querySelector('.bx-vfig'),
+            g = f && (f.querySelector('.bx-gfam') || f.querySelector('svg')),
+            r = g && g.getBoundingClientRect();
+          return {
+            h: r ? Math.round(r.height) : 0,
+            say: ((document.querySelector('.bx-wsay') || {}).textContent || '').trim(),
+            wide: document.documentElement.scrollWidth > innerWidth + 1,
+            alt: !g || g.tagName !== 'svg' || !!g.getAttribute('aria-label')
+          };
+        });
+        if (!m.h || !m.say) fails.push(`${W} ${st} view ${k}: nothing drawn ${JSON.stringify(m)}`);
+        // A drawing at most 45% of a phone's or tablet's height, 62% of a desktop's (as Coral basics' photo, rule U2).
+        if (st !== 'groups' && m.h > h * (w < 1000 ? 0.45 : 0.62) + 1) fails.push(`${W} ${st} view ${k}: the drawing is ${m.h}px of ${h}`);
+        if (m.wide) fails.push(`${W} ${st} view ${k}: wider than the screen`);
+        if (!m.alt) fails.push(`${W} ${st} view ${k}: a drawing without its text alternative`);
+      }
+      // The step's check, answered (a drawing, a choice or the groups' photo): its feedback and report button, and the
+      // whole check on one screen between the header and the tab bar (rule U2; as basicsFit for Coral basics).
+      const ck = await p.evaluate(() => {
+        const d = document.querySelector('.bx-check');
+        if (d) d.open = true;
+        return !!document.querySelector('.bx-q .choice');
+      });
+      if (!ck) fails.push(`${W} ${st}: no check`);
+      else {
+        await p.click('.bx-q .choice >> nth=0');
+        const m = await p.evaluate(() => {
+          const top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight,
+            sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+            fb = document.querySelector('.bx-q .bx-fb');
+          return {
+            check: Math.round(fb.getBoundingClientRect().bottom - sum.top),
+            room: Math.round(tb - top),
+            text: fb.textContent.trim().length,
+            rep: !!fb.querySelector('[data-rep]')
+          };
+        });
+        if (!m.text) fails.push(`${W} ${st}: no feedback after the answer`);
+        if (!m.rep) fails.push(`${W} ${st}: no report button after the answer (rule U14)`);
+        if (w < 1000 && m.check > m.room) fails.push(`${W} ${st}: the answered check takes ${m.check}px, only ${m.room}px on screen`);
+      }
+    }
+    // The groups come from the key: numbers and titles of fish.json, only the groups with families, their families as tiles.
+    await p.evaluate(() => (location.hash = 'fish/learn/basics/groups'));
+    await p.waitForSelector('.bx-gfam figure', {timeout: 15000}).catch(() => fails.push(`${W} groups: no family tile`));
+    const grp = await p.evaluate(() => {
+      const picks = [...document.querySelectorAll('.bx-picks button')].map(x => Number(x.textContent));
+      const key = ((FISH || {}).groups || []).filter(g => slateGenera().some(n => GX(n).group === g.n)).map(g => g.n);
+      return {
+        picks,
+        key,
+        tiles: document.querySelectorAll('.bx-gfam figure').length,
+        cite: /Allen/.test(document.querySelector('.bx-off').textContent)
+      };
+    });
+    if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
+      fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
+    // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
+    for (const st of STEPS) {
+      await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
+      await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+      // the "Next: <view>" button goes through the views of a step, then the step's own next
+      for (let k = 0; k < 8 && (await p.$('.bx-wnext')); k++) await p.click('.bx-wnext');
+    }
+    const done = await p.evaluate(() => {
+      const st = JSON.parse(localStorage.getItem('reefid-fish-basics') || '{}'),
+        a = JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}');
+      return {
+        fin: !!st.fin,
+        seen: Object.keys(st.seen || {}).length,
+        feat: !!a._fbasics,
+        coralFeat: !!a._basics,
+        coralKey: localStorage.getItem('reefid-basics'),
+        done: basicsDone()
+      };
+    });
+    if (!done.fin || done.seen !== STEPS.length || !done.feat || !done.done)
+      fails.push(`${W} not done after every step: ${JSON.stringify(done)}`);
+    if (done.coralFeat || done.coralKey) fails.push(`${W} Coral basics touched by Fish basics: ${JSON.stringify(done)}`);
+    await p.evaluate(() => (location.hash = 'home'));
+    await p.waitForSelector('.hdoor.learn', {timeout: 15000});
+    if (await p.$('.hdoor.learn .hdnew, .hdoor.learn .hdnewk')) fails.push(`${W} the Home line stays once Fish basics is done`);
+    // The Tools page lists its graduated tool under the name of the subject on screen's module, never both, and no tile for it.
+    await p.evaluate(() => (location.hash = 'tools'));
+    await p.waitForSelector('.labgrad', {timeout: 15000}).catch(() => fails.push(`${W} the Tools page does not open`));
+    const tools = await p.evaluate(() => ({
+      links: [...document.querySelectorAll('.labgrad a')].map(a => a.getAttribute('href') + ' ' + a.querySelector('b').textContent),
+      tile: !!document.querySelector('.labhub a[href*="basics"]')
+    }));
+    if (tools.tile || !tools.links.includes('#fish/learn/basics Fish basics') || tools.links.some(x => /Coral basics/.test(x)))
+      fails.push(`${W} the Tools page: ${JSON.stringify(tools)}`);
+    // The corals still offer theirs: their record is their own.
+    const cor = await p.evaluate(() => {
+      const S = SUBJECTS[0];
+      return [basicsDone(S), basicsKey(S)];
+    });
+    if (cor[0] || cor[1] !== 'reefid-basics') fails.push(`${W} Coral basics wrongly done: ${JSON.stringify(cor)}`);
+    if (errs.length) fails.push(`${W} ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // The first-launch offer for "new" (and the check of the groups, answered right then wrong).
+  {
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      try {
+        if (sessionStorage.getItem('fb-init')) return;
+        sessionStorage.setItem('fb-init', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-nudge', '1');
+      } catch (e) {}
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base + '#fish/practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.unlock.startq', {timeout: 15000}).catch(() => fails.push('Fish basics: the welcome question is not asked'));
+    await p.click('.unlock.startq [data-start="new"]').catch(() => {});
+    await p.waitForSelector('.unlock.basicsq', {timeout: 10000}).catch(() => fails.push('new to reef fish: no Fish basics offer'));
+    const offer = await p.evaluate(() => {
+      const d = document.querySelector('.unlock.basicsq');
+      return d
+        ? {title: (d.querySelector('h2, .ultitle, h3') || {}).textContent, text: d.textContent, basics: !!d.querySelector('[data-basics]')}
+        : null;
+    });
+    if (
+      !offer ||
+      !/Start with Fish basics\?/.test(offer.text) ||
+      !/New to reef fish/.test(offer.text) ||
+      !offer.basics ||
+      /coral/i.test(offer.text)
+    )
+      fails.push(`new to reef fish: the offer ${JSON.stringify(offer)}`);
+    if (offer) {
+      await p.click('.unlock.basicsq [data-basics]');
+      await p
+        .waitForFunction(() => location.hash === '#fish/learn/basics' && document.querySelector('.bx .bx-picks'), null, {timeout: 15000})
+        .catch(() => fails.push('the offer does not open Fish basics'));
+    }
+    if (errs.length) fails.push(`Fish basics offer: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
+
 // Coral basics, Pierre's feedback of 2026-11-03: step 4 defines costae beside septa (a term of its own, a label in its own
 // colour outside the cup's rim, the septa label inside it, the centre on the cup's centre); step 6 shows the four wall
 // types one after the other, "Next: Growth forms" only after the fourth, the check opening then; step 7 picks a form on a
@@ -6021,6 +6257,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('credits')) for (const f of await credits(b, base)) fails.push(f);
   if (run.has('visit')) for (const f of await pagesVisit(b, base)) fails.push(f);
   if (run.has('basics')) for (const f of await basicsTeach(b, base)) fails.push(f);
+  if (run.has('basics')) for (const f of await fishBasicsCheck(b, base)) fails.push(f);
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
   if (run.has('tips')) for (const f of await customLeftCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);

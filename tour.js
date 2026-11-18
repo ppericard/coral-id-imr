@@ -216,7 +216,7 @@
           : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
     b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
       <div class="tnav">${forced ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
-      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${forced && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? 'Coral basics (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
+      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${forced && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? basicsWords().name + ' (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
     // Picked: kept on this device and synced (SUBJECT_KEY, as the switch does), the subject's data loaded and every page
     // redrawn for it (setSubject), then the next step: that subject's question. The buttons wait meanwhile (fish.json on a
     // slow line); a failed load leaves the choice open.

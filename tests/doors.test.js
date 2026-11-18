@@ -166,6 +166,7 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
     store: {get: (k, d) => d},
     startKey: () => 'k',
     basicsDue: () => true,
+    basicsWords: () => ({ask: 'New to corals?'}), // app.js: the subject's basics words (UNITS basics)
     CHOICE: {ASK: 20},
     SUBJ: {id: 'coral', many: 'genera'},
     UNITS: {coral: {identify: 'idkey'}},

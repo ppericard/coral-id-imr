@@ -54,11 +54,11 @@ In the admin, Inbox › To do › Points (from [`points.json`](../points.json), 
 
 ## Setting up to work, and what lives outside GitHub
 
-Nothing needs rebuilding: the site is served by GitHub Pages from `main` through `pages.yml`, so a merged PR triggers deployment. The Pages source must be GitHub Actions; see [PAGES.md](PAGES.md) for the workflows and recovery. There is no build step and no package manager. What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
+Nothing needs rebuilding: the site is served by GitHub Pages from `main` through `pages.yml`, so a merged PR triggers deployment. The Pages source must be GitHub Actions; see [PAGES.md](PAGES.md) for the workflows and recovery. Development has no build step and no package manager (the deploy minifies and stamps versions: PAGES.md "The build at deploy"). What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
 
 **Working copy (any machine or cloud container):**
 1. Clone `https://github.com/ppericard/coral-id-imr` (public). **A clone or worktree made before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: its commits would bring the old photos back): clone again. Python 3 (CI: 3.15), Node (CI: 26, the current LTS) and Playwright 1.65.1 with its Chromium are all you need (the versions CI pins: `.github/workflows/checks.yml`).
-2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?demo> (admin without a token, every page on made-up data, nothing sent; `?readonly` shows the real curation instead). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
+2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?demo> (admin without a token, every page on made-up data, nothing sent; `?readonly` shows the real curation instead). A local copy (`localhost`, `file:` or a webdriver browser) never signs in, saves or sends to the sheet (`app.js` `LOCAL`, `sheetFetch`); only the photo statistics (`sync.js`, a plain read) and the R2 photos reach live services.
 3. Check: `node tests/run.js` (the unit tests, in the machine slot: rule W24), `node tests/pages.smoke.js`, `node tests/draw.smoke.js`, `node tests/admin.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py` (consistency only: the deploy stamps the version numbers, the integrator assigns the sheet's `VERSION` at merge).
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need Pillow for photo work: `pip install --require-hashes -r tools/requirements.txt` (the version and file hashes CI pins).
 
@@ -160,7 +160,7 @@ Paste this into the new Claude Code session (repository `ppericard/coral-id-imr`
 
 ```
 You are taking over development of ppericard/coral-id-imr, a static web app (GitHub Pages)
-that teaches the IMR coral genera to Research Assistants at the Institute for Marine Research,
+that teaches the IMR coral genera, reef fish and sea slugs to Research Assistants at the Institute for Marine Research,
 Dauin, Philippines. Previous work happened in another Claude account; you have no access to its
 memory or chats. Everything you need is in the repo.
 

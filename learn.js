@@ -27,8 +27,8 @@ let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
 // Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
 // page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
 // It always opens step 1 (Pierre, 2026-11-04: a card at the start of the path starts the path); the Basics tab, Home and
-// the quiz's offers open #learn/basics, which resumes at the last step seen.
-const BASICS_STEPS = 7;
+// the quiz's offers open #learn/basics, which resumes at the last step seen. The same card opens a subject's own module
+// (UNITS basics: name, card, trail; Fish basics' is the first block of the families page, viewFishList).
 // The card's picture (Pierre, 2026-11-04, mockup A3 of four proposals): the seven steps as a trail of line drawings,
 // from the colony down to the septal teeth and back out to the growth forms, each stop a soft disc in its own colour
 // (--bt1…--bt7, reef blue to coral orange; app.css). Stops seen: tinted, with a ✓; the next one: a deeper tint, a ring and
@@ -72,19 +72,42 @@ const BASICS_AT = [
   [200, 212],
   [86, 212]
 ];
+// Fish basics' trail (proto/fishbasics.js steps, Pierre 2026-11-04: the same component): six stops, three along the top
+// and three back along the bottom (Tails under Fins), in the colours --bt1…--bt6.
+const BASICS_TRAIL_F = [
+  ['shape', 'Body shape', '<path d="M2.5 12c3-5 10-6 14-2.5l5-3v11l-5-3C12.5 18 5.5 17 2.5 12z"/><circle cx="7" cy="11" r=".9"/>'],
+  [
+    'groups',
+    'Groups',
+    '<rect x="3.5" y="4" width="7" height="7" rx="1.5"/><rect x="13.5" y="4" width="7" height="7" rx="1.5"/><rect x="3.5" y="13" width="7" height="7" rx="1.5"/><rect x="13.5" y="13" width="7" height="7" rx="1.5"/>'
+  ],
+  ['fins', 'Fins', '<path d="M5 20c0-8 5-14 14-16-1 8-6 14-14 16z"/><path d="M8.5 16.5l7-7"/>'],
+  ['tails', 'Tails', '<path d="M3 12h5"/><path d="M8 12 20 5l-4 7 4 7z"/>'],
+  ['marks', 'Markings', '<path d="M2.5 12c3-5 10-6 14-2.5l5-3v11l-5-3C12.5 18 5.5 17 2.5 12z"/><path d="M8 8.4v7.2M12 7.6v8.4"/>'],
+  ['features', 'Key features', '<circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>']
+];
+const BASICS_AT_F = [
+  [60, 76],
+  [190, 76],
+  [320, 76],
+  [320, 212],
+  [190, 212],
+  [60, 212]
+];
 function basicsArt() {
+  const {stops: TRAIL, at, turn} = basicsWords().trail();
   // Done on another device (the synced achievement) counts every stop as seen.
   const done = basicsDone(),
-    seen = (store.get(BASICS_KEY, {}) || {}).seen || {},
-    next = BASICS_TRAIL.findIndex(s => !seen[s[0]]),
-    st = BASICS_TRAIL.map((s, i) => (done || seen[s[0]] ? 'is-seen' : i === next ? 'is-next' : 'is-todo')),
-    at = BASICS_AT,
+    seen = (store.get(basicsKey(), {}) || {}).seen || {},
+    next = TRAIL.findIndex(s => !seen[s[0]]),
+    st = TRAIL.map((s, i) => (done || seen[s[0]] ? 'is-seen' : i === next ? 'is-next' : 'is-todo')),
     c = i => `var(--bt${i + 1})`;
-  // From one stop to the next: straight along a row, a curve down the right side from Septa to Teeth; in the colours of
-  // its two stops once the second is reached, dotted before.
+  // From one stop to the next: straight along a row, a curve down the right side where the trail turns back (Septa to
+  // Teeth); in the colours of its two stops once the second is reached, dotted before.
   const way = i => {
     const [a, b] = [at[i], at[i + 1]];
-    const d = i === 3 ? `M${a[0]} ${a[1]}C${a[0] + 62} ${a[1]} ${b[0] + 76} ${b[1]} ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`;
+    const d =
+      i === turn ? `M${a[0]} ${a[1]}C${a[0] + 62} ${a[1]} ${b[0] + 76} ${b[1]} ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`;
     return st[i + 1] === 'is-todo'
       ? `<path class="bxt-way" d="${d}"/>`
       : `<linearGradient id="bxg${i}" gradientUnits="userSpaceOnUse" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"><stop offset="0" style="stop-color:${c(i)}"/><stop offset="1" style="stop-color:${c(i + 1)}"/></linearGradient><path class="bxt-way on" d="${d}" style="stroke:url(#bxg${i})"/>`;
@@ -99,22 +122,21 @@ function basicsArt() {
   return `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 400 300">${at
     .slice(0, -1)
     .map((_, i) => way(i))
-    .join('')}${BASICS_TRAIL.map(stop).join('')}</svg>${BASICS_TRAIL.map(lab).join('')}</span>`;
+    .join('')}${TRAIL.map(stop).join('')}</svg>${TRAIL.map(lab).join('')}</span>`;
 }
 function basicsCard(tips) {
-  const n = Object.keys((store.get(BASICS_KEY, {}) || {}).seen || {}).length,
+  const W = basicsWords(),
+    TRAIL = W.trail().stops,
+    N = TRAIL.length,
+    n = Object.keys((store.get(basicsKey(), {}) || {}).seen || {}).length,
     done = basicsDone(),
-    state = done
-      ? '✓ Done'
-      : n
-        ? `${Math.min(n, BASICS_STEPS - 1)} of ${BASICS_STEPS} steps seen`
-        : `${BASICS_STEPS} short steps · about 5 min`,
-    say = 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
+    state = done ? '✓ Done' : n ? `${Math.min(n, N - 1)} of ${N} steps seen` : `${N} short steps · about 5 min`,
+    say = W.card,
     art = basicsArt(),
-    to = hr('basics|' + BASICS_TRAIL[0][0]);
+    to = hr('basics|' + TRAIL[0][0]);
   return tips
-    ? `<article class="tipg bxtip"><a href="${to}" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
-    : `<a class="card bxcard${done ? ' done' : ''}" href="${to}">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
+    ? `<article class="tipg bxtip"><a href="${to}" class="tipph">${art}<i>${esc(W.name)}</i></a><div><p class="note">${state}</p><p>${esc(say)}</p></div></article>`
+    : `<a class="card bxcard${done ? ' done' : ''}" href="${to}">${art}<span class="cap"><b>${esc(W.name)}</b><small>${state}</small><p>${esc(say)}</p></span></a>`;
 }
 function viewGenera() {
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
@@ -752,8 +774,7 @@ function viewCompare(a, b) {
 // credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
 // stay a surprise. Each entry opens its family's sheet (viewFishSheet, below; an IMR entry by the family it was renamed into).
 function viewFishList() {
-  // Each photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06: a tap did nothing);
-  // the family and species sheets are a later project (docs/ROADMAP.md).
+  // Each photo enlarges in the shared viewer, as the coral photos do (a tap on a photo opens it).
   const flat = [];
   const tip = n => {
     const g = GX(n),
@@ -833,7 +854,11 @@ function viewFishList() {
     UNITS[SUBJ.id].lede ||
     `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and IMR’s names. Photos: iNaturalist and FishBase.`;
   const tx = !key && UNITS[SUBJ.id].listBy && FISH.taxa;
-  $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack${tx ? ' gtaxa' : ''}">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : tx ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>` : ''}`;
+  // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups (Pierre, 2026-11-04).
+  const bas = SUBJ.pages.includes('basics')
+    ? `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the groups"><span class="gn">0</span><span class="gt">${esc(basicsWords().name)}</span></h3>${basicsCard(true)}</section>`
+    : '';
+  $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack${tx ? ' gtaxa' : ''}">${[bas, ...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : tx ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
   $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }

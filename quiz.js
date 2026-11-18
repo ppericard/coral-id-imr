@@ -2035,20 +2035,22 @@ function startAskShow(cur) {
   });
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
 }
-// "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
-// is not done, and only for a subject that has one (app.js basicsDue: no Fish basics yet). Returns whether it showed.
+// "I'm new to corals" (CHOICE v.basics): the subject's basics module (Coral basics, Fish basics) offered first, about 5
+// minutes, then the quiz. Only while the module is not done, and only for a subject that has one (app.js basicsDue), in
+// its words (UNITS basics). Returns whether it showed.
 function startBasicsOffer(cur) {
   if (!startV().basics || !basicsDue()) return false;
+  const W = basicsWords();
   cardShow({
     kind: 'tip',
     cls: 'startq basicsq',
-    kick: 'New to corals',
-    title: 'Start with Coral basics?',
-    body: '<p>Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.</p>',
-    primary: {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')},
+    kick: W.kick,
+    title: `Start with ${W.name}?`,
+    body: `<p>${esc(W.offer)}</p>`,
+    primary: {text: `${W.name} (5 min)`, attr: 'data-basics', on: () => go('basics')},
     secondary: {text: 'Start the quiz', on: () => quizPhoto(cur)},
     esc: 2, // Escape: the quiz
-    note: 'Learn › Coral basics, any time.'
+    note: `Learn › ${W.name}, any time.`
   });
   return true;
 }
@@ -2072,12 +2074,12 @@ function startFbShow(dir) {
           kind: 'tip',
           cls: 'startfb',
           kick: 'A tip',
-          title: all ? `All the ${SUBJ.many} at once is a lot` : 'The first genera feel hard?',
+          title: all ? `All the ${SUBJ.many} at once is a lot` : `The first ${SUBJ.many} feel hard?`,
           label: 'Your start',
           body: all
-            ? `<p>${SUBJ.what} basics in 5 minutes? It shows, on real photos, the few words the ID tips use.</p>`
-            : '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
-          primary: {text: 'Coral basics in 5 minutes', attr: 'data-basics', on: () => (startEase(), go('basics'))},
+            ? `<p>${esc(basicsWords().name)} in 5 minutes? ${esc(basicsWords().all)}</p>`
+            : `<p>They do for most people. ${esc(basicsWords().lo)}</p>`,
+          primary: {text: `${basicsWords().name} in 5 minutes`, attr: 'data-basics', on: () => (startEase(), go('basics'))},
           secondary: {text: 'No thanks, I know the basics', attr: 'data-keep'},
           esc: 2, // Escape: no thanks
           onClose: () => topUp()

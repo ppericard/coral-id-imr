@@ -3117,13 +3117,14 @@ async function freshPlayers(b, base, errs) {
     )
       welcome.push(`welcome card: ${JSON.stringify(card)}`);
     await q.click(`.unlock.startq [data-start="${pick}"]`);
-    await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000}).catch(() => {});
+    // "I'm new to reef fish": Fish basics offered first (Pierre, 2026-11-04), then the quiz; the other answers go straight on.
+    await q.waitForFunction(() => document.querySelector('#view .q, .unlock.basicsq'), null, {timeout: 15000}).catch(() => {});
     const after = await q.evaluate(() => ({
       fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
       coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
       p: startV().p,
       basics: !!document.querySelector('.unlock.basicsq'),
-      card: !!document.querySelector('.unlock.startq'),
+      card: !!document.querySelector('.unlock.startq:not(.basicsq)'), // the question's card (the basics offer is one too)
       q: !!document.querySelector('#view .q')
     }));
     const v = await q.evaluate(c => startVars(c), pick);
@@ -3131,7 +3132,17 @@ async function freshPlayers(b, base, errs) {
       welcome.push(`${pick}: the fish record ${JSON.stringify(after.fish)}`);
     if (!after.coral || after.coral.c !== 'know') welcome.push(`${pick}: the coral answer changed ${JSON.stringify(after.coral)}`);
     if (after.p !== v.p) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, v])}`);
-    if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
+    if (after.basics !== (pick === 'new') || after.card || after.q === (pick === 'new'))
+      welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
+    if (pick === 'new') {
+      // The offer is Fish basics, in the fish's words, and "Start the quiz" goes on to the first question.
+      const offer = await q.evaluate(() => (document.querySelector('.unlock.basicsq') || {}).textContent || '');
+      if (!/Start with Fish basics\?/.test(offer) || /coral/i.test(offer)) welcome.push(`new: the basics offer ${JSON.stringify(offer)}`);
+      await q.click('.unlock.basicsq .next.sec');
+      await q
+        .waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000})
+        .catch(() => welcome.push('new: Start the quiz does not open the quiz'));
+    }
     await c7.close();
   }
   // (11) The fish beta invitation (progress.js subjHello, app.js UNITS hello.group; Pierre, 2026-11-05: "a proper card the

@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 181 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 183 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 181;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 183;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -4445,8 +4445,11 @@ const CORE_ = (function () { const module = {exports: {}};
       // quality, sharpness, source, from data.json, curation.json, quality.json and metrics.json). The admin's words for
       // its units are its one and many.
       analyses: {photos: true},
-      // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
+      // basics: Coral basics (proto/basics.js), step 0 of the Learn path. Its record stays on the device (subjDev 'basics':
+      // reefid-basics, cleared with the progress at sign-out) and its done feat is in the synced achievements record
+      // (basics.feat), read by app.js basicsDone; a subject whose pages hold no 'basics' has none.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      basics: {feat: '_basics'},
       // The text slots its content editor may edit on a genus sheet (docs/reviews/2026-11-14-sheet-overlay-design.md v2,
       // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
       // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
@@ -4595,7 +4598,10 @@ const CORE_ = (function () { const module = {exports: {}};
       // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
       // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
-      pages: ['genera', 'sheet', 'quiz'],
+      // basics: Fish basics (proto/fishbasics.js, Pierre 2026-11-04: the twin of Coral basics), step 0 of the Learn path;
+      // its own record (reefid-fish-basics) and done feat (the corals' are not touched by it).
+      pages: ['basics', 'genera', 'sheet', 'quiz'],
+      basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
       // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
@@ -4646,11 +4652,11 @@ const CORE_ = (function () { const module = {exports: {}};
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
-      // profiles later). No Fish basics yet (pages): "new" offers none until it exists.
+      // profiles later). "new" offers Fish basics first (pages 'basics', as the corals' offers Coral basics).
       start: {
         q: 'How well do you know reef fish?',
         opts: {
-          new: ['I’m new to reef fish', 'Start from scratch: a few easy families first.'],
+          new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
           imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }

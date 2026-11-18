@@ -14,7 +14,8 @@ phones, often on a slow line.
   things as you master the old. Questions come as photo to name (choices, or typed), "Again: A or B?", look-alike
   duels and, for fish, "Find the X" (name to photos). A silent exam decides when something is learned. No level selector.
 - **Learn.** Corals: Coral basics, the Genera page, a sheet per genus (three photo views, IMR lecture notes,
-  look-alikes), Look-alikes; fish and sea slugs: a list and a sheet for each unit, from family down. Corals also have a custom quiz,
+  look-alikes), Look-alikes; fish: Fish basics (what to look at first: body shape, groups, fins, tails, markings), then a list and a
+  sheet for each unit, from family down; sea slugs: a list and a sheet for each unit. Corals also have a custom quiz,
   look-alike duels and a memory game.
 - **Identify.** The Coral ID Key: tap the clues you see, get a ranked shortlist. (A fish key is not built yet.)
 - **Live mode.** A trainer and a class answer the same photo questions together (`#live`).
