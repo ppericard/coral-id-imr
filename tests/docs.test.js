@@ -567,7 +567,7 @@ const DOC_BUDGET = {
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
-  'docs/LEARNING.md': [179, 370],
+  'docs/LEARNING.md': [175, 320],
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],

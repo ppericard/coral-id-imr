@@ -11,8 +11,8 @@ this file explains why it works that way.
 
 ## What each number measures (read this first)
 
-Pierre, 2026-11-12, after two agents read a player's success rate as their level: what each figure of the game and of
-the answer log says, and what it never says. Any analysis of players (rule L12) starts from here.
+What each figure of the game and of the answer log says, and what it never says. Any analysis of players (rule L12)
+starts from here, before it reads a success rate as a level.
 
 - **Success rate** (right %, over any window): **not a level.** The engine holds it near its aim on purpose: each
   question's format and photo are chosen so its expected success hits the aim (the difficulty controller, "One
@@ -26,14 +26,12 @@ the answer log says, and what it never says. Any analysis of players (rule L12) 
   overall or over a window) is the figure that compares players and moments: below 0, the model is too optimistic.
 - **The player's level**: the **global level** `P['~level'].th` (an Elo on the photo-difficulty scale, 0 = an average
   photo; shown as 1000 + 200 × th once `ELO_MIN` = 200 answers are in: "Ability per genus (Elo) and the global level").
-  Simulated at 50 answers: a beginner about −0.9, an RA who knows 60% of the genera −0.2, 80% +0.8, an expert +1.2
-  ("The first-launch question"). The sheet keeps its own chain `R` (the admin's level, the photo ratings' player term).
-  Read a player's level from the global level **at that moment** (the log's answers replayed, as `tools/learnsim.js`
-  and the full replay do), and from their **progress**, never from their success rate. **The Elo is not settled before
-  many answers** (Pierre, 2026-11-12; "even 50 is not enough to settle the score", 2026-11-01): the game shows it only
-  from `ELO_MIN` = 200 answers, and a level read earlier (or on a player back from a break, or right after many new
-  units) is a rough guess: say how many answers it rests on, and lean on progress there. A rule keyed on the level
-  (a threshold) must say what it does before the level is settled.
+  The sheet keeps its own chain `R` (the admin's level, the photo ratings' player term). Read a player's level from
+  the global level **at that moment** (the log's answers replayed, as `tools/learnsim.js` and the full replay do),
+  and from their **progress**, never from their success rate. **The Elo is not settled before many answers**: the game
+  shows it only from `ELO_MIN` = 200 answers, and a level read earlier (or on a player back from a break, or right after
+  many new units) is a rough guess: say how many answers it rests on, and lean on progress there. A rule keyed on the
+  level (a threshold) must say what it does before the level is settled.
 - **Ability per unit** (`P[genus].th`): the same Elo, per genus or family; a unit never answered starts from the
   global level (`playerStart`).
 - **Progress**: per unit, the domain-score bar (the share of all its photos the player would name, one photo alone,
@@ -41,7 +39,7 @@ the answer log says, and what it never says. Any analysis of players (rule L12) 
   opened. With the global level, the only measure of how far a player has come.
 - **Difficulty of a photo**: its rating in the sheet's photo Elo (`stats_`, pooled over every player), around its
   genus offset `gd` (**one genus difficulty**: "One genus difficulty"); a question's difficulty adds the photo memory,
-  the mix-ups term and the format's offset (Q138). The success of one player on a photo says little about its
+  the mix-ups term and the format's offset. The success of one player on a photo says little about its
   difficulty alone: it depends on that player's level.
 - **Shaky** (a unit holding new openings): its expected success on a typical photo of it is under `OPEN.P` (0.6),
   moved with the aim ("One opening rule"). It reads the ability and the genus offset, not the success rate. From 200
@@ -1316,14 +1314,14 @@ notebook: [docs/archive/learning-notebook.md](archive/learning-notebook.md) (the
 - **Answer time compared within the same question format**: not used. One pooled median of the player's own timed
   answers (`RTIME`, `rtWeight`).
 
-## Real-answer replay (`tools/abilityeval.js`): judging a paired difference (2026-11-05)
+## Real-answer replay (`tools/abilityeval.js`): judging a paired difference
 
 The replay's last table compares each rule with the first one on the same answers: the paired difference of next-answer
-log-loss (negative: the rule predicts better). The answers cluster in players (about 10 players, about 150 answers
-each), and a player's answers are correlated (same person, same habits, a learning path over time), so a standard error
-that treats the answers as independent is too narrow: the stats study (`docs/reviews/2026-11-05-stats-methods-study.md`,
-PR #580, §0 point 4 and §5.2) estimates about 1.6 times too narrow with even a tiny correlation within a player (its
-estimate; the correlation is unknown). **Players are the unit of inference** since 2026-11-05:
+log-loss (negative: the rule predicts better). The answers cluster in a few players, and a player's answers are
+correlated (same person, same habits, a learning path over time), so a standard error that treats the answers as
+independent is too narrow: the stats study (`docs/reviews/2026-11-05-stats-methods-study.md`, §0 point 4 and §5.2)
+estimates about 1.6 times too narrow with even a tiny correlation within a player (its estimate; the correlation is
+unknown). **Players are the unit of inference** (`paired`, `signFlip` and `SIGN` in `tools/abilityeval.js`):
 
 - each player's own mean difference d_p over their answers in the row, then the plain mean of the d_p (each player one
   vote: a player with 400 answers weighs as much as one with 20);
@@ -1333,51 +1331,79 @@ estimate; the correlation is unknown). **Players are the unit of inference** sin
   possible p is 2/1024 ≈ 0.002; with 5 it is 2/32 = 0.0625, so 5 players can never give p < 0.05.
 
 The 'all' row is the primary measure; the group rows (number of choices, level bands, response time, after a false
-alarm) are exploratory: many rows, no correction for their number. The former figure per answer (the mean over the
-answers, which is the answer-weighted mean of the d_p, ± a standard error that treats the answers as independent) stays
-as a second, descriptive table, so the two can be compared; it is not a test. A percentile bootstrap over players was not
-chosen for the interval: with about ten players it under-covers (Cameron, Gelbach & Miller 2008), and the wild cluster
-bootstrap of a mean with Rademacher weights is the sign-flip test above. `tests/ability.test.js` checks it on a made-up
-log with one dominant player (400 answers better with the second rule, five small players worse): per answer the
-interval is [−0.0148, −0.0120] (a clear gain), with the players as the unit [−0.008, +0.020], sign-flip p 0.34.
+alarm) are exploratory: many rows, no correction for their number. The figure per answer (the mean over the answers,
+which is the answer-weighted mean of the d_p, ± a standard error that treats the answers as independent) is a second,
+descriptive table, so the two can be compared; it is not a test. A percentile bootstrap over players is not used for the
+interval: with about ten players it under-covers (Cameron, Gelbach & Miller 2008), and the wild cluster bootstrap of a
+mean with Rademacher weights is the sign-flip test above. `tests/ability.test.js` checks it on a made-up log with one
+dominant player (400 answers better with the second rule, five small players worse): per answer the interval is narrow
+and clear, with the players as the unit it is wide, reaches both sides of 0, and the sign-flip p is well above 0.05.
 
-Figures recorded in this file before 2026-11-05 as "paired log-loss difference per answer ± its standard error" (and
-"× 10⁻³ ± SE") are the per-answer figure: read their intervals as too narrow, and "n standard errors" as fewer.
+## Validating a learning change (rule L11)
 
-## Validating a learning change (rule L11; validated by Pierre on 2026-11-08, #735)
+A change to what players see or learn is checked in proportion to its possible effect, in simulated worlds where the
+truth is known, and on the real answer log (rule L12, "Real-answer replay"). Rule L11 (`docs/rules/learning.md`) states
+the requirements; this section is the method behind them: the levels, the two worlds, the profiles, the measures, the
+margins and the commands.
 
-Pierre, 2026-11-08: the engines and the simulations moved a lot these last days, so the way a change is validated must
-still fit what was built, and follow his suggestion: a fully rated world where photos, players and every unit (coral
-genera; fish families, genera, species) have continuous Elo difficulties or abilities drawn from stated distributions,
-with the engine running on them. What the check was until now, and where it no longer fits (each point checked in the
-code or the docs unless marked *inferred*):
+**Levels.** The PR declares its level with one line of why; the integrator checks it and may raise it; in doubt, the
+higher one. Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12).
 
-- **One world, the real data's.** `tools/learnsim.js`'s learner reads each photo's difficulty from the app's own
-  estimate (`photoDiff`; for the fish, the judged-ease prior) unless `--truth` is given, so a change to the estimate
-  changes the world too ("Limits" below). No unit difficulty unless `--stats` carries the sheet's offsets; no player
-  ability spread (each profile is one fixed player; the spread is the draws'). `--truth gen` gives photos a normal spread
-  around their genus, the corals only (*inferred* from its code: it reads the coral views).
-- **Profiles built for the corals.** The four profiles know every 5th unit in data order (`i % 5 < m`); `--subject fish`
-  plays the same four on the fish units. No casual diver (common names only), no IMR RA who knows the IMR families, no
-  lecture RA for fish, no names choice.
-- **Learners whose teaching ignores the photo.** The item learner gains `rate × (1 − know)` after a right answer and
-  1.5 times that after a miss (`MISS`; the genus wrongly picked 0.5 times, `PICKED`), whatever the photo: a photo
-  diet changes what it learns only through which units are asked and how often it misses, so easier photos, fewer
-  misses, teach it a little less, never because the photo itself was clearer. The scratch rated world of 2026-11-08
-  ("Fish: the global score, built") learns by the number of answers alone, so there only which units are asked
-  counts.
-- **Measures of the old yardsticks.** `knowSlate` (success on an average photo among choices), `progGap` (bar − that
-  know: the judge's D\* replaced it for the bar), `prog` (the fish % as the families' mean, not the global score of
-  Q242), units met. Nothing on the per-unit levels (Open Water, Advanced), the global score and its components, plateaus,
-  the hard-photo share before Open Water (a run field since #729 only) or the photo exposure that rates the photos.
-- **A horizon of the families only.** 300 questions; a fish run takes about 1 minute per worker (checked on 2026-11-08:
-  30 runs of 300 questions in 867 s on 2 workers), so the tree (genera from a family's Open Water or Advanced, species,
-  circle 3 at 55% of the circle-1 Entries) and the score's later shape (10,000-100,000 answers) are out of its reach.
-  `tools/fishscore.js` kept the formula of 2026-11-04 on the old moving-average bar (retired since: the rated world gives
-  the score's shape on today's engine).
-- **Margins never set.** Rule L11 asks for guardrail margins "set once in LEARNING.md"; PRs have used the statistics
-  study's examples (true knowledge 0.02, genera met 2, §3.2 "for example"). A pacing measure the change is meant to move
-  then reads as a breach (#729: units met at 300, expert −2.8).
+| Level | The change | App world | Rated world |
+| --- | --- | --- | --- |
+| 0 | no effect on learning: a wording, the UI, a test, code that gives the same answers | - | - |
+| 1 | small and local: one kind of unit, a rare situation, a constant nudged | the subject touched, its profiles × 5 seeds × 300 questions | - |
+| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | as level 1 | 10 seeds per profile (20 if a result is near a margin) × 3,000 answers (10,000 when the change reaches genera, species or the score's shape), normal photos and one heavy-tailed variant |
+| 3 | choosing a value | 30-40 seeds, sized from the spread seen | 40 seeds × 30,000 answers, both distributions |
+
+At level 3, each setting is compared with the current value (or a fitted curve) with Dunnett or Holm, TOST judges "no
+worse", and the value chosen is confirmed on fresh seeds (`--seed0`); a close level 1 or 2 result is "the measure
+cannot tell", never a level 3 by itself.
+
+**The cap.** Every check has a hard cap of 40 minutes of compute, at every level; when an agent reaches it, it stops
+and returns what it has. Level 3 never runs on this machine: only with Pierre's explicit go, on GitHub runners ("On a
+GitHub runner" below), with its duration announced first. An unclear result is reported as "the measure cannot tell",
+never escalated automatically. A guardrail breached, or a cost not declared, goes to Pierre.
+
+**Progressive, with valid statistics.** A large expected effect needs no high sensitivity: a check starts with the
+level's fewest seeds and adds seeds only when a result lands near a margin (unclear), by the rule declared before
+running (at level 2, the rated world 10 seeds, then 20; then "the measure cannot tell"). The error is split over the
+looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (two looks: 95%) and the primary at 0.05/k
+(Bonferroni), so stopping on a result keeps the 90%.
+
+- Before running, the PR declares one primary measure, its world, its checkpoint and its direction, and any cost the
+  change is expected to bring (a guardrail it will move, with the bound accepted).
+- The primary is tested pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact
+  up to 20 pairs, else 100,000 draws from a fixed seed); only if that passes, per profile under Holm.
+- A guardrail ("Guardrails and margins" below) is held when the one-sided 90% bound of the paired difference stays
+  inside its margin; unclear goes one step up within the cap, then is reported "the measure cannot tell"; breached,
+  or a cost not declared, goes to Pierre.
+- Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
+  9% of cells with no effect).
+- On real data (rule L12) the inference is per player, never per answer. A multifactor design (profile × parameter ×
+  seed) gets the method suited to it, found before running (a mixed-effects model with seeds as random effects and the
+  interactions in the model rather than many pairwise tests); the PR states the model and its assumptions and checks
+  them. The statistics study behind all of this: `docs/reviews/2026-11-05-stats-methods-study.md` §0, §3.2, §4, §6.
+
+**Limits.** What the worlds do not cover, so the PR says what it measured instead:
+
+- **One world, the real data's.** The app world's learner reads each photo's difficulty from the app's own estimate
+  (`photoDiff`; for the fish, the judged-ease prior) unless `--truth` gives a true one (`gen[:SD[:NOISE]]`: a normal
+  spread around the genus's offset; or a file), so a change to the estimate changes the world too. A unit has a
+  difficulty only when `--stats` carries the sheet's offsets. Each profile is one fixed player; the spread between
+  players is the draws'.
+- **Learners whose teaching ignores the photo.** The item learner: a right answer gains `rate × (1 − know)`, a miss 1.5 times that
+  (`LEARNER.MISS`), the genus wrongly picked 0.5 times (`LEARNER.PICKED`), whatever the photo. A photo diet changes what
+  it learns only through which units are asked and how often it misses; easier photos, fewer misses, teach it a
+  little less, never because the photo itself was clearer. The rated world's count learner learns by the number of
+  answers alone, so there only which units are asked counts. Whether easier photos teach less is for the real log.
+- The app world's horizon is 300 questions (600 when the change acts later), so what comes later (genera from a
+  family's Open Water or Advanced, species, circle 3, the score's shape at 10,000 answers and beyond) is judged in
+  the rated world.
+- Not in the rated world: the Again after a miss, the duels slipped into the quiz, the comeback and breaks, the
+  surprise cards.
+- `tools/learncmp.js` has the primary's sign-flip test, the guardrails' paired bounds and Holm over the profiles; the
+  level 3 tests (Dunnett, TOST) are not in it.
 
 **The two worlds.**
 
@@ -1385,38 +1411,37 @@ code or the docs unless marked *inferred*):
 | --- | --- | --- |
 | Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | `node tools/learnsim.js --world rated [--subject fish]` (`tools/ratedworld.js`) |
 | Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
-| Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
+| Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ `RATED.CORAL_GD`, the spread of the sheet's genus offsets `gd` |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
 | The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
 | Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
 | Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
-| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | about 4 s per 300 answers and 80-160 s per 3,000 per worker on a loaded machine (the app's own `photoSet` on pools of up to 1,600 photos); the scratch harness, which did not run it, took under a minute for 4 × 20 × 2 × 3,000 |
 
 The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
-`OPEN.K`, a card every 2 answers, at most 3 openings in 15, `RARE`) and runs the real `core.js` (`domStep`,
+`OPEN.K`, at most `OPEN.MAX` openings in `OPEN.WIN` answers, `RARE`) and runs the real `core.js` (`domStep`,
 `treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
-app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
-a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
+app's own. **The anchor.** The rated world is anchored on the app world where both reach: at 1,000 fish answers the
+shown score agrees within a few points, on the low side, while the rated world's levels and right rates run lower (its
+learner has no photo memory, the world adds the units' μ and the player's π, and a guess is uniform among the
+choices). So the rated world compares two arms within itself, as the protocol pairs them; its levels and right rates
+are not read against the app world's. The figures are in the notebook.
 
-**Long rated runs: the false-alarm table** (2026-11-15, after #975's 10,000-answer check could not end in the workflow's
-6 hours: 34 minutes a run with the species in). Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which
-scanned every record of the player's progress, and the planner reads the bars of every unit in play several times an
-answer: the cost grew with the units met times the units read, and the scan was the largest single part of a profile
-(23-29% of the time on their own, 36-45% with the bar around them; fish, `main` and #975, 1,000-3,000 answers). The
-rated world now arms a table for each answer (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds
-every unit's false alarms and chances in one pass over the records, in the scan's own order, so each value is the
-scan's to the last bit, and `scoreAnswer` empties it. The app and the sheet never arm it and scan as before. The same
-seeds give byte-identical `--out` files (the date, commit and run time aside) and reports, and every read of a run can
-be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 3,000-answer fish run of the
-expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
+**Long rated runs: the false-alarm table.** Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which scans
+every record of the player's progress, and the planner reads the bars of every unit in play several times an answer, so
+the cost of a long run grows with the units met times the units read. The rated world arms a table for each answer
+(`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds every unit's false alarms and chances in one
+pass over the records, in the scan's own order, so each value is the scan's to the last bit, and `scoreAnswer` empties
+it. The app and the sheet never arm it and scan as before. The same seeds give byte-identical `--out` files (the date,
+commit and run time aside) and reports, and every read of a run can be checked against the scan (`FA_CHECK`,
+`tests/faof.test.js`).
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`
-cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
-A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π
-(each genus's and species' μ on a stream of its own, keyed by its id, since 2026-11-18: a version with more or fewer
-units plays the same photos and the same other units, so the arms stay paired);
-the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
+cut out as `tests/rareease.js` cuts `model.js`): the families in three circles, their scientific genera, every game
+photo. A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the
+player's π (each genus's and species' μ on a stream of its own, keyed by its id: a version with more or fewer units
+plays the same photos and the same other units, so the arms stay paired); the same seed gives the same world, so two
+versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the
 domain-score bar, the global level, rule L2), so the aim, the start's lean, `photoSet` (Gaussian choice, `RARE`, the
@@ -1428,11 +1453,10 @@ every choice after), the photo aimed lower by the opening hold's ease and the pl
 `confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
-photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
+photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
 with two true difficulties): the sheet's photo Elo simulated. The profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
 log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
-learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`, as the notebook's "Q315 option 1: what three
-rounds showed" describes); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
+learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
 and served to every player's app (`PSTAT`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
 against the truth at each checkpoint (`rateErr`, the centred root mean square error; weighed by answers; the
 correlation; the genus offsets' `gdErr`), which learncmp reads as population measures, one value per seed (an exact
@@ -1445,76 +1469,42 @@ know) per answer on the unit and per card). D\*: its mean chance on each of the 
 learncmp reads (`dStar`, `knowSlate`, `met`, `right`, `prog`, `f`, `kinds`, `score`, `plateau`; per run `owAt`, `advAt`,
 `c3`, `expo`, `preOW`), at the guardrails' checkpoints (100, 300, 1,000, 3,000, 10,000, 30,000) up to the horizon.
 
-**The corals** (2026-11-08, step 5): the coral units as the app builds them (`core.js` `applyCuration` and `applySlots`,
+**The corals**: the coral units as the app builds them (`core.js` `applyCuration` and `applySlots`,
 `app.js` `applyForms` and `imrFormsOf` cut out the same way; the extra genera, Millepora and the bonus genera, too): the
 40 genera of the slate and the bonus genera, their game photos in their three views (a question shows those
 `photoSet` picks; one view alone is the single-view case). Each genus's μ ~ N(0, `RATED.CORAL_GD`²), **0.286: the SD of the
-sheet's genus offsets `gd` as #637 measured them with the photos rated against the genus ability (Q136); 0.370 with
-today's rating against the level, the sensitivity variant (`--coralsd 0.37`)**; no photo has a
-judged ease, so the share under ease 4 is not measured there. The bonus genera are offered once every slate genus is
-met and accepted, as in the app world; there is no global score, so the shown score is the units' mean (`progPct`).
+sheet's genus offsets `gd` measured with the photos rated against the genus ability; 0.370 with the rating against the
+level, the sensitivity variant (`--coralsd 0.37`)**; no photo has a
+judged ease, so the share under ease 4 is not measured there. The bonus genera come into play once their offer is on,
+as in the app world; there is no global score, so the shown score is the units' mean (`progPct`).
 **The learners**: `--learner count` (the default), by the number of answers, as above; `--learner item`, whose gain
 depends on the answer and its feedback, as learnsim's item learner: a right answer teaches rate × (1 − know), a miss
 1.5 times that (`ITEM.MISS`), the unit wrongly given 0.5 times (`ITEM.PICKED`), a card as one right answer.
 
-```
-node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 --out before.json [--dist tail] [--app own]
-node tools/learncmp.js before.json after.json --primary score@3000:up
-```
-
-**The anchor** (2026-11-08, fish, at 1,000 answers; the rated world told the truth, normal photos, 5 seeds, π −1.26 to
-0.25; the app world on main with the same profiles, 2 seeds, `--choice auto`; #787, #789):
-
-| Beginner / lecture RA | Rated, count learner | Rated, item learner | App world (item learner) |
-|---|---|---|---|
-| Score shown | 31.6% / 36.6% | 33.6% / 38.2% | 37.0% / 41.0% |
-| Families at Open Water | 17.8 / 24.6 | 23.0 / 28.0 | 32 / 32 (every circle-1 and circle-2 family) |
-| Families at Advanced | 2.6 / 5.4 | 4.2 / 7.2 | 14 / 16 |
-| Right %, answers 301-1,000 | 77% / 77% | 79% / 81% | 93-95% |
-
-The score agrees within 3-5 points, on the low side; the levels and the right rate lag in the rated world (its learner has
-no photo memory, the world adds the units' μ and the player's π, a guess is uniform among the choices; the causes not
-measured one by one). So the rated world compares two arms within itself, as the protocol pairs them; its levels and
-right rates are not read against the app world's.
-
-**The score's shape** (2026-11-08, the rated world, fish, told the truth, normal photos, count learner, `--beyond yes`, 2
-seeds, π −1.26 and 0.05; the shown %, families and genera at Advanced):
-
-| Answers | Lecture RA (both names) | Casual diver (common names only) |
-|---|---|---|
-| 100 | 10.5% | 9.0% |
-| 300 | 21.0% | 18.5% |
-| 1,000 | 35.5% (2 families) | 31.5% (2.5 families) |
-| 3,000 | 48.5% (31 families) | 46.5% (40.5 families) |
-| 10,000 | 63.0% (60.5 families, 53.5 genera) | 50.0% (64.5 families) |
-
-Fast at the start, slower after, as Q242 asked. The casual diver stops at 50%, the families' share once every family is
-mastered: with no species or common-name unit yet, a player who declines the scientific names has no credit left to
-earn, so the last 6,000 of its 10,000 answers are one plateau (6,277 answers). The lecture RA's genera carry it to 63%.
-This replaces `tools/fishscore.js` (the formula of 2026-11-04 on the old moving-average bar).
-
 **Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
-levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
-re-simulation's IMR RA):
+levels are learnsim's `lectureRA` and `strongRA` (the first-launch answer "IMR course"):
 
 | Profile | Who | Corals | Fish |
 | --- | --- | --- | --- |
 | Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
 | Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
-| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water (#720) |
-| Strong RA | an RA with practice behind the lecture | 3 genera in 5 at 85%, the others 10% | the IMR families and their genera well known; both names |
-| Expert | knows nearly everything | every genus at 93% | families and genera well known, species partly; both names |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water |
+| Strong RA | an RA with practice behind the lecture | the IMR lecture groups, in the course's order, until 60% of the slate is covered, at 85%; the others 10% | the IMR families and their genera well known; both names |
+| Expert | knows nearly everything | every genus at 93% | every family, genus and species at 93%; both names |
 
 Built in `tools/learnprof.js` (one list, loaded by learnsim in Node and in the page; the rated world reads the same list),
 never by data order. The default list of a subject is every profile with a part for it (`--profiles` picks others;
 `strongBack` and `spotty` stay by name). Corals: the lecture RA knows the 34 genera numbered on the IMR slate at 0.55;
-the strong RA the IMR lecture groups in the course's order until 60% of the slate is covered (groups 1 to 7, 26
-genera with their starred look-alikes) at 0.85; the others 0.1. Fish: the lecture RA knows the circle-1 families at
-0.5 and their IMR genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others
-0.1; the expert every family and genus at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most
-common families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at
-0.02, and declines the scientific names (Not now on the set's offer). First-launch answer with `--choice auto`: the
-casual diver "new". Learning rate as before (0.12; the expert 0.05).
+the strong RA the IMR lecture groups in the course's order (a starred genus in the group of its look-alikes) until 60%
+of the slate is covered, at 0.85; the others 0.1. Fish: the lecture RA knows the circle-1 families at 0.5 and their IMR
+genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others 0.1; the expert
+every family, genus and species at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most common
+families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at 0.02,
+and declines the scientific names (Not now on the set's offer). In the rated world the species units start at a
+profile's low value. First-launch answer with `--choice auto`: the beginner and the casual diver "new", the lecture RA "imr", the
+others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
+(knows 4 genera in 5 well, the rest hardly) and `spotty` (knows the genera of some IMR lecture groups as an expert does,
+the others hardly).
 
 **Measures** every run reports (the guardrails among them in the table below):
 
@@ -1529,35 +1519,24 @@ casual diver "new". Learning rate as before (0.12; the expert 0.05).
   them (answers per photo, answers on photos under ease 4);
 - right %, the Elo error against D\*, units met, `open/15`.
 
-**Guardrails and margins** (Pierre's "smallest change that matters", in each measure's units; one-sided 90% bound of the
-paired difference on the side of harm; validated with #735):
+**Guardrails and margins** (the smallest change that matters, in each measure's units; one-sided 90% bound of the
+paired difference on the side of harm; `GUARDRAILS` in `tools/learncmp.js`):
 
 | Guardrail | Checkpoints | Margin | Why this margin |
 | --- | --- | --- | --- |
-| True knowledge (D\*, or `knowSlate` in the app world) | 300 and 600 questions; 1,000 and 3,000 answers | −0.02 | 2 photos in 100 named less well: the statistics study's scale, and below what a player can feel |
-| E = bar − D\*, the over-claim side | the same | +0.03 | the bar must not promise more than the player can do; 3 points of a bar is about the smallest step a player reads |
-| The global score as shown | 1,000 and 3,000 answers (rated world) | −1 point | the % is shown rounded to the point: one point is the smallest change a player sees |
-| Answers to the first unit at Open Water | the run | +20% or +10 answers, the larger | the first level is the hook; a wait a fifth longer is felt, 10 answers is a short session's worth |
-| Units at Open Water | 300 questions; 1,000 answers | −2 units or −5%, the larger | two families or genera fewer is what a player sees on My progress; 5% scales it to a large set |
-| Longest plateau of the shown score | the run | +20% | Pierre's "fast at the start, slow after", without a flat stretch a fifth longer |
-| Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 Pierre set (Q252): a change must not undo half of it unnoticed |
-| Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) | the pace of new units, as the CI test reads it; two units is a card or two a session |
-| Fish families at Advanced (`famAdv`) | 300 and 600 questions; 1,000, 3,000 and 10,000 answers | −2 families or −5%, the larger | the families' pace while genera and species share the draw (#892, 2026-11-15); the margin of the units at Open Water |
+| True knowledge (`know`: D\*, or `knowSlate` in the app world) | 300 and 600 questions; 1,000 and 3,000 answers | −0.02 | 2 photos in 100 named less well: the statistics study's scale, and below what a player can feel |
+| E = bar − D\*, the over-claim side (`over`) | the same | +0.03 | the bar must not promise more than the player can do; 3 points of a bar is about the smallest step a player reads |
+| The global score as shown (`score`) | 1,000 and 3,000 answers (rated world) | −1 point | the % is shown rounded to the point: one point is the smallest change a player sees |
+| Answers to the first unit at Open Water (`firstOW`) | the run | +20% or +10 answers, the larger | the first level is the hook; a wait a fifth longer is felt, 10 answers is a short session's worth |
+| Units at Open Water (`unitsOW`) | 300 questions; 1,000 answers | −2 units or −5%, the larger | two families or genera fewer is what a player sees on My progress; 5% scales it to a large set |
+| Longest plateau of the shown score (`plateau`) | the run | +20% | fast at the start, slow after: no flat stretch a fifth longer |
+| Share under ease 4 before Open Water (`hard`) | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 share the cap sets (`RARE.SHARE`): a change must not undo half of it unnoticed |
+| Units met (`met`) | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera) | the pace of new units, as the CI test reads it; two units is a card or two a session |
+| Fish families at Advanced (`famAdv`) | 300 and 600 questions; 1,000, 3,000 and 10,000 answers | −2 families or −5%, the larger | the families' pace while genera and species share the draw; the margin of the units at Open Water |
 
 None comes from the seeds' spread, which only sizes the seeds. A change meant to move one of them declares that cost
-and its accepted bound before running (rule L11).
-
-**Levels and runtimes** (rule L11: the PR declares the level, the integrator checks it):
-
-| Level | App world | Rated world | Time (checked 2026-11-08 unless marked) |
-| --- | --- | --- | --- |
-| 0 | - | - | the CI |
-| 1 | the subject touched, its profiles × 5 seeds × 300 questions | - | corals about 2 minutes on 4 cores; fish about 5 minutes per arm (*inferred*) |
-| 2 | as level 1 | 10 seeds per profile (20 if a result is near a margin) × 3,000 answers (10,000 when the change reaches genera, species or the score's shape), normal photos and one heavy-tailed variant | the rated world under a minute |
-| 3 | 30-40 seeds, sized from the spread seen | 40 seeds × 30,000 answers, both distributions | fish app world about an hour for both arms on 2 workers, so a manual GitHub Action; rated world about half an hour on 4 cores (*inferred* from a 10,000-answer run) |
-
-A large expected effect (several times its margin) is read at the level's fewest seeds; more seeds only when a result is
-near a margin. Neither world belongs in the hourly analyses Action (its 2 hours serve the real log).
+and its accepted bound before running (rule L11). Neither world belongs in the hourly analyses Action (its 2 hours serve
+the real log).
 
 **Commands.** Each arm runs on the same seeds, then `tools/learncmp.js` pairs the two files and judges them (offline,
 under a second; `--list` prints its measures and guardrails):
@@ -1565,12 +1544,15 @@ under a second; `--list` prints its measures and guardrails):
 ```
 node tools/learnsim.js --subject fish --out before.json          # on main; the change's branch: --out after.json
 node tools/learncmp.js before.json after.json --primary hard@300:down [--cost met@100:-3] [--looks 2] [--json r.json]
+# the rated world (level 2 and 3): the same, with
+node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 --out before.json [--dist tail] [--app own]
+node tools/learncmp.js before.json after.json --primary score@3000:up
 ```
 
 It pairs the runs by (profile, seed) and prints, ready for the PR: the primary (`MEASURE@CHECKPOINT:up|down`, declared
 before running), the stratified sign-flip pooled over the profiles (each pair's difference over its profile's root mean
 square difference, a scale a sign flip leaves unchanged so the test stays exact; T the sum; two-sided p, exact up to 20
-pairs, else 100,000 draws from seed 1, as #729 read it), clear when p ≤ 0.05 / looks and T goes the declared way, and
+pairs, else 100,000 draws from seed 1), clear when p ≤ 0.05 / looks and T goes the declared way, and
 only then each profile's paired t under Holm; then every guardrail of the table above at the checkpoints both files
 reach, per profile: before → after, the paired difference and its one-sided bound at 1 − 0.10 / looks on the side of
 harm (paired t), held, unclear or breached, and the before/after correlation r in `--json`. A guardrail is judged against
@@ -1585,18 +1567,21 @@ genera apart) the units, those met, at Open Water and at Advanced, D\* and E = b
 shown score (`headPct`) and, for the fish, its components (`treeScore`: entries, genera, common, scientific, S, credit,
 raw, by circle); `plateau`, the longest stretch so far without a new high of the shown score; per run `owAt` and `advAt`
 (the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
-photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
-(the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
-`unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `famAdv` (the fish families at Advanced) and `spShare` (the share of answers on the fish species; both 2026-11-15, the species level), `right`, `prog`, `thErr`. The species units (kind `species`) are in both worlds
-since the species level (step 1, by common name); the scientific species names do not exist yet. After the guardrails,
-learncmp also prints, with no margin, the right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the
-one-sided bounds either side.
+photo exposure. The measures learncmp reads (`--list` prints them; any may be the primary): the ones above (`know`,
+`over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`, `unitsOW`, `unitsAdv`, `plateau`, `c3`, `hardAns`,
+`perPhoto`, `right`, `prog`, `thErr`), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
+`spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), the phase
+photos' shares (`phEarly`, `phLate`, `phEasy`, `phOther`, `phAns`), the measures after a break (`learnsim --breaks`:
+`cbLen`, `cbLong`, `cbRight`, `afterRight`, `held`, `holdAfter`, `open15`, read per break and per profile with their
+one-sided bounds, no margin) and the population measures of `--app sheet` (`rateErr`, `rateErrW`, `rateCorr`, `gdErr`:
+one value per seed, an exact sign-flip over the seeds). `firstOW` and `unitsAdv` leave the corals' bonus genera out, and
+a run where no unit reached Open Water drops its pair. After the guardrails, learncmp also prints, with no margin, the
+right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the one-sided bounds either side.
 
-**On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
-workflow (`.github/workflows/learncheck.yml`, manual dispatch only), with the version with the change (`after`: its
-branch), the one to compare it with (`before`, `main` by default), the subject, the world (`both`, `app` or `rated`; the
-rated world from the version that has it, ROADMAP "Validation tools", step 4), the seeds, the questions (app world) and
+**On a GitHub runner** (the checks too long for the shared machine, level 3 among them, which also needs Pierre's go):
+Actions › "Learning check (tier 2)" › Run workflow (`.github/workflows/learncheck.yml`, manual dispatch only; the job's
+limit is 6 hours), with the version with the change (`after`: its branch), the one to compare it with (`before`, `main`
+by default), the subject, the world (`both`, `app` or `rated`), the seeds, the questions (app world) and
 answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only) and the world it is read in when both run
 (`primary_world`; the other world reports its guardrails), the looks and
 any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim on both versions with the same
@@ -1604,33 +1589,10 @@ seeds (4 workers), then `tools/learncmp.js` of the version with the change, and 
 it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
 -f primary=hard@300:down`. Inputs are checked against narrow patterns before any command reads them.
 
-**First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
-unit under Open Water; exploratory, the protocol not yet
-approved; the rated world by the scratch harness with the cap mimicked as `rareCap` does, 4 profiles × 20 seeds × 3,000
-answers, told the truth; the app world re-read from #729's own 5-seed runs, 5 seeds × 300 questions). Paired
-difference, in brackets its one-sided 90% bound on the side of harm:
-
-| Measure | Rated world, normal photos | Rated world, heavy tails (15% +1.5) | App world (#729's runs) |
-| --- | --- | --- | --- |
-| **Under ease 4 before Open Water** (primary) | 27-51% → 9-10%, 80 of 80 pairs down | 30-53% → 9-10%, 80 of 80 | 20-40% → 9-10%, 19 of 20 |
-| Answers to the first family at Open Water | −2.1 to −0.6 (+8.0 worst) | −10.7 to +9.9 (+17.9 worst, IMR RA) | −6.0 pooled (−0.5) |
-| Families at Open Water, 1,000 answers / 300 questions | −0.6 to +0.5 (−2.1 worst, expert) | −1.0 to +0.9 (−2.6, expert) | +0.05 pooled (−0.49) |
-| Global score shown, 3,000 answers | −0.2 to +0.4 points (−0.6) | −0.4 to +0.3 (−0.7) | not measured (no genus bars in the runs) |
-| Circle-1 Entries component, 1,000 answers / 300 questions | +0.002 to +0.007 | −0.009 to +0.010 | **−0.041 pooled (−0.063)** |
-| True knowledge D\* of the families, 3,000 answers | −0.010 to 0 (−0.022) | −0.008 to +0.002 (−0.016) | (knowledge at 300: unclear, #729) |
-| Longest plateau of the shown score | −13 to +33 answers (+53, about +16%) | −18 to +25 (+48) | - |
-| Answers on photos under ease 4, answers 1-3,000 | −39% to −46% | −37% to −47% | - |
-
-What it says: the primary moves as intended in every world and profile; the levels, the score and the plateaus hold
-within the proposed margins, except the expert's families at Open Water at 1,000 answers with heavy tails (bound −2.6
-against −2.1 for 5% of 42: unclear) and the IMR RA's wait for the first Open Water with heavy tails (bound +17.9 answers
-against +12: unclear); in the app world the families' bars run lower (a right answer on an easier photo proves less to
-the domain-score bar), about −0.04 of the Entries component at 300 questions. And one thing the families-only check
-could not see: in the tree, every unit opened later (a genus, a species, a name) starts under Open Water, so 50-54% of
-a player's first 10,000 answers are on such units (rated world, 10 seeds, the IMR RA and the casual diver), and the cap
-cuts the answers on photos under ease 4 by about 30% over those 10,000 (IMR RA 5,582 → 3,904), not only in the first 300
-questions: the rating of the hard photos (Q252) slows for as long as the tree keeps opening units. In the rated world
-the learner learns by the number of answers, so its unchanged knowledge says nothing about whether easier photos teach less.
+**Figures.** The anchor's figures and the speeds measured, **The score's shape** (the fish global score in the rated
+world: fast at the start, slower after) and the **First run: the cap under ease 4 before Open Water** (`RARE.SHARE`, the
+first change checked with this protocol) are in the notebook (`docs/archive/learning-notebook.md`, "Validating a
+learning change").
 
 ## Simulation (`tests/profiles.smoke.js`, `tools/learnsim.js`)
 
