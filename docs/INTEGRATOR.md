@@ -111,6 +111,18 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 
 ## Working with Pierre
 
+**The right model and effort for each task** (the Agent tool's `model` and `effort`, set at every agent launch;
+Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents
+(et notamment à l'intégrateur)"):
+
+| Task | Model | Effort |
+| --- | --- | --- |
+| Design, architecture, the learning engine, security, rule wording with consequences | the strongest | high |
+| Ordinary code (game formats, admin pages, fixes, docs) | intermediate | medium |
+| Mechanical, repetitive work (framing, sorting photos, conversions) | the lightest that passes the sample test (Model choice by measurement) | low |
+
+In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through.
+
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
