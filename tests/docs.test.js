@@ -469,6 +469,33 @@ test('the code identifiers the docs cite in backticks still exist', () => {
   );
 });
 
+// LEARNING.md describes the learning rules in force; the studies behind them live in docs/archive/learning-notebook.md.
+// Every LEARNING.md "X" cited in the repo names a heading, or the start of a bullet, a paragraph or a bold lead-in, of
+// LEARNING.md (as ARCHITECTURE.md's citations above); a citation of a study names the notebook instead. The archive and
+// this file's own examples are left out.
+test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
+  const doc = read('docs/LEARNING.md'),
+    flat = s => s.replace(/[*"`“”]/g, '').trim(),
+    starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, ''))),
+    bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+  const found = x => {
+    const t = flat(x);
+    return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
+  };
+  const cite = /LEARNING(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const bad = [];
+  for (const f of TEXT_FILES) {
+    if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue;
+    for (const m of read(f).matchAll(cite))
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': LEARNING "' + q[1] + '"');
+  }
+  assert.deepStrictEqual(
+    bad,
+    [],
+    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
+  );
+});
+
 // Studies written from 2026-11-19 cite the measured PRs behind every effort figure (estimates alone prove wrong):
 // tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
 // #NNN on its line or bullet. Older studies are history and keep their words.
