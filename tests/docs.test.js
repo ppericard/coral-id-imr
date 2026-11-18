@@ -624,7 +624,7 @@ test('every living doc has a size and line-length budget, and no budget names a 
   assert.deepStrictEqual(
     living.filter(f => !budgetOf(f)),
     [],
-    'living docs with no budget in DOC_BUDGET (add one a little above the doc\'s size)'
+    "living docs with no budget in DOC_BUDGET (add one a little above the doc's size)"
   );
   assert.deepStrictEqual(
     Object.keys(DOC_BUDGET).filter(f => !living.map(x => x.split(path.sep).join('/')).includes(f)),
@@ -653,7 +653,7 @@ const SUBJECT_DOCS = ['README.md', 'privacy.html'];
 // A doc known to be behind SUBJECTS, with why: its check must fail until it is fixed, and an entry that now passes fails
 // so it is deleted.
 const SUBJECT_DOCS_BEHIND = {
-  'privacy.html': 'its notice for the three subjects is a separate change that waits for Pierre\'s reading'
+  'privacy.html': "its notice for the three subjects is a separate change that waits for Pierre's reading"
 };
 const subjectProblems = f => {
   const text = read(f).replace(/\s+/g, ' ').toLowerCase();
@@ -665,7 +665,8 @@ const subjectProblems = f => {
       continue;
     }
     const marked = new RegExp(name + '\\W{0,3}(?:\\(?beta\\b|in beta\\b)|\\bin beta\\W{0,6}' + name).test(text);
-    if (!!s.beta !== marked) bad.push(s.name + (s.beta ? ' is in beta in core.js SUBJECTS, not here' : ' is out of beta in core.js SUBJECTS, in beta here'));
+    if (!!s.beta !== marked)
+      bad.push(s.name + (s.beta ? ' is in beta in core.js SUBJECTS, not here' : ' is out of beta in core.js SUBJECTS, in beta here'));
   }
   return bad;
 };
