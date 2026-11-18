@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the gate floor (core.js MIN_SHEET, the oldest script the app and the admin
+    // The script version the demo answers as: the gate floor (core.js SHEET_FLOOR, the oldest script the app and the admin
     // still know), or a newer one with ?demo&v=N, for the gates above it (tests/admin.smoke.js: the admin then does what
     // it did before that version; rule D4). A version below the floor answers as the floor.
-    V = Math.max(MIN_SHEET, Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 0),
+    V = Math.max(SHEET_FLOOR, Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 0),
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.

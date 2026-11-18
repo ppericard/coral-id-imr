@@ -2066,8 +2066,8 @@ async function replayAdoptCheck(base) {
     window.SHEET_STUB = answer;
     window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
   };
-  // sv: the sheet script version the stub answers as (the gate floor, core.js MIN_SHEET).
-  const open = async (rv, core, sv = C.MIN_SHEET) => {
+  // sv: the sheet script version the stub answers as (the gate floor, core.js SHEET_FLOOR).
+  const open = async (rv, core, sv = C.SHEET_FLOOR) => {
     const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
     await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
     await c.addInitScript(init, [old, dev, mine, rv, data]);
@@ -3917,7 +3917,7 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Before any reply too: the app reads the script as the gate floor (core.js MIN_SHEET), which stores them (sheet v30).
+  // Before any reply too: the app reads the script as the gate floor (core.js SHEET_FLOOR), which stores them (sheet v30).
   {
     const [c, p] = await open(390, 0);
     await answer(p);

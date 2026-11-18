@@ -178,7 +178,7 @@ test("the app shows the 🌱 after the admin's name, outside its text, on the ro
     ['<img src=x onerror=alert(1)>', 70, null],
     ['Cy & "D"', 60, null, 0]
   ];
-  const html = paint(rows, C.MIN_SHEET),
+  const html = paint(rows, C.SHEET_FLOOR),
     mark = C.markHtml();
   assert.strictEqual(mark, `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`);
   const li = html.match(/<li[^>]*>.*?<\/li>/g);
@@ -221,14 +221,14 @@ test('the account line: the mark from a load reply that says the admin, for that
   );
   const {markSeen, markMine} = ctx;
   assert.strictEqual(markMine(), false, 'no reply yet');
-  markSeen({ok: true, found: true, admin: 1, v: C.MIN_SHEET}, 'Ana B.');
+  markSeen({ok: true, found: true, admin: 1, v: C.SHEET_FLOOR}, 'Ana B.');
   assert.strictEqual(markMine(), true);
-  markSeen({ok: true, log: true, v: C.MIN_SHEET}, 'Ana B.');
+  markSeen({ok: true, log: true, v: C.SHEET_FLOOR}, 'Ana B.');
   assert.strictEqual(markMine(), true, 'a save reply changes nothing');
   ctx.SYNC = {name: 'Cy D.'};
   assert.strictEqual(markMine(), false, 'another account on this device');
   ctx.SYNC = {name: 'ana b.'};
-  markSeen({ok: true, found: true, v: C.MIN_SHEET}, 'ana b.');
+  markSeen({ok: true, found: true, v: C.SHEET_FLOOR}, 'ana b.');
   assert.strictEqual(markMine(), false, "no longer the admin's");
   ctx.SYNC = null;
   assert.strictEqual(markMine(), false);

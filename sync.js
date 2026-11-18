@@ -1603,10 +1603,10 @@ function notesSeen(j) {
   if (j && j.notes && typeof j.notes === 'object' && !Array.isArray(j.notes)) store.set(NOTES_KEY, j.notes);
 }
 // The script version last seen: what the app may rely on (rule D4), so a visit offline does what the last one did. Never
-// below the gate floor (core.js MIN_SHEET, a version already confirmed live), also before any reply: a new device or an
+// below the gate floor (core.js SHEET_FLOOR, a version already confirmed live), also before any reply: a new device or an
 // offline first launch plays today's rules, never those of a script long replaced (architecture review 2026-11-18, R3).
 // The full replay checks each reply's own v (replayAdopt).
-const sheetV = () => Math.max(Number(store.get(SHEETV, 0)) || 0, MIN_SHEET);
+const sheetV = () => Math.max(Number(store.get(SHEETV, 0)) || 0, SHEET_FLOOR);
 // The genus of a page key, or of a link's address ('#…', core.js routeIn).
 const pvGenus = h => {
   const g = String(h || '').startsWith('#') ? routeIn(h).key || '' : String(h || ''),

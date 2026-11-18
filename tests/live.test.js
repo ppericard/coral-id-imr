@@ -184,7 +184,7 @@ test('liveMerge: a deleted, merged or archived account never stays in the log he
 // ---- the admin's timer ----
 
 // admin.js's live block run on stubs: the page (cur), its visibility, the clock (timers run by hand), the sheet replies.
-function liveAdmin({v = C.MIN_SHEET, rows = [row('A', 1)], reply} = {}) {
+function liveAdmin({v = C.SHEET_FLOOR, rows = [row('A', 1)], reply} = {}) {
   const timers = [],
     calls = [],
     ctx = {

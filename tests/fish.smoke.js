@@ -836,7 +836,7 @@ async function freshPlayers(b, base, errs) {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
-    // The global score, which the sheet ranks by (v101, below the gate floor core.js MIN_SHEET), also before any reply.
+    // The global score, which the sheet ranks by (v101, below the gate floor core.js SHEET_FLOOR), also before any reply.
     ok(headScore() && headPct() === headScore().pct, 'the global score');
     ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
@@ -2011,7 +2011,7 @@ async function freshPlayers(b, base, errs) {
     });
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (Pierre, 2026-11-04: separate per subject): #leaderboard on Fish asks the sheet for the fish
-    // board (&s=fish, sheet v95, below the gate floor core.js MIN_SHEET), kept apart from the corals' copy.
+    // board (&s=fish, sheet v95, below the gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
     // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
     const fb = await q.evaluate(async () => {
       const f0 = window.fetch,
@@ -2024,7 +2024,7 @@ async function freshPlayers(b, base, errs) {
               ['Other P', 20, null]
             ]
           : [['Coral P', 90, 1.1]];
-        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: MIN_SHEET})));
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: SHEET_FLOOR})));
       };
       const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
       try {

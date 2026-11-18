@@ -57,7 +57,7 @@ test("fishReplayGen at the genus: the app's sea slug units, from seaslug.json al
   // its file named, its pool's first too (Code.gs subjFile_), its board from the version that replays it
   assert.strictEqual(S.replayed.file, 'seaslug.json');
   assert.strictEqual(S.pool.files[0], S.replayed.file);
-  assert.ok(S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.MIN_SHEET);
+  assert.ok(S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.SHEET_FLOOR);
 });
 
 test('fishReplayGen: nothing from an empty fish.json', () => {

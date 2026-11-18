@@ -11,7 +11,7 @@ const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
-  SV = C.MIN_SHEET; // the replies' script version by default: the gate floor, the oldest script the app still knows
+  SV = C.SHEET_FLOOR; // the replies' script version by default: the gate floor, the oldest script the app still knows
 // data.json from GitHub, as the script reads it (Code.gs gen_), and curation.json, whose look-alike pairs the coral replay
 // lays over it (Code.gs subjRpl_; design note v2, step 8).
 const withData = () => ({
@@ -35,7 +35,7 @@ function storage(init = {}) {
   };
 }
 // A page of the app (its own sync.js, a fresh page: its first sync loads) on the sheet s, whose replies say script
-// version v (core.js MIN_SHEET by default; Code.gs's VERSION is assigned at merge, rule D3). net(kind, body, n): what
+// version v (core.js SHEET_FLOOR by default; Code.gs's VERSION is assigned at merge, rule D3). net(kind, body, n): what
 // the n-th request gets instead of the sheet's reply (an Error to throw, a reply object), or undefined for the sheet's;
 // lost(kind, body, n): the sheet applies it, then the reply never comes.
 function page(s, {v = SV, SYNC = null, P = {}, ls = {}, net = () => undefined, lost = () => false, zip = true} = {}) {

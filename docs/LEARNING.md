@@ -3300,7 +3300,7 @@ the sheet's leaderboard (Code.gs `pctOf_` now calls `core.js` `pctOf`, no copy) 
 **The transition (rule D4).** The moving average `s.pg` is no longer the bar. A record the new rules have not rebuilt
 (saved with `s.pg`) keeps it, and the former rule with it, until the sheet's full replay under rules version 9 reaches
 the device; a genus first answered in the app takes the new bar (the sheet replays it from v87; until the gate floor of
-2026-11-18, `core.js` `MIN_SHEET`, a device with no reply yet still gave it the moving average), and so does the app's own
+2026-11-18, `core.js` `SHEET_FLOOR`, a device with no reply yet still gave it the moving average), and so does the app's own
 replay of its queued answers. The fish are not
 replayed: a fish unit first answered takes the new bar at once, and one answered before is rebuilt on the device, silently
 (Pierre, 2026-11-06, Q200; no card, the apology is the corals' only). The device keeps no log of the answers the sheet has
@@ -5132,7 +5132,7 @@ may weigh how much it moves the ability, never a decay nor a penalty for being s
   (`mergeUsers`), and the replay's record goes with the level's answer count (`replayedOf`, `replayBase`). The times
   are recorded whatever the sheet's version.
 - **The app never gets ahead of the sheet** (rule D4): the weight was on only once the sync script's replies said
-  v ≥ 32 (Codex review #444), a gate deleted with the gate floor (`core.js` `MIN_SHEET`, 2026-11-18): the weight is on in
+  v ≥ 32 (Codex review #444), a gate deleted with the gate floor (`core.js` `SHEET_FLOOR`, 2026-11-18): the weight is on in
   the live game and in the device's own answers replayed on top of an adopted replay. A device then adopts the v32 replay
   of its whole log under rules version 4 (standard card `RV_CARD`).
 

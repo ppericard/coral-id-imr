@@ -715,7 +715,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko], [P[C.LEVEL].ok, P[C.LEVEL].ko], why);
     assert.deepStrictEqual(R[C.LEVEL].rt, P[C.LEVEL].rt, why);
   };
-  // The app weighs its steps by the time (sheet v32, below the gate floor core.js MIN_SHEET).
+  // The app weighs its steps by the time (sheet v32, below the gate floor core.js SHEET_FLOOR).
   const on = live(),
     rows = on.log.map(a => C.logRow(a, 'me'));
   assert.ok(on.ws.filter(w => w !== 1).length > 20, 'many right answers weighed by their time');
@@ -801,7 +801,7 @@ test('response time: the median of the earlier times, the weight, and the record
 });
 
 // Codex review #428 (P1): the live game applies the first-launch prior as the sync script replays it (sheet v36, below
-// the gate floor core.js MIN_SHEET; model.js startP), every subject alike.
+// the gate floor core.js SHEET_FLOOR; model.js startP), every subject alike.
 test('the first-launch prior in the live ability, as the sheet replays it (Codex review #428)', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),

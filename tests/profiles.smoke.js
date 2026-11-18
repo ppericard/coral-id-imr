@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  // A genus first answered takes the domain-score bar (the gate floor, core.js MIN_SHEET), so the learning paths below are
+  // A genus first answered takes the domain-score bar (the gate floor, core.js SHEET_FLOOR), so the learning paths below are
   // those of the current model, not of the moving average (Codex review #646).
   await ctx.addInitScript(() => {
     localStorage.setItem('reefid-tour', '"done"');

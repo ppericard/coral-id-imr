@@ -1,6 +1,6 @@
 // Every smoke's page (tests/calm.js adds it to each context first): a test's sheet stub (window.SHEET_STUB, app.js
 // sheetFetch; rule D1) reads a save as the sync script reads it. The app saves light (sync.js syncOnce: the lighter saves,
-// sheet v116, below the gate floor core.js MIN_SHEET): the body wrapped ({lt} or {z}, gzipped), and right after a load
+// sheet v116, below the gate floor core.js SHEET_FLOOR): the body wrapped ({lt} or {z}, gzipped), and right after a load
 // only what changed since the copy it loaded (dz). Here the body is unwrapped and the delta laid over the copy the stub's
 // last load reply served (core.js dataPatch, as Code.gs lightData_ does), so a stub written for whole saves still gets
 // one: {name, pin, data, answers, ...}. Nothing else changes: the stub's replies go to the app as they are.

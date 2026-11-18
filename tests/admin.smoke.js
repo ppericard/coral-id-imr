@@ -2831,7 +2831,7 @@ const darkCards = (p, sel) =>
       // view drawn from the fish answers, not from the report (checked with fish Health, below: "Fish admin at parity").
       // At 1280, and the Overview and Mix-ups at 360 px too.
       {
-        const GATE = require('../core.js').MIN_SHEET;
+        const GATE = require('../core.js').SHEET_FLOOR;
         for (const [v, vw] of [
           [GATE, 1280],
           [GATE, 360]
@@ -4225,7 +4225,7 @@ const darkCards = (p, sel) =>
             // group leaves it, and the members of another group keep theirs (a second subject set to a group here, every
             // player added to it first). Read on the page and on the demo sheet.
             {
-              // The other subject's sheet version is dropped with it: the demo sheet is the gate floor's (core.js MIN_SHEET),
+              // The other subject's sheet version is dropped with it: the demo sheet is the gate floor's (core.js SHEET_FLOOR),
               // before the sea slugs' (v151).
               const other = await p.evaluate(b => SUBJECTS.find(S => S.id !== b && !S.replay && !subjGroup(S)).id, beta),
                 was = await p.evaluate(o => (S => ({open: S.open, sheet: S.sheet}))(SUBJECTS.find(S => S.id === o)), other),

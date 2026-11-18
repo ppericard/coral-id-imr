@@ -115,8 +115,8 @@ test('core: the marker and the subject readers', () => {
   assert.deepStrictEqual(C.subjEntries([{...wk, s: ''}, cq]), [cq], 'never in the replayed one either');
   assert.deepStrictEqual(C.subjRows([wk, fq, cq].map(row), 'fish'), [row(fq)]);
   assert.deepStrictEqual(C.subjRows([{...wk, s: ''}, cq].map(row)), [row(cq)]);
-  // Sent as they come: the readers leave it out from v98, below the gate floor (core.js MIN_SHEET).
-  assert.ok(C.MIN_SHEET >= 98);
+  // Sent as they come: the readers leave it out from v98, below the gate floor (core.js SHEET_FLOOR).
+  assert.ok(C.SHEET_FLOOR >= 98);
 });
 
 // The sheet: the same player's answers with and without a surprise card's, which every reader must give alike. The

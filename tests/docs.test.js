@@ -415,7 +415,7 @@ const ID_ALLOW = [
     'model.js PGD_SHEET'
   ].map(key => ({
     key,
-    why: 'removed with the gate floor (core.js MIN_SHEET, 2026-11-18); the version history tells its history'
+    why: 'removed with the gate floor (core.js SHEET_FLOOR, 2026-11-18); the version history tells its history'
   }))
 ];
 const ID_TREE = (() => {

@@ -1254,7 +1254,7 @@ async function run(browser, base, name, seed) {
   await ctx.addInitScript(([st, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
-    // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js MIN_SHEET).
+    // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js SHEET_FLOOR).
     localStorage.setItem('reefid-sheet-v', String(sv));
     localStorage.setItem(`reefid-sync-${subj}-start`, '{"c":"new","t":1}');
     if (st)

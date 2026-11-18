@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
 // when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,
 // 2026-11-04: a gate had no test at all). The versions come from the source, so a recalibrated gate needs no edit here.
-// The gate floor (core.js MIN_SHEET; architecture review 2026-11-18, R3): a version already confirmed live, below which
+// The gate floor (core.js SHEET_FLOOR; architecture review 2026-11-18, R3): a version already confirmed live, below which
 // no gate is left (the ratchet below). Deleted with it, each with its old branch: RV_SHEET 28 (the full replay adopted),
 // PGD_SHEET 31 (the genus offsets), RT_SHEET 32 (the answer time), START_SHEET 36 (the first-launch prior), RP_SHEET 42
 // (the replay in the player list), GROUP_SHEET 48 (the beta groups), DEL_SHEET 55, HELP_SHEET 57, ARCH_SHEET 58,
@@ -21,7 +21,7 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 // name -> {N, file}: every "const X_SHEET = N" in the app's files (the repo root's .js and proto/), as
-// tools/sheet_version.py reads them; MIN_SHEET is the floor, not a gate. ANY: also a version written as a number in a
+// tools/sheet_version.py reads them; SHEET_FLOOR is the floor, not a gate. ANY: also a version written as a number in a
 // comma list or an object field ("X_SHEET = N," or "SHEET: N"), so the ratchet sees a gate however it is spelled.
 const FILES = [
     ...fs.readdirSync(ROOT).filter(f => f.endsWith('.js')),
@@ -31,8 +31,8 @@ const FILES = [
   ANY = [];
 for (const f of FILES) {
   const src = read(f);
-  for (const m of src.matchAll(/\bconst (?!MIN_SHEET\b)([A-Z][A-Z0-9_]*_SHEET) = (\d+);/g)) FOUND[m[1]] = {N: +m[2], file: f};
-  for (const m of src.matchAll(/\b(?!MIN_SHEET\b)([A-Z][A-Z0-9_]*_SHEET\s*=|SHEET:)\s*(\d+)\b/g))
+  for (const m of src.matchAll(/\bconst (?!SHEET_FLOOR\b)([A-Z][A-Z0-9_]*_SHEET) = (\d+);/g)) FOUND[m[1]] = {N: +m[2], file: f};
+  for (const m of src.matchAll(/\b(?!SHEET_FLOOR\b)([A-Z][A-Z0-9_]*_SHEET\s*=|SHEET:)\s*(\d+)\b/g))
     ANY.push({name: m[1].replace(/\s*=$/, ''), N: +m[2], file: f});
 }
 const C = require('../core.js'),
@@ -207,32 +207,32 @@ for (const name of Object.keys(GATES))
 // The ratchet (architecture review 2026-11-18, R3, step 2): no gate at or below the floor (delete it with its old branch
 // when the floor rises), and the floor never above main's VERSION (a PR never edits VERSION, rule D3, so this checkout's
 // is main's): it is a version already live, never the one the app is built against.
-test('the gate floor: no gate at or below MIN_SHEET, MIN_SHEET at or below VERSION', () => {
-  assert.ok(Number.isInteger(C.MIN_SHEET) && C.MIN_SHEET > 0, String(C.MIN_SHEET));
-  assert.ok(C.MIN_SHEET <= VERSION, `MIN_SHEET ${C.MIN_SHEET} is above main's VERSION ${VERSION}: set it to a version already live`);
-  const low = ANY.filter(g => g.N <= C.MIN_SHEET).map(g => `${g.name} = ${g.N} (${g.file})`);
-  assert.deepStrictEqual(low, [], `gates at or below MIN_SHEET ${C.MIN_SHEET}: delete each with its old branch`);
+test('the gate floor: no gate at or below SHEET_FLOOR, SHEET_FLOOR at or below VERSION', () => {
+  assert.ok(Number.isInteger(C.SHEET_FLOOR) && C.SHEET_FLOOR > 0, String(C.SHEET_FLOOR));
+  assert.ok(C.SHEET_FLOOR <= VERSION, `SHEET_FLOOR ${C.SHEET_FLOOR} is above main's VERSION ${VERSION}: set it to a version already live`);
+  const low = ANY.filter(g => g.N <= C.SHEET_FLOOR).map(g => `${g.name} = ${g.N} (${g.file})`);
+  assert.deepStrictEqual(low, [], `gates at or below SHEET_FLOOR ${C.SHEET_FLOOR}: delete each with its old branch`);
   assert.ok(Object.keys(FOUND).length >= 3 && ANY.length >= Object.keys(FOUND).length, 'the gates are still found');
   // the core.js copy embedded in Code.gs holds the same floor (tools/sync_core.py)
-  assert.match(read('tools/sync/Code.gs'), new RegExp(`\\bconst MIN_SHEET = ${C.MIN_SHEET};`));
+  assert.match(read('tools/sync/Code.gs'), new RegExp(`\\bconst SHEET_FLOOR = ${C.SHEET_FLOOR};`));
 });
 
-// The floor as the app reads it: sync.js sheetV is never below MIN_SHEET, also before any reply (a new device, an offline
+// The floor as the app reads it: sync.js sheetV is never below SHEET_FLOOR, also before any reply (a new device, an offline
 // first launch: nothing stored), and a newer reply's version is kept as it is. Every gate left stays off until a reply
 // says its version.
-test('sheetV: MIN_SHEET before any reply or over an older stored one, the stored version above it', () => {
+test('sheetV: SHEET_FLOOR before any reply or over an older stored one, the stored version above it', () => {
   const mem = {},
     sheetV = fn('sync.js', 'const sheetV = ', '\n', 'sheetV', {
-      MIN_SHEET: C.MIN_SHEET,
+      SHEET_FLOOR: C.SHEET_FLOOR,
       SHEETV: 'reefid-sheet-v',
       store: {get: (k, d) => (k in mem ? mem[k] : d)}
     });
-  assert.strictEqual(sheetV(), C.MIN_SHEET, 'no reply yet');
+  assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'no reply yet');
   for (const k of Object.keys(FOUND)) assert.ok(FOUND[k].N > sheetV(), `${k} on before any reply`);
   mem['reefid-sheet-v'] = 0;
-  assert.strictEqual(sheetV(), C.MIN_SHEET, 'a stored 0');
-  mem['reefid-sheet-v'] = C.MIN_SHEET - 40;
-  assert.strictEqual(sheetV(), C.MIN_SHEET, 'a stored version below the floor');
-  mem['reefid-sheet-v'] = C.MIN_SHEET + 7;
-  assert.strictEqual(sheetV(), C.MIN_SHEET + 7, 'a newer one as it is');
+  assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'a stored 0');
+  mem['reefid-sheet-v'] = C.SHEET_FLOOR - 40;
+  assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'a stored version below the floor');
+  mem['reefid-sheet-v'] = C.SHEET_FLOOR + 7;
+  assert.strictEqual(sheetV(), C.SHEET_FLOOR + 7, 'a newer one as it is');
 });

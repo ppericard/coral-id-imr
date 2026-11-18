@@ -5860,7 +5860,7 @@
   // answers (v98), the global score (v101), the other subjects' replays (v112) and the rest (tests/gates.test.js). Raised
   // by hand in a PR, to a version merged at least three days before (tools/sync/Code.gs VERSION's git log); never above
   // main's VERSION (the ratchet in tests/gates.test.js). Not a gate: tools/sheet_version.py leaves it alone.
-  const MIN_SHEET = 131;
+  const SHEET_FLOOR = 131;
   // The sync script version that replays a subject's progress under the content editor's structure (Code.gs v146:
   // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
   // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
@@ -7072,7 +7072,7 @@
     RV_SORRY,
     RVS,
     RV,
-    MIN_SHEET,
+    SHEET_FLOOR,
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
     SEASLUGPAIRS_SHEET,

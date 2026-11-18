@@ -654,7 +654,7 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', (
     [2]
   );
   // Every answer is sent as it comes: the gate that held a fish answer for the script that files it under its subject
-  // (v60) went with the gate floor (core.js MIN_SHEET).
+  // (v60) went with the gate floor (core.js SHEET_FLOOR).
   assert.strictEqual(C.logOk, undefined);
 });
 

@@ -4,7 +4,7 @@ require('./slot.js').testGuard();
 // app's own sync code run in Node on stubs (tests/syncpage.js), against the sync script on an in-memory sheet
 // (tests/gas.js), with Node's own CompressionStream. Nothing leaves this process (rule D1). The merge guarantees are the
 // classic flow's: no answer lost or counted twice across devices, the replay, the hold, archived and removed accounts, an
-// older app on the same account. The classic flow (a load, then the whole data) went with its gate (core.js MIN_SHEET).
+// older app on the same account. The classic flow (a load, then the whole data) went with its gate (core.js SHEET_FLOOR).
 const test = require('node:test'),
   assert = require('node:assert'),
   zlib = require('zlib');
@@ -336,7 +336,7 @@ test('property: light devices, an older app, refusals, failed requests and lost 
   let seed = 11;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
   const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora'];
-  // Each run three light devices on the account (the classic flow went with its gate, core.js MIN_SHEET).
+  // Each run three light devices on the account (the classic flow went with its gate, core.js SHEET_FLOOR).
   const MIX = [[SV, SV, SV]];
   for (let run = 0; run < 60; run++) {
     const s = loadCodeGs(withData());

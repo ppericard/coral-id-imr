@@ -7,7 +7,7 @@
 // rows in the Answers tab) answers question after question, one save after each (syncPush, as 3 s after an answer):
 // - one device: the RA alone on their phone;
 // - two devices: every save comes after the other device's (the worst case: each one stale).
-// The classic sync before them (a load, then the whole data) is gone with its gate (core.js MIN_SHEET); ARCHITECTURE.md
+// The classic sync before them (a load, then the whole data) is gone with its gate (core.js SHEET_FLOOR); ARCHITECTURE.md
 // keeps its numbers. Per answer: requests, HTTP round trips (an Apps Script call is two: the request to script.google.com, then
 // its 302 to script.googleusercontent.com, where the reply is read; connections kept open), bytes up (URL and body, plus
 // HDR for each HTTP request's headers: an estimate) and down (the reply's JSON, raw and gzipped: Google's front end

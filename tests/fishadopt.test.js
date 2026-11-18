@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The fish progress replayed by the sheet, adopted by the app (ROADMAP "Fish progress replayed from the answer log";
 // Pierre, 2026-11-08, Q298): sync.js replayAdoptS for another subject than the corals, the log the only reference (no floor
 // since fish rules version 2: Pierre, 2026-11-09, Q330), under its own rules versions (core.js FISH_RVS), from the script that replays it under this
-// app's rules (sheet v112, below the gate floor core.js MIN_SHEET).
+// app's rules (sheet v112, below the gate floor core.js SHEET_FLOOR).
 // The app's own sync.js run in Node on stubs, against the sync script on an in-memory sheet (tests/gas.js); nothing
 // leaves this process (rule D1). The harness is tests/adopt.test.js's, with a subject switch (inSubject) that really
 // switches: SUBJ, its progress P and its keys.
@@ -190,7 +190,7 @@ const today = {
 };
 const bar = (P, n) => C.scoreOf(P[n], P, n);
 // The in-memory sheet's replies as the script that replays fish says them (its VERSION is assigned at merge).
-const atv = (s, v = C.MIN_SHEET) => ({get: q => ({...s.get(q), v}), post: b => ({...s.post(b), v})}),
+const atv = (s, v = C.SHEET_FLOOR) => ({get: q => ({...s.get(q), v}), post: b => ({...s.post(b), v})}),
   FRV = C.rvOf('fish');
 const seed = (s, data) => s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}', ...data}, summary: {}, answers: F});
 
@@ -203,7 +203,7 @@ test('the fish replay adopted from the script that replays it: the log alone, no
     ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-coral-rv': String(C.RV)},
     SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
   });
-  await a.syncPush(); // the first load asks for the fish replay already (sheetV: the gate floor, core.js MIN_SHEET)
+  await a.syncPush(); // the first load asks for the fish replay already (sheetV: the gate floor, core.js SHEET_FLOOR)
   assert.ok(
     a.sent.some(b => (b.rvs && b.rvs.fish === 0) || b.rv_fish === '0'),
     'asked with its own rules version'
@@ -285,7 +285,7 @@ test('a fish reset made on this device while the save was on its way: its replay
   const s = loadCodeGs(withFiles());
   seed(s, {});
   const a = app({sheet: s, ls: {'reefid-sync-fish-reset': JSON.stringify(T(30))}, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}}),
-    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.MIN_SHEET};
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.SHEET_FLOOR};
   assert.ok(j.replays && j.replays.fish);
   assert.strictEqual(a.replaysAdopt(j, [], {fish: ''}), false, 'sent before the reset');
   assert.strictEqual(a.rvApplied(FS), 0);
@@ -300,7 +300,7 @@ test('answers logged from a refused save (SYNC.lg): the replay of every subject 
       ls: {'reefid-sync-fish-rv': String(FRV), 'reefid-sync-coral-rv': String(C.RV)},
       SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, lg: 1}
     }),
-    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.MIN_SHEET};
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.SHEET_FLOOR};
   assert.strictEqual(j.replays.fish.rv, FRV);
   // The same version again for fish, its baseline lacking the logged answers.
   assert.strictEqual(a.replaysAdopt(j, [], undefined), true);
@@ -344,7 +344,7 @@ test('a refused save while the fish units are not in: no merge, the replay of th
       },
       SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: base, lg: 1, lgOk: ['coral'], srv: 0}
     });
-  a.store.set('reefid-sheet-v', C.MIN_SHEET);
+  a.store.set('reefid-sheet-v', C.SHEET_FLOOR);
   const gen = a.ctx.UNITS.fish.gen;
   a.ctx.UNITS.fish.gen = () => null; // the fish data not loaded on this device yet
   await a.syncPull();
@@ -363,9 +363,9 @@ test('a refused save while the fish units are not in: no merge, the replay of th
 // ROADMAP "A save whose reply is lost, then another device's save" (found 2026-11-08), on the fish side: the sheet wrote
 // the save, its reply never came, another device saved over it; the plain merge counted the lost save's answers twice.
 // Its fate unknown (SYNC.lg, sync.js fateUnknown), the fish replay of the log counts each answer once by its id, from
-// the gate floor's script (core.js MIN_SHEET) as from today's.
+// the gate floor's script (core.js SHEET_FLOOR) as from today's.
 test('fish: a save whose reply never came, then another device saved over it: its answers count once', async () => {
-  for (const v of [C.MIN_SHEET, SV]) {
+  for (const v of [C.SHEET_FLOOR, SV]) {
     const s = loadCodeGs(withFiles());
     let lose = false;
     const sheet = {
@@ -436,7 +436,7 @@ test("a second device pulls the first one's adopted fish replay: the same record
     B = dev(),
     n = (P, u) => ((P[u] || {}).ok || 0) + ((P[u] || {}).ko || 0);
   await A.syncPush();
-  B.store.set('reefid-sheet-v', C.MIN_SHEET);
+  B.store.set('reefid-sheet-v', C.SHEET_FLOOR);
   await B.syncPull();
   assert.deepStrictEqual(B.fish()['f:Damselfishes'], A.fish()['f:Damselfishes'], 'the same record on both');
   assert.strictEqual(n(B.fish(), 'f:Damselfishes'), 9);
@@ -479,7 +479,7 @@ test('a refused save recovered by the replay: the baseline takes the replay, not
       ls: {'reefid-sync-fish-progress': JSON.stringify(here), 'reefid-sync-coral-rv': String(C.RV)},
       SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: savedHigh, lg: 1, lgOk: ['coral'], srv: 0}
     });
-  a.store.set('reefid-sheet-v', C.MIN_SHEET);
+  a.store.set('reefid-sheet-v', C.SHEET_FLOOR);
   await a.syncPull();
   assert.strictEqual(a.rvApplied(FS), FRV, 'recovered by the replay');
   assert.strictEqual(n(a.fish()), 9);
@@ -581,7 +581,7 @@ test("an unsent typed answer at adoption: its typed opportunity in this device's
   const s = loadCodeGs(withFiles());
   seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
   const a = app({sheet: atv(s), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: {}, srv: 1}}),
-    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.MIN_SHEET},
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.SHEET_FLOOR},
     mine = {...fa('u1', 50), m: 'quiz|t', a: 'f:Damselfishes', ok: 1, ch: ''};
   assert.ok(!((j.replays.fish.rec['~level'] || {}).tyk || {}).f, 'the replay has no typed answer');
   assert.strictEqual(a.replaysAdopt(j, [mine], undefined), true);
@@ -597,7 +597,7 @@ test('queued answers and no variant table yet: the fish replay waits, its versio
   const s = loadCodeGs(withFiles());
   seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
   const fresh = () => app({sheet: atv(s), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: {}, srv: 1}}),
-    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.MIN_SHEET},
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.SHEET_FLOOR},
     mine = {...fa('u1', 50), a: 'f:Damselfishes', ok: 1};
   const a = fresh();
   a.ctx.UNITS.fish.vars = () => null;

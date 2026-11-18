@@ -1136,7 +1136,7 @@ test('achievement recount: a stale device (record version 2) never brings back w
 });
 
 // Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
-// it: the answer time weighs them (sheet v32, below the gate floor core.js MIN_SHEET), as the sheet's own replay does.
+// it: the answer time weighs them (sheet v32, below the gate floor core.js SHEET_FLOOR), as the sheet's own replay does.
 test('a replay adopted replays the pending answers with the answer time, as the sheet (Codex review #444)', () => {
   // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
   const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
@@ -1146,12 +1146,12 @@ test('a replay adopted replays the pending answers with the answer time, as the 
     th = time => C.replayProgress(rows, {gen, conf: {}, start, time})['~me'].P.Acropora.th;
   assert.notStrictEqual(th(true), th(false), 'the time changes the ability on these answers');
   const a = app();
-  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.MIN_SHEET), true);
+  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.SHEET_FLOOR), true);
   assert.strictEqual(a.ctx.P.Acropora.th, th(true), `ability ${a.ctx.P.Acropora.th}`);
 });
 
 // Codex review #428 (P1): the first-launch prior follows the script that replays it (sheet v36, below the gate floor
-// core.js MIN_SHEET): this device's answers replayed on top of its replay apply it, as the sheet's own replay does.
+// core.js SHEET_FLOOR): this device's answers replayed on top of its replay apply it, as the sheet's own replay does.
 test('a replay adopted replays the pending answers with the first-launch prior, as the sheet (Codex review #428)', () => {
   // The first answers on a genus never answered: their ability starts from the prior.
   const pending = Array.from({length: 6}, (_, i) => ({...qa('s' + i, i), g: 'Pocillopora', a: 'Pocillopora', ok: 1}));
@@ -1164,11 +1164,11 @@ test('a replay adopted replays the pending answers with the first-launch prior, 
   assert.notStrictEqual(th(true), th(false), 'the prior changes the ability on these answers');
   const a = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
   // The replay says which history it applied (the same as this device's here).
-  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], fp: C.startFp(start)}, pending, C.MIN_SHEET), true);
+  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], fp: C.startFp(start)}, pending, C.SHEET_FLOOR), true);
   assert.strictEqual(a.ctx.P.Pocillopora.th, th(true), `ability ${a.ctx.P.Pocillopora.th}`);
   // Another history than this device's: not adopted, a save to follow (Code.gs v36 sends the fingerprint it used).
   const b = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
-  assert.strictEqual(b.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.MIN_SHEET), false);
+  assert.strictEqual(b.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.SHEET_FLOOR), false);
 });
 
 // Codex review #428 (P2): signing in merges the first-launch record made here before (a newer answer and its history)
@@ -1349,7 +1349,7 @@ const devCol = s => s.sheets.Answers.rows.slice(1).map(r => [r[7], r[s.sheets.An
 test('a signed-in save carries the device id, written in each of its answers', async () => {
   const s = loadCodeGs(withData()),
     a = app({
-      sheet: asV(s, C.MIN_SHEET),
+      sheet: asV(s, C.SHEET_FLOOR),
       ls: {'reefid-dev-id': JSON.stringify('k3v9q0x7mz')},
       SYNC: {name: 'Ana', pin: '1234', dirty: true, log: [qa('d1', 1), qa('d2', 2)]}
     });
@@ -1366,7 +1366,7 @@ test('a signed-in save carries the device id, written in each of its answers', a
 test('an anonymous send carries the device id, made once and kept (never the anonymous answer id), also before any reply', async () => {
   const s = loadCodeGs(withData()),
     a = app({
-      sheet: asV(s, C.MIN_SHEET),
+      sheet: asV(s, C.SHEET_FLOOR),
       ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify([qa('n1', 1)])}
     });
   a.sendAnon();
