@@ -652,10 +652,7 @@ const SUBJECT_DOCS_BEHIND = {
   'privacy.html': 'its notice for the three subjects is a separate change that waits for Pierre\'s reading'
 };
 const subjectProblems = f => {
-  const text = read(f)
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
+  const text = read(f).replace(/\s+/g, ' ').toLowerCase();
   const bad = [];
   for (const s of require('../core.js').SUBJECTS) {
     const name = s.name.toLowerCase();
