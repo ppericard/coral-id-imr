@@ -262,6 +262,19 @@ const GATES = {
     assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
     return out.pa === 'fi2';
   },
+  // An answer's content version (quiz.js and live.js cv, app.js contentVer; ROADMAP "Content versions and duplicate-safe
+  // answers"): sent from the version that stores it (Code.gs Content version), through core.js logOut at both of sync.js's
+  // sends; before, the copy sent leaves it out and keeps the rest, the queue untouched.
+  CV_SHEET: v => {
+    const {logOut} = require('../core.js'),
+      a = {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, cv: 'c1x2y3z'}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.cv === 'c1x2y3z';
+  },
   // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
   // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).
   DOM_SHEET: (v, N) => fn('model.js', 'const domRules = ', '\n', 'domRules', {sheetV: () => v, DOM_SHEET: N, SUBJ: {replay: true}})(),

@@ -35,6 +35,13 @@ const liveMissed = hist =>
     .filter(m => m.tot > 0 && m.pct < 100)
     .sort((a, b) => a.pct - b.pct || a.qi - b.qi)
     .map(({tot, ...m}) => m);
+// A live answer's attempt id (core.js answerId): 'l', the player's id in the game (pid, the script's: Code.gs lvJoin_,
+// 10 hex characters), 'q' and the question's number in base 36, so this answer has one id however often it is logged
+// (20 characters at most, Code.gs logAnswers_ ID); a random one when either is missing (an answer kept from before).
+const liveAid = (pid, qi) =>
+  /^[a-z0-9]{8,16}$/.test(String(pid || '')) && Number.isInteger(qi) && qi >= 0 && qi < 1296
+    ? 'l' + pid + 'q' + qi.toString(36)
+    : answerId();
 // "1st", "2nd", "3rd", "4th"…
 const liveNth = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 // pure: end
@@ -386,7 +393,7 @@ function liveCatch(j) {
       .forEach(x => {
         LV.logged = [...LV.logged, x.qi];
         const m = LV.mine[x.qi] && LV.mine[x.qi].id === x.c ? LV.mine[x.qi] : {};
-        LV.pend = [...LV.pend, {qi: x.qi, s: j.s, t: x.t, c: x.c, ok: x.c === x.t, ph: x.f, chs: x.ch, rt: m.rt, at: m.at}];
+        LV.pend = [...LV.pend, {qi: x.qi, pid: LV.pid, s: j.s, t: x.t, c: x.c, ok: x.c === x.t, ph: x.f, chs: x.ch, rt: m.rt, at: m.at}];
       });
     LV.hx = Math.max(LV.hx || 0, j.hn);
     liveSave();
@@ -503,7 +510,9 @@ function liveLog(S, o) {
       if (!good) delete s.ex;
       if (!good && GX(c) && P[c]) delete P[c].ex;
       const ans = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        // Its attempt id: the same at every try for this player's answer to this question (liveAid), so the sheet logs it
+        // once even if a reload logged it again before it left the queue (liveDone).
+        id: liveAid(o.pid, o.qi),
         t: o.at || new Date().toISOString(),
         g: t,
         a: c,
@@ -522,7 +531,9 @@ function liveLog(S, o) {
         rk: rankOf(t) || unitRankOf(SUBJ),
         ...(unitName(t) ? {tn: unitName(t)} : {}),
         ...(unitName(c) ? {ta: unitName(c)} : {}),
-        ...(sp ? {sp} : {})
+        ...(sp ? {sp} : {}),
+        // the content version of the units it was scored on (quiz.js cvField, app.js contentVer: its subject's, in force here)
+        ...cvField()
       };
       holdStep(ans.e, good);
       startStep(res.dm, k, good, first);

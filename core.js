@@ -5841,12 +5841,64 @@
   // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
   // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
   const PA_SHEET = 141;
+  // The sync script version that stores an answer's content version (Code.gs vNEXT: Answers Content version, the entry's
+  // cv; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18). Sent with cv only once the script's
+  // replies say v >= CV_SHEET; before, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
+  const CV_SHEET = 174;
   const logOut = (a, v) => {
-    if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
+    // (a reply with no version, NaN, is below both)
+    const pa = !!a && a.pa !== undefined && !(Number(v) >= PA_SHEET),
+      cv = !!a && a.cv !== undefined && !(Number(v) >= CV_SHEET);
+    if (!pa && !cv) return a;
     const o = {...a};
-    delete o.pa;
+    if (pa) delete o.pa;
+    if (cv) delete o.cv;
     return o;
   };
+  // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
+  // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
+  // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // Until 2026-11-18 its random part was 4 characters of Math.random: two answers of one millisecond could meet, and the
+  // sheet then skipped the second as a resend. rnd: the random bytes (tests); else crypto.getRandomValues, else
+  // Math.random (a runtime without crypto, never a browser the app runs in).
+  const AID = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  function answerId(now = Date.now(), rnd) {
+    const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
+      b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
+    return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // The content version of an answer (ROADMAP "Content versions and duplicate-safe answers"; Pierre, 2026-11-18: "A
+  // implémenter rapidement parce que le contenu évolue vite"): a short id of the content its subject's units were built
+  // from on this device, so analyses and replays can tell which content an answer saw. Per subject, from:
+  // - files: the version of each data file the subject's units are built from, in a fixed order (app.js contentVer): the
+  //   deploy's hash of the file (its ?v=, tools/stamp_versions.py), else, for a file fetched without one (the sea slugs'),
+  //   a hash of its content (app.js fileVer);
+  // - cur: the curation the units were built under, the subject's part of it only (curPart), so a Publish of another
+  //   subject's choices leaves it as it is;
+  // - st: the structure stamp in force (structStamp: '' on the base's circles and pairs, and while the sheet does not
+  //   replay under the structure yet, which the units then do not follow).
+  // So it changes whenever the photos in play, the units, the structure or the curation do; a text edit in a data file
+  // changes it too. 'c' and a hash53 (12 characters at most): a letter first, so the sheet never reads it as a number.
+  function contentVersion(S, cur, files, st) {
+    const f = (files || []).map(x => (x == null || x === '' ? '-' : String(x)));
+    return 'c' + hash53(JSON.stringify([f, hash53(JSON.stringify(curPart(S, cur))), String(st || '')]));
+  }
+  // The subject's part of the curation (curation.json, or its players' copy): a tree subject's own key (SUBJECTS admin
+  // cur: fish, seaslug) and the root keys every subject reads (CUR_SHARED: the exclusions, read by fishGone and fishPhotos
+  // for the tree subjects); the first subject's (admin cur ''), the root without the other subjects' keys.
+  const CUR_SHARED = ['exclude'];
+  function curPart(S, cur) {
+    if (!isObj(cur)) return null;
+    const k = S && S.admin && S.admin.cur;
+    if (k) return Object.fromEntries([k, ...CUR_SHARED].filter(x => x in cur).map(x => [x, cur[x]]));
+    const own = new Set(SUBJECTS.map(X => X.admin && X.admin.cur).filter(Boolean));
+    return Object.fromEntries(
+      Object.keys(cur)
+        .filter(x => !own.has(x))
+        .map(x => [x, cur[x]])
+    );
+  }
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -7054,7 +7106,12 @@
     WINK_SHEET,
     logOk,
     PA_SHEET,
+    CV_SHEET,
     logOut,
+    answerId,
+    contentVersion,
+    curPart,
+    CUR_SHARED,
     RTIME,
     rtMedian,
     rtWeight,

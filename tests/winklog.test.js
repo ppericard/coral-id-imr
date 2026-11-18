@@ -34,12 +34,16 @@ function page({signedIn = false} = {}) {
       LOG0: 'reefid-log0',
       ANONQ: 'reefid-anonq',
       anon: 0,
+      // core.js answerId (the attempt id); app.js contentVer (the content version of the units in force: quiz.js cvField)
+      answerId: C.answerId,
+      contentVer: S => (S.id === 'fish' ? 'cfish1' : ''),
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.anonSoon = () => ctx.anon++;
   vm.createContext(ctx);
   vm.runInContext(
-    cut(quiz, 'function logAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
+    cut(quiz, 'const cvField = () => {', '\n};\n', {file: 'quiz.js', through: 1}) +
+      cut(quiz, 'function logAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, 'function winkAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       '\nthis.M = {logAnswer, winkAnswer};',
     ctx
@@ -68,7 +72,8 @@ test('a wink answer: one entry, marked, with what was shown and answered, nothin
   assert.strictEqual(a.rt, 3.4);
   assert.strictEqual(a.zm, 1);
   assert.strictEqual(typeof a.tz, 'number');
-  assert.match(a.id, /^[a-z0-9]+$/);
+  assert.match(a.id, /^[a-z][a-z0-9]{15}$/, 'its attempt id (core.js answerId)');
+  assert.strictEqual(a.cv, 'cfish1', 'the content version of the units in force (quiz.js cvField)');
   for (const k of ['e', 'th', 'nw', 'sc', 'ty', 'tr']) assert.ok(!(k in a), `nothing scored: no ${k}`);
   assert.strictEqual(pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0}).ok, 1, 'the right one');
   assert.ok(!('rt' in pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0})), 'no seconds when the photo never came in');

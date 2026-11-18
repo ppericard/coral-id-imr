@@ -59,7 +59,16 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // as Photos (PH, 400); anything else is blank. Blank for every other answer, an app before it and the rows logged
 // before. Logged only: nothing the script computes reads it, served to no reader yet; it names no one, so it travels
 // with its row (merge, delete, archive) as the other answer fields do.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered'];
+// Content version (vNEXT; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18: "A implémenter
+// rapidement parce que le contenu évolue vite"): a short id of the content the answer's subject was built from on the
+// device (core.js contentVersion: its data files' versions, its part of the curation, the structure stamp in force), the
+// entry's cv: 'c' and up to 15 lower-case letters and digits, else blank; blank in the rows logged before and from an app
+// before it. Logged only: nothing the script computes reads it, served to no reader yet (a reader takes it by name and
+// accepts a blank); it names no one, so it travels with its row (merge, delete, archive).
+// Id, the answer's attempt id (core.js answerId, made on the device once per answer and sent as it is at every try): an
+// id the tab already has, or one met earlier in the same send, is skipped (freshAnswers_, logAnswers_), so a retried
+// send never logs an answer twice.
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered', 'Content version'];
 const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
 // The Activity tab (one formula over the Answers tab): answers, right and last answer per player. v98: a surprise
@@ -458,12 +467,19 @@ function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64De
 // Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
 // The answers of a send the Answers tab does not have yet (by id): what the flood caps count (v24, Codex review #372: a
 // device sending again what it already sent must not use up its quota). The ids read once are handed to logAnswers_.
+// vNEXT: an id met twice in the same send counts once (newIds_), and a send with no answer reads nothing.
 function freshAnswers_(answers){
+  const L = (Array.isArray(answers) ? answers : []).filter(a => a && a.id);
+  if (!L.length) return {seen: null, fresh: []};
   const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
   if (n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // v130: the Timings tab
-  return {seen: seen, fresh: (Array.isArray(answers) ? answers : []).filter(a => a && a.id && !seen.has(String(a.id)))};
+  return {seen: seen, fresh: newIds_(L, seen)};
 }
+// The answers of L whose id is not in seen, each id once (the first): the same answer twice in one send (a queue that
+// holds it twice) is logged once, as a resend is. An id is compared as the tab keeps it (its first 20 characters,
+// logAnswers_), so a longer one sent again is never taken for a new answer. seen is left as it is.
+const newIds_ = (L, seen) => { const got = new Set(); return L.filter(a => { const k = String(a.id).slice(0, 20); if (seen.has(k) || got.has(k)) return false; got.add(k); return true; }); };
 // dev (v109): the sending device's anonymous id (dev_), in every row of the send; blank when the app sent none.
 function logAnswers_(name, answers, seen0, dev){
   if (!Array.isArray(answers) || !answers.length) return;
@@ -489,9 +505,11 @@ function logAnswers_(name, answers, seen0, dev){
   const rank = (a, sj) => word_(a.rk, W, 20) || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '';
   // v69: a fish answer from an app before the switch to the book's families names an old entry (t01): renamed here to
   // its family (core.js renameLogEntry, the row's species shown deciding a split entry), so the log holds family ids only.
-  const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
+  // CV (vNEXT): a content version as core.js contentVersion makes it ('c' and a hash53), else blank.
+  const CV = /^c[a-z0-9]{1,15}$/;
+  const rows = newIds_(answers.filter(a => a && a.id && ID.test(String(a.id))), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400)]; });  // v141: Photo answered, as Photos
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), word_(a.cv, CV, 16)]; });  // v141: Photo answered, as Photos
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -9647,12 +9665,64 @@ const CORE_ = (function () { const module = {exports: {}};
   // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
   // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
   const PA_SHEET = 141;
+  // The sync script version that stores an answer's content version (Code.gs vNEXT: Answers Content version, the entry's
+  // cv; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18). Sent with cv only once the script's
+  // replies say v >= CV_SHEET; before, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
+  const CV_SHEET = 174;
   const logOut = (a, v) => {
-    if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
+    // (a reply with no version, NaN, is below both)
+    const pa = !!a && a.pa !== undefined && !(Number(v) >= PA_SHEET),
+      cv = !!a && a.cv !== undefined && !(Number(v) >= CV_SHEET);
+    if (!pa && !cv) return a;
     const o = {...a};
-    delete o.pa;
+    if (pa) delete o.pa;
+    if (cv) delete o.cv;
     return o;
   };
+  // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
+  // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
+  // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // Until 2026-11-18 its random part was 4 characters of Math.random: two answers of one millisecond could meet, and the
+  // sheet then skipped the second as a resend. rnd: the random bytes (tests); else crypto.getRandomValues, else
+  // Math.random (a runtime without crypto, never a browser the app runs in).
+  const AID = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  function answerId(now = Date.now(), rnd) {
+    const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
+      b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
+    return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // The content version of an answer (ROADMAP "Content versions and duplicate-safe answers"; Pierre, 2026-11-18: "A
+  // implémenter rapidement parce que le contenu évolue vite"): a short id of the content its subject's units were built
+  // from on this device, so analyses and replays can tell which content an answer saw. Per subject, from:
+  // - files: the version of each data file the subject's units are built from, in a fixed order (app.js contentVer): the
+  //   deploy's hash of the file (its ?v=, tools/stamp_versions.py), else, for a file fetched without one (the sea slugs'),
+  //   a hash of its content (app.js fileVer);
+  // - cur: the curation the units were built under, the subject's part of it only (curPart), so a Publish of another
+  //   subject's choices leaves it as it is;
+  // - st: the structure stamp in force (structStamp: '' on the base's circles and pairs, and while the sheet does not
+  //   replay under the structure yet, which the units then do not follow).
+  // So it changes whenever the photos in play, the units, the structure or the curation do; a text edit in a data file
+  // changes it too. 'c' and a hash53 (12 characters at most): a letter first, so the sheet never reads it as a number.
+  function contentVersion(S, cur, files, st) {
+    const f = (files || []).map(x => (x == null || x === '' ? '-' : String(x)));
+    return 'c' + hash53(JSON.stringify([f, hash53(JSON.stringify(curPart(S, cur))), String(st || '')]));
+  }
+  // The subject's part of the curation (curation.json, or its players' copy): a tree subject's own key (SUBJECTS admin
+  // cur: fish, seaslug) and the root keys every subject reads (CUR_SHARED: the exclusions, read by fishGone and fishPhotos
+  // for the tree subjects); the first subject's (admin cur ''), the root without the other subjects' keys.
+  const CUR_SHARED = ['exclude'];
+  function curPart(S, cur) {
+    if (!isObj(cur)) return null;
+    const k = S && S.admin && S.admin.cur;
+    if (k) return Object.fromEntries([k, ...CUR_SHARED].filter(x => x in cur).map(x => [x, cur[x]]));
+    const own = new Set(SUBJECTS.map(X => X.admin && X.admin.cur).filter(Boolean));
+    return Object.fromEntries(
+      Object.keys(cur)
+        .filter(x => !own.has(x))
+        .map(x => [x, cur[x]])
+    );
+  }
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -10860,7 +10930,12 @@ const CORE_ = (function () { const module = {exports: {}};
     WINK_SHEET,
     logOk,
     PA_SHEET,
+    CV_SHEET,
     logOut,
+    answerId,
+    contentVersion,
+    curPart,
+    CUR_SHARED,
     RTIME,
     rtMedian,
     rtWeight,
