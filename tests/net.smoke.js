@@ -718,8 +718,8 @@ const server = http.createServer((req, res) => {
     BUILD = 0;
     await ctx.close();
   }
-  // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
-  // then My progress, then the Tools, one tier after the other.
+  // 10. Load order. Home first: nothing of My progress, the Learn pages or the Tools asked for before it shows; then the
+  // quiz's files with My progress, then the Learn pages, then the Tools with the Lab's stylesheet, one tier after the other.
   {
     const {ctx, p, errs} = await ctxOf();
     // When Home was drawn and when each file was asked for, on the page's own clock.
@@ -738,7 +738,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(
         () => {
           const got = performance.getEntriesByType('resource').map(e => new URL(e.name).pathname);
-          return ['/progress.js', '/flag.js', '/proto/lab.js', '/proto/idkey.js'].every(f => got.includes(f));
+          return ['/progress.js', '/learn.js', '/flag.js', '/proto/lab.js', '/proto/lab.css', '/proto/idkey.js'].every(f =>
+            got.includes(f)
+          );
         },
         null,
         {timeout: 20000}
@@ -748,11 +750,13 @@ const server = http.createServer((req, res) => {
       window.__home,
       Object.fromEntries(performance.getEntriesByType('resource').map(e => [new URL(e.name).pathname.slice(1), e.startTime]))
     ]);
-    const early = ['progress.js', 'flag.js', 'proto/lab.js', 'proto/idkey.js'].filter(f => !(at[f] > home));
+    const early = ['progress.js', 'learn.js', 'flag.js', 'proto/lab.js', 'proto/lab.css', 'proto/idkey.js'].filter(f => !(at[f] > home));
     if (!(home > 0) || early.length) fails.push(`Asked for before Home showed (${home} ms): ${early.join(', ')}`);
-    const order = ['quiz.js', 'progress.js', 'proto/lab.js'].map(f => at[f]);
+    const order = ['quiz.js', 'progress.js', 'learn.js', 'proto/lab.js'].map(f => at[f]);
     if (!order.every((x, i) => x >= 0 && (!i || x >= order[i - 1])))
-      fails.push(`Tiers out of order (quiz, My progress, Tools): ${order.join(', ')} ms`);
+      fails.push(`Tiers out of order (quiz, My progress, Learn, Tools): ${order.join(', ')} ms`);
+    if (!(at['proto/lab.css'] >= at['learn.js']))
+      fails.push(`The Lab's stylesheet asked for before the Learn pages' tier: ${at['proto/lab.css']} ms`);
     if (errs.length) fails.push('Load order: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
@@ -760,6 +764,8 @@ const server = http.createServer((req, res) => {
   for (const [h, sel] of [
     ['quiz', qa.SEL],
     ['progress', '#view .pring'],
+    ['genera', '#view .card'],
+    ['cmp', '#view .lkmain'],
     ['lab', '#view .lab a']
   ]) {
     const {ctx, p, errs} = await ctxOf();
@@ -767,7 +773,51 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(s => document.querySelector(s) && !/Loading/.test(document.getElementById('view').innerText), sel, {timeout: 20000})
       .catch(() => fails.push(`A first visit straight to #${h} did not open it`));
+    // The Tools are drawn once the Lab's stylesheet is in (app.js tierCss): their hub is already its grid.
+    if (h === 'lab') {
+      const hub = await p.evaluate(() => {
+        const e = document.querySelector('#view .labhub');
+        return e && getComputedStyle(e).display;
+      });
+      if (hub !== 'grid') fails.push(`#lab first: drawn before the Lab's stylesheet (hub display ${hub})`);
+    }
     if (errs.length) fails.push(`#${h} first: ` + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // The quiz's tier without learn.js (index.html: it comes with tier 3, after the quiz's next photos): with learn.js held,
+  // a wrong answer shows its mix-up montage (model.js photoPair), a duel and My progress work, nothing throws; the
+  // Genera page shows the loading bar until learn.js comes, then opens.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let free;
+    const held = new Promise(ok => (free = ok));
+    await ctx.route(/\/learn\.js\?v=/, async r => (await held, r.fallback()));
+    const go = h => p.evaluate(x => (location.hash = routeOut(x)), h);
+    // 'commit': the load event waits for a script the tier loader has already inserted, so while learn.js is held it
+    // does not come (CI, 2026-11-18: goto timed out at 30 s); the quiz is waited for below, not the load event.
+    await p.goto(base + '#' + require('../core.js').routeOut('quiz'), {waitUntil: 'commit'});
+    if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no quiz question');
+    else {
+      const r = await p.evaluate(() => smokeAnswer(false));
+      const vs = await p.evaluate(() => !!document.querySelector('#view .qstage.qvs .qko img'));
+      if (r.fmt === 'choices' && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
+    }
+    await go('quiz-duel');
+    if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no duel question');
+    else await p.evaluate(() => smokeAnswer());
+    await go('progress');
+    await p.waitForSelector('#view .pring', {timeout: 20000}).catch(() => fails.push('learn.js held: My progress did not open'));
+    const late = await p.evaluate(() => typeof viewGenera);
+    if (late !== 'undefined') fails.push(`learn.js held: it ran all the same (${late})`);
+    await go('genera');
+    await p
+      .waitForSelector('#view .boot', {timeout: 5000})
+      .catch(() => fails.push('learn.js held: the Genera page did not show the loading bar while it waits'));
+    free();
+    await p
+      .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
+      .catch(() => fails.push('learn.js held: the Genera page did not open once it came'));
+    if (errs.length) fails.push('learn.js held: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
   // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the

@@ -371,7 +371,7 @@ without cm counts as the median.
 
 A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
 card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
-look-alike of …", `learn.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+look-alike of …", `model.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
 
 ### Confusion groups
 

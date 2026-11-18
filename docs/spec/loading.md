@@ -16,21 +16,25 @@ the progress sync's bytes and round trips per answer, `node tools/syncperf.js`
 
 The files come one tier after the other, so what the player waits for never shares the line with the rest:
 
-1. **Home**: `app.css`, `proto/lab.css` (which also holds the layout of Home, My progress and the games' side columns,
-   `.pgame`, `data-page=lab`), `home.css`, the main font, `core.js`, `app.js`, `sync.js`, `home-art.js`, `home.js`,
-   `tour.js`, `data.json`, `curation.json`.
-2. **The photo quiz**: `model.js`, `tips.js` (the "Did you know?" tips' registry and rules), `quiz.js`, `learn.js` (the
-   quiz uses it for its look-alike pairs and mix-up montages), `progress.js` (each answer updates the achievements, and
-   it opens My progress at once; a sign-in from the tour waits for it), `live.js` (the live mode), with `forms.json`,
-   `quality.json`, `picks.json` and `calibration-set.json`, which the draw and the photo slots use: the data is rebuilt
-   with them, then the achievements are counted and the sheet's photo statistics asked for.
-3. **The photos of the next quiz questions** (below).
+1. **Home**: `app.css` (with, at its end, the few rules from the Lab's stylesheet that the pages before tier 5 use: the
+   tile grid `.pgrid`, the game layout `.pgame` with its side column `.gside`, the Genera page's `.ikn` and `.ikxtag`),
+   `home.css`, the main font, `core.js`, `app.js`, `sync.js`, `home-art.js`, `home.js`, `tour.js`, `data.json`,
+   `curation.json`.
+2. **The photo quiz**: `model.js` (with the look-alike pairs and their sources the quiz shares with the Learn pages:
+   `pairs`, `isClassic`, `mixedUp`, `photoPair`, `shownGroup`, `starNote`), `tips.js` (the "Did you know?" tips'
+   registry and rules), `quiz.js`, `progress.js` (each answer updates the achievements, and it opens My progress at
+   once; a sign-in from the tour waits for it), `live.js` (the live mode), with `forms.json`, `quality.json`,
+   `picks.json` and `calibration-set.json`, which the draw and the photo slots use: the data is rebuilt with them, then
+   the achievements are counted and the sheet's photo statistics asked for.
+3. **The photos of the next quiz questions** (below), then `learn.js` (the Learn pages).
 4. **The sheet's reads**: the sync, the anonymous answers, the leaderboard, the achievement shares.
-5. **The rest**: `flag.js`, `proto/lab.js` with the Lab; then the service worker is registered, and its install caches
-   every other shell file (the italic and condensed fonts, the Lab…) for the next visit.
+5. **The rest**: `flag.js`, `proto/lab.js` and `proto/lab.css` with the Lab; then the service worker is registered,
+   and its install caches every other shell file (the italic and condensed fonts, the Lab…) for the next visit.
 
 The tiers are listed in `index.html`: tier 1 as `<link rel=preload as=script data-tier=1>`, later ones as bare
-`<link data-tier=N href>`, which fetch nothing until the loader turns them into preloads. `loadTier(N)` in the inline
+`<link data-tier=N href>`, which fetch nothing until the loader turns them into preloads; a later stylesheet as a bare
+`<link data-css=N href>`, which `need(N)` makes a stylesheet where it stands, between `app.css` and `home.css`, so the
+cascade keeps its order, and waits for (`tierCss`: loaded or failed). `loadTier(N)` in the inline
 loader (its own CSP hash) starts tiers 2..N at once and resolves once their scripts have run, in order, each inserted
 once the one before has run, each failed one tried again up to 3 times (after 1, 2, 3 s); `window.BOOT` resolves once
 tier 1 has run, and `app.js` waits for it before the first page (`domReady`). `need(N)` in `app.js` adds each tier's
@@ -39,8 +43,8 @@ prototypes (`labLoad`). `data.json` is preloaded too (`as=fetch crossorigin`, th
 downloads alongside the scripts), and the JSON files are fetched again on failure, up to 3 tries (`getR`); if
 `data.json` still fails, the page offers Try again.
 
-A page opened before its files arrived (`pageTier`: Home, About and Delete my account 1; the quiz, the duels, the Learn
-pages, My progress, the leaderboard, the achievements and the live mode 2; Tools and the Coral ID Key 5) shows the
+A page opened before its files arrived (`pageTier`: Home, About and Delete my account 1; the quiz, the duels, My
+progress, the leaderboard, the achievements and the live mode 2; the Learn pages 3; Tools and the Coral ID Key 5) shows the
 loading bar and asks for its tier at once, ahead of the queue (`route()`); a link straight to a page asks for its tier at
 start-up, alongside Home's files.
 
@@ -55,7 +59,8 @@ and the notices wait for the data. Home's own photos are lazy thumbnails.
 **Under "Loading…"** a bar moves one step per script run and one for `data.json` (`bootTick`; it counts tier 1, or the
 tiers the first page needs: `bootMax`), and after 6 s a line says only the first visit is this slow.
 
-**What tests wait for**: `window.APP_READY` is set once tier 2 is in (Home, the quiz and the Learn pages work);
+**What tests wait for**: `window.APP_READY` is set once tier 2 is in (Home, the quiz and My progress work; a Learn page
+waits for tier 3 by itself);
 `window.ROUTED` holds the address of the last page `route()` drew, set only by a full drawing; `window.CARDS_SAID`
 (`progress.js`) reads true once start-up has settled its one-time cards (the notices that waited for the visit's first
 sync have run, `subjHello` is not waiting for its calm moment, no card waits to try again unless the card it waits behind
