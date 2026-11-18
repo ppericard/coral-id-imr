@@ -299,13 +299,13 @@ function doPost_(e){
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
-    // The code is checked before anything is written (v12 review: a wrong code must not move anonymous answers).
+    // The code is checked before anything is written (a wrong code must not move anonymous answers).
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
     // A name the admin removed or merged, with its old code: no new account. Answers of a merged name go to the name it
     // joined; the app then asks the player to sign out (and to sign in under the other name).
     const g = r ? null : gone_(name, h);
     if (g) { if (g.into) logAnswers_(g.into, p.answers, null, p.dev); return json_({ok: false, error: 'gone', into: g.into, log: !!g.into}); }
-    // v58 (Codex review #603): the generation the device saved under (acct, sync.js), checked under the lock before
+    // The generation the device saved under (acct, sync.js), checked under the lock before
     // anything is logged or written: no account of the name any more, or another generation of it (archived, the name
     // taken again since), and the save is refused as archived (the app stops and says so).
     if (typeof p.acct === 'string' && p.acct) {
@@ -313,16 +313,15 @@ function doPost_(e){
       let d = {}; try { d = JSON.parse(readData_(String(sh.getRange(r, 1).getValue()), String(sh.getRange(r, 8).getValue() || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.acct) return json_({ok: false, error: 'archived'});
     }
-    // v119 (Pierre, 2026-11-09): no new account under a reserved name (core.js reservedName: a word such as constructor,
-    // __proto__ or toString), refused before anything is logged or written; an account that has one already saves as before.
+    // No new account under a reserved name (core.js reservedName: a word such as constructor, __proto__ or toString),
+    // refused before anything is logged or written; an account that has one already saves as any other.
     if (!r && CORE_.reservedName(name)) return json_({ok: false, error: 'reserved'});
     const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
-    // v116: a light save against another revision than the saved one (another device wrote since) is answered 'stale'
-    // before anything is counted or logged, with the load of the copy there (load_), read once the lock is released, as a
-    // load is: the app merges it and saves again at once, its answers still queued with it (as an app before v116 loads,
-    // merges, then saves). A name not found (no row) answers found: false, which the app reads as archived. The row (its
-    // code checked above) is read before the lock goes: an admin's delete, merge or archive in between moves the rows up,
-    // and the row at r would then be another player's (independent review of #799).
+    // A light save against another revision than the saved one (another device wrote since) is answered 'stale' before
+    // anything is counted or logged, with the load of the copy there (load_), read once the lock is released: the app
+    // merges it and saves again at once, its answers still queued with it. A name not found answers found: false, which
+    // the app reads as archived. The row is read before the lock goes: an admin's delete, merge or archive in between
+    // moves the rows up, and the row at r would then be another player's.
     if (p.light && typeof p.at === 'number' && p.at !== rev) {
       if (!r) return json_({ok: false, error: 'stale', rev: rev, found: false});
       const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
@@ -331,7 +330,7 @@ function doPost_(e){
       return json_(Object.assign(ld, {ok: false, error: 'stale', rev: ld.rev}));
     }
     let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
-    // v116: a light save's data (lightData_): the copy rebuilt from a delta, or the whole data under the new key names, the
+    // A light save's data (lightData_): the copy rebuilt from a delta, or the whole data under the new key names, the
     // old ones added here. A delta that does not rebuild the copy the app holds is refused before anything is counted or
     // logged ('delta': the app sends the whole data again, its answers with it, which the caps below then count once).
     if (p.light) {
@@ -339,42 +338,42 @@ function doPost_(e){
       if (!ld) return json_({ok: false, error: 'delta', rev: rev});
       p.data = ld;
     }
-    // Caps (v12): at most 40 new accounts and 3000 answers per name every 6 hours; over that, nothing is written and the
+    // Caps: at most 40 new accounts and 3000 answers per name every 6 hours; over that, nothing is written and the
     // app keeps its answers to send later. A real class of RAs stays far below both.
     if (!r && over_('newacct', 40)) return json_({ok: false, error: 'busy'});
-    // Only the answers the sheet does not have yet count (v24): a resend after a lost reply uses up nothing.
+    // Only the answers the sheet does not have yet count: a resend after a lost reply uses up nothing.
     const f = freshAnswers_(p.answers);
     if (f.fresh.length && over_('n:' + name.toLowerCase(), 3000, f.fresh.length)) return json_({ok: false, error: 'busy'});
     logAnswers_(name, f.fresh, f.seen, p.dev);
-    if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
+    if (!p.av) oldApp_('save', name);  // after the code check
     if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
-    // v34: the keys of a subject the saving app does not know (an app from before fish) are kept from the saved copy
-    // (core.js keepSubjectKeys): replacing the record would erase that progress.
-    // v58: the account's generation (_acct), made with the account and kept by every save (sent apart as acct): a device that knew another
-    // generation of this name (a record archived, then the name taken again) learns it was replaced (sync.js acctChanged;
-    // Codex review #603). An account saved before v58 gets one at its next save.
+    // The keys of a subject the saving app does not know (an old app) are kept from the saved copy (core.js
+    // keepSubjectKeys): replacing the record would erase that progress.
+    // The account's generation (_acct), made with the account and kept by every save (sent apart as acct): a device that
+    // knew another generation of this name (a record archived, then the name taken again) learns it was replaced (sync.js
+    // acctChanged). An account without one gets one at its next save.
     const kept = CORE_.keepSubjectKeys(old, p.data || {});
     kept._acct = typeof old._acct === 'string' && old._acct ? old._acct : Utilities.getUuid().replace(/-/g, '').slice(0, 12);
     const json = JSON.stringify(kept);
     try {
       writeData_(name, json, rev + 1);
       if (!r) { r = sh.getLastRow() + 1; }
-      if (sh.getRange(1, 9).getValue() !== HEAD[8]) sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');  // tab made before v14
+      if (sh.getRange(1, 9).getValue() !== HEAD[8]) sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');  // an old tab without the last columns
       const pct = typeof s.pct === 'number' && isFinite(s.pct) ? Math.max(0, Math.min(100, Math.round(s.pct))) : '';
       // Board: the player's choice when the app sends it, else the one saved (an older app must not undo an opt-out).
-      // An admin's hide (-1, v20) and an archive (-2, v58) stay: the player's app never sends them back to 1.
+      // An admin's hide (-1) and an archive (-2) stay: the player's app never sends them back to 1.
       const saved = r ? sh.getRange(r, 10).getValue() : '',
         board = Number(saved) < 0 && saved !== '' ? Number(saved) : typeof s.board === 'number' ? (s.board ? 1 : 0) : saved === 0 ? 0 : 1;
       sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, board]]);
     } catch (err) { return json_({ok: false, error: 'save', log: true}); }
     // The first send after signing in carries the device's anonymous id: its anonymous answers become this name's, for an
-    // existing account (code checked above) as for a new one. v115 (review of #801): once the account is written, so a
-    // send refused as stale or failing to save moves nothing (the app keeps the id and sends it again with its retry).
+    // existing account (code checked above) as for a new one, once the account is written, so a send refused as stale or
+    // failing to save moves nothing (the app keeps the id and sends it again with its retry).
     if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) {
       relabel_('Answers', 1, '~anon ' + p.anon, name);
-      pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
-      rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
-      // v115 (the integrator, 2026-11-09, review of #801): a device left out of the statistics stays out once signed in:
+      pagesMove_('~anon ' + p.anon, name);  // the pages opened on the device go with its answers
+      rplDrop_('~anon ' + p.anon);  // the device's full replay records go too (its answers are the name's now; every subject's)
+      // A device left out of the statistics stays out once signed in:
       // its row follows its answers to the name's admin id (the whole account then, which the admin can count again in
       // Players), with an Alerts line under both admin ids, never a name.
       if (sxMove_('~anon ' + p.anon, name)) {
@@ -391,25 +390,24 @@ function doPost_(e){
       g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
         .setBackgrounds([['#ffffff', '#ffffff'].concat(genera.map(n => COLORS[s.genera[n]] || '#ffffff'))]);
     }
-    // v95: the units of each other subject's leaderboard. v143: bt, the trees the sheet holds, only once that step ran to
-    // the end (a failure is logged, and its reply without bt makes the app send its tree again).
+    // The units of each other subject's leaderboard; bt, the trees the sheet holds, only once that step ran to the end (a
+    // failure is logged, and its reply without bt makes the app send its tree again).
     let bt = null;
     try { bt = boardUnitsSave_(s.boards); } catch (err) { boardLog_('save', 'the leaderboard step failed: ' + String(err && err.message || err).slice(0, 200), ''); }
-    TIM_.op = 'save';  // v130: a completed save is timed as a whole, to its reply (timEnd_)
-    out = {ok: true, log: true, rev: rev + 1, acct: kept._acct, ...(bt ? {bt} : {})};  // v58: the generation, known to the creating device at once (Codex review #603)
-    // v116: the checksum of the copy now saved, under the new key names (core.js dataSum), so a light app knows it holds
+    TIM_.op = 'save';  // a completed save is timed as a whole, to its reply (timEnd_)
+    out = {ok: true, log: true, rev: rev + 1, acct: kept._acct, ...(bt ? {bt} : {})};  // the generation, known to the creating device at once
+    // The checksum of the copy now saved, under the new key names (core.js dataSum), so a light app knows it holds
     // that very copy (sync.js sdSaved) and sends only what changes next time.
     if (p.light) { const k2 = CORE_.keysIn(kept); delete k2._acct; out.sum = CORE_.dataSum(k2); }
   } finally { if (held) lock.releaseLock(); }
-  // v50: what the reply adds is read once the progress is written and the script lock released (it was computed under
-  // it, so every other save, anonymous send and event batch waited for this player's replay; some waited past the lock's
-  // timeout, and those failed). The answers this save logged are in the tab by now.
-  // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
-  // another device's must not keep the order it replayed them in): the app takes it after a send.
-  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // v48, v179 gids: as the load reply
-  try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
+  // What the reply adds is read once the progress is written and the script lock released, so no other save, anonymous
+  // send or event batch waits for this player's replay. The answers this save logged are in the tab by now.
+  // The hold over every answer now logged, in time order (a device that sent answers older than another device's must
+  // not keep the order it replayed them in): the app takes it after a send.
+  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // as the load reply
+  try { out.notes = notes_(); } catch (err) {}  // as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
-  // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
+  // The full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
   if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data), undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
@@ -417,12 +415,12 @@ function doPost_(e){
   return json_(out);
 }
 
-// v116 (lighter saves): the data of a light save p (sync.js syncOnce), against the saved copy old at revision rev. A
+// The data of a light save p (sync.js syncOnce), against the saved copy old at revision rev. A
 // delta (dz, core.js dataDelta) against the copy the app holds at its revision at: that copy is the saved one under the
 // new key names (core.js keysIn, the generation _acct left out, as a load serves it), the delta applied (dataPatch), and
 // the result taken only when its checksum is the app's (sum: the whole data the app holds, dataSum); null otherwise.
 // Without a delta, the app's data as it is. Either way under the new names only: the old names are added here
-// (core.js withLegacy, for a device still on an app from before the rename), as the app added them before.
+// (core.js withLegacy, for a device still on an app from before the rename).
 function lightData_(p, old, rev){
   if (p.dz === undefined) return CORE_.withLegacy(p.data && typeof p.data === 'object' ? p.data : {});
   if (typeof p.at !== 'number' || p.at !== rev) return null;  // (a delta against another revision is answered 'stale' first)
@@ -434,91 +432,90 @@ function lightData_(p, old, rev){
 function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(z), 'application/x-gzip')).getDataAsString('UTF-8'); }
 
 // Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
-// The answers of a send the Answers tab does not have yet (by id): what the flood caps count (v24, Codex review #372: a
-// device sending again what it already sent must not use up its quota). The ids read once are handed to logAnswers_.
-// v178: an id met twice in the same send counts once (newIds_), and a send with no answer reads nothing.
+// The answers of a send the Answers tab does not have yet (by id): what the flood caps count (a device sending again
+// what it already sent must not use up its quota). The ids read once are handed to logAnswers_. An id met twice in the
+// same send counts once (newIds_), and a send with no answer reads nothing.
 function freshAnswers_(answers){
   const L = (Array.isArray(answers) ? answers : []).filter(a => a && a.id);
   if (!L.length) return {seen: null, fresh: []};
   const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
-  if (n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // v130: the Timings tab
+  if (n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // the Timings tab
   return {seen: seen, fresh: newIds_(L, seen)};
 }
 // The answers of L whose id is not in seen, each id once (the first): the same answer twice in one send (a queue that
 // holds it twice) is logged once, as a resend is. An id is compared as the tab keeps it (its first 20 characters,
 // logAnswers_), so a longer one sent again is never taken for a new answer. seen is left as it is.
 const newIds_ = (L, seen) => { const got = new Set(); return L.filter(a => { const k = String(a.id).slice(0, 20); if (seen.has(k) || got.has(k)) return false; got.add(k); return true; }); };
-// dev (v109): the sending device's anonymous id (dev_), in every row of the send; blank when the app sent none.
+// dev: the sending device's anonymous id (dev_), in every row of the send; blank when the app sent none.
 function logAnswers_(name, answers, seen0, dev){
   if (!Array.isArray(answers) || !answers.length) return;
   const dv = dev_(dev);
   const sh = sheet_('Answers', LOG);
-  // The new columns first (v60): the header check below reads the last one, which a tab made before has not.
+  // The new columns first: the header check below reads the last one, which an older tab has not.
   if (sh.getMaxColumns && sh.getMaxColumns() < LOG.length) sh.insertColumnsAfter(sh.getMaxColumns(), LOG.length - sh.getMaxColumns());
-  if (sh.getRange(1, LOG.length).getValue() !== LOG[LOG.length - 1]) sh.getRange(1, 1, 1, LOG.length).setValues([LOG]).setFontWeight('bold');  // tab made before v5 (or v10, v23: the new columns get their header)
+  if (sh.getRange(1, LOG.length).getValue() !== LOG[LOG.length - 1]) sh.getRange(1, 1, 1, LOG.length).setValues([LOG]).setFontWeight('bold');  // an older tab: the new columns get their header
   const act = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity');
   if (!act) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
-  else if (answers.some(CORE_.winkEntry) && act.getRange(1, 1).getFormula() === ACTIVITY_V1) act.getRange(1, 1).setFormula(ACTIVITY);  // v98
+  else if (answers.some(CORE_.winkEntry) && act.getRange(1, 1).getFormula() === ACTIVITY_V1) act.getRange(1, 1).setFormula(ACTIVITY);  // the formula that leaves the surprise cards out
   const n = sh.getLastRow() - 1, t0 = Date.now();
   const seen = seen0 || new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
-  if (!seen0 && n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // v130: the Timings tab
-  // v60: a unit may be a fish entry (t01) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a duel's
-  // mode; still a letter first, so nothing can start a formula.
+  if (!seen0 && n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // the Timings tab
+  // A unit may be a family (f:Damselfishes) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a
+  // duel's mode; still a letter first, so nothing can start a formula.
   const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
-  // v170: Species shown also takes a species with no name yet by its label, a number after "sp. " (Goniobranchus sp. 5,
-  // tools/seaslug_informal.json; Pierre, 2026-11-17, Q389 (2)), where any digit blanked the whole cell: a digit only in
-  // that number (1 to 3 digits, ending its name), nowhere else; still a letter first, so nothing can start a formula.
+  // Species shown also takes a species with no name yet by its label, a number after "sp. " (Goniobranchus sp. 5,
+  // tools/seaslug_informal.json): a digit only in that number (1 to 3 digits, ending its name), nowhere else; still a
+  // letter first, so nothing can start a formula.
   const W = /^[a-z]{1,20}$/, TX = /^[A-Za-z][A-Za-z0-9 .&'()-]*$/, SP = /^[A-Za-z](?:[A-Za-z .,()-]| sp\. [0-9]{1,3}(?=,|$))*$/;
-  const subj = a => word_(a.s, W, 20) || CORE_.SUBJECTS[0].id;  // an app from before v60 sends none: its answers are coral
+  const subj = a => word_(a.s, W, 20) || CORE_.SUBJECTS[0].id;  // an old app sends none: its answers are coral
   const rank = (a, sj) => word_(a.rk, W, 20) || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '';
-  // v69: a fish answer from an app before the switch to the book's families names an old entry (t01): renamed here to
-  // its family (core.js renameLogEntry, the row's species shown deciding a split entry), so the log holds family ids only.
-  // CV (v178): a content version as core.js contentVersion makes it ('c' and a hash53, 16 characters at most), else
+  // A fish answer from an old app names an old entry (t01): renamed here to its family (core.js renameLogEntry, the
+  // row's species shown deciding a split entry), so the log holds family ids only.
+  // CV: a content version as core.js contentVersion makes it ('c' and a hash53, 16 characters at most), else
   // blank: a longer text or anything but a text is never cut or read into one.
   const CV = /^c[a-z0-9]{1,15}$/;
   const rows = newIds_(answers.filter(a => a && a.id && ID.test(String(a.id))), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // v141: Photo answered, as Photos
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // Photo answered checked as Photos
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
   sh.getRange(at, 1, rows.length, LOG.length).setValues(rows);
   dropHold_(name);
-  try { photoAlert_(name, rows); } catch (e) {}  // v115: flagged, never refused
+  try { photoAlert_(name, rows); } catch (e) {}  // flagged, never refused
 }
 const num_ = x => typeof x === 'number' && isFinite(x) ? x : '';
-// v109: a device id as the app makes it (sync.js devId: a string of 10 lower-case letters and digits; 8 to 16 accepted,
+// A device id as the app makes it (sync.js devId: a string of 10 lower-case letters and digits; 8 to 16 accepted,
 // as the Events' Device, events_), else blank: never anything a cell could read as a formula.
 const dev_ = x => typeof x === 'string' && /^[a-z0-9]{8,16}$/.test(x) ? x : '';
-// v23: seconds to answer, 0-600 to the tenth (blank when the app sent none: before v23, or photos never loaded); and a
-// 0/1 flag (blank when not sent).
+// Seconds to answer, 0-600 to the tenth (blank when the app sent none: photos never loaded); and a 0/1 flag (blank when
+// not sent).
 const secs_ = x => typeof x === 'number' && isFinite(x) ? Math.round(Math.max(0, Math.min(600, x)) * 10) / 10 : '';
 const flag_ = x => x === 1 || x === true ? 1 : x === 0 || x === false ? 0 : '';
-// v44: the device's UTC offset when the answer was given, in whole minutes east of UTC (-720 to +840 exist; blank when
-// the app sent none or something else), logged only: the time of day at home for the analyses (Pierre, 2026-11-04).
+// The device's UTC offset when the answer was given, in whole minutes east of UTC (-720 to +840 exist; blank when the
+// app sent none or something else), logged only: the time of day at home for the analyses.
 const tz_ = x => Number.isInteger(x) && Math.abs(x) <= 840 ? x : '';
-// v59: a typed answer's raw text, control characters out, trimmed, at most 40 characters, never read as a formula (safe_).
+// A typed answer's raw text, control characters out, trimmed, at most 40 characters, never read as a formula (safe_).
 const typed_ = x => typeof x === 'string' ? safe_(x.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40)) : '';
-// v100: the texts a typed answer refused before it, each as typed_ (control characters out, trimmed, 40 characters at most),
+// The texts a typed answer refused before it, each as typed_ (control characters out, trimmed, 40 characters at most),
 // at most 10, in order, as a JSON list; blank when none (or the app sent none).
 const rejected_ = x => { const L = Array.isArray(x) ? x.filter(t => typeof t === 'string').map(t => t.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40)).filter(Boolean).slice(0, 10) : []; return L.length ? JSON.stringify(L) : ''; };
-// v61: the scoring record (core.js scoreRec: only its known fields, each checked), as JSON; blank when the app sent none.
+// The scoring record (core.js scoreRec: only its known fields, each checked), as JSON; blank when the app sent none.
 const scoring_ = x => { const o = CORE_.scoreRec(x); return o ? JSON.stringify(o) : ''; };
 
-// The opening hold (v23, Pierre 2026-11-02: it follows the player from one device to another, and is rebuilt from the
-// answers they gave before it existed: an RA who left on a run of misses had no hold on his device). The app's rule
-// (model.js holdStep, docs/LEARNING.md "Held while the player falls behind"): over the answers in time order, h = max(0,
-// h + expected - right - SLACK), rounded to 1/1000 at each step as the app does; no new genus card while h is 1.5 or
-// more (the app decides that). Answers of the gentle restart (mode with |w, from v23) do not count, older rows do; only
-// the answers since the player's last progress reset count (reefid-sync-coral-reset, as the app starts the hold over then).
+// The opening hold, kept here so it follows the player from one device to another (model.js holdStep, docs/LEARNING.md
+// "Held while the player falls behind"): over the answers in time order, h = max(0, h + expected - right - SLACK),
+// rounded to 1/1000 at each step as the app does; no new genus card while h is 1.5 or more (the app decides that).
+// Answers of the gentle restart (mode with |w) do not count; only the answers since the player's last progress reset
+// count (reefid-sync-coral-reset, as the app starts the hold over then).
 // HOLD.SLACK is model.js INTRO.SLACK: keep both in step (tests/sync.test.js replays model.js on the same answers).
 // The app takes it and adds its own answers the sheet has not confirmed yet (model.js holdSync). Cached per player
 // until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
 const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
-// The first-launch answer in a player's saved data (reefid-sync-coral-start, v29), null when there is none or it is broken.
+// The first-launch answer in a player's saved data (reefid-sync-coral-start), null when there is none or it is broken.
 // sid: another subject's (core.js subjKey, startKey: reefid-sync-fish-start, -reset), under its new key name or
 // the one from before the rename (core.js keyLegacy).
 const subjData_ = (data, k) => { const d = data || {}, o = CORE_.keyLegacy(k); return d[k] !== undefined ? d[k] : o ? d[o] : undefined; };
@@ -531,22 +528,21 @@ function resetOf_(data, sid){
 // A progress reset time as the app keeps it (an ISO string) in ms, 0 when there is none.
 const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 0;
 // Returns {h, ids}: ids = the answer ids of the player's last HOLD.IDS rows counted, so the app does not add again the
-// answers of a send whose reply was lost (they are already in h; Codex review #370), and every row from pt on (the time
-// of the oldest answer the device still queues, as replay_ reads it: a lost reply can leave up to 2,000 answers already
-// logged in the queue; Codex review #399). The cache keeps the last HOLD.IDS and the time of the first of them (t): a
-// pt before it reads the rows again.
-// light (v116, a request of the lighter saves, sync.js): only the ids from pt on, the only ones such an app reads (every
+// answers of a send whose reply was lost (they are already in h), and every row from pt on (the time of the oldest
+// answer the device still queues, as replay_ reads it: a lost reply can leave up to 2,000 answers already logged in the
+// queue). The cache keeps the last HOLD.IDS and the time of the first of them (t): a pt before it reads the rows again.
+// light (a request of the lighter saves, sync.js): only the ids from pt on, the only ones such an app reads (every
 // answer it still queues is at pt or later; holdSync adds the queued answers not among them), not the last HOLD.IDS:
 // up to 500 ids, several KB, in every reply. The cache keeps their times (tt) for it; a cache without them is read again.
 function hold_(name, since, pt, light){
   const c = CacheService.getScriptCache(), k = holdKey_(name), hit = c.get(k),
     from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity,
     mine = (ids, tt) => (light ? ids.filter((x, i) => tt[i] >= from) : ids);
-  // v50 (Codex review #565): the cached hold is used only while the Answers tab has as many rows as when it was read
+  // The cached hold is used only while the Answers tab has as many rows as when it was read
   // (n): a request that read the tab before another logged answers must not keep its older hold in the cache.
   const tab = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), nAll = tab ? tab.getLastRow() : 0;
   if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t && o.n === nAll && (!light || Array.isArray(o.tt))) return {h: o.h, ids: mine(o.ids, o.tt || [])}; }
-  const who = lc_(name), all = answerRows_(), nRead = ROWS_LAST_ || nAll;  // v60: the tab's rows as read, every subject's
+  const who = lc_(name), all = answerRows_(), nRead = ROWS_LAST_ || nAll;  // the tab's rows as read, every subject's
   let h = 0;
   const rows = all
     .filter(r => lc_(r[0]) === who && !/\|w(\||$)/.test(String(r[5])))
@@ -559,19 +555,18 @@ function hold_(name, since, pt, light){
   return {h: h, ids: ids};
 }
 
-// The Answers tab read once per request (every LOG column; v32: Seconds and Enlarged, M-N, for the replay; v60: the
-// Subject column, R; v61: Scoring, W): hold_, replay_, stats_ and the admin's replays go through it. Only the rows of the subject the
-// sheet replays (core.js SUBJECTS replay: the corals; a row with no subject, logged before v60, is one): a fish answer
-// rates no photo and counts in no confusion, hold or replay. Dropped whenever answers are logged or moved (dropHold_),
-// and at the start of each request.
+// The Answers tab read once per request (every LOG column): hold_, replay_, stats_ and the admin's replays go through
+// it. Only the rows of the subject the sheet replays (core.js SUBJECTS replay: the corals; a row with no subject is
+// one): another subject's answer rates no photo and counts in no confusion, hold or replay. Dropped whenever answers are
+// logged or moved (dropHold_), and at the start of each request.
 let ROWS_ = null, ROWS_LAST_ = 0;  // ROWS_LAST_: the tab's last row when ROWS_ was read (hold_ keys its cache by it)
 const SUBJ_COL = LOG.indexOf('Subject');  // 17, core.js LOG_SUBJ: the same index in readAnswers rows
-const replayed_ = r => CORE_.rowSubject(r) === CORE_.replaySubject() && !CORE_.winkRow(r);  // v98: never a surprise card's
+const replayed_ = r => CORE_.rowSubject(r) === CORE_.replaySubject() && !CORE_.winkRow(r);  // never a surprise card's
 function answerRows_(){
   if (ROWS_) return ROWS_;
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
   ROWS_LAST_ = sh ? sh.getLastRow() : 0;
-  ROWS_ALL_ = sh ? logRows_(sh, LOG.length).filter(r => !protoRow_(r)) : [];  // v115 (review of #801)
+  ROWS_ALL_ = sh ? logRows_(sh, LOG.length).filter(r => !protoRow_(r)) : [];  // protoRow_: never a row with a reserved word
   return ROWS_ = ROWS_ALL_.filter(replayed_);
 }
 // The rows of another subject the sheet replays (core.js replayedSubjects: fish), from the same read of the tab
@@ -583,13 +578,13 @@ function subjRows_(sid){
   if (SROWS_.of !== base) SROWS_ = {of: base};
   return SROWS_[sid] = SROWS_[sid] || ROWS_ALL_.filter(r => CORE_.rowSubject(r) === sid && !CORE_.winkRow(r));
 }
-// The Answers tab's rows (from row 2), its first k columns. A tab made before the columns of v60 has fewer until the next
+// The Answers tab's rows (from row 2), its first k columns. An older tab has fewer columns until the next
 // answer is logged (logAnswers_ adds them): what it lacks reads blank, so a reader never asks past the sheet's grid.
 function logRows_(sh, k){
   const n = sh.getLastRow() - 1, t0 = Date.now();
   if (n < 1) return [];
   const w = sh.getMaxColumns ? Math.min(k, sh.getMaxColumns()) : k, v = sh.getRange(2, 1, n, w).getValues();
-  TIM_.n = n; tim_('read Answers', t0, n, w);  // v130: the Timings tab
+  TIM_.n = n; tim_('read Answers', t0, n, w);  // the Timings tab
   return w < k ? v.map(r => r.concat(new Array(k - w).fill(''))) : v;
 }
 
