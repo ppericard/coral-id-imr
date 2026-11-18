@@ -10,7 +10,7 @@ name: Clean branches and Actions
 #     requests were squash-merged, and a train never has a pull request of its own, so GitHub's "Automatically delete
 #     head branches" never removes it;
 #   - by hand only, the branches named in "also_delete" (Pierre's go for each, AGENTS.md: destructive is asked first).
-# Always kept: main, a branch with an open pull request, the KEEP list below, and everything else (listed in the run's
+# Always kept: main, release (the sheet script's source, only the merge train moves it: rule D3), a branch with an open pull request, the KEEP list below, and everything else (listed in the run's
 # log for a human). A deletion is a `git push --force-with-lease` on the SHA checked, so a branch that moved meanwhile
 # is kept.
 #
@@ -66,7 +66,8 @@ jobs:
           cutoff=$(date -u -d '2 days ago' +%s)
           deleted=0; kept=0; failed=0
           while IFS=$'\t' read -r name sha; do
-            [ "$name" = "$default" ] && continue
+            # `release`: the branch the sheet script installs from, moved only by the merge train (rule D3), never deleted here.
+            if [ "$name" = "$default" ] || [ "$name" = release ]; then continue; fi
             open=$(awk -F'\t' -v b="$name" '$1==b && $2=="open"' prs.tsv | wc -l)
             merged_here=$(awk -F'\t' -v b="$name" -v s="$sha" '$1==b && $3!="" && $4==s' prs.tsv | wc -l)
             why=''; reason=''

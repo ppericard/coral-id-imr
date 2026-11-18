@@ -47,8 +47,20 @@ line 1 set to the short form for it, the entry written at the top of HISTORY.md 
 every gate the PR adds and every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any
 other, then merged (docs/INTEGRATOR.md). The self-update reads only `const VERSION = N;`, so line 1 and HISTORY.md are for people.
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
-itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
-"Code.gs"); check the live `v` about 15 minutes after merging, and the sheet's "Deploy log" tab says what happened.
+itself within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md "Code.gs"); check
+the live `v` about 15 minutes after the train that merged it, and the sheet's "Deploy log" tab says what happened.
+- **The script installs from the `release` branch, not from `main`** (Pierre, 2026-11-18, review R5 question h).
+  `release` is a branch of the same repository that only the merge train moves (`tools/train.py`, rule W26): after
+  its tree went green and its PRs are squash-merged, the train pushes the commit `main` ended on to `release`
+  (creating it when missing, a fast-forward otherwise, never a force-push). Nobody else pushes it, by hand or from a
+  workflow: a commit that reaches `main` without a train (the admin's Publish, the Candidate photos workflow, a fix
+  pushed by hand) never reaches the live script, so the script only runs code a green train tested; the data files
+  those two write (`curation.json`, `data.json`, the photo lists) stay read from `main`, as does the site. Until
+  `release` exists GitHub answers 404 for it and the script reads `main` as before (only 404 does that: any other
+  answer is a failed read, so a GitHub outage never makes it take `main`'s code), so the first update can never lose
+  its way. `release` is always an ancestor of `main`. A `Code.gs` change merged without a train (rare, by hand) waits
+  on `main` for the next train to carry it. No workflow edits `tools/sync/Code.gs` (checked 2026-11-18: the Candidate
+  photos workflow stages data files only, the admin's Publish writes `curation.json` only).
 - Never remove `autoUpdate` (the updater refuses such a version, so the script would stay behind) and keep
   `tools/sync/appsscript.json` in step (a new Google service = a new scope there = Pierre must accept it once: tell him).
 - The app keeps working with an older script, so a change stays backward compatible (rule D4).
@@ -62,7 +74,8 @@ itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's 
 
 *Why:* no more copy and paste by Pierre; two open PRs never collide on the number. *Source:* Pierre, 2026-11-01;
 subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305); the history out of line 1 into
-`tools/sync/HISTORY.md`, 2026-11-18 (Pierre, shown the line: "Pourquoi? Juste pourquoi?").
+`tools/sync/HISTORY.md`, 2026-11-18 (Pierre, shown the line: "Pourquoi? Juste pourquoi?"); the `release` branch,
+2026-11-18 (review R5 question h).
 
 ### D4
 

@@ -236,7 +236,11 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   list them. A train of one PR is the usual case (87 of 98 trains, 2026-11-14 to 16): it saves the catch-up merge, its
   CI run and its Codex wait; a docs-only PR runs the smokes on its train (about 3 min). The merges land
   seconds apart: Deploy Pages cancels all but the last run (its concurrency group), so check that last one; a Code.gs
-  PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4).
+  PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4). The last step of a
+  green train moves the `release` branch to the commit `main` ended on (the sheet script installs from `release`, rule
+  D3): exit 3 = main is merged but `release` was not moved (a refused push); `release` then stays behind and the next
+  train moves it. `git pull` before a train so you run the current `train.py`. Only the train pushes `release`; a Code.gs
+  merged any other way does not reach the sheet until the next train.
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
   assign are new heads, so `@codex review` and wait. The train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex

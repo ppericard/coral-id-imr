@@ -396,6 +396,115 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
   assert.deepStrictEqual(g.calls, []);
 });
 
+// The release branch (vNEXT; Pierre, 2026-11-18, review R5 question h): the script installs from `release`, which only the
+// merge train moves; main is read only while GitHub says `release` does not exist (404).
+// `branches`: what each branch answers for tools/sync/*: a status number, or the text of its Code.gs (its manifest then
+// says which branch it came from). `seen` lists what was read, `installed` the files the script put.
+function fakeBranches(branches) {
+  const g = fakeGoogle(''),
+    seen = [],
+    installed = [];
+  return {
+    calls: g.calls,
+    seen,
+    installed,
+    fetch: (url, o) => {
+      const m = /raw\.githubusercontent\.com\/[^/]+\/[^/]+\/([^/]+)\/tools\/sync\/([\w.]+)\?/.exec(url);
+      if (!m) {
+        if ((o || {}).method === 'put' && /\/content$/.test(url)) installed.push(JSON.parse(o.payload));
+        return g.fetch(url, o);
+      }
+      seen.push(m[1] + '/' + m[2]);
+      const a = branches[m[1]];
+      if (typeof a === 'number') return resp(a, 'status ' + a);
+      if (m[2] === 'Code.gs') return resp(200, a);
+      return (branches.noManifest || []).includes(m[1])
+        ? resp(404, 'no manifest')
+        : resp(200, JSON.stringify({timeZone: 'Asia/Manila', from: m[1]}));
+    }
+  };
+}
+const bump = (code, n) => code.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + n};`);
+
+test('autoUpdate reads release, never main, once release exists: main is ahead of it and that is not installed', () => {
+  const g = fakeBranches({release: CODE, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+});
+
+test('autoUpdate installs the release branch: its code and its manifest, the version says where from', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 5)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  const files = g.installed[0].files;
+  assert.strictEqual(files.find(f => f.name === 'Code').source, bump(CODE, 1), 'the release code, not the main one');
+  assert.strictEqual(JSON.parse(files.find(f => f.name === 'appsscript').source).from, 'release');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub release/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /^deployed v\d+ as version 7 \(1 web app deployment\), from release$/);
+});
+
+test('autoUpdate falls back to main only while release does not exist (404), one branch for the whole run', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs', 'main/appsscript.json']);
+  assert.strictEqual(JSON.parse(g.installed[0].files.find(f => f.name === 'appsscript').source).from, 'main');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub main/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /, from main$/);
+});
+
+test('autoUpdate with no release branch and main up to date: up to date, nothing logged, the trigger work still runs', () => {
+  const g = fakeBranches({release: 404, main: CODE}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+  assert.ok(
+    Object.keys(s.props).some(k => /^ONCE_/.test(k)),
+    'the one-shot migrations ran: the up-to-date path was reached through the fallback'
+  );
+  assert.strictEqual(s.sheets['Deploy log'].rows.slice(1).filter(r => /from main/.test(r[1])).length, 0, 'no log row for the fallback');
+});
+
+test('autoUpdate: any answer for release but 404 (a 5xx, a rate limit) is a failed read: main is never consulted', () => {
+  for (const code of [500, 502, 429, 403, 301]) {
+    const g = fakeBranches({release: code, main: bump(CODE, 1)}),
+      s = loadCodeGs({fetch: g.fetch});
+    assert.strictEqual(s.ctx.autoUpdate(), 'github ' + code);
+    assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+    assert.deepStrictEqual(g.calls, []);
+    assert.deepStrictEqual(g.installed, []);
+  }
+});
+
+test('autoUpdate: a main with no release and no autoUpdate is skipped as before, and main answering 404 too is a failed read', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1).replace(/function autoUpdate\(/g, 'function gone(')}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'skipped');
+  const h = fakeBranches({release: 404, main: 404}),
+    t = loadCodeGs({fetch: h.fetch});
+  assert.strictEqual(t.ctx.autoUpdate(), 'github 404');
+  assert.deepStrictEqual(h.seen, ['release/Code.gs', 'main/Code.gs']);
+});
+
+test('autoUpdate: the manifest is never taken from another branch than the code (release has the code, no manifest)', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 1), noManifest: ['release']}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  assert.ok(!g.seen.some(x => x.startsWith('main/')), g.seen.join(','));
+  assert.strictEqual(g.installed[0].files.find(f => f.name === 'appsscript').source, '{}', 'the stored manifest is kept');
+});
+
 test('autoUpdate: an interrupted update (code in place, deploy failed) is finished on the next run', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
   // First run: the code goes in, then /versions fails.

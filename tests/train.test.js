@@ -45,7 +45,7 @@ if path == 'git/ref/heads/main':
     out({'object': {'sha': g('rev-parse', 'refs/heads/main')}})
 m = re.match(r'git/commits/(\w+)$', path)
 if m:
-    out({'tree': {'sha': g('rev-parse', m.group(1) + '^{tree}')}})
+    out({'tree': {'sha': st.get('tree_override') or g('rev-parse', m.group(1) + '^{tree}')}})
 m = re.match(r'pulls/(\d+)/merge$', path)
 if m and method == 'PUT':
     head = g('rev-parse', 'refs/pull/%s/head' % m.group(1))
@@ -141,7 +141,40 @@ const fixture = () => {
   const calls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf-8').trim().split('\n') : []);
   const og = (...a) => execFileSync('git', ['-C', origin, ...a], {encoding: 'utf-8'}).trim();
   const trains = () => og('for-each-ref', '--format=%(refname)', 'refs/heads/train/').split('\n').filter(Boolean);
-  return {d, clone, heads, setState, runs, train, calls, og, trains, done: () => fs.rmSync(d, {recursive: true, force: true})};
+  // The release branch in origin: its commit, or '' when there is none.
+  const release = () => {
+    try {
+      return og('rev-parse', '--verify', '-q', 'refs/heads/release');
+    } catch (e) {
+      return '';
+    }
+  };
+  // A commit on top of the given one, made in origin itself (to put a release branch somewhere).
+  const commitOn = (parent, msg) =>
+    execFileSync('git', ['-C', origin, 'commit-tree', parent + '^{tree}', '-p', parent, '-m', msg], {
+      encoding: 'utf-8',
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 't@example.com',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 't@example.com'
+      }
+    }).trim();
+  return {
+    d,
+    clone,
+    heads,
+    setState,
+    runs,
+    train,
+    calls,
+    og,
+    trains,
+    release,
+    commitOn,
+    done: () => fs.rmSync(d, {recursive: true, force: true})
+  };
 };
 const noWorktreeLeft = f =>
   assert.deepStrictEqual(fs.readdirSync(path.join(f.clone, '.claude', 'worktrees')), [], 'the train worktree is removed');
@@ -159,6 +192,8 @@ test('--dry-run checks the PRs and builds the train, pushes and merges nothing',
     );
     assert.deepStrictEqual(f.trains(), []);
     assert.strictEqual(f.og('rev-parse', 'main'), main);
+    assert.strictEqual(f.release(), '', 'a dry run creates no release branch');
+    assert.match(r.stdout, /move release to the commit main ends on/);
     assert.ok(
       f.calls().every(c => c.startsWith('GET ')),
       f.calls().join('\n')
@@ -232,6 +267,8 @@ test("green: one train pushed, each PR squash-merged in order at its tested head
       ['PUT pulls/2/merge', 'PUT pulls/1/merge', 'PUT pulls/5/merge']
     );
     assert.ok(!calls.some(c => /update-branch/.test(c)), 'no update-branch');
+    assert.strictEqual(f.og('rev-parse', 'release'), f.og('rev-parse', 'main'), 'release is created on the commit main ends on');
+    assert.match(r.stdout, /release created at \w{7}: the sheet script takes its code from here/);
     noWorktreeLeft(f);
   } finally {
     f.done();
@@ -257,6 +294,7 @@ test('red: nothing merged, the failing job named', () => {
     assert.ok(!/smoke \(fish\)/.test(r.stdout));
     assert.strictEqual(f.og('rev-parse', 'main'), main);
     assert.ok(!f.calls().some(c => c.startsWith('PUT')));
+    assert.strictEqual(f.release(), '', 'a red train never creates release');
   } finally {
     f.done();
   }
@@ -271,7 +309,75 @@ test('main moved after a merge (a Publish landed): it stops, the rest waits for 
     assert.match(r.stdout, /main moved to \w+ before #2 \(a Publish, an Action or another merge landed\)/);
     assert.match(r.stdout, /merged: #1; not merged: #2/);
     assert.deepStrictEqual(f.og('log', '--format=%s', 'main').split('\n'), ['Photo curation: x', 'PR 1 (#1)', 'main']);
+    assert.strictEqual(f.release(), '', 'a train stopped half way leaves release alone');
   } finally {
     f.done();
+  }
+});
+
+// The release branch (Pierre, 2026-11-18, review R5 question h): the sheet script installs from it, only this train moves it.
+test('release: a second train fast-forwards it to the commit main ends on, and a Publish after it is not on release', () => {
+  const f = fixture();
+  try {
+    assert.strictEqual(f.train('1').status, 0);
+    const first = f.og('rev-parse', 'release');
+    assert.strictEqual(first, f.og('rev-parse', 'main'));
+    // A Publish lands on main after the train: main moves on, release does not.
+    const publish = f.commitOn('refs/heads/main', 'Photo curation: y');
+    f.og('update-ref', 'refs/heads/main', publish);
+    assert.strictEqual(f.og('rev-parse', 'release'), first);
+    const r = f.train('5');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+    const second = f.og('rev-parse', 'release');
+    assert.notStrictEqual(second, first);
+    assert.strictEqual(f.og('rev-parse', 'main'), second, 'release is where the train left main');
+    f.og('merge-base', '--is-ancestor', first, second); // throws unless it was a fast-forward
+    assert.match(r.stdout, new RegExp(`release moved ${first.slice(0, 7)} -> ${second.slice(0, 7)}`));
+    // The Publish commit is in release's history too (main moved first, the train then merged on top of it).
+    assert.ok(f.og('log', '--format=%s', 'release').split('\n').includes('Photo curation: y'));
+  } finally {
+    f.done();
+  }
+});
+
+test("release: the train's own last merge commit, not a Publish that landed on main right after it", () => {
+  const f = fixture();
+  try {
+    // The fake gh lands a Publish right after the first merge, which here is the last one: main is one commit past it.
+    f.setState({publish_after_merge: true});
+    const r = f.train('1');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+    assert.strictEqual(f.og('log', '-1', '--format=%s', 'main'), 'Photo curation: x');
+    assert.strictEqual(f.og('log', '-1', '--format=%s', 'release'), 'PR 1 (#1)');
+    assert.strictEqual(f.og('rev-parse', 'release'), f.og('rev-parse', 'main~1'));
+  } finally {
+    f.done();
+  }
+});
+
+test("release: left alone when main's tree is not the train's (exit 2) and when it is not a fast-forward (exit 3, never forced)", () => {
+  const f = fixture();
+  try {
+    f.setState({tree_override: '0'.repeat(40)});
+    const r = f.train('1');
+    assert.strictEqual(r.status, 2, r.stdout + r.stderr);
+    assert.strictEqual(f.release(), '');
+  } finally {
+    f.done();
+  }
+  const g = fixture();
+  try {
+    // Someone pushed a commit main does not have: release is not an ancestor of what the train ends on.
+    const stray = g.commitOn('refs/heads/main', 'stray');
+    g.og('update-ref', 'refs/heads/release', stray);
+    const r = g.train('1');
+    assert.strictEqual(r.status, 3, r.stdout + r.stderr);
+    assert.match(r.stdout, /release not moved/);
+    assert.match(r.stdout, /main is merged and fine/);
+    assert.strictEqual(g.release(), stray, 'never forced');
+    assert.deepStrictEqual(g.og('log', '--format=%s', 'main').split('\n'), ['PR 1 (#1)', 'main']);
+    assert.ok(g.calls().every(c => /^(GET|PUT) /.test(c)));
+  } finally {
+    g.done();
   }
 });
