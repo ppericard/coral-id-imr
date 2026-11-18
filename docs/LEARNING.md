@@ -856,8 +856,9 @@ corals' answers only (`Code.gs` `stats_` reads the replayed subject's rows), yet
 scored and recalculated fish answers with it too: on 2026-11-08 the corals' shown-never-right offset was +0.43, so a
 fish photo shown and missed was taken as harder than a new one, where the prior says −0.5. Every use now reads
 `model.js` `pmem()`: the sheet's offsets for the subject it rates (`SUBJECTS` `replay`: the corals, the very `PMEM`
-array, so nothing changes for them), the prior (`core.js` `MEM.PRIOR`) for any other, until a per-subject `?stats=1`
-rates fish photos (ROADMAP admin plan PR 11). Checked by `tests/fishmemory.test.js` (a fish draw, expectation and
+array, so nothing changes for them), the prior (`core.js` `MEM.PRIOR`) for any other. The fish's photos have been rated
+by a per-subject `?stats=1` since sheet v137 and the app reads those ratings from vNEXT (below, "The fish read theirs
+too"), but their memory offsets stay the prior. Checked by `tests/fishmemory.test.js` (a fish draw, expectation and
 recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM` itself).
 
 - **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen).
@@ -1292,8 +1293,14 @@ dropped by the players' answers.
   smoke's Analyses part. No learning simulation: with no sea slug answers the pooled numbers are their priors, so the draw
   is the one of before until answers come (Pierre, 2026-11-17, against a simulation of a subject with no data). To watch
   once they come: the seeded pairs that drop (`dataLooks`), the genus offsets against the judged ease.
-- **The fish** keep their statistics on the sheet only (no `SUBJECTS` `stats`): reading them in the app is the admin
-  plan's PR 11 (ROADMAP), a change of their draw to check on their log (rule L12).
+- **The fish read theirs too** (admin plan PR 11, ROADMAP; `SUBJECTS` `fish` `stats`, from sheet vNEXT): the same
+  mechanism, on a subject with real answers. Their rows are rated at the rank each question asked, so a family, a genus
+  or a species unit is the "genus" of the hierarchical photo Elo and `PGD` holds one offset per unit id (`f:`, `g:`,
+  `s:`). Their photo memory and format offsets stay the prior and none (`pmem`, `pfmt`): the reply carries `mem` and
+  `fmt` (2026-11-18: `memn` 2,627 / 15 / 66 / 2, so three of the four buckets rest on under 70 answers), and using them
+  would move the progress the sheet replays (rule D5, a rules version of their own), a decision for Pierre. The
+  progress itself is untouched: the sheet replays a fish answer from the scoring record it logged (`core.js`
+  `scoreRec`), whatever pooled numbers it holds (`tests/fishstats.test.js`).
 
 ### Photo exposure (2026-11-06, Q187-Q190; fish too)
 

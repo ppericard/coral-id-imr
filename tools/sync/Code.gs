@@ -4270,7 +4270,7 @@ const CORE_ = (function () { const module = {exports: {}};
   //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
   //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
   //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
-  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
+  //           a subject with a pool and no stats draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -4403,6 +4403,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
   const SEASLUGPAIRS_SHEET = 174;
+  // The sync script version from which the app reads the fish's own pooled statistics (rule D4; SUBJECTS fish stats): their
+  // ?stats=1&s=fish reply (photo ratings, unit offsets and pairs, rated at the rank each question asked) names its
+  // subject and is the one this version serves; the app asks for it and keeps it only from here, so an older script,
+  // which answers &s=fish with the corals' numbers, changes nothing.
+  const FISHST_SHEET = 186;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -4568,6 +4573,11 @@ const CORE_ = (function () { const module = {exports: {}};
         vars: (F, Fs, S) => fishVarTable(F, Fs, S)
       },
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
+      // The app reads its pooled statistics from the script that serves them (FISHST_SHEET; rule D4): photo ratings, unit
+      // offsets and pair counts at the rank asked, so its draw, traps and look-alikes follow its players' answers. Its
+      // photo memory and format offsets stay the prior and none (model.js pmem, pfmt), and its replay reads no pooled
+      // number: a row carries the scoring record it was scored with.
+      stats: FISHST_SHEET,
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -11218,6 +11228,7 @@ const CORE_ = (function () { const module = {exports: {}};
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
     SEASLUGPAIRS_SHEET,
+    FISHST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,

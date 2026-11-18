@@ -248,6 +248,6 @@ test('the app reads the sea slugs’ own statistics from the script that pools t
     assert.strictEqual(A.asked.length, 1);
     assert.ok(!('reefid-photo-stats-seaslug' in A.kept) && A.M.isDataLook(a, b), JSON.stringify({s: r.s, v: r.v}));
   }
-  // the fish ask nothing of their own: no stats field, their statistics on the sheet only
-  assert.ok(FISH.pool && !FISH.stats);
+  // the fish read theirs from a version of their own (tests/fishstats.test.js), never the sea slugs'
+  assert.ok(FISH.pool && FISH.stats > SEA.stats);
 });

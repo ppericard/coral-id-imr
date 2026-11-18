@@ -610,13 +610,19 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   data look-alikes follow their players' answers; their photo memory and format offsets stay the prior and none
   (`pmem`, `pfmt`), as the sheet's replay of them reads none.
 - The fish's rows are rated at the rank each question asked (a family or a species unit as the "genus" of the
-  hierarchical photo Elo, its pairs among the choices offered). The app does not read the fish's (no `SUBJECTS` `stats`
-  for the fish; `model.js` `pfmt`: no fish offsets), and FISH_PATH.md's confusion views (family to family, species to
-  family, shrunk to the family's) are not built.
+  hierarchical photo Elo, its pairs among the choices offered). **The app reads the fish's own** from vNEXT, the same
+  way (`SUBJECTS` `fish` `stats`, `core.js` `FISHST_SHEET`; stored as `reefid-photo-stats-fish`): their photo ratings,
+  unit offsets and pairs join the corals' in `PSTAT`, `PGD`, `PCONF` under keys of their own (photo ids, `f:`, `g:`, `s:`
+  unit ids), so the fish draw, traps and look-alikes follow their players' answers. The reply also carries `mem`, `memn`
+  and `fmt`, which the app ignores for the fish (`model.js` `pmem`, `pfmt`: the prior and none), as the sheet's replay of
+  the fish reads no pooled number: each answer carries the scoring record it was scored with (`core.js` `scoreRec`), so
+  the device's record and the sheet's replay stay equal (`tests/fishstats.test.js`). FISH_PATH.md's confusion views
+  (family to family, species to family, shrunk to the family's) are not built.
 - **Quota with three subjects**: one fold per subject per 15-minute run (a run reads the new rows only, a rebuild the
   whole Answers tab 2,000 rows at a time, 60 s at most a run), one `pool3` entry per subject in the script cache (the
   corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, each in parts under 100 KB), and one more
-  `?stats=1` request every 10 minutes per device playing the sea slugs (served from the snapshot's cache).
+  `?stats=1` request every 10 minutes per device playing the sea slugs or the fish (served from the snapshot's cache; the
+  fish's reply is about 125 KB on 2026-11-18, growing with the photos rated and the pairs offered).
 
 **The other readers** use the numbers over all the data, stored, never simplified. The admin's `readStats`
 (`POST {readStats, token, s}`, `s` the subject, the corals without it) is served by `statsAdmin_` from row 2 and **row 4**, the
