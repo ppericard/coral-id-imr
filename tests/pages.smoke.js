@@ -4922,7 +4922,8 @@ async function namesCheck(b, base) {
         document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
         const a = smokeAnswer(false),
           nd = document.querySelector('#after .ndiff'),
-          vs = [...document.querySelectorAll('#after .vs')].map(x => x.className),
+          // behind More: the line telling the genus shown from the answer's is the sheet's one decisive line, outside it
+          vs = [...document.querySelectorAll('#after .fbmore .vs')].map(x => x.className),
           nb = document.getElementById('next').getBoundingClientRect();
         return {
           fmt: a.fmt,
@@ -4943,6 +4944,49 @@ async function namesCheck(b, base) {
         fails.push(`similar names ${w}: the names not in italics with bold letters, or not first ${JSON.stringify(r)}`);
       else if (!r.vs.length) fails.push(`similar names ${w}, ${pair.join('/')}: no "Your answer" line ${JSON.stringify(r)}`);
       if (!r.next) fails.push(`similar names ${w}, ${pair.join('/')}: Next out of view after the answer`);
+      // The short sheet (Pierre, 2026-11-18, rule C3): the verdict, the species line and one line; More and Next on one row;
+      // everything else (the ID tips, the names, "Your answer") hidden until More is opened, counted once (core.js PAGES.FB).
+      const m = await p.evaluate(() => {
+        const q = s => document.querySelector(s),
+          box = e => e.getBoundingClientRect(),
+          panel = q('#fbmore'),
+          mb = q('#fbmbtn'),
+          nx = q('#next'),
+          seen = s => !!(q(s) && q(s).offsetParent && q(s).getClientRects().length),
+          st = () => ({
+            hidden: panel.hidden,
+            tips: seen('#after .fbtips'),
+            names: seen('#after .fbmore .vs'),
+            exp: mb.getAttribute('aria-expanded'),
+            label: mb.textContent,
+            next: box(nx).bottom <= innerHeight && box(nx).top >= 0,
+            fb: [...PV.fb]
+          }),
+          before = {
+            ...st(),
+            line: (q('#after .fbline') || {}).textContent || '',
+            visible: q('#after .fb').innerText,
+            h: box(mb).height,
+            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1
+          };
+        mb.click();
+        const open = st();
+        mb.click();
+        const shut = st();
+        mb.click();
+        return {before, open, shut, again: st()};
+      });
+      const bad = [];
+      if (!m.before.hidden || m.before.tips || m.before.names || m.before.exp !== 'false' || m.before.label !== 'More')
+        bad.push('More is not closed');
+      if (!m.before.line || /ID tips|Your answer|Similar names/.test(m.before.visible))
+        bad.push('the short sheet holds more than one line');
+      if (m.before.h < 44 || !m.before.row) bad.push('More is not a 44 px target on the row of Next');
+      if (m.open.hidden || !m.open.tips || m.open.exp !== 'true' || m.open.label !== 'Less' || !m.open.next) bad.push('More does not open');
+      if (!m.shut.hidden || m.shut.tips || m.shut.label !== 'More') bad.push('Less does not close');
+      if (m.open.fb[1] - m.before.fb[1] !== 1 || m.again.fb[1] !== m.open.fb[1] || m.before.fb[0] < 1)
+        bad.push(`the tally: ${JSON.stringify([m.before.fb, m.open.fb, m.again.fb])}`);
+      if (bad.length) fails.push(`similar names ${w}, ${pair.join('/')}: the short sheet: ${bad.join('; ')} ${JSON.stringify(m)}`);
     }
     if (errs.length) fails.push(`similar names ${w}: page errors ${errs.slice(0, 3).join(' | ')}`);
     await c.close();

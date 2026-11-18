@@ -1953,7 +1953,7 @@ async function freshPlayers(b, base, errs) {
           c,
           d.querySelector('h3').textContent.replace(/\s+/g, ' ').trim(),
           (d.querySelector('.tyread') || {}).textContent || '',
-          !!d.querySelector('.fb > p.vs:not(.tyread)')
+          !!d.querySelector('.fbmore .vs') // the "Your answer would show" block (behind More; the sheet's own line is .fbline)
         ];
       };
       return {
