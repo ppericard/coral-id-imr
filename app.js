@@ -690,7 +690,7 @@ function build() {
   }
   // What the corals' units were made from, for the content version of their answers (contentVer), kept out of sight on
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
-  Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}});
+  Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
   DATA = d;
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
@@ -1190,7 +1190,10 @@ const fishBuild = () => {
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
   // What its units were made from, for the content version of their answers (contentVer), kept out of sight on them (not
   // enumerable). gm: a hash of {photos: {}} while the game photos have not come (dataPartial), another content.
-  Object.defineProperty(FISH, 'cvIn', {value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''}});
+  Object.defineProperty(FISH, 'cvIn', {
+    value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''},
+    configurable: true
+  });
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };

@@ -307,13 +307,16 @@ test('app.js contentVer: the corals’ from DATA, a tree subject’s from its ow
 });
 
 test('app.js: build and fishBuild keep what their units were made from, out of sight; every data file reaches okJson', () => {
-  const src = read('app.js');
+  const src = read('app.js'),
+    flat = x => x.replace(/\s+/g, ' ');
   assert.ok(
-    src.includes("Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}});")
+    flat(src).includes(
+      "Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});"
+    )
   );
   assert.ok(
-    /Object\.defineProperty\(FISH, 'cvIn', \{\s*value: \{S, cur: CUR, st: FISHST, files: \[FISHRAW\.f, FISHRAW\.ph, FISHRAW\.ho, FISHRAW\.gm\], v: ''\}\s*\}\);/.test(
-      src
+    flat(src).includes(
+      "Object.defineProperty(FISH, 'cvIn', { value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''}, configurable: true });"
     )
   );
   // Before DATA is set and after FISH is made: what contentVer reads is the units in force.
@@ -513,4 +516,31 @@ test('Code.gs: a send with no answer does not read the Id column', () => {
   assert.strictEqual(idReads, 0);
   save(s, 'Ana', [ans('a2')]);
   assert.strictEqual(idReads, 1, 'one read of the ids for a send that has answers');
+});
+
+test('Code.gs: a tab on a 26-column grid (a new Sheets tab) is read by every reader before the 27th column exists, then grows', () => {
+  const s = loadCodeGs(),
+    TOK = 'ghp_write000000000000000000';
+  save(s, 'Ana', [ans('a1'), ans('a2')]);
+  const sh = s.sheets.Answers;
+  sh.rows.forEach(r => (r.length = 26));
+  sh.maxCols = 26;
+  // Every reader of the tab, before any answer brings the new column: a load, a save with no answer (its hold and
+  // replay), the admin's reads, the stats and the 15-minute trigger.
+  assert.ok(s.post({name: 'Ana', pin: '1234', load: 1}).ok !== undefined);
+  assert.strictEqual(save(s, 'Ana', [], {rv: 0}).ok, true);
+  assert.ok(s.post({readAnswers: 1, token: TOK}).ok);
+  assert.ok(s.post({readLive: 1, token: TOK}).ok);
+  assert.ok(s.post({readStats: 1, token: TOK}).ok);
+  s.ctx.autoUpdate();
+  assert.strictEqual(sh.maxCols, 26, 'nothing written past the grid yet');
+  // The next answer adds the column, then writes it.
+  assert.strictEqual(save(s, 'Ana', [ans('a3', {cv: 'cabc'})]).ok, true);
+  assert.strictEqual(sh.maxCols, 27);
+  assert.strictEqual(sh.rows[0][26], 'Content version');
+  assert.deepStrictEqual(cvs(s), [
+    ['a1', ''],
+    ['a2', ''],
+    ['a3', 'cabc']
+  ]);
 });

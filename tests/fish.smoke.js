@@ -706,6 +706,11 @@ async function freshPlayers(b, base, errs) {
       'fish answers logged with their subject, rank and name: ' + JSON.stringify(L0.slice(0, 2))
     );
     ok(JSON.parse(localStorage.getItem('reefid-anonq') || '[]').length === L0.length, 'fish answers queued for the anonymous send');
+    // Each with its attempt id (core.js answerId) and the content version of the fish units in force (app.js contentVer).
+    ok(
+      L0.every(a => /^[a-z][a-z0-9]{15}$/.test(a.id) && /^c[a-z0-9]{1,15}$/.test(a.cv || '')),
+      'fish answers logged with their attempt id and content version: ' + JSON.stringify(L0.slice(-2).map(a => [a.id, a.cv]))
+    );
     ok(L0.filter(a => a.sp).length >= L0.length / 2, 'the species shown logged: ' + JSON.stringify(L0.map(a => a.sp).slice(0, 5)));
     ok(!localStorage.getItem('reefid-anon-base'), 'no coral anonymous base from fish answers');
     // Typed names.
