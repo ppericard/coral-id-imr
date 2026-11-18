@@ -125,8 +125,35 @@ worker's shell), every other host refused, before `upload-pages-artifact`. It ad
 Sizes (2026-11-18, gzip -9): the player's scripts, tiers 1 and 2, 464 KB → 177 KB (tier 1, what Home waits for,
 288 → 106 KB; tier 2, the quiz, 176 → 71 KB); every script 1,027 → 501 KB.
 
-An error report's `src` (`sync.js`, `file:line:column`) then points into a minified file; the build number it carries
-(`appVer`) names the deploy, whose `<file>.map` maps it back (rebuild that commit with the same terser for an older one).
+**Reading an error report** (`tools/unminify.js`). A report's `src` (`file:line:column` from 1, in the admin's Errors
+page and the sheet's Events tab) points into a one-line minified file; its `av` (`appVer`) is the deploy's number, then
+app.js's content hash: `982-a0aeab7eb0`. Plan decision (architecture review R4): the maps stay published beside the
+scripts (`<file>.map`, the original inside; the repository is public, so they show nothing it does not), and the tool maps
+a position back with Node's own source map reader, no dependency:
+
+```sh
+node tools/unminify.js --src 'app.js:1:23456' --av 982-a0aeab7eb0                 # the live site's maps (plain GETs)
+node tools/unminify.js --commit <sha> --src 'app.js:1:23456' --av 982-a0aeab7eb0  # a deploy no longer live, rebuilt here
+node tools/unminify.js --dir <built copy> stack.txt                               # a copy of tools/build_site.py; a pasted stack
+```
+
+It prints `reported -> original (name)` and the original line, for bare `file.js:line:col`, V8 `at f (url:l:c)` and
+Safari or Firefox `f@url:l:c` frames. A report keeps no folder, so a name is looked up in the root, then in `proto/`;
+`sw.js` and `proto/lab.js` are not minified and pass through. **The build is checked by the hash, not by the number**:
+every Publish redeploys, so the number moves while the scripts stay the same. `--av`'s hash must be the hash of the
+`app.js` the maps belong to, and a frame with its own `?v=` must match its file, or the tool refuses (exit 2; `--force`
+maps anyway). That hash is all a report holds of the scripts (`app.js` names no other with `?v=`), so a frame in another
+script, bare as the error handler reports it, is mapped and marked `[build not verified]`, unless the maps are the live
+site's and its `<meta name="build">` is the report's deploy number (a number given with `--commit` or `--dir` proves
+nothing: the caller chose that build). The live maps cover the latest deploy only, and phones keep a cached shell for
+days: for an older report, `--commit` rebuilds its commit with this checkout's `git archive` and `tools/build_site.py`
+(terser on `NODE_PATH` at the version `tools/minify.js` pins, installed as above). The commit is the "Published source"
+line of the summary of the deploy run whose number `av` starts with; `pages.yml` checks out the latest `main` when its
+job starts, so that run's `head_sha` can be a newer commit than the one published, and the `app.js` hash says when it is
+the wrong one. Each deploy's staged smoke maps a position of every minified script back (`tests/staged.smoke.js`);
+`tests/unminify.test.js` holds the tool's logic. A report carries one position (an error event's place, a rejection stack's first frame): the sheet keeps
+160 characters of `src` (`Code.gs`) and the Errors page groups by message and `src`, so more frames are a later change
+of both.
 
 **Rolling back the minification**: revert the PR that added it (the "Build the site" step back to the stamps alone), or,
 at once, change `tools/build_site.py` to skip step 3; the next deploy serves the source files, and since the stamps
