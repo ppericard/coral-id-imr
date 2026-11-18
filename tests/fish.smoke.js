@@ -504,6 +504,27 @@ async function freshPlayers(b, base, errs) {
         ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
         ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
       }
+      // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
+      // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
+      // for that pair only.
+      const nM = TREEU.c1.find(n => (GX(n).mim || []).some(m => m.pair.id === 'M1')),
+        pM = nM && GX(nM).views.wide.find(p => (mimOf(nM, p) || {}).sp && p.loc === 'world');
+      ok(!!pM, 'a juvenile of the mimicry class from outside the region in play (M1)');
+      if (pM) {
+        const c = mimCardOf([{n: nM, p: pM}], mimSeen);
+        ok(!!c && !mimSeen('M1'), 'its card due');
+        const two = c && mimPics(c.m, c.p, c.n);
+        ok(!!two && two[0].loc !== 'world' && two[0].sp === pM.sp, 'the card shows a juvenile of the species from the region');
+        const d = c && mimShow(c, false);
+        if (d) {
+          ok(d.querySelectorAll('.phvis figure').length === 2, 'the two species side by side');
+          ok(d.querySelectorAll('.mimmarks li').length === c.m.pair.marks.length, 'its marks');
+          ok(!/mimic/i.test(d.querySelector('h3').textContent), 'it says resembles');
+          d.close(1);
+          ok(mimSeen('M1') && !mimSeen('M2'), 'marked shown for its pair only');
+          ok(mimCardOf([{n: nM, p: pM}], mimSeen) === null, 'not again');
+        }
+      }
       return {fails, gated};
     }, 15);
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));

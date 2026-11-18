@@ -537,6 +537,13 @@ Decided from the admin pooling study:
   - **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
     Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
   - Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
+- **The mimicry class** (Pierre, 2026-11-18; docs/LEARNING.md "The mimicry class"): a juvenile or an adult that a source
+  says resembles another species (the pairs M1-M7 of `tools/fish_lookalikes.json`, `fish.json` `lookalikes`) comes into
+  its unit's draw from Open Water once a unit of the species it resembles is met, at Advanced while none is; this
+  replaces the class B timing for *Acanthurus pyroferus* and *Scolopsis bilineata*. Its first meeting brings its pair's
+  card: both species side by side, the sourced marks that tell them apart, the sources of the resemblance. A species
+  whose look varies by region (`fish.json` species `region`: *A. pyroferus*) never shows a photo taken elsewhere on the
+  card. Not built yet: the pair drilled in the look-alike formats (the per-photo traps, below).
 - The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag

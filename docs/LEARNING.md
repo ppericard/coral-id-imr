@@ -706,6 +706,43 @@ progress of its own: it comes as the unit asked is mastered.
 **Juveniles and colour phases in stages** was the first build of this path, replaced by the ramp above; its measured
 record is in the [notebook](archive/learning-notebook.md).
 
+### The mimicry class
+
+A photo of a species a source says resembles another one comes in once the player has met the species it resembles,
+so the trap arrives with its explanation. Why and who decided: the
+[decision record](decisions/2026-11-18-variant-classes.md).
+
+- **The pairs** (`tools/fish_lookalikes.json`, hand-kept; `tools/build_fish.py` `lookalikes` checks it and writes
+  `fish.json` `lookalikes`): two species of the game, the kind (`resembles` where a source says one resembles the other;
+  `confused` for a plain confusion), the stage of each side that resembles (`juvenile` or `all`), the sources that state
+  the resemblance (their quotes kept in the hand-kept file) and the marks that tell them apart on a photo: our words, at
+  most 80 characters, no digit, never the word "mimic" (a resemblance is a source's claim, FISH_PATH.md), each with its
+  sources. The build stops on a mark with no source or quote, a digit, the word mimic, a species out of the game or a
+  source never used.
+- **In the draw** (`app.js` `mimLay`; `model.js` `MIM_AT`, `mimIn`, `mimOf`, `mimAt`, in `varOf`): the family of each
+  resembling species carries its entries (`mim`); a photo of that species at the stage that resembles weighs a ramp on
+  the bar of the unit asked: `MIM_AT.met` [0.5, 0.8] once a unit of the species it resembles (its species unit
+  `s:<id>`, its genus or its family) is met (`introduced`), `MIM_AT.alone` [0.8, 0.8] while none is, so the photo never
+  waits on a unit the player may never open. It replaces the photo's class timing. A pair inside the unit asked holds
+  nothing back (two blennies asked as their family: the photo asks the same name as its model), and the unit asked and
+  its home never count as the model met. The variety fallback holds as for every variant.
+- **The draw only**: the photo's kind and its group for "Learned" stay its phase's (`core.js` `varKindOf`, `varUnit`,
+  `varLeftOf`): a resembling juvenile is in the juveniles' group, a resembling adult in none. The sheet's replay and the
+  learned marks do not read the class; at the exam's bar every photo of the class is in.
+- **The card** (`quiz.js` `mimArm`, `mimShow`, `mimPics`, `mimCardOf`): the first question that shows a photo of the
+  class brings its pair's card at the break at Next, before the juvenile card, on the same conditions: the two species
+  side by side (named as the player sees them first, `cnFirst`), the marks with their sources, "Resembles" with the
+  sources that state it, the credits. Once per pair and subject (`subjDev` `mim`, `TOLD` `mim:<subject>-<pair>`),
+  cleared at sign-out (rule D7).
+- **The out-of-region warning** (`fish.json` species `region`: why and its sources; `tools/fish_lookalikes.json`
+  `regional`): a photo of a species whose look varies by region, taken outside the Philippines (`loc` `world`), never
+  shows on the card; the card takes the form met here first (near Dauin, then the Philippines, the larger views first),
+  or waits. Every card photo shows one subject and no watermark (the judged flag `w`). The photo stays in play.
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): the pair drilled in the look-alike formats, family
+  pairs, the Look-alikes deck for every subject, the admin's ⚠ badge and its lift, the feature frames' default.
+
+Its level-1 check is in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check").
+
 ### The held-out photos in the game
 
 Some fish observations are kept out of practice for an honest mastery exam (rule L9): never shown in a game, a card, a
