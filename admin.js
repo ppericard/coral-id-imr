@@ -184,7 +184,7 @@ document.addEventListener(
 );
 const clone = o => JSON.parse(JSON.stringify(o));
 // The page's address without its filter (after '?', split off before decoding: hashQuery), decoded; a malformed
-// %-escape no longer throws (code re-review L2). A name in it is the last segment, so a '/' in a player's name stays in it.
+// %-escape never throws. A name in it is the last segment, so a '/' in a player's name stays in it.
 const hashNow = () => {
   const h = location.hash.slice(1).split('?')[0];
   try {
@@ -916,7 +916,7 @@ function rowOf(n, v) {
   const pin = (entry(n).feat || {})[v];
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
-  // Featured = always the first FEAT photos: the admin's pinned ones in his order, the rest filled automatically,
+  // Featured = always the first FEAT photos: the admin's pinned ones in that order, the rest filled automatically,
   // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
   const pinned = (pin || [])
     .map(f => live.find(p => p.f === f))
@@ -1104,7 +1104,7 @@ const ruleTag = p =>
       ? `<span class="adm-src adm-rule kept" title="Kept out of the presence rule">out of rule · kept</span>`
       : `<span class="adm-src multi adm-rule" title="Out of the presence rule">out of rule</span>`;
 // Photos out of the rule still needing a decision, from the curated photo lists (presence.js ruleQueue), for To do; and
-// the ones he kept (To do's Kept subsection).
+// the ones kept (To do's Kept subsection).
 const outOfRuleList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES, ruleKept);
 const ruleKeptList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES).filter(p => ruleKept(p.f));
 // A share-alike photo (CC BY-SA, CC BY-NC-SA; presence.js shareAlike: its lic, else its attribution text). The candidate
@@ -1309,7 +1309,7 @@ const ACT = {
         else k.move[f] = to;
       }
       dropFeat(k, f);
-      // Dropped after the last of 3 featured photos: it takes the last place (it used to fall off the end).
+      // Dropped after the last of 3 featured photos: it takes the last place, never falls off the end.
       if (at !== null) {
         L.splice(Math.min(at, L.length, FEAT - 1), 0, f);
         k.feat = k.feat || {};
@@ -1340,7 +1340,7 @@ const changed = () =>
   [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
 const tile0 = (...a) => tile(...a);
 function tile(n, p, v, st) {
-  // The cover shown in the header (his pick, else the automatic one) is marked on its photo either way.
+  // The cover shown in the header (the admin's pick, else the automatic one) is marked on its photo either way.
   const k = entry(n),
     isCover = (k.cover || SHOWN_COVER) === p.f,
     two = lv(n) === 2;
@@ -1425,11 +1425,9 @@ function fitModes() {
   if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow');
 }
 addEventListener('resize', () => fitModes());
-// The header groups and their tabs: Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes,
-// Photo stats), Players (Activity, List), plus Analyses (below). No tab holds a view of its own name, and no group a tab
-// of its own name. The views of a tab are chosen with the segmented switch at the right of the tab row (#subnav,
-// navs()). Each header group reopens the tab and view used last in it (reefid-admin-nav-group), each tab its view used
-// last (reefid-admin-nav-tab). Phones: one menu with every tab.
+// The header groups, their tabs and views (rule A3: no tab holds a view of its own name, no group a tab of its own name).
+// A tab's views are in the segmented switch at the right of the tab row (#subnav, navs()); a group reopens the tab and
+// view used last in it (reefid-admin-nav-group), a tab its view used last (reefid-admin-nav-tab); phones: one menu.
 // Addresses: #<group>/<tab>/<view>, each segment the word on screen, computed from GROUPS; a tab with one view has no
 // view segment (#players/activity); a thing the page is about follows as a further segment (#photos/genera/live/<Genus>,
 // #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after '?' (#inbox/coverage/games?look=all). A shorter
@@ -1631,9 +1629,9 @@ const GROUPS = [
     // fixed: a click on the group always opens its first tab (Activity), never the tab used last.
     {fixed: true}
   ],
-  // Analyses = what we learn (one role per admin page): the multifactor analyses of the answer log, every 1000 answers
-  // (docs/rules/admin.md A3; drawn by admin-analyses.js), and the views read live from the answer log (renderStats,
-  // LIVE_STATS): Pairs, Answer log and Stops (where players stop, genus sheets opened).
+  // Analyses = what we learn (one role per admin page; the one header group added to the first three, rule A3): the
+  // multifactor analyses of the answer log, every 1000 answers (drawn by admin-analyses.js), and the views read live
+  // from the answer log (renderStats, LIVE_STATS): Pairs, Answer log and Stops (where players stop, genus sheets opened).
   [
     'analyses',
     'Analyses',
@@ -1895,19 +1893,13 @@ const modeKey = () =>
                 'photos/candidates': 'cand'
               }[cur] || (treeOf(cur) ? (ASUBJ.rank === 'family' ? 'units' : 'ctree') : 'genus');
 // ---- The fish units page (on the book's families: docs/reviews/2026-11-06-fish-units-plan.md §6) ----
-// Photos › Tree › Key (#fish/photos/tree/key/<node id>): the key's classification as a tree at the left (key group,
-// family, genus, species; taxtree.js, any depth: fuTreeOf below), each node a page of its own (renderFishUnits), English
-// name first, the scientific names below, an IMR tag on the families and genera in the IMR course (the All | IMR filter,
-// FU_IMR). A family's page: one block per genus (its IMR tag, its species count), inside it one section per species
-// (common name first, scientific name below, its observations in play against its target), each with its photos in
-// play (curation.json fish add, autosort.js fishOn): featured first (FISHFEAT, the admin's order), then the game's order
-// (the easiest, then the most reference-like: core.js easyRank), never by who took them (fishOrder; rule P1 for fish).
-// On each photo: where it comes from, auto when the auto-sort put it in play, its ease, phase and what makes it harder;
-// Feature, ★ Cover, Remove (fishReject), Not this (fishNotThis: another species of the family or none; the admin's
-// click only), Crop, Tags and × (fishExclude), one click and one Undo step each: the one fish tile (fishTile,
-// bindFishTiles, below), the same wherever the admin shows the photo. The family's choices go to curation.json fish
+// Photos › Tree › Key (#fish/photos/tree/key/<node id>): the key's classification as a tree (key group, family, genus,
+// species: fuTreeOf below), each node a page of its own (renderFishUnits, described there), common names first; an IMR
+// tag on the families and genera of the IMR course (the All | IMR filter, FU_IMR). Photos in play (curation.json fish
+// add, autosort.js fishOn): featured first (FISHFEAT), then the game's order (core.js easyRank), never by who took them
+// (fishOrder; rule P1), each the one fish tile (fishTile, bindFishTiles). The family's choices go to curation.json fish
 // genera keyed by family id (fishPick), through the draft and Publish only (rule A1); ✓ Validated once fishNeeds has
-// nothing to say. A wink family shows its surprise card first, as players meet it. Fish data load once (fishLoad).
+// nothing to say. Fish data load once (fishLoad).
 // A photo's judgment: the pass's (suggest.json), else the game record's own ease and tags (a reference photo is judged
 // outside suggest.json; fish-game.json keeps its e and jt).
 const fuJ = f => {
@@ -1986,8 +1978,8 @@ let TT_VIEW = TREE;
 const tvHref = id => '#' + ASUBJ.hash + TT_VIEW + '/' + encodeURIComponent(id);
 // Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
 // with Not this, and the species whose photos changed since the published file (the list's dots).
-// An add with other species one could take for its subject, or not sorted yet (core.js fishOther: his tag, his legacy m
-// refined by the pass's o or k) is out of play: listed apart (other), never counted in play.
+// An add with other species one could take for its subject, or not sorted yet (core.js fishOther: the admin's tag and
+// legacy m refined by the pass's o or k) is out of play: listed apart (other), never counted in play.
 function fuData() {
   const F = DRAFT[TK] || {},
     S0 = SAVED[TK] || {},
@@ -2031,7 +2023,7 @@ function fuData() {
   return {F, play, other, gone, dirty};
 }
 // A family's game species (fish.json order: most common first) and its photos in play by species, in the page's order;
-// its cover (his pick while in play, else the family's first photo in the game's order); what it still needs.
+// its cover (the admin's pick while in play, else the family's first photo in the game's order); what it still needs.
 function fuFam(u, D) {
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
@@ -2040,7 +2032,7 @@ function fuFam(u, D) {
     rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
     all = ids.flatMap(s => [...rows[s].feat, ...rows[s].rest]),
-    // his pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
+    // the admin's pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
     // as the game's card cover: reference-level first)
     cover = fishCoverOf(all, D.F, u.id, fuJ);
   return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
@@ -2110,7 +2102,7 @@ const fuJt = (F, f) => {
   return c && c !== mine[6] ? mine.slice(0, 6) + c + mine.slice(7) : mine;
 };
 // p: the photo's record; o: {sid, fam (its family id), play (in play: on its family's page), st: {num} (featured),
-// cover (the cover shown), picked (his pick), XI (fishIdx of the draft's fish part), lead (caption first), cap (caption
+// cover (the cover shown), picked (the admin's pick), XI (fishIdx of the draft's fish part), lead (caption first), cap (caption
 // last), open (an Open in Tree link), extra (more actions), flag (a flag's key: the tools that take the photo out
 // also clear it)}.
 function fishTile(p, o) {
@@ -2133,7 +2125,7 @@ function fishTile(p, o) {
     RK = fuRanks(),
     path = o.path || [o.fam],
     lv = o.path ? Math.min(o.lv || 0, path.length - 1) : 0,
-    // his pick on node k, under either of the photo's names (a reference photo and its candidate copy: core.js fishPid)
+    // the admin's pick on node k, under either of the photo's names (a reference photo and its candidate copy: core.js fishPid)
     pick = k => {
       const c = k && ((F.genera || {})[k] || {}).cover;
       return c && fishPid(c) === fishPid(f) ? 1 : 0;
@@ -2145,7 +2137,7 @@ function fishTile(p, o) {
     raw = o.play ? path.map(pick) : [],
     held = raw.map((x, i) => !!x && (!juv || fishCoverJ(F, path[i], p))),
     ignored = raw.some((x, i) => x && !held[i]),
-    // his picks in force at the other ranks than the page's (the page's own: isCover, the cover in force there)
+    // the admin's picks in force at the other ranks than the page's (the page's own: isCover, the cover in force there)
     picks = held.map((x, i) => (i === lv ? 0 : x)),
     more = picks.some(Boolean),
     cvOn = !!raw[lv],
@@ -2606,14 +2598,14 @@ function fuFilters(T, U, E, D) {
     name = id => (U.find(x => x.id === id) || U.flatMap(x => x.genera || []).find(g => g.id === id) || {}).name || id,
     sp = FISHC.species,
     out = [];
-  // The circles in force (the draft's: fuCircle), None for a family he took off the game.
+  // The circles in force (the draft's: fuCircle), None for a family taken off the game.
   const cs = [...new Set(U.map(fuCircle))];
   cs.filter(c => c != null)
     .sort((a, b) => a - b)
     .forEach(c => out.push({k: 'c' + c, grp: 'Circle', t: 'Circle ' + c, on: n => !!n.unit && fuCircle(n.u) === c}));
   if (cs.includes(null)) out.push({k: 'cnone', grp: 'Circle', t: 'No circle', on: n => !!n.unit && fuCircle(n.u) == null});
-  // The pairs: the base's (fishPairs) and the ones he added (admin-content.js pairRows), each saying when he withdrew or
-  // added it (the structure editor's tools for it in the bar: structBar); Any look-alike, the pairs in force. The pair
+  // The pairs: the base's (fishPairs) and the ones added (admin-content.js pairRows), each saying when it is withdrawn or
+  // added (the structure editor's tools for it in the bar: structBar); Any look-alike, the pairs in force. The pair
   // rows are of the rank the subject declares its pairs at (SUBJECTS structure pairs): the families' (the fish), or the
   // genera's (the sea slugs: the base's pairs come from pairRows alone, the genus look of seaslug.json).
   const PR = typeof pairRows === 'function' ? pairRows(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ)) : [],
@@ -2685,25 +2677,17 @@ function fuTreeMount(T, sel, row, vis, hadF, top) {
   else if (list) list.scrollTop = top;
   if (hadF) M.focus(TT_FOC, !fresh); // a redraw keeps the tree where it was
 }
-// A node's page (docs/ROADMAP.md "The Tree tab", its node pages): every node of the tree has one, at its address in the
-// view on screen (#fish/photos/tree/key/<node id>, #fish/photos/tree/worms/<node id>; none or an unknown id: the view's
-// first unit, the Key's first family or WoRMS's first family). The sticky bar: the path from the root in that view (each
-// ancestor a link, the node last) and the select of the node's children (the drill-down, at every width: the phone's way
-// down the tree, which it does not show), the select of the view's families and All | IMR.
-// - A node above the units (a key group): a light page, its children's cards (each as its tree row: cover, names, counts,
-//   what it needs, ✓ and the draft's dot), each opening its page.
-// - A unit (a family) or a node under one (a genus, a species): its photos in play, one section per leaf (species) under
-//   it, inside one block per node between (genus); its cover in force in the bar with why (the admin's ★, else the
-//   default: admin-covers.js nodeCover, nodeCoverWhy; the Cover proposals view linked when the rule proposes another),
-//   and ★ Cover on its photos sets this node's cover (curation.json fish genera under its id: autosort.js fishCover, one
-//   Undo step, Publish sends it); each block's and section's heading shows its own cover in force (ringed when the
-//   admin's) and opens its page. The unit's own page adds its wink card, ✓ Validated and what it needs; every page the
-//   photos of its leaves sent elsewhere (Not this) or held out for other species, and each leaf's candidates waiting.
-//   The tiles' tools stay their unit's (Feature, Remove, Not this: fishTile with the unit's id).
-// - In the WoRMS view, a species (one node in both views) has its Key page's body, every choice through the Key's tree
-//   (T: its unit, its photos' paths); only the way around it is WoRMS's (TV: the side tree, the path, the selects). A
-//   WoRMS taxon (w:<AphiaID>, in no Key) has a read-only page: its cover in force, the default by the rule (never a ★:
-//   no data shape is decided for it), and its children's cards, each with its own cover in force.
+// A node's page (docs/ROADMAP.md "The Tree tab"), at its address in the view on screen (none or an unknown id: the
+// view's first family). The sticky bar: the path from the root, the select of the node's children (the phone's way down
+// the tree, which it does not show), the select of the view's families and All | IMR.
+// - Above the units (a key group): its children's cards, each as its tree row.
+// - A unit (a family) or a node under one: its photos in play, a section per leaf (species) inside a block per node
+//   between (genus); its cover in force with why (admin-covers.js nodeCover, nodeCoverWhy), and ★ Cover on its photos
+//   sets this node's cover (autosort.js fishCover, under its id); the unit's own page adds its wink card, ✓ Validated and
+//   what it needs. The tiles' tools stay their unit's (fishTile with the unit's id).
+// - WoRMS view: a species (one node in both views) has its Key page's body, every choice through the Key's tree (T);
+//   only the way around it is WoRMS's (TV). A WoRMS taxon (w:<AphiaID>) has a read-only page: its cover in force by the
+//   rule (never a ★: no data shape is decided for it) and its children's cards.
 // The Light proposals asked for once by a Tree page (its juvenile-cover confirmation reads them: admin-light.js lightJOf).
 let LIGHT_TREE = false;
 function renderFishUnits(id, view = TREE) {
@@ -2899,7 +2883,7 @@ function renderFishUnits(id, view = TREE) {
     W = fishWaiting(FISHC.cand, F, D.play),
     nC = [...LV].reduce((a, s) => a + (W[s] || []).length, 0),
     unitPage = sel === u.id,
-    // A heading's cover: the one in force, small, enlarged on a tap; ringed when it is his pick.
+    // A heading's cover: the one in force, small, enlarged on a tap; ringed when it is the admin's pick.
     hThumb = (p, picked, t) =>
       p && p.src
         ? `<button type="button" class="adm-sthumb adm-hthumb${picked ? ' mine' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid || p.sp || '')}" data-fu="zoom" title="${t}${picked ? ' ★' : ''}"><img ${crSrc(fuP(p), 1)} alt="" loading="lazy"></button>`
@@ -2947,7 +2931,7 @@ function renderFishUnits(id, view = TREE) {
     return `<section class="adm-fgen" data-gen="${esc(x)}"><h3 class="adm-fgenh">${hThumb(c.p, c.by === 'mine', `${cap1(m.rank || '')} cover`)}<a class="adm-nlink" href="${esc(tvHref(x))}">${ttName(m)}</a> ${m.tag || ''} <small>${nS} species</small></h3>${inner}</section>`;
   };
   const body = block(sel);
-  // Photos of its leaves sent elsewhere with Not this (his click only), with Put back.
+  // Photos of its leaves sent elsewhere with Not this (the admin's click only), with Put back.
   const G = D.gone.filter(p => LV.has(p.sid)),
     outRow = G.length
       ? `<section class="adm-row adm-out"><h3>Not this species <small>${G.length} photo${G.length > 1 ? 's' : ''}</small></h3>
@@ -5508,7 +5492,7 @@ function loadInfra() {
         ? {err: 'Offline', rows: repo}
         : infraOn(j) && j.ok
           ? {rows: [...infraRows(j, Date.now()), ...repo]}
-          : // before INFRA_SHEET the page behaves as before (rule D4): no line, the repository's numbers alone
+          : // an older script than INFRA_SHEET (rule D4): no line, the repository's numbers alone
             infraOn(j)
             ? {err: 'Not available', rows: repo}
             : {rows: repo});
@@ -5904,7 +5888,7 @@ function renderTriage() {
   };
   // The sections the subject on screen has (core.js SUBJECTS admin todo) besides the reports, the flags and the errors,
   // every subject's: the corals' read the coral photos (the presence rule, licences, Featured, suggest.json), never shown
-  // on another side (they were on the fish Reports before).
+  // on another side.
   const has = k => (ASUBJ.admin.todo || []).includes(k);
   const poor = [];
   if (has('poor'))
@@ -6207,7 +6191,7 @@ const sortKeys = o =>
   Object.keys(o || {})
     .sort()
     .reduce((m, k) => ((m[k] = o[k]), m), {});
-/* ---------- Look-alikes (was "Montages"): one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
+/* ---------- Look-alikes ("mont": montages): one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
 // Same pairs, order and automatic pick as the site (app.js classics / montage): pairs a source compares in so many words.
 const MONT_V = {
   'Pocillopora|Stylophora': 'medium',
@@ -7334,7 +7318,7 @@ function renderCand() {
         CSKIP.delete(f);
         CDONE++;
       },
-      // After his answer to a Check, the agent's (once the action has drawn the next card).
+      // After the admin's answer to a Check, the agent's (once the action has drawn the next card).
       told = () => chk && checkToast(f);
     S.querySelectorAll('[data-add]').forEach(
       b =>
@@ -8877,7 +8861,7 @@ function pstatsFish(S, here) {
       else if (cand && !(F.add || {})[f]) st.wait++;
       else st.off++;
     };
-  // his decisions first (they name the photo by the id he acted on), then the candidates, then the game's own records
+  // the admin's decisions first (they name the photo by the id acted on), then the candidates, then the game's own records
   ['exclude', 'out', 'seen', 'add'].forEach(k => Object.keys(F[k] || {}).forEach(f => one(f, !!FISHC.byF[f])));
   Object.values(FISHC.cand).forEach(L => (L || []).forEach(p => one(p.f, true)));
   (FISHC.plays || []).forEach(p => p && p.f && one(p.f, false));
@@ -9442,8 +9426,8 @@ const ofAns = (k, fn) => {
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
 // Reads of the sync sheet, one per kind on its way at a time (never the whole answer log three times at once, each
-// render before the first reply starting another): sheetRead(k, go) gives the
-// read k on its way, or starts it with go(fresh), whose reply is used only while fresh() (the read was not dropped since).
+// render before the first reply starting another): sheetRead(k, go) gives the read k on its way, or starts it with
+// go(fresh), whose reply is used only while fresh() (the read was not dropped since).
 // sheetAgain(...kinds) is ↻ and the account actions: what they name is forgotten and read again, a read of it still on
 // its way dropped (its late reply ignored). Kinds: ans (the answer log), stats (photo ratings, levels), users (the player
 // list), pages (pages opened), events, alerts (the Alerts tab), reports.
@@ -9886,7 +9870,7 @@ function savedPump() {
           };
         // Each subject's part of the copy (core.js subjKey: reefid-sync-<subject>-progress…): its progress, first-meeting
         // cards and Open all offer, first-launch answer (admin-journey.js) and reset; the achievements are the player's
-        // (progress.js ACHK: a session's summary). The replayed subject's at the top level, as before; savedFor reads any.
+        // (progress.js ACHK: a session's summary). The replayed subject's at the top level; savedFor reads any.
         const ach = P('reefid-sync-ach'),
           one = S => ({
             P: P(subjKey(S.id, 'progress')) || {},
@@ -9991,7 +9975,7 @@ function unitRpl(S, f, ph, gm, cur) {
 const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.slate));
 // replay units: end
 // The registry a page of subject S waits for before its units are read (unitsOf): its own for a tree subject, else the
-// fish's, as before.
+// fish's.
 const unitWait = S => (S && S.sheets ? S : FISHS);
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
 // replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's.
@@ -10213,8 +10197,9 @@ const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
   `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}">${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
 // Change the starting answer (users_ userStart; core.js startAdminSet): a player's starting answer per subject, in their
-// bar, fixed through the normal sync, never by hand in the sheet: the answer in force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
-// SUBJECTS start words), then Change / Cancel in the bar (no browser dialog), then one line saying whether it was done.
+// bar, fixed through the normal sync, never by hand in the sheet: the answer in force, its history (date, answer, how
+// it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js SUBJECTS start words), then Change
+// / Cancel in the bar (no browser dialog), then one line saying whether it was done.
 // A subject with no answer saved shows nothing: there is nothing to change, the player is asked on their device.
 function startBlock(u) {
   const X = savedOf(u.name);
@@ -10845,9 +10830,8 @@ function bindUsers() {
         group(L, false, `${L.length} players removed from the ${S.name} beta.`, S.id);
       })
   );
-  // Archive: keep a record apart under an archive
-  // name ("Pierre-test"), out of normal operation (Board -2: no leaderboard, no achievement share, no beta group, no
-  // player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
+  // Archive: keep a record apart under an archive name ("Pierre-test"), out of normal operation (Board -2: no
+  // leaderboard, no achievement share, no beta group, no player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
   // offered to sign out (sync.js archivedOf), then its owner may sign in under it and start empty.
   $v.querySelectorAll('[data-uarch]').forEach(
     b =>
@@ -11057,14 +11041,14 @@ const sessLen = L => {
 // The sessions unfolded on Recent sessions (a tap unfolds a session's summary under it, a tap folds it), by player id and first answer time, so a session stays open when the page is drawn again (↻, a saved copy read).
 const SOPEN = new Set();
 // Sessions (Activity's recent ones, a Journey's): a tap (or Enter / Space) on a session unfolds its summary, again folds
-// it; its player's link opens the Journey as before. An unfolded session's panel is as wide as the visible part of the
+// it; its player's link opens the Journey. An unfolded session's panel is as wide as the visible part of the
 // table's scroll box (.adm-sess, --sw), never past it.
 function bindSess() {
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf))); // a session's photos
   const rsc = $v.querySelector('.adm-recent .adm-tscroll');
   if (rsc) rsc.style.setProperty('--sw', rsc.clientWidth + 'px');
   // Recent sessions: a tap (or Enter / Space) on a session unfolds its summary, again folds it; its player's link opens
-  // the Journey as before.
+  // the Journey.
   $v.querySelectorAll('[data-sopen]').forEach(tr => {
     const flip = () => {
       const k = tr.dataset.sopen;

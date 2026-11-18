@@ -20,6 +20,9 @@ Each line: the date, Pierre's words as written (French where he spoke French), w
   own (Players › List), not under the statistics. `admin.js` `renderUsers`.
 - 2026-11-01: "one page, sort the players by name or by score, and act on them there". One row per signed-in player,
   sortable by any column, the account tools on the row's bar. `admin.js` `UCOLS`, `renderUsers`.
+- 2026-11-02, after the Candidates swiper opened on its "Pierre 0" source showing "No candidate left": an empty source
+  gives way to the first source, in priority order, that still has candidates; a source whose candidates are only
+  skipped or waiting in full cells stays. `admin.js` `renderCand`.
 - 2026-11-03: "le crop, tu aurais pu presque le faire de manière automatique". A candidate shows the judging pass's
   suggested crop until it is added, then the crop is written to the admin's crops, where it changes as any crop; the
   admin's own crop, or Full photo, always wins. `admin.js` `sugCrop`, `ACT.addc`.
