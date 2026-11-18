@@ -392,7 +392,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
 // generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
 // (runPop serves it the sheet's statistics).
 function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null}) {
-  // the simulated player's reserve (core.js reserveOf): one id per profile and seed, as learnsim's (simId)
+  // the simulated player's reserve (core.js reserveOf): one id per profile and seed (its own form; the app world's is learnsim.js simId)
   const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib, id: `~anon sim ${profile} ${rseed}`}),
     prof = LP.profOf(profile, U.subject),
     r = gen((rseed * 2654435761) ^ 0x9e3779b9),

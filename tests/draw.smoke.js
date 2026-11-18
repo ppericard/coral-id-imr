@@ -170,8 +170,11 @@ const server = http.createServer((req, res) => {
         exTyped += ty;
       }
       say(shownT);
-      // Typed exam questions are logged |t|x (the sheet reads |x at the end, model.js TYPED).
-      if (ex && (logged().m || '') !== (ty ? 'quiz|t|x' : 'quiz|x')) fails.push(`exam answer logged ${logged().m}, typed ${ty}`);
+      // Typed exam questions are logged |t|x (the sheet reads |x at the end, model.js TYPED); |h before them when the photo
+      // is one of the player's reserve (core.js reserveOf: the exam asks those first), never on a unit with none.
+      const lm = logged().m || '',
+        hOk = !/\|h\|/.test(lm) || heldOf(GX(t)).length > 0;
+      if (ex && (lm.replace('|h|', '|') !== (ty ? 'quiz|t|x' : 'quiz|x') || !hOk)) fails.push(`exam answer logged ${lm}, typed ${ty}`);
     }
     question = qx;
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);

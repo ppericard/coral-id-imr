@@ -4087,7 +4087,19 @@ rated arms run again after Codex's review of #1099, whose seeded player id the a
   True knowledge held at 300 and 1,000 for every profile in both subjects. The fish arms differ by which observations
   are held back and by the genera of circles 2 and 3 now holding some (2,319 against 1,946), the corals' by 96 colonies
   newly held back in 14 genera; at 5 seeds, and with #1057's A/A run moving these pacing measures by a breach's size,
-  they may be the run's path as much as the change. Not run further: a breach goes to Pierre with the PR (rule L11).
+  they may be the run's path as much as the change.
+- **The fish pair again, for a measuring fix** (not a second look: the same declared check): both fish rated arms above
+  ran before #1094, with the rated world's true unit offset averaged over the views alone while `genusDiff` reads the
+  held photos too, so every unit with held photos had a slightly wrong difficulty, otherwise in each arm. Run again,
+  `main` a8fe8a38 (with #1094) against 272d48b9 (about 9 minutes more, 37 in all): **primary no clear difference**
+  (T −6.92, p 0.078 exact; beginner 0.8 → 0.0, strongRA 10.2 → 9.6, expert 9.2 → 7.8; 6 of 15 pairs down), **no
+  breach**: the global score at 1,000 held for the strongRA and the expert (41.4 → 42.2), unclear for the beginner
+  (31.0 → 30.2, bound −1.9); the expert's plateau held (140 → 106); units at Open Water at 1,000 held for the strongRA and
+  the expert, unclear for the beginner (−0.6, bound −2.9); every other cell held or unclear. So the fish breaches above
+  went with the measuring error, and **the two coral breaches stand** (the corals have no judged ease: #1094 does not
+  touch them). A breach goes to Pierre with the PR (rule L11); not run further (the 40 minutes are spent).
+- **Real log** (rule L12): it cannot judge this change: another draw asks other questions, and no answer on a
+  per-player reserve is logged yet (the `|h` answers so far are on #1057's set).
 
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
 
