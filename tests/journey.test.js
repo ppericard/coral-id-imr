@@ -1,9 +1,8 @@
 'use strict';
 require('./slot.js').testGuard();
-// Journey (admin-journey.js): the Cards list in time order (Pierre, 2026-11-05: rows of Nov 4 came before rows of Nov 2),
-// the untimed ones after; the start rows say "inferred" once and "Answered again" for the same answer given again; and
-// the word beside a unit outside the slate (Pierre, 2026-11-08: the fish genera were labelled "bonus", a coral word,
-// although they are the scientific-names step of the game). The blocks are cut with tests/block.js, which fails by name
+// Journey (admin-journey.js): the Cards list in time order, the untimed ones after; the start rows say "inferred" once
+// and "Answered again" for the same answer given again; and the word beside a unit outside the slate is the subject's
+// own (the fish genera are the scientific-names step of the game, never "bonus", a coral word). The blocks are cut with tests/block.js, which fails by name
 // when a marker moves.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -43,7 +42,7 @@ test('a family outside the slate of families (another circle) stays "bonus"', ()
   assert.strictEqual(jOffSlate('f:Batfishes', new Set(['f:Damselfishes'])), 'bonus');
 });
 
-// Journey details for every subject (fish admin at parity, after #876): the steps of a player's path (jSteps) and the
+// Journey details for every subject (the fish admin at parity with the corals'): the steps of a player's path (jSteps) and the
 // Games card by format (jGames), on the real SUBJECTS and made-up rows [id, time, shown, answered, right, mode, photos,
 // expected, ability, new photos, choices].
 const C = require('../core.js'),
@@ -125,8 +124,8 @@ test('jGames: the corals keep their rows, the Duel tab shown at 0, no rank rows'
   ]);
 });
 
-// jlocal: the Cards list in the player's own local time (Pierre's list of 2026-11-05, left from #554): the
-// offset of the answer nearest in time (sheet v44, readAnswers index 14, minutes east of UTC), and the time written at
+// jlocal: the Cards list in the player's own local time: the offset of the answer nearest in time (readAnswers index
+// 14, minutes east of UTC), and the time written at
 // that offset whatever the admin's own zone. Expected texts come from Intl in the real IANA zone, never typed by hand.
 const jlocalSrc = cut('// jlocal: begin', '// jlocal: end');
 const {jOffAt, jAtText, jUtcText} = new Function(jlocalSrc + '\nreturn {jOffAt, jAtText, jUtcText};')();
