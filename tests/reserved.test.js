@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Reserved account names (Pierre, 2026-11-09): a name holding a member name of Object.prototype (constructor, __proto__,
+// Reserved account names: a name holding a member name of Object.prototype (constructor, __proto__,
 // toString…) or prototype as one of its words is refused for a new account and an archive name, in the app's sign-in form
 // (sync.js, core.js reservedName) and by the sync script (Code.gs doPost_, users_ userArchive: error 'reserved'). An
 // account that already has one keeps working, and the script's maps by player have no prototype, so such a player is a
@@ -46,7 +46,7 @@ const OLD = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf'
 
 test('reservedName: every member name of Object.prototype and prototype, as a word, in any capitalisation', () => {
   const {RESERVED_NAMES, reservedName} = C;
-  // The list Pierre saw covers this engine's Object.prototype (V8: Node and Apps Script alike).
+  // The list covers this engine's Object.prototype (V8: Node and Apps Script alike).
   Object.getOwnPropertyNames(Object.prototype).forEach(w => assert.ok(RESERVED_NAMES.includes(w), w));
   assert.ok(RESERVED_NAMES.includes('__proto__') && RESERVED_NAMES.includes('prototype'));
   RESERVED_NAMES.forEach(w => {
@@ -57,7 +57,7 @@ test('reservedName: every member name of Object.prototype and prototype, as a wo
   ['Ana B.', 'Anna', 'Constance', 'Proto', 'Constructors', 'valueOfX', 'toStrings', 'Jean-Luc', "O'Neil", '', null, undefined].forEach(n =>
     assert.strictEqual(reservedName(n), false, String(n))
   );
-  // The sheet's own word check (Code.gs PROTO_RE, review of #801) refuses no word the list lets through.
+  // The sheet's own word check (Code.gs PROTO_RE) refuses no word the list lets through.
   const s = loadCodeGs();
   RESERVED_NAMES.filter(w => w !== 'prototype').forEach(w =>
     assert.strictEqual(vm.runInContext(`protoWord_(${JSON.stringify(w)})`, s.ctx), true, w)
