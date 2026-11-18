@@ -1035,10 +1035,10 @@
       [NOW - 9 * DAY, 'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'],
       [NOW - 40 * DAY, 'limit reached: anon (6000 per 6 h)']
     ];
-    // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board apart and a cohort, each player's gids.
+    // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board and a cohort, each player's gids.
     const gdefs = [
-      {id: 'g:demo0001', n: 'Staff', board: 1, apart: 1, beta: '', at: NOW - 5 * DAY},
-      {id: 'g:demo0002', n: 'RA November 2026', board: 1, apart: 0, beta: '', at: NOW - DAY}
+      {id: 'g:demo0001', n: 'Staff', board: 1, beta: '', at: NOW - 5 * DAY},
+      {id: 'g:demo0002', n: 'RA November 2026', board: 1, beta: '', at: NOW - DAY}
     ];
     [
       ['Ana Demo', 'g:demo0001'],
@@ -1402,7 +1402,6 @@
       Object.assign(d, {
         n,
         board: flag('board', cur ? cur.board : 0),
-        apart: flag('apart', cur ? cur.apart : 0),
         beta: o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '')
       });
       if (!cur) S.gdefs.push(d);
