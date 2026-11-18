@@ -1,6 +1,6 @@
 # Decisions from the app's code comments: kept here when the comments were cleaned
 
-Date: 2026-11-18. PR: the comment clean-up of `model.js`, `app.js`, `quiz.js` and `sync.js`. Rules or docs touched: none
+Date: 2026-11-18. PR: #1124, the comment clean-up of `model.js`, `app.js`, `quiz.js` and `sync.js`. Rules or docs touched: none
 (rule W19: history stays in git and the PRs, decisions in `docs/decisions/`).
 
 ## Context
