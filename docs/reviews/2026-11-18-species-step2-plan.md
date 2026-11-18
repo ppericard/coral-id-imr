@@ -115,9 +115,11 @@ slugs: 206 species (205 named and *Goniobranchus* sp. 5) under 78 genera.
 
 - **`names`** (new): the kinds of name its species are asked by: fish `['cn', 'sci']`, sea slugs `['sci']`. A kind not
   listed has no units: the sea slugs get no common-name branch from data, not from a test on their id.
-- **Its gate** (rule D4): a subject whose sheet replays its progress and ranks its board (`replayed`: the fish) opens the
-  scientific species only once the sheet replays them (a `SCI_SHEET` version in `sync.js`, beside `SPECIES_SHEET`). A
-  subject with no replay and no board (the sea slugs: `replay: false`, no `replayed`, no `board`) needs no gate.
+- **Its gate** (rule D4): a subject whose sheet replays its progress and ranks its board (`replayed`: the fish **and the
+  sea slugs**, `core.js` `SUBJECTS`, `replayed.gen`, `replayed.rvs`, `board: true`; `replay: false` only says the sea
+  slugs are not the primary replay subject) opens the scientific species only once the sheet replays them (a `SCI_SHEET`
+  version in `sync.js`, beside `SPECIES_SHEET`; the sea slugs' own replay script is `SEASLUGRP_SHEET`). No subject is
+  exempt from the gate.
 - Nothing else is new: `unitRank` already says where the units start (the sea slugs' genera), `sheets` already names
   the species sheet's prefix.
 
@@ -188,8 +190,12 @@ stays out, as in step 1 (#892), for both kinds.
   if it changes how an answer counts, is read by the replay under a new fish rules version (`FISH_RVS`).
 - **Achievements**: fspsci1, fboth25 and fdauin20 on the scientific bars at Advanced (Q262), fpct70 on the score;
   fpct100 needs the ultimate exam (Q395). My progress's "Scientific name: M" counters and the third bar are already in place.
-- **The sea slugs** have no score tree, replay, board or achievements: their species level touches nothing on the sheet,
-  and their progress merges per device as today.
+- **The sea slugs** have no score tree or achievements, but they do have a sheet replay (`replayed`: `gen` is
+  `fishReplayGen(F, 'genus')`, `rvs` is `SEASLUG_RVS`) and a board ranked by the genera's mean (Codex review #1041).
+  Their species units are therefore new units for that replay too: `fishReplayGen`'s `'genus'` branch returns before it
+  adds any species today, so the sheet PR extends it to the sea slugs' `sci:` species (look-alikes from the genus's
+  other species, family line, `from` the genus), under a new `SEASLUG_RVS` version for the answers it now counts, and
+  the replay's cache keys move with it. The sea slugs' species level is gated behind that script version.
 
 ### 2.7 Where the sea slugs differ
 
@@ -208,7 +214,9 @@ stays out, as in step 1 (#892), for both kinds.
    other species, as the fish's.
 5. **One-species genera**: 36 of the 78 genera hold one species in the game. Their species stay units: what the player
    learns is the second word, which the typed share tests; their traps come from the family's other genera.
-6. **No sheet gate**, so the sea slugs can be on as soon as the app PR merges, before the fish's sheet version.
+6. **The same sheet gate as the fish** (rule D4): their replay and board read the new units, so the sea slugs' species
+   level opens only once the sheet script replays them (section 2.2, 2.6); it does not wait for the fish's `SCI_SHEET`
+   if their extension ships under its own script version.
 
 ## 3. Questions for Pierre, answered
 
@@ -360,9 +368,13 @@ below. Every cut is stated with the power it gives up.
   (the level the new units take questions from), a claim of no harm read as a guardrail with the families' margin (−2 or
   −5%, the larger). Guardrails: the families at Advanced at 1,000 and 3,000, the fish % shown (−1 point), the right %
   (±3 points), E = bar − D\*, the plateau, every other learncmp guardrail. Reported: the scientific species met, at Open
-  Water and at Advanced, and their share of the answers. One look at 90%; a cell unclear gets one second look of its own
-  (10 more seeds, about 5 minutes), one cell at most, else it goes to Pierre. In all: about 41 minutes, 46 with a
-  second look.
+  Water and at Advanced, and their share of the answers. Two looks are declared before running (rule L11, progressive: the error
+  is split over the looks declared, so a second look never spends error that was not budgeted): `learncmp --looks 2`
+  reads the one-sided 95% bound at both, and the primary at 0.025. The first look is the 10 seeds; a cell unclear
+  there gets the second look of its own (10 more seeds, 20 in all, about 5 minutes), one cell at most, else it goes
+  to Pierre; stopping at the first look when every cell is clear keeps the 90%. The price is a wider first look (95%
+  bounds instead of 90%), so a few more cells land unclear and take the second look. In all: about 41 minutes, 46
+  with a second look.
 - **Unit tests** (the sea slugs' whole check): the units of each kind from `names`; the parent and the share level; the
   opening order; a scientific question's choices and typed answers among its own kind; *Goniobranchus* sp. 5's key and
   typed forms; no `gl` photo on a species; Q394's step never positive on a scientific bar over a grid of states; the
@@ -400,7 +412,8 @@ runs on top: about 41 minutes of machine time, outside these figures.
 
 1. **Done**: this note, with the answers; the scientific genera of circles 2 and 3 (Q397: #1067, their content #1074);
    the log's "Species shown" pattern accepting a species with no name yet's number (sheet script v170, #1053).
-2. **Sheet PR (fish)**: the `sci:` units and the central levels table in `core.js` (`fishSpUnits` with a kind,
+2. **Sheet PR (fish, and the sea slugs' replay: `fishReplayGen`'s `'genus'` branch gains their `sci:` species under a new
+   `SEASLUG_RVS`, gated by their script version; its size is not re-estimated here, the PR sizes it)**: the `sci:` units and the central levels table in `core.js` (`fishSpUnits` with a kind,
    `fishReplayGen`, `fishScoreTree`), new cache keys, Q394's mark under a fish rules version (A: smaller faults, so the
    replay reads them); a sheet script version (`SCI_SHEET`). Nothing changes in the app until it is assigned (rule D4).
    Level 0: the replay identity and the tree tests. **Size engine+sheet M, about 45 minutes**: comparable to #812, #835,
@@ -408,7 +421,7 @@ runs on top: about 41 minutes of machine time, outside these figures.
 3. **App PR (both subjects)**: `SUBJECTS` `names`, the units, the parent (the genus, Q397), the opening and the share
    (C0, with live answers and the placement test counting on a locked unit), the choices by kind, the display, typed
    answers and Q394's faults, the log's suffixes, the milestone card, fspsci1-fpct70, the species tiles of My progress
-   (the sea slugs' too). The fish behind `SCI_SHEET`; the sea slugs on at merge. The check of section 4. **Size engine XL,
+   (the sea slugs' too). The fish behind `SCI_SHEET`; the sea slugs behind their own replay script version, as the fish. The check of section 4. **Size engine XL,
    about 6 hours**: comparable to #839, #954, #987, #1062 and #1076, median 6.4 h (range 1.6 h to 9.6 h); if it splits
    into the units and the display, each part is engine L, comparable to #861, #885, #957, #1047 and #1075, median 2.9 h
    (range 1.6 h to 3.2 h).
