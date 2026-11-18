@@ -2098,7 +2098,22 @@
    },
    "dlook": [
     "g:Chromodoris"
-   ]
+   ],
+   "apart": {
+    "g:Phyllidiella": "Phyllidiella: black rhinophores"
+   },
+   "apsrc": {
+    "g:Phyllidiella": [
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     },
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, Table 6, the external features of the genera, p. 89",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     }
+    ]
+   }
   },
   {
    "id": "g:Aegires",
@@ -2175,6 +2190,21 @@
      [
       0
      ]
+    ]
+   },
+   "apart": {
+    "g:Phyllidiopsis": "Phyllidiopsis: rhinophores of varied colours, often in two colours or more"
+   },
+   "apsrc": {
+    "g:Phyllidiopsis": [
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, External morphology of Phyllidiopsis, p. 19",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     },
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, Table 6, the external features of the genera, p. 89",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     }
     ]
    }
   },
