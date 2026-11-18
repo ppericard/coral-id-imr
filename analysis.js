@@ -1,5 +1,5 @@
-// Multifactor analyses of the answer log for the admin's Analyses group (Pierre, 2026-11-04: "every 1000 new answers,
-// a new section with several sub-pages, visualisations, reports, graphs, tables"). Pure functions, no DOM: loaded by
+// Multifactor analyses of the answer log for the admin's Analyses group (docs/ARCHITECTURE.md "Analyses": a milestone
+// every 1000 answers, with sub-pages, visualisations and tables). Pure functions, no DOM: loaded by
 // admin.html (window.ANALYSIS), run in a Web Worker (this same file, new Worker('analysis.js?v=N')) so the admin stays
 // responsive, and required by Node for the tests (tests/analysis.test.js, synthetic data whose true effects are known).
 // Methods (docs/LEARNING.md "Multifactor analyses"): crossed random effects (player, genus, photo; a question's photos
@@ -11,25 +11,9 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 15; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
-  // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
-  // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
-  // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
-  // 7: player profiles (who)
-  // 8: the Wright map and the genus × player residuals (Learning wright, res)
-  // 9: Time and difficulty (tdiff): others' answer time and enlarging on a photo, time intensity beside difficulty
-  // 10: interactions (ix): enlarging × view (Zoom), pair × view (Confusions), format × practice (Learning), one omnibus
-  // test each in the exploratory family
-  // 11: random practice slopes in Learning (each player's and genus's own), their spreads, per-genus learning curves
-  // (gcurve), the player profiles' learning slope
-  // 12: model checks (chk): each binary model's predictions of a player left out, calibration, quantile residuals, the
-  // paired log-loss against the app's expectation; Answer time's residuals
-  // 13: the correlations of the estimates over the bootstrap draws (ent rb), the mix-up families' stability (map stab)
-  // 14: the fish photos' judged features in Photo factors (fph: ease, phase, framing), the judged ease a primary effect
-  // 15: the rank asked (meta.rk: the fish's families, genera and species units told apart) in Response time, Photo
-  // factors, Confusions and Learning curves, and each rank against the app's expectation in Formats
+  const AV = 15;
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
-    STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
+    STEP = 1000, // a milestone every 1000 answers
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
     Z = 1.96;
   const sig = x => 1 / (1 + Math.exp(-x)),
@@ -52,9 +36,8 @@
   }
   // A copy of L in random order from R (Fisher-Yates): exactly L.length - 1 draws, so a seeded stream stays the same in
   // every engine. Never sort with a random comparator (sort(() => R() - 0.5)): how many times sort calls it is up to the
-  // engine, and Chromium calls it a different number of times once the code is optimised, so every later draw moved and
-  // the admin demo's made-up answers changed from one load to the next (the Health photos with no difficulty to show,
-  // tests/admin.smoke.js "difficulty in words", 2026-11-06).
+  // engine (Chromium changes it once the code is optimised), so every later draw would move and the admin demo's
+  // made-up answers would change from one load to the next.
   function shuffle(L, R) {
     const o = L.slice();
     for (let i = o.length - 1; i > 0; i--) {
@@ -67,7 +50,7 @@
   // Bootstrap refits stop earlier (looser tolerance): their spread matters, not their fourth decimal.
   let FAST = false;
   // Bootstrap refits start from the full fit of the same model (warm start): the same fit, reached in fewer steps, so
-  // 999 draws fit in the Action's time (the multiple-testing study of 2026-11-05, §5.3). WARM[sig] holds the last full
+  // 999 draws fit in the Action's time. WARM[sig] holds the last full
   // fit's fixed effects, variance components and shrunk effects; runAll empties it before each analysis. A player
   // drawn twice in a bootstrap sample is named id + DUP + draw index: both copies start from that player's own effect.
   let WARM = {};
@@ -84,7 +67,7 @@
   // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
   function warmGet(kind, p, F) {
     // never while a player is left out (HOLD, checkOf): a coefficient only their answers move would keep the full fit's
-    // value, learnt from those answers (Codex review #831); the fit starts from 0 instead
+    // value, learnt from those answers; the fit starts from 0 instead
     const W = FAST && HOLD == null ? WARM[sigOf(kind, p, F)] : null;
     if (!W) return null;
     F.forEach((f, k) => {
@@ -124,8 +107,7 @@
       )
     );
   // A bootstrap draw (FAST) with no answer moving a column cannot estimate its coefficient: NaN, so boot leaves the draw
-  // out for it, rather than counting the warm start's value (the full fit's) or the ridge's 0 as a draw (Codex review
-  // #588).
+  // out for it, rather than counting the warm start's value (the full fit's) or the ridge's 0 as a draw.
   const drawn = (b, n0) => (FAST ? b.map((v, a) => (n0[a] ? v : NaN)) : b);
   // A column the data never moves (all zero in this sample) gets a ridge, so its coefficient stays 0, not huge.
   const ridge = (A, X) => A.map((r, i) => r.map((v, j) => v + (i === j && !X.some(x => x[i]) ? 1 : 0)));
@@ -320,8 +302,8 @@
       const now = [...b, s2, ...F.map(f => f.tau2)];
       if (now.every((v, k) => Math.abs(v - old[k]) < (FAST ? 1e-4 : 1e-6) * (1 + Math.abs(v)))) break;
     }
-    // The fixed effects' covariance, marginal over the random effects (Codex review #441: conditional on them, an effect
-    // that is constant within a player looked sure from many answers of a few players).
+    // The fixed effects' covariance, marginal over the random effects (conditional on them, an effect that is constant
+    // within a player would look sure from many answers of a few players).
     const V = FAST ? null : margV(X, F, null, f => s2 / f.tau2, s2, XtX);
     if (!FAST) warmKeep('lmm', p, F, b, s2);
     const n0 = nz(X);
@@ -529,13 +511,12 @@
     const k = /\|k(\d)/.exec(m);
     return k && Number(k[1]) < 4 ? (Number(k[1]) >= 3 ? 'k3' : 'k2') : 'k4';
   }
-  // The rank of the unit a question asks (the fish parity review, #1056; the integrator, 2026-11-17: a rank effect in the
-  // models, not one report per rank): a subject whose units span several ranks (the fish: families, scientific genera and
-  // species units) has meta.rk, the rank of its game units from the start (core.js unitRankOf: the fish's 'family'), the
-  // models' reference level. Each answer's rank is read from its unit's id prefix (core.js SUBJECTS sheets: f: a family,
-  // g: a genus, s: a species unit), else the log's Rank column (index 18, sheet v60; Code.gs answerOut_ fills a blank one
-  // with the subject's rank), else meta.rk. With no meta.rk (the corals: one rank) no answer carries a rank and every
-  // model is as before. A model with a unit-level term (Response time, Photo factors, Confusions, Learning curves) takes
+  // The rank of the unit a question asks, a rank effect in the models rather than one report per rank: a subject whose
+  // units span several ranks (the fish: families, scientific genera and species units) has meta.rk, the rank of its game
+  // units from the start (core.js unitRankOf), the models' reference level. Each answer's rank is read from its unit's
+  // id prefix (core.js SUBJECTS sheets: f: a family, g: a genus, s: a species unit), else the log's Rank column (index
+  // 18; Code.gs answerOut_ fills a blank one with the subject's rank), else meta.rk. With no meta.rk (the corals: one
+  // rank) no answer carries a rank. A model with a unit-level term (Response time, Photo factors, Confusions, Learning curves) takes
   // one 0/1 column per other rank with RK_MIN answers or more (rkLev): that rank's questions against the reference's,
   // beyond the unit's own random effect, which then varies around its rank's mean (rkUnit adds the rank back where a
   // unit's own value is shown). Formats reads each rank's right answers against the app's expected chance (oe_rk_*).
@@ -617,8 +598,8 @@
         views = ph.map(f => (PH[f] || [])[0]).filter(Boolean),
         A = {
           p: String(r[0]),
-          // the answers a deleted account left (Code.gs answers_ anonymous 2, sheet v55): in the pooled fits only, never
-          // in a per-player result or a count of players (Pierre, 2026-11-05, Q86)
+          // the answers a deleted account left (Code.gs answers_ anonymous 2): in the pooled fits only, never in a
+          // per-player result or a count of players (docs/reviews/2026-11-05-deleted-accounts-audit.md)
           gone: r[11] === 2 ? 1 : 0,
           t: Number(r[1]) || 0,
           g: String(r[2]),
@@ -635,7 +616,7 @@
           f: fmtOf(m, ch.length),
           typed: TYPED_RE.test(m) ? 1 : 0,
           back: /\|c(\||$)/.test(m) ? 1 : 0,
-          // an exam question (|x), typed or not (a typed exam question is logged quiz|t|x; Codex review #441)
+          // an exam question (|x), typed or not (a typed exam question is logged quiz|t|x)
           exam: /\|x(\||$)/.test(m) ? 1 : 0,
           qv: !ph.length
             ? null
@@ -645,7 +626,7 @@
                 ? views[0]
                 : 'multi'
         };
-      // the rank of the unit asked (rankOfUnit), only for a subject whose ranks are told apart: the corals' answers as before
+      // the rank of the unit asked (rankOfUnit), only for a subject whose ranks are told apart
       if (meta.rk) ((A.rk0 = meta.rk), (A.rk = rankOfUnit(A.g, r[LOG_RANK], meta.rk)));
       let P = per.get(A.p);
       if (!P) per.set(A.p, (P = {last: null, sess: 0, pos: 0, g: {}, miss: 0}));
@@ -667,7 +648,7 @@
       if (A.f === 'again') G.again = G.again || G.miss;
       else ((G.miss = !A.y), (G.again = false));
       // A wrong answer is a miss for the genus given too (quiz.js: it counts against both genera, rule L2), so
-      // its next answers are "after a miss" and an Again on the pair follows it (Codex review #441).
+      // its next answers are "after a miss" and an Again on the pair follows it.
       if (!A.y && A.a && A.a !== A.g) {
         const W = (P.g[A.a] = P.g[A.a] || {n: 0, prev: null, miss: false, again: false});
         W.miss = true;
@@ -679,8 +660,8 @@
     });
     return out;
   }
-  // Milestones: the first 1000, 2000, 3000, … answers of the log (time order), round thousands only (Pierre, 2026-11-05:
-  // never shifted by the count of the first report), none before 1000.
+  // Milestones: the first 1000, 2000, 3000, … answers of the log (time order), round thousands only (never shifted by
+  // the count of the first report), none before 1000.
   function milestones(n) {
     const L = [];
     for (let k = STEP; k <= n; k += STEP) L.push(k);
@@ -750,7 +731,7 @@
   }
   // The answers needed for an interval of half-width h, from the current n and half-width (h scales as 1/sqrt(n)).
   const nice = n => (n < 1000 ? Math.ceil(n / 100) * 100 : Math.ceil(n / 500) * 500);
-  // Verdict of one effect (Pierre, 2026-11-04: each analysis says when it cannot conclude):
+  // Verdict of one effect (each analysis says when it cannot conclude):
   // clear: the 95% interval excludes the null value; margin: it includes it and is narrower than the smallest effect
   // that would matter (sesoi) on each side, so no effect that size; thin: it includes it and is wider, with the answers
   // that would resolve the current estimate (or the sesoi, if the estimate is smaller).
@@ -793,7 +774,7 @@
     });
   }
   const players = D => new Set(D.filter(a => !a.gone).map(a => a.p)).size;
-  // The players to leave out of a per-player list: those whose answers a deleted account left (gone, sheet v55).
+  // The players to leave out of a per-player list: those whose answers a deleted account left (gone).
   const goneOf = D => new Set(D.filter(a => a.gone).map(a => a.p)),
     livePl = (D, L) => {
       const G = goneOf(D);
@@ -853,7 +834,7 @@
   }
   function rt(A, B, seed) {
     const D = A.filter(a => a.s && a.x != null);
-    // the model's clusters, a deleted account's included: the count shown (players) leaves it out (Codex review #600)
+    // the model's clusters, a deleted account's included: the count shown (players) leaves it out
     if (D.length < 100 || new Set(D.map(a => a.p)).size < 2) return thin(D.length, 100);
     const RK = rkLev(D),
       KX = [...RT_X, ...rkX(RK, D[0].rk0)],
@@ -889,7 +870,7 @@
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
       ...(rks ? {rk0: D[0].rk0} : {}),
-      // the units' baseline once their rank's effect is folded in (Codex review #1058): the reference rank's typical
+      // the units' baseline once their rank's effect is folded in: the reference rank's typical
       // seconds, so a reference unit reads its own time and another rank's its time times exp(its coefficient), not the
       // median of every rank's answers (admin-analyses.js anSu)
       ...(RK.length
@@ -1015,8 +996,8 @@
       return a;
     });
   }
-  // The fish photos' own features (Pierre, 2026-11-08, ROADMAP "Analyses for the fish": "the fish photos' own features
-  // (judged ease, phase, framing) in What makes a photo hard"): meta.fph {file: [ease 1-5, phase word ('' none,
+  // The fish photos' own features in What makes a photo hard (docs/ROADMAP.md "Analyses for the fish"): judged ease,
+  // phase and framing. meta.fph {file: [ease 1-5, phase word ('' none,
   // 'juvenile', 'male'...), view letter (p profile, o oblique, h head-on, t tail, d from above), whole ('1' the whole fish,
   // '0' part of it)]} (photoMetaFish). The same model as the corals' (LLTM with player, unit and photo random effects):
   // judged ease per point (centred on 3), the phase against none, the framing against a whole fish in profile. No "one
@@ -1271,7 +1252,7 @@
   // The bootstrap of a difficulty is stored as the shift d; reported as -d (+ = harder).
   const remap = (bi, k) => (bi[k] ? {[k]: [-bi[k][1], -bi[k][0]]} : null);
 
-  /* ---------- Structure (the multifactor visualisation study of 2026-11-05, Pierre's Q70-Q77) ---------- */
+  /* ---------- Structure (docs/reviews/2026-11-05-multifactor-viz-study.md) ---------- */
   // Small helpers shared by the views that show how effects, genera and players relate: correlations, clustering.
   const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
   // Pearson correlations of the columns cols of X (rows of numbers), lower triangle: R[i][j] for j < i.
@@ -1288,18 +1269,16 @@
     );
   }
   const full = (L, diag = 1) => L.map((r, i) => L.map((_, j) => (i === j ? diag : i > j ? r[j] : L[j][i])));
-  // "Effects hard to tell apart" (study §2.2, §2.3; Pierre's "correlations between effects"): for the effects one model
-  // reports, the correlation of their estimates, from V, the fixed effects' covariance marginal over the random effects
-  // (cov2cor(vcov(fit)) in R: near ±1, one estimate could rise as the other falls with almost as good a fit, so each
-  // alone is fragile, their sum is not), and the correlation of the conditions themselves in the answers (the design
-  // matrix's columns), with each condition's variance inflation factor, the diagonal of the inverse correlation matrix
-  // over every condition of the model (VIF: 1 = independent of the others; above 5 to 10, entangled). keys[c]: the
-  // effect key of column c (null for the intercept or a column the analysis does not report); sg[c] = -1 for an effect
-  // reported with the opposite sign (a difficulty). Columns that never vary are left out. Lower triangles, 3 decimals.
-  // bi: the analysis's bootstrap (boot); from ENT_B draws (the latest milestone's 999), rb: the correlation of the
-  // effects' values over the draws (the study's later item for view 1: over players, so it carries what the model's V,
-  // conditional on its random effects, leaves out), on the draws where every reported effect has a value; nb: their count.
-  // The draws hold the effects as reported (a difficulty with its sign turned already), so no sign is applied to them.
+  // "Effects hard to tell apart" (docs/reviews/2026-11-05-multifactor-viz-study.md §2.2, §2.3): for the effects one
+  // model reports, the correlation of their estimates, from V (cov2cor(vcov(fit)) in R: near ±1, one estimate could rise
+  // as the other falls with almost as good a fit, so each alone is fragile, their sum is not), and the correlation of the
+  // conditions themselves in the answers (the design matrix's columns), with each condition's variance inflation factor
+  // (VIF: 1 = independent of the others; above 5 to 10, entangled). keys[c]: the effect key of column c (null for the
+  // intercept or a column not reported); sg[c] = -1 for an effect reported with the opposite sign (a difficulty).
+  // Columns that never vary are left out. Lower triangles, 3 decimals. bi: the analysis's bootstrap; from ENT_B draws,
+  // rb: the correlation of the effects' values over the draws (over players, so it carries what V, conditional on the
+  // random effects, leaves out), on the draws where every reported effect has a value; nb: their count. The draws hold
+  // the effects as reported (signs already turned).
   const ENT_B = 200;
   function entOf(V, X, keys, sg = [], bi = null) {
     if (!V || !X || !X.length) return null;
@@ -1445,8 +1424,8 @@
   // The predictions of player id's rows by a fit in which their rows weigh nothing (fast: the bootstrap's looser fit,
   // warm-started from the full one). NaN elsewhere.
   // A new player's own effects are unknown: their chance is averaged over the players the fit has (each one's fitted level,
-  // and in Learning their slope at the row's practice), not read at the average player (Codex review #831: with a player
-  // SD of 2, 81.8% at the average player against 71.5% averaged over players). Over the fitted players rather than over
+  // and in Learning their slope at the row's practice), not read at the average player (with a player SD of 2: 81.8% at
+  // the average player against 71.5% averaged over players). Over the fitted players rather than over
   // N(0, tau2): with this fit (PQL-like: its spreads shrunk, its intercept towards the average over players, ROADMAP
   // "what the correction leaves open" (e)), the normal integral over-predicted the generator's own mix-ups by 2-6 points in
   // every band, while the fitted players' own effects average to what they answered.
@@ -1605,7 +1584,7 @@
   // Wald chi-square from the model's covariance and, with BIX_MIN bootstrap draws or more (over players: the same cluster
   // bootstrap, BIX draws, a covariance needs some 200: Efron & Tibshirani 1993), from the draws' covariance; the larger p
   // of the two, as the wider of the two intervals elsewhere (p0). One test per interaction, exploratory (correct: the
-  // Benjamini-Hochberg family; Pierre's primary effects stay those of Q69). inm: every product coefficient inside the
+  // Benjamini-Hochberg family; the primary effects stay PRIMARY's). inm: every product coefficient inside the
   // smallest effect that matters with its 95% interval (the wider of the two): "no difference that would matter".
   const BIX = 199,
     BIX_MIN = 50,
@@ -1641,7 +1620,7 @@
   // The draws of an interaction's product coefficients: the cluster bootstrap over players (boot) of fit(S).b[cols];
   // BIX draws for the latest milestone (B = BOOT), BIX_MIN for the earlier ones and Recompute here (B = 199), so the
   // three interactions add about a sixth to the Action's time at the latest milestone (estimated from 60 draws on 7,200
-  // synthetic answers, 2026-11-09).
+  // synthetic answers).
   const ixB = B => (B >= BOOT ? BIX : B >= 199 ? BIX_MIN : 0);
   function ixDraws(D, fit, cols, B, seed) {
     if (!ixB(B)) return null;
@@ -1708,7 +1687,7 @@
       );
     if (!t) return null;
     // enlarging is read against the player's own habit (rel = z - the player's rate): for a player at the typical rate rb
-    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb (Codex review #829)
+    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb
     const rate = {};
     D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
     const rb = mean(D.map(a => rate[a.p][0] / rate[a.p][1])),
@@ -1880,7 +1859,7 @@
       const g = fgOf(a),
         c = (cnt[g] = cnt[g] || {n: 0, s: new Set()});
       c.n++;
-      c.s.add(a.n); // every practice count it was asked at (Codex review #829: capped at 2, later practice read as none)
+      c.s.add(a.n); // every practice count it was asked at (uncapped, so later practice counts too)
     });
     const ok = g => cnt[g] && cnt[g].n >= 100 && cnt[g].s.size > 1,
       L = ['two', 'typed'].filter(ok);
@@ -2023,8 +2002,8 @@
     const plist = Object.values(pl).map(o => {
       const j = jp.get(o.k);
       // observed / expected (expected from the pooled rates: pair, view, choices), its interval from the count's Poisson
-      // spread (square-root scale); the player's own effect apart, as an odds ratio (Codex review #441: exp(u) is not
-      // observed / expected when mix-ups are common)
+      // spread (square-root scale); the player's own effect apart, as an odds ratio (exp(u) is not observed / expected
+      // when mix-ups are common)
       const e = Math.max(o.exp, 1e-9);
       return {
         ...o,
@@ -2041,10 +2020,9 @@
       mixed,
       players: players(E),
       typ: {p: mixed / n},
-      // each rank's own mix-up rate per offer (a subject whose ranks are told apart; Codex review #1058): the baseline a
-      // pair's odds ratio, against a typical pair of its rank, is read on (admin-analyses.js anPairP), as the pooled rate
-      // (typ) is for a subject with one rank
-      // (the reference rank and each rank the model fits)
+      // each rank's own mix-up rate per offer (the reference rank and each rank the model fits): the baseline a pair's
+      // odds ratio, against a typical pair of its rank, is read on (admin-analyses.js anPairP), as the pooled rate (typ)
+      // is for a subject with one rank
       ...(RK.length
         ? {
             rkp: Object.fromEntries(
@@ -2073,7 +2051,7 @@
     };
   }
 
-  // The mix-up map (study §2.11, its first pick; Pierre's Q74: a phone form, the whole matrix from tablet width up):
+  // The mix-up map (study §2.11; docs/ARCHITECTURE.md "Analyses": a phone form, the whole matrix from tablet width up):
   // which genera form families of mix-ups. Similarity of two genera = how much more often, at the least, their pair is
   // mixed up than a typical pair: the lower end of the 95% range of the pair's shrunk effect u in the model above (a log
   // odds ratio: rates per offer, not counts, which mirror the app's choice of traps), 0 for a pair not clearly above a
@@ -2185,8 +2163,8 @@
     ['back', 'Comeback question']
   ];
   const MASTER = 0.8; // mastery = 80% recognised beyond guessing, the app's target success
-  // Random practice slopes (Pierre, 2026-11-04, ROADMAP "Analyses: next views": per-genus learning slopes; 2026-11-05,
-  // the player profiles' learning slope): each player and each genus its own slope on log(1 + answers on the genus),
+  // Random practice slopes (docs/ROADMAP.md "Analyses: next views"): each player and each genus its own slope on
+  // log(1 + answers on the genus),
   // around the common one, uncorrelated with its own level (lme4's (1 | g) + (0 + x | g)); the covariate centred on the
   // answers' mean (lc), so each level stays the level at typical practice. F: player, genus, player slope, genus slope.
   // RK: the ranks with a column of their own (rkLev), after LN_X's.
@@ -2225,11 +2203,11 @@
   // A genus's (or player's) own intercept and slope on log(1 + answers): b0 + u - v lc and b1 + v (the slope's weight is
   // log(1 + answers) - lc).
   const ownLine = (M, lc, u = 0, v = 0) => [M.b[0] + u - v * lc, M.b[1] + v];
-  // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
-  // reached (a flat or falling slope below it).
+  // Answers to reach MASTER: 0 when the start is already there, whatever the slope; 999 = not reached (a flat or falling
+  // slope below it).
   // 95% interval of the answers to MASTER from the joint uncertainty of the intercept and the slope (their covariance in
-  // the fit, V: 2 x 2) and of the genus's own effect (u, its conditional variance cv): seeded draws (Codex review #441:
-  // varying the slope alone gave [0, 0] for an intercept above the target whatever its own uncertainty).
+  // the fit, V: 2 x 2) and of the genus's own effect (u, its conditional variance cv): seeded draws (varying the slope
+  // alone would give [0, 0] for an intercept above the target whatever its own uncertainty).
   function masterCI(b0, b1, V, u = 0, cv = 0, seed = 1, sl = null) {
     const R = rng(seed),
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
@@ -2267,7 +2245,7 @@
       gone = goneOf(D);
     D.forEach(a => ((by.get(a.p) || by.set(a.p, []).get(a.p)).push(a), (cnt[a.g] = (cnt[a.g] || 0) + 1)));
     // each place's uncertainty carries the intercept's and the slope's, with their covariance (V, as masterCI), beside the
-    // player's or genus's own effect (Codex review #620: the random effect's alone gave ranges too narrow)
+    // player's or genus's own effect (the random effect's alone gives ranges too narrow)
     const V = M.V || [
         [0, 0],
         [0, 0]
@@ -2285,7 +2263,7 @@
             )
         )
       ),
-      // a deleted account's answers are in the fit, never a player on the map (sheet v55)
+      // a deleted account's answers are in the fit, never a player on the map
       live = P.L.map((id, j) => j).filter(j => !gone.has(P.L[j])),
       lt = q(
         live.map(j => lp[j]),
@@ -2305,8 +2283,8 @@
         ];
       }),
       // + the lowest and highest chance (log-odds beyond guessing) the model gives a player on the genus, each player at
-      // their own practice with their own slope and the genus's (Codex review #830: a place read off the typical practice
-      // alone dropped the genus slope times each player's distance to it, so "every player" could be wrong)
+      // their own practice with their own slope and the genus's (a place read off the typical practice alone would drop
+      // the genus slope times each player's distance to it)
       g: G.L.map((x, j) => {
         const [v, cvv] = vs(GS, gj && gj.get(x)),
           d = lt - lc,
@@ -2328,7 +2306,7 @@
       m: r3(logit(MASTER))
     };
   }
-  // A second skill? (study §2.4, §5 item 5; Pierre's Q77: residual PCA, never a PCA of raw right / wrong answers): the
+  // A second skill? (study §2.4, §5 item 5; docs/LEARNING.md: residual PCA, never a PCA of raw right / wrong answers): the
   // genus × player table of standardised residuals after the Learning model, each cell sum(right - P) / sqrt(sum P(1 - P)
   // + RES_K) (shrunk towards the model's prediction when the player met the genus little; 0 when never), players with
   // PROF_MIN answers or more, genera met by 2 of them or more; a PCA of the players' columns (centred): genera as points,
@@ -2343,7 +2321,7 @@
   function resOf(D, M, F, seed) {
     const Pr = D.map((a, i) => clamp(a.g0 + (1 - a.g0) * sig(M.eta[i]), 1e-6, 1 - 1e-6)),
       cnt = {};
-    // a deleted account's answers (gone, sheet v55) stay in the fit, never as a player's column
+    // a deleted account's answers (gone) stay in the fit, never as a player's column
     D.forEach(a => !a.gone && (cnt[a.p] = (cnt[a.p] || 0) + 1));
     const pl = Object.keys(cnt)
         .filter(p => cnt[p] >= PROF_MIN)
@@ -2488,7 +2466,7 @@
     D.forEach(a => {
       const c = (cnt[a.g] = cnt[a.g] || {n: 0, p: new Set(), y: 0});
       c.n++;
-      if (!a.gone) c.p.add(a.p); // a deleted account's answers count, never as a player (Codex review #600)
+      if (!a.gone) c.p.add(a.p); // a deleted account's answers count, never as a player
       c.y += a.y;
     });
     const V2 = [
@@ -2631,8 +2609,8 @@
       n = D.length,
       C = A.filter(a => a.back && a.E != null),
       bi = boot(D, S => ({slope: backFit(S).b[1]}), B, seed),
-      // the calibration over every comeback question, its own bootstrap (Codex review #441: the slope's sample keeps
-      // only answers after a right one, the estimate takes them all)
+      // the calibration over every comeback question, its own bootstrap (the slope's sample keeps only answers after a
+      // right one, the estimate takes them all)
       bc = boot(C, S => ({calib: mean(S.map(a => a.y - a.E))}), B, seed + 1);
     const effects = [eff('slope', 'Forgetting slope (logit per log(1 + days))', M.b[1], M.se[1], bi, 'logit', 0.1, n)];
     if (C.length >= 10) {
@@ -2690,7 +2668,7 @@
     ['pos', 'Later in the session (log position)']
   ];
   function sessRows(A) {
-    // a loop, not Math.max(...): a spread of the whole log overflows the stack past about 150,000 answers (Codex review #441)
+    // a loop, not Math.max(...): a spread of the whole log overflows the stack past about 150,000 answers
     const end = A.reduce((m, a) => (a.t > m ? a.t : m), -Infinity),
       S = new Map();
     A.forEach(a => (S.get(a.sess) || S.set(a.sess, []).get(a.sess)).push(a));
@@ -2706,7 +2684,7 @@
         if (open && i === L.length - 1) return;
         rows.push({
           p: a.p,
-          gone: a.gone, // a deleted account's answers: no player in the count (Codex review #600)
+          gone: a.gone, // a deleted account's answers: no player in the count
           y: i === L.length - 1 ? 1 : 0,
           X: [
             1,
@@ -2752,8 +2730,8 @@
     }
     return out;
   }
-  // Sessions in figures (Pierre, 2026-11-04: "what can we learn from each play session, and from sessions in general?"):
-  // every session in a table, when sessions start (Manila time), the result along a session and at its end, how
+  // Sessions in figures (docs/decisions/2026-11-18-decisions-from-comments-3.md): what each play session and sessions in
+  // general show. Every session in a table, when sessions start (Manila time), the result along a session and at its end, how
   // sessions end, the start of a session against the end of the one before by the length of the break, and the players
   // who come back. Counts and means only (no model); the ranges along a session by a bootstrap over sessions.
   const SS_GAPS = [
@@ -2804,7 +2782,7 @@
           .map(a => a.y)
           .join(''),
         miss: last.y ? 0 : 1,
-        // two misses in a row within this session (prep's streak runs across sessions; Codex review #500)
+        // two misses in a row within this session (prep's streak runs across sessions)
         miss2: R.length >= 2 && !last.y && !R[R.length - 2].y ? 1 : 0,
         lastNew: last.n === 0 ? 1 : 0,
         open: end - last.t < GAP ? 1 : 0
@@ -2940,10 +2918,10 @@
     const returns = [1, 2, 3].map(k => {
       let at = 0,
         back = 0;
-      // one observation window for both outcomes (Codex review #500): a kth session that ended less than a day before
+      // one observation window for both outcomes: a kth session that ended less than a day before
       // the log ends counts neither as a return nor as a player who did not come back
       byP.forEach(Q => {
-        if (Q[0].gone || Q.length < k || end - Q[k - 1].t1 < DAY) return; // no deleted account in the cohort (Codex #603)
+        if (Q[0].gone || Q.length < k || end - Q[k - 1].t1 < DAY) return; // no deleted account in the cohort
         at += 1;
         if (Q.length > k) back += 1;
       });
@@ -3046,13 +3024,12 @@
     };
   }
 
-  /* ---------- 9. Player profiles (Pierre, 2026-11-05: Q70-Q73; the multifactor visualisation study §3) ---------- */
-  // A descriptive map of how each player plays, not a typology: no named types until about 30 players (Q70; Dalmaijer et
-  // al. 2022: clusters need 20-30 people per group). Each player's current profile is computed on their last PROF_N
-  // answers (the whole history when fewer, Q71), the count shown, rows under PROF_MIN answers greyed and left out of the
-  // tree, the map and the groups. The behaviours (Q72, the study's 8; the learning slope waits for a random practice
-  // slope in Learning, ROADMAP), each net of what the app decided: the app picks the genus, the photo, the format and
-  // the difficulty from the level, so a raw share mostly measures the level.
+  /* ---------- 9. Player profiles (docs/LEARNING.md "Multifactor analyses"; the multifactor visualisation study §3) ---------- */
+  // A descriptive map of how each player plays, not a typology: no named types until about 30 players (Dalmaijer et al.
+  // 2022: clusters need 20-30 people per group). Each player's current profile is computed on their last PROF_N answers
+  // (the whole history when fewer), the count shown, rows under PROF_MIN answers greyed and left out of the tree, the map
+  // and the groups. The behaviours (the study's 8), each net of what the app decided: the app picks the genus, the
+  // photo, the format and the difficulty from the level, so a raw share mostly measures the level.
   const PROF_N = 300,
     PROF_MIN = 100,
     PROF_LOW = 20, // fewer answers than this: not on the page at all
@@ -3070,7 +3047,7 @@
   ];
   // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
   // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
-  // (Pierre, 2026-11-05: whole-history trajectories are a later level).
+  // (whole-history trajectories).
   function profFeat(D, slopes) {
     const by = new Map();
     D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
@@ -3102,8 +3079,8 @@
     });
     const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
     // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over).
-    // The misses are counted within the session (Codex review #604: prep's streak runs across a break, so a session's
-    // first miss after a miss that ended the one before read as two in a row).
+    // The misses are counted within the session (prep's streak runs across a break, so a session's first miss after a
+    // miss that ended the one before would read as two in a row).
     const stopRows = id => {
       const L = by.get(id),
         R = [];
@@ -3138,8 +3115,8 @@
       if (S.length >= 20) o[fi('stop')] = (s2 + PROF_K * p2) / (n2 + PROF_K) - (s0 + PROF_K * p0) / (n0 + PROF_K);
       const lens = new Map();
       L.forEach(a => lens.set(a.sess, (lens.get(a.sess) || 0) + 1));
-      // a session cut by the window's start (its first answer here is not its first, pos > 1) is not a session's length
-      // (Codex review #604): left out of the median, unless it is the only one (then it lasted at least that long)
+      // a session cut by the window's start (its first answer here is not its first, pos > 1) is not a session's length:
+      // left out of the median, unless it is the only one (then it lasted at least that long)
       const cut = L[0].pos > 1 && lens.size > 1 ? L[0].sess : null;
       o[fi('len')] = q(
         [...lens.entries()].filter(([k]) => k !== cut).map(([, v]) => v),
@@ -3160,8 +3137,8 @@
       const L = rows.map(r => V[r][f]).filter(v => v != null);
       mu[f] = mean(L);
       sd[f] = Math.sqrt(mean(L.map(v => (v - mu[f]) ** 2)));
-      // players who all share one value have no spread: what is left is the rounding of the mean (Codex review #604:
-      // seven identical log(40) read ±1 SD each), so a spread under a billionth of the values' size counts as none
+      // players who all share one value have no spread: what is left is the rounding of the mean (seven identical log(40)
+      // would read ±1 SD each), so a spread under a billionth of the values' size counts as none
       if (sd[f] <= 1e-9 * Math.max(1, Math.abs(mu[f]))) sd[f] = 0;
     }
     return id => V[id].map((v, f) => (v == null || !sd[f] ? 0 : (v - mu[f]) / sd[f]));
@@ -3249,7 +3226,7 @@
   }
   // Each player's own learning slope: the Learning model with random slopes (lnFit) on all the answers, the common slope
   // + the player's own. A slope needs the whole range of practice: on the last PROF_N answers alone most answers come
-  // late, on genera already practised, and the slopes it gave did not follow the planted ones (2026-11-09).
+  // late, on genera already practised, and the slopes do not follow the planted ones in synthetic data.
   function slopeOf(A) {
     if (A.length < 200 || players(A) < 3) return null;
     FAST = true;
@@ -3265,7 +3242,7 @@
     }
   }
   function profiles(A, B, seed) {
-    // a deleted account's answers (gone, sheet v55) make no profile (Pierre, 2026-11-05, Q86)
+    // a deleted account's answers (gone) make no profile
     const by = new Map();
     A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const win = [...by.entries()].filter(([, L]) => L.length >= PROF_LOW).map(([id, L]) => [id, L.slice(-PROF_N)]),
@@ -3332,7 +3309,7 @@
       loo = G.map(() => []),
       bt = G.map(() => []);
     let kept = 0,
-      done = 0; // the leave-one-out runs that could be compared (Codex review #604: with 3 players none can)
+      done = 0; // the leave-one-out runs that could be compared (with 3 players none can)
     main.forEach(id => {
       const H = run(main.filter(x => x !== id));
       if (!H) return;
@@ -3349,8 +3326,8 @@
     const R = rng(seed || 1),
       NB = B ? Math.min(200, Math.max(50, B)) : 100;
     for (let b = 0; b < NB; b++) {
-      // the draw keeps its multiplicities for the standardisation and the tree (Codex review #604: a set of the players
-      // drawn measured a subsample, not the bootstrap); the groups compare unique players
+      // the draw keeps its multiplicities for the standardisation and the tree (a set of the players drawn would measure
+      // a subsample, not the bootstrap); the groups compare unique players
       const S = main.map(() => main[Math.floor(R() * n)]),
         U = [...new Set(S)];
       const H = run(S);
@@ -3390,16 +3367,16 @@
       pca: {
         var: ax.map(a => r3(a.val / tot)),
         load: PROF_F.map((_, f) => ax.map(a => r3(a.vec[f] * Math.sqrt(a.val)))),
-        // the players projected on the same standardised behaviours the PCA diagonalised (Codex review #604: a behaviour
-        // missing for some players has a spread under 1 once those are set to the average, and Cr rescales it)
+        // the players projected on the same standardised behaviours the PCA diagonalised (a behaviour missing for some
+        // players has a spread under 1 once those are set to the average, and Cr rescales it)
         pts: T.order.map(i => ax.map(a => r3(sum(Z[i].map((z, f) => (C[f][f] > 1e-12 ? z / Math.sqrt(C[f][f]) : 0) * a.vec[f])))))
       },
       k,
       sil: r3(sil),
       groups: G.map(L => L.map(id => re(main.indexOf(id))).sort((a, b) => a - b)),
-      // stable only when every leave-one-out run keeps every group and each group's bootstrap mean reaches PROF_STAB (Codex
-      // review #604: the leave-one-out means alone called groups stable that some runs changed); null when no run could
-      // be compared (too few players: unavailable evidence is not instability). runs: the runs compared, of n players.
+      // stable only when every leave-one-out run keeps every group and each group's bootstrap mean reaches PROF_STAB (the
+      // leave-one-out means alone would call stable groups that some runs change); null when no run could be compared
+      // (too few players: unavailable evidence is not instability). runs: the runs compared, of n players.
       stab: {
         loo: loo.map(L => (L.length ? r3(mean(L)) : null)),
         boot: bt.map(L => (L.length ? r3(mean(L)) : null)),
@@ -3415,9 +3392,9 @@
     };
   }
 
-  /* ---------- 10. Time and difficulty: what the time to answer and enlarging say about a photo (Pierre, 2026-11-08) ---------- */
-  // The reverse of Answer time and Enlarging: "a slow answer, even a right one, or a photo enlarged first, means the
-  // question or the photo was harder than if the player answers at once". Two parts (docs/LEARNING.md "Response time as
+  /* ---------- 10. Time and difficulty: what the time to answer and enlarging say about a photo ---------- */
+  // The reverse of Answer time and Enlarging: does a slow answer, even a right one, or a photo enlarged first, mean the
+  // question or the photo was harder (docs/ROADMAP.md)? Two parts (docs/LEARNING.md "Response time as
   // information on difficulty"):
   // 1. Others' answers on the photo: before each answer, the answers OTHER players gave earlier on its photo (the
   //    question's first photo, the colony of a multi-view question): their right answers' speed, z = log seconds minus
@@ -3431,14 +3408,14 @@
   //    into genus and photo): log seconds ~ right + typed + enlarged + 2 choices + (player) + (genus) + (photo), then
   //    right ~ the photo's time intensity + typed + 2 choices + (player) + (genus) + (photo): how much harder a slower
   //    photo is (an LLTM-like covariate). The genus's time intensity is shown beside its difficulty, not tested: with a
-  //    few dozen genera, a genus-level covariate beside the genus's own effect is not identified (its interval ran to
+  //    few dozen genera, a genus-level covariate beside the genus's own effect is not identified (its interval runs to
   //    thousands on a planted log).
   const TD_K = 3, // shrinkage: 3 = residual variance / photo variance of the time (LEARNING.md "Response time: genus and photo")
     TD_MIN = 10, // a player's timed answers before their median counts (core.js RTIME.MIN)
     TD_ZB = 0.1; // the bins of the others' mean z (fast below -0.1, slow above 0.1)
   // The median of a list in order (medS), of any list (medOf). A player's log seconds are kept in order as they come
-  // (tdIns, a sorted insert), so each answer's median needs no sort of the whole history (performance pass, 2026-11-09:
-  // the same medians); a NaN (a negative time) breaks the order, so its player's list is then sorted as before.
+  // (tdIns, a sorted insert), so each answer's median needs no sort of the whole history; a NaN (a negative time) breaks
+  // the order, so its player's list is then sorted in full (medOf).
   const medS = S => {
     const n = S.length;
     return n % 2 ? S[(n - 1) / 2] : (S[n / 2 - 1] + S[n / 2]) / 2;
@@ -3859,7 +3836,7 @@
     return synth({players: o.players || DEMO_PLAYERS, photos, look, start: end - (o.days || 40) * DAY, end, seed: o.seed || 20261104});
   }
 
-  /* ---------- The plain reading of each effect (Pierre, 2026-11-04: "a non-statistician must understand it at a glance") ---------- */
+  /* ---------- The plain reading of each effect, for a reader who is no statistician (decisions-from-comments-3) ---------- */
   // For each effect: what is compared (name), the outcome it moves (o), the contrast its estimate is read at (s: the
   // estimate times s is the change shown), whether the estimate is a difficulty (inv: + = fewer right answers), whether it
   // says how far the app's own estimate is off (cal), and what a clear result suggests for the app (up / down: the
@@ -4047,7 +4024,7 @@
     const F = FMT_PLAIN[k];
     PLAIN.fmt = PLAIN.fmt || {};
     PLAIN.fmt['g_' + k] = {name: `${F}: success of a pure guess`, o: 'guess', fmt: k, cal: true};
-    // fitted with the format's own guess rate (fmtFit), so read beyond guessing (Codex review #495)
+    // fitted with the format's own guess rate (fmtFit), so read beyond guessing
     PLAIN.fmt['d_' + k] = {
       name: `${F}: easier or harder than the app expects, beyond guessing`,
       o: 'right',
@@ -4092,8 +4069,8 @@
       q0 = clamp((p0 - g1) / (1 - g1), 0.001, 0.999);
     return g1 + (1 - g1) * sig(logit(q0) + d);
   };
-  // How many times as often, from an odds ratio exp(u) at the base chance p (Codex review #495: the odds ratio is not
-  // a frequency ratio when the chance is not small; doubling the odds at 30% gives 46%, 1.54 times as often).
+  // How many times as often, from an odds ratio exp(u) at the base chance p (the odds ratio is not a frequency ratio
+  // when the chance is not small: doubling the odds at 30% gives 46%, 1.54 times as often).
   const freqRatio = (p, u) => shiftP(p, 0, u) / clamp(p, 1e-6, 1);
   // One effect read in words: {name, verdict, tone ('good' | 'bad' | 'info' | 'none' | 'thin'), dir ('up' | 'down' |
   // ''), text (direction and size), range (the 95% range in words), advice, scale ('p' | 's' | 'pts'), base, val, lo, hi}.
@@ -4120,7 +4097,7 @@
       out.text = e.v === 'nolog' ? 'It leaves no row in the answer log, so it cannot be measured yet.' : 'No such answers yet.';
       return out;
     }
-    // too few answers to estimate anything yet (Codex review #495: not "no such answers")
+    // too few answers to estimate anything yet (not "no such answers")
     if (e.est == null || !isFinite(e.est)) {
       Object.assign(out, {v: 'thin', verdict: PLAIN_VERDICT.thin, text: 'Not enough data yet: too few answers to estimate it.'});
       return out;
@@ -4174,13 +4151,13 @@
     else if (P.o === 'pts') ((out.scale = 'pts'), (base = 0), (at = v => v), (f = ptsOf));
     else if (P.o === 'guess') ((base = e.ref != null ? e.ref : T.g), (at = v => v), (f = pctOf));
     else if (P.g1 != null) {
-      // the other side has its own guess floor (typed answers: none; Codex review #495): the same recognition, then
+      // the other side has its own guess floor (typed answers: none): the same recognition, then
       // the change, read with that floor
       const q0 = clamp((T.p - g) / (1 - g), 0.001, 0.999);
       ((base = T.p), (at = v => shiftP(P.g1 + (1 - P.g1) * q0, P.g1, sg * s * v)), (f = pctOf));
     } else if (P.beyond) {
       // recognition beyond guessing: the app's expectation without its guess floor, shifted with no floor (the fit has
-      // its own guess rate; the raw right answers are the format's "against the app's expectation", Codex review #495)
+      // its own guess rate; the raw right answers are the format's "against the app's expectation")
       const q0 = clamp((T.p - T.g) / (1 - T.g), 0.001, 0.999);
       ((base = q0), (at = v => shiftP(q0, 0, sg * s * v)), (f = pctOf));
     } else ((base = T.p), (at = v => shiftP(T.p, g, sg * s * v)), (f = pctOf));
@@ -4195,8 +4172,7 @@
     out.range = lo == null ? '' : `between ${f(lo)} and ${f(hi)}`;
     // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when the
     // multiple-testing correction finds it clear, tested against as many right answers as the baseline (correct sets
-    // its null so: Codex review #588), else no clear effect when its range stays within 5 points of the baseline
-    // (Codex review #495)
+    // its null so), else no clear effect when its range stays within 5 points of the baseline
     let v = e.v;
     // (an effect read here without that correction, its 95% range of right answers holding the baseline, is not clear)
     if (P.g1 != null && lo != null && v !== 'none' && (v !== 'clear' || (lo <= base && hi >= base)))
@@ -4227,10 +4203,10 @@
   }
 
   // The outcome a chart draws an effect on: its own (right, time, …), except a difficulty read beyond guessing, which is
-  // not a chance of a right answer (Codex review #495).
+  // not a chance of a right answer.
   const outOf = P => (!P ? 'right' : P.beyond ? 'beyond' : P.o || 'right');
 
-  /* ---------- Multiple testing (Pierre, 2026-11-05, Q69; the stats-methods study of 2026-11-05, §2, §5.3, §6.3) ---------- */
+  /* ---------- Multiple testing (docs/LEARNING.md; docs/reviews/2026-11-05-stats-methods-study.md §2, §5.3, §6.3) ---------- */
   // About 40 effects per milestone, each at 95%: some would read "clear" by chance alone. Each analysis declares the 1-2
   // questions it exists to answer (PRIMARY, chosen before looking at any result: docs/LEARNING.md "Multifactor analyses");
   // they are tested together under Holm (family-wise error 5%: the chance of even one false "clear" among them). Every
@@ -4240,8 +4216,8 @@
   const PRIMARY = {
     rt: ['right', 'diff'], // is answer time a signal: right answers faster, harder questions slower
     zoom: ['rel'], // does enlarging a photo help the same player
-    // the photo rules the games rest on: Poor photos harder, corallites harder than a colony; on the fish side (2026-11-15,
-    // chosen before any fish result was seen), does the judged ease the draw starts from predict the right answers
+    // the photo rules the games rest on: Poor photos harder, corallites harder than a colony; on the fish side (chosen
+    // before any fish result was seen), does the judged ease the draw starts from predict the right answers
     photo: ['poor', 'macro', 'ease'],
     fmt: ['oe_k4', 'oe_typed'], // is the app's expected chance right on its main format and on typed answers
     conf: ['macro'], // do corallites shown cut mix-ups (an SD is never primary: its test is rough near 0, see pOf)
@@ -4318,7 +4294,7 @@
   }
   // Adjusted p-values, in the order given: Holm (step-down, family-wise error, any dependence between the tests) and
   // Benjamini-Hochberg (step-up, false discovery rate, valid under independence or positive dependence). raw: without
-  // the cap at 1, so that level * p / adjusted p stays the level the test faces (settle; Codex review #588).
+  // the cap at 1, so that level * p / adjusted p stays the level the test faces (settle).
   function holm(P, raw) {
     const m = P.length,
       I = P.map((_, i) => i).sort((a, b) => P[a] - P[b]),
@@ -4355,8 +4331,8 @@
     const nul = e.sd ? e.sesoi / 10 : e.nul || 0,
       d = e.est - nul;
     if (e.sd ? e.hi <= e.sesoi : e.lo >= nul - e.sesoi && e.hi <= nul + e.sesoi) return Object.assign(e, {v: 'margin'});
-    // Answers for either reachable verdict, the interval shrinking as 1/sqrt(n) (Codex review #588: the sesoi taken as
-    // the target half-width asked fewer answers than an effect smaller than it already had): clear, its interval at the
+    // Answers for either reachable verdict, the interval shrinking as 1/sqrt(n) (never the sesoi as the target
+    // half-width, which could ask fewer answers than the effect already has): clear, its interval at the
     // level it faces leaving the null value out; or no clear effect, its 95% interval inside the margin. Both need more
     // answers than it has, as it is neither now.
     const at = f => (f > 0 && isFinite(f) ? e.n / (f * f) : Infinity),
@@ -4392,7 +4368,7 @@
       (a.effects || []).forEach(e => {
         // An effect read as right answers on another guess floor (typed answers, PLAIN g1; plainOf) is tested, and
         // corrected, on that contrast: its null is the coefficient at which it gets as many right answers as the
-        // typical question, not 0 (Codex review #588).
+        // typical question, not 0.
         const P = (PLAIN[k] || {})[e.k];
         if (P && P.g1 != null && e.est != null && isFinite(e.est)) {
           const T0 = Object.assign({p: 0.75, g: 0.25}, a.typ || {}),
@@ -4469,9 +4445,9 @@
   }
 
   /* ---------- Photo features, from the public files (the same for the workflow and the admin) ---------- */
-  // {file: [view, quality 1-3, sharpness or null, source]}: the view after Pierre's moves and adds (curation.json), his
-  // quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as the
-  // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist).
+  // {file: [view, quality 1-3, sharpness or null, source]}: the view after the admin's moves and adds (curation.json),
+  // his quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as
+  // the app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, the admin's own, other iNaturalist).
   function photoMeta(data, cur, qual, met, core) {
     const out = {},
       C = (cur && cur.genera) || {},
@@ -4483,7 +4459,7 @@
       const a = AQ[p.f] || 2;
       out[p.f] = [v, CQ[p.f] || (a === 1 && src(p) === 'imr' ? 2 : a), MT[p.f] ? MT[p.f][0] : null, src(p)];
     };
-    // The game's own pipeline when core.js is at hand (Codex review #441): applyCuration then applySlots, so a photo's
+    // The game's own pipeline when core.js is at hand: applyCuration then applySlots, so a photo's
     // view is the one the games show it in (a genus on 2 zoom levels: its close-ups join Colony; its IMR lecture
     // close-ups count as Corallites), never a copy of those rules here. Then the files' own views for the photos left.
     const K = core || (typeof module !== 'undefined' && module.exports && typeof require === 'function' ? require('./core.js') : root);
@@ -4510,7 +4486,7 @@
       const V = gen[g].views || {},
         mv = (C[g] || {}).move || {};
       Object.keys(V).forEach(v => (V[v] || []).forEach(p => p && p.f && put(p, mv[p.f] || v)));
-      // IMR lecture photos (data.json course, game photos since PR #227)
+      // IMR lecture photos (data.json course, game photos too)
       (((data && data.course) || {})[g] || []).forEach(p => p && p.f && put({...p, imr: true}, mv[p.f] || p.v || 'wide'));
       const add = (C[g] || {}).add || {};
       (((data && data.cand) || {})[g] || []).forEach(p => p && p.f && typeof add[p.f] === 'string' && put(p, mv[p.f] || add[p.f]));
@@ -4519,11 +4495,11 @@
   }
 
   // The fish photos' features (core.js SUBJECTS analyses photos 'judged'), from the photos the game plays: fish-game.json
-  // (game: the file, or {photos: {any: [records]}}), whose records carry what the game reads, Pierre's ease and tags first,
-  // else the judging pass's (tools/fish_game.py: e the ease 1-5, jt the tags, ph the phase word, juvenile included).
-  // {file: [ease, phase word or '', view letter or '', whole '1' | '0' | '']}; a photo with no ease is left out. The same
-  // for the workflow (tools/analyses.js) and the admin's Recompute here (FISHC.plays): a change Pierre has not published
-  // yet waits for the next Candidate photos run.
+  // (game: the file, or {photos: {any: [records]}}), whose records carry what the game reads, the admin's ease and tags
+  // first, else the judging pass's (tools/fish_game.py: e the ease 1-5, jt the tags, ph the phase word, juvenile
+  // included). {file: [ease, phase word or '', view letter or '', whole '1' | '0' | '']}; a photo with no ease is left
+  // out. The same for the workflow (tools/analyses.js) and the admin's Recompute here (FISHC.plays): an unpublished
+  // change waits for the next Candidate photos run.
   function photoMetaFish(game) {
     const out = {};
     Object.values((game && game.photos) || {}).forEach(L =>
@@ -4532,7 +4508,7 @@
         if (!p || !p.f || !(e >= 1 && e <= 5)) return;
         const jt = String(p.jt || '');
         // a reference photo's record carries its tags but no ph (tools/fish_game.py record): its juvenile flag (j, past
-        // the seven tags) is its phase then (Codex review #943)
+        // the seven tags) is its phase then
         out[p.f] = [e, String(p.ph || (jt.slice(7).includes('j') ? 'juvenile' : '')), jt.charAt(0), jt.charAt(1)];
       })
     );
@@ -4542,7 +4518,7 @@
   /* ---------- The report: every milestone, earlier ones reused ---------- */
   // A milestone's fingerprint: its answers (count, last time, right answers, players), so a stored result is reused only
   // for the very same answers under the same code (AV).
-  // The photos' features too (Codex review #441): a view or quality changed in curation refits every milestone.
+  // The photos' features too: a view or quality changed in curation refits every milestone.
   function hashOf(o) {
     const t = JSON.stringify(
       Object.keys(o || {})
@@ -4553,7 +4529,7 @@
     for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
     return h.toString(36);
   }
-  // Who answered each row too (Codex review #441): a renamed player gets a new anonymous id, and a milestone holding
+  // Who answered each row too: a renamed player gets a new anonymous id, and a milestone holding
   // the old one must be refitted, not reused under ids that no longer exist.
   function fpOf(rows, M, mh = '') {
     const S = rows.slice(0, M);
@@ -4567,14 +4543,14 @@
 
   // rows: the whole answer log; prev: the stored report (or null); o: {B, Bh, hcap, bse, seed, progress, now}. Returns
   // {AV, made, answers, M: [milestones], R: {milestone: result}}; a result carries its fingerprint fp and its draws B.
-  // Draws per milestone (Pierre, 2026-11-05: at least 999): the latest milestone, the one read for the verdicts, takes
+  // Draws per milestone (at least 999: docs/LEARNING.md): the latest milestone, the one read for the verdicts, takes
   // B (999); the earlier ones are looks at a smaller log (history), so they take Bh (199) newest first, as long as their
   // answers add up to at most hcap (60,000: about 25 minutes in the Action), and none beyond (the model's own interval
   // only): a whole recompute (new AV, new photo features) stays inside the Action's 2 hours as the log grows.
   // The answers the report reads: the log's rows without those of the players and devices the admin left out of the
-  // statistics (sheet v115, Players' Leave out: readAnswers excluded, the player list's excluded; their admin ids, the
-  // rows' first column). The same rule for the stored report (tools/analyses.js) and the admin's Recompute here
-  // (admin-analyses.js anRecompute; Codex review #801).
+  // statistics (Players' Leave out: readAnswers excluded, the player list's excluded; their admin ids, the rows' first
+  // column). The same rule for the stored report (tools/analyses.js) and the admin's Recompute here (admin-analyses.js
+  // anRecompute).
   function leftOut(rows, excluded) {
     const L = Array.isArray(rows) ? rows : [],
       sx = new Set(Array.isArray(excluded) ? excluded : []);
@@ -4612,8 +4588,8 @@
   // Keeps a report under max characters of JSON (the sheet's cap): the oldest milestones lose their tables first (their
   // effects, verdicts and counts stay, for the convergence plots and the Overview).
   // The size is kept as a running total (each milestone's result measured once, again only when it changes, and the rest
-  // of the report apart): measuring the whole report at every step made this quadratic (test-suite review, 2026-11-04:
-  // 20 s for 300 milestones). J() is exactly JSON.stringify(rep).length.
+  // of the report apart): measuring the whole report at every step would make this quadratic (20 s for 300 milestones).
+  // J() is exactly JSON.stringify(rep).length.
   function compact(rep, max) {
     const len = {}, // JSON length of each milestone's '"M":{…}' entry in R
       measure = M => (len[M] = JSON.stringify(String(M)).length + 1 + JSON.stringify(rep.R[M]).length),
@@ -4638,19 +4614,19 @@
       Object.keys(r.A).forEach(k => {
         const a = r.A[k];
         // what the plain reading needs stays: the typical values, and each format's own expected chance and guess rate
-        // (Codex review #495: without them a lean milestone read its formats at 75% and 25%)
+        // (without them a lean milestone would read its formats at 75% and 25%)
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
         // an interaction keeps its test, not its lines
         if (a.ix)
           r.A[k].ix = a.ix.map(t => ({k: t.k, ix: 1, df: t.df, W: t.W, n: t.n, fam: t.fam, p: t.p, pa: t.pa, v: t.v, need: t.need}));
         if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
-        // the common learning slope reads the slope spreads (plainOf; Codex review #830)
+        // the common learning slope reads the slope spreads (plainOf)
         if (k === 'learn' && a.b1 != null) r.A[k].b1 = a.b1;
       });
       body -= len[M];
       body += measure(M);
     }
-    // 2. still too big (hundreds of milestones; Codex review #441): every other older milestone goes, the first and the
+    // 2. still too big (hundreds of milestones): every other older milestone goes, the first and the
     // last 5 stay, until it fits; then, if need be, only the latest
     while (J() > max && rep.M.length > 6) {
       const keep = new Set([rep.M[0], ...rep.M.slice(-5)]),
