@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 180 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 181 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 180;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 181;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -3565,7 +3565,7 @@ function replayedAll_(users, dcol){
 // https://script.google.com/home/usersettings, the manifest's scopes accepted (running installAutoUpdate asks), and a
 // first manual deploy of this version. A newer file without autoUpdate is never installed (it would end the updates);
 // every attempt that does something is written to the "Deploy log" tab. Anyone who can push to the release branch can
-// change this script, and only the merge train (tools/train.py, rule W26) pushes it (from vNEXT; Pierre, 2026-11-18, review R5
+// change this script, and only the merge train (tools/train.py, rule W26) pushes it (from v181; Pierre, 2026-11-18, review R5
 // question h): the script installs the code a green train tested, never a commit that reached main without the train
 // (the admin's Publish, the Candidate photos workflow). Until the branch exists (GitHub answers 404 for it, and only for
 // that) the script reads main as before, so the first update that reads release cannot lose its way; any other answer
@@ -3595,7 +3595,7 @@ function autoUpdate(){
 function autoUpdate_(){
   const log = m => sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), String(m).slice(0, 500)]);
   try {
-    let branch = SELF_BRANCH;  // vNEXT: the release branch, main only while that branch does not exist
+    let branch = SELF_BRANCH;  // v181: the release branch, main only while that branch does not exist
     const get = f => UrlFetchApp.fetch(selfRaw_(branch) + f + '?t=' + Date.now(), {muteHttpExceptions: true});
     let src = get('Code.gs');
     if (src.getResponseCode() === 404) { branch = SELF_FALLBACK; src = get('Code.gs'); }

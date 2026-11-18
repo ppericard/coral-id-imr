@@ -396,7 +396,7 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
   assert.deepStrictEqual(g.calls, []);
 });
 
-// The release branch (vNEXT; Pierre, 2026-11-18, review R5 question h): the script installs from `release`, which only the
+// The release branch (v181; Pierre, 2026-11-18, review R5 question h): the script installs from `release`, which only the
 // merge train moves; main is read only while GitHub says `release` does not exist (404).
 // `branches`: what each branch answers for tools/sync/*: a status number, or the text of its Code.gs (its manifest then
 // says which branch it came from). `seen` lists what was read, `installed` the files the script put.
