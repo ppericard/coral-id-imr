@@ -139,7 +139,7 @@ test("a delete, a merge or an archive of the admin's account clears it: a new ac
 
 // The app's board (progress.js paintBoard): the 🌱 after the admin's name element, outside its text, only on the marked
 // row of a script that sends the mark; every name escaped. A DOM stub: the list's HTML is read as written.
-const paint = (rows, v) => {
+const paint = (rows, v, extra = {}) => {
   const box = {innerHTML: '', querySelector: () => null};
   const ctx = {
     document: {getElementById: id => (id === 'board' ? box : null)},
@@ -155,18 +155,20 @@ const paint = (rows, v) => {
     markRow: C.markRow,
     markHtml: C.markHtml,
     SUBJ: {},
-    innerHeight: 800
+    innerHeight: 800,
+    store: {get: (k, d) => d},
+    COHORT_KEY: 'reefid-cohort'
   };
   vm.createContext(ctx);
   const src = read('progress.js');
   vm.runInContext(
-    block(src, 'const boardMe = ', '\n', {file: 'progress.js'}) +
+    block(src, 'const boardMe = ', '\nfunction viewBoard', {file: 'progress.js'}) +
       '\n' +
       block(src, 'function paintBoard(', '\n}\n', {through: 1, file: 'progress.js'}) +
       '\nthis.paintBoard = paintBoard;',
     ctx
   );
-  ctx.paintBoard({rows, v}, ctx.SUBJ);
+  ctx.paintBoard({rows, v, ...extra}, ctx.SUBJ);
   return box.innerHTML;
 };
 
@@ -187,6 +189,25 @@ test("the app shows the 🌱 after the admin's name, outside its text, from a sc
   assert.strictEqual(html.split(SEED).length - 1, 1, 'one mark');
   (html.match(/<b class="bname">.*?<\/b>/g) || []).forEach(b => assert.ok(!b.includes(SEED), b));
   [undefined, C.MARK_SHEET - 1].forEach(v => assert.ok(!paint(rows, v).includes(SEED), String(v)));
+});
+
+test("the staff and cohort boards (sheet v171): the mark on every board, a cohort's name escaped as a player's", () => {
+  const N = Number(/const SCOPES_SHEET = (\d+);/.exec(read('progress.js'))[1]),
+    html = paint([['Cy', 60, null]], N, {staff: [['Ana B.', 80, 1.2, 1]], cohorts: [{n: '<i>RA</i> & co', rows: [['Cy', 60, null]]}]}),
+    mark = C.markHtml();
+  assert.ok(
+    html.includes(
+      '<h3 class="bhead">Staff</h3><ol class="blist"><li><span class="brank">🥇</span><span class="bwho"><b class="bname">Ana B.</b>' + mark
+    ),
+    html
+  );
+  assert.ok(
+    html.includes(
+      '<summary>Other cohorts</summary><section class="bscope" data-scope="other"><h3 class="bhead">&lt;i&gt;RA&lt;/i&gt; &amp; co</h3>'
+    ),
+    html
+  );
+  assert.ok(!html.includes('<i>'), 'no markup from a cohort name');
 });
 
 test('the account line: the mark from a load reply of a script that knows the admin, for that account only', () => {
