@@ -6343,8 +6343,8 @@
     RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
     GENUS: /^[A-Z][a-z]{2,30}$/,
     FROM: ['quiz', 'learn', 'progress', 'other'],
-    // The answer's feedback sheet (Pierre, 2026-11-18, the feedback sheet study §2 and question (f): "ok pour les 6
-    // recommandations"): four numbers a visit, in this order: the answers whose feedback was shown, those where More was
+    // The answer's feedback sheet (docs/decisions/2026-11-18-feedback-sheet.md): four numbers a visit, in this order: the
+    // answers whose feedback was shown, those where More was
     // opened, the seconds the feedback stayed on screen (each answer's capped at FBSEC) and the taps on a link inside it.
     // Counts only, no answer, unit or time of day; the first number is the denominator.
     FB: ['shown', 'more', 'sec', 'link'],
