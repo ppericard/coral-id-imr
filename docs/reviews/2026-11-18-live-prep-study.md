@@ -1,8 +1,8 @@
 # Live prep: the trainer's page to build live questions (design study, 2026-11-18)
 
 Status: a design study with mockups. It changes no app code. The mockups are the app itself, served locally, with the
-prototype page injected (section 12). They are not committed. Pierre's choices are the questions at the end (section
-14); the rest is the integrator's call once he has answered.
+prototype page injected (section 13). They are not committed. Pierre's choices are the questions at the end (section
+16); the rest is the integrator's call once he has answered.
 
 ## 1. Why this study
 
@@ -13,8 +13,30 @@ Pierre, 2026-11-18, 09:26 Manila:
 > personalisable mais aidé par notre app/moteur."
 
 The trainer needs a preparation page. There they pick from our database, or select precise topics, to build their
-questions: a customisable live quiz, helped by the app and its engine. Our own design and words, as for live mode v1
-(no other product's name, look or sounds).
+questions: a customisable live quiz, helped by the app and its engine.
+
+**The principle** (Pierre, 2026-11-18, 10:06-10:10 Manila):
+
+> "Le but n'est pas de faire un clone, mais de faire notre version, en s'inspirant au maximum de ce qu'on peut
+> s'inspirer tout en ayant nos propres features et contenu."
+
+> "Je ne connais pas bien Kahoot, mais les formateurs ici oui. Donc tout ce que tu peux faire pour rendre l'interface et
+> le fonctionnement le plus familier possible ça serait idéal."
+
+In English: not a clone but our own version, borrowing as much as can be borrowed while keeping our own features and
+content; the trainers know live-quiz tools well, so the interface and the flow should feel as familiar as possible.
+
+So the live mode **borrows the generic conventions** trainers know from live-quiz tools:
+- a game PIN;
+- a lobby that fills with nicknames;
+- four answers, each with its colour and shape;
+- a countdown;
+- the standings between questions;
+- a final podium.
+
+It **never takes another product's name, logo, artwork or music**. **Our own features stay ours**: the engine's photos
+and wrong choices, live answers that count in progress, the cohort and staff boards, and prepared sets. Section 9 maps
+each convention to where it lives.
 
 **What exists (live mode v1, #1049).** The trainer's setup (`live.js` `hostSetup`) offers a subject, a set (every unit
 in play, or one IMR lecture group: `liveSets`), 5 to 20 questions and one time for the whole game. Each question is
@@ -302,10 +324,33 @@ breakpoint). Not mocked.
 projected name → photo).
 
 Design: the DESIGN.md components only (`.seg`, `.chip`, `.next`, `.next.sec`, `.linkish`, `.cqtile`), the
-"recognised by" colours of the admin's scale (`--rec-*`), no new colour. No page title or intro (rule U1): the help
+"recognised by" colours of the admin's scale (`--rec-*`), and no new colour but the four answer colours of section 9. No page title or intro (rule U1): the help
 goes behind "?".
 
-## 9. Privacy and data (rules D2, D7)
+## 9. Familiar to trainers: the conventions and where they live
+
+Each generic convention, what live mode v1 already does, and what this page and its PRs add. The words on screen are
+ours. Each is the integrator's call and easy to correct (a layout, a wording).
+
+| Convention | Live mode v1 today (`live.js`, `app.css`) | This page and its PRs |
+| --- | --- | --- |
+| **A game PIN** | a 6-digit code (`lvStart_`), shown big in the lobby (`hostDraw` lobby, `.lvbigcode`) with "Join at <address>" (`.lvjoinat`); students type it or open `#live?code=…` (`liveJoin`) | call it "Game PIN" on both screens, the word trainers know (PR 1); a QR code stays in ROADMAP |
+| **A lobby that fills with nicknames** | each nickname a chip as it joins (`hostNames`), Start enabled from the first one; nicknames of 1-20 characters (`lvNick_`), signed-in students nudged to keep their answers | add the count ("8 players") above the chips (PR 1) |
+| **Four answers, each with its colour and shape** | lettered A-D on a grey badge (`LETTERS`, `.lvl`), the same order on the projector (`hostDraw`) and the phones (`liveDraw`) | each slot gets a **shape and a colour** as well as its letter, the same on the projector, the phones, the reveal's shares (`liveShareList`) and the prep page's question cards. Shapes: the four simple ones trainers know (triangle, diamond, circle, square). Colours: four new tokens `--ans-1`…`--ans-4` from our palette, in light, dark and colour-blind (DESIGN.md, rule U3), with our own pairing of shape and colour, never another product's set. The shape carries the meaning, so colour-blind players lose nothing (PR 1, about 1 hour) |
+| **A countdown** | a shrinking bar and the seconds left (`liveClock`, `.lvbar`, `.lvtime`); the reveal comes when time is up or everyone has answered (`hostReply`) | a time per question (PR 3). A short "get ready" screen before the photos, naming the question's type, needs the script to time each answer from after it: PR 3 too |
+| **The standings between questions** | the reveal: the right answer, each answer's share, the top 5 (`lvrev`, `liveTop`); each student sees their own points and rank (`liveDraw`) | the points just won beside each name in the top 5 (PR 3) |
+| **A final podium** | the top 3 on steps (`.lvpod`), "Everyone (n)", and "Most missed" (`liveMissed`) | "Save as a set" and "Again with the most missed" (section 7, PR 1) |
+| Sounds and music | none (v1: out of version 1) | if ever, our own (ROADMAP "Live mode, after version 1"), never another product's |
+
+**What stays ours**, with no counterpart in a generic live quiz:
+- **The engine** builds the questions: photos rated by every player's answers (`photoDiff`), wrong choices from the
+  look-alikes and the pooled mix-ups, never a held-out photo (section 4).
+- **Answers count in progress** for signed-in students (Q393 c), mode `live`.
+- **The cohort and staff boards** (#1050) after the game: the end screen links each signed-in student to their cohort's
+  board.
+- **Prepared sets** with the trainer's own choices (sections 5, 6), shared between trainers.
+
+## 10. Privacy and data (rules D2, D7)
 
 - A set holds units and photo stems, never a student's name or answer.
 - The weak-points reply holds counts per unit and pair, never a name.
@@ -313,7 +358,7 @@ goes behind "?".
 - The mockups use anonymous trainers ("Trainer T1", "Trainer T2"), a made-up cohort ("Reef Team, January intake") and no student
   name (rule D2).
 
-## 10. The learning check (rule L11)
+## 11. The learning check (rule L11)
 
 - PR 1 (sets of photo → name questions): a new source of the same questions and the same scorer, so level 1, unit
   tests and smokes, as v1.
@@ -325,21 +370,21 @@ goes behind "?".
   format offsets are fitted on the quiz's modes only (`core.js` `fmtPoint`), so live answers take their format's offset
   without feeding its fit, as v1's do.
 
-## 11. Effort in agent time, split into PRs
+## 12. Effort in agent time, split into PRs
 
 Hours of agent work, the review loop included (two Codex rounds at most, rule W27).
 
 | PR | What | Sheet | Agent hours |
 | --- | --- | --- | --- |
-| 1. The page | `#live/prep`; the picker (the Custom quiz's, every unit, pooled look-alikes); the class engine (`pooledConf`, `photoDiff`, the band); generate, preview, swap, reorder, add, remove; sets on the device; Host now and `#live/host?set=` consuming a set (`liveFromSet`); the held-out re-check; the class-engine fix in `liveBuild`; unit tests of the generator, a smoke part | none (`core.js` routes: a changes file, `sync_core.py`) | 7-9 |
+| 1. The page | `#live/prep`; the picker (the Custom quiz's, every unit, pooled look-alikes); the class engine (`pooledConf`, `photoDiff`, the band); generate, preview, swap, reorder, add, remove; sets on the device; Host now and `#live/host?set=` consuming a set (`liveFromSet`); the held-out re-check; the class-engine fix in `liveBuild`; the answers' shapes and colours, "Game PIN", the lobby's count (section 9); unit tests of the generator, a smoke part | none (`core.js` routes: a changes file, `sync_core.py`) | 8-10 |
 | 2. Saved and shared sets | the "Live sets" tab, `lv: sets / set / save / del`, `can_`, Audit, D7 (delete, merge, archive), My sets, Copy, `LIVESET_SHEET` | yes | 6-8 |
 | 3. Question types and time | two choices, name → photo (the student's and the projector's screens, `pa`), per-question time, `LIVEQ_SHEET` | yes | 6-8 |
 | 4. Weak points | `lv: 'weak'` (cohort, subject, 60 days, cached), the Weak points view, "counts for 3 of 8", the band aimed at the cohort, `LIVEWEAK_SHEET` | yes | 5-6 |
 
-**Total: about 24-31 agent hours** in four PRs. PR 1 ships alone and is useful at once. PRs 2-4 touch `Code.gs` each:
+**Total: about 25-32 agent hours** in four PRs (the two future modes of section 14 apart). PR 1 ships alone and is useful at once. PRs 2-4 touch `Code.gs` each:
 run them one after another, or rebase each on the last (the `lv_` dispatcher).
 
-## 12. Mockups
+## 13. Mockups
 
 Made on the app at `main` 815509b3 (#1049 merged), served on 127.0.0.1, no file changed. The prototype is markup and
 a stylesheet using the app's tokens only, injected into the app's page. The questions come from the app's own data and
@@ -370,7 +415,53 @@ Files: in the session's scratchpad, `liveprep/shots/`, not committed:
 - `student-np-phone-light.png`, `student-np-phone-small-light.png`, `student-duel-phone-light.png`,
   `projector-np-desk-light.png`
 
-## 13. Out of this study
+## 14. Two future modes (leads, not built)
+
+Pierre agreed to keep both as leads ("ok", 2026-11-18, 10:06-10:10 Manila). Neither is part of live mode v1 or of this
+page's four PRs. Each would reuse the prepared sets (PR 2), so neither comes before it.
+
+### A homework mode: a set played at each student's own pace
+
+A trainer sends a prepared set as homework, to play before or after class, as self-paced quiz tools do.
+
+- **The trainer** picks a set and an end date and gets a link and a code; the end date is optional.
+- **Students** play it alone, at their own pace, on the live mode's question screens. There is no channel and no
+  polling. Each answer gets its feedback at once, and no time limit by default.
+- **Accounts.** Signed-in students only, so the trainer can see who finished. A nickname would keep nothing, as in v1.
+- **Progress.** Answers are logged like any game answer, so they count in progress, on unlocked units only (rule L4,
+  question (d)).
+- **What the trainer sees:** per question, the class's % right and the wrong answer given most. Per student, finished
+  or not, by name only once roles step 2 lets a trainer see a cohort's names (Q344, Q345); counts until then.
+- **The sheet:**
+  - a "Homework" tab: id, set, owner, cohort, opens, closes, code;
+  - the homework's id on each answer: a new log field, behind a gate (rule D4);
+  - a results step reading the Answers tab by that id, cached;
+  - rule D7: a deleted trainer's homework goes with their sets (question (c)); students' answers stay theirs.
+- **Learning check:** level 1, the same scorer.
+- **Effort: about 10-12 agent hours** after PR 2: the route and the self-paced player (about 3), the sheet's tab, log
+  field and results (about 4), the trainer's results view (about 2), tests and reviews (about 2-3).
+
+### A team mode: answers split across a team's phones
+
+Students play in teams, each member seeing only part of the answers, so the team must talk to find the right one, as
+team live-quiz games do. It is close to a survey dive, where buddies identify a coral or a fish together.
+
+- **Teams.** At Start the script makes teams of 2-4 from the lobby, at random or as the trainer sets them.
+- **The question.** The projector shows the photo only. The answers, 6 to 8 here so each phone holds 2, are split over
+  the team's phones. Only the member holding the right one can tap it, so the team has to say what they see ("corallites
+  in rows", "a dark spot at the tail").
+- **Scoring.** The first tap of any member is the team's answer. A wrong tap loses the team that question; our rule,
+  not another product's (no reset of the whole run). Team points and standings, then a team podium.
+- **The engine** ranks enough traps for 6-8 answers (`distractors` with a larger count, the look-alikes first).
+- **The sheet:** teams in the session, each student's view filtered to their answers, team answers and points. It is
+  the same polling, so the same load per student.
+- **Progress.** A team answer is not one student's own evidence: the tap may come from a teammate's words. So it counts
+  in nothing by default. Whether it should count is a question for Pierre when the mode is built.
+- **Effort: about 12-16 agent hours**: the script's teams and filtered views (about 5), the student's partial answers
+  and the team screens on the projector (about 4), the engine's larger answer sets (about 1), tests, smokes and reviews
+  (about 3-5).
+
+## 15. Out of this study
 
 - A QR code, WebSocket, typed answers in live (ROADMAP "Live mode, after version 1").
 - A per-student view by name after the game (roles step 2).
@@ -379,7 +470,7 @@ Files: in the session's scratchpad, `liveprep/shots/`, not committed:
 - Images or questions a trainer writes themself: the page builds questions from the database only. A trainer's own
   content would be content the instance owns (Q347) and goes through the editors' relay (Q348).
 
-## 14. Questions for Pierre
+## 16. Questions for Pierre
 
 Product choices only. Each has a recommendation. Everything else (layouts, words, the band's thresholds, the
 generator's details, the PR split, the merge behaviour of sets) is the integrator's call, easy to correct.
