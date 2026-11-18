@@ -1494,6 +1494,26 @@ function memRecalcAll() {
   if (ch) save();
   return ch;
 }
+// Each other subject's own pooled statistics (core.js SUBJECTS stats: the sea slugs; sync.js loadOwnStats), kept on this
+// device under its own key (OWN_STATS + its id) and joined to the corals' (PBASE, the reply loadStats keeps) in PSTAT, PGD
+// and PCONF: their photos and units carry ids of their own (seaslug-…, g:Chromodoris), never a coral one, so each subject
+// reads its own numbers in the same maps and the corals' stay as they are. A subject with no stats (the fish) finds none
+// of its own there, as before. The photo memory and the format offsets stay the corals' alone (pmem, pfmt): another
+// subject draws and scores with the prior and no offset there, as the sheet's replay of it reads (Code.gs rplMake_).
+const OWN_STATS = 'reefid-photo-stats-';
+let PBASE = store.get('reefid-photo-stats', {}) || {};
+function statsJoin(base = PBASE) {
+  PBASE = base || {};
+  const own = SUBJECTS.filter(S => !S.replay && S.stats)
+      .map(S => store.get(OWN_STATS + S.id, null))
+      .filter(o => o && typeof o === 'object'),
+    join = (b, k) => Object.assign({}, b, ...own.map(o => (o[k] && typeof o[k] === 'object' ? o[k] : {})));
+  PSTAT = join(PBASE.photos || {}, 'photos');
+  PCONF = join(PBASE.conf || {}, 'conf');
+  PGD = join(gdOf(PBASE), 'gd');
+  GDIFF = {}; // genus difficulties follow the new photo stats and confusions
+}
+statsJoin();
 // The domain-score bar for a subject the sheet does not replay (SUBJECTS replay false: fish; Pierre, 2026-11-06, Q200): a
 // unit record still under the former moving average (s.pg) is rebuilt on the device from its own counts (core.js
 // domFromCounts: ok, ko and its last 10 results, each on a photo of the unit's average difficulty, genusDiff with one

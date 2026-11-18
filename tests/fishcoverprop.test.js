@@ -440,3 +440,11 @@ test('the players’ copy leaves the answers out; the view is wired in the admin
   assert.match(rd('admin.html'), /<script src="admin-covers\.js\?v=\d+"><\/script>/);
   assert.match(rd('admin.js'), /'cover-proposals',\s*'Cover proposals',/);
 });
+
+// The cover proposals' load is kept per tree subject (admin-covers.js COVER_P by FISHS's id), so a switch to the other
+// tree subject never reuses the first one's finished load (Codex review #1047).
+test('coverLoad: one load per tree subject', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-covers.js'), 'utf8');
+  assert.match(src, /let COVER_P = \{\};/);
+  assert.match(src, /COVER_P\[k\] =\s+COVER_P\[k\] \|\|/);
+});

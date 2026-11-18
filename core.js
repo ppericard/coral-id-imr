@@ -246,7 +246,11 @@
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
   //           ACHK) under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
-  //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo
+  //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo; boardSheet, the
+  //           script version that serves it when later than BOARD_SHEET (progress.js boardLive; rule D4)
+  //   replayed  a subject other than replay's whose progress the sheet replays from its own answers: gen(F) its units
+  //           from its file (file, else its pool's first), rvs() its rules versions, tree(F) its board's tree (a subject
+  //           with a score), sheet the script version that replays it when later than REPLAYS_SHEET (sync.js rpOn)
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
   //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
@@ -271,7 +275,13 @@
   //           Identify and the Tools are the corals' for now
   //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, core.js
   //           unitPool; Pierre, 2026-11-06, Q191): files, the site's files it reads (fetched from main, in this order),
-  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them
+  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them; as,
+  //           what each file is to that builder (entries: f its tree, ph its first photos, gm its game photos, cur
+  //           curation.json). A subject with a pool has its own pooled statistics on the sheet (Code.gs statsSubjects_:
+  //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
+  //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
+  //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
+  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -389,6 +399,15 @@
   // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
   // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
   const SEASLUG_SHEET = 151;
+  // The sync script version that replays the sea slugs' progress from their answers and serves their leaderboard (rule
+  // D4; SUBJECTS seaslug replayed sheet, boardSheet): the app asks for and adopts their replay (sync.js rpOn) and shows
+  // their board (progress.js boardLive) only from it; before, the subject does exactly what it did (the plain merge, no
+  // board: an older script answers &s=seaslug with the corals' board, never shown as the sea slugs').
+  const SEASLUGRP_SHEET = 164;
+  // The sync script version that pools the sea slugs' own answer statistics (rule D4; SUBJECTS seaslug pool, stats): its
+  // ?stats=1&s=seaslug serves their photo ratings, genus offsets and confusions, the reply naming its subject (s). The app
+  // asks for and reads them only from it (sync.js loadOwnStats); an older script answers &s=seaslug with the corals'.
+  const SEASLUGST_SHEET = 167;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -429,6 +448,43 @@
       analyses: {photos: true},
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      // The text slots its content editor may edit on a genus sheet (docs/reviews/2026-11-14-sheet-overlay-design.md v2,
+      // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
+      // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
+      // genera), by name. lsrc/<other genus> is one look-alike line (the words under it on the sheet's Don't confuse with,
+      // and its source), at the pairs the base holds only (a new one is a new pair: structure). keep: hidden, the field
+      // stays empty ([] or ''), as every genus record holds it and its readers read it (contentPut).
+      content: {
+        genus: {
+          at: ['gen', 'x.gen'],
+          slots: [
+            {k: 'plain', n: 'Plain words', t: 'text'},
+            {k: 'qt', n: 'ID tips', t: 'list'},
+            {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
+            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'sum', n: 'Summary', t: 'text', keep: 1},
+            {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
+            {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
+            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'info', n: 'Other sources', t: 'list'}
+          ]
+        }
+      },
+      // The structure its content editor may change (design note v2, step 8; Q359, Q363 h A, Q366): its look-alike pairs
+      // between genera (look: a list of genus names; the pair key a|b, v 1 or null), laid over data.json by core.js
+      // structApply (genStructure); no circles (the slate is not the editor's: design note section 6, "Not in this
+      // design"). hold: the withdrawals the ★ rule refuses (starHold, rule L5: a starred genus keeps a surveyed look-alike
+      // to open after), never applied, held their word for it on the admin's pages. sheet: the sync script that replays
+      // the progress under it (rule D4). A change to them replays every player's progress (Q363 h A: structStamp).
+      structure: {
+        pairs: {rank: 'genus', slot: 'look', hold: (R, P) => starHold(R, P), held: '★ rule'},
+        apply: (R, X) => genStructure(R, X),
+        sheet: () => PAIRS_SHEET
+      },
+      // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
+      // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
+      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
+      replayed: {gen: d => genLooks(d)},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
@@ -480,15 +536,11 @@
       zoom: 'the markings and the fins',
       // A word a typed name may leave out (core.js fishTypeNames): "trigger" for Triggerfish.
       typeDrop: 'fish',
-      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
-      // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
-      beta: {
-        kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the reef fish families, iNaturalist photos for now. Feedback welcome.'
-      },
-      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
-      // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
-      // it to that group again (the sheet keeps the Groups tab's rows).
+      // Out of beta (Pierre, 2026-11-17 ~19:10 Manila: "les poissons on peut les sortir du mode bêta, parce que c'est plus
+      // vraiment une bêta … à peu près stable"; in beta from 2026-11-04, "Something fishy…"): no beta label.
+      // Opens to every player, signed out included (Pierre, 2026-11-06, Q158: "open fish to everyone now"; it opened to the
+      // admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close it to that group again
+      // (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
       // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
@@ -517,7 +569,7 @@
         tree: F => fishBoardTree(F),
         vars: (F, Fs, S) => fishVarTable(F, Fs, S)
       },
-      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
+      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -611,8 +663,12 @@
       admin: {
         cur: 'fish',
         // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
-        // its tree; ph, its first photos (none for a subject without); gm, its game photos.
-        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json'},
+        // its tree; ph, its first photos (none for a subject without); gm, its game photos; cand, its candidate photos
+        // (admin.js fishLoad: Photos › Tree's tools, Candidates).
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'fish-cand.json'},
+        // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
+        // the candidates judged sure that the game does not take in by itself.
+        autosort: true,
         // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
         // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
         todo: ['photos'],
@@ -695,23 +751,78 @@
         kick: 'Sea slugs…',
         line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
       },
-      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
-      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
-      open: 'group',
+      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-17 ~19:10 Manila: "on peut laisser
+      // les nudibranches ouverts à tous mais en gardant le mot bêta dedans"; the admin and its beta group only from
+      // 2026-11-16). 'group' would close it to that group again (the sheet keeps the Groups tab's rows). sheet: the sync
+      // script version that knows this subject (Code.gs groupIds_: its group can be set while it opens to a group; D4).
+      open: 'all',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
       // No opt-in set: its genera are its units from the start.
       optin: [],
       rank: 'family',
       unitRank: 'genus',
-      // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
-      // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
+      // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_, replay_ per subject;
+      // rules D5, D8, D9): its units from seaslug.json (file, its pool's first too), the genera played from the start
+      // (fishReplayGen at its unitRank), its own rules versions (SEASLUG_RVS), its records in the "Replayed Sea slugs"
+      // tab. sheet: the script version that replays it (SEASLUGRP_SHEET; rule D4), before which the app neither asks
+      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %.
       replay: false,
+      replayed: {
+        file: 'seaslug.json',
+        sheet: SEASLUGRP_SHEET,
+        gen: F => fishReplayGen(F, 'genus'),
+        rvs: () => SEASLUG_RVS
+      },
+      // Its own leaderboard (Pierre, 2026-11-17: "le leaderboard ... pour les limaces de mer"; one per subject, Pierre,
+      // 2026-11-04), shown only to those who see the subject (its group and the admin), from the script that serves it
+      // (boardSheet; progress.js boardLive): by its % then its Elo, its players behind its rules ranked by their replay
+      // (Code.gs board_, boardWarm_; rule D8).
+      board: true,
+      boardSheet: SEASLUGRP_SHEET,
+      // Its game photos (Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"): its tree, its
+      // game file and its part of curation.json (treeCur), its genera the units (unitRank), as the app builds them. So the
+      // sheet pools its own answer statistics (Code.gs statsSubjects_: the "Stats Sea slugs" tab, ?stats=1&s=seaslug) and
+      // checks its photos and exposure, as the fish's; stats: the app reads them, from the script that serves them
+      // (SEASLUGST_SHEET; rule D4): the pooled photo difficulty, genus offsets and confusions, so a data look-alike seeded
+      // from iNaturalist (model.js dataSeed) is dropped once the players tell the pair apart.
+      pool: {files: ['seaslug.json', 'seaslug-game.json', 'curation.json'], of: 'entries', as: ['f', 'gm', 'cur']},
+      stats: SEASLUGST_SHEET,
+      // Its Analyses report (one per subject, refitted every 1000 of its answers: tools/analyses.js; Pierre, 2026-11-08), by
+      // genus, its units (its one and many): photos 'judged', its photos' judged ease, phase and framing from its game file
+      // (analysis.js photoMetaFish; SUBJECTS admin files gm), as the fish's.
+      analyses: {photos: 'judged'},
+      // Its own achievements (Pierre, 2026-11-17: "une première version des succès"; core.js SEASLUG_ACH), in the shared
+      // record under ids of their own (ss...), never counted in the corals' or the fish's.
+      ach: true,
+      achs: () => SEASLUG_ACH,
       // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
       // observations, the sea slugs' candidate count (Q377).
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       pages: ['genera', 'sheet', 'quiz'],
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      // The text slots its content editor may edit on each rank's sheets (the fish's SUBJECTS content above; Pierre,
+      // 2026-11-17: the sea slugs' admin at parity), laid over seaslug.json by core.js contentApply (app.js fishBuild, the
+      // sheet's replay alike): a family's and a genus's ID marks (tools/seaslug_cues.json, each line with its sources'
+      // numbers: contentPut keeps them on a line kept word for word) and the free note on every rank. No IMR slot (study §8).
+      // No structure: its genus look-alikes (look, lsrc: sources, not words) stay the build's (tools/seaslug_game.py).
+      content: {
+        family: {
+          at: 'families',
+          slots: [
+            {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        genus: {
+          at: 'genera',
+          slots: [
+            {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
+      },
       progress: ['photos'],
       // No IMR content (study §8): no "I'm at IMR" answer.
       start: {
@@ -721,12 +832,41 @@
           know: ['I know sea slugs well', 'A diver or a photographer: you can already name many genera.']
         }
       },
-      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
-      // not about one subject's photos, its Players page holding its beta group.
+      // Its admin part: its own key in curation.json (Pierre's choices on its photos, applied by the app through treeCur
+      // and by tools/seaslug_game.py), the pages not about one subject's photos, its Players page holding its beta
+      // group, and its Photos › Tree with the fish's photo tools.
       admin: {
         cur: 'seaslug',
-        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
-        files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
+        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
+        // for Photos › Tree (its candidates: Not this, the candidates waiting).
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
+        // target: a species' photos in play its Candidates fill up to (autosort.js fishTarget; the fish's FISHT by
+        // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
+        // play up to it; tests/seaslugadmin.test.js keeps the two equal).
+        target: 12,
+        // tags: its rubric's rows where they differ from the fish's (judging/SEASLUG.md "Tags"; admin-fish.js FROWS), by
+        // the code's position: [value, name, words], words how a photo's tags say it ('' for a value that makes no photo
+        // harder: its good views); flags, the ones Pierre may set (the fish's j c w, and f, features hidden).
+        tags: {
+          0: [
+            ['d', 'Dorsal', ''],
+            ['p', 'Lateral', ''],
+            ['o', 'Oblique', ''],
+            ['h', 'Head-on', 'head-on'],
+            ['t', 'Rear', 'from behind'],
+            ['v', 'Ventral', 'ventral']
+          ],
+          2: [
+            ['g', 'Good light', ''],
+            ['d', 'Dim', 'dim light']
+          ],
+          flags: [
+            ['j', 'Juvenile', 'juvenile'],
+            ['c', 'Camouflage', 'camouflage'],
+            ['w', 'Watermark', 'watermark'],
+            ['f', 'Features hidden', 'features hidden']
+          ]
+        },
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
@@ -736,11 +876,42 @@
           'inbox/todo/reports',
           'inbox/todo/errors',
           'inbox/todo/points',
+          // Health (the sea slugs' admin at parity, 2026-11-17): the photos everyone misses with their tools, the genera
+          // players are stuck on, from its answers (admin.js statsHealth, healthBad, healthGenera)
+          'inbox/todo/health',
           'players/list',
-          'analyses/difficulty/heatmap'
+          // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
+          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus, its sheets'
+          // text slots (content above). WoRMS: the reference taxonomy's tree (seaslug.json ref, tools/seaslug_worms.py;
+          // admin.js fuWormsOf), as the fish's.
+          'photos/tree/key',
+          'photos/tree/worms',
+          // Candidates (the sea slugs' admin at parity): seaslug-cand.json one at a time, as the fish's (admin-fish.js
+          // renderFishCand), a photo moved with Not this waiting as its new species' candidate; no auto-sort (autosort)
+          'photos/candidates',
+          // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
+          // at their genus, never as a species (autosort.js fishCov)
+          'photos/stats/overview',
+          'analyses/difficulty/heatmap',
+          // Its Analyses report's views (analyses above; admin-analyses.js), and the views drawn live from its answers
+          // (admin.js LIVE_STATS), as the fish's
+          'analyses/overview',
+          'analyses/speed',
+          'analyses/difficulty/photos',
+          'analyses/difficulty/formats',
+          'analyses/difficulty/mix-ups',
+          'analyses/difficulty/time',
+          'analyses/difficulty/pairs',
+          'analyses/learning/practice',
+          'analyses/learning/after-a-break',
+          'analyses/learning/sessions',
+          'analyses/learning/profiles',
+          'analyses/learning/answer-log',
+          'analyses/learning/stops'
         ],
         obs: 'Observations',
         origins: [
+          ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
           ['world', 'iNat elsewhere', 'World']
@@ -1267,12 +1438,24 @@
   // app.js fishGenera (a circle-1 family's genera with species of circle 1, each with its sibling genera as look-alikes
   // and its family's name and line as its family), from fish.json alone (no photo changes them). The sync sheet builds it
   // from fish.json (Code.gs fishGen_); tests/fishreplay.test.js checks it against the app's units.
-  function fishReplayGen(F) {
-    const X = fishGen(F || {}, {}),
+  // unit: the rank of the subject's game units (SUBJECTS unitRank): 'genus' (the sea slugs) reads the units fishGen plays
+  // from the start (fishGenUnits: each genus with its sibling genera as look-alikes and its family's line), as the app's
+  // (app.js fishGenera keeps them); no circle-1 genera or species units are added then (the subject has neither).
+  function fishReplayGen(F, unit) {
+    const X = fishGen(F || {}, {}, undefined, unit),
       out = {},
       sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
       gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
     Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
+    if (X.unit === 'genus') {
+      // and the genera a specialist source names as its look-alikes (the tree's genus look, across families: Q390 D), as
+      // app.js fishGenera adds them, so the sheet's replay reads the app's units
+      Object.keys(out).forEach(id => {
+        const G = gens.get(id);
+        if (G && Array.isArray(G.look)) out[id].look = [...new Set([...out[id].look, ...G.look.filter(o => X.gen[o])])];
+      });
+      return out;
+    }
     ((F && F.families) || [])
       .filter(f => f.circle === 1 && X.gen[f.id])
       .forEach(f => {
@@ -1397,6 +1580,109 @@
       out.start = F.start.filter(id => tc.get(id) === 1);
     }
     return out;
+  }
+  // ---- Genera by name: the structure of a subject whose units are data.json's genus records (design note v2, step 8) ----
+  // Where its genus records sit: gen (the slate) and x.gen (Millepora, the bonus and Coral ID Key genera), by name.
+  const GEN_AT = ['gen', 'x.gen'];
+  // The units its replay reads (Code.gs dataJson_ and subjRpl_, core.js replayProgress gen): each genus of d's gen and
+  // x.gen (gen's first) with its look-alikes (look, names only) and its family (fam).
+  function genLooks(d) {
+    const out = {};
+    GEN_AT.forEach(at => {
+      const G = atPath(d || {}, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!out[n] && isObj(G[n]))
+          out[n] = {look: (Array.isArray(G[n].look) ? G[n].look : []).filter(x => typeof x === 'string'), fam: String(G[n].fam || '')};
+      });
+    });
+    return out;
+  }
+  // The pairs in force written into data.json R (SUBJECTS structure apply; design note v2, step 8; Q359, Q366): the
+  // content editor's pairs X ({pairs: [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on the genus
+  // records, both sides, as the build writes a pair: one withdrawn leaves both records' look and their lsrc lines (its
+  // words: their text slots lsrc/<other genus> are then orphaned, kept and not applied); one added joins both looks after
+  // the base's look-alikes, with an lsrc line on each side, the source the editor gave, else EDITOR_PAIR (never IMR's or
+  // the Coral Finder's words). A record held in both gen and x.gen (the admin's merged data) changes in both. A new object
+  // sharing every record it does not change; R itself when X changes nothing.
+  function genStructure(R, X) {
+    const P = (X && X.pairs) || [];
+    if (!P.length) return R;
+    const add = new Map(),
+      drop = new Map(),
+      put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
+    P.forEach(x => (x.v === 1 ? (put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src])) : (put(drop, x.a, x.b), put(drop, x.b, x.a))));
+    const made = new Map(),
+      one = (id, g) => {
+        if (made.has(g)) return made.get(g);
+        const look = Array.isArray(g.look) ? g.look : [],
+          ls = isObj(g.lsrc) ? g.lsrc : {},
+          D = new Set(drop.get(id) || []),
+          A = (add.get(id) || []).filter(([o], i, L) => !look.includes(o) && L.findIndex(y => y[0] === o) === i);
+        let r = g;
+        if (A.length || look.some(o => D.has(o)) || Object.keys(ls).some(o => D.has(o))) {
+          const l2 = Object.fromEntries(Object.entries(ls).filter(([o]) => !D.has(o)));
+          A.forEach(([o, s]) => !l2[o] && (l2[o] = s ? s.t : EDITOR_PAIR));
+          r = {...g, look: [...look.filter(o => !D.has(o)), ...A.map(([o]) => o)], lsrc: l2};
+        }
+        made.set(g, r);
+        return r;
+      },
+      out = {...R},
+      done = new Set();
+    GEN_AT.forEach(at => {
+      const G = atPath(R, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!isObj(G[n]) || (!add.has(n) && !drop.has(n))) return;
+        const r = one(n, G[n]);
+        if (r !== G[n]) contentBox(out, R, at, done)[n] = r;
+      });
+    });
+    return done.size ? out : R;
+  }
+  // The ★ rule under the content editor's pairs (rule L5; design note v2, step 8): a starred genus is on the slate because
+  // it looks like surveyed genera, and opens only after the ones its card names (starRefs: its own look-alikes that are
+  // surveyed genera of the lecture group it is shown in). Every starred genus of the base has some; a withdrawn pair could
+  // leave one with none (Alveopora and Halomitra have one look-alike each), and it would then open at any time and be
+  // shown in no group. Of the pair changes P that apply ([{key, a, b, v}]: structEntries), the withdrawals refused: every
+  // addition first (they only add references), then the withdrawals in key order, each refused when it leaves a starred
+  // genus of either side with no reference, so two devices' withdrawals merged keep the first and hold the other,
+  // whatever order they were made in. A Set of their keys (structEntries: orphaned, why hold; never applied).
+  function starHold(R, P) {
+    const held = new Set(),
+      W = (P || []).filter(x => x.v !== 1).sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+    if (!W.length) return held;
+    const G = (R && R.gen) || {},
+      X = xGen(R),
+      d = {gen: {}, x: {gen: {}}},
+      copy = g => ({...g, look: Array.isArray(g.look) ? g.look.slice() : []});
+    Object.keys(X).forEach(n => isObj(X[n]) && (d.x.gen[n] = copy(X[n])));
+    Object.keys(G).forEach(n => isObj(G[n]) && (d.gen[n] = G[n] === X[n] ? d.x.gen[n] : copy(G[n])));
+    const rec = n => d.gen[n] || d.x.gen[n],
+      star = n => !!d.gen[n] && !d.gen[n].n && !d.x.gen[n] && starRefs(R, n).length > 0;
+    (P || [])
+      .filter(x => x.v === 1)
+      .forEach(x => {
+        const a = rec(x.a),
+          b = rec(x.b);
+        if (!a || !b) return;
+        if (!a.look.includes(x.b)) a.look.push(x.b);
+        if (!b.look.includes(x.a)) b.look.push(x.a);
+      });
+    W.forEach(x => {
+      const a = rec(x.a),
+        b = rec(x.b);
+      if (!a || !b) return;
+      const la = a.look,
+        lb = b.look;
+      a.look = la.filter(o => o !== x.b);
+      b.look = lb.filter(o => o !== x.a);
+      if ([x.a, x.b].some(n => star(n) && !starRefs(d, n).length)) {
+        a.look = la;
+        b.look = lb;
+        held.add(x.key);
+      }
+    });
+    return held;
   }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
   // sure), downloaded to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish).
@@ -1794,15 +2080,41 @@
       c = P && P.content;
     return isObj(c) ? c : {};
   };
-  // A rank's records by id ({id: {rec, i}}: i its place in the list, or its key in a map), from its declaration D.
+  // A rank's records by id ({id: {rec, i, at}}: i its place in the list, or its key in a map; at the path of the list or
+  // map), from its declaration D. D.at is a path (a.b: a field inside one) or a list of them, read in order: an id met
+  // again in a later one is the first one's (the admin's coral data holds the x genera in gen too, the same records).
+  const atPath = (R, at) =>
+    String(at)
+      .split('.')
+      .reduce((o, k) => (isObj(o) ? o[k] : undefined), R);
   const contentRecs = (R, D) => {
-    const L = (R || {})[D.at],
-      out = new Map();
-    if (Array.isArray(L)) L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i}));
-    else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && out.set(id, {rec: r, i: id}));
+    const out = new Map();
+    (Array.isArray(D.at) ? D.at : [D.at]).forEach(at => {
+      const L = atPath(R || {}, at);
+      if (Array.isArray(L))
+        L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i, at}));
+      else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && !out.has(id) && out.set(id, {rec: r, i: id, at}));
+    });
     return out;
   };
-  // Every node a subject's slots reach in built file R: {id: {rank, rec, i}}.
+  // The list or map at path at of out (a copy of built file R, sharing what is not copied yet), copied from R's the first
+  // time (each level of the path once: done, the paths copied), so a record can be put in it without touching R.
+  function contentBox(out, R, at, done) {
+    const P = String(at).split('.');
+    let o = out,
+      r = R;
+    P.forEach((k, j) => {
+      r = isObj(r) ? r[k] : undefined;
+      const p = P.slice(0, j + 1).join('.');
+      if (!done.has(p)) {
+        o[k] = Array.isArray(r) ? r.slice() : {...(isObj(r) ? r : {})};
+        done.add(p);
+      }
+      o = o[k];
+    });
+    return o;
+  }
+  // Every node a subject's slots reach in built file R: {id: {rank, rec, i, at}}.
   function contentNodes(S, R) {
     const out = new Map();
     Object.entries((S && S.content) || {}).forEach(([rank, D]) =>
@@ -1855,6 +2167,14 @@
   function contentPut(sp, r, key, v) {
     const f = sp.f || sp.k,
       val = Array.isArray(v) ? v.slice() : v;
+    // A list whose lines carry their sources' numbers (mby[f][i], the record's msrc indexes of line i: the fish's and the
+    // sea slugs' ID marks): a line kept word for word keeps its numbers, a new or reworded one gets none (its source is the
+    // edit's own, esrc), so no line shows a source it was not read from (rule C2).
+    if (sp.t === 'list' && !sp.rows && !sp.map && isObj(r.mby) && Array.isArray(r.mby[f])) {
+      const was = Array.isArray(r[f]) ? r[f] : [],
+        by = r.mby[f];
+      r.mby = {...r.mby, [f]: (Array.isArray(val) ? val : []).map(x => (was.indexOf(x) >= 0 ? by[was.indexOf(x)] || [] : []))};
+    }
     if (sp.rows) r[f] = r[f].map(y => (Array.isArray(y) && y[0] === key ? [y[0], val == null ? '' : val, ...y.slice(2)] : y));
     else if (sp.map) r[f] = {...r[f], [key]: val == null ? '' : val};
     else {
@@ -1862,7 +2182,10 @@
         last = P.pop();
       let o = r;
       P.forEach(x => (o = o[x] = isObj(o[x]) ? {...o[x]} : {}));
-      if (val == null) delete o[last];
+      // keep: a field every record holds and its readers read as such (a coral genus's crit, imr, sum): hidden, it stays,
+      // empty ([] or ''), which reads as no value (contentVal) and shows nothing
+      if (val == null && sp.keep) o[last] = sp.t === 'list' ? [] : '';
+      else if (val == null) delete o[last];
       else o[last] = val;
     }
   }
@@ -1936,15 +2259,14 @@
     L.forEach(x => {
       const n = N.get(x.node),
         at = S.content[n.rank].at;
-      if (!done.has(at)) {
-        out[at] = Array.isArray(R[at]) ? R[at].slice() : {...R[at]};
-        done.add(at);
-      }
       let r = recs.get(x.node);
       if (!r) {
         r = JSON.parse(JSON.stringify(n.rec));
         recs.set(x.node, r);
-        out[at][n.i] = r;
+        // in its list or map, and in any other of its rank's that holds the same record (the admin's merged coral gen)
+        (Array.isArray(at) ? at : [at]).forEach(a => {
+          if (a === n.at || (atPath(R, a) || {})[n.i] === n.rec) contentBox(out, R, a, done)[n.i] = r;
+        });
       }
       contentPut(x.sp, r, x.key, x.e.v);
       const s = contentSrc(x.e.src);
@@ -1986,7 +2308,7 @@
     if (D.pairs) {
       const N = at(D.pairs.rank),
         f = D.pairs.slot,
-        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => Array.isArray(y) && y[0] === o);
+        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => pairIdOf(y) === o);
       Object.keys(isObj(C && C.pairs) ? C.pairs : {})
         .sort()
         .forEach(key => {
@@ -2000,9 +2322,23 @@
               p.length !== 2 || !a || !b || !(a < b) ? 'key' : !x || !y ? 'node' : !isObj(e) || !(e.v === 1 || e.v === null) ? 'value' : '';
           out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
         });
+      // The subject's own guard (SUBJECTS structure pairs hold: the corals' ★ rule, starHold): the changes it refuses among
+      // those that apply are never applied, orphaned with why hold, so the apply, the stamp, the admin and the sheet agree.
+      if (typeof D.pairs.hold === 'function') {
+        const H = D.pairs.hold(
+          R,
+          out.pairs.filter(x => x.state !== 'orphan' && x.e.v !== x.base).map(x => ({key: x.key, a: x.a, b: x.b, v: x.e.v}))
+        );
+        if (H && H.size)
+          out.pairs = out.pairs.map(x =>
+            H.has(x.key) ? {key: x.key, a: x.a, b: x.b, e: x.e, base: x.base, state: 'orphan', why: 'hold'} : x
+          );
+      }
     }
     return out;
   }
+  // A look-alike row's other node id: a row [id, words] (fish.json look) or the id itself (data.json look: genus names).
+  const pairIdOf = y => (Array.isArray(y) ? (y[0] == null ? '' : String(y[0])) : typeof y === 'string' ? y : '');
   // Whether content map Cm holds any structure entry (a circle slot, a pair).
   const structHas = Cm =>
     Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
@@ -2034,7 +2370,7 @@
     if (D.pairs)
       contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
         (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {
-          const o = Array.isArray(y) ? String(y[0]) : '';
+          const o = pairIdOf(y);
           if (o && o !== id) p.add(id < o ? id + '|' + o : o + '|' + id);
         })
       );
@@ -3686,10 +4022,69 @@
       s => ((s.setsAdv || {}).sp || 0) >= 50
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
+  // The sea slug achievements, a first version (Pierre, 2026-11-17: "une première version des succès pour les limaces de
+  // mer"), modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level, families with every
+  // genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
+  // Learning milestones only, never time (rule L8), tested on the sea slug snapshot (progress.js achSnap: met, q, learned
+  // over its genera; circ, each circle's genera; fam, its families with every genus at Advanced or above; tax, each
+  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %), in the shared record
+  // under ids starting with ss. SEA_NUDI: the nudibranchs' taxonomic groups (seaslug.json taxa groups 1 and 2,
+  // Nudibranchia · Doridina and · Cladobranchia; tests/seaslugach.test.js checks it against the file).
+  const SEA_NUDI = [1, 2],
+    seaTax = (s, f) => ((s && s.tax) || []).filter(f),
+    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p];
+  const SEASLUG_ACH = [
+    ['ssmet5', 'Slug spotter', 'Met 5 sea slug genera', 1, '🧭', s => s.met >= 5],
+    ['ssmetall', 'Muck stick', 'Met every sea slug genus in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['ssq50', 'Rhinophore reader', '10 genera at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 10],
+    ['ssq80', 'Macro lens', '10 genera at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 10],
+    ['ssq95', 'Slug guide', '5 genera at Divemaster level or above (95%: their mastery exam is on)', 2, '🐌', s => s.q[2] >= 5],
+    ['sslearn1', 'Slug whisperer', "You passed a genus's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['ssfam5', 'Family portraits', '5 families with every genus at Advanced level or above (80%+)', 2, '🌳', s => (s.fam || 0) >= 5],
+    [
+      'ssc1adv',
+      'Greatest hits',
+      'Every genus the quiz opens first (the most seen in the Philippines) at Advanced level or above',
+      2,
+      '🗺️',
+      s => !!(s.circ && s.circ[0] && s.circ[0].total && s.circ[0].adv >= s.circ[0].total)
+    ],
+    [
+      'ssnudi',
+      'Naked gills',
+      'Every nudibranch genus (Doridina and Cladobranchia) at Advanced level or above',
+      3,
+      '🔬',
+      s => {
+        const L = seaTax(s, t => SEA_NUDI.includes(t.n));
+        return L.length > 0 && L.every(t => t.total && t.adv >= t.total);
+      }
+    ],
+    [
+      'ssother',
+      'Beyond nudibranchs',
+      'A genus of each other group (Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida) at Advanced level or above',
+      2,
+      '🔬',
+      s => {
+        const L = seaTax(s, t => !SEA_NUDI.includes(t.n) && t.total);
+        return L.length > 0 && L.every(t => t.adv >= 1);
+      }
+    ],
+    seaPct('sspct10', 10, 'Slow and steady', 1),
+    seaPct('sspct20', 20, 'Slime trail', 1),
+    seaPct('sspct30', 30, 'Colour chart', 2),
+    seaPct('sspct40', 40, 'Torch light', 2),
+    seaPct('sspct50', 50, 'Half the reef', 3)
+  ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
-  // subject's page; achFind: an achievement of any list by its id.
+  // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
   const ACH_CONTRIB = ACH.filter(a => a.kind === 'contrib');
-  const achFind = id => ACH.find(a => a.id === id) || FISH_ACH.find(a => a.id === id) || null;
+  const achFind = id =>
+    [ACH, ...SUBJECTS.filter(S => S.ach && S.achs() !== ACH).map(S => S.achs())].reduce(
+      (x, L) => x || L.find(a => a.id === id) || null,
+      null
+    );
   // Reports that count for the Contributions (Pierre, 2026-11-05, Q65): every report sent (game, enlarged photo, genus
   // sheet, Send feedback), signed in or not; one per photo: a report on photos already in a counted report does not count
   // again (several reports on one photo count once); an "Other" report counts only with a note. A counted report goes into
@@ -3748,7 +4143,19 @@
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearn30', 'flearncore'];
+  const ACH_LEARN = [
+    'learn1',
+    'learn5',
+    'learn10',
+    'learn20',
+    'learnall',
+    'group',
+    'flearn1',
+    'flearn10',
+    'flearn30',
+    'flearncore',
+    'sslearn1'
+  ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
@@ -4291,11 +4698,22 @@
       });
       return out;
     },
-    entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur), (ph || {}).sheet);
+    // entries: a tree subject's files by what each is (SUBJECTS pool as: f, ph, gm, cur), its part of the curation
+    // (treeCur), its units at its unit rank (unitRankOf: the sea slugs' genera, the fish's families); a subject whose
+    // units are below its families (fishGen unit) keeps those units only, its families being structure.
+    entries: (L, S) => {
+      const as = (S && S.pool && S.pool.as) || [],
+        x = k => (as.includes(k) ? L[as.indexOf(k)] : null),
+        ph = x('ph') || {},
+        F = fishGen(
+          x('f') || {},
+          fishPhotos(ph.photos, (fishGameRead(x('gm')) || {}).photos, treeCur(S, x('cur'))),
+          ph.sheet,
+          unitRankOf(S)
+        );
       return Object.fromEntries(
         Object.values(F.gen)
-          .filter(g => !g.wink)
+          .filter(g => !g.wink && (!F.unit || g.rank === F.unit))
           .map(g => [g.id, g.views.wide])
       );
     }
@@ -4308,7 +4726,7 @@
       make = P && POOLS[P.of];
     if (!make || !Array.isArray(files) || files.length < P.files.length || files.some(x => !x)) return null;
     const by = {};
-    Object.entries(make(files) || {}).forEach(([n, L]) =>
+    Object.entries(make(files, S) || {}).forEach(([n, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
         const O = (by[renamedId(S, n, p.t)] = by[renamedId(S, n, p.t)] || {}),
@@ -5299,6 +5717,16 @@
       msg: null
     }
   ];
+  // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
+  // numbered from 1, as FISH_RVS is. No card (rules D5, D6).
+  const SEASLUG_RVS = [
+    {
+      v: 1,
+      at: '2026-11-17',
+      why: "The sea slugs' progress replayed from the answer log, as the fish's (rules D8, D9; their leaderboard, Pierre, 2026-11-17): a player's sea slug progress is replayed by the sheet from their sea slug answers with the same engine; the log is the only reference, a bar may go down.",
+      msg: null
+    }
+  ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
   const rvsOf = id => {
     const S = subjectOf(id);
@@ -5347,6 +5775,11 @@
   // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
   // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
   const STRUCT_SHEET = 146;
+  // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
+  // editor's look-alike pairs (Code.gs v163: gen_ and replay_ under curation.json's pairs, keyed by the structure stamp;
+  // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
+  const PAIRS_SHEET = 163;
+  const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -6551,7 +6984,11 @@
     SCORE_SHEET,
     LOG_SHEET,
     REPLAYS_SHEET,
+    SEASLUGRP_SHEET,
+    SEASLUGST_SHEET,
     STRUCT_SHEET,
+    PAIRS_SHEET,
+    structSheet,
     WINK_SHEET,
     logOk,
     PA_SHEET,
@@ -6585,6 +7022,8 @@
     pagesOwn,
     ACH,
     FISH_ACH,
+    SEASLUG_ACH,
+    SEA_NUDI,
     ACH_CONTRIB,
     achFind,
     newAch,
@@ -6717,6 +7156,7 @@
     fishGen,
     fishGlOf,
     fishReplayGen,
+    SEASLUG_RVS,
     fishSpUnits,
     fishBoardTree,
     easyRank,
@@ -6781,6 +7221,10 @@
     structStamp,
     structFp,
     fishStructure,
+    genStructure,
+    genLooks,
+    starHold,
+    pairIdOf,
     EDITOR_PAIR,
     hash53,
     contentOut,

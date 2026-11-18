@@ -2595,7 +2595,7 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
     const t1 = await q.evaluate(() => {
       const t = document.querySelector('#view .hsubj');
-      return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(SUBJECTS.find(S => S.beta))};
+      return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(subjectOf('fish'))};
     });
     if (old) {
       if (t1.tile || t1.open) grp.push(`an older script (no groups): fish opened ${JSON.stringify(t1)}`);
@@ -2623,7 +2623,7 @@ async function freshPlayers(b, base, errs) {
     const other = await q.evaluate(() => {
       const a = store.get('reefid-account', null);
       store.set('reefid-account', {...a, name: 'Ben'});
-      const o = subjOpen(SUBJECTS.find(S => S.beta));
+      const o = subjOpen(subjectOf('fish'));
       store.set('reefid-account', a);
       return o;
     });
@@ -2696,7 +2696,8 @@ async function freshPlayers(b, base, errs) {
       const f = document.querySelector('#view .hsubj [data-subj="fish"]');
       return {admin: IS_ADMIN, open: subjOpen(subjectOf('fish')), btn: !!f, tag: !!(f && f.querySelector('.beta'))};
     });
-    if (h0.admin || !h0.open || !h0.btn || !h0.tag) all.push(`signed out, Home: ${JSON.stringify(h0)}`);
+    // fish out of beta (Pierre, 2026-11-17): no beta tag on its button
+    if (h0.admin || !h0.open || !h0.btn || h0.tag) all.push(`signed out, Home: ${JSON.stringify(h0)}`);
     await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
     await q.evaluate(() => go('quiz'));
@@ -3124,6 +3125,13 @@ async function freshPlayers(b, base, errs) {
       if (shown) hello.push(`${who}: the card showed`);
       const s = await seen();
       if (who === 'met' ? !s : s) hello.push(`${who}: seen mark ${s}`);
+      await c9.close();
+      continue;
+    }
+    // Fish out of beta (Pierre, 2026-11-17): open to all, no fish invitation any more (another subject's may come).
+    if (who === 'all') {
+      const t = await q.evaluate(() => (document.querySelector('.unlock.hello h3') || {}).textContent || '');
+      if (t === 'Test the fish beta') hello.push('all: the fish invitation showed, fish out of beta');
       await c9.close();
       continue;
     }

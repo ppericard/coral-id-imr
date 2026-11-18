@@ -33,26 +33,53 @@ function loadStats() {
     .then(j => {
       sheetSeen(j);
       if (j && j.ok && j.photos) {
-        PSTAT = j.photos;
-        GDIFF = {}; // genus difficulties follow the new photo stats and confusions
-        PCONF = j.conf || {};
-        PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
-        PGD = gdOf(j); // genus offsets of the photo Elo (sheet v31, model.js photoDiff); none from an older sheet
-        if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
-        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet
-        store.set('reefid-photo-stats', {
+        const st = {
           t: Date.now(),
           v: j.v,
           photos: j.photos,
-          conf: PCONF,
+          conf: j.conf || {},
           ...(j.mem ? {mem: j.mem} : {}),
           ...(j.gd ? {gd: j.gd} : {}),
           ...(j.fmt ? {fmt: j.fmt} : {})
-        });
+        };
+        // The photo ratings, the confusions and the genus offsets of the photo Elo (sheet v31, model.js photoDiff; none
+        // from an older sheet), joined to each other subject's own (model.js statsJoin)
+        statsJoin(st);
+        PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
+        if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
+        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet
+        store.set('reefid-photo-stats', st);
       }
+      loadOwnStats();
     })
     .catch(() => {});
 }
+// The subject on screen's own pooled statistics (core.js SUBJECTS stats: the sea slugs, sheet SEASLUGST_SHEET): its photo
+// ratings, genus offsets and confusions (?stats=1&s=<id>, Code.gs statsServed_), so its draw, its traps and its data
+// look-alikes (model.js dataSeed) follow its players' answers as the corals' do. Asked with the corals' (every 10 minutes,
+// once their reply has told the script's version) and when the player switches to it, for the subject on screen only:
+// a player who never opens it asks nothing more of the sheet. Only from a script that serves them (S.stats, rule D4) and
+// only a reply that names that subject (s): an older script, or one where it has no pool, answers with the corals'. Kept
+// on this device and joined to the corals' (model.js OWN_STATS, statsJoin).
+const ownStatsAt = {};
+function loadOwnStats(S = SUBJ) {
+  if (!SYNC_URL || !S || S.replay || !S.stats || sheetV() < S.stats) return;
+  ownStatsAt[S.id] = Date.now();
+  fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
+    .then(r => r.json())
+    .then(j => {
+      if (!j || !j.ok || !j.photos || j.s !== S.id || !(Number(j.v) >= S.stats)) return;
+      store.set(OWN_STATS + S.id, {t: Date.now(), v: j.v, s: j.s, photos: j.photos, conf: j.conf || {}, ...(j.gd ? {gd: j.gd} : {})});
+      statsJoin();
+      if (typeof rankPhotos === 'function') rankPhotos();
+    })
+    .catch(() => {});
+}
+// A switch to a subject with its own statistics brings them, unless asked in the last 10 minutes (a visit, keep, never).
+if (typeof SUBJ_HOOKS !== 'undefined')
+  SUBJ_HOOKS.push(keep => {
+    if (!keep && Date.now() - (ownStatsAt[SUBJ.id] || 0) > 600000) loadOwnStats();
+  });
 // The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
 // The first leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen; the others' units
 // in boards.
@@ -237,11 +264,12 @@ const RVK = 'reefid-sync-coral-rv';
 // progress replayed from the answer log"): each with its own rules version applied (rvKey: reefid-sync-<subject>-rv,
 // travelling with the progress data as RVK does), asked for with the requests (rvs, the load's rv_<subject>) and adopted
 // as the corals' replay is (replayAdoptS), under its own rules versions (core.js rvsOf: fish FISH_RVS), but only from the
-// script that replays it under this app's rules (core.js REPLAYS_SHEET; rule D4): before, that subject does exactly what it
-// did (no rules version, the plain merge).
+// script that replays it under this app's rules (core.js REPLAYS_SHEET, or the subject's own version when later: SUBJECTS
+// replayed sheet, the sea slugs' SEASLUGRP_SHEET; rule D4): before, that subject does exactly what it did (no rules
+// version, the plain merge).
 const rpSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed);
 const rvKey = S => (!S || S.replay ? RVK : subjKey(S.id, 'rv'));
-const rpOn = (S, v) => !!S && (!!S.replay || (!!S.replayed && Number(v) >= REPLAYS_SHEET));
+const rpOn = (S, v) => !!S && (!!S.replay || (!!S.replayed && Number(v) >= Math.max(REPLAYS_SHEET, Number(S.replayed.sheet) || 0)));
 const rvApplied = S => Number(store.get(rvKey(S), 0)) || 0;
 // The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
 // refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
@@ -268,12 +296,22 @@ function fateUnknown(me) {
 }
 const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
-// subject), null before they are in.
-const rpUnits = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].gen ? UNITS[S.id].gen() : null);
+// subject), null before they are in: read with its own tree in force (app.js treeWith), whichever tree subject is on
+// screen, so one subject's units never stand for another's (the fish and the sea slugs share the tree engine).
+const rpUnits = S => {
+  const U = typeof UNITS === 'object' ? UNITS[S.id] : null;
+  if (!U || !U.gen) return null;
+  return typeof treeWith === 'function' ? treeWith(S.id, () => U.gen()) : U.gen();
+};
 // Its variant table (core.js fishVarTable, as the sheet's replay reads it: SUBJECTS replayed vars; app.js UNITS vars), for
 // this device's answers replayed on top of the sheet's under a rules version that reads it (core.js rvVars): a queued
-// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in.
-const rpVars = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].vars ? UNITS[S.id].vars(S) : null);
+// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in;
+// read with its own tree in force, as rpUnits.
+const rpVars = S => {
+  const U = typeof UNITS === 'object' ? UNITS[S.id] : null;
+  if (!U || !U.vars) return null;
+  return typeof treeWith === 'function' ? treeWith(S.id, () => U.vars(S)) : U.vars(S);
+};
 // The other subjects' versions a request says, each only once a reply said the script replays it (sheetV), so an older
 // script is never asked for a replay the app would not adopt, and once its units are in (the replay waits for them).
 const rvsAsk = () =>
@@ -292,14 +330,20 @@ const rvsAsk = () =>
 // slots alone (app.js fishBuild).
 const stKey = S => subjKey(S.id, 'st');
 const stApplied = S => String(store.get(stKey(S), '') || '');
-const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= STRUCT_SHEET;
+// Each subject from its own script version (core.js structSheet: the fish's STRUCT_SHEET, the corals' PAIRS_SHEET, design
+// note v2 step 8).
+const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= structSheet(S);
 const stNow = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st ? String(UNITS[S.id].st() || '') : '');
 // {sts: {subject: stamp applied}, stn: {subject: stamp of the units here, when another}}, for the subjects asked (rvsAsk).
 // The stamp applied is then held as a key ('' when none yet), so this device's saves always say it: a whole copy saved
 // without it would keep another device's stamp beside this device's progress (core.js keepSubjectKeys), and the merge
 // guard (mergeSubject stOff) could not tell the two structures apart (Codex review #977).
+// The subject the sheet replays (SUBJECTS replay: the corals, its rules version the request's rv) says its stamp too
+// (Code.gs stMain_; design note v2, step 8), once its units are made (DATA).
 const stsAsk = rv => {
-  const L = rpSubjects().filter(S => S.id in rv && stOn(S, sheetV()));
+  const L = [...SUBJECTS.filter(S => S.replay && typeof DATA !== 'undefined' && DATA), ...rpSubjects().filter(S => S.id in rv)].filter(S =>
+    stOn(S, sheetV())
+  );
   L.forEach(S => store.get(stKey(S), null) === null && store.set(stKey(S), ''));
   const stn = Object.fromEntries(L.filter(S => stNow(S) !== stApplied(S)).map(S => [S.id, stNow(S)]));
   return L.length ? {sts: Object.fromEntries(L.map(S => [S.id, stApplied(S)])), ...(Object.keys(stn).length ? {stn} : {})} : {};
@@ -1346,6 +1390,7 @@ function sendAnon() {
       anonAnswers: batch.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
       av: appVer(),
       rv: rvApplied(),
+      ...stsAsk({}), // its structure stamp (Code.gs stMain_; design note v2, step 8)
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
       ...(cut ? {reset: cut} : {}),
       ...(store.get(sk, null) ? {start: store.get(sk, null)} : {}),
@@ -1729,7 +1774,7 @@ function signIn(name, pin, j) {
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
     // and its structure stamps likewise (stKey)
-    [RVK, ...rpSubjects().map(rvKey), ...rpSubjects().map(stKey)].forEach(k => localStorage.removeItem(k));
+    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name

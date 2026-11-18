@@ -1188,7 +1188,9 @@ test("groups (v53): a subject that opens to all has no group, whatever its beta 
   open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
   assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
   open('all');
-  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'fish').beta", s.ctx), 'the beta label kept');
+  // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
+  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
+  assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
   assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
   assert.ok(
@@ -1798,15 +1800,22 @@ const C = require('../core.js'),
   vm = require('vm'),
   {execFileSync} = require('child_process');
 const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
+  CJSON0 = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
   GEN = (d => {
     const out = {};
     [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
     return out;
   })(JSON.parse(DJSON));
-// data.json from GitHub, served here (counted); anything else is the default stub.
+// data.json from GitHub, served here (counted), and curation.json, whose look-alike pairs the coral replay lays over it
+// (Code.gs subjRpl_; design note v2, step 8); anything else is the default stub.
 const withData = (n = {c: 0}) => ({
   n,
-  fetch: url => (/\/main\/data\.json$/.test(url) ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON}) : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON})
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON0}
+        : null
 });
 const qa = (id, i, x = {}) =>
   ans(id, {
@@ -1994,8 +2003,9 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
-  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
+  // Three times in all: once for the replay's units under the content editor's pairs (subjRpl_, design note v2 step 8),
+  // once for the slate (dataJson_), once for the photo pool of the list (v81 pools_), each then cached.
+  assert.strictEqual(f.n.c, 3, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});

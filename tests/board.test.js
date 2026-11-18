@@ -16,6 +16,7 @@ const ROOT = path.join(__dirname, '..'),
   CODE = fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
+  SJSON = fs.readFileSync(path.join(ROOT, 'seaslug.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
   TOK = 'ghp_write000000000000000000';
 const resp = (code, body) => ({
@@ -25,20 +26,22 @@ const resp = (code, body) => ({
 // data.json and fish.json from GitHub (counted), and the script itself at the same version: autoUpdate finds itself up
 // to date and runs the leaderboard's replays (boardWarm_).
 // hook.data: run at the first fetch of data.json (inside the first coral replay the trigger makes, outside the lock).
-const withAll = (n = {data: 0, fish: 0}, hook = {}) => ({
+const withAll = (n = {data: 0, fish: 0, seaslug: 0}, hook = {}) => ({
   n,
   fetch: url =>
     /\/main\/data\.json$/.test(url)
       ? (n.data++ || !hook.data || hook.data(), resp(200, DJSON))
       : /\/main\/fish\.json$/.test(url)
         ? (n.fish++, resp(200, FJSON))
-        : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
-          ? resp(200, CJSON)
-          : /\/main\/tools\/sync\/Code\.gs/.test(url)
-            ? resp(200, CODE)
-            : /\/main\/tools\/sync\/appsscript\.json/.test(url)
-              ? resp(200, '{}')
-              : null
+        : /\/main\/seaslug\.json$/.test(url) // the sea slugs' replay units (core.js SUBJECTS seaslug replayed file)
+          ? ((n.seaslug = (n.seaslug || 0) + 1), resp(200, SJSON))
+          : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
+            ? resp(200, CJSON)
+            : /\/main\/tools\/sync\/Code\.gs/.test(url)
+              ? resp(200, CODE)
+              : /\/main\/tools\/sync\/appsscript\.json/.test(url)
+                ? resp(200, '{}')
+                : null
 });
 const ans = (id, x) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-1', ...x});
 // Coral answers, 1 in 4 a mix-up with Montipora.
@@ -68,9 +71,26 @@ const fa = (id, i) =>
     th: 1,
     sc: {d: 0, r: 1}
   });
+// Sea slug answers as the app logs them (its genera from the start: rk genus), 1 in 3 a mix-up with a sibling genus.
+const sa = (id, i) =>
+  ans(id, {
+    t: new Date(Date.UTC(2026, 10, 17, 6, 0, i)).toISOString(),
+    s: 'seaslug',
+    rk: 'genus',
+    g: 'g:Chromodoris',
+    a: i % 3 === 2 ? 'g:Hypselodoris' : 'g:Chromodoris',
+    ok: i % 3 === 2 ? 0 : 1,
+    m: 'quiz|c',
+    ph: 'seaslug-' + (100 + (i % 4)),
+    ch: 'g:Chromodoris g:Hypselodoris g:Goniobranchus g:Glossodoris',
+    e: 0.8,
+    th: 1,
+    sc: {d: 0, r: 1}
+  });
 const GENERA = {Acropora: 'mid', Montipora: 'new', Porites: 'new', Pocillopora: 'new'},
   CLIST = Object.keys(GENERA),
-  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses'];
+  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses'],
+  SUNITS = ['g:Chromodoris', 'g:Hypselodoris', 'g:Goniobranchus', 'g:Glossodoris'];
 // Each subject with a leaderboard and rules versions, its fixtures: its saved progress key, a saved copy whose bars the
 // replay of its answers moves, those answers, the summary that sends its board's units, the units its % is over.
 const FIX = {
@@ -85,6 +105,12 @@ const FIX = {
     answers: n => Array.from({length: 9}, (_, i) => fa(n + i, i)),
     summary: {board: 1, boards: {fish: FUNITS}},
     units: FUNITS
+  },
+  seaslug: {
+    saved: {'g:Chromodoris': {ok: 1, ko: 0, h: '1', pg: 0.1}, 'g:Glossodoris': {ok: 1, ko: 0, h: '1', pg: 0.2}},
+    answers: n => Array.from({length: 9}, (_, i) => sa(n + i, i)),
+    summary: {board: 1, boards: {seaslug: SUNITS}},
+    units: SUNITS
   }
 };
 const BOARDED = C.SUBJECTS.filter(S => S.board && C.rvsOf(S.id).length);
@@ -103,7 +129,10 @@ function play(s, name, pin, rv, extra = {}) {
   // the log is the only reference (rule D9), so such a player would have no answer at all.
   const id = [...name.toLowerCase()].map(c => c.charCodeAt(0).toString(36)).join(''),
     answers = BOARDED.flatMap(S => FIX[S.id].answers('p' + id + S.id));
-  const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra);
+  // each subject's board units joined (boards: {subject: units})
+  const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra, {
+    boards: Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary.boards || {}))
+  });
   const r = s.post({name, pin, data: dataOf(allSaved(), rv), summary, answers});
   assert.ok(r.ok && !r.replay && !r.replays, JSON.stringify(r).slice(0, 200));
 }
@@ -388,9 +417,20 @@ test('answers logged while the trigger replays: that replay dropped, made again 
     s = loadCodeGs({fetch: f.fetch}),
     S = C.subjectOf(C.replaySubject());
   play(s, 'Ana', '1234', {});
-  hook.data = () =>
-    assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+  // The answer comes in while the trigger makes the first coral replay, outside the lock: from step 8 of the design note
+  // the coral units are made before the replays (subjStRefresh_ reads data.json under the content editor's pairs), so the
+  // replay itself is where it comes, not data.json's fetch.
+  const mk = s.ctx.rplMake_;
+  let late = false;
+  s.ctx.rplMake_ = (...a) => {
+    if (!late && !a[4]) {
+      late = true;
+      assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+    }
+    return mk(...a);
+  };
   s.ctx.autoUpdate();
+  assert.ok(late, 'the answer came in during the replay');
   assert.ok(!s.sheets.Replayed || !s.sheets.Replayed.rows.slice(1).some(r => r[0] === 'Ana'), 'made over 12 rows, 13 now: not written');
   s.ctx.autoUpdate();
   assert.deepStrictEqual(
