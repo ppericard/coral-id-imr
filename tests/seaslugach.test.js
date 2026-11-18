@@ -66,8 +66,12 @@ test('sea slug achievements: their own ids, a modest first list, plain and well-
   [60, 70, 80, 90, 100].forEach(p => {
     const a = L.find(x => x.id === 'sspct' + p);
     assert.strictEqual(a.tier, 3, a.id);
-    assert.ok(a.test({pct: p}) && !a.test({pct: p - 1}), a.id);
+    assert.ok(a.test({pct: p, total: 5, learned: 5}) && !a.test({pct: p - 1, total: 5, learned: 5}), a.id);
   });
+  // 100% is a rounded mean (77 learned and one at 95% make 100): it also asks every genus learned, and goes with a learned mark
+  const top = L.find(x => x.id === 'sspct100');
+  assert.ok(!top.test({pct: 100, total: 78, learned: 77}) && !top.test({pct: 100, total: 0, learned: 0}));
+  assert.ok(C.ACH_LEARN.includes('sspct100'));
 });
 
 test("the nudibranchs' taxonomic groups are seaslug.json's, and the other groups are named as it names them", () => {

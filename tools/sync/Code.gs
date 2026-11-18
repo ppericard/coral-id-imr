@@ -8196,7 +8196,16 @@ const CORE_ = (function () { const module = {exports: {}};
     seaPct('sspct70', 70, 'Muck magnet', 3),
     seaPct('sspct80', 80, 'Slug savant', 3),
     seaPct('sspct90', 90, 'Nudibranch nerd', 3),
-    seaPct('sspct100', 100, 'Every last slug', 3)
+    // 100% shows rounded (77 genera learned and one at 95% make 100), so it also asks every genus learned (Codex, #1112);
+    // it rests on genera learned, so ACH_LEARN takes it back with a learned mark.
+    [
+      'sspct100',
+      'Every last slug',
+      '100% sea slug progress: every genus learned',
+      3,
+      '📈',
+      s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
@@ -8275,7 +8284,8 @@ const CORE_ = (function () { const module = {exports: {}};
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
