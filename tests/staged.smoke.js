@@ -7,7 +7,8 @@
 // 2. the Lab: the identification key, its module loaded through the stamped LAB_V (proto/lab.js);
 // 3. the admin demo (admin.html?demo, the admin's minified scripts, its analysis worker's file);
 // 4. the service worker installed from the copy: its shell cache holds every SHELL address, and index.html's scripts are
-//    among them (sw.js V and the ?v= agree).
+//    among them (sw.js V and the ?v= agree);
+// 5. the source maps: a position in each minified script goes back to its original line (tools/unminify.js).
 // Each page: no page error, no Content-Security-Policy refusal, no address of the copy answered 404.
 // Run:
 //   STAGED_DIR=<dir> node tests/staged.smoke.js   a copy already built (pages.yml, after tools/build_site.py)
@@ -221,6 +222,57 @@ async function worker(b, base, dir, fails) {
   await ctx.close();
 }
 
+// 5. The source maps: an error report's position goes back to its original line (tools/unminify.js), in every minified
+// script of the copy. Per script: a string literal of the original that the minified file keeps is found in it (its line
+// and column as a browser reports them, from 1), mapped back, and the original line the map names must hold the literal;
+// the script ends with its sourceMappingURL. And the premise of the report's `av` check: app.js's hash, as the loader
+// names it (index.html app.js?v=), is the hash of the app.js served.
+async function maps(dir, fails) {
+  const U = require('../tools/unminify.js'),
+    scripts = require('../tools/minify.js').scripts(dir);
+  const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8'),
+    named = (/app\.js\?v=([0-9a-f]{10})/.exec(html) || [])[1],
+    served = U.h10(fs.readFileSync(path.join(dir, 'app.js')));
+  if (named !== served)
+    fails.push(`maps: index.html names app.js ${named}, the file served is ${served} (the report's av check relies on it)`);
+  let checked = 0;
+  for (const f of scripts) {
+    const code = fs.readFileSync(path.join(dir, f), 'utf8'),
+      base = path.basename(f);
+    if (!code.trimEnd().endsWith(`//# sourceMappingURL=${base}.map`)) {
+      fails.push(`maps: ${f} does not end with its sourceMappingURL`);
+      continue;
+    }
+    let map;
+    try {
+      map = JSON.parse(fs.readFileSync(path.join(dir, f + '.map'), 'utf8'));
+    } catch (e) {
+      fails.push(`maps: ${f}.map: ${e.message}`);
+      continue;
+    }
+    const orig = String((map.sourcesContent || [])[0] || ''),
+      lit = [...code.matchAll(/'[A-Za-z][A-Za-z0-9 _:.\/-]{3,59}'/g)].map(m => m[0]).find(s => orig.includes(s));
+    if (!lit) {
+      fails.push(`maps: ${f} holds no string literal to look for (widen the pattern of tests/staged.smoke.js maps)`);
+      continue;
+    }
+    const at = code.indexOf(lit),
+      before = code.slice(0, at).split('\n'),
+      pos = `${before.length}:${before[before.length - 1].length + 1}`;
+    const r = await U.unminify(U.fromDir(dir), `${f}:${pos}`);
+    const to = /-> (\S+):(\d+):(\d+)/.exec(r.lines[0] || '');
+    if (r.code !== 0 || !to) {
+      fails.push(`maps: ${f}:${pos} (${lit}) not mapped: ${r.lines.join(' | ')}`);
+      continue;
+    }
+    if (!(orig.split('\n')[+to[2] - 1] || '').includes(lit))
+      fails.push(`maps: ${f}:${pos} went to ${to[1]}:${to[2]}, which does not hold ${lit}`);
+    checked++;
+  }
+  if (checked !== scripts.length) fails.push(`maps: ${checked} of ${scripts.length} scripts mapped back`);
+  return `${checked} of ${scripts.length} scripts mapped back`;
+}
+
 (async () => {
   await slot('staged.smoke');
   const {dir, own} = stage(),
@@ -237,6 +289,7 @@ async function worker(b, base, dir, fails) {
   await lab(b, base, fails);
   await admin(b, base, fails);
   await worker(b, base, dir, fails);
+  const mapped = await maps(dir, fails);
   await b.close();
   server.close();
   if (own) fs.rmSync(dir, {recursive: true, force: true});
@@ -244,7 +297,7 @@ async function worker(b, base, dir, fails) {
     console.error([...new Set(fails)].join('\n'));
     process.exit(1);
   }
-  console.log(`staged smoke: OK (${C.SUBJECTS.map(s => s.id).join(', ')}, the Lab, the admin, the worker)`);
+  console.log(`staged smoke: OK (${C.SUBJECTS.map(s => s.id).join(', ')}, the Lab, the admin, the worker, the source maps: ${mapped})`);
 })().catch(e => {
   console.error(e);
   process.exit(1);
