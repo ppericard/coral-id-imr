@@ -894,13 +894,13 @@ function subjRpl_(sid, force){
   }
   return out;
 }
-// v162: a variant table kept (subjRpl_), read once per run (SVARM_), null when it is not there.
+// A variant table kept (subjRpl_), read once per run (SVARM_), null when it is not there.
 const SVARM_ = {};
 function subjVarGet_(c, k){
   if (SVARM_[k]) return SVARM_[k];
   try { const v = cacheBigGet_(c, k); return v ? (SVARM_[k] = JSON.parse(v)) : null; } catch (e) { return null; }
 }
-// v162: the variant table a subject's replay reads (rplMake_; core.js replayProgress vars): {} for a subject with none
+// The variant table a subject's replay reads (rplMake_; core.js replayProgress vars): {} for a subject with none
 // (nothing to apply), the one kept with its units under the structure in force (subjRpl_, made then when it is not
 // there), null when it cannot be made (no replay then; a subject with variants and no structure has none yet).
 function subjVar_(sid){
@@ -913,7 +913,7 @@ function subjVar_(sid){
 // The tree a subject's leaderboard ranks by when the sheet makes it (subjTreeOn_): the one made with its replay's units
 // under the structure in force (subjRpl_), from the cache only (board_ never fetches; the 15-minute trigger keeps it
 // there, subjStRefresh_), checked as a tree an app sends (boardTreeOk_); null when it is not there: the tree the apps sent
-// then (boardUnits_), as before.
+// then (boardUnits_).
 function subjTreeKept_(S){
   if (!S.structure || !subjTreeOn_(S)) return null;
   const c = CacheService.getScriptCache();
@@ -934,8 +934,8 @@ function subjStKept_(sid){
   } catch (e) { return null; }
 }
 // The 15-minute trigger: every subject's curation read again (subjCur_), before the leaderboard's replays (boardWarm_);
-// its units, tree and (v162) variant table made again when they are not cached (subjRpl_).
-// v163: the subject replayed here too, when it has a structure (the corals' pairs).
+// its units, tree and variant table made again when they are not cached (subjRpl_). The subject replayed here too, when
+// it has a structure (the corals' pairs).
 function subjStRefresh_(){
   [CORE_.replaySubject()].concat(CORE_.replayedSubjects()).filter(id => CORE_.subjectOf(id).structure).forEach(id => { try { subjRpl_(id, true); } catch (e) {} });
 }
@@ -949,7 +949,7 @@ function subjStSeen_(sid, stn){
 }
 
 // Anonymous id of an RA: the same for the same name, no name in it. Its salt is secret (Script Properties, made on first
-// use), so nobody can rebuild ids from a list of names; the admin learns its own id with ?answers=1&name=…&pin=… (v6).
+// use), so nobody can rebuild ids from a list of names; the admin learns its own id with its name and code (answers_ me).
 function anonSalt_(){
   const pr = PropertiesService.getScriptProperties(); let s = pr.getProperty('ANON_SALT');
   if (!s) { s = Utilities.getUuid(); pr.setProperty('ANON_SALT', s); }
@@ -959,44 +959,42 @@ function aid_(name, salt){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, (salt || anonSalt_()) + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
 }
 
-// The anonymous column of readAnswers (index 11): 1 a device that never signed in ("~anon <id>"), 2 (v55) the answers an
-// account deleted without its answers left behind ("~deleted <id>"): used only in the pooled photo statistics, never as a
-// player (Pierre, 2026-11-05, Q86); 0 a signed-in player. Readers that test it for truthy still see both as no name.
-// v58: an archived record's answers are flagged 2 too (arch: archivedSet_), as a deleted account's.
+// The anonymous column of readAnswers (index 11): 1 a device that never signed in ("~anon <id>"), 2 the answers an
+// account deleted without its answers left behind ("~deleted <id>") or an archived record's (arch: archivedSet_): used
+// only in the pooled photo statistics, never as a player; 0 a signed-in player. Readers that test it for truthy see
+// both as no name.
 const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w).indexOf('~deleted ') === 0 || (arch && arch.has(lc_(w))) ? 2 : 0);
 // {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos, choices, anonymous 0|1|2,
 //   seconds, enlarged 0|1, UTC offset, typed, retyped right, subject, rank, taxon shown, taxon answered, species shown, scoring]], players:
-//   {id: [learned, seen, total, {genus: ability}]}}. v59: the typed text (index 15, '' when none) and the spelling step (16, null
-//   when none was asked), served from v60 so the indexes match the tab's columns. v60: the subject (index 17, core.js LOG_SUBJ: the default subject's id, coral, in the rows
-//   logged before), the rank asked (the subject's rank when the row has none), the names at that rank and the species
+//   {id: [learned, seen, total, {genus: ability}]}}. The indexes match the tab's columns: the typed text (15, '' when
+//   none) and the spelling step (16, null when none was asked); the subject (17, core.js LOG_SUBJ: coral in a row
+//   without one), the rank asked (the subject's rank when the row has none), the names at that rank and the species
 //   shown ('' when none); a reader of one subject keeps its rows (core.js subjRows), so a fish answer never counts in a
-//   coral result. v61: the scoring record (index 22, core.js LOG_SC: scoreRec, null before it). Expected/ability/new photos are null
-//   on answers before v5; choices (the genera offered, space-separated) is '' on answers before v10; seconds and enlarged
-//   (v23, at the end so the indexes before them never move) are null on answers before v23; the UTC offset (v44, minutes
-//   east of UTC on the player's device; +480 in the rows logged before v44, the one-shot tz) is null only when an app
-//   sent none; the scoring record (v61, core.js scoreRec, an object) is null before v61.
+//   coral result; the scoring record (22, core.js LOG_SC: scoreRec, an object, null without). In the oldest rows
+//   expected, ability and new photos are null, choices (the genera offered, space-separated) '', seconds and enlarged
+//   null; the UTC offset (minutes east of UTC on the player's device) is null only when an app sent none.
 function answers_(q){
-  // v55: the roster read before the answers (Codex review #600): a removal while they are read leaves the report stale.
+  // The roster read before the answers: a removal while they are read leaves the report stale.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), out = {ok: true, rows: [], players: {}, roster: rosterAt_()}, sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs');
-  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // v119: by name, no prototype (a player named constructor)
-  out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics (sxSet_), for the Analyses report and the admin
+  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // by name, no prototype (a player named constructor)
+  out.excluded = [...sxSet_()];  // the ids left out of the statistics (sxSet_), for the Analyses report and the admin
   // me: the caller's own id, only with its name and right code (the admin page marks "you").
   const {name, pin} = clean_(q || {});
   if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) {
     const r = find_(ra, name), h = hash_(name, pin), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
     if (row && row[6] === h) {
       out.me = id(name);
-      if (!archived_(row) && adminAcct_() !== h) try { adminClaim_(name, h); } catch (e) {}  // v125: the admin's account (adminAcct_)
-      // v156 (roles step 1): Pierre's grants, once, to the admin's account (rolesSeed_)
-      // v159: a failure is a Deploy log line, never silent, never the reader's error; the seed's next try finishes it.
+      if (!archived_(row) && adminAcct_() !== h) try { adminClaim_(name, h); } catch (e) {}  // the admin's account (adminAcct_)
+      // Pierre's grants, once, to the admin's account (rolesSeed_); a failure is a Deploy log line, never silent, never
+      // the reader's error; the seed's next try finishes it.
       if (q.who && !archived_(row) && adminAcct_() === h) try { rolesSeed_(name, h, q.who); } catch (e) { roleLog_('seed failed, tried again at the next read: ' + errText_(e)); }
     } else if (r) failed_(name);
   }
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
-  // v98: a surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
+  // A surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
   if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
-  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // v58: no archive
+  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // no archive
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
   return out;
 }
@@ -1009,7 +1007,7 @@ function answerOut_(r, id, arch){
       [12, 13, 14].map(i => r[i] === '' || r[i] == null ? null : Number(r[i])), [String(r[15] || ''), r[16] === '' || r[16] == null ? null : Number(r[16])],
       [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])]);
 }
-// The admin's light read (v110, Pierre 2026-11-08: "Les deux", a live Players › Activity): POST {readLive: 1, token} →
+// The admin's light read (a live Players › Activity): POST {readLive: 1, token} →
 // {ok, rows, last, n, k, roster}, re-read every minute while that page is open and in view (admin.js liveRead), where readAnswers
 // sends the whole tab. rows: the Answers tab's last LIVE_N rows with a player, as readAnswers serves them (answerOut_),
 // in the tab's order, a surprise card's left out (core.js winkRow). last: {admin id (aid_): time ms of the player's last
@@ -1023,7 +1021,7 @@ const LIVE_N = 50;
 function live_(){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0, roster: rosterAt_()};
   if (!sh || sh.getLastRow() < 2) return out;
-  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // v119: by name, no prototype (a player named constructor)
+  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // by name, no prototype (a player named constructor)
   const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(LOG.length, sh.getMaxColumns()) : LOG.length;
   out.rows = sh.getRange(n - k + 2, 1, k, w).getValues().map(r => w < LOG.length ? r.concat(new Array(LOG.length - w).fill('')) : r)
     .filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
@@ -1047,62 +1045,49 @@ function abilities_(data){
 
 // Elo over the Answers tab, oldest first. Each answer: P(right) = g + (1 - g) * sigmoid(ability - difficulty), with
 // g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown, +0.5 when a
-// single view was shown alone (harder than the same photo with the other views), plus the genus offset (v31), minus the player's photo memory (MEM,
-// v26). Ratings move by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos:
-// {file: [difficulty, answers, right]}, ras: {anonymous id: [ability, answers]}, conf: {"A|B": [offered, mixed up]},
-// mem: [offsets by memory bucket], memn: [trusted answers in each], gd: {genus: [offset, weighed answers]}}. Difficulty
-// 0 = average photo, met for the first time; +1 = clearly harder.
-// v31 (Pierre, 2026-11-03): hierarchical photo Elo, the player rule "global level + genus" applied to the photos. A
-// photo's difficulty = its genus's offset (G, every photo of the genus shown shares it: one colony per question) + its
-// own residual (P), both moved by each trusted answer's surprise: P as before, G by GENUS_K / (1 + its weighed answers
-// / 10). photos serves the total (G + P), so the app reads it as before; gd the offsets, the prior of a photo nobody
-// has answered yet (model.js photoDiff). The Easy / Medium / Hard prior it replaces predicted the answers worse than no
-// prior at all (docs/LEARNING.md "Hierarchical photo Elo", with the replay that set GENUS_K).
-// conf (v10): per pair of genera (A before B alphabetically), how often one was shown with the other among the choices, and how often the other was answered; only answers that logged their choices (v10) count.
-// The app turns it into confusion scores (core.js confScore) to pick the look-alike traps; core.js confusionOf counts the same.
-// admin.js eloOf replays the same rules in the browser (photo Elo with or without the author's answers): keep both in step.
-// Who rates the photos and the confusions (v17, Pierre 2026-11-02, after 17 anonymous "players" turned out to be test
-// runs; v18: devices that never signed in too, under the same rule, now that it tells real players from bots and random
-// clicking, Pierre): players whose answers show they really play: TRUST.N answers or more, right clearly above chance (one-sided z of at
-// least TRUST.Z against each question's guess rate). Bots and random clicking stay out; nobody's own progress, level or
-// leaderboard place changes. core.js trustOf replays the same rule for the admin: keep both in step.
-// N is per player, not per photo: a photo counts from its first answer (Pierre kept 10, 2026-11-02).
+// single view was shown alone (harder than the same photo with the other views), plus the genus offset, minus the
+// player's photo memory (MEM). Ratings move by K * (result - P(right)), K shrinking as a photo or an RA gathers answers.
+// Returns {ok, photos: {file: [difficulty, answers, right]}, ras: {anonymous id: [ability, answers]}, conf: {"A|B":
+// [offered, mixed up]}, mem: [offsets by memory bucket], memn: [trusted answers in each], gd: {genus: [offset, weighed
+// answers]}}. Difficulty 0 = average photo, met for the first time; +1 = clearly harder.
+// Hierarchical photo Elo (docs/LEARNING.md "Hierarchical photo Elo"): a photo's difficulty = its genus's offset (G,
+// every photo of the genus shown shares it: one colony per question) + its own residual (P), both moved by each trusted
+// answer's surprise, G by GENUS_K / (1 + its weighed answers / 10). photos serves the total (G + P); gd the offsets, the
+// prior of a photo nobody has answered yet (model.js photoDiff).
+// conf: per pair of genera (A before B alphabetically), how often one was shown with the other among the choices, and
+// how often the other was answered; only answers that logged their choices count. The app turns it into confusion
+// scores (core.js confScore); core.js confusionOf counts the same. core.js eloReplay replays the same rules for the
+// admin: keep them in step (tests/core.test.js compares them).
+// Who rates the photos and the confusions: players, devices that never signed in included, whose answers show they
+// really play: TRUST.N answers or more (per player, not per photo), right clearly above chance (one-sided z of at least
+// TRUST.Z against each question's guess rate). Bots and random clicking stay out; nobody's own progress, level or
+// leaderboard place changes. core.js trustOf is the same rule.
 const TRUST = {N: 10, Z: 1.645};
-// How much one answer moves the photos (v17, Pierre 2026-11-02): a player's answers weigh n / (n + PHOTO_W.N) after n
-// answers (Glicko's idea: a player whose level is still uncertain moves the items little; a beginner answering at
-// random at first counts more and more as their level settles). Every answer counts, repeats too, but against what the
-// player is expected to remember of that photo (Duolingo half-life regression and PFA: the item's difficulty is fitted
-// beside the player's own history with it): v17-v25 a fixed rule, a photo new to the player PHOTO_W.NEW harder, one
-// they already got right twice PHOTO_W.KNOWN easier; from v26 the prior of the estimated photo memory (MEM).
-// N 10 (was 30; v18, Pierre, same reason): the 10th answer weighs 0.5, the 30th 0.75 (were 0.25 and 0.5).
+// How much one answer moves the photos: a player's answers weigh n / (n + PHOTO_W.N) after n answers (Glicko's idea: a
+// player whose level is still uncertain moves the items little), so the 10th weighs 0.5, the 30th 0.75. Every answer
+// counts, repeats too, against what the player is expected to remember of that photo (MEM; NEW and KNOWN make its prior).
 const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
-// Photo memory (v26, Pierre 2026-11-03: in a genus with few photos the same ones come back, players learn the photos
-// rather than the genus, and that skewed the photo difficulty and the player's progress). An answer on a photo is
-// expected easier by an offset (logits off its difficulty) from the player's own history with that photo, [shown,
-// right]: bucket 0 new (the reference, 0: a photo's rating is what a player meets on it the first time), 1 shown never
-// right, 2 right once, 3 right twice or more; a question with several photos takes the mean of its photos' offsets.
-// Buckets 1-3 are rated in the replay itself, on the trusted answers weighed as for the photos: after each answer each
-// one its photos fall in moves by the surprise over the information gathered so far plus the prior's (a Newton step on
-// the log-likelihood, as Glicko moves a rating by what it learns over how sure it is). Prior: the old rule as offsets
-// from a new photo (0, -0.5, -0.5, -1.5), weighing MEM.N answers at the game's usual chance (80%, 4 choices). Served by
-// ?stats=1 (mem; memn the answers behind each bucket); the app (model.js) expects every question with them.
-// core.js MEM, memBucket, memFam and eloReplay are the same: keep them in step (tests/core.test.js compares them).
+// Photo memory (docs/LEARNING.md "Photo memory"; core.js MEM, memBucket, memFam, the same: keep them in step): an answer
+// on a photo is expected easier by an offset from the player's own history with that photo: bucket 0 new (the
+// reference, 0), 1 shown never right, 2 right once, 3 right twice or more; a question with several photos takes the mean
+// of its photos' offsets. Buckets 1-3 are rated in the replay itself, on the trusted answers, each moving by the surprise
+// over the information gathered so far plus the prior's (a Newton step). Prior: 0, -0.5, -0.5, -1.5, weighing MEM.N
+// answers at the game's usual chance (80%, 4 choices). Served by ?stats=1 (mem; memn the answers behind each bucket).
 const MEM = {N: 10, PRIOR: [0, -PHOTO_W.NEW, -PHOTO_W.NEW, PHOTO_W.KNOWN - PHOTO_W.NEW]};
 const memBucket_ = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3);
 const memFam_ = (hs, mem) => (hs.length ? hs.reduce((t, h) => t + mem[memBucket_(h)], 0) / hs.length : 0);
 // Fisher information of one answer at ability - difficulty x with k choices (the prior's weight: MEM.N at x 1, k 4).
 function infoAt_(x, k){ const s = 1 / (1 + Math.exp(-x)), p = 1 / k + (1 - 1 / k) * s; return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p)); }
-// Every player starts as a beginner, not an average player (Pierre, 2026-11-02: the RAs play from the first day of
-// their course, others know even less): level PLAYER0 = -1, i.e. about 45% right on a photo of average difficulty with
-// 4 choices. Starting at 0 (average), a beginner's misses made the photos look harder than they are.
+// Every player starts as a beginner, not an average player (the RAs play from the first day of their course): level
+// PLAYER0 = -1, about 45% right on a photo of average difficulty with 4 choices. Starting at 0, a beginner's misses
+// would make the photos look harder than they are.
 const PLAYER0 = -1;
-// v31: how fast a genus's offset moves (core.js GENUS_K, in step): 0.2-0.4 beat the photo-only Elo on the real answer
-// log, 0.8 is too fast (docs/LEARNING.md "Hierarchical photo Elo").
+// How fast a genus's offset moves (core.js GENUS_K, in step): 0.2-0.4 beat the photo-only Elo on the real answer log,
+// 0.8 is too fast (docs/LEARNING.md "Hierarchical photo Elo").
 const GENUS_K = 0.4;
-// v20: a photo-quiz question logged without its number of choices but with fewer than 4 in the Choices column (the
-// "Again: A or B?" question after a mix-up, logged plain "quiz" until 2026-11-02) is rated with its real guess rate,
-// 1 / choices (Pierre: correct the existing data too; nothing in the sheet is rewritten). core.js guessOf in step.
-// v27: a typed answer (|t: the player types the genus, nothing to pick from) has no guess rate, 0 (core.js guessOf).
+// A photo-quiz question logged without its number of choices but with fewer than 4 in the Choices column (the old
+// "Again: A or B?" rows) is rated with its real guess rate, 1 / choices; a typed answer (|t) has none, 0. core.js
+// guessOf in step.
 const guess_ = (mode, choices) => {
   if (/\|t(\||$)/.test(mode)) return 0;
   const kq = /\|k(\d)$/.exec(mode); if (kq) return 1 / Number(kq[1]);
@@ -1110,29 +1095,29 @@ const guess_ = (mode, choices) => {
   const n = String(choices || '').split(/\s+/).filter(Boolean).length;
   return n >= 2 && n < 4 ? 1 / n : 0.25;
 };
-// A player's trust counters [answers, right, sum of guess rates, sum of their variances], one answer added (v134: kept
-// per player in the pooled stats' snapshot, statsFold_), and whether they make the player trusted (TRUST).
+// A player's trust counters [answers, right, sum of guess rates, sum of their variances], one answer added (kept per
+// player in the pooled stats' snapshot, statsFold_), and whether they make the player trusted (TRUST).
 const trustAdd_ = (t, ok, g) => { t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); return t; };
 const trustOk_ = t => !!t && t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
 function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
-  const T = Object.create(null), out = Object.create(null);  // v115: keyed by names, no inherited entry
+  const T = Object.create(null), out = Object.create(null);  // keyed by names, no inherited entry
   rows.forEach(([w, ok, m, an, ch]) => trustAdd_(T[w] = T[w] || [0, 0, 0, 0, an], ok, guess_(m, ch)));
   Object.keys(T).forEach(w => { out[w] = trustOk_(T[w]); });
   return out;
 }
-// v134: the pooled stats as a fold, one answer at a time, so the whole log (stats_) and a few new rows at a time
+// The pooled stats as a fold, one answer at a time, so the whole log (stats_) and a few new rows at a time
 // (statsFold_) run the very same steps. An answer as the fold reads it (a "mini row"): [tab row, time ms, player key,
 // unit shown, answered, right 0|1, mode, photos, logged expectation (null when none), choices]. The player key is the
 // lower-case name in stats_, the admin's anonymous id (aid_) in the snapshot, which never holds a name (rule D2).
-const tOf_ = r => new Date(r[1]).getTime() || 0;  // an unreadable time sorts first (it compared as NaN before v134)
+const tOf_ = r => new Date(r[1]).getTime() || 0;  // an unreadable time sorts first
 const statsMini_ = (r, row, w) => [row, tOf_(r), w, String(r[2] || ''), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), String(r[11] || '')];
-// Oldest first, the tab's order between equal times (the stable sort of stats_ before v134).
+// Oldest first, the tab's order between equal times.
 const statsOrder_ = (a, b) => a[1] - b[1] || a[0] - b[0];
 const nul_ = () => Object.create(null);
 // An empty fold. at: when its last run started; dirty: the mark of the last rewrite of the log it saw (statsDirty_);
 // roster, sx: the roster time (rosterAt_) and the ids left out of the
 // statistics (sxSet_) it is built with; cause: why it was (re)built, built: when; why: the same until it is caught up,
-// then ''; runs: the runs since. sid (v137): the subject whose answers it folds (statsSid_). D (v145): the admin ids of
+// then ''; runs: the runs since. sid: the subject whose answers it folds (statsSid_). D: the admin ids of
 // the answers a deleted account left ("~deleted <id>"), which rate the photos but get no ability in the admin's reply
 // (stats_ ras, statsAdmin_).
 function statsNew_(roster, sx, at, why, sid){
@@ -1147,7 +1132,7 @@ function statsNew_(roster, sx, at, why, sid){
 function statsStep_(S, m, tr, ex, idx){
   const w = m[2], sg = m[3], sa = m[4], ok = m[5], mode = m[6], fs = m[7].split(/\s+/).filter(Boolean), ch = m[9];
   if (tr) ch.split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = S.conf[k] = S.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
-  // v77: each question format's offset is fitted on the trusted answers' points (core.js fmtPoint, fmtFit).
+  // Each question format's offset is fitted on the trusted answers' points (core.js fmtPoint, fmtFit).
   if (tr && sg) { const p = CORE_.fmtPoint(mode, m[8], ch, ok); if (p) (S.L[p[0]] = S.L[p[0]] || []).push(p.slice(1)); }
   if (ex) S.skip.excluded++;
   if (!fs.length) return;
