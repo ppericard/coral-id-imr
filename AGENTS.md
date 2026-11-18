@@ -97,6 +97,10 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
   screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
   a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger** (Pierre, 2026-11-19): each answer of Pierre's is applied to
+  the document it changes (a ROADMAP row, a rule, a study, a decision record) in the PR that records it, and added to the
+  append-only ledger [docs/ANSWERS.md](docs/ANSWERS.md); STATUS only cites it. Before any question,
+  the integrator searches the ledger, the rules and docs/decisions/; an answer found there is applied, never asked again.
 - **Data access**: any agent, subagents included, may **read** the sync sheet ("IMR Coral ID – RA progress", its id in
   HANDOVER "Code.gs") through the Google Sheets / Drive connector, read-only, real names included: no anonymisation
   between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit

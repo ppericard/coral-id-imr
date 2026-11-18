@@ -225,6 +225,16 @@ A suggested crop shows on the candidate (`sugCrop`, `crSrc`), opens in the crop 
 `tools/judging_cand.py detail <f>` builds the full-size sheet (the whole frame with a 10% grid, three 100% crops) the
 pass judges quality and crop from.
 
+## The calibration set (`calibration-set.json`)
+
+- About 50 coral game photos the draw shows a little more often until each has 20 answers, so a later placement test
+  asks photos whose difficulty is measured ([decision](../decisions/2026-11-18-coral-calibration-set.md), rule and check
+  in [LEARNING.md](../LEARNING.md) "The calibration set"). `{v, built, about, rule, coral: {genus: [files]}}`, keyed by
+  subject id (no key, no set). Written by `node tools/calibset.js` from `data.json`,
+  `curation.json`, `quality.json` and `forms.json`; sticky, never rewritten by a workflow: a member that leaves play
+  is not drawn until the tool is run again (`--check` says when).
+- The quiz tier loads it (`app.js` `tier2json` → `model.js` `CALSET`, `setBonus`; `tests/calibset.test.js`).
+
 ## Presence of coral species (`presence.json`)
 
 The presence rule (rule C8, `tools/presence.py`) applied to every coral species named on a photo (game, sheet and Key

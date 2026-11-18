@@ -45,7 +45,8 @@ function engine(
     held = null, // its held-out photos (g.held: model.js HELD, examSet, heldSet)
     mim = null, // its mimicry class entries (app.js mimLay: model.js mimOf)
     met = () => false, // whether a unit is met (model.js introduced: mimAt)
-    others = {} // the player's records of other units (P: model.js shownAll)
+    others = {}, // the player's records of other units (P: model.js shownAll)
+    calset = {} // the calibration set as app.js reads it (model.js CALSET: {subject id: {unit: [files]}})
   } = {}
 ) {
   let s = 12345;
@@ -98,12 +99,13 @@ function engine(
     ability: () => th,
     genScore: () => score,
     LV_AT: [0.5, 0.8, 0.95],
-    pick: a => a[Math.floor(rnd() * a.length)]
+    pick: a => a[Math.floor(rnd() * a.length)],
+    CALSET0: calset
   };
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, RARE, rareCap, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));

@@ -987,6 +987,79 @@ in a multi-view question, and a colony counting as seen whatever view of it was 
 "What a question shows". The admin's Colony view puts up to `admin.js` `CELL_MAX` (40) colonies of a coral genus in the
 games, per view; the fish have no cap. The study and its simulations are in the notebook.
 
+### The calibration set (corals, 2026-11-18)
+
+Pierre's answer to the placement test study (docs/reviews/2026-11-18-placement-test-check.md, #1080), the first step
+before an explicit placement test: a fixed set of about 50 coral photos, each drawn a little more often in normal play
+until it has 20 or more answers, never as a hidden probe. Today no coral photo has 20 answers (the study: 39 have 10 or
+more), and a test of 20-25 adaptive questions needs about 40-60 photos whose difficulty is measured. Decision record:
+docs/decisions/2026-11-18-coral-calibration-set.md.
+
+- **Which photos** (`tools/calibset.js`, `calibration-set.json`): game photos of the slate genera (the bonus genera are
+  opt-in: few players meet them), in the views every question shows (colony and close-up; a two-level genus's colony
+  and close-up), never several corals, a photo rated Poor or a Colony photo whose growth form is not visible. One each
+  for every slate genus, the rest of the 50 to the genera with the most eligible colonies; within a genus, the views
+  alternate and the photo is the first of a fixed hash order, one per colony. Never by source, licence, observer or the
+  answers a photo already has (rule P1). The genera span the slate's difficulty, so the set does: on the sheet's ratings
+  of 2026-11-18, the 48 members already rated sit from −1.14 (10%) to 0.67 (90%), median −0.03, and 4 answers each
+  (median; 0 to 11, 212 in all). The hard end of a test comes from its formats (a single view, look-alike choices, a
+  typed name: the format offsets), not from a set of hard photos.
+- **Sticky**: a member stays while it is in play, even when its genus's share of the 50 falls (the set may then hold a
+  few more); a genus whose member left play (Pierre removed it, rated it Poor,
+  excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
+  says when it would). Until then the member out of play is simply never drawn. A redraw would waste the answers the
+  members have gathered.
+- **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
+  sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
+  online calibration's bonus (`calBonus`); then 1. Only on a unit the player holds (met, not shaky: the calibration
+  questions' condition) and for a photo within one width of the question's target (|x| ≤ 1 in the targeting's
+  Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
+  else: the difficulty targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the
+  format and the scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
+  file did not come, draws as before.
+- **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
+  lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
+
+**The check, declared before running** (rule L11 level 1, the app world: `tools/learnsim.js --stats` (the sheet's
+reply of 2026-11-18) `--truth gen`, the four profiles × 5 seeds × 600 questions, item learner; `--set none` (no set, the
+draw of `main`) against the set, on the same seeds):
+- primary: the share of questions 1-600 showing a member, pooled over the 20 pairs, up;
+- guardrails: `tools/learncmp.js`'s (true knowledge at 300 and 600, units met at 100 and 300, E = bar − D\* at 300 and
+  600), with their margins; and the colony repeat rate over questions 1-600 (a question showing a colony shown before in
+  the run), margin +1 point;
+- reported: the questions that showed each member, pooled over the 20 runs as one cohort (minimum, quartiles, members
+  never shown), before and after.
+
+**What the check found.**
+- **The run as declared measured nothing**: `--truth gen` tells the app that every photo has 20 answers (learnsim's
+  `PSTAT` of that world), so no member is under its goal and the factor is 1 everywhere; both files were identical. The
+  same check without `--truth gen` (the learner reads the app's own photo difficulty, learnsim's default; the sheet's
+  real counts) is the one below.
+- **Two earlier variants, dropped**: ×2 on every unit (share 4.17% → 5.94%, but the beginner met 2.4 fewer genera at
+  300 and reached its first Open Water 44 answers later) and held units only (share 5.21%, the beginner's true
+  knowledge at 300 down 0.023 on seeds 6-20). Both breached a guardrail; the built version is below.
+- **Built version, the four profiles × 5 seeds** (seeds 1-5, 600 questions): members' share 4.17% → 5.35% (19 of 20
+  up; beginner +1.5 points, strong RA +1.4, lecture RA +1.1, expert +0.7); questions showing each member, pooled over
+  the 20 runs: minimum 1 → 3, quartiles 7 / 9 / 12 → 8 / 11 / 17, total 500 → 642, none never shown either way. Colony
+  repeats 10.2% → 10.5% (+0.36 points; margin 1 point). `learncmp`'s guardrails on 5 seeds: true knowledge and units
+  met held for every profile; the run-level ones swung both ways, as they did between the variants, so they were run
+  again on fresh seeds.
+- **Fresh seeds** (rule L11, one step up on the unclear and breached cells): the beginner on 45 (seeds 6-50; 6-20 to
+  600 questions, 21-50 to 300), the lecture and strong RAs on 15 (6-20, 600). Every guardrail held but one: first Open
+  Water −0.5 answers [bound +5.3], units met at 300 −1.2 [−1.8]; the lecture and strong RAs held on all.
+  **The one left: the beginner's true knowledge at 300 questions.** The within-one-width condition was chosen
+  after the held-only result on seeds 6-20, so only seeds 21-50 confirm it: there −0.013 [bound −0.023], past the
+  margin's bound though the mean is inside it (unclear); on seeds 6-20 −0.012 [−0.023]; pooled over the 45, −0.012
+  [−0.020]. At 600 questions +0.003 (seeds 1-5 and 6-20; seeds 21-50 stopped at 300). The simulated beginner meets about
+  one genus fewer by question 300 and has caught up by 600. A cost Pierre accepted (Q412, 2026-11-19: merge as is).
+- Compute: about 30 minutes (rule L11's cap 40), level 1 only. The real log cannot judge it (rule L12): its answers
+  were played under the draw before.
+- **Pace** [guess, from the sheet's counts of 2026-11-18]: the members hold 212 answers (median 4); at the study's
+  traffic (about 3,500 coral answers in 17 days) and the share above (+28%), the median member reaches 20 in roughly 7
+  weeks, the least shown quarter in 10 weeks or more, the slowest in several months (the starred genera among them: they
+  open after their look-alikes, rule L5). The factor buys about two weeks on the median (simulated 9 → 11 showings).
+  The check measures the share, not real players' pace: `--progress` tells.
+
 ### Full replay
 
 The reference for a player's progress is the replay of their whole answer log, in time order, under today's rules
@@ -1682,7 +1755,10 @@ learning change".
   as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file
   (`{photos: {file: d}, gd: {genus: d}}`), or `gen[:SD[:NOISE]]`, each photo's true difficulty drawn from N(μ_g, SD²) by
   a hash of its file name (μ_g the sheet's genus offset, SD by default `JUDGE.SD` 0.8), the app told the truth plus
-  N(0, NOISE²) (by default `JUDGE.NOISE` 0.3), as if 20 trusted answers had rated each photo.
+  N(0, NOISE²) (by default `JUDGE.NOISE` 0.3), as if 20 trusted answers had rated each photo. `--set FILE` serves FILE
+  as `calibration-set.json`, `--set none` an empty set (the draw without the calibration set), for a paired comparison
+  on one tree ("The calibration set"); `--truth gen` tells the app every photo has 20 answers, so the set's factor is off
+  in that world.
 - **Long runs**: a run is one synchronous `page.evaluate`, so the page's `localStorage` lives in its own memory
   (`tools/memstorage.js`, installed before anything writes: the browser's behaviour and its quota of 5,242,880
   characters, checked by `tests/memstorage.test.js`); the browser's storage traffic would otherwise queue in the

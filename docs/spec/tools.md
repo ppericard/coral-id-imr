@@ -204,6 +204,12 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
 - **The one-time content passes**, `apply_covers.py`, `apply_look_sources.py`, `apply_sources.py`,
   `apply_review_slides.py`, `apply_cmp.py`, `apply_multi.py`: idempotent; they record how those fields were built.
 - **`apply_loc_fix.py`**: hand corrections of a photo's `loc` (five Anacropora photos from Sabah labelled `ph` → `world`).
+- **`calibset.js`** → `calibration-set.json`: the coral calibration set
+  ([data.md](data.md#the-calibration-set-calibration-setjson), [LEARNING.md](../LEARNING.md) "The calibration set"):
+  writes the file from `data.json`, `curation.json`, `quality.json`, `forms.json` and the file itself (sticky);
+  `--check` (exit 1 when a run would change it: a member out of play, a genus short; by hand, not in CI, since Pierre's
+  Publish can take a member out of play), `--progress STATS` (each member's answers from a saved `?stats=1` reply, the
+  members at 20, the difficulty spread, what it can conclude); `tests/calibset.test.js`.
 
 ## Photos
 
