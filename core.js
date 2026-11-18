@@ -1293,7 +1293,7 @@
     );
     (F.families || []).forEach(t => {
       // how common its species are: near Dauin for the fish, over the subject's own area where its tree gives one
-      // (present.area: the sea slugs' distinct observers in the Philippines; Pierre, 2026-11-15, Q369 (b))
+      // (present.area: the sea slugs' distinct observers in the Philippines)
       const dauin = (t.species || []).reduce((a, id) => {
           const p = (sp.get(id) || {}).present || {};
           return a + ((F.area ? p.area : p.dauin) || 0);
@@ -1320,11 +1320,11 @@
         forms: t.group ? ['g' + t.group] : [],
         look: [...new Set((t.look || []).map(([id]) => id).filter(id => id !== t.id))],
         lk: (t.look || []).map(([id, txt]) => [id, txt]),
-        // Each look-alike line's source: the family's own (fish.json lsrc, Pierre's declared groups, #662), else the slides;
-        // then the source the content editor gave when he reworded it (contentApply esrc, Q359 e).
+        // Each look-alike line's source: the family's own (fish.json lsrc), else the slides; then the source the content
+        // editor gave with a rewording (contentApply esrc).
         lsrc: fishLookSrc(t),
         qt: t.cues && t.cues.length ? t.cues : null,
-        // The source given with an edit of its tips (contentApply esrc; Q359 e, rule C2), shown with them (app.js tipsList).
+        // The source given with an edit of its tips (contentApply esrc; rule C2), shown with them (app.js tipsList).
         ...(t.cues && t.cues.length && t.esrc && t.esrc.cues ? {qsrc: t.esrc.cues} : {}),
         sum: t.why || t.note || '',
         phase: t.phase || [],
@@ -1358,14 +1358,14 @@
         ...(t.tgroup ? {tg: t.tgroup} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         // Its juvenile classes and its variant thresholds, when it has them (fish.json juv, varAt): the kind of each
-        // variant photo of its units and when it comes in (varKindOf, VAR_AT; model.js varKind, varAtOf; Q391 a).
+        // variant photo of its units and when it comes in (varKindOf, VAR_AT; model.js varKind, varAtOf).
         ...(t.juv ? {juv: t.juv} : {}),
         ...(t.varAt ? {varAt: t.varAt} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
         // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
-        // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
-        // The names among them that designate part of it only (Pierre, 2026-11-09 ~15:45 Manila, Q333): an IMR genus or
-        // sub-entry (Chromis, Anemonefish, Clownfish, Unicornfish), each with the species it designates (fishTypeNames sc).
+        // plural or singular (fishTypeNames: never "Amphiprions").
+        // scopes: the names among them that designate part of it only, an IMR genus or sub-entry (Chromis, Anemonefish,
+        // Clownfish, Unicornfish), each with the species it designates (fishTypeNames sc).
         scopes: fishScopes(imrGen, [...(teachOf.get(t.id) || [])]),
         sciNames: [...new Set([...(t.sci || []), ...imrGen.map(g => g.name), ...[...(teachOf.get(t.id) || [])].map(x => x.fam)])].filter(
           Boolean
@@ -1376,10 +1376,9 @@
     Object.values(gen).forEach(g => {
       if (g.views.wide.length) g.cover = easyCover(g.views.wide).f;
     });
-    // A subject whose game units are its genera from the start (unit 'genus', SUBJECTS unitRank: the sea slugs; Pierre,
-    // 2026-11-16): its families stay in gen as structure (the sheets, the blocks, a genus's parent) and its genera are the
-    // units of its circles (fishGenUnits); app.js fishGenera completes their records as it does the fish's scientific
-    // genera. Otherwise (the fish) the families are the units, as before.
+    // A subject whose game units are its genera from the start (unit 'genus', SUBJECTS unitRank: the sea slugs): its
+    // families stay in gen as structure (the sheets, the blocks, a genus's parent) and its genera are the units of its
+    // circles (fishGenUnits); app.js fishGenera completes their records. Otherwise (the fish) the families are the units.
     const byGen = unit === 'genus' ? fishGenUnits(F, gen, sp) : null;
     if (byGen) byGen.forEach(g => (gen[g.id] = g));
     const ids = byGen ? byGen.map(g => g.id) : Object.keys(gen),
@@ -1402,22 +1401,19 @@
       ...(byGen ? {unit: 'genus'} : {})
     };
   }
-  // The fish units as the full replay reads them (core.js replayProgress gen: each unit's look-alikes and family line, for
-  // the look-alike prior of a mix-up and the unit wrongly given): the families of fishGen and the scientific genera of
-  // app.js fishGenera (fishGenSets: every genus of a family in play holding species, in every circle, each with its
-  // sibling genera as look-alikes and its family's name and line as its family), from fish.json alone (no photo changes
-  // them). The sync sheet builds it
-  // from fish.json (Code.gs fishGen_); tests/fishreplay.test.js checks it against the app's units.
-  // unit: the rank of the subject's game units (SUBJECTS unitRank): 'genus' (the sea slugs) reads the units fishGen plays
-  // from the start (fishGenUnits: each genus with its sibling genera as look-alikes and its family's line), as the app's
-  // (app.js fishGenera keeps them); no scientific genera or species units are added then (the subject has neither).
+  // The fish units as the full replay reads them (replayProgress gen: each unit's look-alikes and family line, for the
+  // look-alike prior of a mix-up and the unit wrongly given): the families of fishGen, the scientific genera of app.js
+  // fishGenera (fishGenSets: each with its sibling genera as look-alikes and its family's line) and the species units,
+  // from fish.json alone (no photo changes them). The sync sheet builds it from fish.json (Code.gs fishGen_);
+  // tests/fishreplay.test.js checks it against the app's units. unit 'genus' (the sea slugs): the genus units fishGen
+  // plays from the start (fishGenUnits), and no scientific genera or species units.
   function fishReplayGen(F, unit) {
     const X = fishGen(F || {}, {}, undefined, unit),
       out = {},
       gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
     Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
     if (X.unit === 'genus') {
-      // and the genera a specialist source names as its look-alikes (the tree's genus look, across families: Q390 D), as
+      // and the genera a specialist source names as its look-alikes (the tree's genus look, across families), as
       // app.js fishGenera adds them, so the sheet's replay reads the app's units
       Object.keys(out).forEach(id => {
         const G = gens.get(id);
@@ -1435,17 +1431,13 @@
     fishSpUnits(F || {}, X).forEach(u => (out[u.id] = {look: u.look.slice(), fam: u.fam, from: u.from}));
     return out;
   }
-  // The fish species units (Pierre, 2026-11-15, Q362: one progress unit per species; docs/reviews/
-  // 2026-11-14-species-step1.md, step 1: photo questions answered by common name): 's:' + the species id (s:s091), one
-  // for each species with a listed common name (fish.json cn; a species with none has no common-name unit, Q247) in a
-  // family in play (a wink family's species are never asked), in each family's species order (fish.json families
-  // species: the commonness order, cmi), the order they open in. Each with: s, its fish.json record; family, its family
-  // unit; look, the other species units of its family (its look-alikes: the traps of its choices once the player gets it
-  // right, rule L7, as a scientific genus's are its sibling genera); fam, its family's line (the card's and the
-  // feedback's, the replay's family prior); from, the unit a species never answered starts from: its family (Pierre,
-  // 2026-11-03, docs/FISH_PATH.md "Unlock rules": "a species starts from its entry's ability"; abilityOf). The app's
-  // units (app.js fishSpUnitsUnits) and the sheet's replay (fishReplayGen) read this one list. X: fishGen's units, when
-  // built already.
+  // The fish species units, one progress unit per species answered by common name (docs/LEARNING.md "Fish: the species
+  // level, step 1, by common name"): 's:' + the species id (s:s091), one for each species with a listed common name
+  // (fish.json cn) in a family in play (never a wink family's), in each family's species order (the commonness order,
+  // cmi), the order they open in. Each with: s, its fish.json record; family, its family unit; look, the other species
+  // units of its family (the traps of its choices, rule L7); fam, its family's line; from, the unit a species never
+  // answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf). The app's units (app.js
+  // fishSpUnitsUnits) and the sheet's replay (fishReplayGen) read this one list. X: fishGen's units, when built already.
   function fishSpUnits(F, X) {
     const G = (X || fishGen(F || {}, {})).gen,
       sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
@@ -1461,22 +1453,20 @@
     return out;
   }
   // The tree of the fish global score as the app makes it (app.js UNITS tree: fishScoreTree over fishGen's families and
-  // app.js fishGenera's scientific genera), from fish.json alone: fishReplayGen's genera are those units (no photo changes
-  // which exist). The sync sheet ranks the fish leaderboard by it, made with its replay's units under the structure in
-  // force (SUBJECTS replayed tree; Code.gs subjRpl_, board_), so a circle Publish moves the board's weights with the
-  // replays, whether a device saves or not (Codex review #977; design note v2, step 4). tests/structure.test.js checks it
-  // is the app's tree, with and without a structure edit. The species level on (fishScoreTree on): a sheet script that holds
-  // this code replays the species units (SPECIES_SHEET), so its tree is the app's with species (app.js treeSp); a player
-  // with no species unit gets the same % on either tree (a named species' common names, [] or its unit never answered,
-  // count 0 both ways; the few species whose common and cn fields disagree move the raw score by about 1e-6).
+  // the scientific genera), from fish.json alone. The sync sheet ranks the fish leaderboard by it, made with its replay's
+  // units under the structure in force (SUBJECTS replayed tree; Code.gs subjRpl_, board_), so a circle Publish moves the
+  // board's weights with the replays, whether a device saves or not. tests/structure.test.js checks it is the app's
+  // tree, with and without a structure edit. With the species units (SPECIES_SHEET; app.js treeSp), a player with no
+  // species unit gets the same % on either tree (the few species whose common and cn fields disagree move the raw score
+  // by about 1e-6).
   function fishBoardTree(F) {
     const X = fishGen(F || {}, {});
     return fishScoreTree({...X, gen: {...fishReplayGen(F), ...X.gen}}, F || {}, true);
   }
-  // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
-  // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
-  // src}]}, each a change from F: core.js structApply) written as the build writes them:
-  // - a family's circle onto the family, its genera, its species (Q214: a species takes its family's circle) and each
+  // The fish structure in force (SUBJECTS fish structure apply): fish.json F with the content editor's circles and pairs
+  // X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null, src}]}, each a change from F: structApply)
+  // written as the build writes them:
+  // - a family's circle onto the family, its genera, its species (a species takes its family's circle) and each
   //   teaching node holding its species (its families' smallest circle in force, as the build's family takes its species'
   //   best); start kept to the teaching nodes in circle 1;
   // - in no circle (null): the family and its genera left out, its species out ('family in no circle', with no circle,
@@ -1544,10 +1534,10 @@
     }
     return out;
   }
-  // ---- Genera by name: the structure of a subject whose units are data.json's genus records (design note v2, step 8) ----
+  // ---- Genera by name: the structure of a subject whose units are data.json's genus records ----
   // Where its genus records sit: gen (the slate) and x.gen (Millepora, the bonus and Coral ID Key genera), by name.
   const GEN_AT = ['gen', 'x.gen'];
-  // The units its replay reads (Code.gs dataJson_ and subjRpl_, core.js replayProgress gen): each genus of d's gen and
+  // The units its replay reads (Code.gs dataJson_ and subjRpl_, replayProgress gen): each genus of d's gen and
   // x.gen (gen's first) with its look-alikes (look, names only) and its family (fam).
   function genLooks(d) {
     const out = {};
@@ -1560,13 +1550,8 @@
     });
     return out;
   }
-  // The pairs in force written into data.json R (SUBJECTS structure apply; design note v2, step 8; Q359, Q366): the
-  // content editor's pairs X ({pairs: [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on the genus
-  // records, both sides, as the build writes a pair: one withdrawn leaves both records' look and their lsrc lines (its
-  // words: their text slots lsrc/<other genus> are then orphaned, kept and not applied); one added joins both looks after
-  // the base's look-alikes, with an lsrc line on each side, the source the editor gave, else EDITOR_PAIR (never IMR's or
-  // the Coral Finder's words). A record held in both gen and x.gen (the admin's merged data) changes in both. A new object
-  // sharing every record it does not change; R itself when X changes nothing.
+  // The pairs in force written into data.json R (SUBJECTS structure apply), by lookStructure on the genus records: an
+  // added pair's lsrc line is the source the editor gave, else EDITOR_PAIR (never IMR's or the Coral Finder's words).
   function genStructure(R, X) {
     return lookStructure(R, X, GEN_AT, (old, s) => old || (s ? s.t : EDITOR_PAIR));
   }
@@ -1635,7 +1620,7 @@
       return s ? [...L, s] : L.length ? L : [{t: EDITOR_PAIR}];
     });
   }
-  // The ★ rule under the content editor's pairs (rule L5; design note v2, step 8): a starred genus is on the slate because
+  // The ★ rule under the content editor's pairs (rule L5): a starred genus is on the slate because
   // it looks like surveyed genera, and opens only after the ones its card names (starRefs: its own look-alikes that are
   // surveyed genera of the lecture group it is shown in). Every starred genus of the base has some; a withdrawn pair could
   // leave one with none (Alveopora and Halomitra have one look-alike each), and it would then open at any time and be
@@ -1680,28 +1665,26 @@
     });
     return held;
   }
-  // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
-  // sure), downloaded to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish).
-  // The stopgap list of remote iNaturalist photos they replaced entry by entry was retired on 2026-11-15 (Pierre): no fish
-  // photo is shown straight from iNaturalist or FishBase any more.
+  // The fish game photos: the photos in play (Pierre's adds, the candidates and reference photos judged sure), downloaded
+  // to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish). No fish photo is
+  // shown straight from iNaturalist or FishBase.
   // fishOn(F, f, sid): photo f is in play for species sid, F being curation.json fish: add names sid, the photo is neither
-  // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (the admin's rule, Not this
-  // coming with admin plan PR 5b; tools/fish_game.py fish_on is its copy).
+  // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (tools/fish_game.py fish_on is
+  // its copy).
   const fishOn = (F, f, sid) => {
     const o = ((F && F.out) || {})[f];
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
   // The count tag (judging/FISH.md "Tags", the code's 7th letter) and play: 1 one fish, s several of its kind, o other
   // species in view with no risk of taking one for the subject at the game's rank (in play), k other species one could
-  // take for the subject at that rank (never in play: rule P3), x the subject not obvious; m, the one code for other
-  // species before the split (Pierre, 2026-11-09, Q323), reads as not sorted yet, so as k until it is sorted.
+  // take for the subject at that rank (never in play: rule P3), x the subject not obvious; m, the legacy code for other
+  // species before o and k, reads as not sorted yet, so as k until it is sorted.
   // FISH_COUNT.play: the counts an automatic route may put in play (autosort.js fishSure, tools/fish_game.py
   // judged_sure); FISH_COUNT.other: the counts never in play, whatever the route, Pierre's adds included.
   const FISH_COUNT = {play: '1so', other: 'km'};
   // fishCount(mine, pass): the count in force on a photo, from Pierre's tags (mine, curation.json fish tags) first, else
-  // the pass's or the game record's (pass, a jt); his legacy m is refined by the pass's o or k (the re-judge of
-  // 2026-11-09: judging/fish/*.json through suggest.json, which tools/fish_game.py writes into the game record's jt).
-  // '' with no tag. tools/fish_game.py count_of is its copy.
+  // the pass's or the game record's (pass, a jt); his legacy m is refined by the pass's o or k (the re-judge, which
+  // tools/fish_game.py writes into the game record's jt). '' with no tag. tools/fish_game.py count_of is its copy.
   const fishCount = (mine, pass) => {
     const c = String(mine || '').charAt(6),
       q = String(pass || '').charAt(6);
@@ -1712,16 +1695,13 @@
     const c = fishCount(mine, pass);
     return !!c && FISH_COUNT.other.includes(c);
   };
-  // fishIn(F, p, gone): game record p (fish-game.json) is in play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in
-  // play", every fish photo in play hosted on R2): his own add (fishOn on its species), or a photo that entered by itself
-  // (p.auto: a candidate judged sure, a reference photo judged at the reference level; tools/fish_game.py in_play) whose
-  // photo id (fishPid) he did not reject, exclude or move with Not this (gone: those ids, fishGone; tools/fish_game.py
-  // fish_in is its copy).
-  // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
-  // "the photo waits for his decision"; Codex review #674). Never a photo whose count in force (fishCount: Pierre's tag,
-  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323): the admin,
-  // which reads his whole curation, passes his tag (mine), so it applies at once there; the players' curation leaves the
-  // tags out (tools/curplay.py), so the app reads the record's jt, which tools/fish_game.py writes from his tag.
+  // fishIn(F, p, gone): game record p (fish-game.json) is in play, the one notion of "in play": Pierre's own add (fishOn
+  // on its species), or a photo that entered by itself (p.auto: a candidate judged sure, a reference photo judged at the
+  // reference level; tools/fish_game.py in_play) whose photo id (fishPid) he did not reject, exclude or move with Not
+  // this (gone: fishGone; tools/fish_game.py fish_in is its copy). An auto-sort add he undid (log code '-a...',
+  // autosort.js fishUndo) counts as decided against too. Never a photo whose count in force (fishCount) is other species
+  // one could take for its subject (fishOther): the admin passes his tag (mine), so it applies at once there; the
+  // players' curation leaves the tags out (tools/curplay.py), so the app reads the record's jt.
   const fishGone = (cur, F = (cur && cur.fish) || {}) =>
     new Set(
       [
@@ -1734,7 +1714,7 @@
   const fishIn = (F, p, gone, mine) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f)))) && !fishOther(mine, p.jt);
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (sheet photo fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
-  // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
+  // photo fb<stem>, so Pierre's curation of a FishBase candidate applies to its reference copy too),
   // else its name.
   function fishPid(f) {
     const s = String(f),
@@ -1742,14 +1722,12 @@
       b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
-  // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"; tools/fish_short.py
-  // writes it, this is its copy): a record's o, an iNaturalist observation, as its id alone, and its src, the original on
-  // iNaturalist's open-data bucket, as its extension alone when the photo is the record's own (the id in its name,
-  // fishPid). fishGameRow gives a record its addresses back, keys in their order (the record as it was written before);
-  // a record already whole (the file before the short form) is the same object. fishGameRead: the file, every record whole.
-  // Every reader of fish-game.json reads it through fishGameRead: the app (fishLoad), the admin, the sheet's photo pools
-  // (POOLS entries), the tools and the tests. A page of an older version that meets the short file keeps every photo (its
-  // src is still set) but its fallback to the original and its observation link are broken until it updates.
+  // fish-game.json's short form (docs/ARCHITECTURE.md "Fish content"; tools/fish_short.py writes it, this is its copy):
+  // a record's o, an iNaturalist observation, as its id alone, and its src, the original on iNaturalist's open-data
+  // bucket, as its extension alone when the photo is the record's own (the id in its name, fishPid). fishGameRow gives a
+  // record its addresses back, keys in their order; a record already whole is the same object. fishGameRead: the file,
+  // every record whole. Every reader of fish-game.json reads it through fishGameRead: the app (fishLoad), the admin, the
+  // sheet's photo pools (POOLS entries), the tools and the tests.
   const FISH_OBS = 'https://www.inaturalist.org/observations/',
     FISH_ORIG = 'https://inaturalist-open-data.s3.amazonaws.com/photos/';
   const fishGameRow = p => {
@@ -1770,19 +1748,17 @@
   // fish-game.json; or when it cannot come); cur: curation.json (or a draft), null when not loaded yet. Pierre's curation
   // applies at once, before the workflow runs again: a photo shows only while it is in play (fishIn: his add, or a photo
   // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
-  // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2 (2026-11-15: the stopgap of
-  // remote iNaturalist photos, which joined an entry short of 5 very easy curated photos, is retired).
+  // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2.
   // treeCur(S, cur): the curation as the fish engine reads it for tree subject S (fishPhotos, fishGone, app.js fishCurate:
   // its fish part): S's own part (SUBJECTS admin.cur) under the fish's key, the rest as it is; the same content for the
-  // fish, whose part it is. A subject with no part yet (the sea slugs: Pierre has curated none) gets none: its photos in
-  // play are its judged ones, as fish photos are before he decides. null stays null (not loaded).
+  // fish. A subject with no part yet gets none: its photos in play are its judged ones. null stays null (not loaded).
   const treeCur = (S, cur) => {
     const k = S && S.admin && S.admin.cur;
     return cur && k ? {...cur, fish: cur[k]} : cur;
   };
   // held (the app's fishBuild, the rated world): the held-out set (fishHeld), whose photos come marked ho, a copy, which
   // fishGen keeps out of every unit's views (its held list). Without it (the sheet's pools and replay, the admin, the
-  // tools) every photo as before.
+  // tools) every photo in the views.
   function fishPhotos(first, game, cur, held) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
@@ -1798,14 +1774,13 @@
     });
     return out;
   }
-  // The held-out set (fish-holdout.json, tools/holdout.py; ROADMAP "A held-out photo set", Pierre, 2026-11-04 and
-  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only by the mastery
-  // exam, unannounced (model.js examSet; Pierre, 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"). fishObs(p): a game record's observation as the file
-  // names it (tools/holdout.py obs_of: fish-game.json's short o, an iNaturalist id or a FishBase page; else the file).
-  // fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists (H), less the observations of a photo
-  // Pierre picked as a ★ cover or a featured photo (cur: curation.json fish genera cover, feat; matched by fishPid, as
-  // fishCurate reads them), which count as practice (#1023: the tool does not read the curation, so a Publish never makes
-  // the file stale). An empty set without the file.
+  // The held-out set (fish-holdout.json, tools/holdout.py; docs/LEARNING.md "The held-out photos in the game"): a fixed
+  // set of observations per species never shown in practice, asked only by the mastery exam, unannounced (model.js
+  // examSet). fishObs(p): a game record's observation as the file names it (tools/holdout.py obs_of: an iNaturalist id
+  // or a FishBase page; else the file). fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists,
+  // less the observations of a photo Pierre picked as a ★ cover or a featured photo (curation.json fish genera cover,
+  // feat; matched by fishPid), which count as practice: the tool does not read the curation, so a Publish never makes the
+  // file stale. An empty set without the file.
   const fishObs = p => {
     const o = p && p.o;
     if (!o) return String((p && p.f) || '');
@@ -1865,9 +1840,9 @@
     (T || []).forEach(e => (e.sub || []).forEach(u => [u.name, ...(u.aka || []), ...(u.often || [])].forEach(x => put(x, u.species))));
     return S;
   }
-  // The names in common use that a typed answer may give, accepted as right but corrected gently (Pierre, 2026-11-06,
-  // Q164: "✓ Yes, Anemonefish (often called clownfish)"): [[the usual name, the name often used]], from the node's and
-  // its sub-entries' often (tools/fish_source.json).
+  // The names in common use that a typed answer may give, accepted as right but corrected gently ("✓ Yes, Anemonefish
+  // (often called clownfish)", docs/FISH_PATH.md): [[the usual name, the name often used]], from the node's and its
+  // sub-entries' often (tools/fish_source.json).
   const fishOften = t => [t, ...(t.sub || [])].flatMap(u => (u.often || []).map(x => [u.name, x]));
   // A whole name, normalised for typing (fish names have several words: "Moorish Idol"): letters only, lower case.
   const typeNormAll = s =>
@@ -1878,10 +1853,10 @@
   // Every name a player may type for the fish entries gen (fishGen): [{k, g, old, alt}], old = the name typed when it is
   // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
   // family the book splits: Holocentridae = Soldierfishes and Squirrelfishes) names both (typeMatchIn shared).
-  // drop (SUBJECTS typeDrop: 'fish'): a word a name may be typed without (Pierre, 2026-11-06: "trigger", "clown",
-  // "damsel"), as its suffix, a separate word or a plural ("Triggerfish", "Trigger fish", "Triggerfishes" -> "Trigger"),
-  // its own short form accepted as another name of the entry, unless it is ambiguous in the game: within the spelling
-  // tolerance of a name or short form of another entry (then it is left out: typing it is no answer, as before).
+  // drop (SUBJECTS typeDrop: 'fish'): a word a name may be typed without ("trigger", "clown", "damsel";
+  // docs/FISH_PATH.md), as its suffix, a separate word or a plural ("Triggerfish", "Trigger fish", "Triggerfishes" ->
+  // "Trigger"), its own short form accepted as another name of the entry, unless it is ambiguous in the game: within the
+  // spelling tolerance of a name or short form of another entry (then it is left out: typing it is no answer).
   // A name in common use (fishOften: oft) carries oft: [usual name, the name often used], its short forms too.
   // Every name is also read in the other number (typeForms: "Grouper" for Groupers, "Goby" for Gobies, "Pipefish" for
   // Pipefishes), as the name itself: exactly, never as a spelling to fix, whatever other name it is close to.
@@ -1890,7 +1865,7 @@
   // never taken for a slip of another (Angelfishes).
   function fishTypeNames(gen, drop = '', known = []) {
     const out = [],
-      // sc: the species a name designates when it names part of the unit only (Q333); one key of a unit read by two
+      // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
       // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
       add = (k, g, x, i, oft, sc) => {
         if (!k) return;
@@ -1928,8 +1903,8 @@
       .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
       .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
-    // scientific name's (a unit of a scientific rank, a family's sciNames: Codex review #834, "Zebrasomas", "Halichoere"
-    // were read exactly), which keeps its spelling step.
+    // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
+    // spelling step.
     Object.values(gen || {})
       .filter(g => !g.rank)
       .forEach(g =>
@@ -1974,7 +1949,7 @@
           const k = typeNormAll(y);
           if (k.length < 3) return;
           if (seen.has(k + '|' + e.g)) {
-            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it (Codex review #834), and
+            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it, and
             // the wider reading holds
             const o = out.find(x => x.k === k && x.g === e.g && !x.known);
             if (o && e.oft && !o.oft) o.oft = e.oft;
@@ -2030,16 +2005,15 @@
                       : w + 's';
     return f && f.length >= 3 ? [a + f] : [];
   }
-  // The fish name index (Pierre, 2026-11-09, Q319, Q320; docs/reviews/2026-11-09-shared-common-names.md), for typed
-  // answers (fishTypeNames known): each name below the family with the family it lifts to and its role (vr): 'sp' a
-  // listed common name of a game species (fish.json cn, every spelling) or a regional one (cnr, accepted when typed:
-  // Pierre, 2026-11-15, Q376 (c)), 'ss' a species' scientific name (its PDF name
-  // and WoRMS's), 'gs' a genus's scientific name, 'gc' a genus's common name, 'k' a kind word carried by at least 2 of
+  // The fish name index (docs/reviews/2026-11-09-shared-common-names.md), for typed answers (fishTypeNames known): each
+  // name below the family with the family it lifts to and its role (vr): 'sp' a listed common name of a game species
+  // (fish.json cn, every spelling) or a regional one (cnr, accepted when typed), 'ss' a species' scientific name (its PDF
+  // name and WoRMS's), 'gs' a genus's scientific name, 'gc' a genus's common name, 'k' a kind word carried by at least 2 of
   // the family's species or all of them (fish.json vn, tools/fish_names.py: razorfish, toby), with n and of; a kind word
   // a family's species carry less than that ('w') is known, owned by none: never read as a slip of another family's
   // name. cur (curation.json fish.names, Pierre's exceptions, written only by the admin): {name: {family id: 'off' (not
   // that family's), 'on' (that family's, the name added or a known word given to it), 'often' (that family's, the
-  // feedback naming the family gently: Q164)}}. [{x, g: family id or '', vr, n, of, oft, w}].
+  // feedback naming the family gently)}}. [{x, g: family id or '', vr, n, of, oft, w}].
   function fishNameIndex(F, cur) {
     const out = [],
       fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
@@ -2050,7 +2024,7 @@
         if (!x || !fam.has(g)) return;
         if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
         const o = oft(x, g),
-          // Pierre's on or often gives the name to the whole family, whatever part it named (Codex review #834)
+          // Pierre's on or often gives the name to the whole family, whatever part it named
           whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
         out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
       };
@@ -2063,7 +2037,7 @@
     ((F && F.genera) || [])
       .filter(g => inGame.has(g.id))
       .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
-    // A kind word designates the species that carry it (Q333: "razorfish" on a cleaner wrasse is a mistake); Pierre's
+    // A kind word designates the species that carry it ("razorfish" on a cleaner wrasse is a mistake); Pierre's
     // on or often gives it to the whole family.
     ((F && F.vn) || []).forEach(([x, owners]) =>
       (owners || []).forEach(([g, r, n, of, sp]) => {
@@ -2100,14 +2074,14 @@
     return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
   }
 
-  // ---- The content editor's edits (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q366) ----
+  // ---- The content editor's edits (docs/ARCHITECTURE.md "The content editor's edits") ----
   // The built file (fish.json: the sources and the instance's layer, resolved at build) is the base; the edits sit in the
   // instance's curation, in the subject's part (SUBJECTS admin.cur: curation.json fish.content, the corals' content at the
-  // top), as content {nodes: {node id: {slot: entry}}, pairs: {"a|b": entry}} (pairs: structure, a later step), each entry
-  // {v, was, src, t, by}: v the value in force (null hides the slot), was the base when it was edited (null: the slot was
-  // empty), src an optional source {t, u}, t when (ms), by who (from the editors' relay on). Only the admin's draft and
-  // Publish write it (rule A1). A slot is declared by the subject (SUBJECTS content); anything else is never applied and is
-  // listed by contentEntries as orphaned, never dropped.
+  // top), as content {nodes: {node id: {slot: entry}}, pairs: {"a|b": entry}} (pairs: structure), each entry {v, was,
+  // src, t, by}: v the value in force (null hides the slot), was the base when it was edited (null: the slot was empty),
+  // src an optional source {t, u}, t when (ms), by who. Only the admin's draft and Publish write it (rule A1). A slot is
+  // declared by the subject (SUBJECTS content); anything else is never applied and is listed by contentEntries as
+  // orphaned, never dropped.
   const contentOf = (cur, S) => {
     const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur,
       c = P && P.content;
@@ -2169,7 +2143,7 @@
   }
   // A slot's types (SUBJECTS content slots t): text, one string; list, a list of strings replaced whole; srcs, a list of
   // sources [{t, u}] replaced whole, t its words and u its web address when it has one (the sea slugs' look-alike lines,
-  // seaslug.json genera lsrc: the sources that name the pair, tools/seaslug_game.py genus_looks; Pierre, 2026-11-18).
+  // seaslug.json genera lsrc: the sources that name the pair, tools/seaslug_game.py genus_looks).
   const srcOk = x => isObj(x) && typeof x.t === 'string' && !!x.t.trim() && (x.u === undefined || typeof x.u === 'string');
   // A value of a slot's type, empty as null (an empty list or text is no value: the slot shows nothing).
   const contentVal = (sp, v) =>
@@ -2233,7 +2207,7 @@
       else o[last] = val;
     }
   }
-  // An entry's state against the base value now (Q359 c): absorbed (the base now says what the editor wrote), fresh (the
+  // An entry's state against the base value now: absorbed (the base now says what the editor wrote), fresh (the
   // base is the one he edited), else stale (the base changed since: the admin shows the three texts; players keep his).
   const contentState = (e, base) => (eq(base, e && e.v) ? 'absorbed' : eq(base, e && e.was) ? 'fresh' : 'stale');
   const contentSrc = s =>
@@ -2282,11 +2256,11 @@
     });
     return out.sort((a, b) => (a.node < b.node ? -1 : a.node > b.node ? 1 : a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0));
   }
-  // Built file R with the edits of subject S in curation cur laid over it (Q359: the editor's text in force, a stale one
+  // Built file R with the edits of subject S in curation cur laid over it (the editor's text in force, a stale one
   // included, until he answers it): a new object sharing every record it does not change, R itself when nothing applies.
   // It reads v and src only (players get the curation without was, t and by: tools/curplay.py). An edited record carries
-  // esrc {slot: {t, u}}, the sources given, shown with the slot (Q359 e). The app before the units are made (app.js
-  // fishBuild) and the admin, to show what is in force.
+  // esrc {slot: {t, u}}, the sources given, shown with the slot. Called by the app before the units are made (app.js
+  // fishBuild) and by the admin, to show what is in force.
   // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
   // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
   // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
@@ -2319,7 +2293,7 @@
     return out;
   }
 
-  // ---- The structure: circles and look-alike pairs (design note v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A, Q366) ----
+  // ---- The structure: circles and look-alike pairs ----
   // Stored in the same content map (contentOf): a node's circle slot {v: a circle of SUBJECTS structure circle of, or null
   // for in no circle, was, src, t, by} and pairs {"a|b": {v: 1 or null, was, src, t, by}}, a and b two node ids in
   // code-point order. Read under the ids as stored (an old id is not read through SUBJECTS renamed: the editor writes the
@@ -2387,7 +2361,7 @@
   const structHas = Cm =>
     Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
     (isObj(Cm && Cm.pairs) && Object.keys(Cm.pairs).length > 0);
-  // Built file R with the structure in force (Q359 c: the editor's value, a stale one included, until he answers it): the
+  // Built file R with the structure in force (the editor's value, a stale one included, until he answers it): the
   // entries that apply and change the base, handed to the subject's own SUBJECTS structure apply ({circle: Map id → v,
   // pairs: [{a, b, v, src}]}); R itself when none does or the subject declares no structure.
   function structApply(S, R, cur) {
@@ -2421,11 +2395,11 @@
     c.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
     return JSON.stringify({c, p: [...p].sort()});
   }
-  // The structure stamp (Q366; the design note's section 6, [format]): '' while the structure in force is the base's (no
+  // The structure stamp: '' while the structure in force is the base's (no
   // structure edit, or none that changes anything: nothing to replay, so a device or a saved copy that never held one
   // agrees), else a short hash of the canonical structure in force (structCanon). Computed the same way by the app (its
   // players' copy of the curation), the admin and the sheet (curation.json on main); never stored in curation.json. When
-  // the stamp a player's progress was replayed with differs from the sheet's, the sheet replays their log (Q363 h A).
+  // the stamp a player's progress was replayed with differs from the sheet's, the sheet replays their log.
   function structStamp(S, R, cur) {
     const A = structApply(S, R, cur);
     if (A === R) return '';
@@ -2507,17 +2481,16 @@
     delete m[slot];
     return {...c, nodes: {...nodes, [id]: m}};
   }
-  // A pair's key (Q366, the design note's section 6, [format]): the two node ids in code-point order joined by |, as
-  // structEntries reads it.
+  // A pair's key: the two node ids in code-point order joined by |, as structEntries reads it.
   const contentPairKey = (a, b) => {
     const x = String(a),
       y = String(b);
     return x < y ? x + '|' + y : y + '|' + x;
   };
-  // One pair edit, as the admin's draft writes it (one click, one Undo step; design note v2 step 4): content map C with
-  // pair key k declared (v 1) or withdrawn (v null) over the base now (1 when the base declares it, else null), with its
-  // source src when given (Q359 e: asked when a pair is added, never required) and the time t; a value equal to the base
-  // removes the entry (contentPairDrop). A new map.
+  // One pair edit, as the admin's draft writes it (one click, one Undo step): content map C with pair key k declared (v
+  // 1) or withdrawn (v null) over the base now (1 when the base declares it, else null), with its source src when given
+  // (asked when a pair is added, never required) and the time t; a value equal to the base removes the entry
+  // (contentPairDrop). A new map.
   function contentPairSet(C, k, v, base, src, t) {
     if (eq(v, base)) return contentPairDrop(C, k);
     const s = contentSrc(src),
@@ -2533,13 +2506,12 @@
     delete pairs[k];
     return {...c, pairs};
   }
-  // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
-  // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
-  // species by its id or its sheet id s:<name>) and order, the families in the key's order (its group numbers, then the
-  // file's order; a family with no group last). go(id): the sheet a family, genus or species id opens, by option B:
-  // a genus with one species opens that species' sheet; the only genus of its family has no page of its own (the family
-  // sheet lists its species: the study's recommendation for one genus with several species); any other genus opens its
-  // short page. null for an id it does not know.
+  // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B) read from fish.json alone: fam, gen and sp
+  // by id (the species of the families only, none left out of the game), spOf (a species by its id or its sheet id
+  // s:<name>) and order, the families in the key's order (its group numbers, then the file's order; no group last).
+  // go(id): the sheet a family, genus or species id opens: a genus with one species opens that species' sheet; the only
+  // genus of its family has no page of its own (the family sheet lists its species); any other genus opens its short
+  // page. null for an id it does not know.
   function fishTree(F) {
     const fam = {},
       gen = {},
@@ -2571,7 +2543,7 @@
     return {fam, gen, sp, order, spOf, go};
   }
   // An object keyed by units (a progress record, the first-meeting cards) with its old ids under the new ones, the
-  // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the switch):
+  // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the rename):
   // the record with more answers stays (a count map adds up). The object itself when nothing is renamed.
   function renameUnits(S, o) {
     const R = S && S.renamed;
@@ -2630,7 +2602,7 @@
   // A player's saved data (the sheet's Data, Code.gs save), with the keys of the subjects after the first (fish:
   // reefid-sync-fish-*) that the saved copy holds and the incoming one lacks kept from the saved copy: an app from before
   // that subject saves its whole record without them, and replacing the record would erase that progress, which no
-  // answer log can rebuild (Codex review #442). saved, data: {key: value}; returns the data to save.
+  // answer log can rebuild. saved, data: {key: value}; returns the data to save.
   function keepSubjectKeys(saved, data) {
     const out = {...(data || {})},
       pre = SUBJECTS.slice(1).map(S => KEYS.SYNC + S.id + '-');
@@ -2650,8 +2622,8 @@
   // published choices this draft replaced (the rule stays the same: mine wins).
   // The maps whose values are single choices though objects: the content editor's entries ({v, was, src, t, by}, written
   // whole at each Save: contentSet), a node's under content nodes <id> and the pairs under content pairs. Merged key by
-  // key, a hide on one device (v null, read as no change from a slot never edited) and a rewording on another mixed into
-  // one entry (Codex review #952); whole, they conflict and mine wins.
+  // key, a hide on one device (v null, read as no change from a slot never edited) and a rewording on another would mix
+  // into one entry; whole, they conflict and mine wins.
   const wholeAt = p =>
     (p.length >= 3 && p[p.length - 3] === 'content' && p[p.length - 2] === 'nodes') ||
     (p.length >= 2 && p[p.length - 2] === 'content' && p[p.length - 1] === 'pairs');
@@ -2666,7 +2638,7 @@
       if (conf && !both && !eq(m[k], b[k]) && !eq(t[k], b[k]) && !eq(m[k], t[k])) conf.push([...path, k]);
       const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : both ? merge3(b[k], m[k], t[k], conf, [...path, k]) : m[k];
       // A copy, never a shared object: setQ & co. edit DRAFT's maps in place, and a map shared with SAVED would change
-      // both, hiding the edit from Publish (code review 2026-11-01).
+      // both, hiding the edit from Publish.
       if (v !== undefined && !(isObj(v) && !Object.keys(v).length && k !== 'genera'))
         out[k] = v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v;
     });
@@ -2683,9 +2655,9 @@
     return out;
   }
 
-  // Two admin tabs in one browser (code re-review 2026-11-01, M4): each keeps its draft in memory and writes all of it to
-  // localStorage on every click, so the last tab clicked used to erase the other tab's clicks. When another tab writes its
-  // draft, this tab merges it onto its own: shared = the draft both tabs last agreed on (what this tab last wrote or took),
+  // Two admin tabs in one browser: each keeps its draft in memory and writes all of it to localStorage on every click, so
+  // without a merge the last tab clicked would erase the other tab's clicks. When another tab writes its draft, this tab
+  // merges it onto its own: shared = the draft both tabs last agreed on (what this tab last wrote or took),
   // mine = this tab's draft, other = the one just written. Returns the merged draft and whether this tab must write it back
   // (it holds clicks the other tab lacks). Compared without key order, so two tabs never bounce the same draft back and forth.
   const canon = o =>
@@ -2724,8 +2696,8 @@
       else delete out.ty;
       // A record recalculated here for the photo memory (pm, memRecalc) with no answer of its own counts as this device's
       // model only while the other side has not moved since B: answers saved from another device win over a mere
-      // recalculation (Codex review #387: an old copy reopened must not undo a passed exam), and the recalculation is
-      // applied to them after the merge (model.js memRecalcAll).
+      // recalculation (an old copy reopened must not undo a passed exam), and the recalculation is applied to them after
+      // the merge (model.js memRecalcAll).
       // The same for a record this device adopted from the sheet's full replay (rv, the rules version: sync.js
       // replayAdopt): it replaces the copy of the same answers, unless the other side has answered since.
       const moved = x => (x.ok || 0) + (x.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (x.h || '') !== (b.h || ''),
@@ -2734,14 +2706,14 @@
       if (mine && l.h) out.h = l.h;
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
-        // global level at the genus's last own step (core.js levelMove), which goes with its th.
+        // global level at the genus's last own step (levelMove), which goes with its th.
         // dp, ds: the domain-score bar's posterior and bar (domStep), the model of that device's answers like pg.
-        // vl: the variant groups the log left (core.js replayedOf), cleared by that device's right answers (model.js varRight).
+        // vl: the variant groups the log left (replayedOf), cleared by that device's right answers (model.js varRight).
         ['lv', 'run', 'L', 'pg', 'dp', 'ds', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx', 'vl'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
-      // The variant groups left (vl), less every group either device has cleared since B (Codex review #953): one B has,
+      // The variant groups left (vl), less every group either device has cleared since B: one B has,
       // missing from a side that holds the same replay (its rv, B's), which only a right answer there takes away (model.js
       // varRight). A group stays left only while neither device has answered it right, as the log will say.
       const cleared = x =>
@@ -2787,7 +2759,7 @@
     return out0;
   }
 
-  // Two accounts of one person merged in the admin (user management, Code.gs v11): A = the name that goes away, B = the
+  // Two accounts of one person merged in the admin (user management): A = the name that goes away, B = the
   // name kept, both as saved by the app (progData: localStorage key -> string). Their answers are different answers, so
   // counts add up (ok, ko, mix-ups, offers, photos seen), milestones are kept if either has them, and the per-genus model
   // (ability th, knowledge L, recent results h...) comes from whichever account answered that genus more. Settings are
@@ -2806,7 +2778,7 @@
     };
     const out = {...A, ...B};
     SUBJECTS.forEach((S, i) => {
-      // The subject's first-launch record: the union of both accounts' histories (startUnion, Codex review #428), so the
+      // The subject's first-launch record: the union of both accounts' histories (startUnion), so the
       // replay after the merge applies each account's answers' priors at their times.
       const sk = startKey(S.id),
         sa = J(A, sk),
@@ -2815,7 +2787,7 @@
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
       if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
-      // The surprise cards met on either account: met once, never shown again (Codex review #652).
+      // The surprise cards met on either account: met once, never shown again.
       const wk = subjKey(S.id, 'wink'),
         wa = J(A, wk),
         wb = J(B, wk);
@@ -2834,8 +2806,8 @@
       }
       // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
       // together, so it has none, and every device of the account asks for the replay of both histories in time order
-      // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
-      // kept pg 0.96 for good). Nor the structure stamp it was replayed with (sync.js stKey), for the same reason.
+      // (the sheet relabels the answers; a merged model of 20 older right answers and 10 newer misses would keep pg 0.96
+      // for good). Nor the structure stamp it was replayed with (sync.js stKey), for the same reason.
       delete out[subjKey(S.id, 'rv')];
       delete out[subjKey(S.id, 'st')];
     });
@@ -2845,8 +2817,8 @@
     if (ta || tb) out[TOLD.KEY] = JSON.stringify(toldUnion(ta, tb));
     return out;
   }
-  // The one-time notices a player has seen, on any device of the account (Pierre, 2026-11-08: a device holding an old
-  // copy of his account showed again the cards and toasts he had seen on another device): a list of tokens, one per
+  // The one-time notices a player has seen, on any device of the account (so a device holding an old copy of the account
+  // never shows again what another device showed): a list of tokens, one per
   // notice seen (progress.js: 'recalc:<note id>' an update note, 'rv:<version>' a rules version's card, 'mx:<unit>@<time>'
   // a learned mark taken away, 'sorry' the apology, 'hello:<subject>-<mode>' a subject's card, 'board' the leaderboard
   // note). It travels with the progress (KEYS.SYNC) and merges as the union (sync.js mergeSaved, signIn; mergeUsers), so
@@ -2858,8 +2830,8 @@
     return [...out].sort();
   }
   // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
-  // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
-  // each surprise once per player).
+  // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (each surprise once
+  // per player).
   function winkUnion(a, b) {
     const out = {};
     [a, b].forEach(r => {
@@ -2871,9 +2843,9 @@
     });
     return out;
   }
-  // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50: "circle 3 an
-  // option; if the player says no, those families don't open, but the player must be able to unlock them later"), from
-  // the subject's quiz settings q and the part's key k. o: met (one of its units already opened on a card), due (its
+  // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; docs/FISH_PATH.md): a "no" keeps its units
+  // closed, and the player can still open them later. From the subject's quiz settings q and the part's key k. o: met
+  // (one of its units already opened on a card), due (its
   // threshold reached), left (a unit of it not open yet), at (the player's answer count). on: the player said yes, or was
   // never asked and has one of its units open (it opened by itself before the choice existed: kept on). row: My progress
   // offers to open it. ask: its card is due: never answered, or once more OPEN_AGAIN answers after a first "Not now"
@@ -2903,9 +2875,9 @@
         y = b[g] || {},
         main = n(x) > n(y) ? x : y,
         o = {...(main === x ? y : x), ...main};
-      // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
-      // (Codex review #367: an old main record let the other account's pg through): its domain-score bar (dp, ds) when it
-      // has one, the other account's never mixed in; else its moving average.
+      // The progress comes from the same account as the rest of the model (a record with no pg gets it recomputed, never
+      // the other account's): its domain-score bar (dp, ds) when it has one, the other account's never mixed in; else its
+      // moving average.
       if (domOn(main)) {
         [o.dp, o.ds] = [main.dp.slice(), main.ds];
         delete o.pg;
