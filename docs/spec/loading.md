@@ -78,13 +78,14 @@ is on screen), so a test that proves a card does not come waits for it rather th
 ## The players' copy of the curation
 
 The deploy writes `curation-play.json` from `curation.json` with `tools/curplay.py`, without what the app never reads:
-the coral auto-sort log `auto`, the fish judging `tags` and `ease`, the fish `auto` log except its undone adds, and the
-same in every tree subject's part (`curplay.py` `TREE_PARTS`, the sea slugs' too): about 0.5 million characters and
-100 KB gzipped instead of 1.3 million and 290 KB. It is part of the service worker's shell, so the first offline launch
-after a deploy still has Pierre's choices. `curation.json` itself is served unchanged and the admin reads it whole; the
-app falls back to `curation.json` where the copy is missing (a local server where the tool was not run); the smokes
-write it through `tests/calm.js`; `tests/curplay.test.js` checks that the app builds the same games from both and that no
-player script reads a field the copy drops.
+the coral auto-sort log `auto`, the admin's `retest` and the players' `flag`, the Candidates' reject marks in the coral
+`seen` (it keeps the `rep:` marks, the reports thanked), the fish judging `tags` and `ease`, the fish `auto` log except
+its undone adds, and the same in every tree subject's part (`curplay.py` `TREE_PARTS`, the sea slugs' too; a part's
+`seen` stays whole, the game reads it): about 0.6 million characters instead of 2.1 million. It is part of the
+service worker's shell, so the first offline launch after a deploy still has Pierre's choices. `curation.json` itself
+is served unchanged and the admin reads it whole; the app falls back to `curation.json` where the copy is missing (a
+local server where the tool was not run); the smokes write it through `tests/calm.js`; `tests/curplay.test.js` checks
+that the app builds the same games from both and that no player script reads a field the copy drops.
 
 ## The quiz plans ahead
 
