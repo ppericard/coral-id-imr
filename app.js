@@ -2193,7 +2193,7 @@ const UNITS = {
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
     names: () => typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX),
     norm: typeNorm,
-    // Look-alike pairs for the duels (quiz.js duelPick): the classic pairs (learn.js pairs), and Millepora and the bonus
+    // Look-alike pairs for the duels (quiz.js duelPick): the classic pairs (model.js pairs), and Millepora and the bonus
     // genera with the slate look-alike the Coral Finder names.
     pairs: () => [
       ...pairs(),
@@ -2592,10 +2592,7 @@ const UNITS = {
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
     // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
     // drawing. Its ID marks are its own, sourced (tools/seaslug_cues.json): shown on the sheets and in the quiz feedback.
-    // sibMarks false: a genus's page lists no sibling genus for its marks alone (the fish's "Don't confuse with" does,
-    // learn.js treeGenusSibs): its look-alikes are the pairs a source names.
     words: {
-      sibMarks: false,
       famLede: () =>
         'One family on one page, under its scientific name and its English names where a source gives one. <b>ID marks</b> are what to look at, in our words from the sources numbered after each line: the rhinophores, the gills or the cerata, the mantle and its edge, the body shape. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. Tap a photo to enlarge it.',
       genLede: f =>
@@ -3822,23 +3819,26 @@ const draftCand = () =>
         .then(j => j.cand || {})
         .catch(() => ({}))
     : Promise.resolve({});
-// Load order in tiers (docs/ARCHITECTURE.md "Load order in tiers"; files in index.html, loadTier), each set up once in
+// Load order in tiers (docs/spec/loading.md "Load order in tiers"; files in index.html, loadTier), each set up once in
 // (SETUP): 1 Home (data.json, curation, BOOT); 2 the quiz (with forms, quality, picks: the data rebuilt); 3 its next
-// photos (planNext); 4 the sheet's reads; 5 the rest, then the service worker (earlier, its install would share the
-// line). need(N) brings tiers 2..N; a page opened early asks for its own (route), a link at start-up too.
+// photos (planNext), then learn.js; 4 the sheet's reads; 5 the rest with proto/lab.css, then the service worker (earlier,
+// its install would share the line). need(N) brings tiers 2..N; a page opened early asks for its own (route), a link at
+// start-up too.
 let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
-  // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
-  // achievements 2 (progress.js is small and the quiz needs it); the live mode 2 (live.js, with the quiz's engine); the
-  // Tools and the Coral ID Key (proto/) 5.
+  // The tier each page needs: Home and About 1; the quiz, the duels, My progress, the leaderboard and the achievements 2
+  // (progress.js is small and the quiz needs it); the live mode 2 (live.js, with the quiz's engine); the Learn pages 3
+  // (learn.js: the Genera page, the sheets, Look-alikes, a comparison); the Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
     !h || h === 'home' || h === 'about' || h.startsWith('delete-account')
       ? 1
-      : /^(quiz|genera|g-|cmp|progress|board|ach|live)/.test(h)
+      : /^(quiz|progress|board|ach|live)/.test(h)
         ? 2
-        : 5,
+        : /^(genera|g-|cmp)/.test(h)
+          ? 3
+          : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
@@ -3868,7 +3868,7 @@ const SETUP = {
     subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
     installNudge(); // install the app on the home screen: once, at a calm moment on Home
     prog();
-    window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
+    window.APP_READY = true; // Home, the quiz and My progress work (tests and tools/perf.js wait for this)
   },
   4: () => {
     syncPull();
@@ -3882,6 +3882,19 @@ const SETUP = {
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 };
+// A later tier's stylesheets (index.html <link data-css=N>, no rel: nothing fetched) become stylesheets where they stand,
+// so the cascade keeps its order; the tier waits until each has loaded or failed (the inline loader tries a failed one
+// again, as it does Home's).
+const tierCss = n =>
+  Promise.all(
+    [...document.querySelectorAll(`link[data-css="${n}"]:not([rel])`)].map(
+      l =>
+        new Promise(ok => {
+          l.onload = l.onerror = ok;
+          l.rel = 'stylesheet';
+        })
+    )
+  );
 function need(n) {
   if (n <= HAVE) return Promise.resolve();
   if (!TIERP[n])
@@ -3890,7 +3903,8 @@ function need(n) {
       window.loadTier ? loadTier(n) : null,
       n === 2 ? tier2json() : null,
       // The subject's whole data (fish: fish-game.json, after Home's files): the quiz and the Learn pages wait for it.
-      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null
+      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null,
+      tierCss(n)
     ])
       .then(a => SETUP[n] && SETUP[n](a[2]))
       .then(() => (HAVE = Math.max(HAVE, n)));

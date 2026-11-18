@@ -195,50 +195,35 @@ test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishB
   assert.ok(Object.values(X).some(x => x.lsrc === 'rls'));
 });
 
-// The genus page's "Don't confuse with" (learn.js treeGenusSibs, treeMarkSrc), on the real fish.json: the siblings IMR gives
-// cues for, then those that have only our marks, each marks card with the sources of its marks; a genus with no such sibling
-// shows nothing; the sea slugs' words (sibMarks false) keep the first kind only.
-test('genus page "Don\'t confuse with": the siblings with IMR cues, then those with our marks, sourced; none without', () => {
+// The genus page's "Don't confuse with" lists sourced pairs only (Pierre, 2026-11-19 05:13 Manila, Q418 (b)): learn.js
+// treeGenusSibs gives the sibling genera IMR gives cues for, never one that has only our own marks, on the real fish.json.
+test('genus page "Don\'t confuse with": sibling genera with IMR cues only, never a marks-only one', () => {
   const vm = require('node:vm'),
     block = require('./block.js'),
     L = fs.readFileSync(path.join(__dirname, '..', 'learn.js'), 'utf8'),
     T = C.treeSheets(F),
-    words = {};
-  const c = {genSpecies: g => (g.species || []).map(id => T.sp[id]).filter(Boolean), sheetWord: k => words[k]};
+    c = {genSpecies: g => (g.species || []).map(id => T.sp[id]).filter(Boolean)};
   vm.createContext(c);
-  vm.runInContext(
-    block(L, 'function treeGenusSibs(g, T) {', '\n}\n', {through: 1, file: 'learn.js'}) +
-      block(L, 'const treeMarkSrc = ', '// The short genus page', {file: 'learn.js'}) +
-      '\nthis.sibs = treeGenusSibs; this.src = treeMarkSrc;',
-    c
-  );
-  const ids = (g, k) => [...c.sibs(T.gen[g], T)[k]].map(x => x.id);
-  // Chromis (Damselfishes): the IMR-cue siblings first, then our-marks ones, most species first, never itself
-  const ch = c.sibs(T.gen['g:Chromis'], T);
-  assert.ok(ch.cues.length >= 2 && ch.marks.length >= 2, 'Chromis has both kinds');
-  assert.ok(!ch.cues.concat(ch.marks).some(x => x.id === 'g:Chromis'));
-  assert.ok(ch.cues.every(x => (x.cues || []).length) && ch.marks.every(x => !(x.cues || []).length && (x.marks || []).length));
-  const n = ch.marks.map(x => c.genSpecies(x).length);
-  assert.deepStrictEqual(
-    n,
-    [...n].sort((a, b) => b - a)
-  );
-  // each marks card names the sources its marks rest on
-  ch.marks.forEach(x => assert.ok(c.src(x).length > 10, `${x.id}: the sources of its marks`));
-  // a family where nobody has cues or marks (the Goatfishes: no sheet genus has marks): no section
-  const goat = F.families.find(f => f.id === 'f:Goatfishes').genera;
-  goat.forEach(id => assert.deepStrictEqual([ids(id, 'cues'), ids(id, 'marks')], [[], []], id));
-  // a genus that is alone in its family: none
-  assert.deepStrictEqual([ids('g:Platax', 'cues'), ids('g:Platax', 'marks')], [[], []]);
-  // a genus without species is nobody's sibling
-  const bare = Object.values(T.gen).filter(x => !c.genSpecies(x).length);
-  bare.forEach(b => Object.keys(T.gen).forEach(id => assert.ok(!ids(id, 'marks').includes(b.id) && !ids(id, 'cues').includes(b.id))));
-  // the sea slugs' words: the IMR-cue siblings only (none for a marks-only sibling)
-  words.sibMarks = false;
-  assert.deepStrictEqual(ids('g:Chromis', 'marks'), []);
-  assert.deepStrictEqual(
-    ids('g:Chromis', 'cues'),
-    ch.cues.map(x => x.id)
-  );
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'), /words: \{\s*sibMarks: false,/, 'the sea slugs say so');
+  vm.runInContext(block(L, 'const treeGenusSibs = ', '\n// The short genus page', {file: 'learn.js'}) + '\nthis.sibs = treeGenusSibs;', c);
+  const sibs = id => [...c.sibs(T.gen[id], T)];
+  // Chromis (Damselfishes): the siblings IMR gives cues for, never itself
+  const ch = sibs('g:Chromis');
+  assert.ok(ch.length >= 2, 'Chromis has IMR-cue siblings');
+  assert.ok(ch.every(x => x.id !== 'g:Chromis' && (x.cues || []).length && c.genSpecies(x).length));
+  // a marks-only sibling is not listed, wherever the family has one
+  let marksOnly = 0;
+  for (const g of Object.values(T.gen)) {
+    const fam = ((T.fam[g.family] || {}).genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && c.genSpecies(x).length),
+      only = fam.filter(x => !(x.cues || []).length && (x.marks || []).length),
+      got = sibs(g.id);
+    marksOnly += only.length;
+    only.forEach(x => assert.ok(!got.includes(x), `${g.id}: ${x.id} has only our marks`));
+    assert.deepStrictEqual(
+      got,
+      fam.filter(x => (x.cues || []).length)
+    );
+  }
+  assert.ok(marksOnly > 100, 'the real data has many marks-only siblings to leave out');
+  // Heniochus: its siblings have marks and no IMR cues, so the page lists none of them
+  assert.deepStrictEqual(sibs('g:Heniochus'), []);
 });

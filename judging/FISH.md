@@ -279,6 +279,12 @@ choices per family in the app" has the details.
     No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
 - **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
   pools, or new code that lets Home show other photos.
+- **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
+  `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
+  photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
+  (nothing to download: the flag is its only change).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.

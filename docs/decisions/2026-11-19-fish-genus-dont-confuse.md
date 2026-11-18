@@ -1,31 +1,31 @@
-# The fish genus page's "Don't confuse with" also lists the sibling genera that have only our marks
+# The fish genus page's "Don't confuse with" lists sourced pairs only
 
 Date: 2026-11-19. PR: #1171. Rules or docs touched: C1, C2; docs/spec/fish-sheets.md "The genus page"; ROADMAP "Fish genera need a presentation and ID cues before they open widely".
 
 ## Context
 
-The fish genus page listed, under "Don't confuse with", the sibling genera IMR gives cues for and the look-alikes a source
-names or players mix up. The ROADMAP row (Pierre, 2026-11-08) left "cards for sibling genera that have only our marks"
-not built, though 154 genera now have marks of our own, sourced in `tools/fish_genus_marks.json`.
+The fish genus page lists, under "Don't confuse with", the sibling genera IMR gives cues for and the look-alikes a source
+names or players mix up, each with its source. The ROADMAP row (Pierre, 2026-11-08) left "cards for sibling genera that
+have only our marks" not built, though 154 genera have marks of our own (`tools/fish_genus_marks.json`). A first version
+of this PR built them: every sibling genus of the family with our marks as a card (92 of the 99 pages, up to 23 cards,
+the first four then "More"). Q418 asked Pierre whether to merge that or to list only sourced look-alike pairs.
 
 ## Decision
 
-Built as the row says; the choices made while building are the integrator's calls (AGENTS.md "Working mode"), none
-decided with Pierre, each easy to correct:
+Pierre, 2026-11-19 05:13 Manila (Q418): (b). "Don't confuse with" shows only the real, sourced look-alike pairs, not
+every sibling genus with marks; further look-alikes will be defined later from the players' real data, the pooled
+confusions.
 
-- **Which pairs**: the sibling genera of the same family (the tree's genus pairs) that have our marks and no IMR cues, a
-  card each with its marks and the sources they rest on, labelled "ID marks", never as IMR's (rules C1, C2). No pair is
-  invented: a genus whose siblings have neither cues nor marks shows no section.
-- **Order and volume**: IMR-cue siblings first, then the marks-only ones, most species first; the first four at once, the
-  others of the family behind "More" (a wrasse genus has 23 siblings).
-- **Where**: the genus page only; the species or family sheet that a genus without a page of its own opens shows its
-  look-alikes as before, not its siblings.
-- **Sea slugs**: unchanged (`sibMarks: false` in their sheet words, rule S1: no subject named in the engine).
+- **What the page lists**: the sibling genera IMR gives cues for and the look-alikes a source names or players mix up,
+  each card with its source; a sibling genus that has only our own marks is not listed. The page is as it was before the
+  first version of this PR; `learn.js` `treeGenusSibs` is the one place that says which siblings.
+- **Later**: the further pairs come from the players' pooled confusions once the data is there (ROADMAP row "Fish genera
+  need a presentation and ID cues before they open widely"); nothing is built for them now.
 - **Not built**: the species mimicry pairs M1-M7 as genus cards (species-level claims, kept off whole ranks by #1162).
 
 ## Consequences
 
-- 92 of the 99 fish genus pages show the section (828 cards); Lutjanus, Diagramma, Caesio, Pterocaesio, Parupeneus,
-  Mulloidichthys and Cheilodipterus show none.
-- Specified in docs/spec/fish-sheets.md "The genus page" (`learn.js` `treeGenusSibs`); tested in
-  `tests/fishsheets.test.js` and the fish smoke.
+- No change for players: the genus page shows what it showed before.
+- Tested: `tests/fishsheets.test.js` (`treeGenusSibs` never returns a marks-only sibling, on the real `fish.json`) and
+  the fish smoke (every card carries a source line, none is "ID marks", nothing behind "More"; Parupeneus shows no
+  section).
