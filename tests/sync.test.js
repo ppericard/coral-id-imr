@@ -1837,10 +1837,10 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('typeof replayProgress', s.ctx), 'undefined', "no core.js name among the script's globals");
   assert.strictEqual(vm.runInContext('TRUST === CORE_.TRUST', s.ctx), false, 'Code.gs keeps its own constants');
   assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
-  // The app and the admin wait for this script version before they rely on the replay (core.js RV_SHEET; rule D4):
-  // the script that serves it says so in every reply.
-  // (Which version that is, and that the gate holds below it, is tests/gates.test.js's.)
-  assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
+  // The script says its version in every reply; the app reads it as at least the gate floor (core.js SHEET_FLOOR), never
+  // above this one (tests/gates.test.js).
+  assert.ok(vm.runInContext('VERSION', s.ctx) >= C.SHEET_FLOOR);
+  assert.strictEqual(vm.runInContext('CORE_.SHEET_FLOOR', s.ctx), C.SHEET_FLOOR);
 });
 
 // v61 (Pierre, 2026-11-06, Q132): each answer carries what the app scored it with (core.js scoreRec), kept in the Answers

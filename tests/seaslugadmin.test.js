@@ -121,9 +121,8 @@ test("the sea slugs' sheet slots: declared at every rank of their tree, their ID
   // The note on a species: its enote.
   const Y = C.contentApply(SS, R, {seaslug: {content: {nodes: {s119434: {note: {v: 'A made-up note', was: null}}}}}});
   assert.strictEqual(Y.species.find(x => x.id === 's119434').enote, 'A made-up note');
-  // No structure: the genus look-alikes stay the build's (no replay change, rule D4).
-  assert.ok(!SS.structure);
-  assert.strictEqual(C.structApply(SS, R, {seaslug: {content: {pairs: {'g:Chromodoris|g:Phyllidia': {v: 1}}}}}), R);
+  // Their structure (the genus look-alike pairs, Pierre, 2026-11-18) and their look-alike lines: tests/seaslugstruct.test.js.
+  assert.strictEqual(SS.structure.pairs.rank, 'genus');
 });
 
 test("fishSure: an egg-mass judgement (the sea slugs' egg rule) is set aside, never added", () => {

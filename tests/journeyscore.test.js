@@ -33,8 +33,7 @@ function admin(rows, saved, cur) {
       block(ADM, 'const statsFor = ', '\n', {through: 1, file: 'admin.js'}) +
       block(ADM, 'function progOf(u, full, S = replayS()) {', '\n}\n', {through: 1, file: 'admin.js'}) +
       `const M0 = unitRpl(S0, F0, PH0, GM0, SAVED);
-       var unitsOf = () => M0, replayOn = () => true, rpOn = () => true, replayS = () => S0,
-         domReplay = () => ({dom: true}), ofAns = (k, f) => f(), subjRows = L => L,
+       var unitsOf = () => M0, replayS = () => S0, ofAns = (k, f) => f(), subjRows = L => L,
          savedFor = () => ({P: SAVED0});
        this.M = M0; this.progOf = progOf; this.unitPct = unitPct; this.unitRpl = unitRpl;`,
     Object.assign(ctx, {S0: S, F0: F, PH0: PH, GM0: GM, SAVED0: saved})

@@ -2677,6 +2677,9 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from seaslug.json, core.js fishReplayGen at the genus); null before its data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the look-alike pairs in force are seaslug.json's),
+    // sent with the requests so the sheet replays under the pairs in force (sync.js stsAsk; Pierre, 2026-11-18).
+    st: () => (FISH ? FISHST : ''),
     gate: fishGate,
     species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
@@ -3356,9 +3359,7 @@ function cardRing(pct, was) {
 // (sheet v124: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
 // page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
-// those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
-const FROMHOME_SHEET = 124;
-const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
+// those taken while it is on screen are not counted).
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
@@ -3366,7 +3367,6 @@ function fromHome(h, nt) {
   if (document.getElementById('tour')) return void (toured = true);
   if (homeLeft || !HOME_AT || (routeFrom !== '' && routeFrom !== 'home') || !h || h === 'home') return;
   homeLeft = true;
-  if (!fromHomeOn()) return;
   ev('fromhome', {
     to: pageName(h, SUBJ.pv),
     s: Math.round((performance.now() - HOME_AT) / 100) / 10,

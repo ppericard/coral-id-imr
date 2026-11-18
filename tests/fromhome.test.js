@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The first page opened from Home in a visit (ROADMAP "Load order, further steps" (c)): app.js fromHome, called by
 // route() before it draws a page, sends one 'fromhome' event a visit, the first time a Home it drew is left for another
-// page, only once the sheet script has the kind (rule D4); the welcome tour's own steps are not the player's choice.
+// page (sheet v124 keeps the kind); the welcome tour's own steps are not the player's choice.
 // The block runs in a vm with route()'s state stubbed.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -11,7 +11,7 @@ const test = require('node:test'),
   block = require('./block.js');
 const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 
-function app({v = 999} = {}) {
+function app() {
   const sent = [],
     c = {
       sent,
@@ -22,15 +22,13 @@ function app({v = 999} = {}) {
       SUBJ: {pv: ''},
       performance: {now: () => c.now},
       document: {getElementById: id => (id === 'tour' && c.tour ? {} : null)},
-      sheetV: () => v,
       pageName: h => h,
       ev: (k, o) => sent.push([k, JSON.parse(JSON.stringify(o))]) // out of the vm's realm, for deepStrictEqual
     };
   vm.createContext(c);
   vm.runInContext(
-    block(src, 'const FROMHOME_SHEET = ', '\nfunction route() {', {file: 'app.js'}) +
-      '\nthis.fromHome = fromHome; this.homeDrawn = () => { if (!HOME_AT) HOME_AT = performance.now(); };' +
-      '\nthis.GATE = FROMHOME_SHEET;',
+    block(src, 'let HOME_AT = 0,', '\nfunction route() {', {file: 'app.js'}) +
+      '\nthis.fromHome = fromHome; this.homeDrawn = () => { if (!HOME_AT) HOME_AT = performance.now(); };',
     c
   );
   return c;
@@ -71,12 +69,4 @@ test("the tour's steps are skipped, and the page after it says the tour ran", ()
   A.tour = false;
   A.fromHome('quiz', 2);
   assert.strictEqual(A.sent[0][1].tr, 1);
-});
-
-test('an older sheet script: nothing sent (rule D4), and nothing later in the visit either', () => {
-  const A = app({v: 120});
-  assert.ok(A.GATE > 120);
-  A.homeDrawn();
-  A.fromHome('quiz', 2);
-  assert.deepStrictEqual(A.sent, []);
 });

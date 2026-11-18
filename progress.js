@@ -458,15 +458,15 @@ const eloLine = G => {
 // after start-up, so the first visit to the page is usually instant too.
 // One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
 // page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
-// GET ?board=1 as before; another's adds &s=<id>, served from sheet v95 (BOARD_SHEET): an older script answers with the
-// first one's, which is never shown as another subject's (rule D4: "not available yet" until the script has it).
+// GET ?board=1 as before; another's adds &s=<id> (sheet v95). A subject whose board came with a later script (SUBJECTS
+// boardSheet) waits for it: an older script answers with the first one's, which is never shown as another subject's
+// (rule D4: "not available yet" until the script has it).
 // Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
 const BOARD_C = 'board-cache';
-const BOARD_SHEET = 95;
 const board0 = () => SUBJECTS.find(x => x.board);
-// The script version that serves subject S's board: BOARD_SHEET, or its own when later (core.js SUBJECTS boardSheet: the
-// sea slugs', SEASLUGRP_SHEET).
-const boardV = S => Math.max(BOARD_SHEET, Number(S && S.boardSheet) || 0);
+// The script version that serves subject S's board: its own when it names one (core.js SUBJECTS boardSheet: the sea slugs',
+// SEASLUGRP_SHEET), else any.
+const boardV = S => Number(S && S.boardSheet) || 0;
 // A board reply to show: the first subject's from any script, another's only from its version (boardV; tests/gates.test.js).
 const boardOk = (j, first, S) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= boardV(S));
 // A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
@@ -566,7 +566,7 @@ function paintBoard(B, S = boardSubj()) {
       ? `<ol class="blist">${rows
           .map(
             (r, i) =>
-              `<li${i === at ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r, B.v) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+              `<li${i === at ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>';
