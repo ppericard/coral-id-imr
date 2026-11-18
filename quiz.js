@@ -876,7 +876,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // replay or rule reads it.
     ...(tap && tap.f ? {pa: tap.f} : {}),
     // The content version its subject's units were made from (app.js contentVer, core.js contentVersion; ROADMAP "Content
-    // versions and duplicate-safe answers", Pierre 2026-11-18): sheet vNEXT keeps it (Answers Content version); sent only
+    // versions and duplicate-safe answers", Pierre 2026-11-18): sheet v178 keeps it (Answers Content version); sent only
     // from CV_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). No score, replay or rule reads it.
     ...cvField()
   };
