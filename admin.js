@@ -8421,11 +8421,11 @@ async function signOut() {
   sealing(true);
   ptFlush(); // a note being typed reaches the draft first
   // A draft from before the store still in localStorage (its move failed at the start) is moved first; while it stays
-  // there in plain, Sign out cannot seal (Codex review #1078).
+  // there in plain, Sign out cannot seal.
   const legacy = () => !!(store.get('reefid-curation-draft', null) || store.get('reefid-curation-base', null));
   if (DW && legacy()) await draftMove();
   // No store (IndexedDB unavailable): nothing was kept, so only a draft with nothing unpublished signs out at once
-  // (Codex review #1078: the warning, not the edits made in this visit lost).
+  // (otherwise the warning, so the edits made in this visit are not lost).
   let ok = !DW && draftClean(DRAFT, SAVED);
   try {
     if (DW && !legacy()) ok = !!(await DW.seal());
@@ -8644,14 +8644,13 @@ function renderFishDiff() {
 }
 
 /* ---------- Photo stats › Overview ---------- */
-// General numbers on every photo (Pierre, 2026-11-03: "how many photos are in play right now, roughly how many per genus
-// and per zoom level, with a median and a spread, not a box plot; if it says Photo stats, it must be stats"). Computed
-// in the browser from what the admin already has: data.json and the draft curation (in play = gamePool, what the games
+// General numbers on every photo: how many are in play, per genus and per zoom level, with a median and a spread, not a
+// box plot. Computed in the browser from what the admin already has: data.json and the draft curation (in play = gamePool, what the games
 // can draw, as Coverage › Games), the candidates (cands, rejected marks, exclusions) and the sheet's photo ratings
 // (?stats=1, as Difficulty) for the answers per photo. A spread is "median [p25–p75]" (core.js distOf): the middle half
 // of the genera lies in the brackets. Per genus = over every game genus (the IMR slate, Millepora, the bonus genera),
 // zeros included; per view, over the genera that have the view (a 2-level genus has no Close-up view). The fish side (fish
-// admin at parity, 2026-11-15): the same page in its words, from its photos in play and its answers alone (pstatsFish).
+// admin at parity): the same page in its words, from its photos in play and its answers alone (pstatsFish).
 // Why a photo of the site is not in the games (first reason that applies), as on Coverage (covOff) plus the genera the
 // games never ask and the Research Grade rule of the extra genera.
 const POOL_OFF = [
@@ -8684,7 +8683,7 @@ function poolStats() {
   });
   // Photos kept only for the look-alike comparison (Not this genus › Look-alike comparison, curation out 'cmp'): they leave
   // their genus (photos and cands skip them) for no other one, so they are counted here, once each, from the genus they
-  // left (Codex review #430: they fell out of the inventory). A candidate sent there counts here too, rejected or not.
+  // left, so they stay in the inventory. A candidate sent there counts here too, rejected or not.
   const cmp = [...(sentTo('own', own).cmp || []), ...(sentTo('cand', rawCands).cmp || [])].length;
   const st = {
       play: play.length,
@@ -8817,7 +8816,7 @@ function pstatsCoral(here) {
     }
   };
 }
-// photoAnswers' {f: {n, ok, by}} merged under key(f): a fish photo is one photo under its candidate id (Pierre's add) and
+// photoAnswers' {f: {n, ok, by}} merged under key(f): a fish photo is one photo under its candidate id (the admin's add) and
 // its game id (core.js fishPid), whichever the answer logged. Pure: tests/fishpstats.test.js.
 function answersBy(PH, key) {
   const O = Object.create(null);
@@ -9049,14 +9048,14 @@ function pstatsHtml(M) {
 }
 
 /* ---------- Photo coverage ---------- */
-// Game photos of genus n in view v, as the games can draw them (applySlots in core.js): field and IMR lecture photos, but no
-// multi-coral, hidden or "sheet only" photo. Poor photos count (Pierre: realistic like ReefCloud
-// images; the players' answers rate how hard they are). The Colony slot never takes a photo whose growth form is not visible (photoSet in app.js). Diversity = distinct colonies
-// (iNat observations), so 5 shots of one colony count once. Shared by the Coverage page and the Candidates queue.
+// Game photos of genus n in view v, as the games can draw them (applySlots in core.js): field and IMR lecture photos, but
+// no multi-coral, hidden or "sheet only" photo. Poor photos count (realistic, like ReefCloud images; the players'
+// answers rate how hard they are). The Colony slot never takes a photo whose growth form is not visible (photoSet in
+// app.js). Diversity = distinct colonies (iNat observations), so 5 shots of one colony count once. Shared by the Coverage page and the Candidates queue.
 const COV = [1, 3, 5, 8]; // colonies per genus x view from which a cell reaches level 1, 2, 3, 4
 function gamePool(n, v) {
   const use = DRAFT.use || {};
-  // A genus with a single IMR growth form (Pierre): the form is no question, so a "form not visible" photo still counts.
+  // A genus with a single IMR growth form: the form is no question, so a "form not visible" photo still counts.
   const oneForm =
     v === 'wide' &&
     new Set(
@@ -9073,7 +9072,7 @@ function gamePool(n, v) {
       !p.extra &&
       use[p.f] !== 'ref' &&
       !(v === 'wide' && fOf(p.f) === 'x' && !oneForm) &&
-      // The games' Research Grade rule for the extra genera that are played (app.js gamePhotoOk; Codex review #390). A
+      // The games' Research Grade rule for the extra genera that are played (app.js gamePhotoOk). A
       // Key-only genus is not played: its Needs ID colonies count, as in tools/fetch_local.py colonies().
       (!DATA.gen[n].x || !isGame(n) || p.own || !p.gid)
   );
@@ -9082,7 +9081,7 @@ function covOf(n, v) {
   const L = gamePool(n, v);
   return {n: L.length, obs: new Set(L.map(p => p.o || p.f)).size, L};
 }
-// Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
+// Photos of a genus x view left out of the game pool, by reason: what isn't counted and why.
 // Short label in the cell, long one in the cell's tooltip.
 const OFF = [
   ['multi', 'multi', 'with several corals'],
@@ -9112,12 +9111,12 @@ const covLvl = c => COV.filter(k => c.obs >= k).length;
 // Views a genus has in games: 2-level genera have no Closer view.
 const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
 // Views a genus takes candidates in, under its cap (capOf): every view of a game genus; Colony and Close-up only for a
-// Key-only genus (Pierre, 2026-11-03). A 2-level genus's macro view is its Close-up (label), so it stays.
+// Key-only genus. A 2-level genus's macro view is its Close-up (label), so it stays.
 const capViews = n => covViews(n).filter(([v]) => isGame(n) || v !== 'macro' || lv(n) === 2);
-// Thinnest at every opening (Pierre 2026-11-01, again 2026-11-03: a saved Thickest kept coming back): the order and a
-// column sort chosen on the page last until the page is reloaded, never saved.
+// Thinnest at every opening: the order and a column sort chosen on the page last until the page is reloaded, never
+// saved (a saved Thickest would keep coming back).
 let COV_ORDER = 'thin';
-// Sort by one zoom column (Pierre 2026-11-01), both coverage views: click a view header (fewest colonies first),
+// Sort by one zoom column, both coverage views: click a view header (fewest colonies first),
 // again to reverse; a genus without that view stays last; the order switch clears it. st = {col, dir}, saved by save().
 const colSort = (st, R) => {
   const i = VIEWS.findIndex(v => v[0] === st.col);
@@ -9167,7 +9166,7 @@ function renderCov() {
       min: Math.min(...live.map(c => c.obs)),
       max: Math.max(...live.map(c => c.obs)),
       all: live.flatMap(c => c.L),
-      // Candidates by source (Pierre, 2026-11-02: Dauin, Philippines and his own at least).
+      // Candidates by source (Dauin, Philippines and Pierre's own at least).
       cand: pending(n).length,
       cby: pending(n).reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {})
     };
@@ -9248,7 +9247,7 @@ function renderCov() {
   );
   lookBanner();
 }
-// Where to look (Pierre, 2026-11-03: a banner above the Games grid, no longer a page of its own): the few genus x view
+// Where to look (a banner above the Games grid): the few genus x view
 // cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
 // colonies); "All N" opens the full list in the banner (?look=all: reason cards, view and genus filters, sort).
 // It needs the answer log: the grid shows at once, the banner once the log is loaded.
@@ -9280,9 +9279,9 @@ function lookBanner() {
     : '';
 }
 
-// Sheets & ID Key coverage (Pierre 2026-11-01): what the Coral ID Key can show per genus, the IMR genera and the book's
-// extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
-// Species = distinct species named on the photos.
+// Sheets & ID Key coverage: what the Coral ID Key can show per genus, the IMR genera and the book's extra genera present
+// at Dauin. Pool = every photo of the view not hidden, not multi-coral; colour = distinct colonies with a photo that is
+// not Poor; Forms = growth forms seen (Colony + Closer); Species = distinct species named on the photos.
 let KCOV = Object.assign({set: 'all', order: 'thin', col: '', dir: 'asc'}, store.get('reefid-admin-kcov', {}));
 function renderKcov() {
   status();
@@ -9399,8 +9398,8 @@ function renderKcov() {
 }
 
 /* ---------- Hidden: every photo removed from the site (Genera › Hidden) ---------- */
-// Photos taken off the site with Remove (curation.json genera[n].hide), every genus at once (Pierre, 2026-11-03: a view of
-// Genera next to Excluded). Put back returns one to its view, as on its genus page; Undo steps back as everywhere.
+// Photos taken off the site with Remove (curation.json genera[n].hide), every genus at once (a view of Genera next to
+// Excluded). Put back returns one to its view, as on its genus page; Undo steps back as everywhere.
 function renderHidden() {
   status();
   // A removed photo no longer in the data (the genus page marks it "⚠ check") is listed by name: Put back drops the entry.
@@ -9427,9 +9426,9 @@ function renderHidden() {
 }
 
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
-// ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
-// level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The views of Activity, Photo stats, To do › Health and the live Analyses views (LIVE_STATS); their tab and view switch are in #subnav (navs()).
+// ?answers=1: every answer, the player replaced by an anonymous id; ?stats=1: Elo difficulty per photo and level per
+// player (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond
+// chance). The views of Activity, Photo stats, To do › Health and the live Analyses views (LIVE_STATS); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
   GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
@@ -9439,15 +9438,15 @@ let ANS = null,
   MEID = null,
   SF = Object.assign({min: 1, nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
-// render, sort or filter click (Pierre, 2026-11-03: admin pages load slower and slower, and the log keeps growing). ANS is
+// render, sort or filter click (the log keeps growing). ANS is
 // replaced, never changed in place, whenever the log is loaded again.
 let ANS_MEMO = {a: null, m: {}};
 const ofAns = (k, fn) => {
   if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
-// Reads of the sync sheet, one per kind on its way at a time (Pierre, 2026-11-04: admin pages load slowly; To do read the
-// whole answer log three times at once, each render before the first reply starting another): sheetRead(k, go) gives the
+// Reads of the sync sheet, one per kind on its way at a time (never the whole answer log three times at once, each
+// render before the first reply starting another): sheetRead(k, go) gives the
 // read k on its way, or starts it with go(fresh), whose reply is used only while fresh() (the read was not dropped since).
 // sheetAgain(...kinds) is ↻ and the account actions: what they name is forgotten and read again, a read of it still on
 // its way dropped (its late reply ignored). Kinds: ans (the answer log), stats (photo ratings, levels), users (the player
@@ -9483,7 +9482,7 @@ function sheetAgain(...kinds) {
   });
 }
 // The reads the landing page needs leave as soon as the token is known, in parallel with the token check and start()'s
-// data files, which they do not need (Pierre, 2026-11-04: they waited for both, about 1.5 s on a phone); the page then
+// data files, which they do not need (waiting for both costs about 1.5 s on a phone); the page then
 // finds them on their way (sheetRead). Called once the script has run (its let names exist).
 function sheetEarly(h) {
   const need =
@@ -9523,8 +9522,8 @@ function sheetEarly(h) {
 }
 // ratingsOnly (Photo stats › Overview): the photo ratings alone (?stats=1), not the whole answer log.
 function loadStats(ratingsOnly) {
-  // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
-  // local digest below only matches script v5 and older.
+  // The sheet keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the local
+  // digest below only matches a very old script.
   const sy = store.get('reefid-account', null) || {},
     me = sy.name;
   const digest = me
@@ -9536,15 +9535,15 @@ function loadStats(ratingsOnly) {
         })
         .catch(() => {})
     : Promise.resolve();
-  // av: never taken for an app from before 2026-11-03 (sheet v25 logs a photo stats read without it as 'old': each
-  // read-only visit of this page did, 2026-11-05).
+  // av: never taken for an old app (the sheet logs a photo stats read without it as 'old', which each read-only visit of
+  // this page would do).
   const get = q =>
     fetch(SYNC_URL + q + '&av=admin')
       .then(r => r.json())
       .catch(() => ({}));
-  // Sheet v14: per-player numbers (the answer log, players' levels) only with this page's GitHub token, by POST; the
-  // caller's own name and code go as aname/apin (never name/pin, which an older script would take for a progress write).
-  // A script before v14 answers 'input' to those POSTs: fall back to its public GETs.
+  // Per-player numbers (the answer log, players' levels) only with this page's GitHub token, by POST; the caller's own
+  // name and code go as aname/apin (never name/pin, which an older script would take for a progress write). An older
+  // script answers 'input' to those POSTs: fall back to its public GETs.
   const post = b =>
     fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...b, token: TOKEN})})
       .then(r => r.json())
@@ -9575,16 +9574,16 @@ function loadStats(ratingsOnly) {
             ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
             : {ok: false, error: 'token'},
           digest,
-          // The answer log is published with the photo ratings, never before them (Codex review #488): the pages that
+          // The answer log is published with the photo ratings, never before them: the pages that
           // read it (Health, To do's Health line) take the ratings as read with it.
           gs
         ]).then(([a]) => {
           if (!fresh()) return;
           if (a && a.me) MEID = a.me;
           ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
-          // Every page reads the replayed subject's answers (the corals'; core.js subjRows, sheet v60 logs every subject's):
-          // a fish answer counts in no coral page, Health, journey or analysis. ANS.all keeps every subject's rows, never a
-          // surprise card's answer (core.js winkRow; sheet v98 serves none: no page, list or analysis counts one).
+          // Every page reads the replayed subject's answers (the corals'; core.js subjRows; the sheet logs every
+          // subject's): a fish answer counts in no coral page, Health, journey or analysis. ANS.all keeps every subject's
+          // rows, never a surprise card's answer (core.js winkRow; the sheet serves none: no page, list or analysis counts one).
           ANS.all = ANS.rows.filter(r => !winkRow(r));
           ANS.rows = subjRows(ANS.all);
           ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
@@ -9592,17 +9591,17 @@ function loadStats(ratingsOnly) {
       );
   return Promise.all([ga, gs, digest]).then(() => {});
 }
-// "you" beside the account this browser is signed in with (MEID): a mark only. Every account counts in every page
-// (Pierre, 2026-11-04: his account is a real player's; the switches that left his own answers out, and the list of his
-// other accounts, are gone, and no page leaves anyone's answers out, the leaderboard's "hidden" included).
+// "you" beside the account this browser is signed in with (MEID): a mark only. Every account counts in every page (the
+// admin's account is a real player's): no page leaves anyone's answers out, the leaderboard's "hidden" included.
 const isMe = id => !!id && id === MEID;
-// Answers that rated a photo (sheet v18's 4th field); the weighed count before v18. The filters use it: a photo answered
-// once weighs under 1 (n / (n + 10)) and "≥1" hid it (Pierre, 2026-11-02: only ~100 photos of the ~300 answered).
+// Answers that rated a photo (the stats' 4th field); the weighed count from an older script. The filters use it: a
+// photo answered once weighs under 1 (n / (n + 10)), and "≥1" on the weighed count would hide it.
 const nAns = s => (s ? (s[3] ?? s[1]) : 0);
 // The photo ratings: the sheet's ?stats=1, the ones the games use.
 const photoStats = () => STATS;
-// The photos in play (poolStats play: {f, genus, view}) far harder than their genus (FAR, above HELP), the farthest first: {...p, d, gd, r,
-// a, n, ok} (difficulty, genus offset, residual, answers, weighed answers and right). None before sheet v31 (no gd).
+// The photos in play (poolStats play: {f, genus, view}) far harder than their genus (FAR, above HELP), the farthest
+// first: {...p, d, gd, r, a, n, ok} (difficulty, genus offset, residual, answers, weighed answers and right). None from
+// an older script (no gd).
 function farHarder(play) {
   const S = photoStats() || {};
   return play
@@ -9616,9 +9615,8 @@ const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
   return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago';
 };
-// When, to the minute (Pierre, 2026-11-03: who played most recently): "now" (less than RECENT.NOW minutes), "12 min ago",
-// "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on phones, a narrower Last column; Pierre, 2026-11-03), then the
-// date. Its title gives the full date and time. Midnight of this browser.
+// When, to the minute (who played most recently): "now" (less than RECENT.NOW minutes), "12 min ago", "3 h ago"
+// (today), "yesterday 18:40" ("yest. 18:40" on phones, a narrower Last column), then the date. Its title gives the full date and time. Midnight of this browser.
 const PHONE = matchMedia('(max-width: 599.98px)'),
   yest = t => `${PHONE.matches ? 'yest.' : 'yesterday'} ${dateText(t, 'hm')}`;
 const dayStart = (k = 0) => new Date().setHours(0, 0, 0, 0) - k * 864e5,
@@ -9636,7 +9634,7 @@ const dayStart = (k = 0) => new Date().setHours(0, 0, 0, 0) - k * 864e5,
             : dateText(t, 'dm');
   },
   // A name or other free text in a table cell: never wider than the column cap (.adm-cut, admin.css), the full text in
-  // its title. A player hidden from the leaderboard is greyed (Pierre, 2026-11-03: the "hidden" tag widened Name).
+  // its title. A player hidden from the leaderboard is greyed (a "hidden" tag would widen Name).
   cut = s => `<span class="adm-cut" title="${esc(s)}">${esc(s)}</span>`,
   pname = (n, hid) =>
     `<b class="adm-cut${hid ? ' adm-uhid' : ''}" title="${esc(n)}${hid ? ' (hidden from the leaderboard)' : ''}">${esc(n)}</b>`,
@@ -9687,21 +9685,21 @@ function bindStats() {
   if (rl)
     rl.onclick = () => {
       sheetAgain('ans', 'users', 'pages'); // the pages opened too (Stops, Journey)
-      // An unfolded session's player's saved copy too (achievements, cards, learned genera follow the new answers; Codex
-      // review #557), as the Players and Journey ↻ do.
+      // An unfolded session's player's saved copy too (achievements, cards, learned genera follow the new answers), as the
+      // Players and Journey ↻ do.
       savedClear();
       render();
     };
   liveArm(); // Activity drawn: the next light read (none on any other page)
 }
-// A live Players › Activity (Pierre, 2026-11-08: "Les deux"): while the page is open and in view, every LIVE_READ.MS the
-// sheet's light read (Code.gs live_, POST readLive, sheet v110: the last rows of the answer log and each player's
+// A live Players › Activity: while the page is open and in view, every LIVE_READ.MS the sheet's light read (Code.gs
+// live_, POST readLive: the last rows of the answer log and each player's
 // last answer time, where readAnswers sends the whole log) brings the answers given since, merged into the log held
 // (liveMerge), and the page is drawn again (Recent sessions, who is playing now, "as of"). Hidden (another tab, the phone
 // asleep) or another page: no read, the timer stopped; back in view, a read at once when the last is over LIVE_READ.MS old.
 // When the light read cannot complete the log held (liveMerge full), the whole log is read again in the background, as
 // ↻ does but with the page kept on screen; a player new to the player list reads it again too. Without the token,
-// nothing: ↻ by hand as before.
+// nothing: ↻ by hand.
 const LIVE_READ = {MS: 60000};
 const liveOn = () => !!ANS && !ANS.old;
 let liveT = 0,
@@ -9718,7 +9716,7 @@ const liveWanted = () => cur === 'players/activity' && document.visibilityState 
 // more than a second later than the last one held (an answer outside the window). Also full when an account left
 // normal operation since the log held was read (j.roster, Code.gs rosterAt_: a delete, merge or archive, against the
 // log's own roster), or when a player of the rows held has no last answer any more (their answers deleted, renamed or
-// claimed): the log held must never keep a deleted account's answers (rule D7; Codex review #775).
+// claimed): the log held must never keep a deleted account's answers (rule D7).
 const liveKey = r => [r[1], r[2], r[3], r[5], r[6]].join('|');
 function liveMerge(all, j, roster) {
   const rows = (j && Array.isArray(j.rows) ? j.rows : []).filter(r => !winkRow(r)),
@@ -9744,9 +9742,9 @@ function liveMerge(all, j, roster) {
 }
 // livemerge: end
 // The player list read again for the light read: a read that fails keeps the last good list (loadUsers would leave
-// {err}, and every signed-in player would show as a device not signed in; Codex review #775).
+// {err}, and every signed-in player would show as a device not signed in).
 // Until a read of it succeeds, every light read asks for it again (liveUsersDue): after a delete or an archive the
-// list held may still name the account (Codex review #775).
+// list held may still name the account.
 let liveUsersDue = false;
 function liveUsers() {
   const U0 = USERS;
@@ -9776,7 +9774,7 @@ function liveRead() {
         const m = liveMerge(a0.all || a0.rows || [], j, a0.roster);
         if (m.full) {
           // The whole log and the player list again, the page kept: a failed read keeps the log held and tries again in
-          // a minute (loadStats leaves an unreadable log as {old}; Codex review #775). An unfolded session's saved copy too.
+          // a minute (loadStats leaves an unreadable log as {old}). An unfolded session's saved copy too.
           sheetDrop('ans');
           return Promise.all([loadStats(), liveUsers()]).then(() => {
             if (!ANS || ANS.old) ANS = a0;
@@ -9792,11 +9790,11 @@ function liveRead() {
         const U = (USERS && USERS.users) || [],
           known = new Map(U.map(u => [u.id, u.name]));
         // A signed-in player of the log the list does not hold (a new account, or an earlier read of the list that
-        // failed): the list again, at each light read until it holds them (Codex review #775).
+        // failed): the list again, at each light read until it holds them.
         if (liveUsersDue || (ANS.all || ANS.rows || []).some(r => !r[11] && !known.has(r[0])))
           liveUsers().then(() => cur === 'players/activity' && render());
         // A player's saved copy read for an unfolded session (achievements, cards, learned genera) follows their new
-        // answers, as ↻ does (savedClear; Codex review #775).
+        // answers, as ↻ does (savedClear).
         if (m.add.some(r => known.has(r[0]) && known.get(r[0]) in PSAVED)) savedClear();
         if (cur === 'players/activity') render();
         else liveArm();
@@ -9804,11 +9802,10 @@ function liveRead() {
   );
 }
 document.addEventListener('visibilitychange', liveArm);
-// Users, a header tab of its own (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"; not under Stats, it manages players): every player who signed in,
-// by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
-// for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the
-// busier account's model per genus), then the sheet relabels the answers and reports and deletes the other name.
-// Delete (sheet v55, Pierre 2026-11-05, Q85/Q89: two named choices, no default): "Delete everything" (a test account, or
+// Users (it manages players): every player who signed in, by name, with their numbers (POST {users: 1, token}; names,
+// so the admin token is checked like for reports). Merge = two names of one person: the progress is merged here
+// (core.js mergeUsers: answers add up, the busier account's model per genus), then the sheet relabels the answers and
+// reports and deletes the other name. Delete (two named choices, no default): "Delete everything" (a test account, or
 // a player who asked: answers and reports too) or "Delete, keep answers anonymously" (answers and reports stay without
 // the name: the answers only rate the photos, the reports read "from a removed account"); nothing else of the account
 // stays in normal operation either way (Code.gs deleteAccount_).
@@ -9817,7 +9814,7 @@ let USERS = null,
   usersAt = 0,
   uOpen = null,
   uDel = '', // the player whose two delete choices show in their bar
-  // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228): the subject being changed in a player's bar
+  // Change the starting answer: the subject being changed in a player's bar
   // {name, sid, c: the answer picked, waiting for Change; busy while sent}, and the last result {name, sid, ok, text}.
   uStart = null,
   uStartMsg = null;
@@ -9850,8 +9847,8 @@ function loadUsers(force) {
       .catch(() => (fresh() ? (USERS = {err: 'Offline'}) : USERS))
   );
 }
-// A player's saved data (userData) is read with the new key names whichever app saved it (core.js keysIn, rename to
-// IMR Reef ID 2026-11-03); a merged record goes back with the old names too (withLegacy), as the app sends it.
+// A player's saved data (userData) is read with the new key names whichever app saved it (core.js keysIn); a merged
+// record goes back with the old names too (withLegacy), as the app sends it.
 const userPost = body =>
   fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})})
     .then(r => r.json())
@@ -9862,8 +9859,7 @@ const userPost = body =>
 // Players' saved progress (sheet userData, this page's token; Code.gs users_ gives only its summary columns): read once
 // per data load, 4 at a time, for the full replay's mastery exams and the saved copy's numbers (progOf) and the
 // journey's cards (admin-journey.js). name -> null while reading, then {P, intro, offer, reset} or {err}. Kept, a failed
-// read too, until ↻ (savedClear): a read is never started again by itself (Codex review #352: an error re-read at once
-// looped). The page is drawn again when the last read is in (Players) or when the player's own is (their Journey).
+// read too, until ↻ (savedClear): a read is never started again by itself (an error re-read at once would loop). The page is drawn again when the last read is in (Players) or when the player's own is (their Journey).
 const PSAVED = {};
 let savedQ = [],
   savedRun = 0,
@@ -9926,7 +9922,7 @@ function savedClear() {
   savedQ = [];
   Object.keys(PSAVED).forEach(k => delete PSAVED[k]);
 }
-// Full replay (Pierre, 2026-11-03: "recalculate from all the results"; docs/LEARNING.md "Full replay"): one player's
+// Full replay (docs/LEARNING.md "Full replay"): one player's
 // progress rebuilt from the answer log with today's rules (core.js replayProgress: the app's weights, photo memory from
 // their own history, the sheet's memory offsets SMEM and pooled confusions SCONF), with what only their saved copy holds
 // (core.js replayedOf: the mastery exam, dropped when passed under the former model). Beside it, the saved copy's own
@@ -9935,16 +9931,16 @@ function savedClear() {
 // devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
 // Computed once per data load (the answer log, the stats, the saved copy), memoized.
 const PROGM = new Map();
-// The player list carries that same replay, computed by the sheet (sheet v42, Code.gs replayedAll_: rp = [progress %,
-// learned, the saved copy's %]; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
-// time, about 15 s on a phone for 40 players), and Players reads no saved copy. The Journey (full) still replays here: it
+// The player list carries that same replay, computed by the sheet (Code.gs replayedAll_: rp = [progress %, learned, the
+// saved copy's %]), and Players reads no saved copy (one sheet call each would take about 15 s on a phone for 40
+// players). The Journey (full) still replays here: it
 // shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or their copy) is
 // replayed here.
 // The subject the sheet replays (SUBJECTS replay): the corals.
 const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
 // A player's saved copy for one subject (savedOf): null while read, {err} when it could not be.
 const savedFor = (name, S) => (x => (!x || x.err ? x : x.by[S.id]))(savedOf(name));
-// A subject's units for a replay in the admin (Pierre, 2026-11-06: follow every subject's progress on the Journey): the
+// A subject's units for a replay in the admin (every subject's progress on the Journey): the
 // replayed subject's from data.json; another's from its own registry (unitRegOf: fishAdmin for the fish, unitAdmin for
 // another tree subject; fishGen, its circles as the app's slate: the sea slugs' genera), once read; null before. A
 // subject the sheet replays from its own answers (SUBJECTS replayed) replays with the sheet's units, variant table, slate
@@ -9976,7 +9972,7 @@ function unitsOf(S) {
 // then rgen, the replay's units (replayed gen: the fish's families, scientific genera and species units, fishReplayGen;
 // gen stays the registry's records, their circles and names);
 // vars, its variant table over its pool files [f, ph, gm, cur] when it has one (replayed vars: the learned marks the log
-// takes away, Q391 b); slate, its units as the app's UNITS slate under that structure (the % and Learned of a subject with
+// takes away); slate, its units as the app's UNITS slate under that structure (the % and Learned of a subject with
 // no tree, the units met); tree, for a subject with a global score (SUBJECTS score), the tree its leaderboard ranks by
 // (replayed tree: fishBoardTree, the app's own UNITS tree, tests/structure.test.js). null for any other subject.
 function unitRpl(S, f, ph, gm, cur) {
@@ -10002,7 +9998,7 @@ const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).
 // fish's, as before.
 const unitWait = S => (S && S.sheets ? S : FISHS);
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
-// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's (PR #808).
+// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's.
 const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD} : {});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
@@ -10072,14 +10068,12 @@ function uprogHtml(u, S) {
       : `Progress ${withSaved(pg.pct + '%', pg.saved && pg.saved.pct + '%')} · Learned ${withSaved(`${pg.learned}`, pg.saved && `${pg.saved.learned}`)}${pg.err ? ` <small title="Their saved copy could not be read (${esc(pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}`
   }</span>`;
 }
-// Players page (Pierre, 2026-11-01: "one page, sort the players by name or by score, and act on them there"): the Users
-// list (names, from the token-guarded sheet call, v11) joined with the anonymous answer stats (?answers=1, ?stats=1) by
-// each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
-// their games, mix-ups, genera to review and Merge / Delete. Answers of devices that never signed in (and of deleted
-// accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
-// The list of players, one page for every subject (Pierre, 2026-11-06: "the players list must not depend on Corals or
-// Fish: it is independent of the game mode, the same page that doesn't change between the two worlds"; "maybe fish
-// columns and coral columns, but there may be too much: Journey has the details"): the player's own columns (UCOLS),
+// Players page: one page to sort the players by name or by score and act on them. The Users list (names, from the
+// token-guarded sheet call) joined with the anonymous answer stats (?answers=1, ?stats=1) by each player's anonymous id
+// (users_ id). One row per signed-in player, sortable by any column; a row opens their games, mix-ups, genera to review
+// and Merge / Delete. Answers of devices that never signed in (and of deleted accounts) have no name: they are counted
+// apart, below. Activity keeps the class-wide charts.
+// The list of players, one page for every subject, whatever the subject on screen: the player's own columns (UCOLS),
 // then a group of columns per subject (SCOLS). Elo, the quiz's right shares, Duels, Days, Learned and the units seen are
 // on the player's Journey (its numbers at the top, per subject); Reports on the row's bar.
 const UCOLS = [
