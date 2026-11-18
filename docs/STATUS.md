@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-19, about 03:35 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 05:20 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
 Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since the 11/17 report, already handled).
@@ -16,20 +16,23 @@ Main: sheet script **v187** (#1146); the script updates from `release`, which on
 `tools/train.py`, one at a time. Agents: at most 4 that write code or run tests, studies on top; model per the table
 (#1086); files only with Write/Edit; no scheduled reminders from agents (they land in the integrator's session).
 
-- **Merged since 02:10**: #1152, #1155; #1153, #1157, #1160 (comments of tests/, tools/, workflows); #1154
-  (ARCHITECTURE a map: 760 KB at 18:00 → 36 KB); #1156, #1158, #1163 (LEARNING as the code runs, history in the
-  notebook: 740 → 170 KB); #1162 (mimicry pairs drilled in traps, duels, Agains; level 1: guardrails held, primary
-  "cannot tell", 3 class questions in 7,500); #1165 (ROADMAP and the reviews index hygiene).
-- **Train queue**: #1164 (sea slug literature: two sourced species pairs, judging hints), #1159 (fish species units named
-  in the admin; Prettier fixed after a merge), then #1161 (the admin's registry follows the published content) and
-  #1166 (the fish Journey's opt-in choices), each with main merged first (both decision index rows kept).
-- **Agents running (4)**: load order (b) and (d) (`learn.js` and `proto/lab.css` out of the quiz's tier); the fish
-  genus page's "Don't confuse with" (F11); the taxonomy reference's monthly refresh (P10: the reference file only);
-  the admin's read-only Taxa view (admin plan PR 12).
-- **Waiting**: #1121 core.js + Code.gs comments: two CodeQL false positives (Pierre's hands), then re-assign v188.
-  #1117 (hooks, analysis session): its 6 Codex threads. #1116, #1130, #1148: Pierre's answers (Q411-Q413).
-- Every new decision record: "Date: … PR: #N." and an index row; two PRs adding a row (or lowering the same budget line
-  in `tests/docs.test.js`) conflict: merge one at a time, keep both rows (`scratchpad/union.py`) or the lower budget.
+- **Merged since 03:35**: #1167, #1164, #1159, #1161, #1166, #1173 (admin smoke waits 60 s on Analyses: the cause of
+  #1168's red train), #1168 (taxonomy refresh), #1172 (inventory recheck: `docs/reviews/2026-11-19-backlog-recheck.md`,
+  pick work from it, not the 11-18 snapshot), #1174 (watermark pass 4), #1169 (admin Taxa view).
+  Then #1178 (A. wallaceae presence), #1180 (coral near-dup suggestions), #1182 (this STATUS's previous version).
+- **No agent running** (stopped at 04:52 to save quota). Their work, each with a commit "WIP, not reviewed, not tested"
+  to finish (docs, record, Codex) before any merge: #1177 (CI speed, I7), #1181 (circle-1 genera with no name root),
+  #1183 (auto-sort A7), branch `claude/tricky-pairs` (L24 f, no PR).
+- **To merge, each brought up to date with main first** (merge origin/main, keep both decision index rows, docs test,
+  CI Prettier set, `@codex review`, then `tools/train.py`, one at a time; the old session's helper scripts are gone):
+  #1130 (Q412 answered: merge; conflicts with main), #1148 (Q413 answered: merge; 2 Codex threads open), #1170, #1176,
+  then #1179. #1175 (load order): its train failed on `smoke (net)` after the merge with main: find the cause.
+- **To redo**: #1171 to option (b) (Q418). **#1121**: no dismissal; fix `photoFallback`/`photoRetry` with
+  `new URL(u).hostname` in a small PR first (next sheet version), then #1121 (comment on #1121). Waiting: #1117 (6
+  Codex threads), #1116 (Q411).
+- **Pierre, 05:15: the app's engine is one engine for every subject**, with only small per-subject parameters. Next:
+  audit where the fish or sea slug path differs from the corals', make each shared code or a stated parameter, propose
+  the rule's wording to Pierre (comment on #1148).
 - Slips tonight: agents' force-pushes (one `--force-with-lease`, #1164), `sed -i`, `&`, heredocs; the integrator
   committed conflict markers once (fixed next commit) and chained a queue on a waiter that did not wait (train refused).
 
@@ -44,9 +47,9 @@ the same (acorn, `ast.dump`, parsed YAML); decisions found only in comments move
 
 ## Next
 
-1. Versions one at a time: #1121 (re-assign v188) once Pierre has dismissed its two CodeQL alerts.
+1. Versions one at a time: the `photoFallback`/`photoRetry` host-check fix (v188), then #1121 brought up to date (v189).
 2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): the Matrix fish game (decided; it needs core.js, so after
-   #1121); F15's rest; S4 the sea slugs' judging pass; C2 the coral lecture pairs apart from the Coral Finder's.
+   #1121); the open rows of `docs/reviews/2026-11-19-backlog-recheck.md`.
 
 ## Questions for Pierre
 
@@ -61,10 +64,6 @@ dropped (the docs describe a coherent model in our words; no new manual step for
 - **Q410** The five new sea slug achievement names (#1112): rename freely.
 - **Q411** #1116 typed answers: simulated expert −3.0 points on answers 200-300 ("unclear"). Level-2 first
   (recommended), merge, or drop that part?
-- **Q412** #1130 coral calibration set: simulated beginner −0.013 at question 300, caught up by 600. Merge
-  (recommended) or no boost for beginners?
-- **Q413** #1148 fish read their own pooled stats: level 1 only (the rated world cannot model L12); the strong RA's bar
-  error +0.034 (margin +0.030), closer to true knowledge. Merge (recommended), or level 2 first?
 - **Q414** Architecture step 4: a `slow` tag takes the slow statistical tests out of the pre-push tier (CI and the
   train keep them); it changes rule W14's wording. Recommended: yes.
 - **Q415** Rule L11 and LEARNING's method differ on five points (#1163's description: level 2's worlds and length, the
@@ -74,15 +73,16 @@ dropped (the docs describe a coherent model in our words; no new manual step for
 - **Q417** The "Pikachu" nickname: to *Thecacera pikachu* (the species named for it), moving the star from
   *T. pacifica*? (the sea slug literature scan §6, #1164)
 
+Answered 05:13: Q412 merge #1130 as is; Q413 merge #1148, no simulation; Q418 (b): sourced pairs only, others later
+from the players' data.
+
 Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points; #1098 (a)-(f); #1041 §6.
 
-Last question number: Q417
+Last question number: Q418
 
 ## Pierre's hands
 
-- **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`); Security › Code scanning:
-  dismiss as false positives the two "Incomplete URL substring sanitization" alerts of #1121 (core.js `photoFallback`
-  and `photoRetry`, lines identical to main, moved up by the shorter comments; agents get 403 there).
+- **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game (the lobby now shows a QR code: scan it once).
 - **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages); the 8 unsure
   fish candidates; the 16 non-Philippine *A. pyroferus* juvenile photos and `fbAcpyr_j0` (yellow form, tagged `ph`).

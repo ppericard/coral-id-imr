@@ -56,7 +56,10 @@ Pleurobranchidae.
   (`brbrun1`) **[read]**: species colours, not a feature of the genus, or what another source above says.
 - **SEASLUG.WORLD** blog, [*Phyllidiella pustulosa* vs *Phyllidiopsis fissurata*](https://en.seaslug.world/blog/phyllidiella-pustulosa-vs-phyllidiopsis-fissurata)
   (Kimoto, 2015) **[read]**: the rhinophores, black all along against black on the upper back only; a species pair,
-  for the species level and the look-alikes (#1042), not a genus mark.
+  for the species level and the look-alikes (#1042), not a genus mark. The genus pair's tell-apart line comes from
+  Brunckhorst 1993 instead (read 2026-11-19): Table 6 (p. 89) gives *Phyllidiella* black rhinophores and
+  *Phyllidiopsis* rhinophores of "various colours; bi- or multi-coloured", and the genus's "External morphology"
+  (p. 19) says they "may be bicoloured".
 - **Identification Key to the Phyllidiids of the Indo-Pacific**, nudibranch.com.au (couplets 1 and 39) **[read]**: the
   same first couplet as Brunckhorst's; not followed further, Brunckhorst's key being the original.
 - **Not read**: Pola, Cervera & Gosliner 2008, the *Nembrotha* revision (Scientia Marina, its PDF answered 503 to the
