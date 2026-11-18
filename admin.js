@@ -5544,10 +5544,10 @@ function loadInfra() {
         ? {err: 'Offline', rows: repo}
         : infraOn(j) && j.ok
           ? {rows: [...infraRows(j, Date.now()), ...repo]}
-          : {
-              err: !infraOn(j) ? `Sheet script v${INFRA_SHEET} not running yet (it updates itself within 15 minutes)` : 'Not available',
-              rows: repo
-            });
+          : // before INFRA_SHEET the page behaves as before (rule D4): no line, the repository's numbers alone
+            infraOn(j)
+            ? {err: 'Not available', rows: repo}
+            : {rows: repo});
     })
   );
 }

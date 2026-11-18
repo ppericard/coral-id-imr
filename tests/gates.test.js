@@ -82,8 +82,8 @@ const GATES = {
   ALERTS_SHEET: (v, N) =>
     fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
   // To do › Alerts, the infrastructure card above the list (admin.js infraOn, loadInfra; Code.gs readInfra_; docs/PAGES.md
-  // "Infrastructure health"): from the version that serves it; before, an older script answers 'input' and the card says
-  // which version it waits for (tests/infra.test.js runs the card's numbers).
+  // "Infrastructure health"): from the version that serves it; before, an older script answers 'input' and the card shows
+  // the repository's numbers alone, silently (tests/infra.test.js runs the card's numbers).
   INFRA_SHEET: (v, N) =>
     fn('admin.js', 'const infraOn = ', '\n', 'infraOn', {INFRA_SHEET: N})({ok: true, cells: {}, ...(v === undefined ? {} : {v})}),
   // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the

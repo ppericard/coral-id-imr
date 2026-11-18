@@ -4667,12 +4667,13 @@ const darkCards = (p, sel) =>
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px Infrastructure page error: ${e.message}`));
           await q.goto(base + `admin.html?demo&v=${IV - 1}#inbox/todo/alerts`);
-          await q
-            .waitForFunction(() => /Infrastructure: /.test(document.getElementById('view').innerText), null, {timeout: 20000})
-            .catch(() => {});
-          const i0 = await q.evaluate(() => document.getElementById('view').innerText);
-          if (!i0.includes(`v${IV} not running yet`))
-            fails.push(`${w}px Infrastructure before v${IV}: ${JSON.stringify(i0.slice(0, 160))}`);
+          await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
+          const i0 = await q.evaluate(() => ({
+            text: document.getElementById('view').innerText,
+            rows: [...document.querySelectorAll('.adm-infra tbody tr')].map(tr => tr.cells[0].textContent)
+          }));
+          if (/Infrastructure: |not running yet/.test(i0.text) || i0.rows.join() !== 'Pages site,R2 storage')
+            fails.push(`${w}px Infrastructure before v${IV}: ${JSON.stringify(i0)}`);
           await q.goto(base + `admin.html?demo&v=${IV}#inbox/todo/alerts`);
           await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
           const i1 = await q.evaluate(() => ({
