@@ -232,7 +232,7 @@ test('every circle: the genera of circles 2 and 3 are units as circle 1’s are'
     [s.id],
     'Aeoliscus'
   ]);
-  assert.ok(g.fam.startsWith('Shrimpfishes') && g.tl === 'Its species here' && typeof g.sum === 'string');
+  assert.ok(g.fam.startsWith('Shrimpfishes') && g.plain && /^ID marks/.test(g.tl) && g.qt.length && typeof g.sum === 'string');
   assert.ok(g.views.wide.every(p => p.sp === s.id));
   assert.strictEqual(X.gen['g:Centriscus'].look[0], 'g:Aeoliscus');
   // opens as circle 1's: from its family's Advanced (never an IMR genus: no IMR sub-entry outside circle 1)

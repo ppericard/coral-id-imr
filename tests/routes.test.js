@@ -42,7 +42,11 @@ const PAIRS = [
   ['lab-anatomy', 'tools/anatomy'],
   ['lab-anatomy|arr|plo', 'tools/anatomy/arr/plo'],
   ['lab-zoom|Acropora', 'tools/zoom/Acropora'],
-  ['lab-cards|toast', 'tools/cards/toast']
+  ['lab-cards|toast', 'tools/cards/toast'],
+  // The live mode (Q393): a student's join page, with the session code the trainer's lobby shows, and the trainer's page.
+  ['live', 'live'],
+  ['live|123456', 'live?code=123456'],
+  ['live-host', 'live/host']
 ];
 
 test('every page key has its address in the words on screen, and back', () => {

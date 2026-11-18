@@ -71,8 +71,8 @@ is the design's shorthand, and internal identifiers may keep it.
   look-alikes, the family's line and circle, the genus credit in the score, the replay, the board and the achievements that
   count genera (`core.js` `fishGenSets`, read by `app.js` `fishGenera`, `fishReplayGen`, `fishVarTable`; fish rules
   version 4; opened from the sheet that replays them, `sync.js` `GENERA_SHEET`). No IMR genus outside circle 1 (the IMR
-  sub-entries are circle 1's), and none of them has a presentation or ID marks yet, so their cards show their species
-  (ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
+  sub-entries are circle 1's); each has its sourced presentation and most their ID marks since #1074 (Pierre's option C:
+  the content before the merge; ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
   name comes after its genus, in every circle (Q397). docs/LEARNING.md "Fish: scientific genera".
 - **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase
   sur les familles, il faut déjà inclure, sans avoir besoin de leur demander, les genres ... qui sont dans la liste du cours d'IMR"):

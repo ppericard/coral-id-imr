@@ -737,13 +737,15 @@ def add_families(o, key, declared=()):
     groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
     # The genera's own presentation and ID marks (tools/fish_genus_marks.json; Pierre, 2026-11-08): plain, marks, msrc, mby,
-    # checked (genus_marks); every circle-1 genus of a family done has marks, IMR cues or a reason in none.
+    # checked (genus_marks); every genus of a family in play (any circle, the surprise cards' families aside: Pierre,
+    # 2026-11-18, "d'abord le contenu" before the genera of circles 2 and 3 open) has IMR cues, or a presentation and
+    # marks or a reason in none.
     gmk = json.loads(GMARKS.read_text(encoding="utf-8")) if GMARKS.exists() else {}
     if gmk and set(gmk) - {"about", "src", "families", "genera", "none"}:
         sys.exit("tools/fish_genus_marks.json: keys about, src, families, genera and none only")
-    # (the families done are the key in force's ids: another key's are left aside, as tools/fish_sheets.json's; the test
-    # tests/genusmarks.test.js checks them against fish.json)
-    mks, mnone, mdone = dict(gmk.get("genera", {})), gmk.get("none", {}), set(gmk.get("families", [])) & set(fams)
+    # (families, the families done, are the key in force's ids: another key's are left aside, as tools/fish_sheets.json's;
+    # tests/genusmarks.test.js checks them against fish.json, every family in play listed)
+    mks, mnone = dict(gmk.get("genera", {})), gmk.get("none", {})
     msrc_used = set()
     go = []
     for g, x in gens.items():
@@ -772,8 +774,10 @@ def add_families(o, key, declared=()):
         elif g in mnone:
             if not str(mnone[g]).strip() or r.get("cues"):
                 sys.exit(f"tools/fish_genus_marks.json: none {g}: a reason, and never for a genus with IMR cues")
-        elif r["circle"] == 1 and x["family"] in mdone and not r.get("cues"):
-            sys.exit(f"tools/fish_genus_marks.json: circle-1 genus {g} of a family done has neither marks nor a reason in none")
+        elif not r.get("cues") and not by[x["family"]].get("wink"):
+            sys.exit(f"tools/fish_genus_marks.json: genus {g} of a family in play has neither marks nor a reason in none")
+        if not r.get("cues") and not by[x["family"]].get("wink") and not r.get("plain"):
+            sys.exit(f"tools/fish_genus_marks.json: genus {g} of a family in play has no presentation (plain)")
         r["species"] = x["species"]
         go.append(r)
     if gnames:
@@ -1066,7 +1070,7 @@ def dumps(o):
 
 
 def main():
-    global NET
+    global NET, GMARKS
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1077,7 +1081,10 @@ def main():
     ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
+    ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     a = ap.parse_args()
+    if a.marks:
+        GMARKS = Path(a.marks)
     if a.regroup:
         regroup(Path(a.src) if a.src else SRC, a.check, Path(a.layer) if a.layer else None)
         return
