@@ -184,6 +184,15 @@ the first sex or colour phase a player meets bring a card at Next (`quiz.js` `ph
 one of its species in another phase, `core.js` `phasePair`; once per kind and subject, `TOLD` `phase:<subject>-<kind>`).
 LEARNING.md "Juveniles and colour phases on their unit's mastery".
 
+**The mimicry class**: a photo of a species a source says resembles another (`fish.json` `lookalikes`, from the
+hand-kept `tools/fish_lookalikes.json` through `tools/build_fish.py` `lookalikes`; `app.js` `mimLay` puts the entries on
+the resembling species' family) weighs its own ramp in the draw (`model.js` `mimOf`, `mimAt`, `MIM_AT`: from Open Water
+once a unit of the species it resembles is met, at Advanced while none is); the draw only, its kind and group for
+"Learned" stay its phase's, so the replay is unchanged. Its first meeting brings its pair's card before the phase card
+(`quiz.js` `mimArm`, `mimShow`, `mimPics`: both species, the sourced marks, the sources of the resemblance; once per pair,
+`TOLD` `mim:<subject>-<pair>`, device key `mim`), never with a photo taken outside the region of a species whose look
+varies by region (`fish.json` species `region`). LEARNING.md "The mimicry class".
+
 ## Progress and mastery
 
 **The bar** (LEARNING.md "The domain-score bar"): the share of all the unit's photos, easy to hard, the player would

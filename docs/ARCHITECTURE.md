@@ -83,8 +83,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
     [Progress scale](spec/model.md#progress-scale-and-mastery-levels).
   - **Which genus next**: [model.md › Which unit next](spec/model.md#which-unit-next).
   - **Continuous difficulty**, **Answer choices**, **Confusion scores**, **Personal path**, **Online calibration**,
-    **Juveniles and colour phases on their unit's mastery**, **One colony per question**, **Photo difficulty**,
-    **Photo memory**: [model.md › Difficulty and ability](spec/model.md#difficulty-and-ability).
+    **Juveniles and colour phases on their unit's mastery**, **The mimicry class**, **One colony per question**,
+    **Photo difficulty**, **Photo memory**: [model.md › Difficulty and ability](spec/model.md#difficulty-and-ability).
   - **Typed questions**, **Every tunable number is in `TYPED`**, **On a genus question below the subject's rank**,
     **Fish names**, **Every text refused**: [quiz.md › Typed questions](spec/quiz.md#typed-questions).
   - **Similar names after a mix-up**, **The short feedback sheet** (**one decisive line**, **More / Less and Next**, the
