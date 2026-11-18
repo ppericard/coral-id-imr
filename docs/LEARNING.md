@@ -101,7 +101,681 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 
 ## The player's own model (app)
 
-SPEC-PLACEHOLDER
+How the app models one player and chooses each question, as the code runs it today; every value is the code's, and the
+code wins where this text and it differ. The studies, measurements and options weighed behind it, with their dates, are
+in the notebook: [docs/archive/learning-notebook.md](archive/learning-notebook.md).
+
+Code: `model.js` (the draw, the opening, the cards, the comeback), `core.js` (the scorer, the ability, the bar, shared
+with the sync sheet's replay, which embeds it), `quiz.js` (the photo quiz: what a question is, what an answer does),
+`app.js` (each subject's units and gates). One engine for every subject (rule S1): a *unit* is what a question asks (a
+coral genus, a fish family, genus or species, a sea slug genus); the code says "genus" for any unit.
+
+### Ability per genus (Elo) and the global level
+
+- **The answer model.** `P[genus].th` is the player's ability on a unit, on the photo-difficulty scale (0 = an average
+  photo). The chance of a right answer is g + (1 − g) · σ(ability − difficulty), g = 1 / k for k plausible choices
+  (none for a typed answer). After each answer the ability moves by K · (result − expected), Pelánek's uncertainty
+  function: K = `ELO.kmax` / (1 + answers / `ELO.n`), never below `ELO.kmin` for a unit, clamped to [`ELO.lo`,
+  `ELO.hi`]. `core.js` `ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2}`; `core.js`
+  `eloStep`, `abilityOf`.
+- **Volatility** (after Glicko-2): `s.vr` is a moving average of the surprise (result − expected, rate `ELO.vr`); the
+  step is multiplied by 1 + `ELO.vg` × |vr|, within `ELO.kmax`, so a skill that changes is caught up with.
+- **Global level** `P['~level']` (`core.js` `LEVEL`): the same Elo over every answer of the subject, with no `kmin`
+  floor (it settles as its answers build up) and kept to 4 decimals. It is made at the first answer from the player's
+  history (`core.js` `levelSeed`). The players see one level, this one, as an Elo of 1000 + 200 × th (`progress.js`
+  `eloScore`), and only from `ELO_MIN` = 200 answers (`progress.js` `ELO_MIN`): before, it is not settled. The
+  leaderboard ranks the level of each player's saved progress, or the replayed one their app will adopt (rule D8).
+- **The sheet's own chain** (`core.js` `eloReplay`, run by the sync sheet's `stats_`): a separate player rating that
+  starts every player at `PLAYER0` = −1 (`core.js` `PLAYER0`) and steps by 0.6 / (1 + n / 40), with no answer time, no
+  mix-up term and no first-launch prior. It is the player term of the photo ratings and the admin's level (with
+  `core.js` `levelMargin`, its 95% margin); players never see it.
+- **A unit never answered** starts from the global level, shrunk towards the first-launch answer's level p
+  (`core.js` `playerStart`): `START.W` × (m · level + `START.N` · p) / (m + `START.N`), m the answers so far, clamped to
+  [`START.LO`, `START.HI`]; `core.js` `START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5}`. A strong player's first question
+  on a new unit has traps, single views and harder photos; never the hardest. A unit whose record names `from` (a fish
+  species: its family) starts from that unit's ability once it has one.
+
+**Global level and genus.** A unit already answered reads its own estimate plus the global level's move since its own
+last step (`core.js` `levelMove`): (level now − `s.lt`) / (1 + its answers / `ELO.n`), the share its own Elo step would
+give a new answer. A unit with few answers leans on the level, one with many on itself (the global + concept skill of
+Pelánek et al. 2017, as a lazy update). The move is taken in at the unit's next own step.
+
+### One surprise, counted once
+
+After an answer the unit shown records `s.lt` = the global level as it stands **after** this answer's step on it
+(`core.js` `scoreAnswer`), so `levelMove` carries only the level's moves from the other answers: an answer never moves
+its unit once by its own step and again through the level.
+
+### The genus wrongly given in the Elo
+
+A wrong answer counts against both units (rule L2), but differently:
+
+- **The unit shown**: an ordinary miss (ability, bar, recent results).
+- **The unit given**: its recent results take a miss (`s.h`), its run resets (`s.streak`), its exam in progress ends,
+  and a learned mark it holds is tested as after any miss. Its **ability does not move**: the Elo moves only on
+  questions about the unit itself. On the bar it is a **false alarm**, not a miss on its photos (`core.js` `faOf`, in
+  "The domain-score bar" below). A record still on the former moving average takes a miss on the photo shown, weighed
+  by the chance the player had on it.
+
+### One scorer
+
+Every answer is scored by one function, `core.js` `scoreAnswer`, in the live game (`quiz.js` `answer`) and in every
+full replay of the answer log (the sheet's, the admin's, a device's: `core.js` `replayProgress`), so a rule is written
+once and both give the same state. Its inputs, as the game had them:
+
+- `t` the unit shown, `c` the unit given, `ok`, `k` the plausible choices (Infinity typed), `chs` the choices offered;
+- `d0` the photo difficulty (the mean over the photos shown, + `PICKD.SINGLE` for one photo alone), `fam` the photo
+  memory, `cf` the known mix-ups term, `look` (a confused unit among the choices), `R` and `Rc` the recall of a comeback
+  question, `df` the format's offset, `p` the first-launch prior, `sec` the seconds, `mu` the unit's offset.
+
+The question's difficulty is dm = d0 + fam + cf. The ability steps take dm − df; the logged expectation
+e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the format fit always reads the same quantity.
+`scoreAnswer` also counts the offers and mix-ups (`s.off`, `s.conf`), the typed questions (`s.ty`, the level's `tyk`),
+the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
+subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
+Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
+means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the hold) stays in
+`quiz.js` `answer`.
+
+### Response time
+
+A right answer given faster than the player's usual is stronger evidence than a slow one (rule L1: time is evidence
+about that answer, never a decay). Its two ability steps (the unit and the global level) are multiplied by
+w = clamp(1 − K · z, LO, HI), z = log(seconds) − the median log(seconds) of the player's own earlier timed answers
+(`core.js` `rtWeight`, `rtMedian`). `core.js` `RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10}`. w = 1 for a miss, an
+answer without seconds, a typed answer, and before `RTIME.MIN` timed answers. The seconds are those logged (tenths, at
+most 600); the earlier times live in the level's record (`P['~level'].rt`, a count per tenth of a second: `core.js`
+`rtAdd`), so two devices' records add up and a replay rebuilds them. The answer's own time never changes its
+expectation, only the step after it.
+
+### Beginners and experts
+
+The success every question aims for follows the global level (`core.js` `aimOf`): 85% up to a level of 0.5, 75% from
+1.5, a straight line between, flat outside; `core.js` `AIM = [[0.5, 0.85], [1.5, 0.75]]`. `TARGET_P` (0.8) stays the
+game's reference point. A beginner is not overwhelmed and a strong player is challenged quickly. Three rules read it:
+the photo's aim (`model.js` `aimP`, `aimOff`), the miss weight of a record on the former moving average (`core.js`
+`pgMissW`), and the **shaky** bar: a unit met and not learned is shaky while its expected success on an average photo
+of it, 4 choices, 0.25 + 0.75 · σ(ability − genus offset), is under `OPEN.P` + aim − `TARGET_P`, so a beginner opens a
+new unit only once those met are a little more solid (`model.js` `shaky`). A success rate is therefore not a level (see
+"What each number measures").
+
+### One difficulty controller
+
+Two levers, one target (after Papoušek, Pelánek & Stanislav 2014):
+
+1. **The format** follows the unit's ability (`model.js` `FORMAT`, `formatAt`, linear between the points
+   [ability, look-alike traps, share of single-view questions] `[0, 0, 0]`, `[0.54, 3, 0]`, `[1.8, 3, 0.85]`, flat
+   outside): no trap on a unit's first question, then up to all three of the wrong choices as look-alike traps by an
+   ability of 0.54 (about 5 right answers), rounded at random between (`model.js` `trapsFor`); single-view questions
+   from none at 0.54 to 85% at 1.8 (`model.js` `singleP`), so each view is learned on its own (rule L3). Typed questions
+   are a third lever with their own rule ("Typed questions").
+2. **The photo** makes up the rest: it is aimed `aimOff(k, df)` = logit((aim − 1/k) / (1 − 1/k)) − df below the
+   ability (`model.js` `aimOff`), lower still by `PICKD.SINGLE` for one view alone, so that with the format's guess rate
+   the question is right with the chance aimed for, whatever its format. `model.js`
+   `PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE}` (`DOM.SINGLE` = 0.5).
+
+**Plausible choices.** While traps are few (0 or 1), easy wrong choices from other growth forms are not plausible, so
+the question counts as a 2- or 3-choice one for the expectation, the bar and the photo's aim (`model.js` `plausibleK`:
+the target, the confusable units and those sharing a growth form, at least 2; logged `|kN`). From 2 traps on, every
+choice counts. A typed question has no guess rate (`TYPED.k` Infinity).
+
+**Easier questions when a run goes wrong.** While the opening hold is on ("First meeting with a genus"), the ability the
+photo and the format aim at is lowered by how far the hold's sum has gone past its threshold, in logits (`model.js`
+`holdEase` = min(0, `INTRO.HOLD` − h)): 0 at the threshold, 1 more for each answer's worth of misses beyond it. Never on
+an exam question.
+
+### Per-format offsets
+
+The players find some formats easier than their guess rate 1/k explains (two plausible choices among four buttons) and
+others harder (typed). Each format f gets an offset d_f in logits, added to the app's log-odds:
+P(right) = 1/k + (1 − 1/k) σ(ability − difficulty + d_f), positive when easier than the app thought. The sheet fits it
+(`core.js` `fmtOffsetsOf`, `fmtFit`; served as `?stats=1` `fmt`) on the trusted answers and their logged expectation e:
+Newton's method on d_f with a normal prior N(0, `FMT.SD`²), for a format with `FMT.N` answers or more;
+`core.js` `FMT = {N: 20, SD: 1}`. The guess rate stays 1/k (fitted together, the two are not identifiable). The format
+of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `typed`, `exam`…;
+a format absent counts 0, `core.js` `fmtOff`). The ability steps expect the question with its format's offset, and the
+photo's aim takes it (`aimOff(k, df)`), so a 2-choice question that is right more often than 1 in 2 explains no longer
+over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `replay` false) scores and aims with every
+offset at 0 (`model.js` `pfmt`).
+
+### What a question shows
+
+The photos of a question on unit n come from `model.js` `photoSet`:
+
+- **One observation.** Every photo of a question comes from one colony or observation (rule P4); a colony with more of
+  the views needed is favoured by the share of views it has. A colony with a single view gives a single-view question,
+  never topped up from another.
+- **Targeting.** Each photo weighs exp(−x²/2), x = (its difficulty − the target) / its spread, the target being
+  ability + shift − `aimOff(k, df)` − `PICKD.SINGLE` (one view alone) − the start's lean. The spread is
+  √(`PICKD.SIGMA`² + u / (1 + answers / `CAL.N`)), wider for a photo few players have answered (`model.js` `calSd`).
+- **Photos never seen** get a bonus, bigger when the player is doing well on the unit (× (1 + 1.5 × the share right in
+  its last 5 answers)), the corals' IMR and Pierre's photos × 1.3 (`SUBJECTS` `tiers`), and a reference-level photo ×
+  the subject's `calib.ref`. **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`,
+  `memBucket`), so the least remembered come first; a colony counts as seen whatever view of it was shown
+  (`model.js` `colonyMem`).
+- **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
+  colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
+  over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
+- **Online calibration.** A photo with few answers from all the players is drawn more often, × (1 + `CAL.B` /
+  (1 + answers / `CAL.N`)) (`model.js` `calBonus`), multiplying the targeting, never replacing it. A share `CAL.RATE` of
+  the questions on a unit the player holds (met, not shaky), never in a comeback, are calibration questions: one view
+  alone, drawn among the colonies the player has never seen, the view the players have answered least.
+  `model.js` `CAL = {B: 2, N: 2, RATE: 0.3, U: 1}`; u, the prior's variance, is `CAL.U` for the corals and the subject's
+  `calib.u` otherwise. Photo exposure, measured: "Photo exposure" below.
+- **Views.** A coral question shows colony and close-up with the corallites as a hint, or one view alone; a two-level
+  genus shows colony and close-up; the colony slot never shows a photo whose growth form is not visible, unless the
+  genus has a single IMR growth form. A fish or sea slug question shows one photo.
+
+**The wrong choices** (`model.js` `distractors`) come from the target's rank only and never repeat a label
+(`model.js` `choiceApart`, `choiceNames`). The look-alike traps the format asks for are the units most confused with the
+target (`model.js` `confOf`: this player's own record on the pair over every player's, over a prior; a little shuffle
+among close scores), only among units the player has met; a player who confuses nothing still gets the pairs other
+players confuse most, then the declared look-alikes, so experts keep hard choices. With few traps, the easy choices come
+from units the player has met before any other, spread over other growth forms and other IMR lecture groups first
+(three mushroom corals beside a massive target would give it away).
+
+**Confusion scores** (`core.js` `confScore`): a pair's mix-up rate when offered together, from a prior worth `CONF.W`
+offers: the declared look-alikes (IMR lecture, Coral Finder) `CONF.LOOK`, the same family `CONF.FAM`, a shared growth
+form `CONF.FORM`, else `CONF.BASE`. A pair at `CONF.TRAP` or more is a trap. Pooled over every player first
+(`model.js` `pooledConf`), then as the prior of this player's own record, worth `CONF.W` offers (`core.js` `pairConf`).
+`core.js` `CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2, N: 20}`. Performance only, never time.
+
+### Known mix-ups
+
+A question on t among choices that hold a unit this player mixes up with t more than everyone does is that much harder
+for them: `core.js` `confGap`, the logit of the player's own score of the pair (shrunk to the pooled one) less the
+logit of the pooled score, when higher; the most over the choices (`model.js` `confTerm`). Only with 3 or more
+plausible choices. The expectation, the ability step, the bar and the photo's aim all take it (the `cf` of the scorer).
+The pooled score is already in the photos' difficulty, so only the player's excess counts.
+
+**Look-alikes from the data** (`core.js` `dataLook`, `model.js` `isDataLook`, `dataLooks`): a pair no source declares,
+offered together `CONF.N` times or more, whose pooled score reaches `CONF.TRAP`, joins the declared look-alikes in the
+duels, the Again and the sheet's "Don't confuse with". A subject's data may seed such a pair (`model.js` `dataSeed`: the
+sea slug genera iNaturalist's identifications show); it starts from the declared prior and, unlike a declared pair,
+the players' answers can drop it.
+
+### Typed questions
+
+Now and then the player types the name instead of picking one of four: recall, not recognition. The chance is the
+unit's typed share from its bar (`core.js` `typedShare`): none below `TYPED.from`, then linear between the points of
+`TYPED.at`, flat after the last (`model.js` `typedP`, `TYPED`: from 0.5; [0.5, 0] → [0.8, 0.3] → [0.95, 0.5]). The
+mastery exam needs `TYPED.exam` (2) typed right answers among its `EXAM.n`: an exam question is typed while the typed
+answers it still needs fill the questions left, else with the unit's usual share, so the format gives nothing away
+(`model.js` `examTyped`). A typed answer has no guess rate (`TYPED.k` Infinity; logged `|t`), so a right one moves the
+ability more and a miss less. Never a comeback question, an Again or a duel. A name typed within the tolerance but not
+exactly is right; the player retypes it once (the spelling step, `quiz.js`), which changes no grading.
+
+### One draw weight
+
+Which unit a question asks (`model.js` `drawW`, `weight`): drawW = 1 − x · c, x = σ(ability − genus offset) the chance
+to recognise an average photo of it, c = m / (m + `ELO.n`) how sure the Elo is after m answers. Never asked: 1; badly
+known or barely measured: near 1; known and measured: near 1 − x. A unit ready for its next exam question weighs 1, one
+whose exam waits between two questions × 0.05; one asked in the last 4 questions × 0.1, and the same unit never twice
+in a row while others exist (`model.js` `nextTarget`).
+
+**"Review"** (`model.js` `level`, `shownLevel`): a shaky unit is marked Review, with an amber dot, only once it has
+`REVIEW_MIN` (5) answers; before, it is still Learning, so a first session's misses do not read as failures. The game
+gives a shaky unit more questions either way.
+
+### Which genus comes next: the progressive path
+
+New units open by the player's results, never by a coded track (rule L3). A photo-quiz question may open a unit (its
+card) only when the path allows one (`quiz.js` `planPhoto`): no opening hold, not in the floor of a visit or a comeback
+(`model.js` `noOpen`), the pace allows it (`model.js` `openPace`), the last graded answer was right
+(`model.js` `openRight`), the unit's gates and the rank share allow it (`model.js` `mayOpen`, `shareRoom`). It then
+opens one with the chance `openChance` ("One opening rule"), drawn by `model.js` `openPick` among those not met yet:
+
+1. a unit of a set that opens after the slate (the fish scientific genera) waits while a slate unit may still open
+   (`model.js` `laterWaits`), unless the player opened everything at once;
+2. the starter core first (units whose record says `first`: the fish starter families), then, for a player who ever
+   answered "I'm at IMR", the units the IMR course teaches (`imrName`; `model.js` `imrSaid`);
+3. a ★ unit waits for its references ("Starred genera after their reference");
+4. a group partner of a unit already met comes next ("Confusion groups"); otherwise a new group or lone unit is drawn,
+   then its member, each with the weight exp(−`OPEN.T` × trust × (genus offset − the lowest)) × the commonness factor
+   (`model.js` `easyWeights`): the easiest first, softly, and the most common first ("Common first").
+
+**Trusted only as far as the data goes.** `model.js` `easyTrust`: the weighed answers behind the photo ratings, plus
+`PDIFF.W` per judged photo, over `OPEN.DATA`, at most 1. Without data every genus offset is 0 and the order is random.
+
+### One opening rule
+
+`model.js` `openChance` = max(0, 1 − shaky units open / `OPEN.K`): a slope, and a work-in-progress limit (nothing opens
+while `OPEN.K` units met are shaky). Only units open now take a place: one closed again by "One at a time" does not.
+`model.js` `OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200}`.
+
+**Opening pace** (`model.js` `openRecent`, `openPace`): no new unit while one opened on a card in the last `OPEN.WIN`
+answers has not been asked yet, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15 answers at
+most, whatever `openChance` says. A unit opened on its card and not asked yet is asked as soon as it is ready.
+
+### A unit stuck shaky
+
+Once the player has `OPEN.STUCK_FROM` answers in the subject, a unit still shaky after `OPEN.STUCK` answers of its own
+stays shaky (marked Review, given more questions) but no longer takes a place among the `OPEN.K`: one hard unit does not
+hold the rest of the path back. Every subject.
+
+### One genus difficulty
+
+One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw weight, shaky, the comeback's
+stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
+Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
+mean of their judged-ease priors. Adding or curating out a photo never moves it; 0 before the sheet's first reply.
+
+### Common first
+
+The opening weight of each unit not met yet is multiplied by √((1 + cm) / (1 + the median cm of those units))
+(`core.js` `commonFactor`), cm how common it is near Dauin (data.json `cm`, `tools/commonness.py` from iNaturalist;
+for the fish, fish.json). No constant: the square root damps it, the median makes it relative to what is left; a unit
+without cm counts as the median.
+
+### Starred genera after their reference
+
+A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
+card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
+look-alike of …", `learn.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+
+### Confusion groups
+
+Look-alike units open close together (`model.js` `groupsOfRank`, `groupsNow`). The units of one rank in play are
+grouped the same way for every player, recomputed with the pooled statistics: first the declared look-alike pairs
+merge, the most confused first, while a group stays at `GROUP.MAX` (3) units or fewer; then average linkage on the
+pooled confusion score, while the two groups' mean is `CONF.TRAP` or more and the group stays at `GROUP.MAX`. Once a
+group has a member open, its other members are the next openings, one at a time. A unit's mastery exam waits until its
+group partners that can open are met (`model.js` `matesLeft`, `examOn`).
+
+### An opening only after a right answer
+
+A new unit must not feel like a reward for a miss: the path opens one only when the last graded answer of the subject,
+in any game, was right, or there was none (`model.js` `openRight`, reading `P['~level'].h`). The opening is deferred,
+not lost. A miss drops the questions planned ahead (`quiz.js` `dropPlans`), and a planned question is checked again when
+it shows.
+
+### First meeting with a genus
+
+- **Cards.** A player starting from zero first meets `INTRO.START` units on cards (name, cover photo, ID tips) and is
+  asked about those (`quiz.js` `introStart`); then new units come one at a time, each on its card, never as the answer of
+  the question right after it: a unit met on a single card can be asked from `INTRO.GAP` answers on (`model.js`
+  `introReady`). Its record: `reefid-sync-<subject>-intro`, synced, {unit: [answers then, ready at once, time, kind]}.
+  `model.js` `INTRO`: START 4, GAP 2, HOLD 1.5, SLACK 0.1.
+- **Held while the player falls behind** (`model.js` `holdStep`, `introHold`): no new card while a CUSUM of how far the
+  answers fall below the success the game expected (each answer's e), less `INTRO.SLACK` an answer and never below 0, is
+  `INTRO.HOLD` or more. A run of misses adds up however long it lasts; right answers pay it back by what they beat the
+  expectation by; the slack keeps a player the game slightly overrates from being held for good. Kept on the device
+  (`reefid-hold`) and, signed in, rebuilt by the sheet from every answer since the last reset (`model.js` `holdSync`,
+  the sheet's `hold_`). While it is on the questions are easier ("Easier questions when a run goes wrong").
+- **"I've had the IMR lecture": Open all** (`model.js` `introAll`): on the first cards and in My progress, one tap
+  opens every unit the lecture teaches (`UNITS` core: the corals' slate, the fish circle 1) without cards; the bonus
+  genera and the later fish circles still open one at a time.
+- **Back to one at a time** (`model.js` `backDue`, `introBack`): after Open all the same CUSUM runs from 0; once it
+  reaches 2 × `INTRO.HOLD`, a card offers "Keep them all" or "One at a time", which closes every unit Open all opened
+  until the path opens it again on its card, its progress kept. Offered once.
+- **After a break**: no unit opens during the floor of a new visit or a comeback ("Comeback after a break").
+- **Choices among the units met**: the wrong choices come from units met first ("What a question shows"). The Duel tab
+  and the other games open nothing ("One progression path for every game").
+
+### One progression path for every game
+
+Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
+drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
+and opens none (rule L4); wrong choices may name any unit, as the quiz's do.
+
+### The first-launch question
+
+One forced choice per subject (`SUBJECTS` `start`: its words), in the welcome tour before the first question, or on a
+card before the next quiz question for a player who skipped the tour. It sets a few variables of the model, never a
+path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
+p is the level the answers are shrunk towards in `core.js` `playerStart` (hence the first questions on each new unit
+and, through shaky, the pace of the opening); basics offers the subject's basics module first. "new" is the default
+player (a new player is a beginner). A player with `CHOICE.ASK` (50) answers or more is not asked: the answer is
+inferred from the global level, the option whose `START.W` × p is nearest (`core.js` `startInfer`). Kept per subject in
+`reefid-sync-<subject>-start` (`core.js` `startKey`), synced, with its history, so a replay uses the answer in force at
+each answer (`model.js` `startSet`, `startMerge`; `core.js` `startUnion`).
+
+**The fallback test, redesigned around the global level** (`core.js` `startCheck`, `model.js` `startStep`, `startDue`).
+Everyone may have picked wrong, so the answers after the choice are checked, at `CHOICE.AT` = 40 and 60 answers only.
+Each answer predicts a band of levels, its edges midway between the priors (`core.js` `startBand`: new under 0.25, IMR
+course 0.25 to 0.875, know well above). With the global level and its standard error over the window:
+
+- **Lower** ('lo', only for the answers with a floor): the level is below the floor with one-sided 80% confidence
+  (`CHOICE.ZL` = 0.84), or the opening hold fired in the window. Its card is a gentle offer: the basics module (taking
+  it moves the variables one band down silently, the answer kept: `model.js` `startEase`), or a lower answer.
+- **Higher** ('hi'): with `CHOICE.MET` (10) slate units met, the level is above the ceiling with 95% confidence
+  (`CHOICE.Z` = 1.96) and, as a guard, the level fitted on each unit's first answer alone is above it too (`core.js`
+  `levelFit`): a player who did well only on the few units met is not moved up.
+
+A card shows once per answer and direction, never the opposite of the last move made on a fallback card, never for an
+inferred answer, and never for a subject whose units say `startFb` false (the fish and the sea slugs, until their
+level is better calibrated).
+
+### Comeback after a break
+
+Time is used here and only here (rule L1): progress, mastery and ability never decay. A break is expected to have cost
+some recall, and the first answers after it measure how much.
+
+- **Recall** t days after a unit's last answer (`s.at`), FSRS's power curve: R = (1 + F · t / S)^C (`model.js`
+  `recallOf`). **Stability** S, in days: from `FSRS.S0` to `FSRS.S1`, log-linear in x = σ(ability − genus offset) (1
+  once learned), times `FSRS.G` for each further day the unit was answered right (`s.dd`: spaced days count, not answers
+  in one sitting; `model.js` `stability`). `model.js` `FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5}`.
+- **Rust**: the right answers the break is expected to have cost, summed over the units answered (`model.js`
+  `rustOf`, `rustNow`). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
+  left rust.
+- **Its questions** (`model.js` `comebackOf`): units answered right, the surest half until one is right in this
+  comeback, then the most rusted half; the player's usual choices; photos aimed at ability + ln R; no card, duel, exam
+  or calibration question; logged `|c`. The answer's expectation and miss weight take the recall.
+- **It ends by the answers** (`model.js` `comebackStep`): a CUSUM like the opening hold's, each answer allowed the rust
+  it repairs plus `INTRO.SLACK`. **The comeback's tolerance**: that slack keeps a player slightly below expectation
+  from staying in it for good.
+- **A new visit opens nothing at first**: during the first `COMEBACK.FLOOR` (10) answers of a new visit, and during a
+  comeback, no unit opens (`model.js` `noOpen`). Neither applies with fewer than 2 units answered right. The opening hold
+  counts every comeback answer with the expectation it really had.
+
+Kept on the device (`reefid-comeback`); the times per unit (`s.at`, `s.dd`, `s.dl`) are in the synced progress.
+
+### One contrast queue
+
+The "Again: A or B?" after a mix-up and the look-alike duels slipped into the photo quiz are one kind of question, a
+2-choice contrast of a look-alike pair, under one rule (`quiz.js` `CONTRAST = {P: 0.1, GAP: 2, Q: 3}`):
+
+- A mix-up in the photo quiz queues its pair (`quiz.js` `rematchAdd`: up to `CONTRAST.Q` pairs, the oldest first; a pair
+  already waiting is not queued twice; with the queue full a new mix-up waits for its next miss). Its **Again** comes
+  `CONTRAST.GAP` questions after the mix-up, on a unit of the pair met and ready.
+- With nothing queued, a question becomes a **duel** with the chance `CONTRAST.P`, on a pair picked as the Duel tab picks
+  (`quiz.js` `duelPick`: the player's own mix-ups still made weigh × 3, pairs players often confuse and the classic
+  look-alikes × 2), both units met and ready, never the pair of the previous contrast question. Not when the question
+  opens a unit, not in a comeback. Logged `quiz|d|k2`.
+- Two contrast questions are at least `CONTRAST.GAP` questions apart. Duels come from the first answers on.
+
+**"Again: A or B?" rated as 2 choices**: an Again or a duel is scored with k = 2 (logged `|k2`), its photo aimed for the
+target with 2 choices, in its own format (`again`, `qduel`).
+
+### Look-alike duels slipped into the photo quiz
+
+The duel of "One contrast queue": a pair from the subject's look-alike pairs (`UNITS` pairs: for the corals the
+declared look-alikes, Millepora's and the bonus genera's with the slate look-alike the Coral Finder names) and the
+look-alikes from the data, never two units of one label (`model.js` `choiceNames`). A right answer counts for the duel
+achievement as one in the Duel tab does.
+
+### Find the X slipped into the fish quiz
+
+One name, four photos: the player taps the one that shows it. Only for a subject whose units have tiles (the fish's
+square crops around the fish, `UNITS` tiles; none for the corals) and only on units of the subject's own rank
+(`quiz.js` `planFind`). It takes the contrast slot: the chance `FIND.P` (0.05), spaced as the contrast questions,
+never with a card, in a comeback or with a mix-up queued. The unit and its three others are met and ready, the
+look-alikes first (`model.js` `distractors` with every trap); each photo drawn as the quiz draws a unit's, among its
+tiles. Scored as a quiz answer with 4 choices (the photo of another unit tapped counts as that unit given, rule L2),
+logged `|f` with the photo tapped (`pa`). A subject or player with no tile draws exactly as without it.
+
+### The Duel tab when the hold sets in
+
+The photo quiz eases its questions while the opening hold is on; the Duel tab keeps drilling the same pair, but eases
+its photos the same way (`model.js` `holdEase`). The first time in a duel run that an answer takes the hold's sum from
+below `INTRO.HOLD` to `INTRO.HOLD` or more (`quiz.js` `reliefNote`, `reliefDue`), the next break at Next offers a step
+back: compare the two side by side, mix in other units (the photo quiz), or keep drilling. At most once a run (from the
+page's opening until it is left), no numbers on it, an out-of-game prompt like the others (`quiz.js` `reliefArm`).
+
+### Custom quiz: the photo quiz on the genera the player picks
+
+The photo quiz limited to the units the player picks among those unlocked (`model.js` `customOf`, `CUSTOM`; at least
+`CUSTOM.MIN` (2); `quiz.js` `quizCustom`), with every rule of the photo quiz but these:
+
+- **The unit asked** (`model.js` `customDraw`): any selected unit, weighed as the quiz weighs the units met; no opening.
+- **The wrong choices** (`model.js` `customChoices`): from the selection first, with the quiz's rules, so a selected
+  look-alike group drills itself; under 4 units, topped up from the other unlocked units. Scored with the choices really
+  shown: the look-alikes among them decide the plausible k.
+- **No mastery exam** (rule L9): the selection may hold none of a unit's look-alikes, so passing there would prove
+  nothing; the exam comes in the photo quiz.
+- **A comeback** runs there only when at least 2 of its units were answered right.
+- **A reminder of the path, once**: after `LEFTN.AT` (100) custom answers since the last photo-quiz answer, while units
+  may still open and the hold is off, a card says how many new units wait in the Quiz (`quiz.js` `LEFTN`).
+- **Picking**: by IMR group, or **My mix-ups** (`model.js` `mixClusters`: the player's own confusions clustered, the
+  heaviest pair first, at most `CUSTOM.CLUSTER` (6) units a cluster; the declared look-alikes weighed by the pooled
+  score for a player with no mix-up yet). Logged `quiz|s`, rated as any photo-quiz answer.
+
+### What the players say about the difficulty
+
+Now and then, at a natural break between an answer and the next question, a one-tap question (`quiz.js` `pulseAsk`,
+`PULSE`; its bank `core.js` `PULSEQ`: too easy or too hard, the flow channels, harder photos, fun, frustration,
+boredom; asked in rounds, never the same wording twice in a row). First after `PULSE.FIRST` (35) answers, then every
+`PULSE.EVERY` (40), twice that after a "Not now"; never early in a session (at least `PULSE.SESS_N`, 15 answers,
+and `PULSE.SESS_MS`, 5 minutes, into it). Only for the subject the sheet replays (the corals) and in the photo quiz or the
+Duel tab. The out-of-game prompts (the sign-in card, this question, the cards about which units are in play) are at least
+`PROMPT.GAP` (10) answers apart and never shown over a card (`quiz.js` `PROMPT`, `promptOk`). The answer goes to the sheet as an event with what the game knew then (mode, answers this visit, recent right
+%, level, units met); the showing and "Not now" are logged too, for the response rate. Nothing in the game changes with
+it.
+
+### Logged for the admin's player journey
+
+The mode of each answer says what the question was: `quiz` the photo quiz, `|s` its custom form, `|d` a duel slipped
+in, `|f` a Find the X, `|c` a comeback question, `|h` a held-out photo, `|kN` fewer plausible choices than buttons,
+`|t` typed, `|x` a mastery-exam question (`quiz.js` `answer`); the cards keep their kind and time; Open all and the
+back card keep their choice. The admin's player journey reads them.
+
+### Millepora and the bonus genera
+
+Millepora (fire coral, not a hard coral but on the IMR benthic slate: `core.js` `BENTHIC`) counts like a slate genus in
+the games and the progress. The bonus genera (`core.js` `BONUS`: Coral Finder genera common at Dauin with a look-alike
+on the slate) are opt-in: offered once, by a card, when every slate genus has been asked; ⚙ Bonus genera turns them on
+or off any time (off keeps their progress). Once on they open like the others, one at a time, and never count in the
+progress (rule L6).
+
+### The domain-score bar
+
+A unit's bar is the share of all its possible photos, easy to hard, the player would name right, one photo alone and
+typed, as far as **their own answers on that unit** have shown: never the global level, never another unit. It is the
+IRT domain score over the unit's photo population (a photo's difficulty d ~ N(the genus offset, `DOM.TAU`²), so adding
+photos moves no bar), estimated as the posterior expectation on a grid of abilities (`core.js` `domStep`, `domUpdate`,
+`domScore`, `domBar`):
+
+- **The prior**: N(`DOM.M0`, `DOM.SD0`²) for a unit never answered: most players start a unit not knowing it.
+- **Each own answer** multiplies in its likelihood, format-aware (guess rate 1/k, none typed; the format's offset), with
+  the photo's difficulty, memory and mix-ups as the game scored them, and the recall after a break. With a logistic
+  likelihood a miss can only move the posterior down. Before each own answer the posterior drifts by `DOM.Q` (the
+  process noise of a Kalman filter), so old answers fade and a unit learned late is credited.
+- **Stored** at each own answer: the log posterior on the grid (`s.dp`, relative to its top, clipped at −`DOM.CLIP`) and
+  the bar (`s.ds`). The bar moves only when the player answers or a replay rebuilds it, never when the photo statistics
+  change, and only the answer's way: a right answer never lowers it, a miss never raises it.
+- **Zero for a unit never answered**: below a knee at `DOM.KNEE` × the prior's own domain score (or halfway to 1 for a
+  very easy unit) the bar is a straight ramp from 0 at the prior's score, so it reaches every value up to 1.
+- **The unit given in a mix-up is a false alarm** (`core.js` `faOf`): naming n for another unit's photo says the player
+  answers n too readily, not that they fail on n's photos. The bar reads Pr = H − FA (two-high-threshold corrected
+  recognition): H the domain score, FA the times n was given for another unit's photo over the questions where n was a
+  possible answer (offered, or any typed question of its rank). `core.js` `barOf` = min(0.95, max(0, `s.ds` − FA)).
+
+`core.js` `DOM = {LO: -4, STEP: 0.5, N: 21, M0: -2, SD0: 1.5, TAU: 0.5, SINGLE: 0.5, Q: 0.1, EX: 0.85, KEEP: 0.8, CLIP: 30, KNEE: 2}`.
+The dynamic bar runs from 0 to 95%; every consumer reads it through `core.js` `barOf`, `examOpen` and `keepsMark`.
+
+**The levels** (`model.js` `MASTERY`, `LV_AT`, `lvStep`): named points on the bar, a diver's ladder: Snorkeler under
+50%, Open Water from 50%, Advanced from 80%, Divemaster from the exam's entry (`DOM.EX`, 85%, with pair coverage),
+Instructor once the exam is passed (learned, `s.mx`). `model.js` `LV_AT = [0.5, 0.8, DOM.EX]`.
+
+### Progress (moving average) and mastery
+
+**The mastery exam** (rule L9; `model.js` `EXAM = {n: 5, gap: 8}`, `examOn`, `examReady`, `examSet`). It opens on a
+unit once its bar (H − FA) reaches `DOM.EX`, it has been compared with each of its declared look-alikes the player can be
+asked, either way, offered together or mixed up (pair coverage: `core.js` `looksLeft`, `model.js` `examLooks`), and its
+confusion-group partners that can open are met; a unit whose record says `noex` (a fish species) has none. Then
+`EXAM.n` questions on it are slipped into the photo quiz, unannounced and counted nowhere on screen, at least
+`EXAM.gap` other answers apart (recognition, not short-term memory). Each is as hard as the game gets: one photo alone,
+the hardest of its view, the views taking turns, 3 look-alike traps; a held-out photo never shown first, else a photo
+never shown, else the least seen of those never answered right (`model.js` `examSet`). `TYPED.exam` of them are typed
+("Typed questions"). All right, with a right answer on each variant group the unit has (`model.js` `examPassed`,
+`varLeft`): the unit is learned, 100%. Any miss on the unit, or the unit given for another, ends the exam; it starts
+again from the entry. On the bar, each exam question passed fills a fifth of what is left to 100%, at most four of them
+before the exam is passed (`core.js` `scoreOf`). Never in the custom quiz. The sheet's replay keeps the same counts
+(`core.js` `MX_EXAM = {n: 5, typed: 2}`, checked against `EXAM` and `TYPED` by the tests).
+
+**Keeping the mark** (`core.js` `keepsMark`, `model.js` `mxKept`): a learned unit stays learned while its bar stays at
+`DOM.KEEP` or above after a miss (about one miss below the entry): a single slip does not take it away, a second one
+before right answers bring it back up does, and the exam comes back. Tested only at a miss, in the game and in the
+replay alike.
+
+**The former moving average** (`core.js` `PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67}`, `pgStep`, `pgOf`): a
+record not yet rebuilt under the domain-score rules (no `s.dp`) keeps `s.pg`, an exponential moving average of its
+answers weighed by what each proves (`core.js` `pgRightW`, `pgMissW`, `pgMemW`): a right answer s.pg += A · w · (1 −
+s.pg), a miss s.pg −= A · w · s.pg. Its bar is 95% × s.pg / `PROG.M`, its exam opens at `PROG.M` and its mark keeps
+while s.pg ≥ `PROG.M` × (1 − `PROG.A`). A replay under the current rules rebuilds such a record; for a subject the sheet
+does not replay on the device, the record is rebuilt from its own counts, silently, once (`model.js` `domRecalcAll`,
+`core.js` `domFromCounts`). A learned mark passed under the model before the moving average (Bayesian Knowledge
+Tracing, a record with neither `s.pg` nor `s.ds`) is dropped (`core.js` `afterBkt`).
+
+### The log, the only reference for progress
+
+The answer log is the reference (rule D9). The sheet replays each player's whole log under the rules in force
+(`core.js` `replayProgress`, `replayedOf`; "Full replay" below), whenever a rules version is added (`core.js` `RVS`, the
+fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adopts the replay once (`sync.js`
+`replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
+more answers; a unit the log has no answer on loses the answers the copy counts. There is no floor: a bar may go down.
+A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
+
+### Fish on the same model
+
+The fish run on the same engine, with no fish-specific code (rules L6, S1); what differs is data and `SUBJECTS` and
+`UNITS` settings.
+
+- **Unit**: a family of the reef fish identification book (`f:Damselfishes`), IMR's name shown beside its own; later the
+  scientific genera and the species. The wrong choices start in other groups of the identification key (as coral growth
+  forms) and the look-alikes come in as a family is learned. One photo per question.
+- **Circles** (fish.json, a family's best species' circle; `app.js` `fishGate`): 1, the families the IMR course teaches;
+  2, open once every circle-1 family has been asked; 3, the families beyond the course, offered by a card once circle 1
+  reaches `FISH_C3` (its Entries component at 55%, or, without the global score, the plain mean at 50%:
+  `app.js` `FISH_C3 = {entries: 0.55, mean: 0.5}`), open on the player's yes (or in My progress any time), offered again
+  `OPEN_AGAIN` (200) answers after a "Not now", then never. Every circle counts in the progress, open or not.
+- **Winks**: an unmistakable fish (a whale shark) as a rare surprise card in the photo quiz, its name among 3 absurd
+  choices: never counted anywhere (logged with the mode `WINK_MODE`, which every reader of the log leaves out). Wink i is
+  due from `WINK.AT[i]` answers and at least the gap between the first two after the last one (`quiz.js`
+  `WINK = {AT: [200, 400]}`, `winkDue`), once per player across devices.
+- **No level-change card** at 40 and 60 answers (`startFb` false), and no one-tap difficulty question.
+
+### Fish: the starter core and judged photos
+
+- **The starter core**: the families whose record says `first` (fish.json `start`: the Butterflyfishes, Angelfishes,
+  Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
+- **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
+  the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`
+  (`core.js` `CALIB`, ease 0.5: one standard deviation of a photo's own difficulty around its unit), fading as answers
+  come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The same prior gives each unit its
+  difficulty, so judged units open easiest first from the first card, and no photo is ever walled off.
+- **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
+  `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's and the sea slugs' `calib` =
+  {ref: 3, early: 1.5, u: 0.25, pool: 30} (pool 20 for the sea slugs); the corals keep `core.js`
+  `CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity}`.
+
+### Fish: easy, reference-like photos first, whoever took them
+
+The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
+`easyRank`): reference-level photos first (`core.js` `refLevel`: a reference source's own photo judged easy, or any
+photo judged 5 with the reference look: profile, whole, good light, true colours, sharp, one kind of fish), then by
+ease, then the most reference-like (`core.js` `refScore`), then a fixed hash of the file name, never by who took it
+(rule P1). In the draw a reference-level photo never seen weighs `calib.ref` (3) times more.
+
+### The fish draw in big pools
+
+A fish family may have hundreds of photos. A photo nobody has answered is trusted to one ease step's spread
+(`calib.u` 0.25 instead of `CAL.U`), so the judged ease leads the targeting while answers are few, and the draw's floor is
+shared over `calib.pool` (30) observations (`model.js` `drawFloor`), so a pool of 1,000 photos favours its easy ones as a
+pool of 30 does.
+
+### Rarely under ease 4 before Open Water
+
+Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or its `RARE.FEW` easiest when it has
+fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js` `rareCap`, applied last, to the
+choice of the observation and of its photo): no wall, they still come, rarely. `model.js`
+`RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of the subject's own rank (the fish families, the sea slug genera:
+`model.js` `rareOn`); photos with no judged ease (every coral photo) are never capped.
+
+### Juveniles and colour phases on their unit's mastery
+
+A variant is a slice of a unit's photos that asks the same name: its juveniles, its sexes and colour phases. It has no
+progress of its own: it comes as the unit asked is mastered.
+
+- **The kinds** (`core.js` `varKindOf`, `VAR_KINDS`): `jE` an early-class juvenile (its family's class A, or named in its
+  early list), `j` any other juvenile, `jL` a late-class one (class B, or named late), `ph` a sex or colour phase.
+- **The ramp** (`core.js` `varRamp`, `VAR_AT`): a variant photo weighs 0 in the draw below its kind's `from` on the
+  unit's bar, then rises in a straight line to full weight at `full`. `core.js`
+  `VAR_AT = {jE: [0, 0], j: [0.5, 0.8], jL: [0.8, 0.8], ph: [0.5, 0.8]}`; a family may override a kind on its record
+  (fish.json `varAt`). Weights only: the prior and the scoring are untouched.
+- **Never a wall**: nothing is held back on a unit with fewer than `PICKD.VARIETY` (3) observations at full weight
+  (`model.js` `varOf`; `core.js` `VAR_FULL`).
+- **"Learned" asks each variant group** (`core.js` `VAR_GROUPS`: juveniles, sexes and colour phases): the exam is passed
+  only once each group the unit has, released by its mastery, has a right answer; while one is left the exam draws that
+  group's photo (`model.js` `varLeft`, `examSet`). The sheet's replay applies the same rule from the log (`core.js`
+  `varLeftOf`, `fishVarTable`), so a learned mark whose unit has a group with no right answer is taken away for every
+  player at once (rules D8, D9), silently.
+
+**Juveniles and colour phases in stages** was the first build of this path, replaced by the ramp above; its measured
+record is in the notebook.
+
+### The held-out photos in the game
+
+Some fish observations are kept out of practice for an honest mastery exam (rule L9): never shown in a game, a card, a
+sheet or a list, asked only by the mastery exam, first, unannounced and counted like any answer, logged `|h`
+(`core.js` `fishHeld`, `model.js` `examSet`). The set is `fish-holdout.json`, written by `tools/holdout.py`: per exam
+unit (every family in play, every scientific genus), 15 observations (three exams), never leaving a species with fewer
+than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in practice, else holds back
+nothing (learning first). Never Pierre's own photos, a reference source's or a reference-level one. Deterministic and
+sticky. A unit's difficulty counts its held-out photos, so withholding them moves nothing.
+
+### Fish: scientific genera, the first step of branch B
+
+The scientific genera of every circle's families are units too (`core.js` `fishGenSets`, `app.js` `fishGenera`): a
+photo, then genus names, the sibling genera as look-alikes. Offered to every player as an opt-in set; once on, each
+genus opens once its family is at Advanced (`app.js` `sciOpen`). A player who ever answered "I'm at IMR" gets the IMR
+genera without the offer, each once its family is at Open Water. **Families met first**: while a slate family may
+still open, the genera wait (`model.js` `laterWaits`). Their share of the questions follows "The rank share".
+
+### Fish: the species level, step 1, by common name
+
+One unit per species (`core.js` `fishSpUnits`), named by its common names: the main name shown (the IMR name for a
+player at IMR), any listed or regional name right when typed. For each family at Advanced, its species met and the next
+one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`), at the opening's usual pace and within
+the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
+tops out at 95%. On only once the sheet replays the species units (`sync.js` `SPECIES_SHEET`, rule D4).
+
+### The rank share
+
+A unit that hangs from another (its record's `parent`: a fish genus or species from its family) may open and be asked,
+but the units hanging from one level together take a share of the questions set by how much of that level the player
+masters (`model.js` `sharesNow`, `shareW`, `shareRoom`): m, the share of the parent level's units in play at their
+threshold (`shareAt`, else `LV_AT[SHARE.AT]`, Advanced), and cap = m^`SHARE.POW`. At most that share of the draw goes
+to the units hanging from the level, and one more of them opens only while their share is under it. `model.js`
+`SHARE = {AT: 1, POW: 2}`. Never capped: the slate, the coral bonus genera, a unit the subject frees (`app.js`
+`shareFree`), a unit whose parent is no unit of the game.
+
+### Fish: species order, the commonness index
+
+Within a family the species come most-met-first: fish.json `cmi`, a weighted mean of field counts near Dauin, the IMR
+cheatsheet's most sighted and iNaturalist's distinct observers around Dauin, shrunk ring by ring
+(`tools/fish_commonness.py`; method and sources: docs/FISH_PATH.md "Species order: the commonness index").
+
+### Fish: the global score, built
+
+The fish headline % is one score over the whole path (`core.js` `treeScore`, `fishScoreTree`; `SUBJECTS` fish `score`):
+the families on the trunk, every species of those families on the branches, each species weighted by how common it is
+near Dauin (`core.js` `rankWeights`: 1/√ of its rank by distinct observers within 40 km), a family by the sum of its
+species'. Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, `half` × its genus's
+bar), credit = a C + b S + (1 − a − b) C S; raw = `entries` × the families' weighted mean + (1 − `entries`) × the mean
+credit; shown as 100 × raw^`pow`. `core.js` `score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5}`. A species
+with no common name at all counts its scientific value alone. Every unit keeps its own bar; this only adds them up. The
+leaderboard ranks by it, and the circle-3 gate reads its circle-1 Entries component.
+
+**Fish: the global score, simulated**: the simulations that set its entries' share and its pace are in the notebook.
+
+### Fish: the progress replayed from the answer log
+
+The sheet replays each fish player's progress from their fish answers with the same engine (`SUBJECTS` fish
+`replayed`: `core.js` `fishReplayGen`, the units and look-alikes from fish.json, and `fishVarTable`), under the fish's
+own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the corals; the sea slugs the same way
+(`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress").
+
+### Fish achievements, around the global score
+
+Learning milestones only, never time (rule L8), in each subject's own list (`core.js` `FISH_ACH`, `SEASLUG_ACH`; the
+corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 60%,
+the scientific genera, the species named by their common names. Only those that rest on learned marks (`core.js`
+`ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
+their timing was simulated with the real game; the runs are in the notebook.
+
+**Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
+their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`).
 
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 

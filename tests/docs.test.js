@@ -326,29 +326,49 @@ test('the living docs: every relative link and anchor resolves', () => {
   assert.deepStrictEqual(bad, [], 'broken relative links in the living docs (point them at what exists, or say "PR #N")');
 });
 
-test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in of docs/ARCHITECTURE.md', () => {
-  // A citation is the start of a heading ("Photos" for "## Photos", "Fish content" for "### Fish content (`fish.json`…"),
-  // or of a bullet or a paragraph's bold lead-in ("Photos, stopgap" for "- **Photos, stopgap** (…"); quotes, bold and
-  // code marks are ignored on both sides.
-  const flat = s => s.replace(/[*"`“”]/g, '').trim();
-  const starts = read('docs/ARCHITECTURE.md')
-    .split('\n')
-    .map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, '')));
-  const bold = [...read('docs/ARCHITECTURE.md').matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+// A citation is the start of a heading ("Photos" for "## Photos", "Fish content" for "### Fish content (`fish.json`…"),
+// or of a bullet or a paragraph's bold lead-in ("Photos, stopgap" for "- **Photos, stopgap** (…"); quotes, bold and
+// code marks are ignored on both sides. name: the file's name as cited (ARCHITECTURE, LEARNING); returns the citations
+// that name nothing in docs/<name>.md.
+const sectionCites = name => {
+  const doc = read('docs/' + name + '.md'),
+    flat = s => s.replace(/[*"`“”]/g, '').trim();
+  const starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, '')));
+  const bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
   const found = x => {
     const t = flat(x);
     return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
   };
   const bad = [];
   // The quoted names after the file's name, on its line or the next one (a comment or a wrapped paragraph).
-  const cite =
-    /ARCHITECTURE(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const cite = new RegExp(
+    name + '(?:\\.md)?[ \\t]*(?:\\n[ \\t]*(?:(?:\\/\\/|#|\\*)[ \\t]*)?)?((?:["“][^"”\\n]+["”](?:,?[ \\t]*(?:and[ \\t]+|or[ \\t]+)?)?)+)',
+    'g'
+  );
   for (const f of TEXT_FILES) {
     if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue; // history; this file's own examples
     for (const m of read(f).matchAll(cite))
-      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': ARCHITECTURE "' + q[1] + '"');
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': ' + name + ' "' + q[1] + '"');
   }
-  assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
+  return bad;
+};
+
+test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in of docs/ARCHITECTURE.md', () => {
+  assert.deepStrictEqual(
+    sectionCites('ARCHITECTURE'),
+    [],
+    'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)'
+  );
+});
+
+// Docs restructuring PR 5 (LEARNING.md as a spec): the studies moved to docs/archive/learning-notebook.md, so a name the
+// code or a doc cites must stay a section or a lead-in of the spec, or the citation must name the notebook.
+test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
+  assert.deepStrictEqual(
+    sectionCites('LEARNING'),
+    [],
+    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
+  );
 });
 
 test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {
@@ -395,15 +415,10 @@ const ID_ALLOW = [
   {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
   {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
-  {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, tools/sync/HISTORY.md)'},
-  {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
-  {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
-  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
