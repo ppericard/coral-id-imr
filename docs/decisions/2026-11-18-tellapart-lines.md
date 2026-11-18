@@ -1,6 +1,6 @@
 # The coral and sea-slug pairs' tell-apart lines
 
-Date: 2026-11-18. PR: this one; the short sheet that shows them, #1110; the study, #1097. Rules or docs touched: C2, C3,
+Date: 2026-11-18. PR: #1119. The short sheet that shows them: #1110; the study: #1097. Rules or docs touched: C2, C3,
 C6; ARCHITECTURE "The short feedback sheet" and "Tools"; ROADMAP "The feedback sheet's decisive lines".
 
 ## Context

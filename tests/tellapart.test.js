@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The tell-apart lines of the coral slate pairs and the sea slugs' declared genus pairs (Pierre, 2026-11-18, the feedback
-// sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md): written in tools/coral_apart.json (laid on
+// The tell-apart lines of the coral slate pairs and the sea slugs' declared genus pairs
+// (docs/decisions/2026-11-18-tellapart-lines.md): written in tools/coral_apart.json (laid on
 // data.json ap, apsrc by tools/apply_coral_apart.py) and tools/seaslug_cues.json apart (laid on seaslug.json genera apart,
 // apsrc by tools/seaslug_cues.py, read by app.js fishGenera), they reach the feedback sheet's one decisive line through
 // quiz.js pairLine and pairText, read here from the real files.

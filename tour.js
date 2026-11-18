@@ -4,22 +4,21 @@
 // replayable from the ? help of any page (or ?tour in the URL). The sign-in step holds the real sign-in form.
 (function () {
   const KEY = 'reefid-tour';
-  // Five steps (Pierre, 2026-11-01: beta testers must sign in early and start playing fast): the two doors, signing in
+  // Five steps, so a new player signs in early and starts playing fast: the two doors, signing in
   // (the form is in the bubble itself, same on phone and desktop), the three games, progress, help; the last button
   // starts the photo quiz. Details (genus sheets, answers, corallites, Coral ID Key) are behind each page's ?.
   // sel: the element to spotlight (alt: fallback when it is hidden); also: an element joined into the same frame (? and ⚙);
   // plus: a second, separate spotlight (Practice in the menu, at the other end of a phone screen); tall: 'end' shows the
   // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top; arrows: a big arrow points
-  // at each spotlight, so two spotlights far apart both catch the eye (Pierre, 2026-11-01: the menu drew the eye from the games).
-  // ask: the first-launch question (Pierre, 2026-11-03; core.js CHOICE), first, before anything else: a forced choice
+  // at each spotlight, so two spotlights far apart both catch the eye (the menu alone would draw it from the games).
+  // ask: the first-launch question (core.js CHOICE), first, before anything else: a forced choice
   // (no Skip and no Next until answered; Escape still closes the tour, and the quiz then asks it on a card, quiz.js
   // startAskShow). Its answer is kept at once (model.js startSet), so the first cards of the quiz under the tour already
   // follow it. "I'm new to corals" turns the last button into Coral basics (about 5 minutes), the quiz beside it.
-  // pick: which subject to start with (Pierre, 2026-11-06: new players choose between Corals and Fish, no more
-  // defaulting to Corals), only for a player who has two subjects or more (app.js subjMine; fish today: the admin and its
-  // group): a forced choice like ask, first, that also says the app has two subjects; the steps after it speak of the
-  // subject picked (UNITS tour: its words for a step, these below being the corals'), and swap shows where to switch.
-  // Everyone else gets the steps as they were, with no word of the other subjects. See plan() below.
+  // pick: which subject to start with (new players choose; none is the default), only for a player who has two subjects
+  // or more (app.js subjMine): a forced choice like ask, first, that also says the app has several subjects; the steps
+  // after it speak of the subject picked (UNITS tour: its words for a step, these below being the corals'), and swap
+  // shows where to switch. Everyone else gets the steps with no word of the other subjects. See plan() below.
   // "Tap" on a touch screen, "Click" with a mouse (as the tip card and the enlarge hint say).
   const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Click' : 'Tap';
   const DEF = {
@@ -74,7 +73,7 @@
     }
   };
   // The steps for this player, worked out again at each step (the subject picked changes the words; a sign-in can open a
-  // subject). Everyone with one subject: the six steps as they were. Two subjects or more from the start: pick, the picked
+  // subject). Everyone with one subject: the six standard steps. Two subjects or more from the start: pick, the picked
   // subject's question, swap, then the rest. A subject that opens on signing in during the tour (a player of the fish group
   // on a new device: the sheet's reply names the group, sync.js groupsSeen, and the page reloads back on the sign-in step)
   // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and
@@ -144,7 +143,7 @@
       place();
     })();
   }
-  // The bubble must never cover what it describes (Pierre, 2026-11-01). The free band is the screen between the pinned
+  // The bubble must never cover what it describes (docs/ARCHITECTURE.md). The free band is the screen between the pinned
   // header (desktop and tablet; on phones it scrolls away) and the phone tab bar.
   const GAP = 12;
   const band = () => {
@@ -227,14 +226,14 @@
             const id = o.dataset.pick,
               all = [...b.querySelectorAll('[data-pick], .tnext, .tback')],
               my = token;
-            // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's (Codex review #629).
+            // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's.
             picking = true;
             all.forEach(x => {
               if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
             });
-            // An answer still being saved (tier 2 on a slow line) is kept for its own subject before the switch (Codex
-            // review #629: startSet writes to the subject on screen).
+            // An answer still being saved (tier 2 on a slow line) is kept for its own subject before the switch
+            // (startSet writes to the subject on screen).
             saving
               .catch(() => {})
               .then(() => setSubject(id))
@@ -424,9 +423,8 @@
     g.innerHTML = out;
   }
   // Skipping the tour before its sign-in step (Escape too) still offers the sign-in card once: a beta tester who skips
-  // at once should not miss it (Pierre, 2026-11-01). "Later" there leaves the card after 10 answers in place. Skipped ON
-  // the sign-in step, it was seen and dismissed: the same form does not come straight back as a card (walkthrough
-  // 2026-11-02), so only the steps after this one count.
+  // at once should not miss it. "Later" there leaves the card after 10 answers in place. Skipped ON the sign-in step, it
+  // was seen and dismissed: the same form does not come straight back as a card, so only the steps after this one count.
   function close(to, skipped) {
     if (!root) return;
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
@@ -445,7 +443,7 @@
     removeEventListener('resize', place);
     removeEventListener('scroll', place);
     // Already there with a card waiting under the tour (the first genus cards): keep that question and its cards; going
-    // there again would draw a new one and drop the card already counted as met (Codex review #353).
+    // there again would draw a new one and drop the card already counted as met.
     if (to && !(here(to) && document.querySelector('.unlock'))) go(to);
     if (ask && window.signinNudge) signinNudge(false);
     // A card that waited under the tour (app.css html.touring .unlock) now shows: give it the focus.
@@ -458,7 +456,7 @@
     if (picking && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return e.preventDefault();
     if (e.key === 'ArrowRight') {
       e.preventDefault();
-      // The first-launch question is answered before the tour goes on (forced, Pierre 2026-11-03).
+      // The first-launch question is answered before the tour goes on (forced).
       if ((STEPS[step].ask || STEPS[step].pick) && !root.querySelector('.tbub .tnext')) return;
       show(step + 1);
     } else if (e.key === 'ArrowLeft') {

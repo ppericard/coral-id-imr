@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""The coral slate pairs' "tell them apart" lines (Pierre, 2026-11-18, the feedback sheet study's question (d): "ok pour
-les 6 recommandations"; docs/decisions/2026-11-18-tellapart-lines.md): lays tools/coral_apart.json on data.json, as the
-fish's undeclared pairs' lines (fish.json apart) reach the quiz feedback's one decisive line (quiz.js fbLine, pairLine).
+"""The coral slate pairs' "tell them apart" lines (docs/decisions/2026-11-18-tellapart-lines.md): lays
+tools/coral_apart.json on data.json, as the fish's undeclared pairs' lines (fish.json apart) reach the quiz feedback's one decisive line (quiz.js fbLine, pairLine).
 
 tools/coral_apart.json, hand-kept: {about, src, pairs, none}.
   - src {key: {t, u?}}: each source, t its name (u its public page when it has one).

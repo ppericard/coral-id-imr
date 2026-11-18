@@ -33,8 +33,8 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
     those only iNaturalist's identifications show (data look-alikes: the players' answers can drop them), lsrc each
     one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D); apart and apsrc, the declared pairs' tell-apart
-    lines and their sources by the other genus's id (tools/seaslug_cues.json apart, seaslug_cues.apart_of; Pierre,
-    2026-11-18), on a genus some pair line describes the other genus for;
+    lines and their sources by the other genus's id (tools/seaslug_cues.json apart, seaslug_cues.apart_of), on a genus
+    some pair line describes the other genus for;
   - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
     differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
     tools/seaslugs.json rank), group (the iNaturalist order: Nudibranchia, Sacoglossa...), star (the stars set, Q369 (c),
@@ -110,7 +110,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-from presence import label_confirmed  # noqa: E402  the label rule beside C8 (Q389 (2))
+from presence import label_confirmed  # noqa: E402  the label rule beside C8
 import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
@@ -121,8 +121,7 @@ GAME_OUT = os.path.join(ROOT, 'seaslug-game.json')
 V = 1
 # The sea slugs' part of curation.json (core.js SUBJECTS seaslug admin.cur): Pierre's choices in the admin.
 CUR = 'seaslug'
-# The circles in the game: those whose candidates were fetched and judged (circle 1, Q377; circles 2 and 3, #985, #989,
-# #991, #997, #999 and circle 3's last part). Circle 4, the rest, has no candidates.
+# The circles in the game: those whose candidates were fetched and judged. Circle 4, the rest, has no candidates.
 CIRCLES = (1, 2, 3)
 # The sea slugs' rubric code without its ease digit, as suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
 TAGS = re.compile(r'^[pohtdv][01][gd][0-3][smb][lms][1sokx][jcawf]*$')
@@ -350,9 +349,8 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
             **({'look': look} if look else {}),
             **vn('species', s['name']),
         })
-    # The species with no name yet (tools/seaslug_informal.json; Pierre, 2026-11-17, Q389 (2)): a species of its genus,
-    # present by its label (tools/presence.py label_confirmed), only when its genus is in the tree; while the species are
-    # not units (#975) a sheet, whose photos play for its genus. Its record: id x:<key>, no inat nor WoRMS ref, src (its
+    # The species with no name yet (tools/seaslug_informal.json; rule C8): a species of its genus, present by its label
+    # (tools/presence.py label_confirmed), only when its genus is in the tree; while the species are not units, a sheet, whose photos play for its genus. Its record: id x:<key>, no inat nor WoRMS ref, src (its
     # source, shown in small type beside its name: never a guide's number), cite and doi (the paper), field (the
     # iNaturalist observation field that marks it), inf 1; circle its genus's (it never moves a genus), r the rank its
     # label's observers would give it among the listed species (between two of them), present from the label's counts.
@@ -493,7 +491,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         keep = kept(judged(key, me['id']), name in documented)
         if len(keep) >= start:
             place(keep, me['family'])
-    # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level; Pierre, 2026-11-17, Q389 (1)): the sure
+    # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level): the sure
     # ones of each genus, sp its genus id and gl 1 (core.js fishGenUnits plays them for the genus, never for a species),
     # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
     for gid, G in gens.items():

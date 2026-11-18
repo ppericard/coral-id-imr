@@ -4,8 +4,7 @@ complete what is missing for the nudibranchs): checks tools/seaslug_cues.json an
 tools/seaslug_game.py builds, as fish.json's genus marks (tools/build_fish.py genus_marks) so the fish engine shows them
 unchanged: on a genus or a family, marks (1 to 3 visible features), msrc (each source once, {t, u}: the source's t, then
 where in it) and mby ({marks: [[msrc indexes] per mark]}). It also lays the declared genus pairs' tell-apart lines
-(the key apart, apart_of; Pierre, 2026-11-18, the feedback sheet study's question (d)) as apart and apsrc on the genera,
-and checks the reasons of the pairs left without one (apartNone).
+(the key apart, apart_of) as apart and apsrc on the genera, and checks the reasons of the pairs left without one (apartNone).
 
 The build stops on anything else (rules C2, C3, C6): a line without a source or with a source not in src, a source not
 https, a mark with a number (a count is never a photo cue), a line too long for a tip, a species named that is not one
@@ -81,9 +80,8 @@ def marks_of(name, x, src, used, species=None, genus=None):
 
 
 def apart_of(apart, gens, src, used, names):
-    """Lays the genus pairs' tell-apart lines (the key apart: {"A|B": {A: line, B: line}}, one side or both; Pierre,
-    2026-11-18, the feedback sheet study's question (d)) on gens: each side's words describe its own genus and go on the
-    OTHER genus's record, as the fish's apart, apart {other id: "A: words"} and apsrc {other id: [{t, u}]}, which the quiz
+    """Lays the genus pairs' tell-apart lines (the key apart: {"A|B": {A: line, B: line}}, one side or both) on gens:
+    each side's words describe its own genus and go on the OTHER genus's record, as the fish's apart, apart {other id: "A: words"} and apsrc {other id: [{t, u}]}, which the quiz
     feedback's decisive line reads (app.js fishGenera ap, apsrc; quiz.js pairText). Only for a declared pair (each genus
     in the other's look: tools/seaslug_game.py genus_looks). Returns the pairs laid."""
     done = []

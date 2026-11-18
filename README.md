@@ -67,7 +67,8 @@ one machine; wrap any other heavy command as `node tests/slot.js -- <command>`. 
 
 Pierre Pericard owns it and works with AI coding agents. One **integrator** (the main agent of a session) starts
 subagents, each on its own branch and PR, and merges them through a green **merge train** (`tools/train.py`) under a
-written contract. Pierre's standing rules have stable IDs. Start with [AGENTS.md](AGENTS.md) (the constitution), then
+written contract. Pierre's standing rules have stable IDs. [CONTRIBUTING.md](CONTRIBUTING.md) says how a change is
+made. Start with [AGENTS.md](AGENTS.md) (the constitution), then
 [docs/INTEGRATOR.md](docs/INTEGRATOR.md) for the integrator, and the [docs/rules/](docs/rules/README.md) file your task
 touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 
@@ -75,10 +76,14 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 
 | Document | What it is |
 |---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How a change is made here: the rules, a branch, the tests, the PR, the merge train, decision records |
 | [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
 | [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
 | [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; where things are and what lives outside GitHub |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
+| [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
+| [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Files, data, admin, sync, photos, deploy |
 | [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |

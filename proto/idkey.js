@@ -31,18 +31,18 @@ LAB.add({
     const CFF = KEY.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
     // IMR Lecture 6 growth forms (forms.json "forms"). The lecture says form is plastic: like every clue it only ranks.
     const IMRCOL = {B: 'branch', E: 'plate', T: 'meander', U: 'solo', M: 'massive', S: 'column', F: 'polyp'};
-    // Display order (Pierre: more logical than the lecture's numbering): branching then tables (secondary branching),
+    // Display order (more logical than the lecture's numbering): branching then tables (secondary branching),
     // then the lumps from columns to domes, then the flat forms, then the solitary mushrooms.
     const IMRORD = 'BTSMEFU';
     const IMRF = [...(FORMS.forms || [])]
       .sort((a, b) => ((IMRORD.indexOf(a.id) + 99) % 99) - ((IMRORD.indexOf(b.id) + 99) % 99))
       .map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
-    // Two entry points: the paper Coral Finder's path (default: Pierre, 2026-10-31, it is the reference for ReefCloud)
+    // Two entry points: the paper Coral Finder's path (default: it is the reference for ReefCloud)
     // or the IMR Lecture 6 growth forms. New key so the new default reaches browsers that stored the old one.
     let startV = store.get('reefid-idkey-start2', 'c');
     if (startV !== 'a') startV = 'c';
     const facets = () => {
-      // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
+      // Each family's note shows as a tooltip on its title (no explanatory text on the page).
       const forms = CFF.filter(f => S.form.has(f.id));
       // The growth-form system picked on the start screen leads, open; the other one follows, folded.
       const cf = startV === 'c';
@@ -70,7 +70,7 @@ LAB.add({
                 id: 'box',
                 name: forms.map(f => f.t).join(' / ') + ' ›',
                 note: 'Coral Finder book, second step: the boxes of the growth form picked above.',
-                // Titled by its form, as on the genus sheet's key path (Pierre: "Coral Finder box" said nothing to RAs).
+                // Titled by its form, as on the genus sheet's key path ("Coral Finder box" says nothing to RAs).
                 opts: forms.flatMap(f =>
                   KEY.find(k => k.id === f.id)
                     .leaves.filter(l => l.g.length && f.id !== 'L' && f.id !== 'C')
@@ -182,9 +182,9 @@ LAB.add({
       const p = (G[n].views[v] || [])[0] || cover(G[n]);
       return p ? img(p, 's') : '';
     };
-    // Each growth-form tile shows 3 photos (one large, two small: Pierre 2026-11-01) tagged with that form (photo growth form, checked in admin), one genus per
+    // Each growth-form tile shows 3 photos (one large, two small) tagged with that form (photo growth form, checked in admin), one genus per
     // photo and a different genus on each tile where possible; a genus only comes back when its form has too few.
-    // Pierre's pinned photos lead (curation.json "tile" {IMR form letter: [f, ...]}, 📌 in admin > Growth form): on its
+    // The admin's pinned photos lead (curation.json "tile" {IMR form letter: [f, ...]}, 📌 in admin > Growth form): on its
     // IMR form's tile and on the Coral Finder tile that starts from that form (first letter of forms.json "cf"; never
     // Meandering, which maps to every form). A pin no longer of that form, or of a genus off the tile, is skipped.
     const PINS = (CUR && CUR.tile) || {},
@@ -250,7 +250,7 @@ LAB.add({
     const $side = root.querySelector('#ikside'),
       $main = root.querySelector('#ikmain'),
       $cmp = root.querySelector('#ikcmp');
-    // One Start over only: the prominent button beside the chosen clues (Pierre, 2026-10-31). Escape does the same.
+    // One Start over only: the prominent button beside the chosen clues. Escape does the same.
     const reset = () => {
       FIDS.forEach(f => S[f].clear());
       S.out.clear();
@@ -319,7 +319,7 @@ LAB.add({
     }
 
     // Best next checks: unpicked options that split the shortlist most evenly, asked as a question with two big answer
-    // buttons (Pierre, 2026-11-01: the old box had tiny targets, unclear what to tap, empty space). Each answer shows how
+    // buttons (big targets, clear what to tap). Each answer shows how
     // many genera and which ones (photos) are on its side. Yes adds the clue; No adds a "not" clue (genera with the
     // feature move one clue down, never hidden); Can't tell moves on to the next best question.
     function nextChecks(F, left) {
@@ -395,11 +395,11 @@ LAB.add({
         return out;
       };
       // With a growth form picked, the lead photo shows the genus in that form (photo growth form, checked in admin), so a
-      // newcomer never compares a massive colony with a branching cover (first-time RA review, 2026-11-01). The cover stays
+      // newcomer never compares a massive colony with a branching cover. The cover stays
       // when it already shows that form; a genus with no photo of the form keeps its cover.
       const formCover = n => {
         if (pv !== 'mix' || !(S.form.size || S.imrf.size)) return null;
-        const rank = p => (p.imr ? 0 : p.own ? 1 : 2); // photo priority: IMR lecture, then Pierre's own, then the rest
+        const rank = p => (p.imr ? 0 : p.own ? 1 : 2); // photo priority: IMR lecture, then the owner's own, then the rest
         const P = [...[...S.form].flatMap(id => formPhotos(n, id)), ...[...S.imrf].flatMap(id => imrFormPhotos(n, id))]
           .map((p, i) => [p, i])
           .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1])
@@ -521,7 +521,7 @@ LAB.add({
             draw();
           })
       );
-      // A prominent Start over beside the chosen clues (Pierre, 2026-10-31): one tap for the next colony, at every width.
+      // A prominent Start over beside the chosen clues: one tap for the next colony, at every width.
       const rs = $main.querySelector('[data-reset]');
       if (rs) rs.onclick = reset;
       const sd = $main.querySelector('[data-side]');
@@ -573,7 +573,7 @@ LAB.add({
     }
 
     // Start screen: the clues people actually start from, on one screen, before any list of genera.
-    // C (default, Pierre 2026-10-31: the Coral Finder is the reference for ReefCloud) = the paper Coral Finder's path
+    // C (default: the Coral Finder is the reference for ReefCloud) = the paper Coral Finder's path
     // (front-page form, then the box of that form); A = IMR growth forms, polyps out, corallite size, walls, as a discreet link.
     const formTile = (fid, o, on, n) => {
       const P = tilePics[fid === 'imrf' ? 'imrf:' + o.id : o.id] || [];
@@ -597,8 +597,8 @@ LAB.add({
       );
     const optBtn = (f, o, on, n) =>
       `<button type="button" class="ikbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${gloss(o.t, undefined, true)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="ikc">${n}</span></button>`;
-    // Coral Finder box drawings (Pierre 2026-11-01: a box's picture must show its criterion; 2026-11-08: the book's crops
-    // leave the app, every box gets a drawing). One style for all (viewBox 160 x 120, .iksch in lab.css): the coral in
+    // Coral Finder box drawings (a box's picture must show its criterion, and the book's own crops are not in the app, so
+    // every box gets a drawing). One style for all (viewBox 160 x 120, .iksch in lab.css): the coral in
     // white with a dark outline (.f), details in grey (.st), calices and valleys shaded (.c), the seabed line (.b); the
     // part a box names in the one highlight colour (.h, .hf; DESIGN.md "Lab drawings"). A surface close-up carries a
     // 1 cm bar (40 units, U per mm), the same in every close-up, so a size box is read against it.
@@ -983,7 +983,7 @@ LAB.add({
       const forms = f =>
         `<div class="ikforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next ikshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(n => !slate.has(n)) ? ` (${left.filter(n => slate.has(n)).length} on the slate)` : ''}`} →</button>`;
-      // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
+      // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (a bigger one takes room for nothing).
       const switcher = `<button type="button" class="linkish iksv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder book path →'}</button>`;
       let body;
       if (startV === 'c') {
@@ -1013,7 +1013,7 @@ LAB.add({
         : `<div class="iklive"><h3 class="ikgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
         <div class="ikgcs">${left.map(genCard).join('')}</div></div>`;
       $start.classList.toggle('used', !!used(F).length);
-      // One-line prompt (design review 2026-11-01, Pierre OK): the start screen says what to do; before any clue, "Show all" is a
+      // One-line prompt: the start screen says what to do; before any clue, "Show all" is a
       // secondary way out, not the main action.
       const prompt = used(F).length
         ? ''
@@ -1130,7 +1130,7 @@ LAB.add({
           })
       );
     }
-    // No genus-name box: the Coral ID Key is for corals you don't know yet (Pierre). Escape (outside the photo viewer) starts over.
+    // No genus-name box: the Coral ID Key is for corals you don't know yet. Escape (outside the photo viewer) starts over.
     const key = e => {
       if (!document.body.contains(root)) return document.removeEventListener('keydown', key);
       if (!lb.hidden || (e.target.closest && e.target.closest('input,textarea'))) return;
