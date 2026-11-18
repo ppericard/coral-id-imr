@@ -50,7 +50,8 @@ the same (checked with acorn); decisions found only in comments moved to records
 ## Next
 
 1. Versions one at a time: #1121 (re-assign v187) once Pierre has dismissed its two CodeQL alerts.
-2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): frames model; game formats; C12 photos. After Pierre: roles UI (#1098 + #1118), #1071, species step 2 (#1041).
+2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): frames model; game formats; C12 photos.
+   After Pierre: roles UI (#1098 + #1118), #1071, species step 2 (#1041).
 
 ## Questions for Pierre
 
@@ -94,6 +95,5 @@ Last question number: Q412
 - None (the Night queue holds the night's work).
 ## Last stop
 
-2026-11-19 ~00:35 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (Pierre's messages, real names: delete tomorrow)
-and the player-data extracts (`placement/data/`): delete, never commit. Queue waiters: never `pgrep -f` a pattern your
-own command line contains.
+2026-11-19 ~00:35 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (real names: delete tomorrow) and `placement/data/`
+(player data): delete, never commit. Queue waiters: never `pgrep -f` a pattern your own command line contains.
