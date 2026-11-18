@@ -3566,9 +3566,9 @@ ties between photos of the same ease).
 of his, easy but his; a new entry should start on reference photos; 14:02: every photo of reference quality, not only a
 source's cover, and never an exclusive rule that would show one photo again and again). The units' reference photos
 (`tools/fish_refs.py`, judging/FISH.md "Reference photos": iNaturalist's cover and taxon-page photos passing the game
-photo rules, FishBase's photos) join the game photos once judged. **Reference level** (`core.js` `refLevel`): a source's
-reference photo (`rep`) judged very easy, or any photo judged 5 with the reference look in its tags (profile, whole, good
-light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it; in both cases one kind of fish (rule P3).
+photo rules, FishBase's photos) join the game photos once judged. **Reference level** (`core.js` `refLevel`; since 2026-11-18 read
+from the photo alone, never its route in): a photo judged very easy (4-5) with the reference look in its tags (profile,
+whole, good light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it; one kind of fish (rule P3).
 It comes before every other photo in `easyRank` (`refFirst`), so it is the card's photo and each list's first, and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`; `model.js` `photoSet`, beside the never-seen bonus): first
 in priority, never alone. Why 3: a reference-level photo then wins most first draws on an entry with a few of them among

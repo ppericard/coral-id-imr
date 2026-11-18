@@ -220,8 +220,9 @@ test('the repository: fish_game.py, offline, keeps exactly the surprise-only pho
 fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs(G.ROOT)
 prev = G.load(G.ROOT, G.OUT_FILE, {'photos': {}})
 todo, keep, _ = G.plan(fish, cur, cand, sug, prev, refs, codes, crops, 0, rkeep, G.boxes_in(G.ROOT))
+more, _, _ = G.plan(fish, cur, cand, sug, prev, refs, codes, crops, None, rkeep, G.boxes_in(G.ROOT))
 W = G.wink_species(fish)
-print(json.dumps({'keep': sorted(f for f, r in keep.items() if r['sp'] in W), 'todo': sorted(r['f'] for r, _, _ in todo if r['sp'] in W)}))`);
+print(json.dumps({'keep': sorted(f for f, r in keep.items() if r['sp'] in W), 'todo': sorted(r['f'] for r, _, _ in todo if r['sp'] in W), 'pending': sorted(r['f'] for r, _, _ in more if r['sp'] in W)}))`);
   const game = C.fishGameRead(read('fish-game.json')).photos,
     W = new Set(
       read('fish.json')
@@ -234,5 +235,16 @@ print(json.dumps({'keep': sorted(f for f, r in keep.items() if r['sp'] in W), 't
       .map(p => p.f)
       .sort();
   assert.deepStrictEqual(out.todo, [], 'nothing of theirs to download');
-  assert.deepStrictEqual(out.keep, listed);
+  // A change to the order (core.js refScore, refLevel) can put a photo in the 5 best that is not on R2 yet: the Candidate
+  // photos workflow downloads it and rewrites fish-game.json when the change merges (approved-photos.yml, on a push to
+  // main touching tools/fish_game.py), so until then the file lists what the plan drops, one photo for each download
+  // waiting, and nothing the plan does not keep. With none waiting the two are the same.
+  assert.deepStrictEqual(
+    out.keep.filter(f => !listed.includes(f)),
+    [],
+    'every photo kept is listed'
+  );
+  const dropped = listed.filter(f => !out.keep.includes(f));
+  assert.ok(dropped.length <= out.pending.length, `${dropped.length} listed photos dropped, ${out.pending.length} downloads waiting`);
+  if (!out.pending.length) assert.deepStrictEqual(out.keep, listed);
 });

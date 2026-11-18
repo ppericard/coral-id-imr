@@ -197,9 +197,10 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 - **Fish: the reference flag by photo, not by route** (2026-11-15, found with "one judgement per photo", `judging/FISH.md`):
   decided 2026-11-17 (Pierre, A: one judgement per photo; "'référence' devrait être déduit des caractéristiques de la
-  photo, pas un tag"): the ease point and the flag's weight in the order are gone (#1045).
-  Still read from the route: the reference level's first case (`core.js` `refLevel`, rule P1's "a reference source's own
-  ... judged very easy"), its new wording waiting for Pierre in #1045.
+  photo, pas un tag"): the ease point and the flag's weight in the order are gone (#1045), and since 2026-11-18 (Pierre:
+  "La source ne devrait pas être le critère principal de 'référence'...") the reference level reads the photo's ease and
+  look alone (`core.js` `refLevel`). Left on the route, for Pierre to say: the held-out set's `rep` exclusion
+  (`tools/holdout.py`), the Coverage count and the "reference" badge in the admin (`autosort.js` `fishCov`, `admin.js`).
 
 - **Corals: the photo source priority, for Pierre to decide** (2026-11-06, after fish dropped it: rule P1). What still ranks coral photos by source (read-only audit, `core.js` `applySlots`, `app.js` `cover`, `model.js` `photoSet`): the sheet shows the 3 featured photos then the other IMR / own ones, other observers' photos only filling a sheet short of 6; the featured and the game list put IMR, then Pierre's own, before others at equal quality; a card's photo is an IMR featured close-up first; a never-seen IMR or own photo gets × 1.3 in the draw; IMR photos are never auto-rated Poor; Coral basics, the Coral ID Key's ranks and the duplicate finder keep IMR, then his. Proposal: keep only the IMR lecture photos' slight priority (his caveat of 2026-11-04), order the rest by quality then the players' ratings (the corals have them), and drop the × 1.3 for his own photos. Waiting for his answer.
 - A script of a later tier that never came (2026-11-08, from the Events tab: one Safari phone on a slow line, 11-06, twice "Can't find variable: shownGroup" from `progress.js` `achSnap`, run by `app.js` `SETUP[2]`): the `index.html` loader tries a failed script 4 times, then goes on without it, and the tier's set-up runs as if it had come (here `learn.js` missing, `progress.js` in). Not a load-order race: the loader always runs `learn.js` before `progress.js`. Options: the loader logs the script it gave up on (`ev`), and the tier waits or offers Try again, as for data.json. What the player sees then is a choice for Pierre. Parked.

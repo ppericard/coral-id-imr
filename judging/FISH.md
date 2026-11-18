@@ -124,8 +124,9 @@ The judge never types anything for it and judges the photo on what it shows; the
 **never changes the ease** (`tools/fish_judge.py` `cap`): one judgement per photo, whatever its route in (Pierre,
 2026-11-17, on #942; from 2026-11-05 to then it added one ease point, which gave 423 photos judged both ways one point
 more as a reference photo than as a candidate). The flag weighs nothing in the order either (`core.js` `refScore`:
-"'référence' devrait être déduit des caractéristiques de la photo, pas un tag", Pierre, 2026-11-17); it still counts in
-the reference level (below). `python3 tools/judging_fish.py rep` re-applies the flag to the judged candidates after a new
+"'référence' devrait être déduit des caractéristiques de la photo, pas un tag", Pierre, 2026-11-17), nor in the
+reference level (below, Pierre, 2026-11-18): it records the route, which only decides the download order
+(`tools/fish_game.py` `tier`). `python3 tools/judging_fish.py rep` re-applies the flag to the judged candidates after a new
 tag. Where the source is FishBase, the photo page (`o`) gives the author and the licence.
 
 **The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
@@ -149,9 +150,12 @@ already in play** (another photo of it is a game photo) is judged against that o
 (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): `tools/fish_judge.json`
 `keep` {photo: `best` | `alt` | `dup`}; `best` or `alt` enters, `dup` stays out, and it waits until judged.
 
-**Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
-read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases
-one kind of fish only (count `1` or `s`: never other species in view, `o` or `k`, nor an unclear subject, rule P3). A
+**Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`, `autosort.js` `fishRec`): a photo judged very
+easy (4-5) whose tags read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever
+took it and whatever its route in (Pierre, 2026-11-18: "La source ne devrait pas être le critère principal de 'référence'
+même si ça peut être un fort indice. L'ensemble des photos de référence doit avoir des qualités intrinsèques, basées sur
+des critères objectifs"; until then a `rep` photo judged 4-5 was one without the look); one kind of fish only (count `1`
+or `s`: never other species in view, `o` or `k`, nor an unclear subject, rule P3). A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
 
