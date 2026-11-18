@@ -882,8 +882,10 @@
           'players/list',
           // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
           // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus, its sheets'
-          // text slots (content above). No WoRMS view: its tree carries no reference taxonomy (seaslug.json ref).
+          // text slots (content above). WoRMS: the reference taxonomy's tree (seaslug.json ref, tools/seaslug_worms.py;
+          // admin.js fuWormsOf), as the fish's.
           'photos/tree/key',
+          'photos/tree/worms',
           // Candidates (the sea slugs' admin at parity): seaslug-cand.json one at a time, as the fish's (admin-fish.js
           // renderFishCand), a photo moved with Not this waiting as its new species' candidate; no auto-sort (autosort)
           'photos/candidates',

@@ -17,7 +17,9 @@ Inputs, all in the repository (no network but --r2's downloads):
   - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources;
   - tools/seaslug_lookalikes_cand.json (tools/seaslug_lookalikes.py): the look-alike survey's literature sets and genus
     pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D);
-  - tools/seaslug_cues.json (checked by tools/seaslug_cues.py): the sourced ID marks of genera and families.
+  - tools/seaslug_cues.json (checked by tools/seaslug_cues.py): the sourced ID marks of genera and families;
+  - tools/seaslug_worms.json (tools/seaslug_worms.py, from WoRMS): the reference taxonomy, AphiaID -> {name, rank,
+    parent} from the class down, and each genus's WoRMS AphiaID.
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
@@ -26,7 +28,8 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     commonness rank);
   - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
     shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
-  - genera {id g:<genus>, name, family, circle (its best species'), species, look, dlook, lsrc}: look, the other genera
+  - genera {id g:<genus>, name, family, circle (its best species'), species, ref (the AphiaID of the WoRMS genus of that
+    name, tools/seaslug_worms.json genera), look, dlook, lsrc}: look, the other genera
     a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
     those only iNaturalist's identifications show (data look-alikes: the players' answers can drop them), lsrc each
     one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D);
@@ -47,7 +50,11 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
     is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
-    tag.
+    tag;
+  - ref {AphiaID: {name, rank, parent}}: the reference taxonomy (WoRMS, as fish.json ref; Pierre, 2026-11-13, Q340: the
+    admin's Photos › Tree › Key | WoRMS; 2026-11-17, "on garde WoRMS"), every node from the class (Gastropoda) down to
+    the species of the tree and its genera's WoRMS genera, parent null at the root (worms_ref); a species or a genus
+    tools/seaslug_worms.json lacks fails the build, naming it (run tools/seaslug_worms.py).
 
 seaslug-game.json, in fish-game.json's record shape (core.js fishPhotos, fishGameRead) under each family id, one photo a
 line:
@@ -267,7 +274,25 @@ def names_of(N):
     return out
 
 
-def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None):
+def worms_ref(W, species, genera):
+    """seaslug.json ref from tools/seaslug_worms.json W: {AphiaID: {name, rank, parent}} for every node above (and at)
+    the species' refs and the genera's, in AphiaID order (as fish.json ref). A ref W lacks fails the build, naming it."""
+    N, need, miss = (W or {}).get('nodes') or {}, set(), []
+    for what, aid in [(s['name'], s.get('ref')) for s in species] + [(g['name'], g.get('ref')) for g in genera]:
+        if aid is None:
+            continue
+        if str(aid) not in N:
+            miss.append(f'{what} ({aid})')
+        a = str(aid)
+        while a is not None and a in N and a not in need:
+            need.add(a)
+            a = None if N[a]['parent'] is None else str(N[a]['parent'])
+    if miss:
+        raise SystemExit('seaslug_game: not in tools/seaslug_worms.json (run python3 tools/seaslug_worms.py): ' + ', '.join(miss))
+    return {k: {'name': N[k]['name'], 'rank': N[k]['rank'], 'parent': N[k]['parent']} for k in sorted(need, key=int)}
+
+
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None, worms=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv, rotation)], the photos in play whose files R2 lacks or holds with
     another crop or rotation, circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
@@ -278,7 +303,8 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     sea-slug part (part: Pierre's admin choices) the photos in play follow, as a fish photo follows the fish part
     (tools/fish_game.py in_play, record): what he removed, excluded or moved leaves, his adds enter, his crop, rotation,
     ease and tags are the record's. cues: tools/seaslug_cues.json, the sourced ID marks (seaslug_cues.apply), none
-    without it."""
+    without it. worms: tools/seaslug_worms.json, the reference taxonomy (ref, each genus's ref: worms_ref), none without
+    it."""
     import fish_game as FG
     F = part(cur)
     top = set((cur or {}).get('exclude') or {})
@@ -300,8 +326,9 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         f['species'].append(i)
         if gid not in f['genera']:
             f['genera'].append(gid)
+        gref = ((worms or {}).get('genera') or {}).get(s['genus'])
         gens.setdefault(gid, {'id': gid, 'name': s['genus'], 'family': fid, 'circle': c, 'species': [],
-                              **vn('genus', s['genus'])})['species'].append(i)
+                              **({'ref': gref} if gref else {}), **vn('genus', s['genus'])})['species'].append(i)
         w = s.get('worms') or {}
         look = [sid[o] for p in pairs if s['name'] in p for o in p if o != s['name']]
         species.append({
@@ -377,7 +404,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         'genera': list(gens.values()),
         'species': species,
         'vn': [],
-        'ref': {},
+        'ref': worms_ref(worms, species, gens.values()) if worms else {},
     }
     old = {p['f']: p for P in ((prev or {}).get('photos') or {}).values() for p in P if isinstance(p, dict) and p.get('f')}
     byname = {s['name']: s for s in species}
@@ -564,7 +591,8 @@ def inputs(root=ROOT):
             j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None, j('curation.json', {}),
-            j(os.path.join('tools', 'seaslug_cues.json'), {}) or None)
+            j(os.path.join('tools', 'seaslug_cues.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_worms.json'), {}) or None)
 
 
 def write(root, tree, game):
