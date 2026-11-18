@@ -54,8 +54,8 @@ read (`pool`, `files`).
   - a genus record in `data.json` (`gen`): `n` the slate number (0 for a starred look-alike), `fam` family, `ig` IMR
     lecture group, `imr` lecture notes, `qt` ID tips, `sum` short description, `plain` plain sentence, `mn`
     mnemonic, `crit` Coral Finder criteria, `tr` and `trs` trait ids (`trs`: only some species), `look` look-alikes,
-    `lsrc` source of each pair, `sl` slide numbers, `info` other sources, `views` and `more` photo lists, `cover`, `cm`
-    how common near Dauin, `root` the name's roots;
+    `lsrc` source of each pair, `ap` and `apsrc` the pairs' tell-apart lines and their sources, `sl` slide numbers,
+    `info` other sources, `views` and `more` photo lists, `cover`, `cm` how common near Dauin, `root` the name's roots;
   - a photo: `f` file stem in `img/`, `ar` width over height, `a` author credit, `lic` licence, `o` page of the
     original, `src` online original, `r: 1` not downloaded yet, `t` species, `own` Pierre's own photo, `loc`
     (`dauin`, `ph`, `world`), `gid: 1` not Research Grade, `skel: 1` a skeleton photo (never shown, rule P6).
