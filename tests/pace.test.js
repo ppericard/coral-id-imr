@@ -469,6 +469,7 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
     ctx = {
       VIEWS: [['wide']],
       gamePics: n => views[n] || [],
+      GX: () => ({}),
       PGD: {A: [-0.54, 80], B: [0.9, 12]},
       PDIFF: {W: 5, MID: 3},
       // The subject's calibration (core.js calibOf, SUBJECTS calib): the judged ease's logits per point.
