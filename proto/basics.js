@@ -587,26 +587,50 @@
   // file is in too); the route of a term: app.js basicsRoute (Codex review #428).
   const WORDS = BASICS_WORDS,
     routeOf = basicsRoute;
-  window.BASICS = {route: routeOf, listed: basicsListed};
   const official = term => (DATA.terms || []).find(x => x[0] === term);
-  const KEY = BASICS_KEY; // app.js: 'reefid-basics'
-  const s0 = id => STEPS.find(s => s.id === id) || {};
-  // A step seen (the walls step once its four types are), and the module done once every step is.
-  const seenStep = id => {
-    const st = store.get(KEY, {}) || {},
+  // A basics module is its content C: id (its Lab module, UNITS basics mod), name, steps, words ([term, step or
+  // 'step|view', plain line]), route(term) (a word's page key), official(term) ([term, line, source, plain] or none), key()
+  // (its record on the device, SUBJECTS basics.key), and the Lab page's blurb and lede; optionally drawOpt(option, check) (a
+  // 'draw' check's option as an SVG), own (a step check of its own) and hub: false (no line on the Tools page). The
+  // engine below draws any of them; Coral basics is the one here, Fish basics (proto/fishbasics.js) joins through
+  // BASICS.add.
+  const CORAL = {
+    id: 'basics',
+    name: 'Coral basics',
+    steps: STEPS,
+    words: WORDS,
+    route: routeOf,
+    official,
+    key: () => basicsKey(),
+    drawOpt: t => cupTop(t),
+    blurb: 'New to corals? Seven short steps, from the colony to the parts of a corallite, each on a real photo with one plain sentence.',
+    lede: 'For anyone who never had the coral lecture: the words used in the ID tips, one at a time, on real photos (credited in the enlarged view: tap a photo) and simple drawings. Every step is optional; the little check under each one is too. Words lists every term and where it is shown.'
+  };
+  window.BASICS = {route: routeOf, listed: basicsListed, add: C => LAB.add(lab(C))};
+  const s0 = (C, id) => C.steps.find(s => s.id === id) || {};
+  // A step seen (the walls step once its four types are; a views step once its views are), and the module done once every
+  // step is.
+  const seenStep = (C, id) => {
+    const st = store.get(C.key(), {}) || {},
       seen = {...(st.seen || {}), [id]: 1},
-      fin = st.fin || (STEPS.every(s => seen[s.id]) ? Date.now() : 0);
-    store.set(KEY, {...st, seen, ...(fin ? {fin} : {})});
+      fin = st.fin || (C.steps.every(s => seen[s.id]) ? Date.now() : 0);
+    store.set(C.key(), {...st, seen, ...(fin ? {fin} : {})});
     if (fin && !st.fin && typeof achBasics === 'function') achBasics();
   };
 
-  LAB.add({
-    id: 'basics',
+  const lab = C => ({
+    id: C.id,
     icon: '●',
-    title: 'Coral basics',
-    blurb: 'New to corals? Seven short steps, from the colony to the parts of a corallite, each on a real photo with one plain sentence.',
-    lede: 'For anyone who never had the coral lecture: the words used in the ID tips, one at a time, on real photos (credited in the enlarged view: tap a photo) and simple drawings. Every step is optional; the little check under each one is too. Words lists every term and where it is shown.',
+    title: C.name,
+    hub: C.hub,
+    blurb: C.blurb,
+    lede: C.lede,
     render(root, ...args) {
+      const STEPS = C.steps,
+        WORDS = C.words,
+        official = C.official,
+        routeOf = C.route,
+        KEY = C.key();
       const edit = args.includes('edit'),
         rest = args.filter(x => x !== 'edit'),
         arg = rest[0] || '',
@@ -620,7 +644,7 @@
       const sub = rest[1] || tSub || '';
       if (id !== 'words') {
         store.set(KEY, {...st, last: id});
-        if (!s0(id).walls) seenStep(id);
+        if (!s0(C, id).walls && !s0(C, id).views) seenStep(C, id);
       }
       const steps = `<nav class="bx-steps" aria-label="Steps">${STEPS.map(
         (s, i) =>
@@ -649,11 +673,11 @@
         ? `<a class="next" href="${esc(hr('basics|' + next.id + sfx))}">Next: ${esc(next.t.split(':')[0])} ›</a>`
         : `<a class="next" href="${esc(hr('basics|words' + sfx))}">All the words ›</a> <a class="next sec" href="${esc(hr('quiz'))}">Practise ›</a>`;
       root.innerHTML = `<div class="bx">${steps}<div class="bx-lay">
-        <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig()}</figure>
+        <figure class="bx-fig">${s.walls || s.views ? '' : s.forms ? '' : s.fig()}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
-          <div class="bx-say">${s.draw || s.walls ? `<span class="bx-draw">${s.draw ? s.draw() : ''}</span>` : ''}<div class="bx-txt"><p>${esc(s.say)}</p>${more}${s.walls ? '<p class="bx-wsay" aria-live="polite"></p>' : ''}</div></div>
+          <div class="bx-say">${s.draw || s.walls ? `<span class="bx-draw">${s.draw ? s.draw() : ''}</span>` : ''}<div class="bx-txt"><p>${esc(s.say)}</p>${more}${s.walls || s.views ? '<p class="bx-wsay" aria-live="polite"></p>' : ''}</div></div>
           ${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}${also}${s.src ? `<small class="bx-off">${esc(s.src)}</small>` : ''}
-          <details class="bx-check"${done[s.id] || (s.walls && Object.keys(st.walls || {}).length < Object.keys(WALLS).length) ? '' : ' open'}><summary>Check yourself${done[s.id] ? ' <span class="ok">✓</span>' : ''}</summary><div class="bx-q"></div></details>
+          <details class="bx-check"${done[s.id] || (s.walls && Object.keys(st.walls || {}).length < Object.keys(WALLS).length) || (s.views && s.all !== false && Object.keys((st.views || {})[s.id] || {}).length < s.views.length) ? '' : ' open'}><summary>Check yourself${done[s.id] ? ' <span class="ok">✓</span>' : ''}</summary><div class="bx-q"></div></details>
           <p class="bx-nav">${nextA}</p></div></div></div>`;
       const fig = root.querySelector('.bx-fig'),
         nav = root.querySelector('.bx-nav');
@@ -692,7 +716,7 @@
           seen.add(k);
           const cur = store.get(KEY, {}) || {};
           store.set(KEY, {...cur, walls: Object.fromEntries([...seen].map(x => [x, 1]))});
-          if (keys.every(x => seen.has(x))) seenStep(s.id);
+          if (keys.every(x => seen.has(x))) seenStep(C, s.id);
           fig.innerHTML = `<div class="seg bx-wtabs" role="group" aria-label="Wall types, ${keys.length} to see">${keys
             .map(
               (kk, n) =>
@@ -727,6 +751,51 @@
           if (moved) nav.querySelector('.next').focus({preventScroll: true});
         };
         show(WALLS[sub] ? sub : 'separate');
+      } else if (s.views) {
+        // A step of views (Fish basics, as the walls: Pierre, 2026-11-03): drawn icons to pick a view, its figure, one
+        // plain sentence under the title. all (default): the step counts as seen once every view has been; the step's
+        // main button reads "Next: <view>" until then. all: false: the step is seen on opening it (a long list of views,
+        // such as the identification groups). A view: {id, name, icon (SVG), fig() (HTML), say, eg (examples), src, bind(fig)
+        // (wires what its figure holds, a photo's enlarged view)}.
+        const V = s.views,
+          every = s.all !== false,
+          seen = new Set(Object.keys(((store.get(KEY, {}) || {}).views || {})[s.id] || {}));
+        const show = (vid, moved) => {
+          const k = Math.max(
+              0,
+              V.findIndex(x => x.id === vid)
+            ),
+            v = V[k];
+          seen.add(v.id);
+          const cur = store.get(KEY, {}) || {};
+          store.set(KEY, {...cur, views: {...(cur.views || {}), [s.id]: Object.fromEntries([...seen].map(x => [x, 1]))}});
+          if (!every || V.every(x => seen.has(x.id))) seenStep(C, s.id);
+          fig.innerHTML = `<div class="bx-picks${V.length > 8 ? ' many' : ''}" role="group" aria-label="${esc(s.pick || s.t)}">${V.map(
+            x =>
+              `<button type="button" data-v="${esc(x.id)}" aria-pressed="${x.id === v.id}" title="${esc(x.name)}">${x.icon}${x.short === '' ? '' : `<span>${esc(x.short || x.name)}</span>`}${every && seen.has(x.id) && x.id !== v.id ? '<i class="ok" aria-label="seen">✓</i>' : ''}</button>`
+          ).join('')}</div><div class="bx-vfig">${v.fig()}</div>`;
+          root.querySelector('.bx-wsay').innerHTML =
+            `<b>${esc(v.name)}.</b> ${esc(v.say)}${v.eg ? ` <span class="bx-eg">${esc(v.eg)}</span>` : ''}${v.src ? `<small class="bx-off">${esc(v.src)}</small>` : ''}`;
+          fig.querySelectorAll('[data-v]').forEach(b => (b.onclick = () => show(b.dataset.v)));
+          if (v.bind) v.bind(fig);
+          const todo = every ? [...V.slice(k + 1), ...V.slice(0, k)].find(x => !seen.has(x.id)) : null;
+          if (!todo && !done[s.id] && !fig.dataset.opened) {
+            fig.dataset.opened = 1;
+            root.querySelector('.bx-check').open = true;
+          }
+          nav.innerHTML = todo
+            ? `<button type="button" class="next bx-wnext" data-wn="${esc(todo.id)}">Next: ${esc(todo.name)} ›</button>`
+            : nextA;
+          const wn = nav.querySelector('[data-wn]');
+          if (wn)
+            wn.onclick = () => {
+              show(wn.dataset.wn, true);
+              const t = fig.getBoundingClientRect().top;
+              if (t < 0 || t > innerHeight * 0.5) fig.scrollIntoView({block: 'start', behavior: 'smooth'});
+            };
+          if (moved && nav.querySelector('.next')) nav.querySelector('.next').focus({preventScroll: true});
+        };
+        show(sub);
       } else if (s.forms) {
         // Growth forms (Pierre, 2026-11-03: the photo thumbnails were too small): drawn icons to pick a form, then 2-3
         // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule P5).
@@ -769,9 +838,10 @@
               );
             })
         );
-      ask(root.querySelector('.bx-q'), s.check, markDone, edit, s.id);
+      ask(C, root.querySelector('.bx-q'), s.check, markDone, edit, s.id);
     }
   });
+  LAB.add(lab(CORAL));
 
   /* ---------- the optional check under each step ---------- */
   // Once answered, every check offers the app's report (rule U14): the step, the answer given and the photos shown, and
@@ -786,12 +856,15 @@
     box.querySelector('.bx-fb').innerHTML =
       `${ok ? '<b class="ok">✓ Yes.</b>' : '<b class="ko">✗ No.</b>'} ${text}${ctx ? `<span class="bx-rep">${rep(ctx)}</span>` : ''}`;
   };
-  function ask(box, c, markDone, edit, sid) {
+  function ask(C, box, c, markDone, edit, sid) {
     const m = 'basics-' + sid,
       again = '<button type="button" class="linkish bx-again">Another one</button>';
+    // A check of the module's own (Fish basics: a photo to place in its group): it draws itself in the box and calls back
+    // with what the engine shares: the feedback line, the source pill, the report button, "Another one".
+    if (c.own) return c.own(box, {markDone, fb, src, rep, again, m});
     if (c.type === 'choice' || c.type === 'draw') {
       box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="choices${c.type === 'draw' ? ' bx-dch' : ' col'}">${c.opts
-        .map((t, j) => `<button type="button" class="choice" data-j="${j}">${c.type === 'draw' ? cupTop(t) : esc(t)}</button>`)
+        .map((t, j) => `<button type="button" class="choice" data-j="${j}">${c.type === 'draw' ? C.drawOpt(t, c) : esc(t)}</button>`)
         .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
       box.querySelectorAll('[data-j]').forEach(
         b =>
@@ -888,7 +961,7 @@
                 : esc(c.why[a]);
             src(box.querySelector('.bx-cphw'), pobj({g, f}));
             fb(box, ok, why + ' ' + again, {g, a: names[j], ph: [f], m});
-            box.querySelector('.bx-again').onclick = () => ask(box, c, markDone, edit, sid);
+            box.querySelector('.bx-again').onclick = () => ask(C, box, c, markDone, edit, sid);
             if (ok) markDone();
           })
       );

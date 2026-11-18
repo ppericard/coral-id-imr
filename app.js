@@ -1558,11 +1558,13 @@ const subjPage = h => {
     !(m === 'sheet' || MODES[tab].some(x => x[0] === m))
   )
     return h;
-  return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
+  // The first page of the section the subject has: never its basics module (a step 0 beside the pages, not a landing page).
+  return MODES[tab].map(x => x[0]).find(k => k !== 'basics' && SUBJ.pages.includes(k)) || '';
 };
 // A tab's words for the subject ("Photo → genus" for corals, "Photo → family" for fish).
 const subjWords = t =>
   t
+    .replace(/\bCoral basics\b/g, basicsWords().name)
     .replace(/\bgenus\b/g, SUBJ.one)
     .replace(/\bGenera\b/g, SUBJ.many[0].toUpperCase() + SUBJ.many.slice(1))
     .replace(/\bgenera\b/g, SUBJ.many);
@@ -2291,6 +2293,22 @@ const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
+    // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
+    // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
+    // read when the card is drawn).
+    basics: {
+      mod: 'basics',
+      name: 'Coral basics',
+      ask: 'New to corals?',
+      kick: 'New to corals',
+      offer:
+        'Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.',
+      lo: 'Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.',
+      all: 'It shows, on real photos, the few words the ID tips use.',
+      card: 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
+      trail: () => ({stops: BASICS_TRAIL, at: BASICS_AT, turn: 3})
+    },
     load: () => Promise.resolve(),
     // Home's doors drawn before data.json, the band's photos once it is in (beforeData).
     doorsFirst: true,
@@ -2360,6 +2378,19 @@ const UNITS = {
   fish: {
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // Its basics module's words (as the corals': proto/fishbasics.js, learn.js BASICS_TRAIL_F). lo and all are for the
+    // "lower" card, off for the fish with their other level-change cards (Pierre, 2026-11-08, the flag below).
+    basics: {
+      mod: 'fishbasics',
+      name: 'Fish basics',
+      ask: 'New to reef fish?',
+      kick: 'New to reef fish',
+      offer: 'Six short steps, about 5 minutes: body shape first, then the identification groups, fins, tails and markings. Then the quiz.',
+      lo: 'Fish basics shows what to look at first: body shape, fins, tail and markings. About 5 minutes.',
+      all: 'It shows what to look at first: body shape, fins, tail and markings.',
+      card: 'Body shape, fins, tails, markings: what to look at first, on drawings and real photos.',
+      trail: () => ({stops: BASICS_TRAIL_F, at: BASICS_AT_F, turn: 2})
+    },
     // Home's words for a subject with no tool of its own yet (home.js viewHome, viewFishKey; the corals' are the page's
     // own): need, what Identify names; before, when the Learn door is for; when, title, desc, btn, soon: the Identify
     // door's; key, the key's page line; learn, practice: the Learn door's two lines where they are not the fish's.
@@ -2915,16 +2946,22 @@ const sheetFetch = (url, o) =>
 let SYNC = store.get('reefid-account', null),
   syncTimer = null;
 
-// Coral basics finished (proto/basics.js: every step seen), on this device or on another one (the achievement's feat
-// _basics in the synced achievements record, progress.js). The Home line and the first-launch offers read it.
-const BASICS_KEY = 'reefid-basics';
+// The basics module of a subject finished (Coral basics, Fish basics: proto/basics.js, proto/fishbasics.js; every step
+// seen), on this device or on another one (the done feat in the synced achievements record, progress.js achBasics). Its
+// record and feat are the subject's own (SUBJECTS basics: key, feat), so finishing one never hides the other's offers. The
+// Home line and the first-launch offers read it.
+const BASICS_KEY = 'reefid-basics'; // the corals' record (SUBJECTS basics.key)
 // Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
-const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})._basics);
-// The basics module of the subject on screen (SUBJECTS pages 'basics': Coral basics; no Fish basics yet) not done yet:
-// what "I'm new" and the first-launch question's "lower" card offer, and the Home line. A subject without one offers none.
+const basicsKey = (S = SUBJ) => (S.basics || {}).key || BASICS_KEY;
+const basicsDone = (S = SUBJ) =>
+  !!((store.get(basicsKey(S), {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})[(S.basics || {}).feat || '_basics']);
+// The basics module of the subject on screen (SUBJECTS pages 'basics') not done yet: what "I'm new" and the first-launch
+// question's "lower" card offer, and the Home line. A subject without one offers none. Its words (UNITS basics: name, ask,
+// offer, lo, card, trail) come from basicsWords.
 const basicsDue = () => SUBJ.pages.includes('basics') && !basicsDone();
+const basicsWords = () => UNITS[SUBJ.id].basics || {name: 'Basics'};
 // The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each, in the words
 // of the subject on screen (SUBJECTS start): the tour, the card that asks it, and the fallback card (only: the choices it
 // offers). cur: the current answer, marked.
@@ -3083,8 +3120,9 @@ showCvd();
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [
-    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path.
-    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, on real photos'],
+    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path; Fish basics
+    // (proto/fishbasics.js) is the same tab for the fish (subjWords: the subject's name for it, UNITS basics).
+    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, shown'],
     ['genera', 'Genera', 'Every genus, as photos or ID tips'],
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
