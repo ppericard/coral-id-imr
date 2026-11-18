@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// The coral calibration set (Pierre, 2026-11-18: the placement test starts with a calibration set; docs/decisions/
-// 2026-11-18-coral-calibration-set.md, docs/LEARNING.md "The calibration set"): writes calibration-set.json, a fixed set
-// of about TARGET coral game photos that the draw shows a little more often (model.js setBonus) until each has GOAL
-// answers, so that a later placement test can ask photos whose difficulty is measured, not guessed.
+// The coral calibration set, the first step of the placement test (docs/LEARNING.md "The calibration set"; why: its
+// decision record in docs/decisions/): writes calibration-set.json, a fixed set of about TARGET coral game photos that
+// the draw shows a little more often (model.js setBonus) until each has GOAL answers, so that a later placement test can
+// ask photos whose difficulty is measured, not guessed.
 //
 // The rule:
 //   - Eligible: a game photo of a slate genus (core.js slateOf: the 39 IMR genera and Millepora; the bonus genera are

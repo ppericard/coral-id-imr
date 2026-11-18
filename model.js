@@ -178,23 +178,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
       k = mem[p.o || p.f];
-<<<<<<< HEAD
-    let r = Math.exp((-x * x) / 2) * calBonus(p) * setBonus(p);
+    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
     // (SUBJECTS calib: 3 for fish, 1 for the corals), whoever took it.
-=======
-    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
-    // Spread the repeats (photo memory, Pierre 2026-11-03): a photo already shown weighs e^offset of its memory bucket
-    // (core.js MEM, the subject's offsets pmem): the odds memory adds to a right answer on it, divided out. With the
-    // offsets of 2026-11-03, about x 0.64 shown never right, x 0.33 right once, x 0.18 right twice or more (it was x 0.6
-    // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
-    // It matters most in a genus with few photos, where repeats come soonest.
-    // A reference-level photo never seen (core.js refLevel: a reference source's own, or judged ease 5 with the
-    // reference look; Pierre, 2026-11-06) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
-    // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
->>>>>>> 975e9049 (Calibration set: the draw on held units near the target, the check's results, tests and docs)
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
