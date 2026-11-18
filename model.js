@@ -297,10 +297,9 @@ const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
 // never waits on a unit the player may not open. The draw only: its kind and its group for "Learned" stay its phase's
 // (core.js varKindOf, varUnit), as the sheet's replay reads them.
 const MIM_AT = {met: [0.5, 0.8], alone: [0.8, 0.8]};
-const mimOf = (n, p) => {
-  const L = p && (GX(varHome(n)) || {}).mim;
-  return (L && L.find(m => m.sp === p.sp && (m.st !== 'juvenile' || phaseOf(p) === 'juvenile'))) || null;
-};
+// mimIn: the entry of photo p among a unit's entries L, null for none.
+const mimIn = (L, p) => (L && p && L.find(m => m.sp === p.sp && (m.st !== 'juvenile' || phaseOf(p) === 'juvenile'))) || null;
+const mimOf = (n, p) => mimIn((GX(varHome(n)) || {}).mim, p);
 const mimAt = m => (m.m.some(id => GX(id) && introduced(id)) ? MIM_AT.met : MIM_AT.alone);
 // The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
 // kind's ramp on the unit's bar (genScore), a photo of the mimicry class its own ramp (mimOf, mimAt), 1 for a photo with
@@ -309,10 +308,11 @@ const mimAt = m => (m.m.some(id => GX(id) && introduced(id)) ? MIM_AT.met : MIM_
 function varOf(n, L) {
   const juv = (GX(varHome(n)) || {}).juv,
     F = {},
+    ML = (GX(varHome(n)) || {}).mim,
     MF = new Map(),
     kind = p => varKindOf(p, juv),
     f0 = p => {
-      const m = mimOf(n, p);
+      const m = ML ? mimIn(ML, p) : null;
       if (m) {
         if (!MF.has(m)) MF.set(m, varRamp(genScore(n), mimAt(m)));
         return MF.get(m);

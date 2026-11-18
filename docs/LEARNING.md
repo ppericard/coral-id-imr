@@ -3811,7 +3811,52 @@ bounds (two looks). The study's C0 prototype matched this branch within noise on
   - Level 3 (about 6 hours of machine time) was declined by Pierre, 2026-11-17 (Q392 b: "6h de calcul ne devrait
     JAMAIS arriver"). The cells are accepted as they stand.
 
-### Juveniles and colour phases in stages (2026-11-15, the first build, replaced on 2026-11-17 by the section above; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
+### The mimicry class (2026-11-18)
+
+Pierre, 2026-11-18 (10:22 Manila), on the variant classes: a juvenile or an adult that resembles another species comes
+in once both units are met and at Open Water, with its explanation card, and the pair is then drilled in the look-alike
+formats; his answers to the classic look-alike pairs study ([2026-11-18-classic-lookalike-pairs](reviews/2026-11-18-classic-lookalike-pairs.md)
+§10): the pairs M1-M7 enter play now, one sourced mark is enough for a card, and a warning on the photos of a species
+whose look varies by region. Decision record: [2026-11-18-variant-classes](decisions/2026-11-18-variant-classes.md).
+
+- **The pairs** (`tools/fish_lookalikes.json`, hand-kept; `tools/build_fish.py` `lookalikes` checks it and writes
+  `fish.json` `lookalikes`): each pair names two species of the game, its kind (`resembles` where a source says one
+  resembles the other; `confused` for a plain confusion, none yet), the stage of each side that resembles (`juvenile`
+  or `all`), the sources that state the resemblance (each with its quote in the hand-kept file) and the marks that tell
+  them apart on a photo: our words, at most 80 characters, no digit, never the word "mimic" (Pierre's rule in
+  FISH_PATH.md: a resemblance is a source's claim), each with its sources. M1-M7 today (the study's §3).
+- **The class in the draw** (`app.js` `mimLay`; `model.js` `MIM_AT`, `mimOf`, `mimAt`, `varOf`): the family of each
+  resembling species carries its entries (`mim`); a photo of that species at the stage that resembles (its juveniles, or
+  every photo) weighs a ramp on the bar of the unit asked: from Open Water to Advanced (`MIM_AT.met`, [0.5, 0.8]) once a
+  unit of the species it resembles (that species, its genus or its family) is met (`introduced`), at Advanced
+  (`MIM_AT.alone`, [0.8, 0.8], the late class's timing) while none is, so the photo never waits on a unit the player may
+  never open (circle 3 declined: M6's bream). It replaces the photo's class timing (*Acanthurus pyroferus* and
+  *Scolopsis bilineata*, class B, came at Advanced; they now come from Open Water once their model is met). The variety
+  fallback holds as for every variant: a unit with fewer than `PICKD.VARIETY` observations at full weight holds nothing
+  back (*Paraluteres* as a genus unit: all its photos are of the class).
+- **The draw only.** The photo's kind and its group for "Learned" stay its phase's (`core.js` `varKindOf`, `varUnit`,
+  `varLeftOf`): a resembling juvenile is in the juveniles' group, an adult that resembles another species in none. So the
+  sheet's replay, its variant table and the learned marks are as before: no rules version (rule D5), no sheet change.
+  At the exam's bar (0.85) every photo of the class is in, met or not, so the exam never waits on the model.
+- **The card** (`quiz.js` `mimArm`, `mimShow`, `mimPics`, `mimCardOf`): the first question that shows a photo of the
+  class brings its pair's card at the break at Next, before the juvenile card, on the same conditions (the photo quiz
+  and the custom quiz; never over another card or a mastery toast due). Two photos side by side (a photo of the species,
+  and one of the species it resembles from that species' family: a juvenile when the pair names its juveniles, else an
+  adult first), the marks under them with their sources, then "Resembles" with the sources that state it, and the
+  credits. Once per pair and subject (`subjDev` `mim`, `TOLD` `mim:<subject>-<pair>`), cleared at sign-out (rule D7).
+- **The out-of-region warning** (`fish.json` species `region`: why and its sources; `tools/fish_lookalikes.json`
+  `regional`): a photo of such a species taken outside the Philippines (`loc` `world`) never shows on the card; the card
+  shows another of the species from the region, or waits. The photo stays in play and in the quiz. Today
+  *Acanthurus pyroferus* (Randall 2005, p. 321; FishBase): 16 of its 18 juvenile photos are from elsewhere.
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): the pair drilled in the look-alike formats (the model's
+  unit as a trap and duel partner for a photo of the class: FISH_PATH.md "Look-alikes at any rank", view 2), M7 as a
+  family pair, the Look-alikes deck for every subject, the admin's ⚠ badge and its one-click lift, the feature frames'
+  default.
+- **The check** (rule L11): proportionate, unit tests (`tests/mimicry.test.js`: the gate on made-up pools through the
+  draw, the groups unchanged, the card's photos); no simulation, since the change moves only the photos of seven species
+  and nothing the replay reads.
+
+### Juveniles and colour phases in stages (2026-11-15, the first build, replaced on 2026-11-17 by "Juveniles and colour phases on their unit's mastery" above; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
 
 Pierre, 2026-11-07: "we may have removed things (the very-easy-first wall), but we must put back a progressive path that
 presents juveniles and sexual dimorphism". His rules: juvenile and phase photos never at the very start of a unit; they
