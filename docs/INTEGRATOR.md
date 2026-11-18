@@ -222,12 +222,12 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   `core.js`, through `python3 tools/sync_core.py --fix`) carries one `tools/sync/changes/<branch>.md` and leaves
   `VERSION`, line 1 and `tools/sync/HISTORY.md` alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
   `origin/main` into the branch, run `python3 tools/sheet_version.py --assign --dry-run`, then `--assign` (VERSION + 1,
-  line 1 set to the short form, the entry written at the top of HISTORY.md and in ARCHITECTURE.md's version history, every gate the PR adds and every bare
+  line 1 set to the short form, the entry written at the top of HISTORY.md (only there), every gate the PR adds and every bare
   `vNEXT` set to the new number, main's gates left alone, the file removed; a merge stopped on a conflict may stay
   uncommitted until then, the tool reads its `MERGE_HEAD`, and it refuses a branch that does not hold `origin/main`
   yet, unresolved conflicts, or a PR that moves one of main's gates), run the fast tier, commit "Sheet script vN assigned at merge",
   push, `@codex review`, wait for green and Codex, then send it in a train, alone or as that train's one Code.gs PR. A PR built under
-  the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
+  the old rule (its own VERSION bump) passes the check only if its number is still main+1 and HISTORY.md holds its entry on top:
   otherwise move its entry into a changes file and restore main's VERSION, line 1 and HISTORY.md. Rules versions (RVS)
   run with no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
 - **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b; every PR, 2026-11-16): when a PR is ready on its own head

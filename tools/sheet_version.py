@@ -20,8 +20,8 @@ accepted while it stays as it is (main's own copy of this tool, which the merge 
 HISTORY.md must then hold exactly its entries. The next --assign writes the short line.
 
 --assign (the integrator, on the PR branch once it is up to date with main, right before the merge): VERSION + 1; the
-entry goes at the head of HISTORY.md (under the day's Manila date) and of ARCHITECTURE.md's version history; line 1 takes
-the short form for the new version; every gate the PR adds against REF (and any above the old VERSION) becomes the new
+entry goes at the head of HISTORY.md (under the day's Manila date), and nowhere else; line 1 takes the short form for the
+new version; every gate the PR adds against REF (and any above the old VERSION) becomes the new
 one, main's gates stay as they are; every bare placeholder (outside a `code span`) becomes vN; the changes file is removed.
 The base is REF itself (default origin/main), which the branch must hold: merged in, committed or not (a merge stopped on
 a conflict, resolved, holds it through MERGE_HEAD), or rebased on. It writes nothing when the branch does not hold REF, a
@@ -38,7 +38,7 @@ head, and merges.
 - a PR waiting for its version: exactly one changes file, a Code.gs change, VERSION, line 1 and HISTORY.md's versions as on
   the base, every gate it adds above the base's VERSION (so the feature stays off until the assign);
 - a PR assigned: no changes file, VERSION one above the base's, line 1 short, HISTORY.md the base's with one entry for vN
-  on top, ARCHITECTURE.md naming vN, every gate it adds at vN, none above, no bare placeholder;
+  on top, every gate it adds at vN, none above, no bare placeholder;
 - a PR with no Code.gs change: no changes file, VERSION and line 1 untouched, HISTORY.md's versions as on the base, no
   gate above VERSION;
 - --main (main itself, or a merge train about to become main): no changes file left, no gate above VERSION and no bare
@@ -51,7 +51,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 GS = 'tools/sync/Code.gs'
-ARCH = 'docs/ARCHITECTURE.md'
 CHANGES = 'tools/sync/changes'
 HIST = 'tools/sync/HISTORY.md'
 TOKEN = 'v' + 'NEXT'  # spelled apart so this file never holds the placeholder itself
@@ -69,7 +68,6 @@ CONST = re.compile(r'^const VERSION = (\d+);', re.M)
 # START_ADMIN_SHEET too. Never SHEET_FLOOR (core.js): the gate floor, a version already live set by
 # hand, never one the assign moves (tests/gates.test.js ratchets it).
 GATE = re.compile(r'\bconst (?!SHEET_FLOOR\b)([A-Z][A-Z0-9_]*_SHEET) = (\d+);')
-HISTORY = '- Version history: v2 Answers/Activity tabs; '
 BARE = re.compile(r'`[^`\n]*`|\b' + TOKEN + r'\b')  # a code span is skipped whole, so only a bare token matches
 
 
@@ -140,7 +138,7 @@ def version(src):
 def flat(entry, md=True):
     """One line, no trailing separator; for the header (md=False), code marks dropped. The marks go before the spaces are
     collapsed, so flat(flat(e, False), False) == flat(e, False) (a span such as `sp. ` left two spaces in v170's header,
-    which --check then refused). HISTORY.md and ARCHITECTURE.md keep the marks (md=True)."""
+    which --check then refused). HISTORY.md keeps the marks (md=True)."""
     s = entry if md else entry.replace('`', '')
     return re.sub(r'\s+', ' ', s).strip().rstrip(' .;')
 
@@ -376,8 +374,6 @@ def problems(root='.', base=None, main=False):
             errs.append('%s: VERSION %d with the long header: line 1 is the short form once a version is assigned (python3 tools/sheet_version.py --assign)' % (GS, v))
         if unfold(ents, bents) is None:
             errs.append('%s: VERSION %d, but it is not the base\'s history with one entry for v%d on top: use --assign' % (HIST, v, v))
-        if '; v%d (' % v not in read(ARCH, root):
-            errs.append('%s: its version history does not name v%d: use --assign' % (ARCH, v))
         if high and not main:
             errs.append('gates above VERSION %d: %s' % (v, ', '.join(high)))
         off = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in added(mine).items() if n != v)
@@ -391,7 +387,7 @@ def problems(root='.', base=None, main=False):
 
 
 def assign(root='.', date=None, dry=False, base=None):
-    """Fold the one changes file into Code.gs and ARCHITECTURE.md; returns the lines saying what changed."""
+    """Fold the one changes file into Code.gs and HISTORY.md; returns the lines saying what changed."""
     files = changes(root)
     if len(files) != 1:
         sys.exit('✗ --assign needs exactly one file in %s, found %d%s' % (CHANGES, len(files), (': ' + ', '.join(files)) if files else ''))
@@ -404,8 +400,8 @@ def assign(root='.', date=None, dry=False, base=None):
     if not h or old is None or h[0] != old:
         sys.exit('✗ %s: the header and the constant disagree: fix them first (--check)' % GS)
     n = old + 1
-    # The entry itself may name the new version with the placeholder: it is written into HISTORY.md and
-    # ARCHITECTURE.md with every bare placeholder set to vN, as in the code files (a code span stays as written).
+    # The entry itself may name the new version with the placeholder: it is written into HISTORY.md with every bare
+    # placeholder set to vN, as in the code files (a code span stays as written).
     entry = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), entry)
     date = date or datetime.now(ZoneInfo('Asia/Manila')).strftime('%Y-%m-%d')
     hist = read(HIST, root) if os.path.exists(os.path.join(root, HIST)) else None
@@ -416,13 +412,8 @@ def assign(root='.', date=None, dry=False, base=None):
     line = LINE1 % (n, date)  # also turns the long header of the transition into the short line
     new = line + src[len(h[2]):]
     new = CONST.sub('const VERSION = %d;' % n, new, count=1)
-    arch = read(ARCH, root)
-    if HISTORY not in arch:
-        sys.exit('✗ %s: the line starting "%s" is missing' % (ARCH, HISTORY.strip()))
-    arch = arch.replace(HISTORY, '%sv%d (%s) %s; ' % (HISTORY, n, date, flat(entry)), 1)
-    edits = {GS: new, ARCH: arch, HIST: new_hist}
-    said = ['%s: VERSION %d -> %d, line 1 (%s)' % (GS, old, n, date), '%s: entry v%d (%s) on top' % (HIST, n, date),
-            '%s: version history v%d' % (ARCH, n)]
+    edits = {GS: new, HIST: new_hist}
+    said = ['%s: VERSION %d -> %d, line 1 (%s)' % (GS, old, n, date), '%s: entry v%d (%s) on top' % (HIST, n, date)]
     every = own(root, base)
     moved = changed(every, old)
     if moved:
@@ -483,8 +474,8 @@ def main():
         for s in said:
             print(('would change ' if a.dry_run else '') + s)
         if not a.dry_run:
-            print('\nNext: git add -A %s %s %s %s (and the files above), commit "Sheet script v%d assigned at merge", push,'
-                  ' then merge once green and Codex-clean (docs/INTEGRATOR.md).' % (GS, HIST, ARCH, CHANGES, n))
+            print('\nNext: git add -A %s %s %s (and the files above), commit "Sheet script v%d assigned at merge", push,'
+                  ' then merge once green and Codex-clean (docs/INTEGRATOR.md).' % (GS, HIST, CHANGES, n))
         return 0
     errs, state = problems(base=base_of(a.base), main=a.main)
     for e in errs:
