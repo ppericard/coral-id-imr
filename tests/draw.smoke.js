@@ -174,6 +174,13 @@ const server = http.createServer((req, res) => {
       if (ex && (logged().m || '') !== (ty ? 'quiz|t|x' : 'quiz|x')) fails.push(`exam answer logged ${logged().m}, typed ${ty}`);
     }
     question = qx;
+    // Every answer logged carries its attempt id (core.js answerId) and its content version (app.js contentVer: the
+    // corals' units in force; tests/contentver.test.js).
+    {
+      const lg = logged();
+      if (!/^[a-z][a-z0-9]{15}$/.test(lg.id || '') || !/^c[a-z0-9]{1,15}$/.test(lg.cv || ''))
+        fails.push(`a coral answer logged without its attempt id or content version: ${JSON.stringify({id: lg.id, cv: lg.cv})}`);
+    }
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
     if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
     // The exam needs TYPED.exam typed right answers among its EXAM.n.

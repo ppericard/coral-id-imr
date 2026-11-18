@@ -820,7 +820,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
   const spShown = speciesShown(ph.filter(p => p !== unseen));
   const ans = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    // Its attempt id (core.js answerId): sent as it is at every try, so the sheet logs it once.
+    id: answerId(),
     t: new Date().toISOString(),
     g: target,
     a: c,
@@ -873,7 +874,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet v141 keeps it (Answers Photo answered); sent only
     // from PA_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). Information only: no score,
     // replay or rule reads it.
-    ...(tap && tap.f ? {pa: tap.f} : {})
+    ...(tap && tap.f ? {pa: tap.f} : {}),
+    // The content version its subject's units were made from (app.js contentVer, core.js contentVersion; ROADMAP "Content
+    // versions and duplicate-safe answers", Pierre 2026-11-18): sheet v178 keeps it (Answers Content version); sent only
+    // from CV_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). No score, replay or rule reads it.
+    ...cvField()
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
@@ -1051,6 +1056,11 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
+// The content version field of an answer in the subject on screen (app.js contentVer), none when it has none yet.
+const cvField = () => {
+  const cv = typeof contentVer === 'function' ? contentVer(SUBJ) : '';
+  return cv ? {cv} : {};
+};
 // An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
 // twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously (Pierre,
 // 2026-11-01, see sendAnon).
@@ -1130,7 +1140,7 @@ function winkAnswer(n, id, ids, p, tm) {
     a = r(id),
     sp = speciesShown([p]);
   return {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: answerId(),
     t: new Date().toISOString(),
     g: n,
     a,
@@ -1145,7 +1155,8 @@ function winkAnswer(n, id, ids, p, tm) {
     rk: rankOf(n) || unitRankOf(SUBJ),
     ...(unitName(n) ? {tn: unitName(n)} : {}),
     ...(unitName(a) ? {ta: unitName(a)} : {}),
-    ...(sp ? {sp} : {})
+    ...(sp ? {sp} : {}),
+    ...cvField()
   };
 }
 function winkShow({n}) {
