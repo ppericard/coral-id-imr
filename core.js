@@ -247,10 +247,10 @@
   //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
   //           ACHK) under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
   //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo; boardSheet, the
-  //           script version that serves it when later than BOARD_SHEET (progress.js boardLive; rule D4)
+  //           script version that serves it when later than that (progress.js boardLive; rule D4)
   //   replayed  a subject other than replay's whose progress the sheet replays from its own answers: gen(F) its units
   //           from its file (file, else its pool's first), rvs() its rules versions, tree(F) its board's tree (a subject
-  //           with a score), sheet the script version that replays it when later than REPLAYS_SHEET (sync.js rpOn)
+  //           with a score), sheet the script version that replays it when later than v112 (sync.js rpOn)
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
   //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
@@ -3000,10 +3000,8 @@
     const o = F && F[f];
     return Array.isArray(o) && typeof o[0] === 'number' && isFinite(o[0]) ? o[0] : 0;
   };
-  // The sync script version that serves fmt and replays with it (Code.gs v77): the app reads fmt only from a reply that
-  // says v >= FMT_SHEET (rule D4), so a replay never undoes what the app did live; before it, every offset is 0.
-  const FMT_SHEET = 77;
-  const fmtsOf = j => (j && j.v >= FMT_SHEET && j.fmt && typeof j.fmt === 'object' ? j.fmt : {});
+  // The per-format offsets of a ?stats=1 reply (Code.gs v77 serves fmt and replays with it), {} when it has none.
+  const fmtsOf = j => (j && j.fmt && typeof j.fmt === 'object' ? j.fmt : {});
   // How sure a player's level is (Pierre, 2026-11-03: a level from 35 answers at 97% right sat above one from 245):
   // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level
   // itself (eloReplay, Code.gs stats_ ras; Codex review #375): an answer that was a near-sure success tells little, so a
@@ -3392,12 +3390,10 @@
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
   const SEED = '\u{1F331}';
-  // The admin's mark (v125): from the script that knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its
-  // leaderboard rows, admin: 1 in its load reply), and only there (rule D4: an older script sends neither). markRow: a
-  // leaderboard row of a reply of version v. markHtml: the mark itself, plain text after the name's element, outside its
-  // text (the name stays the account's name).
-  const MARK_SHEET = 125;
-  const markRow = (row, v) => Number(v) >= MARK_SHEET && Array.isArray(row) && row[3] === 1;
+  // The admin's mark (v125): the script knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its leaderboard
+  // rows, admin: 1 in its load reply). markRow: whether a leaderboard row carries it. markHtml: the mark itself, plain
+  // text after the name's element, outside its text (the name stays the account's name).
+  const markRow = row => Array.isArray(row) && row[3] === 1;
   const markHtml = () => `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
@@ -5374,8 +5370,8 @@
   // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
   // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
   // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
-  // The domain-score bar's inputs of a question (scoreAnswer): q.dom false, a game whose sheet does not replay these rules
-  // yet (model.js domOn_, DOM_SHEET; rule D4), keeps the former moving average; a record already under them (s.dp), or one
+  // The domain-score bar's inputs of a question (scoreAnswer): q.dom false (a replay with dom false, replayProgress) keeps
+  // the former moving average; a record already under them (s.dp), or one
   // without a former moving average (a genus first answered under them, every genus of a full replay), takes the domain
   // score; a record with s.pg keeps it until a full replay under these rules rebuilds it from the log.
   const domIn = (q, s) => q.dom !== false && (domOn(s) || typeof s.pg !== 'number');
@@ -5736,39 +5732,16 @@
   // Whether a replay under rules version rv of subject id reads the variant table (FISH_RVS vars; Q391 b): this device's
   // answers replayed on top of the sheet's then recompute a unit's variant groups left (vl) with them (Codex review #953).
   const rvVars = (id, rv) => rvsOf(id).some(e => e && e.vars && e.v <= rv);
-  // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
-  // script (rule D4, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
-  // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
-  const RV_SHEET = 28;
-  // The sync script version that replays the answer time (Code.gs v32 reads the Seconds column into the replay rows):
-  // the app weighs a right answer's steps by its time (rtWeight) only once the script's replies say v >= RT_SHEET
-  // (sync.js sheetV), so a replay never undoes what the app did live (rule D4); before it, exactly as before.
-  const RT_SHEET = 32;
-  // The sync script version that replays the first-launch answer's prior (Code.gs v36 replay_ reads the player's
-  // reefid-sync-coral-start: its answers and the silent ease): the app shrinks a new genus's start towards that prior
-  // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
-  // Codex review #428); before it, the default player's prior 0, exactly as before.
-  const START_SHEET = 36;
-  // The sync script version that replays the domain-score bar (rules version 9, core.js DOM): a genus first answered in
-  // the app takes it only once the script's replies say v >= DOM_SHEET (model.js domRules), and the app's own replay of
-  // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
-  // s.pg exactly as before (rule D4).
-  const DOM_SHEET = 87;
-  // The sheet script that ranks a subject with a global score by it (Code.gs v101 board_, core.js treeScore): the app shows
-  // the score, and sends its tree, only from a reply with v >= SCORE_SHEET (model.js headScore, sync.js boardUnits; rule
-  // D4: the leaderboard and My progress on one scale; Codex review #730), before that the families' mean as before.
-  const SCORE_SHEET = 101;
-  // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
-  // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
-  // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
-  // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
-  const LOG_SHEET = 60;
-  // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
-  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS)
-  // only once the script's replies say v >= REPLAYS_SHEET
-  // (rule D4); before,
-  // that subject does exactly what it did (no rules version, the plain merge).
-  const REPLAYS_SHEET = 112;
+  // The gate floor (architecture review 2026-11-18, R3, step 2): a sheet script version already confirmed live, at least
+  // three days before it was set here, never the version the app is built against (Pages deploys on a push to main, the
+  // script only at its next self-update, so the build's VERSION can run ahead of the live script: rule D4). The app reads
+  // the script version as at least this (sync.js sheetV), also before any reply (a new device, an offline first launch),
+  // and every gate at or below it is gone with its old branch: the full replay (v28), the answer time (v32), the
+  // first-launch prior (v36), each answer filed under its subject (v60), the domain-score bar (v87), the surprise cards'
+  // answers (v98), the global score (v101), the other subjects' replays (v112) and the rest (tests/gates.test.js). Raised
+  // by hand in a PR, to a version merged at least three days before (tools/sync/Code.gs VERSION's git log); never above
+  // main's VERSION (the ratchet in tests/gates.test.js). Not a gate: tools/sheet_version.py leaves it alone.
+  const MIN_SHEET = 131;
   // The sync script version that replays a subject's progress under the content editor's structure (Code.gs v146:
   // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
   // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
@@ -5780,11 +5753,6 @@
   // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
   const PAIRS_SHEET = 163;
   const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
-  // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
-  // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
-  // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
-  const WINK_SHEET = 98;
-  const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
   // The sync script version that stores the photo a Find the X answer tapped (Code.gs v141: Answers Photo answered, the
   // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
   // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
@@ -6048,8 +6016,7 @@
       fmt = o.fmt || {},
       memory = o.memory !== false,
       time = o.time !== false,
-      // dom: false, the rules before version 9 (the former moving average; a device whose sheet does not replay version 9
-      // yet, sync.js replayAdopt, rule D4); gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for
+      // dom: false, the rules before version 9 (the former moving average); gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for
       // the rows logged without them.
       dom = o.dom !== false,
       gdv = g => {
@@ -6377,10 +6344,8 @@
   // view), and the genus sheets opened: how many times, for how long, how the first one was reached (from: the quiz
   // feedback, a Learn page, My progress, anything else) and whether the genus had already been asked to the player
   // then (asked). The app keeps the tally (sync.js pagesRoute) with these pure functions; the sheet cleans what arrives
-  // with pagesClean (Code.gs events_, through its embedded copy of this file). SHEET: the sync script version that
-  // stores them (rule D4: nothing is queued before the sheet says v >= SHEET).
+  // with pagesClean (Code.gs events_, through its embedded copy of this file).
   const PAGES = {
-    SHEET: 30,
     ROUTES: 30, // at most this many page names a summary, the most opened first
     GEN: 30, // at most this many genus sheets a summary
     MAXN: 1000, // openings of one page counted at most
@@ -6988,20 +6953,12 @@
     RV_SORRY,
     RVS,
     RV,
-    RV_SHEET,
-    RT_SHEET,
-    START_SHEET,
-    DOM_SHEET,
-    SCORE_SHEET,
-    LOG_SHEET,
-    REPLAYS_SHEET,
+    MIN_SHEET,
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,
-    WINK_SHEET,
-    logOk,
     PA_SHEET,
     logOut,
     RTIME,
@@ -7058,7 +7015,6 @@
     SEED_LOOKALIKES,
     reservedName,
     SEED,
-    MARK_SHEET,
     markRow,
     markHtml,
     sorryFelt,
@@ -7106,7 +7062,6 @@
     fmtPoint,
     fmtFit,
     fmtOff,
-    FMT_SHEET,
     fmtsOf,
     TRUST,
     PHOTO_W,

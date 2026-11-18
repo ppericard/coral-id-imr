@@ -7,7 +7,7 @@
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json|live] [--truth truth.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall N] [--back keep|one]
-//                          [--rt off] [--rtapp off] [--rtlog answers.json]
+//                          [--rt off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
@@ -107,9 +107,8 @@
 //   are set so that the simulated logs replayed by tools/abilityeval.js --rtfit give back the two measures of the real
 //   answers (PR #431: -0.88 per unit of z on the answer itself, -0.39 on the next answer on the genus after a right one);
 //   T0 only sets the scale (z is against the player's own median). No zoom: the learner never enlarges a photo (too
-//   few real answers to model it yet). The app weighs a right answer's steps by its time once the sync script replays
-//   it (core.js RT_SHEET): the tool says so to the app (the sheet version it last saw, reefid-sheet-v); --rtapp off keeps
-//   the app as before that script (every weight 1); --rt off gives no seconds at all (the learner before 2026-11-04).
+//   few real answers to model it yet). The app weighs a right answer's steps by its time (core.js rtWeight); --rt off
+//   gives no seconds at all (the learner before 2026-11-04).
 //   --rtlog writes the app's own answer log of every run (readAnswers rows, player = profile:seed, then the learner's
 //   pTrue and its time noise) for tools/abilityeval.js.
 //
@@ -270,7 +269,6 @@ const SEEDS = Number(arg('seeds', 5)),
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
-  RTAPP = arg('rtapp', 'on') !== 'off',
   RTLOG = arg('rtlog', null),
   LEARN = arg('learner', arg('world', 'app') === 'rated' ? 'count' : 'item'), // the rated world's: count (tools/ratedworld.js)
   TAU = Number(arg('tau', 0.5)),
@@ -1245,12 +1243,11 @@ async function run(browser, base, name, seed) {
   // evaluate, and the browser's storage queued about 1.5 MB an answer in the renderer until it crashed, #734).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
-  await ctx.addInitScript(([st, rtapp, sv, subj]) => {
+  await ctx.addInitScript(([st, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
-    // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
-    // the app weighs its steps by it; --rtapp off: an older one.
-    if (rtapp) localStorage.setItem('reefid-sheet-v', String(sv));
+    // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js MIN_SHEET).
+    localStorage.setItem('reefid-sheet-v', String(sv));
     localStorage.setItem(`reefid-sync-${subj}-start`, '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
@@ -1263,11 +1260,11 @@ async function run(browser, base, name, seed) {
           ...(st.mem ? {mem: st.mem} : {}),
           ...(st.gd ? {gd: st.gd} : {}),
           // The per-format offsets (?stats=1 fmt, sheet v77; 2026-11-09): the app reads them as the live game does
-          // (model.js PFMT, core.js fmtsOf from a sheet that reports v >= FMT_SHEET); before, every offset was 0 here.
+          // (model.js PFMT, core.js fmtsOf).
           ...(st.fmt ? {fmt: st.fmt} : {})
         })
       );
-  }, [STATS_JSON, RTAPP, SHEETV, SUBJECT]);
+  }, [STATS_JSON, SHEETV, SUBJECT]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));

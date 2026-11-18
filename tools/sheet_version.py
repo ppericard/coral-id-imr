@@ -41,7 +41,9 @@ CHANGES = 'tools/sync/changes'
 TOKEN = 'v' + 'NEXT'  # spelled apart so this file never holds the placeholder itself
 HEAD = re.compile(r'^(?P<pre>// .*?  VERSION )(?P<n>\d+) \((?P<date>\d{4}-\d\d-\d\d): (?P<rest>v(?P<first>\d+): .*)$')
 CONST = re.compile(r'^const VERSION = (\d+);', re.M)
-GATE = re.compile(r'\bconst ([A-Z][A-Z0-9_]*_SHEET) = (\d+);')  # START_ADMIN_SHEET too (Codex review #757)
+# START_ADMIN_SHEET too (Codex review #757). Never MIN_SHEET (core.js): the gate floor, a version already live set by
+# hand, never one the assign moves (tests/gates.test.js ratchets it).
+GATE = re.compile(r'\bconst (?!MIN_SHEET\b)([A-Z][A-Z0-9_]*_SHEET) = (\d+);')
 HISTORY = '- Version history: v2 Answers/Activity tabs; '
 BARE = re.compile(r'`[^`\n]*`|\b' + TOKEN + r'\b')  # a code span is skipped whole, so only a bare token matches
 

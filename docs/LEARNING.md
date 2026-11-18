@@ -6584,7 +6584,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
+  [--openall N] [--back keep|one] [--rt off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
   [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]` (the learner and the Custom-N scenario: "Field learner and
   the Custom-8 scenario" below; the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
@@ -6621,8 +6621,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   situation of the run that collapsed on 2026-11-03.
 - **Response time** (2026-11-04, "Response time" section 5): the learner takes log t = log 7 − 0.15 × right − 0.3 ×
   logit(its true chance) + 0.6 × N(0, 1) seconds (`LEARNER.RT`, calibrated so that its logs give back the two real
-  measures), handed to the app's question clock; the app weighs its steps by it (the sheet version it sees is set to
-  one that replays the time). `--rtapp off`: the app as with an older script (weights 1); `--rt off`: no seconds;
+  measures), handed to the app's question clock; the app weighs its steps by it. `--rt off`: no seconds;
   `--rtlog`: the app's answer log of every run, with the learner's chance and time noise, for `tools/abilityeval.js`.
 - **Openings after a miss** (2026-11-03): per profile, the genera opened on their own cards, those on the question
   right after a miss (0 with `openRight`), the questions where that rule alone held the opening and the openings they

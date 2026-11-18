@@ -6,10 +6,9 @@
 // a Web Worker on this page's own answer log, in this tab; its result stays in this tab. Loaded after admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, loadStats,
 // loadUsers, allPhotos, zoom, img, kpis). Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in
 // docs/LEARNING.md "Multifactor analyses"; the chart helpers in docs/DESIGN.md "Admin charts".
-const AN_V = 35; // sync script version with analysesGet (rule D4: before it, the page just has no stored report)
-// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet v113, ANALYSIS.AN_SUBJ_SHEET): ANREPS and
+// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet v113): ANREPS and
 // ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn), as every view reads them.
-let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
+let ANREP = null, // {st: 'ok' | 'none' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
   ANWORK = null;
 const ANREPS = {},
@@ -42,12 +41,9 @@ function anLoad(S = ASUBJ) {
   return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN, subject: S.id})})
     .then(r => r.json())
     .then(j => {
-      // A script before v35 answers 'input' to an unknown POST: no stored report, nothing else changes (rule D4).
-      if (!j || (!j.ok && j.error === 'input') || (j.v && j.v < AN_V)) return put({st: 'old', v: j && j.v});
-      if (!j.ok) return put({st: 'err', err: j.error === 'token' ? 'Token refused' : 'Not available'});
-      // Another subject's report from the script that stores one per subject only (rule D4): an older one answers with the
-      // corals' report whatever the subject asked. Its answers are still counted (the status line).
-      const own = S.id === replaySubject() || (Number(j.v) >= ANALYSIS.AN_SUBJ_SHEET && j.subject === S.id);
+      if (!j || !j.ok) return put({st: 'err', err: j && j.error === 'token' ? 'Token refused' : 'Not available'});
+      // Another subject's report only when the reply names it. Its answers are still counted (the status line).
+      const own = S.id === replaySubject() || j.subject === S.id;
       if (!own) return put({st: 'none', rep: null, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: null});
       let rep = null;
       try {

@@ -312,7 +312,7 @@ function statsHeat() {
     $v.innerHTML =
       head +
       kp +
-      `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`;
+      `<p class="note">No answer with its choices yet.</p>`;
     bind();
     return;
   }
