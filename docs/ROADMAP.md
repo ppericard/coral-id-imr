@@ -146,7 +146,7 @@ Pierre's decisions (2026-11-04, on the design study's questions):
 | 9 | Photo review for fish | The prior shown in By difficulty beside the answers waits for the per-subject `?stats=1` (PR 11) | Built (#663, #938) except that |
 | 10 | Fish Look-alikes | Species pairs from the data, IMR, players' confusions and reference sites, cues always sourced | Family pairs done (#667); species pairs Next |
 | 11 | Log fish answers | A per-subject `?stats=1` (fish photo ratings, memory offsets, confusions keyed by rank), then Difficulty, prior against measured, Confusions and Health per subject | Logging done (#630); the pooled fish stats are served (sheet v137) but not read by the app; the ratings Next |
-| 12 | Photo stats, Taxa, Players columns | The read-only Taxa view (out-of-game species and why) | Done: Photo stats, Players columns (#690, #692, #992), Taxa (Photo stats › Taxa, PR_NUM) |
+| 12 | Photo stats, Taxa, Players columns | The read-only Taxa view (out-of-game species and why) | Done: Photo stats, Players columns (#690, #692, #992), Taxa (Photo stats › Taxa, #1169) |
 
 Open point for the plan: the coral auto-sort's thresholds per field apply to fish as they are until fish agreement data exist. The fish judging uses the one rubric of `judging/FISH.md` (visual criteria only: the species is the iNaturalist experts' identification, never judged); candidates are refilled automatically (Q171).
 

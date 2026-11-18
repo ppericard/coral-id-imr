@@ -1,6 +1,6 @@
 # The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds
 
-Date: 2026-11-19. PR: #PR_NUM. Rules or docs touched: A3, A4, A5; docs/spec/admin.md, docs/spec/admin-photos.md "Taxa";
+Date: 2026-11-19. PR: #1169. Rules or docs touched: A3, A4, A5; docs/spec/admin.md, docs/spec/admin-photos.md "Taxa";
 ROADMAP "Admin for every subject" row 12.
 
 ## Context
