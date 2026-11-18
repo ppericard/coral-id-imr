@@ -333,276 +333,288 @@ async function freshPlayers(b, base, errs) {
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
   // juvenile of a capped genus (fish.json juv: a juvenile is very easy only in a class-A entry or a show-early genus);
-  // past Open Water the others come in (a sex / colour phase is no family-level difficulty). Five seeds.
-  const fresh = [];
-  for (const seed of [11, 222, 3333, 44444, 555555]) {
-    const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
-    await c6.route(
-      u => !u.href.startsWith(base),
-      r => r.abort()
+  // past Open Water the others come in (a sex / colour phase is no family-level difficulty). Five seeds, each a player
+  // of its own (its context, its storage, its seeded Math.random, its renderer process), so they play side by side: on
+  // CI, where the runner is this smoke's alone, all five at once; on a shared machine two at a time, the two cores of
+  // the smoke's slot (tests/slot.js). The failures are reported in the seeds' order.
+  const seeds = [11, 222, 3333, 44444, 555555],
+    width = Math.min(seeds.length, process.env.CI ? seeds.length : 2),
+    out = seeds.map(() => []);
+  let next = 0;
+  await Promise.all(
+    Array.from({length: width}, async () => {
+      for (let i; (i = next++) < seeds.length;) await freshSeed(b, base, errs, seeds[i], out[i]);
+    })
+  );
+  return out.flat();
+}
+// One brand-new fish player of freshPlayers, on Math.random seeded with seed: its failures pushed to fresh, its page
+// errors to errs.
+async function freshSeed(b, base, errs, seed, fresh) {
+  const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+  await c6.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c6.addInitScript(sd => {
+    try {
+      if (!sessionStorage.getItem('fish-new')) {
+        sessionStorage.setItem('fish-new', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+      }
+    } catch (e) {}
+    let s = sd;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  }, seed);
+  const q = await c6.newPage();
+  q.on('pageerror', e => errs.push(`new player ${seed}: ${e.message}`));
+  await q.goto(base + '#practice/quiz');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU && document.querySelector('#view .q'), null, {
+    timeout: 30000
+  });
+  await qa.install(q);
+  const r = await q.evaluate(N => {
+    const fails = [],
+      ok = (c, m) => c || fails.push(m);
+    // Read the cards as a player does (Next, Next... Start): each card is met as it shows (quiz.js introShow).
+    const readCards = () => {
+      for (let k = 0; k < 10 && document.querySelector('.unlock [data-b="1"]'); k++) document.querySelector('.unlock [data-b="1"]').click();
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    };
+    const starters = slateGenera().filter(n => GX(n).first),
+      ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
+    ok(
+      starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
+      `the starter core from fish.json: ${starters}`
     );
-    await c6.addInitScript(sd => {
-      try {
-        if (!sessionStorage.getItem('fish-new')) {
-          sessionStorage.setItem('fish-new', '1');
-          localStorage.setItem('reefid-tour', '"done"');
-          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
-          localStorage.setItem('reefid-sync-subject', '"fish"');
-          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
-        }
-      } catch (e) {}
-      let s = sd;
-      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    }, seed);
-    const q = await c6.newPage();
-    q.on('pageerror', e => errs.push(`new player ${seed}: ${e.message}`));
-    await q.goto(base + '#practice/quiz');
-    await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU && document.querySelector('#view .q'), null, {
-      timeout: 30000
-    });
-    await qa.install(q);
-    const r = await q.evaluate(N => {
-      const fails = [],
-        ok = (c, m) => c || fails.push(m);
-      // Read the cards as a player does (Next, Next... Start): each card is met as it shows (quiz.js introShow).
-      const readCards = () => {
-        for (let k = 0; k < 10 && document.querySelector('.unlock [data-b="1"]'); k++)
-          document.querySelector('.unlock [data-b="1"]').click();
-        document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    // The card: Pierre's ★ Cover while in play (app.js treeCurate: his pick), else the default (app.js seenCover): a photo of its species most seen around the instance's centre (observers,
+    // then observations), the first of that species' adult photos by reference level (core.js refFirst), never a juvenile.
+    const seenK = p => treeSeen(p.sp)[0] * 1e6 + treeSeen(p.sp)[1],
+      // among the species with a reference-level adult photo (else with an adult photo), the most seen; his ★ cover of it
+      // when he picked one, else its reference photo; never a watermarked photo while the unit has an adult one without
+      // (app.js wmP), his ★ cover of the species included
+      mostSeen = (L, c) => {
+        const A0 = L.filter(p => !juvP(p)),
+          A1 = A0.filter(p => !wmP(p)),
+          A = A1.length ? A1 : A0,
+          R = A.filter(refLevel);
+        if (!A.length) return !!c;
+        if (!c || juvP(c) || (A1.length && wmP(c)) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
+        const pk = treeSpPick(c.sp);
+        if (pk && A.some(p => p.f === pk.f)) return c.f === pk.f;
+        return R.length ? refLevel(c) : refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst));
       };
-      const starters = slateGenera().filter(n => GX(n).first),
-        ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
-      ok(
-        starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
-        `the starter core from fish.json: ${starters}`
-      );
-      // The card: Pierre's ★ Cover while in play (app.js treeCurate: his pick), else the default (app.js seenCover): a photo of its species most seen around the instance's centre (observers,
-      // then observations), the first of that species' adult photos by reference level (core.js refFirst), never a juvenile.
-      const seenK = p => treeSeen(p.sp)[0] * 1e6 + treeSeen(p.sp)[1],
-        // among the species with a reference-level adult photo (else with an adult photo), the most seen; his ★ cover of it
-        // when he picked one, else its reference photo; never a watermarked photo while the unit has an adult one without
-        // (app.js wmP), his ★ cover of the species included
-        mostSeen = (L, c) => {
-          const A0 = L.filter(p => !juvP(p)),
-            A1 = A0.filter(p => !wmP(p)),
-            A = A1.length ? A1 : A0,
-            R = A.filter(refLevel);
-          if (!A.length) return !!c;
-          if (!c || juvP(c) || (A1.length && wmP(c)) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
-          const pk = treeSpPick(c.sp);
-          if (pk && A.some(p => p.f === pk.f)) return c.f === pk.f;
-          return R.length ? refLevel(c) : refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst));
+    ok(
+      starters.every(n => {
+        const L = GX(n).views.wide,
+          c = ph(n, GX(n).cover);
+        if (GX(n).coverP) return c.f === GX(n).coverP.f && cover(GX(n)).f === c.f;
+        return mostSeen(L, c);
+      }),
+      "each card shows Pierre's cover, else its most seen species' photo (Q339 (b))"
+    );
+    // Chromis: with no pick of his, its card shows its species seen by the most distinct
+    // observers around the centre, not the first of the easy order.
+    const cg = GX('g:Chromis');
+    ok(
+      !cg || cg.coverP || mostSeen(cg.views.wide, ph('g:Chromis', cg.cover)),
+      `Chromis: the card shows its most seen species (${cg && (TREEU.sps[ph('g:Chromis', cg.cover).sp] || {}).name})`
+    );
+    // No wall: before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
+    // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
+    let gated = 0,
+      under = 0;
+    for (let i = 0; i < N; i++) {
+      readCards();
+      if (!document.querySelector('#view .q')) quizPhoto();
+      const qq = SHOWNQ,
+        t = qq[1];
+      ok(starters.includes(t), `question ${i + 1}: ${t} is not in the starter core`);
+      (qq[4].shown || []).forEach(s => {
+        const p = ph(t, s.f);
+        if (genScore(t) >= LV_AT[0]) return;
+        gated++;
+        under += (p.e || 3) < 4 ? 1 : 0;
+      });
+      smokeAnswer();
+      route();
+    }
+    ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
+    ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
+    const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
+    ok(cards.sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes', `the first cards: ${cards}`);
+    // The draw itself, on every circle-1 entry before and after Open Water.
+    TREEU.c1.forEach(n => {
+      const L = GX(n).views.wide,
+        es = L.map(p => p.e || 3).sort((a, b) => b - a),
+        cut = Math.min(4, es[Math.min(3, es.length) - 1]), // as easyFirst: its 3 easiest when it has fewer (the Soapfishes have 2)
+        s0 = JSON.parse(JSON.stringify(st(n))),
+        pgAt = x => {
+          delete st(n).dp;
+          delete st(n).ds;
+          st(n).pg = x;
         };
-      ok(
-        starters.every(n => {
-          const L = GX(n).views.wide,
-            c = ph(n, GX(n).cover);
-          if (GX(n).coverP) return c.f === GX(n).coverP.f && cover(GX(n)).f === c.f;
-          return mostSeen(L, c);
-        }),
-        "each card shows Pierre's cover, else its most seen species' photo (Q339 (b))"
-      );
-      // Chromis: with no pick of his, its card shows its species seen by the most distinct
-      // observers around the centre, not the first of the easy order.
-      const cg = GX('g:Chromis');
-      ok(
-        !cg || cg.coverP || mostSeen(cg.views.wide, ph('g:Chromis', cg.cover)),
-        `Chromis: the card shows its most seen species (${cg && (TREEU.sps[ph('g:Chromis', cg.cover).sp] || {}).name})`
-      );
-      // No wall: before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
-      // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
-      let gated = 0,
-        under = 0;
-      for (let i = 0; i < N; i++) {
-        readCards();
-        if (!document.querySelector('#view .q')) quizPhoto();
-        const qq = SHOWNQ,
-          t = qq[1];
-        ok(starters.includes(t), `question ${i + 1}: ${t} is not in the starter core`);
-        (qq[4].shown || []).forEach(s => {
-          const p = ph(t, s.f);
-          if (genScore(t) >= LV_AT[0]) return;
-          gated++;
-          under += (p.e || 3) < 4 ? 1 : 0;
+      pgAt(0);
+      // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
+      // aim favour the easy ones; no wall).
+      let hard = 0,
+        tot = 0;
+      for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
+      const share = L.filter(p => (p.e || 3) < cut).length / L.length;
+      ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
+      // After Open Water: the entry as a player reaches it, its bar at 60% with the answers and the ability that take
+      // it there (12 answers, 10 right, ability 0.5: the low end), not the bar alone, since the draw leans on the
+      // answers and the ability (SUBJECTS calib early fades with the answers, the narrower targeting follows the
+      // ability): the harder photos come in.
+      pgAt(0.6);
+      Object.assign(st(n), {ok: 10, ko: 2, th: 0.5});
+      let low = 0;
+      for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
+      ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
+      P[n] = s0;
+    });
+    // Juveniles and colour phases on their unit's mastery (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
+    // early-class juveniles (model.js varKind, core.js VAR_AT), which do come; past Advanced they all come (no wall),
+    // checked on the entries with 20 easy phase photos or more.
+    let easyJ = 0;
+    TREEU.c1.forEach(n => {
+      const L = GX(n).views.wide,
+        s0 = JSON.parse(JSON.stringify(st(n)));
+      if (!L.some(p => phaseOf(p))) return;
+      P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+      let early = 0;
+      for (let k = 0; k < 60; k++)
+        photoSet(n).shown.forEach(x => {
+          const v = varKind(n, x);
+          early += v && v !== 'jE' ? 1 : 0;
+          easyJ += v === 'jE' ? 1 : 0;
         });
-        smokeAnswer();
-        route();
+      ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
+      if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
+        P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+        let late = 0;
+        for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
+        ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
       }
-      ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
-      ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
-      const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
-      ok(cards.sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes', `the first cards: ${cards}`);
-      // The draw itself, on every circle-1 entry before and after Open Water.
-      TREEU.c1.forEach(n => {
-        const L = GX(n).views.wide,
-          es = L.map(p => p.e || 3).sort((a, b) => b - a),
-          cut = Math.min(4, es[Math.min(3, es.length) - 1]), // as easyFirst: its 3 easiest when it has fewer (the Soapfishes have 2)
-          s0 = JSON.parse(JSON.stringify(st(n))),
-          pgAt = x => {
-            delete st(n).dp;
-            delete st(n).ds;
-            st(n).pg = x;
-          };
-        pgAt(0);
-        // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
-        // aim favour the easy ones; no wall).
-        let hard = 0,
-          tot = 0;
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
-        const share = L.filter(p => (p.e || 3) < cut).length / L.length;
-        ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
-        // After Open Water: the entry as a player reaches it, its bar at 60% with the answers and the ability that take
-        // it there (12 answers, 10 right, ability 0.5: the low end), not the bar alone, since the draw leans on the
-        // answers and the ability (SUBJECTS calib early fades with the answers, the narrower targeting follows the
-        // ability): the harder photos come in.
-        pgAt(0.6);
-        Object.assign(st(n), {ok: 10, ko: 2, th: 0.5});
-        let low = 0;
-        for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
-        ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
-        P[n] = s0;
-      });
-      // Juveniles and colour phases on their unit's mastery (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
-      // early-class juveniles (model.js varKind, core.js VAR_AT), which do come; past Advanced they all come (no wall),
-      // checked on the entries with 20 easy phase photos or more.
-      let easyJ = 0;
-      TREEU.c1.forEach(n => {
-        const L = GX(n).views.wide,
-          s0 = JSON.parse(JSON.stringify(st(n)));
-        if (!L.some(p => phaseOf(p))) return;
-        P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
-        let early = 0;
-        for (let k = 0; k < 60; k++)
-          photoSet(n).shown.forEach(x => {
-            const v = varKind(n, x);
-            early += v && v !== 'jE' ? 1 : 0;
-            easyJ += v === 'jE' ? 1 : 0;
-          });
-        ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
-        if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
-          P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
-          let late = 0;
-          for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
-          ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
-        }
-        P[n] = s0;
-      });
-      ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
-      // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
-      const nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
-        pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
-      ok(!!pJ, 'a juvenile with an adult of its species in play');
-      if (pJ) {
-        ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
-        const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
-        ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
-        ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
-        ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
-        const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
-        ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
+      P[n] = s0;
+    });
+    ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
+    // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
+    const nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
+      pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
+    ok(!!pJ, 'a juvenile with an adult of its species in play');
+    if (pJ) {
+      ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
+      const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+      ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
+      ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
+      ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+      const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
+      ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
+      d.close(1);
+      ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
+      ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+    }
+    // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
+    // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
+    // for that pair only.
+    const nM = TREEU.c1.find(n => (GX(n).mim || []).some(m => m.pair.id === 'M1')),
+      pM = nM && GX(nM).views.wide.find(p => (mimOf(nM, p) || {}).sp && p.loc === 'world');
+    ok(!!pM, 'a juvenile of the mimicry class from outside the region in play (M1)');
+    if (pM) {
+      const c = mimCardOf([{n: nM, p: pM}], mimSeen);
+      ok(!!c && !mimSeen('M1'), 'its card due');
+      const two = c && mimPics(c.m, c.p, c.n);
+      ok(!!two && two[0].loc !== 'world' && two[0].sp === pM.sp, 'the card shows a juvenile of the species from the region');
+      const d = c && mimShow(c, false);
+      if (d) {
+        ok(d.querySelectorAll('.phvis figure').length === 2, 'the two species side by side');
+        ok(d.querySelectorAll('.mimmarks li').length === c.m.pair.marks.length, 'its marks');
+        ok(!/mimic/i.test(d.querySelector('h3').textContent), 'it says resembles');
         d.close(1);
-        ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
-        ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+        ok(mimSeen('M1') && !mimSeen('M2'), 'marked shown for its pair only');
+        ok(mimCardOf([{n: nM, p: pM}], mimSeen) === null, 'not again');
       }
-      // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
-      // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
-      // for that pair only.
-      const nM = TREEU.c1.find(n => (GX(n).mim || []).some(m => m.pair.id === 'M1')),
-        pM = nM && GX(nM).views.wide.find(p => (mimOf(nM, p) || {}).sp && p.loc === 'world');
-      ok(!!pM, 'a juvenile of the mimicry class from outside the region in play (M1)');
-      if (pM) {
-        const c = mimCardOf([{n: nM, p: pM}], mimSeen);
-        ok(!!c && !mimSeen('M1'), 'its card due');
-        const two = c && mimPics(c.m, c.p, c.n);
-        ok(!!two && two[0].loc !== 'world' && two[0].sp === pM.sp, 'the card shows a juvenile of the species from the region');
-        const d = c && mimShow(c, false);
-        if (d) {
-          ok(d.querySelectorAll('.phvis figure').length === 2, 'the two species side by side');
-          ok(d.querySelectorAll('.mimmarks li').length === c.m.pair.marks.length, 'its marks');
-          ok(!/mimic/i.test(d.querySelector('h3').textContent), 'it says resembles');
-          d.close(1);
-          ok(mimSeen('M1') && !mimSeen('M2'), 'marked shown for its pair only');
-          ok(mimCardOf([{n: nM, p: pM}], mimSeen) === null, 'not again');
-        }
-        // The pair drilled (model.js mimUnit, mimPairs, mimKeep; quiz.js duelPick): the juvenile sets the angelfishes as
-        // its trap; once the surgeonfishes pass Open Water (the angelfishes met on the first cards, the card shown), the
-        // pair duels, each side on the pair's species, as its Again does.
-        const m1 = GX(nM).mim.find(m => m.pair.id === 'M1'),
-          s0 = JSON.parse(JSON.stringify(st(nM))),
-          adult = GX(nM).views.wide.find(p => p.sp === m1.sp && !phaseOf(p)),
-          duels = () => mimPairs([nM, m1.fb], m => mimSeen(m.pair.id));
-        ok(mimUnit(nM, pM) === m1.fb, `the juvenile's trap: ${mimUnit(nM, pM)}`);
-        ok(!adult || mimUnit(nM, adult) === null, 'an adult of the species sets none');
-        P[nM] = {ok: 0, ko: 0, th: 0, pg: 0.3};
-        ok(!duels().length, 'no duel before Open Water: its juveniles held back');
-        P[nM] = {ok: 12, ko: 2, th: 1, pg: 0.7};
-        const pr = duels().find(p => p.mim === 'M1');
-        ok(!!pr, 'the pair duels from Open Water once its card was shown');
-        if (pr) {
-          const draw = n => {
-            const k = mimKeep('M1', pr, n);
-            return Array.from({length: 20}, () => photoSet(n, null, 0, 2, 'qduel', k).shown[0]);
-          };
-          const a = draw(nM).filter(p => !p || mimOf(nM, p) !== m1),
-            b = draw(m1.fb).filter(p => !p || p.sp !== m1.pair.b);
-          ok(!a.length, 'the surgeonfishes’ side: its juveniles that resemble');
-          ok(!b.length, 'the angelfishes’ side: the species resembled');
-        }
-        P[nM] = s0;
+      // The pair drilled (model.js mimUnit, mimPairs, mimKeep; quiz.js duelPick): the juvenile sets the angelfishes as
+      // its trap; once the surgeonfishes pass Open Water (the angelfishes met on the first cards, the card shown), the
+      // pair duels, each side on the pair's species, as its Again does.
+      const m1 = GX(nM).mim.find(m => m.pair.id === 'M1'),
+        s0 = JSON.parse(JSON.stringify(st(nM))),
+        adult = GX(nM).views.wide.find(p => p.sp === m1.sp && !phaseOf(p)),
+        duels = () => mimPairs([nM, m1.fb], m => mimSeen(m.pair.id));
+      ok(mimUnit(nM, pM) === m1.fb, `the juvenile's trap: ${mimUnit(nM, pM)}`);
+      ok(!adult || mimUnit(nM, adult) === null, 'an adult of the species sets none');
+      P[nM] = {ok: 0, ko: 0, th: 0, pg: 0.3};
+      ok(!duels().length, 'no duel before Open Water: its juveniles held back');
+      P[nM] = {ok: 12, ko: 2, th: 1, pg: 0.7};
+      const pr = duels().find(p => p.mim === 'M1');
+      ok(!!pr, 'the pair duels from Open Water once its card was shown');
+      if (pr) {
+        const draw = n => {
+          const k = mimKeep('M1', pr, n);
+          return Array.from({length: 20}, () => photoSet(n, null, 0, 2, 'qduel', k).shown[0]);
+        };
+        const a = draw(nM).filter(p => !p || mimOf(nM, p) !== m1),
+          b = draw(m1.fb).filter(p => !p || p.sp !== m1.pair.b);
+        ok(!a.length, 'the surgeonfishes’ side: its juveniles that resemble');
+        ok(!b.length, 'the angelfishes’ side: the species resembled');
       }
-      return {fails, gated};
-    }, 15);
-    fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
-    // The card through the game's own path, once (quiz.js phaseArm): an answer whose photo has a sex or colour phase
-    // (core.js phaseKind) arms the break; Next shows the card over the question answered; Got it marks it shown and goes on
-    // to the next question. Every unit opened first, so the next question brings no unit's card (which the break waits for).
-    if (seed === 11) {
-      const a = await q.evaluate(() => {
-        document.querySelectorAll('.unlock, .achpop').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      P[nM] = s0;
+    }
+    return {fails, gated};
+  }, 15);
+  fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
+  // The card through the game's own path, once (quiz.js phaseArm): an answer whose photo has a sex or colour phase
+  // (core.js phaseKind) arms the break; Next shows the card over the question answered; Got it marks it shown and goes on
+  // to the next question. Every unit opened first, so the next question brings no unit's card (which the break waits for).
+  if (seed === 11) {
+    const a = await q.evaluate(() => {
+      document.querySelectorAll('.unlock, .achpop').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      if (typeof achQ !== 'undefined') achQ.length = 0;
+      if (typeof achBusy !== 'undefined') achBusy = false;
+      introAll('progress');
+      dropPlans();
+      NEXTQ = null;
+      route();
+      const n = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseKind(p) === 'phase')),
+        p = n && GX(n).views.wide.find(x => phaseKind(x) === 'phase');
+      if (!p || !document.querySelector('#view .q')) return {why: `no question or no phase photo (${n})`};
+      smokeAnswer();
+      const nb = document.getElementById('next');
+      nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
+      return {armed: phaseArm(nb, 'quiz', [{n, p}], false), seen: phaseSeen('phase')};
+    });
+    if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
+    else {
+      // An achievement toast the answer brought would hold the card back (overlayBusy): gone, as a player waits it out.
+      await q.evaluate(() => {
+        document.querySelectorAll('.achpop').forEach(d => d.remove());
         if (typeof achQ !== 'undefined') achQ.length = 0;
         if (typeof achBusy !== 'undefined') achBusy = false;
-        introAll('progress');
-        dropPlans();
-        NEXTQ = null;
-        route();
-        const n = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseKind(p) === 'phase')),
-          p = n && GX(n).views.wide.find(x => phaseKind(x) === 'phase');
-        if (!p || !document.querySelector('#view .q')) return {why: `no question or no phase photo (${n})`};
-        smokeAnswer();
-        const nb = document.getElementById('next');
-        nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
-        return {armed: phaseArm(nb, 'quiz', [{n, p}], false), seen: phaseSeen('phase')};
       });
-      if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
+      await q.click('#next');
+      const shown = await q.waitForSelector('.unlock.phasecard', {timeout: 5000}).catch(() => null);
+      if (!shown)
+        fresh.push(
+          `new player ${seed}: Next showed no phase card (${await q.evaluate(() => [...document.querySelectorAll('.unlock, .achpop, #tour')].map(d => d.className).join() || 'nothing over the page')})`
+        );
       else {
-        // An achievement toast the answer brought would hold the card back (overlayBusy): gone, as a player waits it out.
-        await q.evaluate(() => {
-          document.querySelectorAll('.achpop').forEach(d => d.remove());
-          if (typeof achQ !== 'undefined') achQ.length = 0;
-          if (typeof achBusy !== 'undefined') achBusy = false;
-        });
-        await q.click('#next');
-        const shown = await q.waitForSelector('.unlock.phasecard', {timeout: 5000}).catch(() => null);
-        if (!shown)
-          fresh.push(
-            `new player ${seed}: Next showed no phase card (${await q.evaluate(() => [...document.querySelectorAll('.unlock, .achpop, #tour')].map(d => d.className).join() || 'nothing over the page')})`
-          );
-        else {
-          await q.click('.unlock.phasecard [data-b]');
-          const on = await q
-            .waitForFunction(() => !document.querySelector('.unlock.phasecard') && document.querySelector('#view .q:not(.done)'), null, {
-              timeout: 5000
-            })
-            .then(() => true)
-            .catch(() => false);
-          if (!on) fresh.push(`new player ${seed}: Got it did not go on to the next question`);
-          if (!(await q.evaluate(() => phaseSeen('phase')))) fresh.push(`new player ${seed}: the phase card not marked shown`);
-        }
+        await q.click('.unlock.phasecard [data-b]');
+        const on = await q
+          .waitForFunction(() => !document.querySelector('.unlock.phasecard') && document.querySelector('#view .q:not(.done)'), null, {
+            timeout: 5000
+          })
+          .then(() => true)
+          .catch(() => false);
+        if (!on) fresh.push(`new player ${seed}: Got it did not go on to the next question`);
+        if (!(await q.evaluate(() => phaseSeen('phase')))) fresh.push(`new player ${seed}: the phase card not marked shown`);
       }
     }
-    await c6.close();
   }
-  return fresh;
+  await c6.close();
 }
 
 (async () => {

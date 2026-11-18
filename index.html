@@ -30,11 +30,12 @@
 <link rel="preload" href="data.json?v=38" as="fetch" crossorigin>
 <!-- Load order (Pierre, 2026-11-02; field HAR: ~86 kbit/s from the IMR field station, everything asked at once, so every
      file got a sliver of the line and all came at 20-25 s). The files come in tiers, one tier after the other:
-     1 Home (preloaded below, with the stylesheets, the main font and data.json; proto/lab.css also holds the layout of
-     Home, My progress and the games, .pgame, data-page=lab), 2 the quiz (+ forms, quality and picks
-     JSON, fetched by app.js), 3 the photos of the next quiz questions (quiz.js), 4 My progress, 5 the rest (then the
-     service worker, whose install caches everything else). A later tier's files are listed as bare <link data-tier=N>
-     (no rel: nothing is fetched) and turned into preloads when the tier starts. loadTier(N) starts tiers 2..N at once
+     1 Home (preloaded below, with app.css, home.css, the main font and data.json), 2 the quiz and My progress (+ forms,
+     quality and picks JSON, fetched by app.js), 3 the photos of the next quiz questions (quiz.js), then learn.js (the
+     Learn pages), 4 the sheet's reads, 5 the rest, proto/lab.css with it (then the service worker, whose install caches
+     everything else). A later tier's scripts are listed as bare <link data-tier=N>
+     (no rel: nothing is fetched) and turned into preloads when the tier starts; a later stylesheet as a bare
+     <link data-css=N>, which app.js need(N) turns into a stylesheet, in its place (the cascade's order kept). loadTier(N) starts tiers 2..N at once
      (a page opened early jumps the queue) and resolves once their scripts have run, in order, each one inserted when the
      one before has run, each failed one tried again up to 3 times (1, 2, 3 s); window.BOOT = tier 1 (app.js waits for it
      before the first page). A stylesheet that fails is tried again the same way. The bar under "Loading…" moves one step
@@ -50,13 +51,13 @@
 <link data-tier="2" href="model.js?v=38">
 <link data-tier="2" href="tips.js?v=3">
 <link data-tier="2" href="quiz.js?v=52">
-<link data-tier="2" href="learn.js?v=20">
 <link data-tier="2" href="progress.js?v=25">
 <link data-tier="2" href="live.js?v=1">
+<link data-tier="3" href="learn.js?v=20">
 <link data-tier="5" href="flag.js?v=11">
 <link data-tier="5" href="proto/lab.js?v=85">
 <link rel="stylesheet" href="app.css?v=140">
-<link rel="stylesheet" href="proto/lab.css?v=57">
+<link data-css="5" href="proto/lab.css?v=57">
 <link rel="stylesheet" href="home.css?v=26">
 </head>
 <body>

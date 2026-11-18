@@ -457,7 +457,8 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
       block(LEARN, 'const esrcOf = (r, k) =>', 'const treeNote', {file: 'learn.js'}),
-      block(LEARN, 'const lsrcOf = (a, b) =>', 'const isClassic', {file: 'learn.js'}),
+      block(src('model.js'), 'const lsrcOf = (a, b) =>', '\n', {file: 'model.js'}),
+      block(LEARN, 'const lsrcEsrc = (a, b) =>', '\n', {file: 'learn.js'}),
       block(QUIZ, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}),
       'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, lsrcEsrc});'
     ].join('\n'),

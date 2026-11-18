@@ -6265,7 +6265,7 @@ function montPick(p) {
     fa = mine && LA.find(x => x.f === m.a),
     fb = mine && LB.find(x => x.f === m.b);
   const gap = (x, y) => (v === 'all' ? 4 * Math.abs(ZOOM[viewOf(p.A, x)] - ZOOM[viewOf(p.B, y)]) : 0);
-  // The site's automatic pick (learn.js photoPair): same growth form first, searched in every photo ("x" matches
+  // The site's automatic pick (model.js photoPair): same growth form first, searched in every photo ("x" matches
   // nothing), then nearest the front, then nearest zoom; with no same form, the best pair among the first 6.
   let best = null;
   (fa ? [fa] : LA).forEach((x, i) =>
