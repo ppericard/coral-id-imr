@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Maps a reported error back to the original files and lines (architecture review of 2026-11-18, R4: the deploy minifies
+// Maps a reported error back to the original files and lines (the deploy minifies
 // the scripts, tools/minify.js, so the `src` an error report carries, `app.js:1:23456`, points into a one-line file).
 //
 //   node tools/unminify.js [SOURCE] [--av AV] [--force] [--src TEXT | FILE | -]

@@ -1,5 +1,5 @@
 name: Clean branches and Actions
-# Pierre, 2026-11-11: leftover branches and finished workflows crowd the repository. Agents cannot delete a branch or
+# Leftover branches and finished workflows crowd the repository. Agents cannot delete a branch or
 # a workflow run from their sessions (the GitHub proxy refuses), so this workflow does it with the repository's token.
 # Weekly on its own, and by hand (Actions > Clean branches and Actions > Run workflow; "dry_run" ticked by default).
 #
@@ -9,7 +9,7 @@ name: Clean branches and Actions
 #   - a merge-train branch (train/*, tools/train.py, rule W26) whose last commit is more than two days old: its pull
 #     requests were squash-merged, and a train never has a pull request of its own, so GitHub's "Automatically delete
 #     head branches" never removes it;
-#   - by hand only, the branches named in "also_delete" (Pierre's go for each, AGENTS.md: destructive is asked first).
+#   - by hand only, the branches named in "also_delete" (the admin's go for each, AGENTS.md: destructive is asked first).
 # Always kept: main, a branch with an open pull request, the KEEP list below, and everything else (listed in the run's
 # log for a human). A deletion is a `git push --force-with-lease` on the SHA checked, so a branch that moved meanwhile
 # is kept.
@@ -53,7 +53,7 @@ jobs:
           # The schedule deletes; a run by hand only lists unless "dry_run" is unticked.
           DRY: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
           ALSO: ${{ inputs.also_delete }}
-          # Work kept on purpose (Pierre, 2026-11-11). Remove a name here once its work is merged or dropped.
+          # Work kept on purpose. Remove a name here once its work is merged or dropped.
           KEEP: claude/admin-signout-seal claude/level-count-from-log claude/fish-todo-wip claude/photo-genus-ability claude/time-weighted-steps
         run: |
           set -euo pipefail

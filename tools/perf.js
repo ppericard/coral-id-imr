@@ -1,5 +1,5 @@
-// Speed check from a player's side (Pierre, 2026-11-01: "everything must stay very fluid, on low-end phones and on the
-// poor connections common in the Philippines"). Two axes: the network (speed, and stability: some requests fail) and
+// Speed check from a player's side (everything must stay very fluid, on low-end phones and on the
+// poor connections common in the Philippines). Two axes: the network (speed, and stability: some requests fail) and
 // the phone's power (Chromium CPU throttling: 6x slower ~ a cheap Android phone). Not run by CI (a few minutes, and the
 // numbers are for reading, not pass/fail). Locally:
 //   node tools/perf.js            all profiles
@@ -72,7 +72,7 @@ const PROFILES = [
   {name: 'brick, slow 3G', net: 'slow 3G', cpu: 6},
   {name: 'brick, 3G, unstable (1 request in 5 fails)', net: '3G', cpu: 6, fail: 5}
 ];
-// The field link (Pierre, 2026-11-02): a real RA's first visit from the IMR field station, Philippines (HAR, Chrome):
+// The field link: a real RA's first visit from the IMR field station, Philippines (HAR, Chrome):
 // served by Fastly's Manila POP (latency ~0.4 s) but ~86 kbit/s of bandwidth, shared by every request in flight. Served
 // over HTTP/2 like GitHub Pages (one connection, all requests at once; HTTP/1.1 would queue them 6 at a time), with a
 // self-signed certificate made by openssl. The link is shaped by this server, not by Chromium: the service worker's own
@@ -279,7 +279,7 @@ const ms = x => Math.round(x) + ' ms';
     let bytes = 0;
     cdp.on('Network.loadingFinished', e => (bytes += e.encodedDataLength));
     // The sync script is also mocked inside the page: once the service worker is registered (warm start), requests
-    // going through it pass by ctx.route, and a run reached the real sheet (17 anonymous "players", 2026-11-02).
+    // going through it pass by ctx.route, and a run reached the real sheet (17 anonymous "players").
     await p.addInitScript(() => {
       const f = window.fetch;
       window.fetch = (u, o) => {

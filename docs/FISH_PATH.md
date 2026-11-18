@@ -543,7 +543,8 @@ Decided from the admin pooling study:
   replaces the class B timing for *Acanthurus pyroferus* and *Scolopsis bilineata*. Its first meeting brings its pair's
   card: both species side by side, the sourced marks that tell them apart, the sources of the resemblance. A species
   whose look varies by region (`fish.json` species `region`: *A. pyroferus*) never shows a photo taken elsewhere on the
-  card. Not built yet: the pair drilled in the look-alike formats (the per-photo traps, below).
+  card. The pair is then drilled (2026-11-19, the per-photo traps below): such a photo makes the unit of the species
+  it resembles a trap, and the pair duels and comes back as an Again on its two species (docs/LEARNING.md).
 - The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
@@ -557,7 +558,7 @@ Decided from the admin pooling study:
   player meets, at the break at Next, the photo beside one of its species in another phase, with the unit's IMR phase
   lines; one per species stays a ROADMAP row.
 
-## Look-alikes at any rank (design, Pierre, 2026-11-04; not built)
+## Look-alikes at any rank (design, Pierre, 2026-11-04; view 2 built for the mimicry class only)
 
 - Fish look-alikes exist sometimes at the family level but mostly at the **species** level, including across two families: not all
   damselfish against all angelfish, but certain dwarf angelfish against certain dark damselfish. So a look-alike pair can link units

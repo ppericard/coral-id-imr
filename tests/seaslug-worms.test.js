@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The sea slugs' reference taxonomy (Pierre, 2026-11-13, Q340: the admin's Photos › Tree views Key | WoRMS; 2026-11-17,
-// "on garde WoRMS"): tools/seaslug_worms.py reads WoRMS's classification of every species, genus and group family into
-// tools/seaslug_worms.json, and tools/seaslug_game.py writes the game's part into seaslug.json ref (AphiaID -> {name,
-// rank, parent}) and each genus's ref, which the admin's WoRMS view draws (admin.js fuWormsOf), as fish.json ref.
+// The sea slugs' reference taxonomy, WoRMS (the admin's Photos › Tree views Key | WoRMS): tools/seaslug_worms.py
+// reads WoRMS's classification of every species, genus and group family into tools/seaslug_worms.json, and
+// tools/seaslug_game.py writes the game's part into seaslug.json ref (AphiaID -> {name, rank, parent}) and each genus's
+// ref, which the admin's WoRMS view draws (admin.js fuWormsOf), as fish.json ref.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The presence rule (Pierre, 2026-11-04; rule C8: "the same scientific rigour for everyone, me included"),
+// The presence rule (rule C8: the same scientific rigour for everyone, the admin included),
 // defined once in tools/presence.py, applied by tools/build_fish.py (fish.json present), tools/fetch_local.py and
 // tools/coral_presence.py (presence.json), read by the admin through presence.js (the "out of rule" photo flag).
 const test = require('node:test'),
@@ -32,7 +32,7 @@ test('rule: the three branches confirm, and nothing else does', () => {
 
 test('rule: species_presence counts Pierre as one observer, Research Grade only, and batches by genus', () => {
   // A stubbed iNaturalist: species 1 has one Research Grade observation and the checklist; 2 has 4 by 3 observers; 3 has
-  // 4 by 2 observers (one of them Pierre); 4 has 2 near Dauin by 2 observers; 5 has Needs ID only (absent from the RG
+  // 4 by 2 observers (one of them the admin); 4 has 2 near Dauin by 2 observers; 5 has Needs ID only (absent from the RG
   // counts, so absent from the result: not confirmed, whoever observed it).
   const R = py(`
 calls = []
@@ -73,7 +73,7 @@ test('fish.json: every species confirmed by the rule from its own fields; near D
     assert.strictEqual(p.ph, why.length > 0, `${s.name}: ph`);
     if (p.near) assert.strictEqual(p.ph, true, `${s.name}: confirmed near Dauin but not in the Philippines`);
     assert.ok(!(p.nearBy || []).includes('own'), `${s.name}: Pierre's own observation confirms nothing alone`);
-    // Pierre alone (his observations, no Research Grade anywhere in the country, not on the IMR list) confirms nothing.
+    // The admin alone (his observations, no Research Grade anywhere in the country, not on the IMR list) confirms nothing.
     if (p.own && p.rg === 0 && !p.near) assert.strictEqual(p.ph, false, `${s.name}: confirmed by Pierre alone`);
   });
   assert.ok(
@@ -171,7 +171,7 @@ test('admin To do: the out-of-rule queue follows the curated photos (removed out
       ['cand', 'Astrea', 'macro']
     ]
   );
-  // A photo Pierre kept as an exception (To do › Keep, Pierre 2026-11-05) leaves the queue for good.
+  // A photo the admin kept as an exception (To do › Keep) leaves the queue for good.
   const K = ruleQueue(
     ['Astrea'],
     n => shown[n] || [],
@@ -196,7 +196,7 @@ test('admin: the "out of rule" tag keeps a bare-name tooltip (rule A2: explanati
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
   const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf(';\n', A.indexOf('const ruleTag')));
   assert.match(tag, /title="Out of the presence rule"/);
-  // A photo Pierre kept (To do › Keep, 2026-11-05) keeps a neutral "kept" tag, its tooltip a bare name too.
+  // A photo the admin kept (To do › Keep) keeps a neutral "kept" tag, its tooltip a bare name too.
   assert.match(tag, /ruleKept\(p\.f\)/);
   assert.match(tag, /class="adm-src adm-rule kept" title="Kept out of the presence rule">out of rule · kept</);
   assert.ok(!('ruleWhy' in require('../presence.js')), 'no long explanation helper left');

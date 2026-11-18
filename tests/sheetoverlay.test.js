@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The content editor's edits laid over the built file (docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 1):
+// The content editor's edits laid over the built file (docs/reviews/2026-11-14-sheet-overlay-design.md, step 1):
 // curation.json content in each subject's part, {nodes: {node id: {slot: {v, was, src, t,
 // by}}}}, applied by one core.js function (contentApply) for the app and the admin. Checked here: the slots each subject
 // declares against fish.json; nothing changes while nothing is edited; replace, hide and add; a keyed line edits its words
