@@ -1,6 +1,6 @@
 # Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs
 
-Date: 2026-11-18 (Manila). PR: #N. Docs touched: LEARNING.md "Typed questions" (Typed mix-ups in the pooled pairs),
+Date: 2026-11-18 (Manila). PR: #1116. Docs touched: LEARNING.md "Typed questions" (Typed mix-ups in the pooled pairs),
 ARCHITECTURE.md (Confusion scores, admin Confusions), ROADMAP "Typed answers, what is left"; sheet vNEXT.
 
 ## Context
