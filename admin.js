@@ -214,6 +214,12 @@ function rebase(next) {
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next);
   SAVED.genera = SAVED.genera || {};
+  // the registries read the published curation: built again under the new one (unitBuild)
+  SUBJECTS.forEach(S => {
+    const R = UNITA[S.id];
+    if (R && R.raw && R.cur !== SAVED) UNITA[S.id] = unitBuild(S, R.raw);
+    if (S === FISHS && UNITA[S.id]) FISHA = UNITA[S.id];
+  });
   snap = JSON.stringify(DRAFT);
   memoReset();
   if (TOKEN) {
@@ -5524,11 +5530,16 @@ const unitRead = S => {
     k = ['f', 'ph', 'gm'].filter(x => W[x]);
   return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
     const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
-    const R = !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
-    // the files as read, for the units of the sheet's replay (unitsOf, unitRpl)
-    if (R) R.raw = J;
-    return R;
+    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : unitBuild(S, J);
   });
+};
+// A registry of subject S from its files as read (J: f, ph, gm) under the published curation (SAVED: the content editor's
+// structure and text in force, as the app and unitRpl lay them over the file). raw, the files as read, for the units of the
+// sheet's replay (unitsOf, unitRpl); cur, the curation it was built under (a Publish builds it again: rebase).
+const unitBuild = (S, J) => {
+  const R = repReg(J.f, J.ph, J.gm, unitRankOf(S), S, SAVED);
+  if (R) Object.assign(R, {raw: J, cur: SAVED});
+  return R;
 };
 // The tree subject in force's (FISHS: FISHA is its registry in UNITA).
 const fishAdmin = () => unitAdmin(FISHS);

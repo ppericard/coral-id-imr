@@ -148,9 +148,12 @@
   // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js treeSpUnits, s:s091) to
   // {family, look: the other species units of its family}, as the game starts its pairs (admin.js fishUnitRec)}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
-  // slugs), each photo then shown by its genus.
-  function repReg(f, first, gm, unit) {
+  // slugs), each photo then shown by its genus. S, cur: the subject and the published curation (curation.json), the
+  // content editor's structure and text laid over f as the app lays them (core.js contentApply: a circle, a look-alike
+  // pair, an ID tip edited), so Pairs, the Heatmap and the Journey read the units in force; none: f as it is.
+  function repReg(f, first, gm, unit, S, cur) {
     if (!f || typeof f !== 'object') return null;
+    if (S && cur) f = C.contentApply(S, f, cur);
     const G = (C.treeGameRead(gm) || {}).photos || {},
       F0 = (first && first.photos) || {},
       all = {};
