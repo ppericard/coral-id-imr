@@ -14,8 +14,7 @@ const F = read('fish.json'),
 test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys unchanged for the corals', () => {
   const ids = C.SUBJECTS.map(s => s.id);
   assert.deepStrictEqual(ids, ['coral', 'fish', 'seaslug']);
-  // the sea slugs (study §9 step 5): a beta subject, open to every player since 2026-11-17 (its group from 2026-11-16),
-  // on the sheet version that knows it (rule D4)
+  // the sea slugs (study §9 step 5): a beta subject open to every player, on the sheet version that knows it (rule D4)
   assert.ok(!C.subjGroup(C.subjectOf('seaslug')) && C.subjectOf('seaslug').beta);
   assert.ok(C.subjectOf('seaslug').sheet > C.STRUCT_SHEET);
   assert.strictEqual(C.subjKey('seaslug', 'progress'), 'reefid-sync-seaslug-progress');
@@ -28,7 +27,7 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.subjKey('coral', 'progress'), 'reefid-sync-coral-progress');
   assert.strictEqual(C.subjKey('fish', 'progress'), 'reefid-sync-fish-progress');
   assert.strictEqual(C.subjKey('coral', 'intro-offer'), 'reefid-sync-coral-intro-offer');
-  assert.strictEqual(C.subjDev('coral', 'hold'), 'reefid-hold'); // as before subjects
+  assert.strictEqual(C.subjDev('coral', 'hold'), 'reefid-hold'); // the corals' device keys keep their names
   assert.strictEqual(C.subjDev('fish', 'comeback'), 'reefid-fish-comeback');
   assert.ok(C.SUBJECT_KEY.startsWith(C.KEYS.SYNC), 'the choice travels with the player');
   C.SUBJECTS.forEach(s => {
@@ -46,9 +45,8 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   // Distinct keys and sign-in record fields: no subject can overwrite another's.
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
-  // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); achievements
-  // per subject too (Pierre, 2026-11-04), each its own list in the one record. A subject still in its beta group may come
-  // without them, as the fish did before sheet v95 (the sea slugs, study §9 step 5); never one open to every player.
+  // A leaderboard per subject (no merged ranking) and achievements per subject, each its own list in the one record. A
+  // subject still in its beta group may come without them (the sea slugs, study §9 step 5); never one open to every player.
   const all = C.SUBJECTS.filter(s => !C.subjGroup(s));
   assert.ok(
     all.every(s => s.board === true),
@@ -65,7 +63,7 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.SUBJECTS.filter(s => s.achFeats).length, 1, "one subject's answers keep the record's feats");
 });
 
-// The admin's one filter bar (admin plan PR 3, admin.js FB) is filled from each subject's admin part: its photo origins
+// The admin's one filter bar (admin.js FB) is filled from each subject's admin part: its photo origins
 // ([key, name, short name], keys among those admin.js origin(p) gives) and its Candidates sources (among its origins).
 test('admin descriptor: origins and Candidates sources for the one filter bar', () => {
   const KEYS = ['imr', 'own', 'dauin', 'ph', 'world'];
@@ -85,14 +83,14 @@ test('admin descriptor: origins and Candidates sources for the one filter bar', 
       )
     );
   });
-  // The corals' chips and sources, as before the bar (their order is the order on screen).
+  // The corals' chips and sources (their order is the order on screen).
   const coral = C.subjectOf('coral').admin;
   assert.deepStrictEqual(
     coral.origins.map(o => o[0]),
     KEYS
   );
   assert.deepStrictEqual(coral.csrc, ['own', 'dauin', 'ph']);
-  // No IMR photos for fish (Pierre, 2026-11-04).
+  // No IMR photos for fish.
   assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr'));
 });
 
@@ -149,11 +147,11 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
   // The line under the name: the scientific names, then IMR's name (the IMR tag).
   assert.strictEqual(X.gen['f:Damselfishes'].fam, 'Pomacentridae · IMR: Damselfish');
   assert.strictEqual(X.gen['f:Lizardfishes'].fam, 'Synodontidae, Harpadontidae · IMR: Lizardfish');
-  assert.strictEqual(X.gen['f:Soapfishes'].fam, 'Grammistidae, Diploprioninae · IMR course: with the Groupers'); // the book's one family (Q248)
+  assert.strictEqual(X.gen['f:Soapfishes'].fam, 'Grammistidae, Diploprioninae · IMR course: with the Groupers'); // the book's one family
   assert.strictEqual(X.gen['f:Soapfishes'].imrName, '');
   assert.strictEqual(X.gen['f:Groupers'].imrName, 'Groupers');
   assert.deepStrictEqual(X.gen['f:Damselfishes'].sub, ['Dascyllus', 'Pomacentrus', 'Chromis', 'Anemonefish']);
-  // The starter core: the same four, now families.
+  // The starter core: four families.
   assert.deepStrictEqual(
     Object.values(X.gen)
       .filter(g => g.first)
@@ -162,14 +160,13 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
     ['f:Angelfishes', 'f:Butterflyfishes', 'f:Damselfishes', 'f:Surgeonfishes']
   );
   assert.ok(X.gen['f:Butterflyfishes'].look.includes('f:Angelfishes'), 'IMR’s look-alikes as families');
-  // Each look-alike line's source is the family's own (fish.json lsrc: Pierre's declared groups, #662), else IMR's slides.
+  // Each look-alike line's source is the family's own (fish.json lsrc: Pierre's declared groups), else IMR's slides.
   assert.strictEqual(X.gen['f:Butterflyfishes'].lsrc['f:Angelfishes'], 'IMR fish presentation, slide 10 and Pierre, 2026-11-06');
   const noSrc = F.families.find(t => !t.lsrc && (t.look || []).length);
   if (noSrc) assert.match(X.gen[noSrc.id].lsrc[noSrc.look[0][0]], /^IMR fish presentation/);
 });
 
-// No fish photo hot-linked (Pierre, 2026-11-15: the stopgap of remote iNaturalist photos retired, the sheet-only photos
-// to R2): fish-photos.json's first photos are records of fish-game.json (on R2, the same name, crop and shape), and its
+// No fish photo hot-linked (no remote iNaturalist photo, the sheet-only photos on R2): fish-photos.json's first photos are records of fish-game.json (on R2, the same name, crop and shape), and its
 // sheet-only photos are on R2 too. The one exception: a sheet-only photo tools/fish_photos.py has just found, remote
 // (r: 1) until the next Candidate photos run downloads it (tools/fish_game.py sheet_of): from an allowed photo host only.
 test('fish-photos.json: no remote photo, the first photos are fish-game.json records in play, the sheet-only photos on R2', () => {
@@ -191,7 +188,7 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
     });
   });
   // The first photos as tools/fish_game.py first_photos picks them (its order: on the fixture, tests/fishgame.test.js),
-  // whatever Pierre's covers are today (a Publish changes them before the workflow writes the file again): every entry
+  // whatever Pierre's covers are (a Publish changes them before the workflow writes the file again): every entry
   // of fish-game.json has some, every circle-1 family among them, the adults before a juvenile.
   assert.deepStrictEqual(Object.keys(PH.photos).sort(), Object.keys(GM).sort(), 'every entry of fish-game.json');
   const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7)),
@@ -200,21 +197,19 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
     const k = L.findIndex(juv);
     assert.ok(k < 0 || L.slice(k).every(juv) || GM[id].filter(p => !juv(p)).length < L.length, `${id}: a juvenile before an adult`);
     // core.js easyRank's order: an entry with an adult reference-level photo without a watermark in play has one among
-    // its first photos (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level
-    // Waspfish photos). Without a watermark: a watermarked one ranks after its unit's adults without one, whatever its
-    // level (Q379; #968's call 2: the Moorish Idol's reference photos all carry one).
+    // its first photos (eight ease-3 photos never push out two ease-5 reference-level ones). Without a watermark: a
+    // watermarked one ranks after its unit's adults without one, whatever its level (the Moorish Idol's reference photos
+    // all carry one).
     if (GM[id].some(p => C.refLevel(p) && !juv(p) && !wm(p)))
       assert.ok(
         L.some(p => C.refLevel(p)),
         `${id}: no reference-level photo first`
       );
   });
-  // No default card watermarked before fish-game.json is in (Pierre, 2026-11-15, Q379; app.js seenCover, since #968, reads
-  // these photos until then): a unit (a genus or a family: fish.json) among an entry's first photos whose adults there all
-  // carry a watermark (judged flag w, Q373) has no adult without one in play, unless one of them is Pierre's ★ cover (his
-  // choice, rule A1: his watermarked covers stay first). On 2026-11-15 the genus units Gnathodentex, Neochirus and
-  // Dendrochirus had only watermarked first photos; since, Dendrochirus has one without, and the other two none among the
-  // first photos (as 62 other genus units of 130), so their card waits for fish-game.json.
+  // No default card watermarked before fish-game.json is in (app.js seenCover reads these photos until then): a unit (a
+  // genus or a family: fish.json) among an entry's first photos whose adults there all carry a watermark (judged flag w)
+  // has no adult without one in play, unless one of them is Pierre's ★ cover (rule A1: his watermarked covers stay
+  // first). A unit with only watermarked first photos and none without in play waits for fish-game.json for its card.
   const gen = new Map(F.species.filter(s => s.genus).map(s => [s.id, s.genus])),
     fam = new Map(F.families.flatMap(f => (f.species || []).map(s => [s, f.id]))),
     covers = new Set(
@@ -243,7 +238,7 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
       assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.(se|de))\//, p.f);
     })
   );
-  // On 2026-11-15, the one sheet-only photo left (Pomacentrus armillatus') waits for the run after the merge.
+  // At most one sheet-only photo waits for the next run.
   assert.ok(remote.length <= 1, `remote sheet-only photos: ${remote.join(', ')}`);
   const X = C.fishGen(F, PH.photos);
   X.c1.forEach(n => assert.ok(X.gen[n].views.wide.length, `${n} has photos before fish-game.json is in`));
@@ -282,7 +277,7 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   assert.strictEqual(S.typeDrop, 'fish');
   assert.strictEqual(C.subjectOf('coral').typeDrop, undefined);
-  // the fish beta QA's refusals (2026-11-06) and Pierre's examples: all read as the entry, exactly (no spelling step)
+  // the fish beta QA's refusals and Pierre's examples: all read as the entry, exactly (no spelling step)
   [
     ['clownfish', 'f:Damselfishes'], // aka of the Anemonefish sub-entry
     ['clown', 'f:Damselfishes'],
@@ -300,8 +295,8 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
     ['cowfish', 'f:Boxfishes'],
     ['moray eel', 'f:Morays']
   ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact], [t, g, true]));
-  assert.strictEqual(m('Chaetodontidae').g, 'f:Butterflyfishes'); // as before
-  // a name in common use (often): right, and carries the usual name for the gentle correction (Pierre, 2026-11-06, Q164)
+  assert.strictEqual(m('Chaetodontidae').g, 'f:Butterflyfishes'); // a scientific family name
+  // a name in common use (often): right, and carries the usual name for the gentle correction
   ['clownfish', 'clown', 'clown fish', 'clowns', 'clownfishes'].forEach(t =>
     assert.deepStrictEqual([t, m(t).oft], [t, ['Anemonefish', 'Clownfish']])
   );
@@ -310,9 +305,9 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
   assert.deepStrictEqual(X.gen['f:Damselfishes'].oft, [['Anemonefish', 'Clownfish']]);
   // ambiguous: "fish" alone names nothing
   assert.strictEqual(m('fish'), null);
-  // Filefishes is the book's own name of a family now (units plan PR 4): read exactly, no longer asked again.
+  // Filefishes is the book's own name of a family: read exactly, never asked again.
   assert.strictEqual(m('filefishes').g, 'f:Filefishes');
-  // a short form within the tolerance of another entry's name or short form is left out (no answer, as before)
+  // a short form within the tolerance of another entry's name or short form is left out (no answer)
   const G = {a: {id: 'a', names: ['Ratfish']}, b: {id: 'b', names: ['Batfish']}, c: {id: 'c', names: ['Goatfish']}},
     M = C.fishTypeNames(G, 'fish'),
     g = t => C.typeMatchIn(M, t, C.typeNormAll);
@@ -324,9 +319,9 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
   assert.strictEqual(C.typeMatchIn(C.fishTypeNames(X.gen), 'trigger', C.typeNormAll), null);
 });
 
-// The three plain fixes of the names study (Pierre, 2026-11-09): a name and its other number are one name; a name typed
-// exactly is never read as a slip of another (the name index, fishNameIndex); a name several
-// families share (a family the book splits) is all of them, never "which one? check the spelling" (Q319).
+// The names study's three plain rules: a name and its other number are one name; a name typed exactly is never read as
+// a slip of another (the name index, fishNameIndex); a name several families share (a family the book splits) is all of
+// them, never "which one? check the spelling".
 test('typed fish names: singular and plural are one name, a known name is never a slip of another, a shared one is all of them', () => {
   const S = C.subjectOf('fish'),
     X = C.fishGen(F, PH.photos),
@@ -348,7 +343,7 @@ test('typed fish names: singular and plural are one name, a known name is never 
     ['snappers', 'f:Snappers']
   ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
   assert.strictEqual(m('grouper').alt, undefined); // the family's own name in the other number: no "read as" line
-  // goby: the Gobies' singular, and a word two of the three dartfishes carry: both (Q319)
+  // goby: the Gobies' singular, and a word two of the three dartfishes carry: both
   assert.deepStrictEqual([...m('goby').shared].sort(), ['f:Dartfishes', 'f:Gobies']);
   assert.deepStrictEqual(m('goby').by['f:Dartfishes'], {
     vr: 'k',
@@ -356,22 +351,22 @@ test('typed fish names: singular and plural are one name, a known name is never 
     of: 3,
     sc: F.vn.find(([x]) => x === 'goby')[1].find(([f]) => f === 'f:Dartfishes')[4]
   });
-  // never another family by the spelling tolerance (anglerfish, tuskfish, firefish, goldie were the Angelfishes, the
-  // Boxfishes, the Filefishes, the Soldierfishes): a name of the family whose species carry it (the name index, Q320), or
-  // a word known to be no family's (one species' only: tuskfish, goldie)
+  // never another family by the spelling tolerance (anglerfish is not the Angelfishes, firefish not the Filefishes): a
+  // name of the family whose species carry it (the name index), or a word known to be no family's (one species' only:
+  // tuskfish, goldie)
   [
     ['anglerfish', 'f:Frogfishes'],
     ['firefish', 'f:Lionfishes'],
     ['batfish', 'f:Spadefishes'],
     ['hogfish', 'f:Wrasses']
   ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
-  // tuskfish, goldie: one species' words, that species' family's names on a photo of it (Q333)
+  // tuskfish, goldie: one species' words, that species' family's names on a photo of it
   assert.deepStrictEqual([m('tuskfish').g, m('tuskfish').sc.length, m('goldie').g], ['f:Wrasses', 1, 'f:Anthias']);
   assert.strictEqual(m('anglerfsh').g, 'f:Frogfishes'); // a slip of it: the spelling step, as everywhere
   assert.strictEqual(m('anglerfsh').exact, false);
-  // "dart": the Dartfishes' own short form, and a jack's word ("Smallspotted dart"): both (Q319), each as the photo shows it (Q333)
+  // "dart": the Dartfishes' own short form, and a jack's word ("Smallspotted dart"): both, each as the photo shows it
   assert.deepStrictEqual([...m('dart').shared].sort(), ['f:Dartfishes', 'f:Jacks']);
-  // the IMR entries' scientific families the book splits: typed exactly, all of their families (Q319), never one of
+  // the IMR entries' scientific families the book splits: typed exactly, all of their families, never one of
   // them by spelling (Holocentridae read as Holocentrinae, Syngnathidae as the Pipefishes only)
   [
     ['Holocentridae', ['f:Soldierfishes', 'f:Squirrelfishes']],
@@ -434,11 +429,11 @@ test('fish circles on the path (Pierre, 2026-11-06, Q175): no circle opt-in set,
   const S = C.SUBJECTS.find(x => x.id === 'fish'),
     html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
     app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  // beyond: circle 3 opened by choice (Pierre, 2026-11-07), offered by a card and My progress, never a ⚙ row.
+  // beyond: circle 3 opened by choice, offered by a card and My progress, never a ⚙ row.
   assert.deepStrictEqual(S.optin, ['sci', 'beyond']);
   assert.ok(!/data-optin="(c[23]|beyond)"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
   assert.ok(app.includes('slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : [])'), 'the fish slate holds every circle');
-  // A stored c3 choice is no longer an opt-in: a merge does not force it on.
+  // A stored c3 choice is not an opt-in: a merge does not force it on.
   const M = C.mergeUsers({'reefid-sync-fish-quiz': JSON.stringify({c3: true})}, {'reefid-sync-fish-quiz': JSON.stringify({c3: false})});
   assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, false);
 });
@@ -451,12 +446,12 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
     if (!L.length) return;
-    // The cover: the list's first, an open licence breaking ties (core.js easyCover, Q270); the list keeps no licence.
+    // The cover: the list's first, an open licence breaking ties (core.js easyCover); the list keeps no licence.
     assert.strictEqual(g.cover, C.easyCover(L).f, `${g.id}: the cover is the list's first, the licence breaking ties`);
     assert.strictEqual(C.easyRank(L, undefined, false)[0].f, L[0].f, `${g.id}: the list in easyRank order without licence`);
     L.slice(1).forEach((p, i) => {
       const a = L[i];
-      // A very easy reference photo (rep) first (core.js refFirst, Pierre 2026-11-06), then the ease, then refScore.
+      // A very easy reference photo (rep) first (core.js refFirst), then the ease, then refScore.
       assert.ok(
         C.refFirst(a) < C.refFirst(p) ||
           (C.refFirst(a) === C.refFirst(p) &&
@@ -545,8 +540,8 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
   );
 });
 
-// Sheet-only fish photos (Pierre, 2026-11-05: a species with no game photo may keep one for its sheet, never in the
-// quiz or any game; tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
+// Sheet-only fish photos (a species with no game photo may keep one for its sheet, never in the quiz or any game;
+// tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
 // views.wide (model.js photoSet; app.js fishGenera builds the genus units from it), so a photo marked use: 'ref' never
 // reaching views.wide is what keeps it out of every game.
 test('sheet-only fish photos: never in an entry’s game photos nor its cover, listed by species in fishGen sheet', () => {
@@ -575,11 +570,11 @@ test('sheet-only fish photos: never in an entry’s game photos nor its cover, l
 test('fish-photos.json sheet: the game photo rules, credited, never among the game photos', () => {
   const SP = new Map(F.species.map(s => [s.id, s])),
     S = PH.sheet || {},
-    ok = new Set(['cc0', 'cc-by', 'cc-by-nc']), // Pierre, 2026-11-05: never share-alike, ND or all rights reserved
+    ok = new Set(['cc0', 'cc-by', 'cc-by-nc']), // never share-alike, ND or all rights reserved
     game = new Set(Object.values(PH.photos).flatMap(L => L.map(p => p.f)));
   // Pomacentrus armillatus: the cover of P. opisthostigma, which passes every game photo rule. The covers of Chromis
-  // agilis (the Maldives), Siganus margaritiferus (Needs ID) and a photo of Halichoeres marginatus (the Red Sea) failed
-  // them: Pierre, 2026-11-05, "if they don't pass the game rules, we don't keep them".
+  // agilis (the Maldives), Siganus margaritiferus (Needs ID) and a photo of Halichoeres marginatus (the Red Sea) fail
+  // them, so they are not kept.
   assert.ok((S.s105 || []).length, 's105 has its sheet photo');
   ['fi421637283', 'fi542118088', 'fi11896335'].forEach(f =>
     assert.ok(!Object.values(S).some(L => L.some(p => p.f === f)), `${f} failed the game photo rules`)
@@ -593,7 +588,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
       assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`);
       assert.ok(p.a && /^\(c\)/.test(p.a), `${p.f}: the observer's credit`);
       assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
-      // iNaturalist, or FishBase (tools/fetch_fishbase.py, Pierre 2026-11-05: the same rules; tests/fishbase.test.js).
+      // iNaturalist, or FishBase (tools/fetch_fishbase.py: the same rules; tests/fishbase.test.js).
       if (p.via === 'fishbase') {
         assert.match(p.o, /^https:\/\/www\.fishbase\.se\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
         assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[\w-]+\.jpg$/);
@@ -612,7 +607,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
   Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref' || !!S[p.sp]?.some(q => q.f === p.f)), g.id));
 });
 
-// Every subject's answers logged (Pierre, 2026-11-06; sheet v60): each subject says its rank and whether the sheet replays
+// Every subject's answers logged: each subject says its rank and whether the sheet replays
 // it; the answer log's readers keep one subject's rows (subjRows, index LOG_SUBJ in readAnswers rows and tab rows alike).
 test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', () => {
   assert.deepStrictEqual(
@@ -628,7 +623,7 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', (
     'the old log field is gone (renamed replay)'
   );
   assert.strictEqual(C.replaySubject(), 'coral');
-  assert.strictEqual(C.LOG_SUBJ, 17); // after v59's Typed and Retyped right (15-16)
+  assert.strictEqual(C.LOG_SUBJ, 17); // after Typed and Retyped right (15-16)
   assert.strictEqual(C.ansSubject({}), 'coral', 'an entry from before the subject field is a coral one');
   assert.strictEqual(C.ansSubject({s: 'fish'}), 'fish');
   const row = (id, s) => Object.assign(Array(17).fill(''), {0: id}).concat(s === undefined ? [] : [s]);
@@ -653,17 +648,16 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', (
     C.subjEntries(log, 'fish').map(a => a.id),
     [2]
   );
-  // Every answer is sent as it comes: the gate that held a fish answer for the script that files it under its subject
-  // (v60) went with the gate floor (core.js SHEET_FLOOR).
+  // Every answer is sent as it comes: no gate holds a fish answer back (core.js SHEET_FLOOR).
   assert.strictEqual(C.logOk, undefined);
 });
 
-// One engine, a calibration per subject (Pierre, 2026-11-06 14:18; SUBJECTS calib): the corals keep the defaults (no
+// One engine, a calibration per subject (SUBJECTS calib): the corals keep the defaults (no
 // draw bonus, the measured ease spread), fish favour reference-level photos in the draw.
 test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.deepStrictEqual(C.calibOf(C.subjectOf('coral')), C.CALIB);
   assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0, pool: Infinity});
-  // Q186 (Pierre, 2026-11-06 15:33): the fish draw in big pools (tests/drawcalib.test.js).
+  // The fish draw in big pools (tests/drawcalib.test.js).
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).u, 0.25);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).pool, 30);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ref, 3);
@@ -718,6 +712,6 @@ test('admin todo: each subject names its To do sections; the fish have To do ›
   const fish = C.subjectOf('fish').admin;
   assert.deepStrictEqual(fish.todo, ['photos']);
   ['inbox/todo/all', 'inbox/todo/points'].forEach(p => assert.ok(fish.pages.includes(p), p));
-  // admin.js renderTriage draws each section only for a subject that has it (they showed on the fish Reports before)
+  // admin.js renderTriage draws each section only for a subject that has it (the fish show none of the coral photo sections)
   KNOWN.forEach(k => assert.ok(admin.includes(`has('${k}')`), `renderTriage gates ${k}`));
 });
