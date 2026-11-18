@@ -187,7 +187,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         if (await p.$('.unlock [data-b="1"]')) await p.click('.unlock [data-b="1"]');
         else
           await p.evaluate(() =>
-            (document.querySelector('#view .q.done .next') || document.querySelector('#view button.next') || {click() {}}).click()
+            (document.getElementById('next') || document.querySelector('#view button.next:not(.sec)') || {click() {}}).click()
           );
       }
       await qa.ready(p);

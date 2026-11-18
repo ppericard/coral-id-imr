@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 182 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 183 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 182;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 183;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -10244,7 +10244,14 @@ const CORE_ = (function () { const module = {exports: {}};
     MAXS: 86400, // seconds of one page counted at most
     RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
     GENUS: /^[A-Z][a-z]{2,30}$/,
-    FROM: ['quiz', 'learn', 'progress', 'other']
+    FROM: ['quiz', 'learn', 'progress', 'other'],
+    // The answer's feedback sheet (Pierre, 2026-11-18, the feedback sheet study §2 and question (f): "ok pour les 6
+    // recommandations"): four numbers a visit, in this order: the answers whose feedback was shown, those where More was
+    // opened, the seconds the feedback stayed on screen (each answer's capped at FBSEC) and the taps on a link inside it.
+    // Counts only, no answer, unit or time of day; the first number is the denominator.
+    FB: ['shown', 'more', 'sec', 'link'],
+    FBMAX: 10000, // answers (or taps) counted in one summary, at most
+    FBSEC: 120 // seconds one answer's feedback counts at most
   };
   // The screen a summary was sent from (the screen sizes the players really use, for the multi-photo game formats): the
   // usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
@@ -10549,7 +10556,14 @@ const CORE_ = (function () { const module = {exports: {}};
     if (/^(progress|leaderboard)/.test(n)) return 'progress';
     return 'other';
   }
-  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
+  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0, fb: [0, 0, 0, 0]});
+  // One count of the feedback sheet's tally (PAGES.FB): kind 'shown', 'more', 'sec' (n seconds, capped at FBSEC) or 'link'.
+  function pagesFb(S, kind, n = 1) {
+    const i = PAGES.FB.indexOf(kind),
+      v = Math.round(Number(n));
+    if (i < 0 || !S.fb || !isFinite(v) || v <= 0) return;
+    S.fb[i] += kind === 'sec' ? Math.min(PAGES.FBSEC, v) : v;
+  }
   // The page in view stops counting time (hidden, or another page opens).
   function pagesStop(S, now) {
     const c = S.cur;
@@ -10597,6 +10611,12 @@ const CORE_ = (function () { const module = {exports: {}};
     const out = pagesSummary(S);
     S.r = Object.create(null);
     S.g = Object.create(null);
+    // The feedback sheet's four numbers ride the summary and start again; with no summary to carry them (no page was open)
+    // they wait for the next one.
+    if (out && S.fb && S.fb.some(Boolean)) {
+      out.fb = S.fb;
+      S.fb = [0, 0, 0, 0];
+    }
     return out;
   }
   // Whose summary it is: set when it is queued, so a summary left in the queue (offline, a failed
@@ -10642,6 +10662,11 @@ const CORE_ = (function () { const module = {exports: {}};
         k => (g[k] = [n(G[k][0], PAGES.MAXN), n(G[k][1], PAGES.MAXS), PAGES.FROM.includes(G[k][2]) ? G[k][2] : 'other', G[k][3] ? 1 : 0])
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
+    // The feedback sheet's four numbers (PAGES.FB): four numbers or nothing, each clamped; nothing when all are zero.
+    if (Array.isArray(o.fb) && o.fb.length === PAGES.FB.length) {
+      const fb = o.fb.map((v, i) => n(v, PAGES.FB[i] === 'sec' ? PAGES.MAXS : PAGES.FBMAX));
+      if (fb.some(Boolean)) out.fb = fb;
+    }
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
     // The screen (VIEWPORT): rounded and clamped again, whatever the device sent; its band kept when it is
     // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
@@ -10916,6 +10941,7 @@ const CORE_ = (function () { const module = {exports: {}};
     pageSubj,
     pageFrom,
     pagesNew,
+    pagesFb,
     pagesStop,
     pagesOpen,
     pagesResume,

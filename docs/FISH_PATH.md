@@ -698,8 +698,8 @@ on families only to an IMR RA with every species open:
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 
-- **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
-  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
+- **Subject switch: two places, one state.** A subject switch (a button per subject) on Home **and** a subject chip in the header next to the logo on
+  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown when a player can open two or more subjects (it was Pierre's alone until fish opened to players).
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
@@ -733,7 +733,9 @@ on families only to an IMR RA with every species open:
 
 ## Open questions for Pierre
 
-1. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
+Questions 1, 2, 4 and 6 are answered; 3 and 5 are still open as designs (the fish exams, the typed common name).
+
+1. **"Twospot wrasse"**: **settled** (Pierre, 2026-11-09, Q319, Q381): the name is right for both species (see "Duplicate common names" above); nothing is asked of IMR.
 2. The display-schedule thresholds and the IMR shift. **Answered (Pierre, 2026-11-04)**: the starting values from learnsim; later,
    with many answers, computed automatically per species from the measured difficulty of answering it with the common name against the
    Latin name ("Name-display schedule").
@@ -762,6 +764,8 @@ on families only to an IMR RA with every species open:
    easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
 
 ## Checks before release
+
+The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
 - **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
   they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
