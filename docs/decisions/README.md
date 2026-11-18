@@ -59,6 +59,7 @@ Newest first.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |
+| 2026-11-18 | [Decisions found in the comments of tests/ (third pass)](2026-11-18-decisions-from-comments-tests-3.md) | #1131 |
 | 2026-11-18 | [Decisions found in the comments of tests/ (second pass)](2026-11-18-decisions-from-comments-tests-2.md) | #1128 |
 | 2026-11-18 | [The coral and sea-slug pairs' tell-apart lines: ours, in `ap` / `apsrc`, never in IMR's `lk`](2026-11-18-tellapart-lines.md) | #1119 |
 | 2026-11-18 | [Decisions kept from the front-end comments: Pierre's words that only the code held](2026-11-18-decisions-from-comments-3.md) | #1126 |

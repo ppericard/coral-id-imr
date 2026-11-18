@@ -109,7 +109,7 @@ test("slot: at most SMOKE_SLOTS holders, a dead holder's slot is taken back, giv
   }
 });
 
-// Codex review #450: a slot file whose record is not complete yet (another process publishing it) is a live holder,
+// A slot file whose record is not complete yet (another process publishing it) is a live holder,
 // never a dead one: taking it back let two holders run Chromium at once. Only a record left incomplete for a minute
 // (a crash with an older version mid-write) is taken back. And a record whose PID now belongs to another process (Linux:
 // another start time) is a dead holder.
@@ -151,7 +151,7 @@ test('slot: an incomplete record is not taken back while recent; a reused PID is
   }
 });
 
-// Codex review #450: six processes racing for one slot never hold it two at a time.
+// Six processes racing for one slot never hold it two at a time.
 test('slot: one holder at a time when six processes race for the only slot', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),
     log = path.join(dir, 'log'),
@@ -178,7 +178,7 @@ test('slot: one holder at a time when six processes race for the only slot', asy
   }
 });
 
-// Rule W24 (Pierre, 2026-11-05: "the automatic lock of the unit tests"): full unit-test runs and heavy tools take the same
+// Rule W24: full unit-test runs and heavy tools take the same
 // slots. Children run with the load gate off (NODE_OPTIONS preloads a stub: the machine running the tests may be busy)
 // and outside any slot of the run that started the tests (REEFID_SLOT '').
 const SLOT = require.resolve('./slot.js');
@@ -428,7 +428,7 @@ test('the load budget is twice the cores; below 5 GB of free disk a heavy run re
   }
 });
 
-// Codex review #608: a guarded tool killed by its original PID takes its run down with it (the wrapper and the worker),
+// A guarded tool killed by its original PID takes its run down with it (the wrapper and the worker),
 // and the slot is given back: a cancelled analysis never keeps running and holding the slot.
 test('guard(): SIGTERM to the guarded tool stops the run it started and gives the slot back', async () => {
   const {dir, env, slots} = sandbox(),
@@ -464,7 +464,7 @@ test('guard(): SIGTERM to the guarded tool stops the run it started and gives th
   }
 });
 
-// Codex review #608: the disk is checked again when the slot is given, not only before the wait.
+// The disk is checked again when the slot is given, not only before the wait.
 test('slot: a run that waited refuses if the disk filled up meanwhile', async () => {
   const {dir, env, slots} = sandbox();
   try {
@@ -498,7 +498,7 @@ test('slot: a run that waited refuses if the disk filled up meanwhile', async ()
   }
 });
 
-// Codex review #608: an option's value given as the next argument is not a test file (it kept the default list out).
+// An option's value given as the next argument is not a test file (taken for one, it would keep the default list out).
 test('tests/run.js: a space-separated option value is not taken for a file', () => {
   const args = require('./run.js'),
     n = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js')).length;

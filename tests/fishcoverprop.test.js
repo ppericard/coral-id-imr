@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864: "Si tu as mieux fait moi des
-// propositions"): where his ★ Cover of a family or a genus differs from the default cover rule's pick, the rule's photo is
-// proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;
-// a proposal is done once answered, once his cover changed, or once the rule agrees; never written to curation.json by a
+// Photo review › Cover proposals (admin-covers.js): where Pierre's ★ Cover of a family or a genus differs from the default
+// cover rule's pick, the rule's photo is proposed beside his; Accept sets it as his cover in the draft (one Undo
+// step), Keep mine records the pair in fish.kept; a proposal is done once answered, once his cover changed, or once the rule agrees; never written to curation.json by a
 // tool (rule A1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -227,9 +226,9 @@ test('a node page’s cover and why (Photos › Tree): his ★, else the rule on
   assert.strictEqual(nodeCoverWhy(c), 'No photo in play');
 });
 
-// His pick under one name, the game's copy under the other (2026-11-14: his ★ Damselfishes cover fi489211132, a reference
-// photo judged adult, came back in play as its candidate copy fish-s100-cand-489211132, judged a juvenile; the admin said
-// "out of play"): the admin finds it as the app does (app.js fishCurate: the name, else core.js fishPid) and says why.
+// Pierre's pick under one name, the game's copy under the other (a ★ cover fi<id>, a reference photo judged adult, back in
+// play as its candidate copy fish-<species>-cand-<id> judged a juvenile, which the admin may call "out of play"): the
+// admin finds it as the app does (app.js fishCurate: the name, else core.js fishPid) and says why.
 test('his ★ cover under the other name of the same photo (reference fi<id>, candidate fish-<species>-cand-<id>)', () => {
   const pair = [
     ['fi7', 'fish-s1-cand-7'],
@@ -295,7 +294,7 @@ test('his ★ cover under the other name of the same photo (reference fi<id>, ca
   assert.strictEqual(fishCoverOf(L4, {genera: {s2: {cover: 'fi3'}}}, 'f:A', j4, seen()).f, 'fish-s2-cand-3');
 });
 
-// Pierre's exception (2026-11-15): his ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id:
+// The juvenile exception: Pierre's ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id:
 // {cover, coverJ}}, coverJ naming the cover's photo): ★ Cover's yes (fishCoverYes), the Tree page's one click
 // (fishCoverJOk); a new pick, taking it off, Remove or a proposal accepted drop the confirmation with the old pick. The
 // default rule alone never takes a juvenile.
@@ -351,9 +350,9 @@ test('a juvenile ★ cover he confirmed: in force on its node page, at any rank;
   assert.deepStrictEqual(out.fish.genera['f:A'], {cover: 'fi9', ok: true, coverJ: 'fi9'});
 });
 
-// A watermarked photo (its flag w, as the game reads it: autosort.js fishWm) is never a default cover (Pierre, 2026-11-15,
-// Q379), but his ★ cover on one stays in force (rule A1): the node page asks "Watermark: keep as cover?" (nodeCover's wm);
-// Keep records coverW beside the cover (fishCoverW, as #948's coverJ) and answers the node's proposal; Cover proposals
+// A watermarked photo (its flag w, as the game reads it: autosort.js fishWm) is never a default cover,
+// but his ★ cover on one stays in force (rule A1): the node page asks "Watermark: keep as cover?" (nodeCover's wm);
+// Keep records coverW beside the cover (fishCoverW, as coverJ) and answers the node's proposal; Cover proposals
 // propose the rule's photo without one, open whatever an earlier Keep mine of the pair said.
 test('a watermarked ★ cover: in force, asked about, kept with coverW; the proposal offers one without a watermark', () => {
   const JW = {...J, fi1: {e: 4, jt: 'p1g0sl1w'}},
@@ -442,7 +441,7 @@ test('the players’ copy leaves the answers out; the view is wired in the admin
 });
 
 // The cover proposals' load is kept per tree subject (admin-covers.js COVER_P by FISHS's id), so a switch to the other
-// tree subject never reuses the first one's finished load (Codex review #1047).
+// tree subject never reuses the first one's finished load.
 test('coverLoad: one load per tree subject', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-covers.js'), 'utf8');
   assert.match(src, /let COVER_P = \{\};/);

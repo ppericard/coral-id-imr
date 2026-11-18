@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// FishBase as a fish photo source (Pierre, 2026-11-05: "the reference platform for fish ... if their licence is
-// compatible, integrate it, fully"), and the reference-photo tag (rep). tools/fetch_fishbase.py, tools/fish_photos.py
-// sheet_fishbase, tools/fetch_fish.py tag_rep, tools/fish_judge.py cap, tools/judging_fish.py entry. The same game photo
+// FishBase as a fish photo source (docs/ARCHITECTURE.md "FishBase"), and the reference-photo tag (rep).
+// tools/fetch_fishbase.py, tools/fish_photos.py sheet_fishbase, tools/fetch_fish.py tag_rep, tools/fish_judge.py cap, tools/judging_fish.py entry. The same game photo
 // rules as the iNaturalist photos (live fish, CC0 / CC BY / CC BY-NC only, the Indo-West Pacific, abroad only for a
-// species confirmed in the Philippines), and never a game photo without Pierre's curation. Offline: fixtures and the
+// species confirmed in the Philippines), and never a game photo without the admin's curation. Offline: fixtures and the
 // repository's own files only. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -125,7 +124,7 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
       s3: {code: 3, photos: [row('Fno_u0.jpg')]}
     }
   };
-  // s1 has one iNaturalist candidate and one Pierre rejected (it frees room); s2 is full (cap 2).
+  // s1 has one iNaturalist candidate and one the admin rejected (it frees room); s2 is full (cap 2).
   const cand = {
     v: 1,
     cand: {
@@ -228,7 +227,7 @@ test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbas
     cand.s238.map(p => p.src.split('/').pop()),
     ['Hachl_m0.jpg', 'Hachl_f0.jpg', 'Hachl_m1.jpg', 'Hachl_u0.jpg']
   );
-  // Never more photos than the highest cap (tools/fetch_fish.py MAX_CAP, Q36): one FishBase photo is one observation.
+  // Never more photos than the highest cap (tools/fetch_fish.py MAX_CAP): one FishBase photo is one observation.
   Object.entries(cand).forEach(([sid, L]) => assert.ok(L.filter(p => p.via).length <= 60, sid));
 });
 
@@ -361,13 +360,12 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
     added = new Set(Object.keys((CUR.fish || {}).add || {})),
     refs = new Set(Object.values(read('tools/fish_refs.json').photos).flatMap(L => L.filter(p => p.via === 'fishbase').map(p => p.f))),
     isFb = p => p.via === 'fishbase' || /fishbase\./.test(p.src || '');
-  // Pierre, 2026-11-06 14:02: FishBase photos enter automatically when their licence allows (until then only through his
-  // curation): every FishBase game photo is his addition, a reference photo of tools/fish_refs.json judged at the
-  // reference level (core.js refLevel), or a photo in play by itself (auto: a candidate judged sure, a reference photo
-  // judged sure; Q180, Q199, Q212; tools/fish_game.py in_play), all on R2 (fish-game.json; fish-photos.json's first photos
-  // are the same records: the stopgap of remote photos is retired, 2026-11-15).
-  // The game as it plays: a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a
-  // judged reference photo, or one in play by itself he did not take out.
+  // FishBase photos enter automatically when their licence allows: every FishBase game photo is the admin's addition, a
+  // reference photo of tools/fish_refs.json judged at the reference level (core.js refLevel), or a photo in play by
+  // itself (auto: a candidate judged sure, a reference photo judged sure; tools/fish_game.py in_play), all on R2
+  // (fish-game.json; fish-photos.json's first photos are the same records).
+  // The game as it plays: a FishBase photo only while the admin has it in play for that species (core.js fishOn), or a
+  // judged reference photo, or one in play by itself the admin did not take out.
   const GM = C.fishGameRead(read('fish-game.json')).photos,
     X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR), PH.sheet);
   [X, C.fishGen(F, C.fishPhotos(PH.photos, {}, CUR), PH.sheet)].forEach(Y =>
@@ -388,7 +386,7 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
         )
       )
   );
-  // The same with a FishBase photo in fish-game.json that Pierre never added, or took out of play since the last run.
+  // The same with a FishBase photo in fish-game.json that the admin never added, or took out of play since the last run.
   const fb = {
       f: 'fish-s091-cand-fb-Chter_u0',
       sp: 's091',
@@ -404,10 +402,10 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
   cur.fish.seen[fb.f] = 1;
   assert.ok(!C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
   assert.ok(!C.fishPhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
-  // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, was its
-  // sheet-only photo (Pierre, 2026-11-05: a species with no game photo); the same photo is in play now as a FishBase
-  // candidate of s238 (2026-11-15), so the sheet-only copy left (tools/fish_game.py sheet_of) and the sheet shows the
-  // game's. Pierre's curation may take it out of play again: then the species shows its other photos in play, or the
+  // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, is in play as
+  // a FishBase candidate of s238, so it has no sheet-only copy (a species with no game photo has one: tools/fish_game.py
+  // sheet_of) and the sheet shows the game's. The curation may take it out of play again: then the species shows its
+  // other photos in play, or the
   // workflow's next run brings no sheet-only copy back by itself (tools/fish_photos.py finds it again on request).
   const inPlay = Object.values(X.gen).flatMap(g => g.views.wide),
     h = inPlay.find(p => C.fishPid(p.f) === 'bHachl_m0');
@@ -504,9 +502,9 @@ print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p 
   assert.deepStrictEqual(out, [{501: 7}, 2, 1]);
 });
 
-// The host (2026-11-06): www.fishbase.de answers 500 (an HTML page) to a browser's image request for every photo tried,
-// so the admin showed "Photo not loading" and Chrome players lost the FishBase sheet photo; the www.fishbase.se mirror
-// answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files points at .de.
+// The host: www.fishbase.de answers 500 (an HTML page) to a browser's image request, so its photos do not load; the
+// www.fishbase.se mirror answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files
+// points at .de.
 test('FishBase links use the www.fishbase.se mirror, never www.fishbase.de', () => {
   const [src, o] = py(
     `print(json.dumps([FB.record({'id': 's9', 'name': 'Fishus fishii'}, 123, {'n': 'Fishu_u0.jpg', 'cp': 'free use'})[k] for k in ('src', 'o')]))`

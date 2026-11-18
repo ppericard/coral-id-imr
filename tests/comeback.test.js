@@ -11,7 +11,7 @@ const {pgMissW} = require('../core.js');
 
 const DAY = 864e5,
   MIN = 60000;
-// The opening hold's tolerance as model.js sets it (INTRO.SLACK), which the comeback's sum takes too (Q367).
+// The opening hold's tolerance as model.js sets it (INTRO.SLACK), which the comeback's sum takes too.
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
   SLACK = Number(/const INTRO = \{[\s\S]*?\bSLACK: ([\d.]+)/.exec(SRC)[1]);
 function model({P = {}, th = {}, answers = 0, slack = SLACK} = {}) {
@@ -26,7 +26,7 @@ function model({P = {}, th = {}, answers = 0, slack = SLACK} = {}) {
       INTRO: {SLACK: slack},
       PICKD: {P: 0.8},
       aimOff: (k = 4) => Math.log((0.8 - 1 / k) / (1 - 1 / k) / (1 - (0.8 - 1 / k) / (1 - 1 / k))),
-      pgMissW, // core.js (shared with the full replay since 2026-11-03)
+      pgMissW, // core.js (shared with the full replay)
       sig: x => 1 / (1 + Math.exp(-x)),
       ability: n => th[n] ?? 0,
       genusDiff: () => 0,
@@ -107,7 +107,7 @@ test('a visit starts after 30 minutes without an answer: the floor of 10 answers
     [40 * MIN, true]
   ]) {
     const M = model({P: player(5, ago), answers: 50});
-    // rustNow says when a new visit starts, so quiz.js replans the questions planned before the break (Codex review #374).
+    // rustNow says when a new visit starts, so quiz.js replans the questions planned before the break.
     assert.strictEqual(M.rustNow(), floor);
     assert.ok(floor ? M.cb().r > 0 && M.cb().r < 0.05 : M.cb().r === 0, M.cb().r); // a tiny comeback at a new visit
     assert.strictEqual(M.noOpen(), floor);
@@ -151,7 +151,7 @@ test('comeback stop rule: a CUSUM that right answers melt and misses keep going;
   assert.ok(M.cb().r > r);
 });
 
-// The comeback's tolerance (Pierre, 2026-11-15, Q367; docs/LEARNING.md "The comeback's tolerance"): the comeback's sum
+// The comeback's tolerance (docs/LEARNING.md "The comeback's tolerance"): the comeback's sum
 // takes the opening hold's tolerance, INTRO.SLACK an answer, on top of the rust a question repairs.
 // n comeback questions, m of them missed and spread evenly from the first (a miss at 0, then every n/m), each at the
 // recall-adjusted chance p on a usual 4-choice question; the answer at which the comeback ended (0: it ran them all) and
@@ -172,9 +172,10 @@ function cbRun({genera, ago, n, m, p, slack}) {
 }
 
 test("the study's case (Q367): 0.075 an answer below expectation no longer holds a whole 40-question visit", () => {
-  // P5, 2026-11-06 (docs/reviews/2026-11-14-comeback-study.md): back after 1.03 days with 29 genera answered right, 40
+  // The study's P5 (docs/reviews/2026-11-14-comeback-study.md): back after 1.03 days with 29 genera answered right, 40
   // comeback questions, 27 right at a mean expectation of 0.75. The order of her answers is not published: here the
-  // misses come every third answer from the first, an order under which the rule before Q367 ran all 40, as hers did.
+  // misses come every third answer from the first, an order under which the rule without tolerance (slack 0) ran all
+  // 40, as hers did.
   const P5 = {genera: 29, ago: 1.03 * DAY, n: 40, m: 13, p: 0.75};
   const before = cbRun({...P5, slack: 0}),
     now = cbRun(P5);
@@ -188,7 +189,7 @@ test("the study's case (Q367): 0.075 an answer below expectation no longer holds
 });
 
 test('the tolerance does not end every comeback: more than 0.1 an answer below expectation still holds it', () => {
-  // 24 right of 40 at 0.75 (0.15 below): the sum still grows, as Pierre's Q367 keeps for a player who really struggles.
+  // 24 right of 40 at 0.75 (0.15 below): the sum still grows, as the tolerance keeps for a player who really struggles.
   const r = cbRun({genera: 29, ago: 1.03 * DAY, n: 40, m: 16, p: 0.75});
   assert.strictEqual(r.end, 0);
   assert.ok(r.r > r.r0, `${r.r0} -> ${r.r}`);
@@ -231,7 +232,7 @@ test('comeback questions: the surest genera until one is right, then the most ru
   M.answeredAt(s, true);
   M.answeredAt(s, true);
   // Recall right after the answer: 1 at the same millisecond, a hair under it one tick later (recallAt reads the clock
-  // again; CI failed on PR #380 when it ticked between the two calls).
+  // again, and the clock can tick between the two calls).
   assert.ok(M.recallAt('g3') > 1 - 1e-6 && s.dd === dd + (s.dl === M.dayNo() ? 1 : 0) && s.dl === M.dayNo());
 });
 
