@@ -119,7 +119,8 @@ test('no pool read: nothing is checked, nothing is flagged', () => {
   assert.strictEqual(st.skip.photos, 0);
 });
 
-// A left-out device stays left out after sign-in, and the admin can count the account again: the row follows the device's answers to the name's admin id, with an Alerts line by ids only.
+// A left-out device stays left out after sign-in, and the admin can count the account again: the row follows the
+// device's answers to the name's admin id, with an Alerts line by ids only.
 test('a device left out of the statistics stays out once it signs in, under a new or an existing name', () => {
   for (const name of ['NewName', 'Old']) {
     const s = loadCodeGs(),

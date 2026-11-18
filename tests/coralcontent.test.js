@@ -1,7 +1,8 @@
 require('./slot.js').testGuard();
-// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the corals' text slots and look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure,
-// genStructure), the ★ rule kept under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay
-// under it (Code.gs gen_, replay_, stMain_). The edits here are made up (fixtures): the real curation.json holds none.
+// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the corals' text slots and
+// look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure, genStructure), the ★ rule kept
+// under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay under it (Code.gs gen_,
+// replay_, stMain_). The edits here are made-up fixtures.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

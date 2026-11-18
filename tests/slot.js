@@ -7,9 +7,9 @@
 //    and none starts with less than MIN_FREE_GB (5 GB) free on the repository's disk: it refuses, with what to clean.
 //    Several agent sessions share one machine, and an overloaded one slows every smoke until fixed timeouts fail.
 //    The slots are files in one directory every session and every user of the machine sees; a slot whose process is
-//    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. No-op on CI, where each smoke has its own runner. Call it before
-//    chromium.launch(); the slot is given back when the process ends. A holder's children run in its slot (REEFID_SLOT,
-//    below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
+//    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. No-op on CI,
+//    where each smoke has its own runner. Call it before chromium.launch(); the slot is given back when the process
+//    ends. A holder's children run in its slot (REEFID_SLOT, below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
 //
 // 1b. Heavy work other than Playwright takes the same slots:
 //    node tests/run.js [node --test options] [files]   a full unit-test run (default: every tests/*.test.js); a single

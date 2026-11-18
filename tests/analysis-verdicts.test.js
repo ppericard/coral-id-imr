@@ -153,7 +153,8 @@ test('the admin draws no “new since the previous milestone” count', () => {
   assert.ok(!/class="note">Each milestone/.test(src), 'no explanatory text on the page');
 });
 
-// A bootstrap draw that leaves out every answer with a feature cannot estimate it; the warm start must not hand back the full fit's value as if it were a draw.
+// A bootstrap draw that leaves out every answer with a feature cannot estimate it; the warm start must not hand back
+// the full fit's value as if it were a draw.
 test('a warm-started draw without a feature gives no value for it (not the full fit’s)', () => {
   const R = A.rng(3),
     D = [];

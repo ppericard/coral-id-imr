@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Photo review › Cover proposals (admin-covers.js): where his ★ Cover of a family or a genus differs from the default cover rule's pick, the rule's photo is
-// proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;
+// Photo review › Cover proposals (admin-covers.js): where his ★ Cover of a family or a genus differs from the default
+// cover rule's pick, the rule's photo is proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;
 // a proposal is done once answered, once his cover changed, or once the rule agrees; never written to curation.json by a
 // tool (rule A1).
 const test = require('node:test'),

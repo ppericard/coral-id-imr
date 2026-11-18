@@ -2,8 +2,8 @@
 require('./slot.js').testGuard();
 // Journey (admin-journey.js): the Cards list in time order, the untimed ones after; the start rows say "inferred" once
 // and "Answered again" for the same answer given again; and the word beside a unit outside the slate is the subject's
-// own (the fish genera are the scientific-names step of the game, never "bonus", a coral word). The blocks are cut with tests/block.js, which fails by name
-// when a marker moves.
+// own (the fish genera are the scientific-names step of the game, never "bonus", a coral word). The blocks are cut
+// with tests/block.js, which fails by name when a marker moves.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -42,8 +42,8 @@ test('a family outside the slate of families (another circle) stays "bonus"', ()
   assert.strictEqual(jOffSlate('f:Batfishes', new Set(['f:Damselfishes'])), 'bonus');
 });
 
-// Journey details for every subject (the fish admin at parity with the corals'): the steps of a player's path (jSteps) and the
-// Games card by format (jGames), on the real SUBJECTS and made-up rows [id, time, shown, answered, right, mode, photos,
+// Journey details for every subject (the fish admin at parity with the corals'): the steps of a player's path (jSteps)
+// and the Games card by format (jGames), on the real SUBJECTS and made-up rows [id, time, shown, answered, right, mode, photos,
 // expected, ability, new photos, choices].
 const C = require('../core.js'),
   CORAL = C.SUBJECTS.find(S => !S.sheets),

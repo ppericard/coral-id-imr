@@ -158,7 +158,7 @@ test('never applied, always listed (orphaned): unknown node, undeclared slot, a 
     nodes: {
       'f:NoSuchFamily': {note: e('x', null)},
       [BF.id]: {
-        name: e('A new name', BF.name), // names are not editable (Q359 b)
+        name: e('A new name', BF.name), // names are not editable
         ['look/f:NoSuchFamily']: e('x', null), // a new line would be a new pair: structure, a later step
         ['apart/' + BF.look[0][0]]: e('x', null), // apart lines only where the base has one
         cues: e('one string, not a list', BF.cues),

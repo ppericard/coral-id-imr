@@ -1,6 +1,7 @@
 require('./slot.js').testGuard();
-// Sea-slug candidate photos (tools/fetch_seaslugs.py, seaslug-cand.json): the egg filter, the licence filter, one photo per observation, the juvenile room of a documented juvenile form,
-// the Philippines before abroad, the record shape of fish-cand.json. The network is stubbed: the whole script runs on a
+// Sea-slug candidate photos (tools/fetch_seaslugs.py, seaslug-cand.json): the egg filter, the licence filter, one photo
+// per observation, the juvenile room of a documented juvenile form, the Philippines before abroad, the record shape of
+// fish-cand.json. The network is stubbed: the whole script runs on a
 // fixture cache with --offline (a request not in it stops the run), nothing here asks iNaturalist. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),

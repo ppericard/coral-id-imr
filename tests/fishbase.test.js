@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// FishBase as a fish photo source (docs/ARCHITECTURE.md "FishBase"), and the reference-photo tag (rep). tools/fetch_fishbase.py, tools/fish_photos.py
-// sheet_fishbase, tools/fetch_fish.py tag_rep, tools/fish_judge.py cap, tools/judging_fish.py entry. The same game photo
+// FishBase as a fish photo source (docs/ARCHITECTURE.md "FishBase"), and the reference-photo tag (rep).
+// tools/fetch_fishbase.py, tools/fish_photos.py sheet_fishbase, tools/fetch_fish.py tag_rep, tools/fish_judge.py cap, tools/judging_fish.py entry. The same game photo
 // rules as the iNaturalist photos (live fish, CC0 / CC BY / CC BY-NC only, the Indo-West Pacific, abroad only for a
 // species confirmed in the Philippines), and never a game photo without the admin's curation. Offline: fixtures and the
 // repository's own files only. Needs python3.
@@ -386,7 +386,7 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
         )
       )
   );
-  // The same with a FishBase photo in fish-game.json that Pierre never added, or took out of play since the last run.
+  // The same with a FishBase photo in fish-game.json that the admin never added, or took out of play since the last run.
   const fb = {
       f: 'fish-s091-cand-fb-Chter_u0',
       sp: 's091',
@@ -503,7 +503,8 @@ print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p 
 });
 
 // The host: www.fishbase.de answers 500 (an HTML page) to a browser's image request, so its photos do not load; the
-// www.fishbase.se mirror answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files points at .de.
+// www.fishbase.se mirror answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files
+// points at .de.
 test('FishBase links use the www.fishbase.se mirror, never www.fishbase.de', () => {
   const [src, o] = py(
     `print(json.dumps([FB.record({'id': 's9', 'name': 'Fishus fishii'}, 123, {'n': 'Fishu_u0.jpg', 'cp': 'free use'})[k] for k in ('src', 'o')]))`
