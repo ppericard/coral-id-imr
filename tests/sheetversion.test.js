@@ -504,6 +504,38 @@ test('SHEET_FLOOR is not a gate: --check accepts it, --assign leaves it alone', 
   }
 });
 
+// #1083: an entry that names the new version with the placeholder was written into HISTORY.md with the
+// placeholder left in, and --check then refused the assigned tree. Every bare placeholder of the entry becomes vN, in
+// HISTORY.md and ARCHITECTURE.md; one in a code span stays as written, as in the code files.
+test('--assign sets every bare placeholder in the entry it writes to HISTORY.md and ARCHITECTURE.md (#1083)', () => {
+  for (const files of [FILES, SHORT]) {
+    const r = repo(files);
+    try {
+      r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+      r.write(
+        'tools/sync/changes/claude-x.md',
+        `The app sends it only from ${NEXT} (\`CV_SHEET\`); ${NEXT} also reads \`${NEXT}\` as written.\n`
+      );
+      r.commit();
+      ok(r.check(), /waiting/);
+      ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
+      const hist = r.read('tools/sync/HISTORY.md');
+      assert.ok(
+        hist.includes(
+          `## v8 (2026-11-09)\n\nThe app sends it only from v8 (\`CV_SHEET\`); v8 also reads \`${NEXT}\` as written\n\n## v7 (`
+        ),
+        hist.slice(0, 400)
+      );
+      assert.ok(r.read('docs/ARCHITECTURE.md').includes('v8 (2026-11-09) The app sends it only from v8 (`CV_SHEET`); v8 also reads'));
+      ok(r.check(), /assigned: v8/);
+      r.commit();
+      ok(r.check('--main'));
+    } finally {
+      r.done();
+    }
+  }
+});
+
 // Line 1 short, the history in tools/sync/HISTORY.md (Pierre, 2026-11-18: "Pourquoi? Juste pourquoi?").
 test('short line 1: an assign puts the entry on top of HISTORY.md and the next version in line 1; --check accepts it', () => {
   const r = repo(SHORT);
