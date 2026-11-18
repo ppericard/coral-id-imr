@@ -6,8 +6,8 @@ where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
-- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>. Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
-- It teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
+- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no framework, no build step in development; the GitHub Pages deploy minifies and stamps versions: [docs/PAGES.md](docs/PAGES.md)) live at <https://ppericard.github.io/coral-id-imr/>. It teaches three subjects (`core.js` `SUBJECTS`: corals, reef fish, sea slugs; benthos next); it was named IMR Coral ID until 2026-11-03, and the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
+- The corals are the first subject: it teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
 - Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones. A separate project from ReefRecall, Pierre's monetised mobile game for another audience and approach: code, data or features move between the two only when he asks.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
 - Path in the app = **Learn → Practice → Identify** (the order RAs work in), plus **My progress** and a Pierre-only **admin** back-office (`admin.html`).
@@ -179,7 +179,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
 - **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
 - **A3** The top level stays short: a new page goes into an existing tab or group first.
-- **A4** One Corals | Fish switch covers every admin page.
+- **A4** One subject switch covers every admin page.
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
