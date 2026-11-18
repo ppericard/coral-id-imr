@@ -243,7 +243,8 @@ function againOf(GEN) {
     recallAt: () => 1,
     uname: n => GEN[n].name,
     shuffle: L => L,
-    photoSet: () => ({shown: []})
+    photoSet: () => ({shown: []}),
+    mimKeep: () => null // no pair of the mimicry class here
   };
   vm.createContext(ctx);
   vm.runInContext(
@@ -308,6 +309,9 @@ function duelOf(GEN, pairs) {
       UNITS: {fish: {pairs: () => pairs}},
       SUBJ: {id: 'fish'},
       dataLooks: () => [],
+      mimPairs: () => [], // no pair of the mimicry class here
+      mimSeen: () => false,
+      mimKeep: () => null,
       weight: () => 1,
       mixedUp: () => 0,
       confusable: () => false,
