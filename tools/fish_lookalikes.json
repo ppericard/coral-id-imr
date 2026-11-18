@@ -61,7 +61,7 @@
     {"src": "randall2005-323", "q": "Moland and Jones (2004) found 92% of mimetic P. rhinorhinchos closely associated with juvenile L. dimidiatus."}
    ],
    "marks": [
-    {"side": "b", "t": "The young cleaner wrasse: black, with a bright blue stripe along the back", "src": ["randall2005-322"], "q": "Juveniles of Labroides dimidiatus are black except for a bright blue dorsal stripe, and they gradually change to the adult pattern with growth."}
+    {"side": "b", "t": "Its young: black, with a bright blue stripe along the back", "src": ["randall2005-322"], "q": "Juveniles of Labroides dimidiatus are black except for a bright blue dorsal stripe, and they gradually change to the adult pattern with growth."}
    ]},
   {"id": "M5", "a": "s484", "b": "s319", "kind": "resembles", "st": {"a": "all", "b": "all"},
    "says": [
@@ -97,6 +97,14 @@
    "src": [
     {"src": "randall2005-321", "q": "which mimics Centropyge flavissima in the central and eastern islands of the South Pacific, is the same species as the one in the western Pacific where its young usually resemble C. vrolikii."},
     {"src": "fb-pyroferus", "q": "(in Guam, juveniles mimic C. flavissimus but in Palau where this species is absent, they mimic C. vrolikii)"}
+   ]},
+  "s272": {"why": "It has other colour forms in the South Pacific (a yellow rear part of the stripe, a pink patch), so a photo taken elsewhere may show a form not met here.",
+   "src": [
+    {"src": "randall2005-323", "q": "There is a common 2nd color form of Labroides dimidiatus in the Society Is. and the Tuamotu Archipelago that has a salmon pink area near the middle of the body beneath the black stripe (Fig. 111). ... A color variant of Labroides dimidiatus with a posterior section of the black stripe replaced by bright yellow (Fig. 112) occurs in the South Pacific from the Samoa Is. to the Coral Sea."}
+   ]},
+  "s485": {"why": "Where the cleaner wrasse has its yellow-marked form (the South Pacific), it has the same pattern, so a photo taken elsewhere may show a form not met here.",
+   "src": [
+    {"src": "randall2005-323", "q": "Individuals of Aspidontus taeniatus near the yellow-marked Cleaner Wrasse have the same color pattern (Fig. 113)."}
    ]}
  }
 }

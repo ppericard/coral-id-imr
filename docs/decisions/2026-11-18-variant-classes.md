@@ -29,12 +29,20 @@ Built here:
 - the out-of-region flag (`fish.json` species `region`, with its reason and sources): such a species' photos taken
   outside the Philippines never show on the card.
 
-The integrator's calls, easy to correct (players see them): the ramp [0.5, 0.8] (as the other juveniles and the phases);
-while no unit of the model is met, the photos come at Advanced, the late class's timing, so a photo never waits on a
-unit the player may not open (circle 3 declined: M6's bream); the class is the draw only, its group for "Learned"
-staying its phase's (a resembling juvenile in the juveniles' group, an adult in none), so the sheet's replay and every
-learned mark are unchanged and no rules version is needed; the card's layout and words ("Careful: this juvenile resembles
-another species", "Resembles" with its sources); the marks' wording.
+Choices made while building, not decided with Pierre (the PR lists them for him, each easy to change):
+
+- the ramp [0.5, 0.8], as for the other juveniles and the phases;
+- while no unit of the model is met, the photos come at Advanced, the late class's timing, so a photo never waits on a
+  unit the player may not open (circle 3 declined: M6's bream);
+- the class is the draw only: its group for "Learned" stays its phase's (a resembling juvenile in the juveniles' group,
+  an adult in none), so the sheet's replay and every learned mark are unchanged and no rules version is needed;
+- a pair inside the unit asked (M5's two blennies, asked as their family) holds nothing back, and the unit asked never
+  opens the gate by itself;
+- the regional species: *A. pyroferus* (Pierre's case), and the cleaner wrasse and the false cleanerfish, whose South
+  Pacific colour forms Randall describes (p. 323); on the card, a photo from near Dauin first.
+
+The integrator's calls, easy to correct: the card's layout and words ("Careful: this juvenile resembles another
+species", "Resembles" with its sources) and the marks' wording.
 
 ## Consequences
 

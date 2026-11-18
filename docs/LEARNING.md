@@ -3833,7 +3833,9 @@ whose look varies by region. Decision record: [2026-11-18-variant-classes](decis
   never open (circle 3 declined: M6's bream). It replaces the photo's class timing (*Acanthurus pyroferus* and
   *Scolopsis bilineata*, class B, came at Advanced; they now come from Open Water once their model is met). The variety
   fallback holds as for every variant: a unit with fewer than `PICKD.VARIETY` observations at full weight holds nothing
-  back (*Paraluteres* as a genus unit: all its photos are of the class).
+  back (*Paraluteres* as a genus unit: all its photos are of the class). A pair inside the unit asked holds nothing back
+  (M5's two blennies asked as their family: the photo asks the same name as its model), and the unit asked and its home
+  never count as the model's unit met (a genus waits on the model's genus, not on the family they share).
 - **The draw only.** The photo's kind and its group for "Learned" stay its phase's (`core.js` `varKindOf`, `varUnit`,
   `varLeftOf`): a resembling juvenile is in the juveniles' group, an adult that resembles another species in none. So the
   sheet's replay, its variant table and the learned marks are as before: no rules version (rule D5), no sheet change.
@@ -3846,8 +3848,10 @@ whose look varies by region. Decision record: [2026-11-18-variant-classes](decis
   credits. Once per pair and subject (`subjDev` `mim`, `TOLD` `mim:<subject>-<pair>`), cleared at sign-out (rule D7).
 - **The out-of-region warning** (`fish.json` species `region`: why and its sources; `tools/fish_lookalikes.json`
   `regional`): a photo of such a species taken outside the Philippines (`loc` `world`) never shows on the card; the card
-  shows another of the species from the region, or waits. The photo stays in play and in the quiz. Today
-  *Acanthurus pyroferus* (Randall 2005, p. 321; FishBase): 16 of its 18 juvenile photos are from elsewhere.
+  shows one of the species from near Dauin first (`loc` `dauin`), else from the Philippines, the subject's larger views
+  first, or waits. Every card photo shows one subject and no watermark (the judged flag `w`). The photo stays in play and in the quiz. Today
+  *Acanthurus pyroferus* (Randall 2005, p. 321; FishBase): 16 of its 18 juvenile photos are from elsewhere; and the
+  cleaner wrasse and the false cleanerfish, whose South Pacific colour forms Randall describes (p. 323).
 - **Not built yet** (ROADMAP "Look-alike pairs between species"): the pair drilled in the look-alike formats (the model's
   unit as a trap and duel partner for a photo of the class: FISH_PATH.md "Look-alikes at any rank", view 2), M7 as a
   family pair, the Look-alikes deck for every subject, the admin's ⚠ badge and its one-click lift, the feature frames'

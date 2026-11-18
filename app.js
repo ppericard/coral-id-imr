@@ -817,6 +817,15 @@ function fishGenera(X, F) {
         // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook): data
         // look-alikes the players' answers can drop (model.js dataSeed).
         ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
+        // Its declared look-alikes' tell-apart lines (the tree's genus apart and apsrc: the sea slugs', tools/seaslug_cues.py
+        // apart_of), by the other genus's id, each naming and describing that genus, with its sources in a line: said by
+        // the quiz feedback after a mix-up of the two (quiz.js pairLine), never a look-alike themselves.
+        ...(G.apart
+          ? {
+              ap: Object.fromEntries(Object.entries(G.apart).filter(([o, t]) => t && X.gen[o])),
+              apsrc: Object.fromEntries(Object.entries(G.apsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')]))
+            }
+          : {}),
         qt: cues || marks,
         // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
         ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
@@ -1189,12 +1198,12 @@ const fishBuild = () => {
 // a, its units' home (model.js varHome): sp, the species; st, the stage that resembles (juvenile: its juvenile photos
 // only; all: every photo); m, the units of b (b, its genus, its family), any of which met opens the gate (model.js mimOf,
 // mimAt); fb, the family of b, whose photos the card draws on; pair, the record its card reads (quiz.js mimShow); na and
-// nb, the two species' names; ra and rb, whether a
+// nb, the two species' names (sci, and cn, cni as cnFirst reads them); ra and rb, whether a
 // species' look varies by region (species region), its photos from elsewhere then kept off the card. A subject whose
 // file has no pairs gets none.
 function mimLay(X, f) {
   const sp = new Map(((f || {}).species || []).map(s => [s.id, s])),
-    name = s => ({sci: s.name, common: (s.cn && s.cn[0] && s.cn[0][0]) || s.common || ''}),
+    name = s => ({sci: s.name, cn: s.cn || [], ...(Number.isInteger(s.cni) ? {cni: s.cni} : {})}),
     by = {};
   ((f || {}).lookalikes || [])
     .filter(r => r.kind === 'resembles')

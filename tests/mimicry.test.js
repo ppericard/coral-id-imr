@@ -50,13 +50,10 @@ test('fish.json lookalikes: the decided pairs M1-M7, each a resemblance between 
   // Every quote is in the hand-kept file, never in fish.json
   SRC.pairs.forEach(r => [...r.says, ...r.marks].forEach(x => assert.ok(String(x.q || '').trim(), `${r.id}: a quote`)));
   assert.ok(!rd('fish.json').includes('"q":'));
-  // The out-of-region flag: the surgeonfish, with its reason and its sources
+  // The out-of-region flag: the surgeonfish, the cleaner wrasse and the false cleanerfish, each with its reason and sources
   const reg = F.species.filter(s => s.region);
-  assert.deepStrictEqual(
-    reg.map(s => s.id),
-    ['s035']
-  );
-  assert.ok(reg[0].region.why && reg[0].region.src.length === 2);
+  assert.deepStrictEqual(reg.map(s => s.id).sort(), ['s035', 's272', 's485']);
+  assert.ok(reg.every(s => s.region.why && s.region.src.length > 0));
 });
 
 test('the build refuses a mark with a digit or the word mimic, an unsourced mark, and a species out of the game', () => {
@@ -157,6 +154,12 @@ test('the gate: from Open Water once the species resembled is met, at Advanced w
   const late = {cls: 'mixed', late: ['Yus m']};
   assert.ok(share(engine('fish', pool(), {score: 0.65, juv: late, mim: ent('juvenile'), met})).juv > 0);
   assert.strictEqual(share(engine('fish', pool(), {score: 0.65, juv: late, mim: ent('juvenile'), met: none})).juv, 0);
+  // A pair inside the unit asked (its model's family is the unit: both blennies asked as the family): nothing held back
+  const inside = [{...ent('all')[0], m: ['s9', 'g:Zus', 'u']}];
+  const s = share(engine('fish', pool(), {score: 0.3, mim: inside, met: () => true}));
+  assert.ok(s.adult > 0.2 && s.juv === 0, `the adults come from the start, the juveniles on their own ramp: ${JSON.stringify(s)}`);
+  // The unit asked never opens the gate by itself: its model's other units must be met
+  assert.deepStrictEqual(share(engine('fish', pool(), {score: 0.65, mim: ent('all'), met: id => id === 'u'})), {adult: 0, juv: 0});
   assert.strictEqual(JSON.stringify(engine('fish', pool(), {}).MIM_AT), JSON.stringify({met: [0.5, 0.8], alone: [0.8, 0.8]}));
 });
 
@@ -220,6 +223,15 @@ test('the card: its photos from the region, one subject in view; it waits when n
   // Seen on another device of the account: not again
   assert.ok(card(G, ['M1']).mimSeen('M1'));
   assert.strictEqual(card(G, ['M1']).mimCardOf([{n: 'u', p: jp}], card(G, ['M1']).mimSeen), null);
+  // A regional species: a photo from near Dauin first, even over the photo answered from the Philippines, and even when
+  // its subject is small in the frame; no watermark
+  assert.ok(!Q.mimPhotoOk({f: 'w', jt: 'p1g0sl1w'}, false), 'a watermark (judged flag w)');
+  const jd = {f: 'jd', sp: 's1', ph: 'juvenile', loc: 'dauin', jt: 'p1g0ss1j'},
+    D = card({u: {mim: [m], views: {wide: [jw, jp, jd]}}, 'f:B': {views: {wide: [ba]}}});
+  assert.deepStrictEqual(
+    D.mimPics(m, jp, 'u').map(p => p.f),
+    ['jd', 'ba']
+  );
   // A pair whose juveniles are the ones resembled shows one of them
   const m4 = {...m, ra: false, pair: {id: 'M4', b: 's2', st: {a: 'juvenile', b: 'juvenile'}}};
   assert.deepStrictEqual(

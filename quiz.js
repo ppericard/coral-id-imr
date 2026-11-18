@@ -1084,7 +1084,9 @@ function pairText(a, b) {
 // a look-alike among the choices (chs: what the player just told apart); 3. else the shown unit's first ID tip or mark, said
 // as "X: ...", its source after it; 4. none (no tip: a fish species, a starred coral genus, a sea slug with no marks): the
 // sheet is the verdict and the species line alone. Never a line made by comparing trait tags (rule C2). A typed answer has
-// no choices (chs empty).
+// no choices (chs empty). After a right answer the pair's line must say something of the unit shown (its half, from the
+// look-alike's record): a pair whose only half describes the look-alike (the sea slugs' one-sided lines,
+// tools/seaslug_cues.json apart) leaves the unit's own first tip.
 function fbLine(target, c, good, chs = []) {
   const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
   const P =
@@ -1092,7 +1094,7 @@ function fbLine(target, c, good, chs = []) {
       ? pairText(target, c)
       : good
         ? chs
-            .filter(o => o !== target && GX(o))
+            .filter(o => o !== target && GX(o) && pairLine(o, target))
             .map(o => pairText(target, o))
             .find(Boolean)
         : null;
@@ -1510,19 +1512,29 @@ function phaseShow({p, k}, n, brk) {
 const MIMC = {KEY: 'mim'};
 const mimTok = id => `mim:${SUBJ.id}-${id}`;
 const mimSeen = id => !!(store.get(subjDev(SUBJ.id, MIMC.KEY), null) || {})[id] || toldHas(mimTok(id));
-// A photo the card may show: one subject in view (its tags' count 1 or s, or no tags), not from outside the region of a
-// species flagged regional (reg).
-const mimPhotoOk = (p, reg) => !!p && !p.multi && (!p.jt || /^[1s]$/.test(String(p.jt).charAt(6))) && !(reg && p.loc === 'world');
+// A photo the card may show: one subject in view (its tags' count 1 or s, or no tags), no watermark (the judged flag w, as
+// Home's tiles), not from outside the region of a species flagged regional (reg).
+const mimPhotoOk = (p, reg) =>
+  !!p &&
+  !p.multi &&
+  (!p.jt || /^[1s]$/.test(String(p.jt).charAt(6))) &&
+  !/w/.test(String(p.jt || '').slice(7)) &&
+  !(reg && p.loc === 'world');
 // The card's two photos for entry m (app.js mimLay), shown with photo p on unit n: p itself when it may show, else another
 // of its species at the stage that resembles, from n's photos; and one of the species it resembles from that species'
-// family, a juvenile when the pair names its juveniles, else an adult first. Each list in its easy order. null: none.
+// family, a juvenile when the pair names its juveniles, else an adult first. Each list in its easy order. For a species
+// flagged regional, the form met here first: a photo from near Dauin, then from the Philippines, each the subject's
+// larger views first (the tags' size: large, medium, small). null: none.
 function mimPics(m, p, n) {
   const st = (m.pair.st || {}).b || 'all',
     stage = (x, s) => s !== 'juvenile' || phaseOf(x) === 'juvenile',
-    own = ((GX(n) || {}).views || {}).wide || [],
-    a = mimPhotoOk(p, m.ra) ? p : own.find(x => x.sp === m.sp && stage(x, m.st) && mimPhotoOk(x, m.ra)),
+    here = x => (x.loc === 'dauin' ? 0 : 3) + Math.max(0, 'lms'.indexOf(String(x.jt || '').charAt(5))),
+    near = (L, reg) => (reg ? (L.map((x, i) => [x, here(x), i]).sort((u, v) => u[1] - v[1] || u[2] - v[2])[0] || [])[0] : L[0]),
+    A = [p, ...(((GX(n) || {}).views || {}).wide || [])].filter(x => x && x.sp === m.sp && stage(x, m.st) && mimPhotoOk(x, m.ra)),
     B = (((GX(m.fb) || {}).views || {}).wide || []).filter(x => x.sp === m.pair.b && stage(x, st) && mimPhotoOk(x, m.rb)),
-    b = (st === 'all' && B.find(x => !phaseOf(x))) || B[0];
+    Bs = st === 'all' && B.some(x => !phaseOf(x)) ? B.filter(x => !phaseOf(x)) : B,
+    a = near(A, m.ra),
+    b = near(Bs, m.rb);
   return a && b ? [a, b] : null;
 }
 // The first photo of L (the photos shown, each with its unit: {n, p}) whose pair's card is due: {n, p, m}, else null.
@@ -1562,10 +1574,13 @@ function mimShow({n, p, m}, brk) {
   if (!two) return null;
   const [a, b] = two,
     r = m.pair,
-    nm = x => (x.common ? esc(x.common) : `<i>${esc(x.sci)}</i>`),
+    // each species by the name the player sees first (app.js cnFirst: the IMR name for a player at IMR), else its
+    // scientific name
+    imr = imrSaid(),
+    cn = x => cnFirst(x, imr),
+    nm = x => (cn(x) ? esc(cn(x)) : `<i>${esc(x.sci)}</i>`),
     word = x => (phaseOf(x) === 'juvenile' ? ' (juvenile)' : ''),
-    fig = (x, t) =>
-      `<figure><img src="${img(x, 's')}" alt="${esc(t.common || t.sci)}"><figcaption>${nm(t)}${word(x)}</figcaption></figure>`,
+    fig = (x, t) => `<figure><img src="${img(x, 's')}" alt="${esc(cn(t) || t.sci)}"><figcaption>${nm(t)}${word(x)}</figcaption></figure>`,
     marks = (r.marks || [])
       .map(k => `<li><b>${nm(k.side === 'a' ? m.na : m.nb)}</b>: ${esc(k.t)} <small>(${mimSrc(k.src)})</small></li>`)
       .join(''),
