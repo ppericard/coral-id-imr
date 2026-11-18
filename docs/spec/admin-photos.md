@@ -10,8 +10,13 @@ decided is in [docs/decisions/](../decisions/README.md) and the PRs.
 
 ## Photos › Genera
 
-- **Live** `#photos/genera/live/<Genus>`, the coral genus pages: a genus's photos per view, its candidates, Not this
-  genus, and its tools (Feature, ★ Cover, Remove, Not this, ×, Crop, the quality and form buttons). Their sticky bar has a
+- **Live** `#photos/genera/live/<Genus>`, the coral genus pages: a genus's photos per view, its candidates and Not this
+  genus. The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key): a photo dragged
+  into the first 3 places is featured, dragged out of them it drops (the next best moves up), places not set fill
+  automatically; a drag to another view moves a photo, a drag from the candidates adds it. **Remove** takes a photo off
+  the site (games included) and lists it with the candidates, where it can be added back; Not this (wrong genus, or only
+  fit for a look-alike comparison); × excludes for good; Crop (with the rotation, below); the cover; each photo's growth
+  form letters; the out of rule, share-alike and WoRMS name tags (`HELP.genus`). Their sticky bar has a
   view filter, All · Colony · Close-up · Corallites: one view's section alone, Candidates and Not this genus hidden and
   counted in one line; kept across genera in `reefid-admin-gview`, All on a genus without the saved view. The origin
   chips are the filter bar's ([admin.md › One filter bar](admin.md#admin-for-every-subject-the-pooled-model)).

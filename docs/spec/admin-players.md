@@ -201,7 +201,7 @@ them; a subject with sheets at several ranks shows its sheets opened as one coun
 genera for the replayed subject, the fish entries' circles for another, read once by `fishAdmin`; `progOf(u, full, S)`,
 `statsFor`: the sheet's photo numbers for the replayed subject only), with the saved copy's cards and mastery exams
 (`savedFor`: each subject's keys) and ↻ saved where it differs; the Elo and the genus sheets table are the replayed
-subject's only. A tab for one unit rank only (`GROUPS` option `rank`) is never shown to the corals.
+subject's only.
 
 ### Activity: recent sessions and who is playing now
 
@@ -240,17 +240,17 @@ screen's answers, `rowsOf`): who plays and how much.
 - Hidden (another tab, a phone asleep) or another page: no read, the timer stopped (`visibilitychange`); back in view, a
   read at once when the last is over a minute old. Without the token: no timer, ↻ by hand.
 - **Script cost**: one light read a minute while the page is open, reading two small ranges (the 50 rows and the
-  Activity tab's one row per player; the token check kept 10 minutes, `isAdmin_`): well under a second of script time
-  each by estimate, and no wait on the script lock for anyone.
+  Activity tab's one row per player; the token check kept 10 minutes, `isAdmin_`): by estimate (not measured on the live
+  sheet) well under a second of script time each, and no wait on the script lock for anyone.
 - **How fresh "now" is** (`sync.js`): a signed-in player's answer goes with their progress about 3 seconds after it is
   given (`syncSoon`: `save()` after each answer, one timer restarted at each change, then a load and a send,
   `syncOnce`), so it is in the sheet within about 10 seconds; a device not signed in queues its answers (`ANONQ`)
   and sends them `ANON_SEND.MS` = 3 seconds after each answer (`anonSoon`, `sendAnon`, at most 100 per request), when
   the app is hidden or closed, or when back online, under the sheet's caps (`anon_`: 600 answers per device and 6000 for
   every device not signed in every 6 hours, [SECURITY.md](../SECURITY.md)). Each anonymous request holds the script lock
-  for its own write (`anon_`: the Id column read to skip resent answers, the rows appended), so the lock's other waiters
-  (saves, events, reports; `LOCK_MS` = 20 s) wait a fraction of a second more per anonymous answer, and the Apps Script
-  quotas (30 simultaneous executions; web app requests count in no daily trigger quota) stay far below their limits at a
+  for its own write (`anon_`: the Id column read to skip resent answers, the rows appended), so, by estimate (not
+  measured on the live sheet), the lock's other waiters (saves, events, reports; `LOCK_MS` = 20 s) wait a fraction of a
+  second more per anonymous answer, and the Apps Script quotas (30 simultaneous executions; web app requests count in no daily trigger quota) stay far below their limits at a
   class's pace ([sync.md › Saving and loading](sync.md#saving-and-loading)). Times are the device's own clock when it
   answered (`a.t`): answers played offline arrive later with their real times, a phone set to the wrong time shows
   wrong.
@@ -366,6 +366,12 @@ list (names); `sheetEarly` reads all four.
 
 The Analyses views read live from the answer log (`renderStats`): Pairs, Heatmap, Answer log and Stops. The views of the
 stored report are ARCHITECTURE "Analyses".
+
+### Answer log
+
+`#analyses/learning/answer-log`, live from the answer log: the learning curve, calibration, conditions (the questions on
+each rank, `logConds`, which a Journey's Games reuse), the units (genera, or a subject's units in its words: `manyWord`,
+`stopWord`; Genera with the median player Elo on each) and the mix-ups.
 
 ### Health and Stops
 

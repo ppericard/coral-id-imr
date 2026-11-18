@@ -44,14 +44,20 @@ over the cap).
 | Analyses | Difficulty | Photos `#analyses/difficulty/photos` · Formats `#analyses/difficulty/formats` · Mix-ups `#analyses/difficulty/mix-ups` · Time `#analyses/difficulty/time` · Pairs `#analyses/difficulty/pairs` · Heatmap `#analyses/difficulty/heatmap` |
 | Analyses | Learning | Practice `#analyses/learning/practice` · After a break `#analyses/learning/after-a-break` · Sessions `#analyses/learning/sessions` · Profiles `#analyses/learning/profiles` · Answer log `#analyses/learning/answer-log` · Stops `#analyses/learning/stops` |
 
+The Analyses tabs: **Overview** (what the data says clearly, every result in words, the milestones); Speed's Answer time
+and Enlarging; Difficulty's Photos, Formats, Mix-ups, **Time** (what the time to answer and enlarging say about a
+photo, from the report), **Pairs** (live from the answer log, `statsConf`) and **Heatmap** (live from the answer log,
+`admin-heatmap.js` `statsHeat`; one map per rank asked); Learning's Practice, After a break, Sessions, **Profiles**
+(player profiles, from the report), **Answer log** (live: learning curve, calibration, conditions, genera, mix-ups) and
+**Stops** (live: where players stop, genus sheets opened).
+
 What each page shows: Inbox and Players in [admin-players.md](admin-players.md); Photos in
 [admin-photos.md](admin-photos.md) and [admin-tree.md](admin-tree.md); the Analyses views read from the stored report in
 ARCHITECTURE "Analyses", the live ones (Pairs, Heatmap, Answer log, Stops) in
 [admin-players.md › Live analyses](admin-players.md#live-analyses-from-the-answer-log).
 
-**Names** (rule A3): no tab holds a view of its own name and no group a tab of its own name: the group is **Inbox**
-(not To do), the players' tab **List**, Activity's view **Recent sessions**, the mix-ups view of the answer log
-**Pairs**.
+**Names** (rule A3): no tab holds a view of its own name and no group a tab of its own name: the group **Inbox**, the
+players' tab **List**, Activity's view **Recent sessions**.
 
 **No page titles**: an admin page never repeats its place in the header (group, tab, view) as a heading; headings name
 the sections of a page (with their counts), a genus or a player (Journey).

@@ -354,12 +354,12 @@ photo pages; [spec/admin-tree.md](spec/admin-tree.md), the Tree tab and the gene
 [spec/admin-players.md](spec/admin-players.md), To do, Players and the live analyses. The stored analyses are "Analyses"
 below.
 
-- **Four header modes, each with its tabs**, **Addresses**, **Names**, **No page titles**: [admin.md › The
-  header](spec/admin.md#the-header-groups-tabs-and-views); the tabs and their views, each in its spec:
+- **Four header modes, each with its tabs**, **Addresses**, **Names**, **No page titles**, **Pages by hash**:
+  [admin.md › The header](spec/admin.md#the-header-groups-tabs-and-views); the tabs and their views, each in its spec:
   - **To do**, **Points to handle**: [admin-players.md › Inbox › To do](spec/admin-players.md#inbox--to-do).
   - **Coverage**, **Coverage › Games**, **Coverage › Sheets & ID Key**:
     [admin-photos.md › Coverage](spec/admin-photos.md#coverage).
-  - **Genera**: [admin-photos.md › Photos › Genera](spec/admin-photos.md#photos--genera).
+  - **Genera**, **Genus status**, **Needs**: [admin-photos.md › Photos › Genera](spec/admin-photos.md#photos--genera).
   - **Tree**: [admin-tree.md](spec/admin-tree.md).
   - **Candidates**, **Auto-sort**: [admin-photos.md › Candidates](spec/admin-photos.md#candidates-the-corals),
     [the auto-sort](spec/admin-photos.md#the-auto-sort).
