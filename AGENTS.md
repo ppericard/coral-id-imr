@@ -239,5 +239,5 @@ For Codex's PR review, the rules cheapest to miss:
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).
-- A PR never edits `Code.gs` `const VERSION` nor its header's history line: a `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at merge (rule D3).
+- A PR never edits `Code.gs` `const VERSION` nor its line 1 or `tools/sync/HISTORY.md` (the version history): a `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at merge (rule D3).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
