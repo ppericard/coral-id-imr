@@ -227,19 +227,14 @@ pass judges quality and crop from.
 
 ## The calibration set (`calibration-set.json`)
 
-- The first step of the placement test (ROADMAP; decision record
-  [2026-11-18-coral-calibration-set](../decisions/2026-11-18-coral-calibration-set.md)): a fixed set of about 50 coral
-  game photos the draw shows a little more often until each has 20 answers, so a later placement test asks photos whose
-  difficulty is measured. `{v, built, about, rule, coral: {genus: [photo file]}}`, keyed by subject id (a subject
-  without a key has no set). Written by `node tools/calibset.js` from `data.json`, `curation.json`, `quality.json` and
-  `forms.json` (the slate genera, the views every question shows, never Poor or several corals; one per slate genus, the
-  rest to the genera with the most colonies; a fixed hash order, one per colony; sticky: rule and figures in
-  [LEARNING.md](../LEARNING.md) "The calibration set"). Not rewritten by any workflow: a member that leaves play
-  (Pierre's Publish) is simply never drawn until the tool is run again, which tops its genus up (`--check` says when);
-  `--progress STATS` reads each member's answers from a saved `?stats=1` reply.
-- The app loads it with the quiz tier (`app.js` `tier2json` → `model.js` `CALSET`; in `sw.js` `SHELL`); `model.js`
-  `setBonus` weighs a member `CSET.B` times while the sheet's plain count of its answers is under `CSET.N`, in
-  `photoSet` on a unit the player holds and within one width of the target. `tests/calibset.test.js`.
+- About 50 coral game photos the draw shows a little more often until each has 20 answers, so a later placement test
+  asks photos whose difficulty is measured ([decision](../decisions/2026-11-18-coral-calibration-set.md); the rule and
+  the check: [LEARNING.md](../LEARNING.md) "The calibration set"). `{v, built, about, rule, coral: {genus: [photo
+  file]}}`, keyed by subject id (no key, no set). Written by `node tools/calibset.js` from `data.json`,
+  `curation.json`, `quality.json` and `forms.json`; sticky, and not rewritten by any workflow: a member that leaves play
+  (Pierre's Publish) is never drawn until the tool is run again (`--check` says when).
+- The app loads it with the quiz tier (`app.js` `tier2json` → `model.js` `CALSET`; in `sw.js` `SHELL`); `setBonus`
+  weighs a member `CSET.B` times while its answers are under `CSET.N`. `tests/calibset.test.js`.
 
 ## Presence of coral species (`presence.json`)
 
