@@ -17,7 +17,7 @@
 "Astreopora": {"ig": 4, "imr": ["Massive.", "Cylindrical corallites standing out from the surface.", "Septa poorly developed, so corallites look like holes."], "mn": ""},
 "Galaxea": {"ig": 4, "imr": ["Spiky, star-like corallites with blade-like septa.", "Tentacles sit outside the septa."], "mn": ""},
 "Turbinaria": {"ig": 4, "imr": ["Smooth coenosteum between corallites.", "Thin plates, regular colony, flowery polyps.", "Corallites 2-3 mm."], "mn": ""},
-"Mycedium": {"ig": 4, "imr": ["Large nose-shaped corallites facing out towards the colony edge.", "Polyps have large mouths and no tentacles (they use slime)."], "mn": "\"My sea god\"."},
+"Mycedium": {"ig": 4, "imr": ["Large nose-shaped corallites facing out towards the colony edge.", "Polyps have large mouths and no tentacles (they use slime)."], "mn": "\"My sea god\", or \"Mycelium\"."},
 "Lobophyllia": {"ig": 5, "imr": ["Large, fleshy corallites that look isolated from each other.", "Large, spiky septal teeth.", "Separate or shared walls; shared walls often have a groove along the top."], "mn": ""},
 "Pavona": {"ig": 5, "imr": ["Club-like or leafy colonies, with corallites on both sides.", "Septo-costae flow between corallites: smooth, star-like look.", "Corallites in parallel rows; ridges meander around several mouths."], "mn": "A star in the pavement (Hollywood Walk of Fame)."},
 "Pachyseris": {"ig": 5, "imr": ["Valleys with parallel ridges.", "Finely ribbed septa.", "Leafy, laminar growth."], "mn": "A series of packed rows."},
