@@ -73,6 +73,18 @@ const GATES = {
   FROMHOME_SHEET: (v, N) =>
     fn('app.js', 'const fromHomeOn = ', '\n', 'fromHomeOn', {sheetV: () => (v === undefined ? 0 : v), FROMHOME_SHEET: N})(),
   LIGHT_SHEET: (v, N) => fn('sync.js', 'const lightOn = ', '\n', 'lightOn', {sheetV: () => v, LIGHT_SHEET: N})(),
+  // The screen in each pages-opened summary (sync.js viewportOn, pagesScreen; core.js viewportOf, pagesClean): from the
+  // version whose pagesClean keeps it; before, the summary as it was (tests/pages.test.js pagesSend runs both).
+  VIEWPORT_SHEET: (v, N) => {
+    const on = fn('sync.js', 'const viewportOn = ', '\n', 'viewportOn', {sheetV: () => v, VIEWPORT_SHEET: N})();
+    const sent = fn('sync.js', 'const pagesScreen = ', '\nfunction pagesSend', 'pagesScreen', {
+      viewportOn: () => on,
+      viewportOf: require('../core.js').viewportOf,
+      window: {innerWidth: 360, innerHeight: 800, devicePixelRatio: 3}
+    })();
+    assert.strictEqual('vp' in sent, on, 'the screen is sent exactly when the gate is on');
+    return on;
+  },
   // The leaderboard tree sent only when it changed, or the sheet holds another (sync.js treeOn, boardUnits, treesSeen;
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).

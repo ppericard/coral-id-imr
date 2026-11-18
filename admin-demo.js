@@ -730,8 +730,14 @@
           o[1] += sec;
         };
       let vk = 0;
+      // The screen each device sends (core.js viewportOf, sheet vNEXT): its window width, a usable height and a pixel
+      // ratio set by that width, no random numbers (the rest of the demo stays the same). The players' visits above have
+      // none (sent before the sheet kept it).
+      const VH = {360: 660, 384: 740, 390: 660, 393: 660, 412: 780, 430: 750, 800: 1180, 820: 1100, 1440: 780, 1680: 920, 1920: 950},
+        VD = {360: 3, 384: 2.8, 390: 3, 393: 3, 412: 2.625, 430: 3, 800: 2, 820: 2, 1440: 2, 1680: 1, 1920: 1.25};
       WHO.forEach(([who, prof, ua, w, st, nv, na], di) => {
-        const dev = 'demovd' + String(di).padStart(2, '0');
+        const dev = 'demovd' + String(di).padStart(2, '0'),
+          vp = typeof viewportOf === 'function' ? viewportOf(w, VH[w] || w, VD[w] || 1) : null;
         for (let v = 0; v < nv; v++) {
           // At its hour of the day, within the 24 hours before NOW - day days - 2 h: never on the edge of the 7 or 30
           // days whatever the time the demo opens (days 6 and 29 left out), so the page's numbers stay the same.
@@ -813,7 +819,8 @@
                 r: Object.fromEntries(K.map(k => [k, P[k]])),
                 g: j || !Object.keys(g).length ? {} : g,
                 vi,
-                na
+                na,
+                ...(vp ? {vp} : {})
               }),
               '190',
               ua

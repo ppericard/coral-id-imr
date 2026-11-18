@@ -18,7 +18,9 @@ const VISITS = {
   MAX: 60, // periods at most in the charts over time (the last ones), as Activity
   TOP: 12, // visitors listed before "Show all"
   SHEETS: 8, // genus sheets listed
-  OPEN: 8 // visits shown in an unfolded visitor
+  OPEN: 8, // visits shown in an unfolded visitor
+  SCREEN_DAYS: 90, // Screens: the devices seen in the last this many days, whatever the filters
+  SIZES: 8 // Screens: the most common sizes listed
 };
 // A game = a Practice page (Q302: quiz, custom quiz, duels, Memory); the Lab (Tools) is not one.
 const visitGame = p => /^practice\./.test(p);
@@ -193,6 +195,57 @@ function visitorSubj(L, sel, order) {
   L.forEach(v => Object.entries(v.on || {}).forEach(([id, u]) => (T[id] = (T[id] || 0) + u.s)));
   const ids = Object.keys(T).sort((a, b) => T[b] - T[a] || (order.indexOf(a) + 1 || 1e9) - (order.indexOf(b) + 1 || 1e9));
   return ids[0] || order[0];
+}
+// Screens (Pierre, 2026-11-18: the screen sizes the players really use, to design multi-photo game formats): from the
+// summaries that carry the screen (core.js VIEWPORT, sheet vNEXT: the CSS viewport rounded to 10 px, the pixel ratio,
+// the orientation and the band of the short side), the devices that sent one in the last SCREEN_DAYS days, whatever
+// the page's filters. A device counts once, with its most common size (the latest on a tie) and its newest browser.
+// Its band: a phone (devClass on its short side) by the band it sent (b: 0 ≤360, 1 361-390, 2 391-414, 3 415-600,
+// taken from the exact width on the device); a tablet or a desktop by devClass (a mobile browser's short side, a
+// computer browser's width). {n: devices, bands: [{k, n}] in SCREEN_BANDS' order, sizes: [{w, h, d (the most common
+// ratio), n}] the most common first, at most SIZES}.
+const SCREEN_BANDS = ['≤360', '361-390', '391-414', '415-600', 'Tablet', 'Desktop'];
+function screenBand(ua, vp) {
+  const mob = / mobile$/.test(String(ua || '')),
+    c = devClass(ua, [mob ? Math.min(vp.w, vp.h) : vp.w]);
+  return c === 'phone' ? Math.max(0, Math.min(3, Number(vp.b) || 0)) : c === 'tablet' ? 4 : 5;
+}
+function screensOf(rows, now) {
+  const since = now - VISITS.SCREEN_DAYS * 864e5,
+    D = Object.create(null),
+    key = vp => vp.w + '×' + vp.h;
+  rows.forEach(x => {
+    if (!x.vp || !(x.t >= since)) return;
+    const d = (D[x.dev] = D[x.dev] || {S: Object.create(null), t: -Infinity, ua: ''}),
+      s = (d.S[key(x.vp)] = d.S[key(x.vp)] || {n: 0, t: -Infinity, vp: x.vp});
+    s.n++;
+    if (x.t >= s.t) {
+      s.t = x.t;
+      s.vp = x.vp;
+    }
+    if (x.t >= d.t) {
+      d.t = x.t;
+      d.ua = x.ua;
+    }
+  });
+  const devs = Object.values(D).map(d => {
+      const vp = Object.values(d.S).sort((a, b) => b.n - a.n || b.t - a.t)[0].vp;
+      return {vp, band: screenBand(d.ua, vp)};
+    }),
+    Z = new Map();
+  devs.forEach(({vp}) => {
+    const z = Z.get(key(vp)) || Z.set(key(vp), {w: vp.w, h: vp.h, n: 0, D: new Map()}).get(key(vp));
+    z.n++;
+    z.D.set(vp.d, (z.D.get(vp.d) || 0) + 1);
+  });
+  return {
+    n: devs.length,
+    bands: SCREEN_BANDS.map((k, i) => ({k, n: devs.filter(d => d.band === i).length})),
+    sizes: [...Z.values()]
+      .sort((a, b) => b.n - a.n || a.w - b.w || a.h - b.h)
+      .slice(0, VISITS.SIZES)
+      .map(z => ({w: z.w, h: z.h, d: [...z.D.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0], n: z.n}))
+  };
 }
 // visits: end
 
@@ -552,6 +605,25 @@ function renderVisits() {
   const first = `<section class="adm-scard adm-hsec" data-visits="first"><h3>First page</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Page</th><th></th><th class="n">Visits</th><th class="n"></th></tr></thead><tbody>${fRows}</tbody></table></div>
     <h3 class="adm-vh3">Device</h3><div class="adm-tscroll"><table class="adm-tbl" data-visits="device"><thead><tr><th>How</th><th></th><th class="n">Visits</th><th class="n">Visitors</th></tr></thead><tbody>${dRows}</tbody></table></div></section>`;
 
+  // Screens: the devices of the last 90 days by width band, then the most common sizes (screensOf; not filtered).
+  const SC = screensOf(PGS.rows || [], now),
+    screens = `<section class="adm-scard adm-hsec" data-visits="screens"><h3>Screens <small>${SC.n} devices, ${VISITS.SCREEN_DAYS} d</small></h3>${
+      SC.n
+        ? `<div class="adm-tscroll"><table class="adm-tbl" data-vsc="bands"><thead><tr><th>Width</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.bands
+            .map(
+              b => `<tr><td>${esc(b.k)}</td><td>${sbar(b.n, SC.n)}</td><td class="n">${b.n}</td><td class="n">${pct(b.n, SC.n)}</td></tr>`
+            )
+            .join(
+              ''
+            )}</tbody></table></div><h3 class="adm-vh3">Most common sizes</h3><div class="adm-tscroll"><table class="adm-tbl" data-vsc="sizes"><thead><tr><th>Size</th><th class="n" title="Pixel ratio">Ratio</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.sizes
+            .map(
+              z =>
+                `<tr><td>${z.w} × ${z.h}</td><td class="n">${z.d}</td><td>${sbar(z.n, SC.n)}</td><td class="n">${z.n}</td><td class="n">${pct(z.n, SC.n)}</td></tr>`
+            )
+            .join('')}</tbody></table></div>`
+        : '<p class="note">None yet.</p>'
+    }</section>`;
+
   // Visitors: one row each, the newest visit first; a row unfolds their visits; the name opens their Journey.
   const VL = [];
   {
@@ -631,7 +703,7 @@ function renderVisits() {
       : ''
   }</section>`;
 
-  $v.innerHTML = `<div class="adm-vis">${head(vDay(P.since))}${filt}${warn.map(t => `<p class="note">${esc(t)}</p>`).join('')}${top}<div class="adm-sgrid">${time}${pages}${key}${sheets}${first}${list}</div></div>`;
+  $v.innerHTML = `<div class="adm-vis">${head(vDay(P.since))}${filt}${warn.map(t => `<p class="note">${esc(t)}</p>`).join('')}${top}<div class="adm-sgrid">${time}${pages}${key}${sheets}${first}${screens}${list}</div></div>`;
   bindVisits();
 }
 function bindVisits() {
@@ -677,4 +749,5 @@ HELP.visits = `<p>Who opens the app and what for, games or not, signed in or not
   <p><b>Subject</b>: <b>All</b> (the default): every visit, each page of each subject its own row, marked with its subject's icon (the Coral ID Key and the Fish ID Key apart). One subject: the visits that opened one of its pages, each counted with that subject's pages only (its length, its pages, a game or not), still marked with every subject it opened. <b>Period</b>: the last 7 or 30 days, or everything read (the last 10,000 summaries). <b>Visits</b>: <b>Without a game</b> (the default) or <b>All visits</b>. A game = a Practice page (the quiz, the custom quiz, duels, Memory) of any subject on All, of the subject filtered otherwise; a visit to the Lab (Tools) counts as without a game. <b>Who</b>: <b>Signed in</b> (with answers), <b>Not signed in</b> (an anonymous device with answers), <b>Never answered</b> (no answer in any subject, signed in or not). <b>Device</b>: see below.</p>
   <p><b>The numbers</b>: the visits (and, without a game, of how many in all), the visitors, those who never answered, the median visit, the share of visits on a phone. <b>Visits over time</b>: per day or week (from Monday), the visits and the visitors; on All visits the visits with a game in the paler colour above those without; then the visits by hour of the day (this browser's time). <b>Pages opened</b>: per page, the visits that opened it and their share, the visitors, the median time on the page in a visit that opened it, the total time. <b>ID Key</b> (the Coral ID Key, the Fish ID Key, a card each on All): its visits, visitors, median time and the visits that started on it, by who; the steps inside the Key are not counted yet (a sheet change). <b>Genus sheets</b> (the corals'; not on Fish alone): the ${VISITS.SHEETS} most opened, by how many visitors, the time on them, and how they were reached most often (quiz feedback, Learn, My progress, other). <b>First page</b> and <b>installed app</b> come from the visit's load row (same device, sent within the visit's first minutes): "Not known" when the Events read (its last 3000 rows) no longer has it. <b>Visitors</b>: one row each, newest first, marked with the subjects of their visits; a tap unfolds their last ${VISITS.OPEN} visits, each marked with its subjects; the name or id opens their Journey, on the subject filtered (on All, the subject they spent most time on).</p>
   <p><b>Device</b> (approximate): a <b>phone</b> is a browser that says it is a mobile one; a <b>tablet</b> is estimated from the window width of the device's load rows (their median): a mobile browser ${VISITS.PHONE} px wide or more, or a computer's browser from ${VISITS.PHONE} to ${VISITS.DESK - 1} px (an iPad's Safari presents itself as a Mac). Only devices with a load row in the Events read get a width (recent devices); the others are a phone or a computer by their browser. A phone held sideways or a narrow computer window can be misread.</p>
+  <p><b>Screens</b> (sheet vNEXT; to design games with several photos): the devices that sent their screen in the last ${VISITS.SCREEN_DAYS} days, whatever the filters above, each counted once with its most common size. The app sends it with each summary, coarse on purpose: the usable window in CSS pixels (what a page can lay out, browser bars left out), rounded to 10 px, the pixel ratio to one decimal, portrait or landscape. <b>Width</b>: a phone by the width of its short side (≤360, 361-390, 391-414, 415-600, worked out on the phone from the exact width, so a 393 px phone shown as 390 × … still counts in 391-414), a tablet or a desktop as in Device above (a mobile browser 600 px wide or more on its short side: a tablet). <b>Most common sizes</b>: width × height as sent (a phone held sideways shows its landscape size), the pixel ratio most of those devices have. The players' devices that have not opened the app since are not counted; nor are older summaries (sent before the sheet kept the screen).</p>
   <p>What is not seen: a first visit left within seconds, a page the phone closed without the app being left (its summary is lost), local copies and automated browsers. Anonymous ids only; a name only for those who signed in.</p>`;
