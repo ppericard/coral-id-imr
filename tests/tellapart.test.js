@@ -121,7 +121,12 @@ test('a sea slug mix-up reads the declared pair line from the built genera, with
 });
 
 test('the sheet line (quiz.js fbLine): a miss says the pair; a right answer only a pair with a half on the unit shown', () => {
-  const words = h => h.replace(/<[^>]*>/g, '');
+  // the text of the line without its tags (a split, not a regex: CodeQL flags tag-stripping regexes)
+  const words = h =>
+    h
+      .split('<')
+      .map((p, i) => (i ? p.slice(p.indexOf('>') + 1) : p))
+      .join('');
   // a miss: the one-sided line, whichever genus was shown
   assert.match(words(slug.fbLine('g:Hypselodoris', 'g:Hexabranchus', false)), /^Hexabranchus: gills set one by one/);
   // right on Hexabranchus beside a Hypselodoris choice: its own half
