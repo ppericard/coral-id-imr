@@ -38,6 +38,7 @@ const LAB = {
   files: [
     'idkey',
     'basics',
+    'fishbasics',
     'map',
     'anatomy',
     'zoom',
@@ -58,8 +59,10 @@ const LAB = {
     this.list.push(p);
   }
 };
-// Graduated prototypes and the section of MODES (app.js) they now live in.
-const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn'};
+// Graduated prototypes and the section of MODES (app.js) they now live in. fishbasics (Fish basics, proto/fishbasics.js)
+// is the page key 'basics' of the fish: labTool opens the module of the subject on screen (UNITS basics mod); it has no
+// address of its own and no line on the Tools page (hub: false).
+const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn', fishbasics: 'learn'};
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly. One that fails (unstable
@@ -178,7 +181,7 @@ function viewLab(h) {
   // A prototype marked `admin` (a design mock-up for Pierre, e.g. cards) is listed in the admin's browser only; its
   // link works for anyone.
   const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
-  const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id]);
+  const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id] && p.hub !== false);
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
   <div class="labhub">${order
@@ -196,7 +199,7 @@ function viewLab(h) {
     )
     .join('')}</div>
   <h3>Now in the main sections</h3>
-  <div class="labgrad">${grad.map(p => `<a href="${esc(hr(p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
+  <div class="labgrad">${grad.map(p => `<a href="${esc(hr(p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.id === 'basics' ? basicsWords().name : p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(
     b =>
       (b.onclick = () => {
@@ -210,8 +213,10 @@ function viewLab(h) {
 }
 // A graduated tool, shown as a page of its section: no Lab crumbs, the section's tab bar gives the context.
 function labTool(h) {
-  const [id, ...args] = h.split('|');
-  if (!GRADUATED[id]) return false;
+  const [id0, ...args] = h.split('|');
+  if (!GRADUATED[id0]) return false;
+  // The basics page is the subject on screen's module (UNITS basics mod: Coral basics, Fish basics).
+  const id = id0 === 'basics' ? basicsWords().mod || id0 : id0;
   document.documentElement.dataset.page = 'lab';
   if (LAB.stop) {
     try {

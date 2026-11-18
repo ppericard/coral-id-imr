@@ -994,13 +994,14 @@ function achAfter(good, ph, cur) {
   store.set(ACHK, A);
   achCheck();
 }
-// Coral basics done (proto/basics.js seenStep): a one-off feat of the record, synced with it, so the Home line and the
-// first-launch offers know on every device (app.js basicsDone).
-function achBasics() {
+// A subject's basics module done (Coral basics, Fish basics: proto/basics.js seenStep): a one-off feat of the record, synced
+// with it, so the Home line and the first-launch offers know on every device (app.js basicsDone). Each subject has its own
+// (SUBJECTS basics.feat). The corals' feat also grants the achievement "Coral basics"; the fish's has none yet.
+function achBasics(feat = (SUBJ.basics || {}).feat || '_basics') {
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
-  if (A._basics) return;
-  A._basics = 1;
+  if (A[feat]) return;
+  A[feat] = 1;
   store.set(ACHK, A);
   achCheck();
   if (SYNC) syncSoon();
