@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; core.js DOM, domStep; docs/LEARNING.md "The domain-score
+// The domain-score bar (core.js DOM, domStep; docs/LEARNING.md "The domain-score
 // bar"): a genus's bar is the share of all its possible photos the player would name alone and typed, the posterior
 // expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only.
 const test = require('node:test');
@@ -33,7 +33,7 @@ test('a miss never raises the bar, a right answer never lowers it (the posterior
     }
   }
   assert.strictEqual(checked, 800);
-  // The same through the scorer, on the genus shown and on the genus wrongly given (Pierre's rule L2).
+  // The same through the scorer, on the genus shown and on the genus wrongly given (rule L2).
   const P = {};
   for (let i = 0; i < 30; i++) C.scoreAnswer(P, q('A', i % 4 !== 0, {d0: 0.3}));
   const a = P.A.ds;
@@ -43,7 +43,7 @@ test('a miss never raises the bar, a right answer never lowers it (the posterior
   const sb0 = C.scoreOf(P.B, P, 'B');
   C.scoreAnswer(P, q('A', false, {c: 'B', chs: ['A', 'B', 'C', 'D'], d0: 1, mu: 0, muc: 0}));
   assert.ok(P.A.ds <= a, 'a miss lowers the genus shown');
-  // The genus given (Q174): no miss in its posterior, a false alarm taken off its bar (faOf): lower, never higher.
+  // The genus given: no miss in its posterior, a false alarm taken off its bar (faOf): lower, never higher.
   assert.strictEqual(P.B.ds, b0);
   assert.ok(C.scoreOf(P.B, P, 'B') < sb0, 'the genus given: its bar lower by its false-alarm rate');
 });
@@ -191,7 +191,7 @@ test('the exam opens at DOM.EX, a learned mark keeps at DOM.KEEP, 95% at most be
   s.mx = 1;
   assert.strictEqual(C.scoreOf(s), 1);
   assert.ok(!C.keepsMark({dp: C.DOM_PRIOR.slice(), ds: C.DOM.KEEP - 0.01}));
-  // A record not rebuilt yet (s.pg): the former rule, as before.
+  // A record not rebuilt yet (s.pg): the former rule.
   assert.ok(C.examOpen({pg: C.PROG.M}) && !C.examOpen({pg: C.PROG.M - 0.01}));
   assert.strictEqual(C.barOf({pg: C.PROG.M / 2}), 0.95 / 2);
   assert.strictEqual(
@@ -318,7 +318,7 @@ test('pair coverage counts a look-alike declared on either side (model.js examLo
   const vm = require('vm'),
     src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     block = require('./block.js');
-  // Acropora lists Montipora, Montipora does not list Acropora (the coral data's own case, Codex on #646).
+  // Acropora lists Montipora, Montipora does not list Acropora (the coral data's own case).
   const look = {Acropora: ['Montipora', 'Isopora'], Montipora: ['Porites'], Porites: [], Isopora: [], Pavona: []};
   const ctx = {
     GX: n => (look[n] ? {look: look[n]} : null),
@@ -488,13 +488,13 @@ test('a non-replayed subject (fish, Q200): its units rebuilt on the device from 
   assert.ok(!again.out && again.saved === 0, 'once per record');
   const Q = {Acropora: {ok: 6, ko: 0, h: '111111', pg: 0.6}};
   assert.ok(!run({id: 'coral', replay: true}, Q).out && Q.Acropora.pg === 0.6, 'a replayed subject waits for the sheet');
-  // Codex review #688: a pull read while the fish data is not in (FISH null: GX knows no fish unit) rebuilds nothing,
+  // A pull read while the fish data is not in (FISH null: GX knows no fish unit) rebuilds nothing,
   // since the rebuild is for good and the difficulty would be the fallback one; it waits for the data.
   const W = {'f:Wrasses': {ok: 6, ko: 0, h: '111111', pg: 0.6}};
   const w = run({id: 'fish', replay: false}, W, () => undefined);
   assert.ok(!w.out && w.saved === 0 && W['f:Wrasses'].pg === 0.6 && !('dp' in W['f:Wrasses']), 'no data, no rebuild');
   assert.ok(run({id: 'fish', replay: false}, W).out && C.domOn(W['f:Wrasses']), 'rebuilt once the data is in');
-  // Before data.json is in (2026-11-08: a link straight to a quiz page runs model.js first, app.js need): DATA undefined,
+  // Before data.json is in (a link straight to a quiz page runs model.js first, app.js need): DATA undefined,
   // which app.js GX reads first. Nothing read, nothing rebuilt: app.js start-up runs it again once the data is built.
   const E = {'f:Wrasses': {ok: 6, ko: 0, h: '111111', pg: 0.6}};
   let D; // data.json not in yet

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Photo rotation (Pierre, 2026-11-08): curation.json rot {f: 90 | 180 | 270} (fish.rot for the fish), degrees clockwise,
+// Photo rotation: curation.json rot {f: 90 | 180 | 270} (fish.rot for the fish), degrees clockwise,
 // set in the admin's crop editor, through the draft and Publish (rule A1), applied to the files by the photo workflow
 // after the crop (tools/photos.py turn). The curation key (autosort.js rotNorm, rotStep, rotSet), its merge (core.js
 // merge3), the composed transform (autosort.js photoAt, turnedSize: the crop cut from the original, then turned) against
@@ -41,7 +41,7 @@ test('the curation key: 90, 180 or 270 degrees clockwise, none left out', () => 
 });
 
 test('merge: a rotation goes through the draft and Publish like a crop (merge3)', () => {
-  // Pierre turned a and b in this tab; another publish turned c and reset d meanwhile: both kept.
+  // The admin turned a and b in this tab; another publish turned c and reset d meanwhile: both kept.
   const base = {v: 1, genera: {}, rot: {d: 90}, crop: {a: [0, 0, 0.5, 1]}},
     mine = {v: 1, genera: {}, rot: {a: 90, b: 270, d: 90}, crop: {a: [0, 0, 0.5, 1]}},
     theirs = {v: 1, genera: {}, rot: {c: 180}, crop: {a: [0, 0, 0.5, 1]}},
@@ -49,7 +49,7 @@ test('merge: a rotation goes through the draft and Publish like a crop (merge3)'
   assert.deepStrictEqual(merge3(base, mine, theirs, conf).rot, {a: 90, b: 270, c: 180});
   assert.deepStrictEqual(conf, []);
   // His reset of the last turned photo leaves an empty map (admin.js cropEditor, as a reset crop leaves DRAFT.crop {}):
-  // merged key by key, the photo another device turned meanwhile is kept (review #793); the crop is untouched.
+  // merged key by key, the photo another device turned meanwhile is kept; the crop is untouched.
   const B = {genera: {}, rot: {a: 90}, crop: {a: [0, 0, 0.5, 1]}},
     T = {genera: {}, rot: {a: 90, c: 180}, crop: {a: [0, 0, 0.5, 1]}},
     out = merge3(B, {genera: {}, rot: {}, crop: {a: [0, 0, 0.5, 1]}}, T);
@@ -117,7 +117,7 @@ test('the crop editor and the previews: a drag in the turned photo, a turned pre
   assert.ok(Math.abs(k * 225 - 300) < 1e-9, String(k));
   assert.strictEqual(rotScale(0, 0, 90, 1), 1, 'no box yet');
   // A tile's photo (cover) turned a quarter shows exactly the part of the photo the turned file will show in that tile
-  // (Codex review #793: a portrait photo turned in a landscape tile was cut twice). The cover cut of an image of aspect
+  // (a portrait photo turned in a landscape tile is never cut twice). The cover cut of an image of aspect
   // a in a box of aspect b, as fractions of the image kept along its width and height:
   const cut = (a, b) => (a > b ? [b / a, 1] : [1, a / b]);
   assert.strictEqual(rotCover(400, 300, 180), null);
@@ -246,7 +246,7 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
     // A sure candidate fishGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
     p = {f: 'fish-s016-cand-7', sp: 't01', src: o, cr: [0.1, 0.2, 0.9, 0.8], ar: 1.33},
     vb = 'object-view-box:inset(20% 10% 20% 10%)';
-  // Pierre has no crop of his own: its R2 file, as the game shows it (it showed the original uncropped).
+  // The admin has no crop of their own: its R2 file, as the game shows it (never the original uncropped).
   assert.strictEqual(T.fishSrc(p, 1), `src="${T.img(p, 1)}"`);
   assert.match(T.img(p, 1), /r2\.dev\/img\/fish-s016-cand-7-s\.webp\?c=0\.1_0\.2_0\.9_0\.8$/);
   // His own crop wins: the original with his crop drawn.
@@ -256,7 +256,7 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
   T.set({DRAFT: {fish: {rot: {[p.f]: 90}}}});
   assert.strictEqual(T.fishSrc(p, 1), `src="${o.replace('/original.', '/medium.')}" style="${vb}" data-rot="90"`);
   // Published turned (its R2 file cut and turned, cr and ro): shown as is while the draft keeps that rotation, never turned
-  // again (Codex review #793: a published 90° showed as 180°); a changed rotation is drawn on the original.
+  // again (a published 90° never shows as 180°); a changed rotation is drawn on the original.
   const q = {...p, ro: 90};
   T.set({DRAFT: {fish: {rot: {[p.f]: 90}}}});
   assert.strictEqual(T.fishSrc(q, 1), `src="${T.img(q, 1)}"`);
@@ -363,7 +363,7 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   ctx.rotFit(q);
   assert.deepStrictEqual([q.style.width, q.style.height, q.style.margin, q.style.transform], ['', '', '', 'rotate(180deg)']);
   // A fixed-size thumbnail beside its text (a family's in the sidebar's .adm-g grid: 44 x 33 in a 246 px row): its own
-  // slot, swapped to 33 x 44 and turned back into 44 x 33, never the row's width (Codex review #793); the row not clipped.
+  // slot, swapped to 33 x 44 and turned back into 44 x 33, never the row's width; the row not clipped.
   const th = tile(90);
   Object.assign(th, {clientWidth: 44, clientHeight: 33});
   th.parentElement.clientWidth = 246;
@@ -386,7 +386,7 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   assert.strictEqual(w2.style.transform, 'rotate(180deg)');
 });
 
-// The app's fallback (app.js turnPlan, turnSet; Codex review #793): a turned photo shown from its online original is cut
+// The app's fallback (app.js turnPlan, turnSet): a turned photo shown from its online original is cut
 // and turned in a canvas as the workflow does, and every use of its original on the element swapped for that picture.
 const appTurn = () => {
   const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
