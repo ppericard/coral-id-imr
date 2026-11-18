@@ -13,7 +13,7 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'admin-visits.js'), 'utf8
   ctx = {};
 vm.runInNewContext(
   block(src, '// visits: begin', '// visits: end', {file: 'admin-visits.js'}) +
-    '\n;Object.assign(this, {VISITS, devClass, visitsOf, visitSubj, visitorSubj, visitsPick, visitPeriods, visitKpis, visitGame});',
+    '\n;Object.assign(this, {VISITS, devClass, visitsOf, visitSubj, visitorSubj, visitsPick, visitPeriods, visitKpis, visitGame, SCREEN_BANDS, screenBand, screensOf});',
   ctx
 );
 const J = x => JSON.parse(JSON.stringify(x)),
@@ -283,4 +283,72 @@ test("visitorSubj: the visitor's Journey on the subject filtered, else the subje
   const tie = ctx.visitsOf([row(at(9), 'devt', 'aidt', 't1', {'fish.home': [1, 5], home: [1, 5]})], {split, order: ORDER});
   assert.strictEqual(visitorSubj(tie, 'all', ORDER), 'coral', 'a tie: the first subject');
   assert.strictEqual(visitorSubj([], 'all', ORDER), 'coral', 'no visit: the first subject');
+});
+
+// Screens (Pierre, 2026-11-18: the sizes the players use, for the multi-photo game formats): the devices of the last 90
+// days that sent their screen (core.js viewportOf), each once with its most common size, by width band.
+test('screenBand: a phone by the band of its short side, a tablet or a desktop as devClass says', () => {
+  const {screenBand} = ctx,
+    vp = (w, h, b) => ({w, h, d: 3, o: h >= w ? 'p' : 'l', b});
+  assert.strictEqual(screenBand('Chrome 140 mobile', vp(360, 660, 0)), 0);
+  assert.strictEqual(screenBand('Safari 18 mobile', vp(390, 660, 2)), 2, 'the band the phone sent (a 393 px phone)');
+  assert.strictEqual(screenBand('Safari 18 mobile', vp(390, 660, 1)), 1);
+  assert.strictEqual(screenBand('Chrome 140 mobile', vp(800, 360, 0)), 0, 'held sideways: its short side');
+  assert.strictEqual(screenBand('Chrome 140 mobile', vp(430, 750, 3)), 3);
+  assert.strictEqual(screenBand('Chrome 140 mobile', vp(800, 1180, 4)), 4, 'a mobile browser 600 px wide or more: a tablet');
+  assert.strictEqual(screenBand('Chrome 140 mobile', vp(1180, 800, 4)), 4, 'a tablet held sideways');
+  assert.strictEqual(screenBand('Safari 18', vp(820, 1100, 4)), 4, "an iPad's Safari says it is a Mac");
+  assert.strictEqual(screenBand('Chrome 140', vp(1440, 780, 4)), 5);
+  assert.strictEqual(screenBand('Chrome 140', vp(500, 700, 3)), 5, 'a narrow computer window');
+  assert.strictEqual(ctx.SCREEN_BANDS.length, 6);
+});
+
+test('screensOf: devices of the last 90 days, once each with their most common size; bands and the most common sizes', () => {
+  const {screensOf} = ctx,
+    now = at(30, 12),
+    vp = (w, h, d, b) => ({w, h, d, o: h >= w ? 'p' : 'l', b}),
+    R = (t, dev, v, ua = 'Chrome 140 mobile') => ({...row(t, dev, 'id' + dev, 'vi' + t, {home: [1, 5]}, {}, ua), vp: v});
+  const rows = [
+    // Phone a: mostly 390 x 660 (twice), once sideways: counted at 390 x 660, band 2 (393 px).
+    R(at(28), 'a', vp(390, 660, 3, 2)),
+    R(at(27), 'a', vp(850, 360, 3, 2)),
+    R(at(26), 'a', vp(390, 660, 3, 2)),
+    // Phone b: one size each time, a tie: the latest (390 x 650).
+    R(at(20), 'b', vp(390, 660, 3, 1), 'Safari 18 mobile'),
+    R(at(21), 'b', vp(390, 650, 3, 1), 'Safari 18 mobile'),
+    // Phone c: 360 x 660.
+    R(at(25), 'c', vp(360, 660, 2.6, 0)),
+    // Tablet d (an iPad's Safari) and desktop e.
+    R(at(24), 'd', vp(820, 1100, 2, 4), 'Safari 18'),
+    R(at(23), 'e', vp(1440, 780, 2, 4), 'Chrome 140'),
+    // Phone f: 390 x 660 with another ratio.
+    R(at(22), 'f', vp(390, 660, 2.6, 1)),
+    // Left out: no screen (an older app or script), or seen more than 90 days ago.
+    R(at(29), 'g', null),
+    R(now - 91 * 864e5, 'h', vp(360, 660, 3, 0))
+  ];
+  const S = screensOf(rows, now);
+  assert.strictEqual(S.n, 6);
+  eq(
+    S.bands.map(b => [b.k, b.n]),
+    [
+      ['≤360', 1],
+      ['361-390', 2],
+      ['391-414', 1],
+      ['415-600', 0],
+      ['Tablet', 1],
+      ['Desktop', 1]
+    ]
+  );
+  eq(S.sizes, [
+    {w: 390, h: 660, d: 2.6, n: 2},
+    {w: 360, h: 660, d: 2.6, n: 1},
+    {w: 390, h: 650, d: 3, n: 1},
+    {w: 820, h: 1100, d: 2, n: 1},
+    {w: 1440, h: 780, d: 2, n: 1}
+  ]);
+  // Phone a's ratio 3 and phone f's 2.6 tie at 390 x 660: the smaller first, as the order is fixed.
+  const many = [...Array(20)].map((_, i) => R(at(10), 'm' + i, vp(300 + 10 * i, 600, 2, 0)));
+  assert.strictEqual(screensOf(many, now).sizes.length, ctx.VISITS.SIZES);
+  eq(screensOf([], now), {n: 0, bands: ctx.SCREEN_BANDS.map(k => ({k, n: 0})), sizes: []});
 });

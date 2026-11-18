@@ -259,19 +259,23 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 
 ### W19
 
-**Keep the docs current in the same PR**: a change is not done until the docs say what the code now does. Before
-merging, check and update as needed: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow),
-`docs/ARCHITECTURE.md` (a new page, hash, setting, data key, `curation.json` key, admin mode, sync endpoint or Code.gs
-version, model constant), `docs/ROADMAP.md` (ship = delete the row it ships, or update its status; deferred = add a row
-inside its section, next to related rows; new "don't do X" = Declined), `README.md` (anything a newcomer sees), the
-admin help. Say "Docs: none needed" in the PR description when nothing applies. **No "done" list in any doc**: the squash
-title ` (#N)` and the PR description are the record of what shipped, the docs say what the code does now; a shared list
+**A PR updates the docs that describe what it changes (the map or the spec it touches) and, when it carries out a
+decision, adds a short decision record in `docs/decisions/`, named YYYY-MM-DD-topic.md (context, the decision with Pierre's words,
+consequences). History stays in git and the PRs, never in the docs.** A change is not done until the docs say what the
+code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
+change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
+its status; deferred = add a row inside its section; new "don't do X" = Declined), `README.md` (anything a newcomer
+sees), the admin help. Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
+[docs/decisions/README.md](../decisions/README.md). **No "done" list or changelog in any doc**: the squash title
+` (#N)`, the PR description and git are the record of what shipped, the docs say what the code does now; a shared list
 that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
 `docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
 rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
 ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow, and the identifiers the governing docs (AGENTS.md, `docs/rules/`, ARCHITECTURE, HANDOVER, INTEGRATOR, LEARNING) cite in backticks still existing: a path, or a file followed by a name it holds (`core.js` `faOf`); the test's `ID_ALLOW` lists, with a reason each, the few a doc names on purpose though they are gone (a retired tool, a branch's note): fix the doc first.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
-chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05.
+chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
+#1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
+history in the docs, 2026-11-18.
 
 ### W20
 
@@ -355,8 +359,10 @@ automatic lock of the unit tests"; the load budget of twice the cores and the di
 ### W25
 
 **Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
-small task, stop agents when done, one wake-up per wait, local checks before each push. A lighter model only for
-mechanical work a test verifies; never for a judgment (photo judging included).
+small task, stop agents when done, one wake-up per wait, local checks before each push. The model and
+effort of each agent follow the table in docs/INTEGRATOR.md (AGENTS.md "Working mode"): ordinary code runs on the
+intermediate model; the lightest model only for mechanical work, after the sample test against a strong model ("Model
+choice by measurement"); never for a judgment (photo judging included).
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.
@@ -383,11 +389,12 @@ the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to
 
 **Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
 checked before it launches or relaunches an agent:
-- **At most four agents at a time, balanced by weight** (Pierre, 2026-11-14: "la limite est plus complexe que ça. Ya des
-  agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"): heavy agents (simulations,
-  smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than two or three of them run at
-  once; light ones (read-only studies, docs) fill the remaining places. Each agent is on one PR or one study with one
-  subject. A finished agent is stopped, not kept waiting.
+- **At most four agents that write code or run tests at a time (conflicts and machine load). Read-only studies, which
+  run no tests, may run on top** (Pierre, 2026-11-18: "ok", the exact wording; before, 2026-11-14: "la limite est plus
+  complexe que ça. Ya des agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"):
+  heavy agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than
+  two or three of them run at once. Each agent is on one PR or one study with one subject. A finished agent is stopped,
+  not kept waiting.
 - **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
   another is the same PR.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
@@ -401,7 +408,7 @@ checked before it launches or relaunches an agent:
   designers"). When the choice changes what he or the players see, he gets the options, each with its benefits and
   risks, and the one recommended.
 - **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
-  and an unclear cell's second look on that cell alone. A check longer than 30 minutes is a tooling bug to fix.
+  and an unclear cell's second look on that cell alone. A check longer than 40 minutes is a tooling bug to fix (rule L11's cap).
 - **One train at a time** (`tools/train.py` through a queue, never two in parallel).
 - **A short or ambiguous request from Pierre is asked back before any work starts** (one question in the chat).
 - **Agents' scratch files carry the PR or topic in their name** (`pr-<N>-<topic>.md`): the scratchpad is shared.
@@ -409,4 +416,4 @@ checked before it launches or relaunches an agent:
 *Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
 conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
 answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
-on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait").
+on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait"); the agents that count, 2026-11-18.
