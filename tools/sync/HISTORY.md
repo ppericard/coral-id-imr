@@ -14,6 +14,10 @@ the next newer entry; for v7 to v34, which no record dates, that is 2026-11-04, 
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v184 (2026-11-18)
+
+The embedded core.js gives the sea slugs the % achievements beyond 50% (`SEASLUG_ACH`: sspct60, sspct70, sspct80, sspct90 and sspct100, every 10 points up to 100%, as the corals' and the fish's climb; Pierre, 2026-11-17, "une première version des succès pour les limaces de mer", the first version stopping at 50%). The script counts a player's achievement ids by their shape (`achs_`, `[a-z0-9]{1,20}`), which the new ids fit, so nothing else in it changes
+
 ## v183 (2026-11-18)
 
 The answer's feedback sheet tally (Pierre, 2026-11-18, the feedback sheet study, question (f): "ok pour les 6 recommandations"; how often players open More on the short sheet): a `pages` event may carry `fb`, four numbers, the answers whose feedback was shown, those where More was opened, the seconds the feedback stayed on screen (each answer's capped at 120) and the taps on a link inside it; the embedded `pagesClean` keeps it in the Pages tab's Detail JSON as four integers, each clamped (10000 for a count, 86400 for the seconds), and drops it when it is not four numbers or all are zero (no new column, no new event kind, no new identifier). The app counts and sends it with the summary it already sends, with no gate (rule D4: a script before this one drops the field, as it drops any field it does not know)
