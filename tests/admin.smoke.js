@@ -494,7 +494,8 @@ async function sealPart(b, base, fails) {
     p.on('dialog', d => d.accept());
     // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
     // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
-    // (the hash change and the render a reply starts land within a frame).
+    // (the hash change and the render a reply starts land within a frame). The Analyses pages wait up to 60 s: the demo
+    // fits their report in a Web Worker, which a slow CI runner can take longer than 15 s to finish.
     // SHOTS=<dir>: screenshots of a few states for the PR (2x, the page's own size), else nothing.
     const shot = async (name, sel) => {
       if (!process.env.SHOTS) return;
@@ -507,6 +508,7 @@ async function sealPart(b, base, fails) {
     };
     const settle = async () => {
       await p.evaluate(() => (window.__calm = 0));
+      const timeout = /^#analyses/.test(await p.evaluate(() => location.hash)) ? 60000 : 15000;
       await p
         .waitForFunction(
           () => {
@@ -515,7 +517,7 @@ async function sealPart(b, base, fails) {
             return window.__calm >= 3;
           },
           null,
-          {timeout: 15000, polling: 'raf'}
+          {timeout, polling: 'raf'}
         )
         .catch(async () =>
           fails.push(
