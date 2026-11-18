@@ -59,7 +59,7 @@ never a subject named in code (rule S1), and counts come from the data (rule U8)
 | --- | --- | --- | --- | --- |
 | Subject | segmented switch, the subjects a trainer can host (`liveSubjects`) | | | live.js v1 |
 | Names: the tree | - | **Common \| Scientific**, Pierre's two independent teaching trees (FISH_PATH "The path is a tree": branch A common names, branch B scientific genera then species) | scientific only (Q369) | the names choice of 2026-11-04 |
-| Ask: the ranks | genera | Families, Genera, Species (the ranks `UNITS` has, `rankOf`, `rankUnits`) | genera; species once built | `SUBJECTS` ranks |
+| Ask: the ranks | genera | Families (65), scientific genera (130), species by common name (659), read through the subject's sets (`SETS()` `all()`, listed even while the trainer's own sets are off; `rankOf`); species by scientific name once built (#1041) | genera; species once built | `UNITS` sets, `rankUnits` |
 | Groups | IMR lecture groups (`cqGroups('imr')`), Fire coral, Bonus | circles: the IMR course, circle 2, beyond IMR (`GX().circle`), the identification groups | circles | the Custom quiz's picker |
 | Look-alike groups | declared and data look-alikes (`lookEdges`, `mixClusters`), most confused first | the same at each rank | the same, seeded pairs included (`dataSeed`) | the Custom quiz's "My mix-ups" view, pooled |
 | Weak points | the cohort's weakest units (section 4) | | | new |
@@ -177,11 +177,14 @@ Mockups: `prep-coral-desk-*.png` (the list), `prep-coral-phone-list-*.png`, `edi
 - **Question type**, per card, offered in "Types" for the generation:
   - *Photo → name* (v1's question);
   - *Name → photo*: "Which one is *Acropora*?" and four photos, one per unit, each from a different observation. It is
-    the answer shape of Find the X: the log keeps the photo tapped as `pa` (sheet v141, `PA_SHEET`). It is cheap: the
-    choices carry a photo each, the student's page draws a 2 × 2 grid, and one screen holds it down to 360 × 640
-    (`student-np-phone-small-light.png`; measured: content ends at 553 px of 640, above the tab bar);
+    Find the X's question, and its log can be Find the X's: the right unit's photo alone in Photos, the four units in
+    Choices, the unit of the photo tapped as the answer given, the photo tapped as `pa` (sheet v141, `PA_SHEET`);
+    scored as a 4-choice question (`k4`), as Find the X is (LEARNING.md "Find the X slipped into the fish quiz"). The
+    work is on the screens and in `lvQ_` (a photo per choice). The question state fits one screen down to 360 × 640
+    (`student-np-phone-small-light.png`; measured: the content ends at 553 px of 640; the tab bar's top read off the
+    screenshot). The reveal state (four photos with their shares) is not mocked: PR 3 measures it;
   - *Two choices*: one photo, the right name and its strongest trap, side by side (the duel's question). It is logged
-    as a two-choice answer: `fmtOf('live', 2)` is `again`, the two-choice format whose offset the sheet already fits.
+    as a two-choice answer: `fmtOf('live', 2)` is `again`, an existing format.
   - Typed answers stay out (v1: out of version 1).
 - **Title, Save, Host now, Shared with trainers.** At the top of the list. Host now starts the game from the set
   without leaving the page.
@@ -243,8 +246,10 @@ accounts:
   to the account and other trainers keep the sets they host.
 - **Merge** (from → into): the sets move to `into`, the same person's account. Grants are dropped on a merge ("a grant
   is given, not merged"), but a set is work, not a right. This is the integrator's call, easy to correct.
-- **Archive**: as a delete for the shared sets (question (c)). The unshared ones stay in the tab, read by nothing while
-  the account is archived (rule D7: an archive no normal feature reads), and come back if it is restored.
+- **Archive** (`userArchive`: the account takes an archive name, its rows follow it, the old name is free at once,
+  there is no restore): the unshared sets follow it to the archive name, as its other rows do (`relabel_`), and nothing
+  reads them (rule D7: an archive no normal feature reads); deleting the archive deletes them. The shared ones are
+  question (c).
 
 ## 7. How live.js v1 consumes a set
 
@@ -267,8 +272,8 @@ On sheet v172 as it is, for four-choice photo → name questions:
 | --- | --- | --- | --- |
 | Saved sets | `lv: 'sets'` (list), `'set'` (one), `'save'`, `'del'`; the "Live sets" tab; D7 in `deleteAccount_`, the merge and the archive | `LIVESET_SHEET` (main's `VERSION` + 1 at that PR) | keeps sets on the device only; "Shared with trainers" hidden |
 | Per-question time | the `q` action carries `lim` (5-120 s); the session's `ends` from it | `LIVEQ_SHEET` | uses the set's one time for every question |
-| Two choices | `lvQ_` takes 2 or 4 choices | `LIVEQ_SHEET` | greys the type with "needs the next sheet update" |
-| Name → photo | `lvQ_` takes a photo per choice (`[id, label, f, u]`), the student's view carries them; the student's page logs `pa` | `LIVEQ_SHEET` | the same |
+| Two choices | `lvQ_` takes 2 or 4 choices | `LIVEQ_SHEET` | does not offer the type |
+| Name → photo | `lvQ_` takes a photo per choice (`[id, label, f, u]`), the student's view carries them; the student's page logs Find the X's way (above); whether v172 keeps a mode such as `live\|f` is checked in PR 3, else part of this gate | `LIVEQ_SHEET` | does not offer the type |
 | Weak points | `lv: 'weak'` (section 4) | `LIVEWEAK_SHEET` | hides the Weak points view |
 
 An older script answers an unknown step `input` with its `v` (`lv_`), so each gate reads `v` from that reply, as v1's
@@ -284,7 +289,8 @@ Mockups: `prep-coral-desk-light.png`, `prep-coral-desk-dark.png`, `prep-fish-des
 **Phone (under 600 px).** Two steps on a segmented switch at the top: **Pick** and **Questions (10)**. A bar fixed above
 the tab bar holds the step's action: "6 picked · Generate 10", then "Save · Host now". A question opens in place for
 editing (the photo strip, the wrong choices, type and time). The prep page is a form, not a game: it may scroll (rule U2
-is about games); the student's and the projector's screens fit one screen. Mockups:
+is about games); the student's and the projector's question screens fit one screen (the name → photo reveal is
+measured in PR 3). Mockups:
 `prep-coral-phone-pick-{light,dark}.png`, `prep-coral-phone-list-{light,dark}.png`, `edit-coral-phone-light.png`,
 `sets-phone-{light,dark}.png`.
 
@@ -313,10 +319,11 @@ goes behind "?".
   tests and smokes, as v1.
 - PR 3 adds two answer shapes to the log:
   - a two-choice answer is scored as the `again` format, which exists;
-  - a name → photo answer takes Find the X's form (`pa`).
+  - a name → photo answer takes Find the X's form (the right unit's photo, `pa`, a 4-choice question).
 
   Both are scored by `scoreAnswer` as those modes are, so no rules version (rule D5) is needed. Say so in the PR. The
-  format offsets fit them from the log.
+  format offsets are fitted on the quiz's modes only (`core.js` `fmtPoint`), so live answers take their format's offset
+  without feeding its fit, as v1's do.
 
 ## 11. Effort in agent time, split into PRs
 
@@ -336,7 +343,7 @@ run them one after another, or rebase each on the last (the `lv_` dispatcher).
 
 Made on the app at `main` 815509b3 (#1049 merged), served on 127.0.0.1, no file changed. The prototype is markup and
 a stylesheet using the app's tokens only, injected into the app's page. The questions come from the app's own data and
-engine: `pool`, `cqGroups`, `cqLooks`, `distractors`, `gamePics`, `img`, `cover`. The "recognised by" values are
+engine: `pool`, `cqGroups`, `distractors`, `pooledConf`, `gamePics`, `img`, `cover`. The "recognised by" values are
 **illustrative**: a local copy has no pooled statistics (the sheet is off), so they come from the fish's judged ease, or
 from a fixed hash for the corals.
 
@@ -396,7 +403,8 @@ cache keeps 6 hours.
 
 **(c) A deleted or archived trainer's sets** (rule D7). Context: shared sets may be hosted by other trainers.
 - A: all its sets go;
-- B: its unshared sets go (an archive keeps them hidden, back on restore); its shared sets stay as the instance's,
+- B: its unshared sets go with the account (deleted with a delete; with an archive, kept under the archive's name
+  where nothing reads them); its shared sets stay as the instance's,
   with no owner;
 - C: all its sets stay as the instance's.
 
