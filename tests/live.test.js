@@ -184,7 +184,7 @@ test('liveMerge: a deleted, merged or archived account never stays in the log he
 // ---- the admin's timer ----
 
 // admin.js's live block run on stubs: the page (cur), its visibility, the clock (timers run by hand), the sheet replies.
-function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows = [row('A', 1)], reply} = {}) {
+function liveAdmin({v = C.MIN_SHEET, rows = [row('A', 1)], reply} = {}) {
   const timers = [],
     calls = [],
     ctx = {
@@ -223,7 +223,7 @@ function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows
   vm.runInContext(
     'const SHEET_READS = {}, SHEET_GEN = {};\n' +
       block(admin, 'function sheetRead(k, go) {', '\nfunction sheetAgain(', {file: 'admin.js'}) +
-      block(admin, 'const LIVE_SHEET = ', "document.addEventListener('visibilitychange', liveArm);", {file: 'admin.js', through: 1}) +
+      block(admin, 'const LIVE_READ = ', "document.addEventListener('visibilitychange', liveArm);", {file: 'admin.js', through: 1}) +
       '\nthis.L = {liveArm, liveRead, LIVE_READ};',
     ctx
   );
@@ -272,10 +272,8 @@ test('Activity: a light read every minute while open and in view; none hidden; a
   assert.strictEqual(a.calls.length, 3);
 });
 
-test('Activity: no light read before LIVE_SHEET, without the token or while the whole log is read', async () => {
+test('Activity: no light read without the token or while the whole log is read', async () => {
   for (const [label, prep] of [
-    ['an older script', a => (a.ctx.ANS.v -= 1)],
-    ['no reply version', a => delete a.ctx.ANS.v],
     ['no token', a => (a.ctx.TOKEN = null)],
     ['an old log', a => (a.ctx.ANS = {old: true, v: 999, rows: []})]
   ]) {
@@ -384,7 +382,6 @@ function anonApp(q = []) {
       sent: 0,
       store: {get: (k, d) => (k === 'reefid-anonq' ? q : d)},
       ANONQ: 'reefid-anonq',
-      logOk: () => true,
       sheetV: () => 108,
       setTimeout: (f, ms) => (timers.push({f, ms}), timers.length),
       clearTimeout: id => id && (timers[id - 1].cleared = true)

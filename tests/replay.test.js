@@ -648,22 +648,21 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
-  // quiz.js answer scores through core.js scoreAnswer with its seconds, the time weighing only once the sheet replays it
+  // quiz.js answer scores through core.js scoreAnswer with its seconds, the time weighing as in the sheet's replay
   // (scoreAnswer steps the genus shown and the level with the same weight, then records the time).
-  assert.ok(quiz.includes('sec: tm.rt,') && quiz.includes('timed: rtOn()') && quiz.includes('scoreAnswer(P, q)'));
-  const live = sheet => {
+  assert.ok(quiz.includes('sec: tm.rt,') && quiz.includes('timed: true') && quiz.includes('scoreAnswer(P, q)'));
+  const live = () => {
     // No first-launch answer: the default prior; the corals on screen (model.js startS).
-    const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral'), GX: () => undefined};
+    const M = {...C, P: {}, startV: () => C.startVars(), startS: () => C.subjectOf('coral'), GX: () => undefined};
     vm.createContext(M);
     vm.runInContext(
       cut('const startP = ', ';\n') +
         cut('const ability = ', ';\n') +
         'const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());\n' +
-        cut('const rtOn = ', ';\n') +
-        '\nthis.T = {ability, abilityStep, rtOn};',
+        '\nthis.T = {ability, abilityStep};',
       M
     );
-    const {ability, abilityStep, rtOn} = M.T,
+    const {ability, abilityStep} = M.T,
       P = M.P,
       log = [],
       ws = [],
@@ -684,7 +683,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
         th0 = ability(t),
         dm = th0 - (typed ? logit(p) : logit((p - 0.5) / 0.5));
       s[good ? 'ok' : 'ko']++;
-      const rw = rtOn() ? C.rtWeight(P[C.LEVEL], rt, k, good) : 1;
+      const rw = C.rtWeight(P[C.LEVEL], rt, k, good);
       ws.push(rw);
       abilityStep(t, s, good, dm, k, rw);
       if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
@@ -709,15 +708,15 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     }
     return {P, log, ws};
   };
-  const same = (R, P, why, rt = true) => {
+  const same = (R, P, why) => {
     for (const n of ['A', 'B', 'C', 'D'])
       for (const f of ['th', 'vr', 'lt']) assert.ok(Math.abs(R[n][f] - P[n][f]) < 1e-9, `${why}: ${n}.${f} ${R[n][f]} vs app ${P[n][f]}`);
     for (const f of ['th', 'vr']) assert.ok(Math.abs(R[C.LEVEL][f] - P[C.LEVEL][f]) < 1e-9, `${why}: level ${f}`);
     assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko], [P[C.LEVEL].ok, P[C.LEVEL].ko], why);
-    if (rt) assert.deepStrictEqual(R[C.LEVEL].rt, P[C.LEVEL].rt, why);
+    assert.deepStrictEqual(R[C.LEVEL].rt, P[C.LEVEL].rt, why);
   };
-  // Script v32 or later: the app weighs its steps by the time.
-  const on = live(C.RT_SHEET),
+  // The app weighs its steps by the time (sheet v32, below the gate floor core.js MIN_SHEET).
+  const on = live(),
     rows = on.log.map(a => C.logRow(a, 'me'));
   assert.ok(on.ws.filter(w => w !== 1).length > 20, 'many right answers weighed by their time');
   assert.ok(on.ws.some(w => w === C.RTIME.HI) && on.ws.some(w => w === C.RTIME.LO) && on.ws.some(w => w > 1 && w < C.RTIME.HI));
@@ -736,21 +735,6 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   const rep = C.replayProgress(rows, {gen: GEN}).me;
   assert.deepStrictEqual(C.replayedOf(rep, {}, C.RV)[C.LEVEL].rt, on.P[C.LEVEL].rt);
   assert.deepStrictEqual(C.replayBase(rep.P, C.replayedOf(rep, {}, C.RV), C.RV, {})[C.LEVEL].rt, on.P[C.LEVEL].rt);
-  // An older script (rule D4): the app does exactly what it did before, every weight 1, the replay without time.
-  const off = live(C.RT_SHEET - 1);
-  assert.ok(off.ws.every(w => w === 1));
-  // (The app still records the times, which the replay without time leaves out.)
-  same(
-    C.replayProgress(
-      off.log.map(a => C.logRow(a, 'me')),
-      {gen: GEN, time: false}
-    ).me.P,
-    off.P,
-    'before the script replays the time',
-    false
-  );
-  assert.deepStrictEqual(off.P[C.LEVEL].rt, on.P[C.LEVEL].rt, 'the times are recorded either way');
-  assert.notStrictEqual(off.P[C.LEVEL].th, on.P[C.LEVEL].th);
 });
 
 // rtMedian keeps the record's sorted keys beside it (admin speed, 2026-11-04): the same medians as sorting them each time,
@@ -816,17 +800,16 @@ test('response time: the median of the earlier times, the weight, and the record
   assert.deepStrictEqual(C.mergeProgress(B, P, R)[C.LEVEL].rt, {50: 3, 60: 1, 70: 1, 45: 1});
 });
 
-// Codex review #428 (P1): the live game applies the first-launch prior only once the sync script replays it (core.js
-// START_SHEET, model.js startP): before, a genus never answered starts as the default player's, as the sheet replays it.
-test('the first-launch prior in the live ability only from sheet v36 (Codex review #428)', () => {
+// Codex review #428 (P1): the live game applies the first-launch prior as the sync script replays it (sheet v36, below
+// the gate floor core.js MIN_SHEET; model.js startP), every subject alike.
+test('the first-launch prior in the live ability, as the sheet replays it (Codex review #428)', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
-  const at = (sheet, S = C.subjectOf('coral')) => {
+  const at = (S = C.subjectOf('coral')) => {
     const M = {
       ...C,
       P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}},
-      sheetV: () => sheet,
       startV: () => C.startVars('know'),
       startS: () => S,
       GX: () => undefined
@@ -836,11 +819,9 @@ test('the first-launch prior in the live ability only from sheet v36 (Codex revi
     return M.T.ability('Pocillopora');
   };
   const P = {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}};
-  assert.strictEqual(at(C.START_SHEET - 1), C.playerStart(P, 'Pocillopora', 0), 'before v36: the default prior');
-  assert.strictEqual(at(C.START_SHEET), C.playerStart(P, 'Pocillopora', C.startVars('know').p), "from v36: the answer's");
-  assert.notStrictEqual(at(C.START_SHEET - 1), at(C.START_SHEET));
-  // A subject whose answers are not logged (fish) is never replayed: its welcome answer's prior applies at once.
-  assert.strictEqual(at(C.START_SHEET - 1, C.subjectOf('fish')), at(C.START_SHEET), 'fish: the prior with any sheet');
+  assert.strictEqual(at(), C.playerStart(P, 'Pocillopora', C.startVars('know').p), "the answer's");
+  assert.notStrictEqual(at(), C.playerStart(P, 'Pocillopora', 0), 'not the default prior');
+  assert.strictEqual(at(C.subjectOf('fish')), at(), 'fish: the same');
 });
 
 // Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOf, fmtOffsetsOf, fmtOff; rules version 6).
@@ -869,9 +850,10 @@ test('fmtOffsetsOf: a format right more often than its guess rate explains gets 
   assert.strictEqual(C.fmtOff(F, 'k2'), F.k2[0]);
   assert.strictEqual(C.fmtOff(F, 'exam'), 0);
   assert.strictEqual(C.fmtOff(null, 'k2'), 0);
-  // Read only from a sheet that serves and replays them (rule D4).
-  assert.deepStrictEqual(C.fmtsOf({v: C.FMT_SHEET - 1, fmt: F}), {});
-  assert.deepStrictEqual(C.fmtsOf({v: C.FMT_SHEET, fmt: F}), F);
+  // Read from a ?stats=1 reply (sheet v77), {} from one without them.
+  assert.deepStrictEqual(C.fmtsOf({fmt: F}), F);
+  assert.deepStrictEqual(C.fmtsOf({v: 200}), {});
+  assert.deepStrictEqual(C.fmtsOf(null), {});
 });
 
 test('replayProgress with the format offsets: a right 2-choice answer the format explains raises the ability less', () => {

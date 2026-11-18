@@ -309,10 +309,7 @@ function statsHeat() {
     [`Cells with ${CONF.N}+ offers`, `${nd.n - nd.lo}/${nd.n}`]
   ]);
   if (!U.length) {
-    $v.innerHTML =
-      head +
-      kp +
-      `<p class="note">No answer with its choices yet.</p>`;
+    $v.innerHTML = head + kp + `<p class="note">No answer with its choices yet.</p>`;
     bind();
     return;
   }

@@ -614,7 +614,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
 
 // Every subject's answers logged (Pierre, 2026-11-06; sheet v60): each subject says its rank and whether the sheet replays
 // it; the answer log's readers keep one subject's rows (subjRows, index LOG_SUBJ in readAnswers rows and tab rows alike).
-test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, logOk', () => {
+test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', () => {
   assert.deepStrictEqual(
     C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
     [
@@ -653,12 +653,9 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
     C.subjEntries(log, 'fish').map(a => a.id),
     [2]
   );
-  // A fish answer waits for the script that files it under its subject (rule D4); a coral one never waits.
-  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET - 1), false);
-  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET), true);
-  assert.strictEqual(C.logOk({s: 'fish'}, undefined), false);
-  assert.strictEqual(C.logOk({}, 0), true);
-  assert.strictEqual(C.logOk({s: 'coral'}, 0), true);
+  // Every answer is sent as it comes: the gate that held a fish answer for the script that files it under its subject
+  // (v60) went with the gate floor (core.js MIN_SHEET).
+  assert.strictEqual(C.logOk, undefined);
 });
 
 // One engine, a calibration per subject (Pierre, 2026-11-06 14:18; SUBJECTS calib): the corals keep the defaults (no

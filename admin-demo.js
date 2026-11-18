@@ -1032,12 +1032,12 @@
     S.alerts = alerts;
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     await Promise.all(
-        SUBJECTS.filter(X => X.pool).map(X =>
-          Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
-            .then(F => (S.pools[X.id] = unitPool(X, F)))
-            .catch(() => {})
-        )
-      );
+      SUBJECTS.filter(X => X.pool).map(X =>
+        Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
+          .then(F => (S.pools[X.id] = unitPool(X, F)))
+          .catch(() => {})
+      )
+    );
 
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
@@ -1311,13 +1311,13 @@
     }
     // v81 (Code.gs exposure_): each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
     SUBJECTS.forEach(X => {
-        if (!S.pools[X.id]) return;
-        const E = exposureOf(
-          subjRows(S.rows, X.id).map(r => [lc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6]]),
-          S.pools[X.id]
-        );
-        Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
-      });
+      if (!S.pools[X.id]) return;
+      const E = exposureOf(
+        subjRows(S.rows, X.id).map(r => [lc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6]]),
+        S.pools[X.id]
+      );
+      Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
+    });
     return {
       ok: true,
       users: Object.values(by),
@@ -1513,9 +1513,7 @@
         counts = {...c0, ...Object.fromEntries(Object.entries(S.fana).map(([k, L]) => [k, (c0[k] || 0) + L.length]))},
         head0 = {ok: true, subject: sj, answers: counts[sj], counts},
         r = text && JSON.parse(text);
-      const stored = r
-        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, subject: sj}
-        : null;
+      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, subject: sj} : null;
       return head || !text ? {...head0, stored} : {...head0, stored, report: text};
     });
   };

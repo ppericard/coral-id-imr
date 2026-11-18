@@ -2001,15 +2001,14 @@ async function replayAdoptCheck(base) {
       A('s3', 3, 'Acropora', 'Montipora', 'acropora-wide-745206089')
     ],
     mine = A('m1', 4, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
-    // The stub answers as a script before the domain-score bar (sv below core.js DOM_SHEET): its replay, and the app's
-    // own answers on top, keep the moving average (dom: false, rule D4).
+    // The stub's replay, and the app's own answers on top, under today's rules (the domain-score bar).
     rec = C.replayProgress(
       sheet.map(a => C.logRow(a, 'ana')),
-      {gen: RGEN, dom: false}
+      {gen: RGEN}
     ).ana.P,
     all = C.replayProgress(
       [...sheet, mine].map(a => C.logRow(a, 'ana')),
-      {gen: RGEN, dom: false}
+      {gen: RGEN}
     ).ana.P,
     // The sheet's copy, saved under the older rules (wrong bars), and this device's: the same plus its unsent answer.
     old = {
@@ -2054,8 +2053,8 @@ async function replayAdoptCheck(base) {
     window.SHEET_STUB = answer;
     window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
   };
-  // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
-  const open = async (rv, core, sv = C.RV_SHEET) => {
+  // sv: the sheet script version the stub answers as (the gate floor, core.js MIN_SHEET).
+  const open = async (rv, core, sv = C.MIN_SHEET) => {
     const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
     await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
     await c.addInitScript(init, [old, dev, mine, rv, data]);
@@ -2095,22 +2094,11 @@ async function replayAdoptCheck(base) {
     p
       .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post), null, {timeout: 15000})
       .catch(() => {});
-  // The app never gets ahead of the sheet script (rule D4): a script before v28 (even one whose reply carried a
-  // replay) changes nothing: the device keeps its own progress, sends its answer as before, records no rules version
-  // and shows no card.
+  // The cards of the rules versions before the apology.
   {
-    const [c, p] = await open(0, null, C.RV_SHEET - 1);
+    const [c, p] = await open(0, null);
     await posted(p);
     await p.waitForTimeout(500);
-    const s = await p.evaluate(() => ({
-      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
-      rv: localStorage.getItem('reefid-sync-coral-rv'),
-      pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
-      card: !!document.querySelector('.rvmsg')
-    }));
-    const a = s.P.Acropora || {};
-    if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
-      fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
     // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
     // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice): on the versions before the apology.
     const card = v =>
@@ -2170,7 +2158,8 @@ async function replayAdoptCheck(base) {
       pct: genScore('Acropora')
     }));
     const a = s.P.Acropora || {};
-    if (Math.abs((a.pg || 0) - all.Acropora.pg) > 1e-9 || a.ok !== 2 || a.ko !== 1 || a.th !== all.Acropora.th)
+    const bar = r => (typeof r.pg === 'number' ? r.pg : r.ds);
+    if (!(Math.abs(bar(a) - bar(all.Acropora)) < 1e-9) || a.ok !== 2 || a.ko !== 1 || a.th !== all.Acropora.th)
       fails.push(
         `replay: the device did not end with the replayed record and its own answer on top: ${JSON.stringify(a)} vs ${all.Acropora.pg}`
       );

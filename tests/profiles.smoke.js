@@ -49,9 +49,8 @@ const server = http.createServer((req, res) => {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  // The rules the sheet replays today (core.js DOM_SHEET): a genus first answered takes the domain-score bar (model.js
-  // domRules), so the learning paths below are those of the current model, not of the moving average (Codex review #646).
-  await ctx.addInitScript(v => localStorage.setItem('reefid-sheet-v', String(v)), require('../core.js').DOM_SHEET);
+  // A genus first answered takes the domain-score bar (the gate floor, core.js MIN_SHEET), so the learning paths below are
+  // those of the current model, not of the moving average (Codex review #646).
   await ctx.addInitScript(() => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');

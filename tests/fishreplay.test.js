@@ -57,7 +57,7 @@ test("fishReplayGen at the genus: the app's sea slug units, from seaslug.json al
   // its file named, its pool's first too (Code.gs subjFile_), its board from the version that replays it
   assert.strictEqual(S.replayed.file, 'seaslug.json');
   assert.strictEqual(S.pool.files[0], S.replayed.file);
-  assert.ok(S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.REPLAYS_SHEET);
+  assert.ok(S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.MIN_SHEET);
 });
 
 test('fishReplayGen: nothing from an empty fish.json', () => {
@@ -74,7 +74,6 @@ test('the subjects the sheet replays besides the corals: fish and the sea slugs,
   );
   assert.strictEqual(C.replaySubject(), 'coral');
   assert.ok(C.rvOf('fish') >= 1 && C.rvsOf('fish') !== C.RVS && C.rvOf('coral') === C.RV);
-  assert.ok(C.REPLAYS_SHEET > C.SCORE_SHEET);
   // No floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down).
   assert.ok(!('floor' in C.subjectOf('fish').replayed) && typeof C.replayFloor === 'undefined');
 });
