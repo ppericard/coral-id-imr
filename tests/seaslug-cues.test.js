@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The sea slugs' sourced ID marks (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7; Pierre, 2026-11-17:
-// complete what is missing for the nudibranchs): tools/seaslug_cues.json, checked and built into seaslug.json genera and
+// The sea slugs' sourced ID marks (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7): tools/seaslug_cues.json, checked and built into seaslug.json genera and
 // families (marks, msrc, mby) by tools/seaslug_cues.py through tools/seaslug_game.py, shown on the sheets (learn.js
 // genMarks, fishMarks) and, a genus's, in the quiz feedback (app.js treeGenera). Every line has a source (rule C2), is
 // short (rule C3) and names only the genus's own game species (rule C6); the sheets speak the sea slugs' words (app.js

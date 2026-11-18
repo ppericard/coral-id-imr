@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The Analyses module (analysis.js): random practice slopes in Learning (each player's and genus's own), the per-genus
-// learning curves and the player profiles' learning slope (the multifactor visualisation study §5 item 7; ROADMAP
-// "Analyses: next views", per-genus learning slopes). Planted slopes recovered (tests/analysis.test.js says why the
+// learning curves and the player profiles' learning slope (ROADMAP "Analyses: next views", per-genus learning
+// slopes). Planted slopes recovered (tests/analysis.test.js says why the
 // module's tests are split).
 const test = require('node:test'),
   assert = require('node:assert');
@@ -96,7 +96,7 @@ test('plainOf: the spread of the learning slope reads as the gain from twice as 
 });
 
 test('Wright map: "every player" is read from each player’s own prediction on the genus, at their own practice', () => {
-  // Codex review #830: players at practice 0, 2 and 4 (log), a genus slope of 1, the rest 0: the first player's
+  // Players at practice 0, 2 and 4 (log), a genus slope of 1, the rest 0: the first player's
   // recognition of that genus is 50% (log-odds 0), so it is not recognised at 80% by every player
   const mk = (n, keys, us, ws) => {
       const f = A.factor(n, keys, ws);

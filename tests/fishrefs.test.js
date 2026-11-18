@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The units' reference photos from iNaturalist's taxon page (tools/fish_refs.py; judging/FISH.md "Reference photos").
 // Every photo of the taxon page, the cover and each taxon photo, for every species, not only those whose observation is
 // among the 200 most faved in the box; never a licence with "no derivatives" (ND), nor all rights reserved: only the
-// licences the rules accept (CC0, CC BY, CC BY-NC). Until Q230 (out-of-zone photos, ROADMAP) is settled, a photo whose
+// licences the rules accept (CC0, CC BY, CC BY-NC). Until out-of-zone photos are decided (ROADMAP), a photo whose
 // observation lies outside the Indo-West Pacific is listed (`away`), never taken. Offline: a stand-in for the network.
 // Needs python3.
 const test = require('node:test'),
@@ -67,7 +67,7 @@ print(json.dumps({"got": [[p["id"], o["id"], src] for p, o, src in got], "away":
     // a second photo of one observation: listed too, the game takes it once judged no duplicate (tools/fish_game.py)
     [290000, 130000, 'taxon']
   ]);
-  // The Red Sea photo passes every rule but the region (Q230 not settled): listed, not taken.
+  // The Red Sea photo passes every rule but the region (out-of-zone photos not decided): listed, not taken.
   assert.deepStrictEqual(out.away, [[270000, 'Red Sea']]);
   // ND, share-alike, all rights reserved and public domain marks are never looked up.
   assert.deepStrictEqual(out.seen, [200000, 260000, 270000, 280000, 290000]);

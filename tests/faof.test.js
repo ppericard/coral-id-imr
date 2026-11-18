@@ -1,15 +1,15 @@
 'use strict';
 require('./slot.js').testGuard();
-// The false-alarm table (core.js faArm, faOf; 2026-11-15): a speed-up only. With the table armed, faOf answers every unit
+// The false-alarm table (core.js faArm, faOf): a speed-up only. With the table armed, faOf answers every unit
 // from one pass over the records instead of a scan per unit, and must give exactly what the scan gave: the same number to
-// the last bit (Object.is), on logs made up here and on rated-world runs. The reference is a copy of faOf as it was before
-// the table, kept here as it was.
+// the last bit (Object.is), on logs made up here and on rated-world runs. The reference is a copy of the scanning faOf,
+// kept here as it was.
 const test = require('node:test'),
   assert = require('node:assert');
 const C = require('../core.js'),
   RW = require('../tools/ratedworld.js');
 
-// faOf before the table (core.js of 2026-11-15, main d0af3c19), verbatim but for LEVEL and rankKey written out.
+// The scanning faOf (the one without the table), verbatim but for LEVEL and rankKey written out.
 const LEVEL = '~level';
 const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
 function faOfRef(P, n) {

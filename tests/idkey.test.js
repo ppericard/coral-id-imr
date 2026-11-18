@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// The Coral Finder tool became the Coral ID Key (Pierre, 2026-11-04): the name Coral Finder is the book's (R. Kelley,
-// BYOGUIDES, 2022; copyrighted), and the app's tool must not look like it. Alpha (rule W3): renamed
-// everywhere, no old name kept for old links or old app versions. The stored data moved once (the devices' one-shot and
-// the sheet's, both removed on 2026-11-15 once every device had run it). These checks keep it so: node --test tests/
+// The tool is the Coral ID Key: the name Coral Finder is the book's (R. Kelley,
+// BYOGUIDES, 2022; copyrighted), and the app's tool must not look like it. Alpha (rule W3): named so
+// everywhere, no old name kept for old links or old app versions, and no migration of stored data left. These checks keep it so: node --test tests/
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

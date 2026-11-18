@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Glossary words (app.js GLOSS_PAT, gloss, glossAll; beginner review 2026-11-03): app.js's own code run in Node on the
+// Glossary words (app.js GLOSS_PAT, gloss, glossAll): app.js's own code run in Node on the
 // real data.json terms.
 const test = require('node:test');
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
@@ -71,7 +71,7 @@ test('a plain-words sentence comes first, the sourced definition and its source 
   }
 });
 
-// The most frequent words of the genus sheets that had no entry (plain words on the genus sheets, 2026-11-03).
+// The most frequent words of the genus sheets that have an entry (plain words on the genus sheets).
 test("the genus sheets' frequent words: glossed where the lecture and ID tips use them, plain sentence first", () => {
   const {gloss, termDef} = app(),
     G = {...DATA.gen, ...DATA.x.gen},

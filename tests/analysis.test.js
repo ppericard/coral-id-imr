@@ -1204,7 +1204,7 @@ test('sessDesc: misses in a row stay within a session; returns use one observati
   assert.deepStrictEqual([r1.at, r1.back], [1, 1], 'only C’s first session is a day old: C came back');
 });
 
-/* ---------- Multiple testing (Pierre, 2026-11-05, Q69): primary effects under Holm, the others under Benjamini-Hochberg ---------- */
+/* ---------- Multiple testing: primary effects under Holm, the others under Benjamini-Hochberg ---------- */
 test('holm and bh give the textbook adjusted p-values (R p.adjust)', () => {
   const P = [0.01, 0.04, 0.03, 0.005];
   assert.deepStrictEqual(
