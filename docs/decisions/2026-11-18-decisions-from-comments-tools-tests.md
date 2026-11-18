@@ -12,7 +12,15 @@ and where it lives in the code.
 ## Decisions
 
 - 2026-11-01: "lighter photos for the slow connections common in the Philippines". Decided the four sizes of every
-  site photo (1600, 960, 480, 240 px WebP), the app picking the smallest that covers each box. `tools/photos.py` `SIZES`.
+  site photo (1600, 960, 480, 240 px WebP), the app picking the smallest that covers each box; the app stays fluid on
+  a poor connection. `tools/photos.py` `SIZES`; checked by `tests/net.smoke.js`.
+- 2026-11-02: players never reload by hand. Decided that a new version, once it has taken over in the background,
+  reloads the page at the next page change. Checked by `tests/net.smoke.js` (check 9).
+- 2026-11-04: "a non-statistician must understand it at a glance". Decided the plain reading of every Analyses effect
+  (`analysis.js` `plainOf`), checked by `tests/analysis.test.js`.
+- 2026-11-08: "il faut faire tous les 1000, mais pour le nombre de réponses dans le mode de jeu". Decided that each
+  subject's analyses are refitted every 1000 answers of that subject, counted apart in the sheet's head
+  (`tools/analyses.js` `headCount`), checked by `tests/analysis.test.js`.
 - 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement the weaker ones on
   iNaturalist". Decided no cap per species on the fish reference photos: the judging decides which play.
   `tools/fish_refs.py` `INAT_MAX`, `FB_MAX`.
