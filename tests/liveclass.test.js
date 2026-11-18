@@ -199,8 +199,11 @@ test('a student is sent their accepted answers once revealed, a reveal missed or
     a = s.lv('join', {code, nick: 'Ann'}),
     poll = (hx = 0) => s.lv('poll', {code, pid: a.pid, pk: a.pk, hx}),
     ans = (qi, c) => s.lv('answer', {code, pid: a.pid, pk: a.pk, qi, c});
-  // A subject in beta for a group is never hosted.
+  // A subject in beta for a group is never hosted (none is today: the sea slugs opened to all on 2026-11-18, #1051; a
+  // group subject is made here).
+  run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'group'");
   assert.strictEqual(start(s, {s: 'seaslug'}).error, 'input');
+  run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'all'");
   s.lv('host', {code, tk, act: 'q', q: Q(1)});
   poll();
   ans(0, 2);
