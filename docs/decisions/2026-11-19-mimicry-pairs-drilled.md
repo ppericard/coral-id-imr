@@ -1,6 +1,6 @@
 # The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species
 
-Date: 2026-11-19. PR: #0000. Rules or docs touched: L11; LEARNING.md "The mimicry class"; docs/spec/model.md,
+Date: 2026-11-19. PR: #1162. Rules or docs touched: L11; LEARNING.md "The mimicry class"; docs/spec/model.md,
 docs/spec/quiz.md; FISH_PATH.md "Juveniles and colour phases", "Look-alikes at any rank"; ROADMAP "Look-alike pairs
 between species".
 
