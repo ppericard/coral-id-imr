@@ -58,6 +58,9 @@ Newest first.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-18 | [Live mode after version 1: a QR code of our own on the lobby screen](2026-11-18-live-after-v1.md) | #1114 |
+| 2026-11-18 | [Sea slug achievements: the % ladder beyond 50%](2026-11-18-seaslug-achievements-high.md) | #1112 |
+| 2026-11-18 | [The short feedback sheet: the verdict, one line, the rest behind More](2026-11-18-feedback-sheet.md) | #1110 |
 | 2026-11-18 | [The sheet script installs from a release branch only the merge train moves](2026-11-18-release-branch.md) | #1102 |
 | 2026-11-18 | [Infrastructure health: an hourly check and the numbers to watch before the free tiers run out](2026-11-18-infrastructure-health.md) | #1101 |
 | 2026-11-18 | [The 2026-11-18 rule wordings](2026-11-18-rules-wordings.md) | #1086 |
