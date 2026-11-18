@@ -44,7 +44,7 @@ decisions that matter are spread over six places.
 |---|---|---|---|---|
 | 1 | The two main references are changelogs, not references: no agent or newcomer can read them, and 294 of 682 commits touch `ARCHITECTURE.md` (the review's count) | ARCHITECTURE 731,467 B, LEARNING 737,989 B | measured: 464 dated or numbered references in ARCHITECTURE's "Progress sync" alone (204,493 B); LEARNING's "The player's own model" is 497,059 B (67%) | PRs 3-6 |
 | 2 | The sheet script's version history sits in `ARCHITECTURE.md` as one 93,791-byte line (115 entries), duplicating the header of `Code.gs`, and `tools/sheet_version.py --assign` writes it there | ARCHITECTURE:642; `tools/sheet_version.py` (the entry goes to "ARCHITECTURE.md's version history") | measured, read | PR 3 (the cheapest large cut) |
-| 3 | The privacy notice is behind the app and says things players rely on: "reef fish, in beta" (line 30), leaderboards "(corals, fish)" (line 62), photos from "Cloudflare (the coral photos…)" and iNaturalist "the fish photos" (line 71, but fish and sea-slug photos are on R2 too), no sea slugs, no live mode (a nickname session is kept up to 6 hours, per its design note) | `privacy.html` | read; the live mode's data from [its design note](2026-11-18-live-mode-design.md) "Data kept" | PR 1 (wording needs Pierre's OK: it states what data is kept) |
+| 3 | The privacy notice is behind the app and says things players rely on: "reef fish, in beta" (line 30), leaderboards "(corals, fish)" (line 62), photos from "Cloudflare (the coral photos…)" and iNaturalist "the fish photos" (line 71, but fish and sea-slug photos are on R2 too), no sea slugs, no live mode (a nickname session is kept up to 6 hours, per its design note) | `privacy.html` | read; the live mode's data from [its design note](2026-11-18-live-mode-design.md) "Data kept" | A separate privacy PR (`claude/privacy-1118`; Pierre's OK, shown to him before it publishes) |
 | 4 | The constitution's first bullet is stale: "corals now, fish and benthos next", "no build step" (the deploy minifies and stamps versions: #1069) | AGENTS.md:9 | read; ARCHITECTURE's own "Run and deploy" says the deploy minifies | PR 1 |
 | 5 | No decision records. A decision is in a code comment (the review counted 416 "Pierre, date" citations in 4 files), a ROADMAP row's source cell, a rule's *Source* line, LEARNING's "Decision log" (27,052 B), or a PR description. A reader cannot list "what was decided about X" | everywhere | measured (178 lines in 57 files cite an ARCHITECTURE or LEARNING section by name) | PR 2 |
 | 6 | ROADMAP's "Next (agreed, not started)" is 138,364 B (68% of the file) and still holds rows whose own status cell says Built or Done; 22 lines of the file exceed 2,000 characters | ROADMAP | measured; X2-X12 re-checked | PRs 1 and 6 |
@@ -298,24 +298,24 @@ Measured by search: none of these exists in the repository.
 | **A contributing guide** (`CONTRIBUTING.md`, short) | A human newcomer, and every outside agent, expects it at the root; today the way in is AGENTS (written for Pierre's agents), HANDOVER and a 34 KB `ship.md` | AGENTS "Ship checklist", `ship.md` W12-W27 |
 | **A glossary** | Words with project meanings: unit, circle, slate, wink, phase, gate, rules version, slot, train, integrator, Open Water, Advanced. Only `unit` and `taxon` are defined (`rules/README.md`) | Scattered through ARCHITECTURE and LEARNING |
 | **A data-files map** | About 35 JSON files at the root; which are Pierre's (`curation.json`), machine-written, built, served, in the players' copy; which tool writes each; the terse field names (`tr`, `ig`, `sl`, `qt`, `cm`…) | ARCHITECTURE "Data files" (149,831 B of prose); the architecture review R8 proposes schemas |
-| **A security reporting channel** | GitHub shows `docs/SECURITY.md` as the security policy; it has no "how to report" and no contact | `privacy.html` says "ask Pierre, or open an issue" for data, not for vulnerabilities. The contact is Pierre's to choose |
+| **A security reporting channel** | GitHub shows `docs/SECURITY.md` as the security policy; it has no "how to report" and no contact | `privacy.html` says "ask Pierre, or open an issue" for data, not for vulnerabilities. GitHub's private vulnerability reporting is enabled (Pierre, 2026-11-18); the `SECURITY.md` line is made in the privacy PR |
 | **A tools map** (`tools/README.md`) | 81 Python and 18 JS tools (the review's count), 23 one-shot `apply_*.py`, 9 referenced nowhere | ARCHITECTURE "Tools" (40,245 B) |
 | **Module notes** | A short note beside each area of code: what it owns, what it must not touch | Code comments; ARCHITECTURE |
 | **An issue template for rights holders** | README, `LICENSE` and the app ask rights holders to "open an issue"; a template tells them what to include | None |
 | **A code licence decision** | See the question below | `LICENSE` |
 
-**Licence (a question, not decided here).** A `LICENSE` exists: "All rights reserved… No licence is granted on its code, on
+**Licence (decided for now: Pierre, 2026-11-18, "A pour l'instant", all rights reserved kept; see 6.3 (b)).** A `LICENSE` exists: "All rights reserved… No licence is granted on its code, on
 the data Pierre Pericard compiled…"; the hosted app is free to use. The new README says exactly that, and keeps the
-heading "Content and rights" that `LICENSE` points to. The brief asked for an "open project" front page; whether the code
-should stay all-rights-reserved or take an open licence is Pierre's decision (ROADMAP:123 records that the rights to his
-code, data and photos are his, and that IMR-owned content is to be separated first). Nothing here pre-empts it.
+heading "Content and rights" that `LICENSE` points to. The brief asked for an "open project" front page; Pierre keeps the
+code all rights reserved for now (ROADMAP:123 records that the rights to his code, data and photos are his, and that
+IMR-owned content is to be separated first).
 
 ## 6. Restructuring plan
 
 This follows step 11 of the architecture review (decision records; ARCHITECTURE and LEARNING cut to maps and specs;
 history out of the docs), ROADMAP's own idea (inventory D8, "Split LEARNING.md and ARCHITECTURE.md into short topic
 files plus a notebook of studies"), and the order the couplings below allow. **Step 11 needs Pierre's OK on the
-structure and on the wording of rule W19; the plan is a proposal.** Sizes: "to be sized with tools/effort.py"
+structure and on the wording of rule W19: Pierre agreed to both on 2026-11-18 (6.3 (a)), so the plan is approved.** Sizes: "to be sized with tools/effort.py"
 (`tools/effort.py` is not on `origin/main` at `7b260e35`; re-check before sizing).
 
 ### 6.1 The couplings that set the order
@@ -341,25 +341,34 @@ structure and on the wording of rule W19; the plan is a proposal.** Sizes: "to b
 | PR | Content | Needs Pierre | Size |
 |---|---|---|---|
 | **0** (this one) | README rewritten; this audit; one row in the reviews README | No (docs only) | done |
-| **1: hygiene** | Fix section 4 (X2-X17, N1-N8): ROADMAP's Built and Done rows deleted and its malformed row fixed, INTEGRATOR "Open work" rewritten from today's state, AGENTS line 9, `ship.md` W18, `admin.md` A4 wording, SECURITY's cell limit, FISH_PATH's stale questions, the reviews README (four rows and the stale cells), the code comments of X17. STATUS stays the integrator's | `privacy.html` and `index.html` wording (they state what data is kept and what players see: integrator's call, easy to correct, but tell him); rule wordings (A4, W18) are his to OK | to be sized with tools/effort.py |
-| **2: decision records** | `docs/decisions/` with a template (context, decision, Pierre's words and date, consequences), numbering, an index; W19 reworded (decisions go to a record, not into ARCHITECTURE); AGENTS "Where decisions live"; `tests/docs.test.js` checks (every record has its source and date, links resolve) and `LEARNING.md` section citations; first records seeded from LEARNING "Decision log" and the Q-number references | Yes: the structure and W19's wording | to be sized with tools/effort.py |
+| **1: hygiene** | Fix section 4 (X2-X17, N1-N8): ROADMAP's Built and Done rows deleted and its malformed row fixed, INTEGRATOR "Open work" rewritten from today's state, AGENTS line 9, `ship.md` W18, `admin.md` A4 wording, SECURITY's cell limit, FISH_PATH's stale questions, the reviews README (four rows and the stale cells), the code comments of X17. STATUS stays the integrator's | `index.html` wording (integrator's call, easy to correct, but tell him); rule wordings (A4, W18) are his to OK. `privacy.html` is the separate privacy PR (6.3 (d)) | to be sized with tools/effort.py |
+| **2: decision records** | `docs/decisions/` with a template (context, decision, Pierre's words and date, consequences), numbering, an index; W19 reworded (decisions go to a record, not into ARCHITECTURE); AGENTS "Where decisions live"; `tests/docs.test.js` checks (every record has its source and date, links resolve) and `LEARNING.md` section citations; first records seeded from LEARNING "Decision log" and the Q-number references | Answered: structure approved; W19's new wording goes in rules PR #1086, so this PR follows its merge | to be sized with tools/effort.py |
 | **3: version history out** | The sheet script's history leaves ARCHITECTURE:642 (93,791 B) for an append-only file (new, not the frozen archive); `tools/sheet_version.py` and its tests write there; `Code.gs`'s header line unchanged | No (follows PR 2's structure) | to be sized with tools/effort.py |
 | **4: ARCHITECTURE as a map** | One section per PR, largest first (Progress sync, Data files, Admin, Front end, Subjects, Tools): the spec of the present moves to a spec file or stays, the history moves to a decision record or `docs/archive/`; each cited heading kept as a stub; ARCHITECTURE ends at about 50 KB (the review's figure) | The structure (once, in PR 2) | to be sized with tools/effort.py, per section |
 | **5: LEARNING as a spec** | The spec of the algorithms in force (the review: about 50-100 KB); one-feature histories, "not adopted" and "no change made" measurements move to a notebook of studies (`docs/reviews/` or `docs/archive/`); the Decision log becomes records | Same | to be sized with tools/effort.py |
 | **6: ROADMAP and the handovers** | ROADMAP's "Next" cut into rows of a bounded length with links to a record or study; HANDOVER reduced to what has no other home (external resources, one-time setups, the redeploy steps) and INTEGRATOR's dated handovers folded into habits | No | to be sized with tools/effort.py |
-| **7: missing documents** | `CONTRIBUTING.md`, a glossary, a data-files map, `tools/README.md`, an issue template, a root or `.github` security policy with a reporting channel | The security contact, the licence question | to be sized with tools/effort.py |
+| **7: missing documents** | `CONTRIBUTING.md`, a glossary, a data-files map, `tools/README.md`, an issue template, a root or `.github` security policy with a reporting channel | No: licence unchanged, security contact answered (6.3) | to be sized with tools/effort.py |
 | **8: keep it from drifting** | Size and line-length budgets in `tests/docs.test.js` for every living doc (it has them for AGENTS and STATUS only); a check that README's and `privacy.html`'s subject names match `SUBJECTS`; a one-off comment pass per module for the "what and why, now; history in the record" policy (code PRs, `core.js` last: coupling 5) | The comment policy | to be sized with tools/effort.py |
 
 PRs 1, 2 and 7 (except the policy) can start now and in parallel; 3-6 follow PR 2; 8 follows 4 and 5.
 
-### 6.3 Questions for Pierre (unnumbered; the integrator numbers what passes the two tests)
+### 6.3 Questions for Pierre, and his answers (2026-11-18, 11:42-11:44 Manila)
 
-- (a) The structure of step 11: decision records in `docs/decisions/`, ARCHITECTURE as a map of about 50 KB, LEARNING as a
-  spec, history in records and `docs/archive/`; and a new wording of rule W19 so that a PR no longer edits ARCHITECTURE for every change.
-  Recommendation: yes.
-- (b) The licence of the code (section 5): keep all rights reserved, or choose one. Not for me to recommend.
-- (c) A contact for reporting a vulnerability (an address, or GitHub's private reporting).
-- (d) The wording of `privacy.html` for three subjects, the live mode and where the photos come from (finding 3).
+- (a) **The structure of step 11** (decision records in `docs/decisions/`, ARCHITECTURE as a map of about 50 KB, LEARNING
+  as a spec, history in records and `docs/archive/`) **and a new wording of rule W19.** Answered "ok" to the new W19
+  (a PR updates the docs that describe what it changes and adds a short decision record in `docs/decisions/` for a
+  decision; history stays in git and the PRs), which goes in the rules PR #1086, and "ok" to the restructuring plan of
+  6.2. **The plan is approved.** The integrator launches its PRs in order after #1086 merges.
+- (b) **The licence of the code** (section 5). Answered "A pour l'instant": `LICENSE` stays all rights reserved for now;
+  the README says so.
+- (c) **A contact for reporting a vulnerability.** GitHub's private vulnerability reporting is already enabled. The line in
+  `docs/SECURITY.md` that points to it is made in the privacy PR (`claude/privacy-1118`), not here.
+- (d) **The wording of `privacy.html`** for three subjects, the live mode and where the photos come from (finding 3).
+  Answered "ok" to an update checked against the code and shown to him before it publishes: a separate PR
+  (`claude/privacy-1118`).
+
+In 6.2, PR 7's two Pierre items are therefore settled (licence: unchanged; security contact: GitHub's private reporting,
+the `SECURITY.md` line in the privacy PR), and PR 1's `privacy.html` change moves to that PR.
 
 ## 7. What I checked and what I did not
 

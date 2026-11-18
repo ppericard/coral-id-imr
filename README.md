@@ -89,7 +89,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 
 ## Content and rights
 
-**Code and compiled data.** © 2026 Pierre Pericard, all rights reserved ([LICENSE](LICENSE)). No open-source licence is
+**Code and compiled data.** © 2026 Pierre Pericard, all rights reserved for now ([LICENSE](LICENSE)). No open-source licence is
 granted; the repository is public so the app can be served and its source read. Much of the code was written with AI
 coding assistants under his direction.
 
