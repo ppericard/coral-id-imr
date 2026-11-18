@@ -4272,8 +4272,16 @@ minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arr
   ID marks first, #1074, then the lecture RA's app-world check again, capped at 40 minutes): the same 3 seeds × 600
   questions, `main` 191dfa27 against the branch, 158 s of runs on 2 workers. The same numbers to the digit (knowSlate at
   600 0.708 → 0.658, bound −0.054: breached; circle 3 offered at 351-378 → 403-438; the arms part at answer 82): the
-  simulated learner learns by its answers and never reads a card's text, so the content cannot move it. The breach
-  stands, for Pierre.
+  simulated learner learns by its answers and never reads a card's text, so the content cannot move it.
+- **What the breach measured, and 20 seeds** (2026-11-18): knowSlate averages the learner's know over the slate, the
+  65 families in both arms (`slateGenera()`: no genus is in it), so the genera do not dilute it; it fell because 4-5
+  circle-3 families met just before 600 in the base were not met yet in the branch, and count at their starting know.
+  Over the families met in both arms (the judge's D\*, `f.ds`), the 3 seeds give −0.018 (bound −0.022): unclear, so one
+  step up (rule L11, a second look, bounds at 95%): the same check with 20 seeds per arm (`main` af0bee85 against the
+  branch, 431 + 515 s of runs on 2 workers). **True knowledge holds**: knowSlate at 600 0.697 → 0.700, +0.004 (bound
+  −0.012); D\* on the common families 0.610 → 0.609 (bound −0.006); knowMet 0.713 → 0.710 (bound −0.008); every
+  guardrail held. Circle 3 is offered at 370 answers on average before, 373 after (later in 13 pairs of 20): the 3
+  seeds of the first look were all later by chance. No cost for Pierre.
 - **Machine time**: about 2 hours of worker time against the 40 minutes declared (rated 12-18 minutes an arm on 2
   workers, four arms with the rerun; app 4-6 minutes an arm), mostly the rerun the broken pairing forced; the machine
   was shared with other agents (waits for a slot of up to 21 minutes not counted).
