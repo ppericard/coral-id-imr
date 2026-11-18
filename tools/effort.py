@@ -215,10 +215,9 @@ def fetch_raw(n):
                     'conclusion': c.get('conclusion')}
                    for c in gh_pages('%s/commits/%s/check-runs' % (base, pr['head']['sha']))],
     }
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(f), prefix='pr-%d.' % n, suffix='.tmp')  # one per writer
-    with os.fdopen(fd, 'w') as out:
-        json.dump(raw, out)
-    os.replace(tmp, f)
+    with tempfile.NamedTemporaryFile('w', dir=os.path.dirname(f), prefix='pr-%d.' % n, suffix='.tmp', delete=False) as out:
+        json.dump(raw, out)  # a temporary file of its own for each writer
+    os.replace(out.name, f)
     return raw
 
 

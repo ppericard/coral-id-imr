@@ -1,6 +1,6 @@
 'use strict';
-// tools/effort.py: the type and size derivation, the record of one PR and the --check parser, on fixtures, no network.
 require('./slot.js').testGuard();
+// tools/effort.py: the type and size derivation, the record of one PR and the --check parser, on fixtures, no network.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
