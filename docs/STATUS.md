@@ -43,18 +43,16 @@ the same (checked with acorn); decisions found only in comments moved to records
   tense): NOT STARTED, after these merge.
 - Docs PR 3 (history out of ARCHITECTURE): #1123, ready. Docs PRs 4-6 (ARCHITECTURE as a map, LEARNING as a spec,
   ROADMAP and handovers, with the rules audit's points 1-5 and 8): NOT STARTED, after #1115 and #1123.
-- Coral calibration set (#1080's first step): running, PR to come.
+- Coral calibration set (#1080's first step): #1130, ready, waits for Pierre (Q412). Variant classes and mimicry
+  (#1085's decided parts): running.
 - Flaky inat test: #1125, ready (the test stub's ids, not the tool: real data unaffected).
 - Typed answers, what is left: #1116, ready, waits for Pierre (Q411).
 
 ## Next
 
 1. Versions one at a time: #1121 (Code.gs comments) after #1123; #1119 (tell-apart lines) after it.
-2. After the night queue, from the backlog (`docs/reviews/2026-11-18-backlog-inventory.md`, ROADMAP): variant classes
-   with mimicry, cards, the out-of-region warning, pairs M1-M7 (#1085); frames model; game formats; coral calibration
-   set then the placement test (#1080); architecture steps 3-4; fish read their own stats; C12 lecture photos.
-   After Pierre: roles UI (#1098, now with #1118), What I learn card (#1071), species step 2 (#1041).
-3. Infrastructure watch (R2, sheet cells, quotas, Pages); domain only when needed.
+2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): frames model; game formats; architecture steps 3-4;
+   fish read their own stats; C12 photos. After Pierre: roles UI (#1098 + #1118), #1071, species step 2 (#1041).
 
 ## Questions for Pierre
 
@@ -74,11 +72,14 @@ dropped (the docs describe a coherent model in our words; no new manual step for
   confusion group becomes Anacropora's (was Astreopora and Cyphastrea), which shifts the opening order there; in the
   level-1 simulation the expert's right % on answers 200-300 falls 95.2 → 92.2 (bounds −5.1 to −0.9), verdict
   "unclear: one step up". Merge as is, run the level-2 simulation first (recommended), or drop the pooled part?
+- **Q412** #1130 coral calibration set (50 photos): a member drawn twice as often until 20 answers, on held genera
+  only. Simulated beginner −0.013 at question 300 ("unclear"), caught up by 600; members rated ~2 weeks sooner. Merge
+  (recommended), or no boost for beginners? Its points 2-3 (repeats, members alone): recommended no, not built.
 
 Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points (backup "three months" wording; audit
 rows after deletion; the Notes tab); #1098 (a)-(f) (with #1118); genera opening vs the two trees (#1041 §6).
 
-Last question number: Q411
+Last question number: Q412
 
 ## Pierre's hands
 
