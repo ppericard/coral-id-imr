@@ -10,8 +10,9 @@ different genera no longer conflict, and writing an unchanged file gives the sam
     python3 tools/datajson.py --split     # move the candidates curation.json doesn't name from data.json to cand.json
 
 The instance's layer (tools/instance.py; design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5): the
-IMR instance's coral fields (imrg, and each genus's ig, imr and mn) live in the coral layer file tools/instance.json
-names (today tools/instances/imr/coral.json), and data.json carries a copy where it always had them. dump() to data.json
+IMR instance's coral fields (imrg, and each genus's ig, imr and mn) and its lecture's look-alike pairs (their look and
+lsrc entries) live in the coral layer file tools/instance.json names (today tools/instances/imr/coral.json), and
+data.json carries a copy where it always had them. dump() to data.json
 lays the layer on, and stops when the data it is given changes one of those fields (an edit belongs in the layer file);
 the rewrite lays the layer on (after an edit of the layer file); --check fails when data.json is not as its layers give
 it, byte for byte.
