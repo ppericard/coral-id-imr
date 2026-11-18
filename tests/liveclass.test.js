@@ -584,10 +584,14 @@ test('live.js: a live miss restarts the mastery exam of the unit shown and of th
     startStep: () => {},
     answeredAt: () => {},
     logAnswer: a => log.push(a),
-    save: () => {}
+    save: () => {},
+    // core.js answerId (an answer kept without its player id); quiz.js cvField (app.js contentVer: the units in force)
+    answerId: require('../core.js').answerId,
+    cvField: () => ({cv: 'clive1'})
   });
   const o = c => ({
     qi: 0,
+    pid: '0a1b2c3d4e',
     s: 'coral',
     t: 'Acropora',
     c,
@@ -599,6 +603,13 @@ test('live.js: a live miss restarts the mastery exam of the unit shown and of th
   assert.ok(!('ex' in P.Acropora) && !('ex' in P.Montipora), JSON.stringify(P));
   assert.deepStrictEqual(P.Porites.ex, {k: 1, v: []});
   assert.strictEqual(log[0].m, 'live');
+  // Its attempt id is the player's and the question's (live.js liveAid), its content version the units' in force.
+  assert.strictEqual(log[0].id, 'l0a1b2c3d4eq0');
+  assert.strictEqual(log[0].cv, 'clive1');
+  // An answer kept from before this field (no pid): a random attempt id.
+  const {pid, ...old} = o('Porites');
+  A.ctx.liveLog({id: 'coral'}, old);
+  assert.match(log[1].id, /^[a-z][a-z0-9]{15}$/);
 });
 
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {

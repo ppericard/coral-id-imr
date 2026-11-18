@@ -195,6 +195,19 @@ const GATES = {
     const plain = {id: 'a2', m: 'quiz'};
     assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
     return out.pa === 'fi2';
+  },
+  // An answer's content version (quiz.js and live.js cv, app.js contentVer; ROADMAP "Content versions and duplicate-safe
+  // answers"): sent from the version that stores it (Code.gs Content version), through core.js logOut at both of sync.js's
+  // sends; before, the copy sent leaves it out and keeps the rest, the queue untouched.
+  CV_SHEET: v => {
+    const {logOut} = require('../core.js'),
+      a = {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, cv: 'c1x2y3z'}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.cv === 'c1x2y3z';
   }
 };
 
