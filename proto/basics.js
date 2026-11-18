@@ -760,6 +760,14 @@
         const V = s.views,
           every = s.all !== false,
           seen = new Set(Object.keys(((store.get(KEY, {}) || {}).views || {})[s.id] || {}));
+        // Nothing to show (a region whose key has no group the game holds, rule S3): the step is seen, its way on stays.
+        if (!V.length) {
+          fig.innerHTML = '<p class="note">Nothing to show here yet.</p>';
+          nav.innerHTML = nextA;
+          seenStep(C, s.id);
+          ask(C, root.querySelector('.bx-q'), s.check, markDone, edit, s.id);
+          return;
+        }
         const show = (vid, moved) => {
           const k = Math.max(
               0,

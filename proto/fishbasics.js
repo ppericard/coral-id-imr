@@ -251,6 +251,9 @@
   };
 
   const DECK = 'IMR fish presentation (Lecture 10)';
+  // The public references that fill what the slides' text does not define, named on screen (rules C1, C2).
+  const GLOS = 'fishIDER glossary (CSIRO, fishider.org/en/glossary)';
+  const FINREF = 'Wikipedia, “Fish fin” (en.wikipedia.org)';
   const STEPS = [
     {
       id: 'shape',
@@ -259,11 +262,11 @@
       all: true,
       pick: 'Seven body shapes',
       say: 'To work out the family, always start with the shape of the body. Everything here is a generalisation: nature has exceptions.',
-      src: `${DECK}: “Body shape is most important to start to work out the FAMILY”; the groups it teaches are by shape.`,
+      src: `${DECK}: “Body shape is most important to start to work out the FAMILY”; the names of its groups by shape: Disc-shaped, Small ovals, Large ovals, Sloping heads / tapered bodies, Heavy bodies / large lips, Slender schoolers, Odd-shaped swimmers, Bottom dwellers. The silhouettes are ours.`,
       views: [
         {
           id: 'disc',
-          name: 'Disc',
+          name: 'Disc-shaped',
           icon: shapeIcon('disc'),
           fig: () => shapeSvg('disc', true),
           say: 'Round and flat like a disc: the dorsal, tail and anal fins curve to complete the shape. Often colourful.',
@@ -271,7 +274,7 @@
         },
         {
           id: 'oval',
-          name: 'Oval',
+          name: 'Ovals',
           icon: shapeIcon('oval'),
           fig: () => shapeSvg('oval', true),
           say: 'An oval body, small or large. The small ovals are the damselfish; the large ovals include the Moorish idol, surgeonfish, unicornfish and rabbitfish.',
@@ -287,10 +290,10 @@
         },
         {
           id: 'heavy',
-          name: 'Heavy',
+          name: 'Heavy bodies',
           icon: shapeIcon('heavy'),
           fig: () => shapeSvg('heavy', true),
-          say: 'A heavy body with a big mouth and thick lips.',
+          say: 'A heavy body with thick, large lips.',
           eg: 'Groupers, sweetlips.'
         },
         {
@@ -303,7 +306,7 @@
         },
         {
           id: 'elongate',
-          name: 'Elongate',
+          name: 'Bottom dwellers',
           icon: shapeIcon('elongate'),
           fig: () => shapeSvg('elongate', true),
           say: 'A long body that lives on the bottom, sitting arched (lizardfish) or slouched (sandperch).',
@@ -311,10 +314,10 @@
         },
         {
           id: 'odd',
-          name: 'Odd',
+          name: 'Odd-shaped',
           icon: shapeIcon('odd'),
           fig: () => shapeSvg('odd', true),
-          say: 'Odd shapes: boxy, flattened, spiky or with a long snout. Look for the one feature that stands out.',
+          say: 'Odd-shaped swimmers: a boxy bony shell, a flattened body, feather-like fins. Look for the one feature that stands out.',
           eg: 'Boxfish, goatfish, triggerfish, pufferfish, filefish, lionfish.'
         }
       ],
@@ -324,7 +327,7 @@
           'Which silhouette is a disc-shaped fish, like a butterflyfish?',
           ['disc', 'slender', 'elongate'],
           'disc',
-          'Round and flat: a disc. Slender is the torpedo of the fusiliers; elongate lives on the bottom.'
+          'Round and flat: a disc. Slender is the torpedo of the fusiliers; the bottom dwellers are long.'
         );
       }
     },
@@ -356,21 +359,23 @@
       all: true,
       pick: 'Fins',
       say: 'Know the fins and where they sit: you will use them to describe every fish.',
-      src: `${DECK}: pectoral, dorsal, caudal, anal and pelvic fins, and the caudal peduncle; parrotfish and wrasses “flap like a bird”.`,
+      src: `${DECK}: the pectoral, dorsal, caudal, anal and pelvic fins and the caudal peduncle named on a fish. Where they sit: ${FINREF}; the caudal peduncle, “the posterior part of body between the rear parts of the dorsal and anal fins, and the caudal fin”: ${GLOS}.`,
       views: [
         {
           id: 'places',
           name: 'The fins',
           icon: fishIcon(),
           fig: finsAll,
-          say: 'Pectoral fins behind the gills, pelvic fins under the belly, anal fin behind them, dorsal fin on the back, and the caudal fin, the tail, on the narrow caudal peduncle. Most fish swim with the tail; parrotfish and wrasses swim by flapping their pectoral fins like a bird.'
+          say: 'Pectoral fins behind the gills, pelvic fins under the belly, the anal fin behind them, the dorsal fin on the back, and the caudal fin, the tail, on the caudal peduncle, the narrow part of the body before it. Parrotfish and wrasses swim with their pectoral fins, flapping them like a bird.',
+          src: `${DECK}: pectoral fins “(flap like a bird)”, parrotfish and wrasses.`
         },
         {
           id: 'dorsal',
           name: 'Dorsal fin',
           icon: fishIcon(['dorsal']),
           fig: dorsals,
-          say: 'Look at the dorsal fin: one continuous fin along the back (damselfish, butterflyfish, angelfish, rabbitfish), or two, a first and a second set apart (cardinalfish, soldierfish, squirrelfish).'
+          say: 'Look at the dorsal fin: one continuous fin along the back, as in the damselfish, angelfish and rabbitfish, or a first and a second dorsal fin, widely spaced, as the slide of cardinalfish, soldierfish and squirrelfish says.',
+          src: `${DECK}: “Continuous dorsal fin”; “Widely spaced primary and secondary dorsal fin”.`
         }
       ],
       get check() {
@@ -397,7 +402,7 @@
           name: 'Deeply forked',
           icon: tailIcon('deep'),
           fig: () => tailSvg('deep'),
-          say: 'The tail splits in two, deeply: fish that swim in the open water over the reef.',
+          say: 'The tail splits in two, deeply: fish that swim up in the water column, above the coral.',
           eg: 'Fusiliers, Chromis.'
         },
         {
@@ -413,14 +418,14 @@
           name: 'Square',
           icon: tailIcon('square'),
           fig: () => tailSvg('square'),
-          say: 'A square tail, cut straight across: usually fish that swim with their other fins.'
+          say: 'A square tail, cut straight across: usually on fish that swim mostly with their other fins.'
         },
         {
           id: 'round',
           name: 'Rounded',
           icon: tailIcon('round'),
           fig: () => tailSvg('round'),
-          say: 'A rounded tail: fish that live close to the bottom, keeping to the corals.',
+          say: 'A rounded tail, as in Pomacentrus, damselfish that stay close to the bottom.',
           eg: 'Pomacentrus.'
         },
         {
@@ -428,7 +433,7 @@
           name: 'Pointed',
           icon: tailIcon('point'),
           fig: () => tailSvg('point'),
-          say: 'A pointed tail, tapering to a tip: usually fish that swim with their other fins.'
+          say: 'A pointed tail, tapering to a tip: usually on fish that swim mostly with their other fins.'
         },
         {
           id: 'heart',
@@ -463,30 +468,34 @@
           name: 'Bars',
           icon: markIcon('bars'),
           fig: () => markSvg('bars'),
-          say: 'Bars or bands run up and down the body.'
+          say: 'A bar is a mark that runs up and down the body.',
+          src: `${GLOS}: bar, “elongate vertical marking”.`
         },
         {
           id: 'stripes',
           name: 'Stripes',
           icon: markIcon('stripes'),
           fig: () => markSvg('stripes'),
-          say: 'Stripes run along the body, from head to tail.',
-          eg: 'A horizontal line across the body is a clue in the breams.'
+          say: 'A stripe is a line that runs along the body, from head to tail.',
+          eg: 'A horizontal line across the body is a clue in the breams.',
+          src: `${GLOS}: stripe, “a contrasting longitudinal pattern in the form of a line”. ${DECK}: bream, “horizontal line across body”.`
         },
         {
           id: 'spots',
           name: 'Spots',
           icon: markIcon('spots'),
           fig: () => markSvg('spots'),
-          say: 'Spots: round marks, small or large, scattered or in rows.'
+          say: 'A spot is a round area of a different colour.',
+          src: `${GLOS}: spot, “a regularly shaped or rounded area of a colour different from adjacent areas”.`
         },
         {
           id: 'saddle',
           name: 'Saddle',
           icon: markIcon('saddle'),
           fig: () => markSvg('saddle'),
-          say: 'A saddle: a patch of colour on the back, like the yellow one of the Moorish idol.',
-          eg: 'Moorish idol.'
+          say: 'A saddle is a patch across the back, from one side to the other, like the yellow saddle of the Moorish idol.',
+          eg: 'Moorish idol.',
+          src: `${GLOS}: saddle, “a blotch extending across the dorsal surface from one side to another”. ${DECK}: “Yellow saddle”.`
         },
         {
           id: 'eyeband',
@@ -494,14 +503,16 @@
           icon: markIcon('eyeband'),
           fig: () => markSvg('eyeband'),
           say: 'A dark band across the eye.',
-          eg: 'Butterflyfish, adult spadefish.'
+          eg: 'Butterflyfish, adult spadefish.',
+          src: `${DECK}: “Black band covers eyes”.`
         },
         {
           id: 'false',
           name: 'False eye',
           icon: markIcon('false'),
           fig: () => markSvg('false'),
-          say: 'A false eye: an eye-like spot, often at the back of the dorsal fin or on the tail, to confuse predators.'
+          say: 'A false eye: an eye-like spot, often at the rear of the dorsal fin or on the tail, to confuse predators.',
+          src: `${DECK}: false eyes “may be located at rear of dorsal or on the caudal fin”. ${GLOS}: ocellus, “a round eye-like spot or marking with a marginal ring”.`
         }
       ],
       get check() {
@@ -528,7 +539,7 @@
           name: 'One scalpel',
           icon: featIcon('scalpel1'),
           fig: FEAT.scalpel1,
-          say: 'A scalpel: a sharp spine on the caudal peduncle, at the base of the tail. One scalpel: the surgeonfish.',
+          say: 'A scalpel on the caudal peduncle, at the base of the tail. One scalpel: the surgeonfish.',
           eg: 'Surgeonfish.'
         },
         {
@@ -545,15 +556,17 @@
           icon: featIcon('cover'),
           fig: FEAT.cover,
           say: 'A spine on the gill cover, the operculum: the angelfish. Its name, Pomacanthus, is Greek for “cover thorn”.',
-          eg: 'Angelfish.'
+          eg: 'Angelfish.',
+          src: `${GLOS}: operculum, “the gill cover”.`
         },
         {
           id: 'barbels',
           name: 'Barbels',
           icon: featIcon('barbels'),
           fig: FEAT.barbels,
-          say: 'Two barbels under the chin, feelers that search the sand for food.',
-          eg: 'Goatfish.'
+          say: 'Two barbels under the chin, which search for food.',
+          eg: 'Goatfish.',
+          src: `${DECK}: “Two chemosensory barbels to search for food”. ${GLOS}: barbel, “an elongate fleshy tentacle-like sensory projection, usually about the mouth”.`
         },
         {
           id: 'trigger',
@@ -670,6 +683,14 @@
     Barbels: 'Two chemosensory barbels to search for food',
     'Locking spines': '3 Dorsal spine (can lock into place when threatened)'
   };
+  // The words the slides' text does not define, from a public reference, named as such (rules C1, C2): [line, source].
+  const FISHIDER = 'fishIDER glossary (CSIRO)';
+  Object.assign(OFFICIAL, {
+    Stripe: ['a contrasting longitudinal pattern in the form of a line', FISHIDER],
+    Spot: ['a regularly shaped or rounded area of a colour different from adjacent areas', FISHIDER],
+    Saddle: ['a blotch extending across the dorsal surface from one side to another', FISHIDER],
+    'Caudal peduncle': ['the posterior part of body between the rear parts of the dorsal and anal fins, and the caudal fin', FISHIDER]
+  });
   const wordOf = term => WORDS.find(w => w[0].toLowerCase() === String(term).toLowerCase());
   const C = {
     id: 'fishbasics',
@@ -681,7 +702,7 @@
       const w = wordOf(term);
       return w && w[1] ? 'basics|' + w[1] : '';
     },
-    official: term => (OFFICIAL[term] ? [term, OFFICIAL[term], DECK] : null),
+    official: term => (OFFICIAL[term] ? [term, ...(Array.isArray(OFFICIAL[term]) ? OFFICIAL[term] : [OFFICIAL[term], DECK])] : null),
     key: () => basicsKey(),
     // A drawn option of a check: the silhouette, fin, tail or marking its key names (the step's check says which).
     drawOpt: (t, c) => (({shape: shapeSvg, fins: finOne, tails: tailSvg, marks: markSvg})[c.kind] || (() => ''))(t),

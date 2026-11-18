@@ -420,14 +420,21 @@ Its own record and done feat (`SUBJECTS` `basics`), never the corals'. The "lowe
   slide number (the full deck and the light variant number their slides differently). **Read from the text of the light
   variant only**: the slides of tail shapes ("Caudal Fin Shapes") and markings ("Features & Markings") are pictures with no
   text, which the connector does not return, so the six tail shapes and six markings are the words the slides' text uses
-  (forked, deeply forked, notch, square, pointed, rounded, heart-shaped; band, bar, stripe, saddle, false eye) drawn by us,
-  with Wikipedia ("Fish fin", "Glossary of ichthyology") named for "truncate" and "emarginate" as
-  other sources (rule C1). A trainer or Pierre checks them against the pictures (ROADMAP "Fish basics").
+  (forked, deeply forked, notch, square, pointed, rounded, heart-shaped; bars, black band over the eye, saddle, false eye)
+  drawn by us. What the text does not define comes from public references, named on screen as "other sources" (rule C1):
+  the fishIDER glossary (CSIRO, fishider.org/en/glossary) for bar, stripe, spot, saddle, ocellus, barbel, operculum and
+  caudal peduncle; Wikipedia ("Fish fin", "Glossary of ichthyology") for the fins' places and for "truncate" and
+  "emarginate". The seven body shapes are drawn from the names of the presentation's groups by shape (Disc-shaped, Small and
+  Large ovals, Sloping heads / tapered bodies, Heavy bodies / large lips, Slender schoolers, Bottom dwellers, Odd-shaped
+  swimmers), the three groups that are not a shape (the swimmers with pectoral fins, the reddish big-eyed fish) left to the
+  identification groups; the last step, **One feature to look for** (scalpels, gill-cover spine, barbels, locking spines),
+  is deck content beyond the list Pierre gave. A trainer or Pierre checks all of it against the pictures (ROADMAP "Fish
+  basics, the rest").
 - **Left out, on purpose**: the "Dive sign" and "Quick quiz" slides and the practice photo slides (no photo of the deck is
   used: Pierre, 2026-11-04, never the slide photos, none has a credit we can show); the full deck's and the biology lecture's (Lecture 9) taxonomy,
   anatomy comparison and feeding guilds (the six trophic guilds): not about what to look at first; the survey methods
   lecture (Lecture 11); the family-level cues of every family (they stay on the families page and sheets); the fish
-  glossary underlining in cues and feedback (ROADMAP "Fish basics").
+  glossary underlining in cues and feedback (ROADMAP "Fish basics, the rest").
 - **The groups are the regional identification key's** (Pierre, 2026-11-04; rule S3): for the Indo-Pacific, the index of
   the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
   shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
@@ -449,7 +456,7 @@ Its own record and done feat (`SUBJECTS` `basics`), never the corals'. The "lowe
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
 - Its words are the fish glossary to be (underlined in cues and feedback, as Coral basics' words are for corals): **not built
-  yet**, the Words list of the module only (ROADMAP "Fish basics"). Same component and format as Coral basics.
+  yet**, the Words list of the module only (ROADMAP "Fish basics, the rest"). Same component and format as Coral basics.
 
 ## What `fish.json` supports, and the gaps
 

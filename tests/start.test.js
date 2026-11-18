@@ -639,12 +639,12 @@ test('sign-out clears the first-launch answer and Coral basics with the progress
   assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
-  // Every basics module's record (SUBJECTS basics.key: Coral basics', Fish basics') goes too: one device, several players.
-  assert.match(list, /SUBJECTS\.map\(S => S\.basics && S\.basics\.key\)\.filter\(Boolean\)/);
+  // Every subject's basics module record (subjDev 'basics': Coral basics', Fish basics') goes too: one device, several players.
+  assert.match(list, /\[[^\]]*'basics'[^\]]*\]\.map\(k => subjDev\(S\.id, k\)\)/);
   assert.deepStrictEqual(
-    C.SUBJECTS.filter(S => S.pages.includes('basics')).map(S => S.basics.key),
-    ['reefid-basics', 'reefid-basics-fish'],
-    'each subject with a basics module has its own record'
+    C.SUBJECTS.filter(S => S.pages.includes('basics')).map(S => C.subjDev(S.id, 'basics')),
+    ['reefid-basics', 'reefid-fish-basics'],
+    'each subject with a basics module has its own record, the corals keeping theirs'
   );
 });
 

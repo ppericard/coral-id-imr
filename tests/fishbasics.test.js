@@ -27,7 +27,7 @@ function load() {
     esc,
     shuffle: a => [...a].reverse(),
     pick: a => a[0],
-    basicsKey: () => 'reefid-basics-fish',
+    basicsKey: () => 'reefid-fish-basics',
     FISH: {
       groups: [
         {n: 1, title: 'Disk-shaped/Colorful'},
@@ -55,7 +55,7 @@ test('Fish basics: the module, its steps and the offers share one set of ids', (
   assert.strictEqual(M.id, 'fishbasics');
   assert.strictEqual(M.name, 'Fish basics');
   assert.strictEqual(M.hub, false, 'no line on the Tools page');
-  assert.strictEqual(M.key(), 'reefid-basics-fish');
+  assert.strictEqual(M.key(), 'reefid-fish-basics');
   const ids = M.steps.map(s => s.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per step');
   // Body shape first, then the groups (Pierre, 2026-11-04); the dorsal fin is a screen of Fins, never a step.
@@ -166,14 +166,16 @@ test('Fish basics: its own record and feat, the corals’ left alone', () => {
     K = C.subjectOf('coral');
   assert.ok(S.pages.includes('basics'));
   assert.strictEqual(S.pages[0], 'basics', 'the first Learn tab');
-  assert.deepStrictEqual(K.basics, {key: 'reefid-basics', feat: '_basics'}, 'the corals keep theirs');
-  assert.deepStrictEqual(S.basics, {key: 'reefid-basics-fish', feat: '_fbasics'});
-  assert.notStrictEqual(S.basics.key, K.basics.key);
+  assert.deepStrictEqual({...K.basics}, {feat: '_basics'}, 'the corals keep theirs');
+  assert.deepStrictEqual({...S.basics}, {feat: '_fbasics'});
   assert.notStrictEqual(S.basics.feat, K.basics.feat);
+  // The record on the device: subjDev 'basics', the corals' key as it always was.
+  assert.strictEqual(C.subjDev('coral', 'basics'), 'reefid-basics', 'the corals keep their record');
+  assert.strictEqual(C.subjDev('fish', 'basics'), 'reefid-fish-basics');
   // app.js basicsDone reads the subject's own record and feat; progress.js achBasics sets the subject's feat.
   const app = read('app.js'),
     prog = read('progress.js');
-  assert.match(app, /const basicsKey = \(S = SUBJ\) => \(S\.basics \|\| \{\}\)\.key \|\| BASICS_KEY;/);
+  assert.match(app, /const basicsKey = \(S = SUBJ\) => subjDev\(S\.id, 'basics'\);/);
   assert.match(app, /\[\(S\.basics \|\| \{\}\)\.feat \|\| '_basics'\]/);
   assert.match(prog, /function achBasics\(feat = \(SUBJ\.basics \|\| \{\}\)\.feat \|\| '_basics'\)/);
   // The fish's feat grants no achievement yet (the list waits for Pierre's name for it), the corals' still does.

@@ -199,7 +199,7 @@ function viewLab(h) {
     )
     .join('')}</div>
   <h3>Now in the main sections</h3>
-  <div class="labgrad">${grad.map(p => `<a href="${esc(hr(p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
+  <div class="labgrad">${grad.map(p => `<a href="${esc(hr(p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.id === 'basics' ? basicsWords().name : p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(
     b =>
       (b.onclick = () => {

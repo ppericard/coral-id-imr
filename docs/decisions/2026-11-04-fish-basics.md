@@ -15,10 +15,11 @@ presentation (Lecture 10) holds the content: anatomy, tail shapes, markings and 
   regional key's (rule S3), body shape first, the dorsal fin the second screen of Fins, never the slides' photos, our own drawings and
   photos with known rights, public sources cited; a local course only as inspiration, never named; same component and format as Coral
   basics.
-- The integrator's calls (easy to correct): one engine, two contents (`BASICS.add`), the page key `basics` for both subjects with the
-  module of the subject on screen, a record and a done feat per subject (`SUBJECTS` `basics`), six steps (shape, groups, fins, tails,
-  markings, one feature), drawings for everything taught and the families' covers for the groups, and no achievement for it yet (its
-  name and tier are Pierre's).
+- Choices made while building, for Pierre's eye (listed in the PR, not decided with him): one engine, two contents
+  (`BASICS.add`), the page key `basics` for both subjects with the module of the subject on screen, a record and a done feat per
+  subject, six steps (shape, groups, fins, tails, markings, one feature), seven body-shape silhouettes named from the presentation's
+  groups by shape, drawings for everything taught and the families' covers for the groups, and no achievement for it yet (its name
+  and tier are his).
 - Where the deck's slides are pictures (tail shapes, markings), the connector returned no text: the words its text uses are drawn,
   and the two slides are to be checked against the drawings (ROADMAP "Fish basics, the rest").
 

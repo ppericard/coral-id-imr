@@ -2948,13 +2948,12 @@ let SYNC = store.get('reefid-account', null),
 
 // The basics module of a subject finished (Coral basics, Fish basics: proto/basics.js, proto/fishbasics.js; every step
 // seen), on this device or on another one (the done feat in the synced achievements record, progress.js achBasics). Its
-// record and feat are the subject's own (SUBJECTS basics: key, feat), so finishing one never hides the other's offers. The
-// Home line and the first-launch offers read it.
-const BASICS_KEY = 'reefid-basics'; // the corals' record (SUBJECTS basics.key)
+// record (subjDev 'basics': reefid-basics, reefid-fish-basics) and feat (SUBJECTS basics.feat) are the subject's own, so
+// finishing one never hides the other's offers. The Home line and the first-launch offers read it.
 // Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
-const basicsKey = (S = SUBJ) => (S.basics || {}).key || BASICS_KEY;
+const basicsKey = (S = SUBJ) => subjDev(S.id, 'basics');
 const basicsDone = (S = SUBJ) =>
   !!((store.get(basicsKey(S), {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})[(S.basics || {}).feat || '_basics']);
 // The basics module of the subject on screen (SUBJECTS pages 'basics') not done yet: what "I'm new" and the first-launch
@@ -3122,7 +3121,7 @@ const MODES = {
   learn: [
     // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path; Fish basics
     // (proto/fishbasics.js) is the same tab for the fish (subjWords: the subject's name for it, UNITS basics).
-    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, shown'],
+    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, one step at a time'],
     ['genera', 'Genera', 'Every genus, as photos or ID tips'],
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],

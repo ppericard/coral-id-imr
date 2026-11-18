@@ -4177,12 +4177,13 @@ async function fishBasicsCheck(b, base) {
       !/Fish basics|Basics/.test(card.tabs[0])
     )
       fails.push(`${W} the families page's block ${JSON.stringify(card)}`);
-    // Every step and every view: drawn, labelled, fitting.
+    // Not done before any step was seen; then every step and every view: drawn, labelled, fitting, its check answered.
+    if (await p.evaluate(() => basicsDone() || !!localStorage.getItem(basicsKey()))) fails.push(`${W} done before any step was seen`);
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
       await p.waitForSelector('.bx .bx-picks button', {timeout: 15000}).catch(() => fails.push(`${W} ${st}: no picker`));
       const n = await p.$$eval('.bx-picks button', L => L.length);
-      for (let k = 0; k < Math.min(n, 4); k++) {
+      for (let k = 0; k < n; k++) {
         await p.click(`.bx-picks button >> nth=${k}`);
         const m = await p.evaluate(() => {
           const f = document.querySelector('.bx-vfig'),
@@ -4196,9 +4197,37 @@ async function fishBasicsCheck(b, base) {
           };
         });
         if (!m.h || !m.say) fails.push(`${W} ${st} view ${k}: nothing drawn ${JSON.stringify(m)}`);
-        if (st !== 'groups' && m.h > h * 0.45 + 1 && w < 1000) fails.push(`${W} ${st} view ${k}: the drawing is ${m.h}px of ${h}`);
+        // A drawing at most 45% of a phone's or tablet's height, 62% of a desktop's (as Coral basics' photo, rule U2).
+        if (st !== 'groups' && m.h > h * (w < 1000 ? 0.45 : 0.62) + 1) fails.push(`${W} ${st} view ${k}: the drawing is ${m.h}px of ${h}`);
         if (m.wide) fails.push(`${W} ${st} view ${k}: wider than the screen`);
         if (!m.alt) fails.push(`${W} ${st} view ${k}: a drawing without its text alternative`);
+      }
+      // The step's check, answered (a drawing, a choice or the groups' photo): its feedback and report button, and the
+      // whole check on one screen between the header and the tab bar (rule U2; as basicsFit for Coral basics).
+      const ck = await p.evaluate(() => {
+        const d = document.querySelector('.bx-check');
+        if (d) d.open = true;
+        return !!document.querySelector('.bx-q .choice');
+      });
+      if (!ck) fails.push(`${W} ${st}: no check`);
+      else {
+        await p.click('.bx-q .choice >> nth=0');
+        const m = await p.evaluate(() => {
+          const top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight,
+            sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+            fb = document.querySelector('.bx-q .bx-fb');
+          return {
+            check: Math.round(fb.getBoundingClientRect().bottom - sum.top),
+            room: Math.round(tb - top),
+            text: fb.textContent.trim().length,
+            rep: !!fb.querySelector('[data-rep]')
+          };
+        });
+        if (!m.text) fails.push(`${W} ${st}: no feedback after the answer`);
+        if (!m.rep) fails.push(`${W} ${st}: no report button after the answer (rule U14)`);
+        if (w < 1000 && m.check > m.room) fails.push(`${W} ${st}: the answered check takes ${m.check}px, only ${m.room}px on screen`);
       }
     }
     // The groups come from the key: numbers and titles of fish.json, only the groups with families, their families as tiles.
@@ -4217,8 +4246,6 @@ async function fishBasicsCheck(b, base) {
     if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
       fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
     // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
-    const before = await p.evaluate(() => [basicsDone(), !!localStorage.getItem('reefid-basics-fish')]);
-    if (before[0]) fails.push(`${W} done before any step was seen`);
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
       await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
@@ -4226,7 +4253,7 @@ async function fishBasicsCheck(b, base) {
       for (let k = 0; k < 8 && (await p.$('.bx-wnext')); k++) await p.click('.bx-wnext');
     }
     const done = await p.evaluate(() => {
-      const st = JSON.parse(localStorage.getItem('reefid-basics-fish') || '{}'),
+      const st = JSON.parse(localStorage.getItem('reefid-fish-basics') || '{}'),
         a = JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}');
       return {
         fin: !!st.fin,
@@ -4243,10 +4270,19 @@ async function fishBasicsCheck(b, base) {
     await p.evaluate(() => (location.hash = 'home'));
     await p.waitForSelector('.hdoor.learn', {timeout: 15000});
     if (await p.$('.hdoor.learn .hdnew, .hdoor.learn .hdnewk')) fails.push(`${W} the Home line stays once Fish basics is done`);
+    // The Tools page lists its graduated tool under the name of the subject on screen's module, never both, and no tile for it.
+    await p.evaluate(() => (location.hash = 'tools'));
+    await p.waitForSelector('.labgrad', {timeout: 15000}).catch(() => fails.push(`${W} the Tools page does not open`));
+    const tools = await p.evaluate(() => ({
+      links: [...document.querySelectorAll('.labgrad a')].map(a => a.getAttribute('href') + ' ' + a.querySelector('b').textContent),
+      tile: !!document.querySelector('.labhub a[href*="basics"]')
+    }));
+    if (tools.tile || !tools.links.includes('#fish/learn/basics Fish basics') || tools.links.some(x => /Coral basics/.test(x)))
+      fails.push(`${W} the Tools page: ${JSON.stringify(tools)}`);
     // The corals still offer theirs: their record is their own.
     const cor = await p.evaluate(() => {
       const S = SUBJECTS[0];
-      return [basicsDone(S), S.basics.key];
+      return [basicsDone(S), basicsKey(S)];
     });
     if (cor[0] || cor[1] !== 'reefid-basics') fails.push(`${W} Coral basics wrongly done: ${JSON.stringify(cor)}`);
     if (errs.length) fails.push(`${W} ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
