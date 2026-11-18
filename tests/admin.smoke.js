@@ -494,7 +494,8 @@ async function sealPart(b, base, fails) {
     p.on('dialog', d => d.accept());
     // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
     // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
-    // (the hash change and the render a reply starts land within a frame).
+    // (the hash change and the render a reply starts land within a frame). The Analyses pages wait up to 60 s: the demo
+    // fits their report in a Web Worker, which a slow CI runner can take longer than 15 s to finish.
     // SHOTS=<dir>: screenshots of a few states for the PR (2x, the page's own size), else nothing.
     const shot = async (name, sel) => {
       if (!process.env.SHOTS) return;
@@ -507,6 +508,7 @@ async function sealPart(b, base, fails) {
     };
     const settle = async () => {
       await p.evaluate(() => (window.__calm = 0));
+      const timeout = /^#analyses/.test(await p.evaluate(() => location.hash)) ? 60000 : 15000;
       await p
         .waitForFunction(
           () => {
@@ -515,7 +517,7 @@ async function sealPart(b, base, fails) {
             return window.__calm >= 3;
           },
           null,
-          {timeout: 15000, polling: 'raf'}
+          {timeout, polling: 'raf'}
         )
         .catch(async () =>
           fails.push(
@@ -6346,6 +6348,89 @@ async function sealPart(b, base, fails) {
       await go('fish/photos/stats/difficulty');
       const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
       if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
+    }
+    // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
+    // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
+    // photo in play; the tree subjects' species with an `out`, and those in the game with no photo in play or under their
+    // target, from autosort.js fishCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
+    // reason chip narrowing the list and All bringing it back, a page on the Tree for a species in the game and none for
+    // one out, no sideways scroll, dark in the dark theme. The sea slugs' list may be empty: the page then says None.
+    for (const [h, subj] of [
+      ['photos/stats/taxa', 'corals'],
+      ['fish/photos/stats/taxa', 'fish'],
+      ['seaslug/photos/stats/taxa', 'seaslug']
+    ]) {
+      await go(h);
+      await p.waitForFunction(() => document.querySelector('#view .adm-taxa'), null, {timeout: 90000}).catch(() => {});
+      const tx = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          S = ASUBJ,
+          rows = [...V.querySelectorAll('tbody tr')],
+          ids = rows.map(r => r.dataset.taxon),
+          chips = [...V.querySelectorAll('[data-taxa]')].map(b => [b.dataset.taxa, Number(b.querySelector('b').textContent)]);
+        let want, outIds;
+        if (S.sheets) {
+          const D = fuData(),
+            C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
+          outIds = FISHC.raw.species.filter(s => s.out).map(s => s.id);
+          want = outIds.length + C.sp.filter(r => !r.n || r.obs < r.tgt).length;
+        } else {
+          const game = new Set(gameOf(DATA));
+          outIds = Object.keys(DATA.gen).filter(n => !game.has(n));
+          want = outIds.length + [...game].filter(n => covViews(n).every(([v]) => !covOf(n, v).n)).length;
+        }
+        return {
+          h: location.hash,
+          rows: rows.length,
+          want,
+          all: chips.length ? chips[0] : null,
+          outOk: outIds.every(id => ids.includes(id)),
+          why: rows.filter(r => !r.children[2].textContent.trim() || /undefined|null/.test(r.textContent)).length,
+          link: S.sheets
+            ? [...V.querySelectorAll('tbody tr')]
+                .map(r => [r.dataset.taxon, !!r.querySelector('a')])
+                .filter(([id]) => !outIds.includes(id))
+                .every(([, a]) => a)
+            : null,
+          outLink: rows.filter(r => outIds.includes(r.dataset.taxon) && S.sheets && r.querySelector('a')).length,
+          chips: chips.length,
+          note: (V.querySelector('p.note') || {}).textContent || '',
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        tx.rows !== tx.want ||
+        !tx.all ||
+        tx.all[0] !== '' ||
+        tx.all[1] !== tx.rows ||
+        !tx.outOk ||
+        tx.why ||
+        tx.link === false ||
+        tx.outLink ||
+        (subj !== 'seaslug' && !tx.rows) ||
+        (!tx.rows && tx.note !== 'None.') ||
+        tx.wide > 0
+      )
+        fails.push(`${w}px #${h}: Taxa ${JSON.stringify(tx)}`);
+      if (tx.chips > 2) {
+        // one reason: its chip's count in the list, All brings the whole list back
+        const nar = await p.evaluate(() => {
+          const b = document.querySelectorAll('#view [data-taxa]')[1],
+            n = Number(b.querySelector('b').textContent),
+            k = b.dataset.taxa;
+          b.click();
+          const V = document.getElementById('view'),
+            one = [...V.querySelectorAll('tbody tr')].length,
+            on = V.querySelector('[data-taxa][aria-pressed="true"]').dataset.taxa;
+          V.querySelector('[data-taxa=""]').click();
+          return {n, one, on, k, back: document.querySelectorAll('#view tbody tr').length};
+        });
+        if (nar.one !== nar.n || nar.on !== nar.k || nar.back !== tx.rows) fails.push(`${w}px #${h}: Taxa chip ${JSON.stringify(nar)}`);
+      }
+      if (tx.rows) {
+        const dkT = await darkCards(p, '#view .adm-tbl th');
+        if (dkT) fails.push(`${w}px #${h}: Taxa, dark theme: still light ${dkT}`);
+      }
     }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
