@@ -58,6 +58,7 @@ Newest first.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
