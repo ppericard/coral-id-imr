@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Photos › Tree, the structure editor (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 4;
-// Pierre, 2026-11-15, Q359, Q363 h A, Q366): the pure part. A family's circle in force and its state, its look-alike
+// Photos › Tree, the structure editor (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md): the pure
+// part. A family's circle in force and its state, its look-alike
 // pairs (the base's and his), the pair entries the draft writes (core.js contentPairKey, contentPairSet,
 // contentPairDrop), the Sheet's look-alike lines read with the pairs in force, the edits to check, the emptied pairs map
 // kept through two merges, and whether a draft changes the structure (its Publish confirms once). The edits are made up.
@@ -36,7 +36,7 @@ test('a pair edit: withdrawn over the base, added with its source, the base valu
   assert.deepStrictEqual(c, {pairs: {[K]: {v: null, was: 1, t: 5}}});
   c = C.contentPairSet(c, N, 1, null, {t: 'A made-up guide', u: 'https://example.org'}, 6);
   assert.deepStrictEqual(c.pairs[N], {v: 1, was: null, src: {t: 'A made-up guide', u: 'https://example.org'}, t: 6});
-  // an empty source is no source (never required: Q359 e)
+  // an empty source is no source (a source is never required)
   assert.ok(!('src' in C.contentPairSet({}, N, 1, null, {t: ' '}, 7).pairs[N]));
   // the base's value again: the entry goes, the map stays (the merge)
   const d = C.contentPairSet(C.contentPairSet(c, K, 1, 1, null, 8), N, null, null, null, 9);
@@ -54,7 +54,7 @@ test("a family's circle: the base, his edit in force (fresh, stale), the base's 
   assert.strictEqual(circleRow(S, F, {nodes: {[A.id]: {circle: e(2, 1)}}}, A.id).state, 'fresh');
   const none = circleRow(S, F, {nodes: {[A.id]: {circle: e(null, 1)}}}, A.id);
   assert.deepStrictEqual([none.v, none.state], [null, 'fresh']);
-  // edited over a base that changed since: his stays in force (Q359 c)
+  // edited over a base that changed since: his stays in force
   const st = circleRow(S, F, {nodes: {[A.id]: {circle: e(3, 2)}}}, A.id);
   assert.deepStrictEqual([st.v, st.state, st.base], [3, 'stale', 1]);
   assert.strictEqual(circleRow(S, F, {nodes: {[A.id]: {circle: e(1, 2)}}}, A.id).state, 'absorbed');

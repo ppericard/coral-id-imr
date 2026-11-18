@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Change the starting answer (Pierre, 2026-11-08, Q228): the admin's change of a player's first-launch answer for one
-// subject (core.js startAdminSet; Code.gs users_ userStart, sheet v99; admin.js startBlock), merged into the player's
+// Change the starting answer: the admin's change of a player's first-launch answer for one subject (core.js
+// startAdminSet; Code.gs users_ userStart; admin.js startBlock), merged into the player's
 // devices by the normal sync (core.js startUnion); the fallback window starts again from it (model.js startStep,
 // startDue: the level card is still offered, on the answers given after the change only).
 const test = require('node:test'),
@@ -45,7 +45,7 @@ test('startAdminSet appends a choice event via admin: the history kept, the answ
   assert.deepStrictEqual(s.h, [...rec().h, ['imr', 75, NOW, 'admin']], 'every earlier event kept, the new one last');
   assert.deepStrictEqual([s.c, s.t, s.at, s.via], ['imr', NOW, 75, 'admin']);
   assert.deepStrictEqual(s.fb, rec().fb, 'the fallback cards shown stay (once per answer and direction)');
-  // The window starts again from the change (Pierre, 2026-11-08, Q228), as an answer given in the app does (startSet).
+  // The window starts again from the change, as an answer given in the app does (startSet).
   assert.deepStrictEqual(s.w, [], 'the window restarts');
   assert.ok(!('v' in s) && !('hd' in s) && !('wt' in s), 'its verdict, hold and epoch were about the former answer');
   assert.deepStrictEqual(JSON.parse(out.data[startKey('coral')]), s);
@@ -153,8 +153,8 @@ test('userStart: an archived record is read-only', () => {
 });
 
 // model.js startStep and startDue, run in Node on stubs (as tests/start.test.js): an answer set in the admin gets the
-// normal fallback card (Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level
-// card must still be offered"), counted on the answers given after the change only.
+// normal fallback card (a player who turns out much better than thought is still offered the level card), counted on
+// the answers given after the change only.
 test('the fallback window restarts at the change, and the level card still comes from the answers after it', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     block = cut(src, '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre'),
