@@ -1998,20 +1998,97 @@ async function freshPlayers(b, base, errs) {
     // "Mystery" tiles for every fish player (Pierre, 2026-11-04; progress.js mysteryOf): each family never met is a "?"
     // with no link, cover or name; each family met keeps its tile.
     const my = await q.evaluate(() => {
-      const L = [...slateGenera(), ...bonusList()],
+      // the families' grid: the families only (a scientific genus of the fish never shows in it: Pierre, 2026-11-18, Q404 A)
+      const L = slateGenera(),
         met = L.filter(n => asked(n) || n in introMap()),
-        M = [...document.querySelectorAll('#view .pwall .myst')];
+        M = [...document.querySelectorAll('#view .pwall:not(.psect) .myst')];
       return {
         n: L.length,
         met: met.length,
         myst: M.length,
         bad: M.filter(a => a.hasAttribute('href') || a.querySelector('img') || L.some(n => (a.title + a.textContent).includes(GX(n).name)))
           .length,
-        shown: document.querySelectorAll('#view .pwall .pw[href]:not(.myst)').length
+        shown: document.querySelectorAll('#view .pwall:not(.psect) .pw[href]:not(.myst)').length
       };
     });
     if (!my.met || !my.myst || my.met + my.myst !== my.n || my.shown !== my.met || my.bad)
       ui.push(`${width}px My progress mystery tiles: ${JSON.stringify(my)}`);
+    // The families' grid holds family units only, whatever the scientific tree does (Pierre, 2026-11-18, Q404 A, Q402 A; the
+    // bug: 17 "?" tiles named "a family you have not met yet" after the 65 families, scientific genera in play for a player
+    // at IMR with scientific names off). The IMR genera come in with their family at Open Water; the badge counts the
+    // families, so the grid and its count agree; a "?" says its own rank; the scientific tree's units show in its own
+    // section only, the ones not met only once it is on. The record and the settings are put back after.
+    const gridfix = await q.evaluate(() => {
+      const sk = startKey('fish'),
+        s0 = localStorage.getItem(sk),
+        q0 = Q.sci,
+        p0 = JSON.stringify(P),
+        out = {};
+      const grid = () => [...document.querySelectorAll('#view .pwall:not(.psect) > a')],
+        sect = () => [...document.querySelectorAll('#view .psect > a')],
+        say = tag => {
+          const m = /(\d+)\/(\d+) families unlocked/.exec((document.querySelector('.pbunl') || {}).textContent || ''),
+            sc = document.querySelector('#view .psect');
+          out[tag] = {
+            tiles: grid().length,
+            fam: slateGenera().length,
+            badge: m ? +m[2] : null,
+            gridMyst: grid().filter(a => a.classList.contains('myst') && a.title !== 'A family you have not met yet').length,
+            gridOther: grid().filter(a => a.classList.contains('bonus') || /Scientific genus/.test(a.textContent + a.title)).length,
+            sect: sect().length,
+            sectMyst: sect().filter(a => a.classList.contains('myst')).length,
+            sectBadMyst: sect().filter(a => a.classList.contains('myst') && a.title !== 'A genus you have not met yet').length,
+            head: sc && sc.previousElementSibling ? sc.previousElementSibling.textContent : ''
+          };
+        };
+      store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: []});
+      [...FISH.c1, ...FISH.c2, ...FISH.c3].forEach(n => {
+        const x = st(n);
+        delete x.dp;
+        delete x.ds;
+        x.pg = n === 'f:Butterflyfishes' ? 0.85 : 0.6; // Open Water; the Butterflyfishes at Advanced
+      });
+      Q.sci = false;
+      out.inPlay = bonusList().filter(n => GX(n).rank === 'genus').length; // the IMR genera, in play while the set is off
+      quizBoard();
+      say('off');
+      const g = bonusList().find(n => GX(n).rank === 'genus');
+      st(g).ok = 1; // one met: its progress shows, in the section
+      quizBoard();
+      say('offMet');
+      Q.sci = true;
+      out.units = SETS()
+        .find(S => S.k === 'sci')
+        .units().length; // the Butterflyfishes' genera, at Advanced
+      quizBoard();
+      say('on');
+      if (q0 === undefined) delete Q.sci;
+      else Q.sci = q0;
+      if (s0 === null) localStorage.removeItem(sk);
+      else localStorage.setItem(sk, s0);
+      Object.keys(P).forEach(k => delete P[k]);
+      Object.assign(P, JSON.parse(p0));
+      quizBoard();
+      return out;
+    });
+    {
+      const {off, offMet, on} = gridfix,
+        fine = x => x.tiles === x.fam && x.badge === x.fam && !x.gridMyst && !x.gridOther;
+      if (
+        !(gridfix.inPlay > 0 && gridfix.units > 0) ||
+        !fine(off) ||
+        off.sect ||
+        !fine(offMet) ||
+        offMet.sect !== 1 ||
+        offMet.sectMyst ||
+        offMet.head !== 'Scientific names' ||
+        !fine(on) ||
+        on.sect < 2 ||
+        !on.sectMyst ||
+        on.sectBadMyst
+      )
+        ui.push(`${width}px My progress, the families grid and the scientific tree: ${JSON.stringify(gridfix)}`);
+    }
     // The leaderboard's toast is never said on a subject without one (fish beta QA, 2026-11-06: it covered fish Home):
     // it stays due. Every subject has a leaderboard since sheet v95, so this one is made one without for the check. The
     // sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).

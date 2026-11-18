@@ -64,13 +64,18 @@ function quizBoard() {
     hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
   // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
   // They stay out of the ring and the counts.
-  const BO = bonusList();
-  const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
+  // The units of the opt-in sets in play (bonusList) are split by rank (boardParts): the ones at the slate's own rank (the
+  // coral bonus genera) come after it in its grid (BO); the others (the fish scientific genera, the species) never do:
+  // each set has its own section below (SECT).
+  const BA = bonusList(),
+    {grid: BO, sections: SECT} = boardParts(BA);
+  const shown = boardTiles(list, BA, SECT),
+    lv = Object.fromEntries(shown.map(n => [n, shownLevel(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
-  const st = Object.fromEntries([...list, ...BO].map(n => [n, lvStep(n)])),
+  const st = Object.fromEntries(shown.map(n => [n, lvStep(n)])),
     nst = k => list.filter(n => st[n] === k).length;
   let deg = 0;
   const ring = [5, 4, 3, 2, 1, 0]
@@ -86,17 +91,16 @@ function quizBoard() {
   // A unit never met, for a player who sees mystery tiles (mysteryOf, above): in every view, the same "?" in place of its
   // name, no cover, no link to its page, no tooltip naming it (the slate keeps the tile's number, as on the IMR slate).
   const myst = mysteryOf(),
-    mystT = `A ${SUBJ.one} you have not met yet`,
-    mystA = (cls, inner) => `<a class="${cls} s0 myst" title="${mystT}" aria-label="${mystT}">${inner}</a>`;
+    mystA = (cls, inner, n) => `<a class="${cls} s0 myst" title="${mystT(n)}" aria-label="${mystT(n)}">${inner}</a>`;
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
-  const tile = n => {
-    if (myst(n)) return mystA('pw', '<span class="pwq" aria-hidden="true">?</span>');
+  const tile = (n, tagged = true) => {
+    if (myst(n)) return mystA('pw', '<span class="pwq" aria-hidden="true">?</span>', n);
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
     const b = isBonus(n);
-    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : 'Bonus genus, not on the IMR list. ') : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${uname(n)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : 'Bonus genus, not on the IMR list. ') : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b && tagged ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${uname(n)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
   };
   // Your mix-ups to review: each pair you mixed up, ranked by your own confusion score (confOf), so a pair you now tell
   // apart sinks and the ones you still confuse lead; the chip opens the side-by-side comparison (with "Drill this pair").
@@ -129,10 +133,17 @@ function quizBoard() {
     st[n] > 0 && st[n] < 5
       ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>`
       : '';
+  // The sets that are not at the slate's rank, each its own section under the view (Pierre, 2026-11-18): the tiles of the
+  // photo wall, smaller, with no tag (the heading names the set); any view shows them the same way.
+  const sects = () =>
+    SECT.map(
+      ({S, L}) =>
+        `<h3 class="label psech">${esc(S.name)}</h3><div class="pgrid pwall psect" data-set="${esc(S.k)}">${L.map(n => tile(n, false)).join('')}</div>`
+    ).join('');
   const gi = n => shownGroup(n) || 99,
     groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}</div>`,
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(n => tile(n)).join('')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them,
     // then Millepora (the benthic slate, no number: "F" for fire coral).
     slate: () => {
@@ -142,13 +153,13 @@ function quizBoard() {
         S = list.filter(n => !GX(n).n);
       const ps = n =>
         myst(n)
-          ? mystA('ps', `<b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i>?</i>`)
+          ? mystA('ps', `<b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i>?</i>`, n)
           : `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
       const bx = BO.map(n =>
         myst(n)
-          ? mystA('ps bonus', '<b>+</b><i>?</i>')
+          ? mystA('ps bonus', '<b>+</b><i>?</i>', n)
           : `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
@@ -166,13 +177,13 @@ function quizBoard() {
               ? ['F', 'IMR benthic slate, not a hard coral']
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
-        <span class="pseg">${L.map(n => (myst(n) ? mystA('', '<i>?</i>') : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
+        <span class="pseg">${L.map(n => (myst(n) ? mystA('', '<i>?</i>', n) : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
       ${
         BO.length
           ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => (myst(n) ? mystA('', '<i>?</i>') : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+        <span class="pseg">${BO.map(n => (myst(n) ? mystA('', '<i>?</i>', n) : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
   };
@@ -285,11 +296,12 @@ function quizBoard() {
   }
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
-    wrap.innerHTML = VIEWS[pv]();
+    wrap.innerHTML = VIEWS[pv]() + sects();
     $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
     requestAnimationFrame(() => {
       const g = wrap.firstChild;
-      if (g.classList.contains('pgrid')) fitTiles(g, 6);
+      if (g.classList.contains('pgrid'))
+        fitTiles(g, 6); // the sections under it keep their own size (app.css .psect)
       else
         g.style[pv === 'slate' ? 'minHeight' : 'height'] =
           Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16 - tabH()) + 'px';
@@ -341,6 +353,30 @@ const mysteryOf =
   (on = mysteryOn()) =>
   n =>
     on && !asked(n) && !(n in introMap());
+// The tooltip of a masked tile names its own unit's rank (Pierre, 2026-11-18: a scientific genus is not "a family"): the
+// rank its record carries (fish scientific genus, species), else the subject's unit word.
+const mystT = n => `A ${(GX(n) || {}).rank || SUBJ.one} you have not met yet`;
+// Where the units of the opt-in sets show on My progress (Pierre, 2026-11-18, Q404 A: the common and scientific trees are two
+// independent teaching trees; Q402 A: a level that is off keeps its progress and does not come into play). BA: the units in
+// play (bonusList: the coral bonus genera, the fish scientific genera and species). The ones at the slate's own rank (rankOf:
+// '') come after it in its grid; the others never do: each set has its own section {S, L, on}. While the set is on (Q[S.k])
+// it lists its units in play, met or not (the "?" tiles); while it is off (or has no switch: the species), only its units
+// met, from the whole set, and no section when none is. Pure on its inputs: tests call it. The badge counts the slate
+// (unlockN), so the grid and its count agree.
+const boardParts = (BA, sets = SETS(), on = S => !!Q[S.k], rk = rankOf, seen = n => asked(n) || n in introMap(), own = setOf) => ({
+  grid: BA.filter(n => !rk(n)),
+  sections: sets
+    .map(S => ({
+      S,
+      on: on(S),
+      L: on(S) ? BA.filter(n => rk(n) && own(n) === S) : (S.all ? S.all() : S.units()).filter(n => rk(n) && own(n) === S && seen(n))
+    }))
+    .filter(x => x.L.length)
+});
+// Every unit the board draws, once: the slate, the units in play and the sections' units (a section keeps the units met while
+// its set is off, and those are not in play). quizBoard builds each tile's level and step from this list (Codex review #1092:
+// a retained unit with no level threw when its tile rendered and blanked every grid).
+const boardTiles = (list, BA, SECT) => [...list, ...BA, ...SECT.flatMap(x => x.L)].filter((n, i, all) => all.indexOf(n) === i);
 // Header progress pill: always in view; the page itself is #progress.
 function showProg() {
   if (!DATA) return;
