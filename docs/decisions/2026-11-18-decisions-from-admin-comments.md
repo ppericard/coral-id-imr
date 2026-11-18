@@ -1,6 +1,6 @@
 # Decisions from the admin's code comments: kept here when the comments were cleaned
 
-Date: 2026-11-18. PR: the comment clean-up of `admin.js`. Rules touched: none (rule W19: history stays in git and the
+Date: 2026-11-18. PR: #1132, the comment clean-up of `admin.js`. Rules touched: none (rule W19: history stays in git and the
 PRs, decisions in `docs/decisions/`). Docs touched: none.
 
 ## Context
