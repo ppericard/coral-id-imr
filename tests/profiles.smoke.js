@@ -31,7 +31,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-// Three players through the real photo quiz (Pierre, 2026-11-02; docs/LEARNING.md): a complete beginner, an IMR RA
+// Three players through the real photo quiz (docs/LEARNING.md): a complete beginner, an IMR RA
 // after one lecture (knows some genera a little), an expert. The learner model is the test's, not the app's: know[g] =
 // chance to recognise genus g on a photo of average difficulty, lowered on harder photos and single views; otherwise a
 // guess among the plausible choices (none on a typed question, model.js TYPED: "I don't know" or another genus typed);
@@ -50,7 +50,7 @@ const server = http.createServer((req, res) => {
     r => r.abort()
   );
   // A genus first answered takes the domain-score bar (the gate floor, core.js SHEET_FLOOR), so the learning paths below are
-  // those of the current model, not of the moving average (Codex review #646).
+  // those of the current model, not of the moving average.
   await ctx.addInitScript(() => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
@@ -134,7 +134,7 @@ const server = http.createServer((req, res) => {
         smokeAnswer(pick); // tests/answer.js: the choice, or typed ('' = I don't know)
         know[t] += rate * (1 - know[t]);
         // Progress (core.js PROG): a genus reaches its exam's entry (95%) only once it has been asked beside one of its
-        // look-alikes (Pierre, 2026-11-02: never confirmed before it has been compared with the genera it gets confused with).
+        // look-alikes (never confirmed before it has been compared with the genera it gets confused with).
         if (examOn(t) && !typedOk.has(t) && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP)) early.add(t);
         if ((i + 1) % 100 === 0) {
           rows.push({
@@ -167,7 +167,7 @@ const server = http.createServer((req, res) => {
       };
     }
     // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff,
-    // the sheet's genus offset since 2026-11-06, Q133) is drawn far more often than the hardest. Made-up ratings: one
+    // the sheet's genus offset) is drawn far more often than the hardest. Made-up ratings: one
     // genus's photos rated easy and its offset low, another's hard and high.
     {
       P = {};
@@ -214,7 +214,7 @@ const server = http.createServer((req, res) => {
       PGD = keepGd;
       GDIFF = {};
     }
-    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, they are the genera
+    // Bonus genera (opt-in, with no weight cap or share of their own): once on, they are the genera
     // not met yet, which only the opening draws (openPick, when a question opens one: model.js openChance); the genus
     // draw of the questions themselves never asks them before their card; off, never drawn. Every slate genus met and
     // half way (nothing shaky: the opening is wide open), none of the bonus genera met.
@@ -283,23 +283,10 @@ const server = http.createServer((req, res) => {
     'calibration',
     JSON.stringify(R.cal)
   );
-  // 17 (was 16; photo memory, 2026-11-03): this seed went from 16, at the limit, to 17, while 6 other seeds gave 11.5
-  // genera on average before and 11.3 after (10-15), and tools/learnsim.js 30 seeds no change either (docs/LEARNING.md
-  // "Photo memory"): one draw, not a faster opening.
-  // Kept at 17 with the genus wrongly given out of the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in
-  // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
-  // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
-  // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
-  // Back to 17 with the global level's move on the genera and the success aimed for by level (2026-11-03,
-  // docs/LEARNING.md "Global level and genus", "Beginners and experts"): this seed meets 13 genera by question 100 (main
-  // 12; the level's move alone gave 18, when the limit went to 21 for a while). Margin 4. Over 5 seeds
-  // (tools/learnsim.js) the beginner meets 20.2 by question 100 (main 19.2), 28.0 by 200 (main 30.4).
-  // On the 8 seeds below: 10-19, mean 12.8 (main 14.5 after the candidate refill).
-  // On the mean of 8 seeds since the candidate refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined
-  // data.json, so every draw changed): this seed went from 12 to 19 with no change to the code, while the 8 seeds gave
-  // 12-16 (mean 13.9) before and 12-19 (mean 14.5) after. One seed sat inside the spread of the seeds and failed on a
-  // data change; the mean of 8 moves with the opening rule, not with one draw. For reference, before #413 the same 8
-  // seeds gave 8-12 (mean 9.8): the watched effect above.
+  // A focused beginner: on the mean of 8 seeds, at most 17 genera met by question 100 (the seeds give 12-19, mean about
+  // 14.5). One seed alone moves with any data change (a candidate refill changes every draw); the mean of 8 moves with
+  // the opening rule. tools/learnsim.js measures it over more seeds (docs/LEARNING.md "Photo memory", "The genus wrongly
+  // given in the Elo", "Global level and genus", "Beginners and experts").
   const fMean = R.focus.reduce((a, x) => a + x, 0) / R.focus.length;
   if (fMean > 17) fails.push(`beginner met ${fMean.toFixed(1)} genera on average in 100 questions (${R.focus.join(' ')}): not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
@@ -313,8 +300,8 @@ const server = http.createServer((req, res) => {
   if (e1.met <= b1.met) fails.push(`expert met no more genera than a beginner in 100 questions (${e1.met} vs ${b1.met})`);
   if (e3.met <= b3.met) fails.push(`expert opened no more genera than a beginner (${e3.met} vs ${b3.met})`);
   // Traps come only from genera met (first-meeting cards), so an expert has few at 100 questions; once their genera are
-  // open (300) they get one or more a question, and more than a beginner from the start. (The mean of 100 and 300 sat at
-  // the threshold and failed with some seeds, duels in the quiz or not: 4 seeds compared, 2026-11-02.)
+  // open (300) they get one or more a question, and more than a beginner from the start. (The mean of 100 and 300 sits at
+  // the threshold and fails with some seeds, duels in the quiz or not.)
   if (e3.traps < 1 || e1.traps <= b1.traps)
     fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question (beginner ${b1.traps} at 100)`);
   // Progress (core.js PROG, a moving average weighed by what each answer proves) climbs progressively: after 300
@@ -326,8 +313,7 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers,
-  // 2026-11-04; the hotfix of 2026-11-03 capped the chance itself at 0.5).
+  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers).
   if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
     fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
