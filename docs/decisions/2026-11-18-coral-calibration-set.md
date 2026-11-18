@@ -32,8 +32,10 @@ The integrator's calls inside it (easy to correct: a constant, a list, a rule in
 ## Consequences
 
 - The members gather answers about 28% faster than in the draw before (simulated share of questions 4.2% → 5.4%); the
-  median member reaches 20 answers in roughly 7 weeks at today's traffic (a guess; `node tools/calibset.js --progress`).
-- One cost left at the margin: the simulated beginner's true knowledge at question 300, −0.012 (bound −0.020, the margin
-  −0.02), none at 600. Put to Pierre in the PR with the alternative (no factor for beginners).
+  median member reaches 20 answers in roughly 7 weeks at today's traffic, the slowest quarter in 10 weeks or more and
+  the slowest in several months (guesses; `node tools/calibset.js --progress`).
+- One cost left, unclear: the simulated beginner's true knowledge at question 300, −0.013 on the confirmation seeds
+  (bound −0.023, past the margin's −0.02 though the mean is inside it), none at 600. Put to Pierre in the PR with the
+  alternative (no factor for beginners).
 - The explicit placement test (ROADMAP step 3) reads this set once its members are rated. Not decided here: whether a
   member may be drawn more for a player who has seen it, or shown alone more often (both listed for Pierre in the PR).
