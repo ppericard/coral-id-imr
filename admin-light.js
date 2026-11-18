@@ -239,8 +239,8 @@ function renderLight() {
     render();
     window.scrollTo(0, y);
   };
-  // A proposal that makes one of his ★ covers a juvenile (lightCovers): Pierre's question first (admin-covers.js JUV_Q,
-  // 2026-11-15), the cover's node named; yes keeps it as the cover, confirmed in the same Undo step; no accepts the tags
+  // A proposal that makes one of his ★ covers a juvenile (lightCovers): the juvenile question first (admin-covers.js
+  // JUV_Q), the cover's node named; yes keeps it as the cover, confirmed in the same Undo step; no accepts the tags
   // all the same, and the cover is then ignored as any juvenile's (the default applies; the Tree page asks again).
   const keepOf = (F, x) => {
     const ids = lightCovers(F, x);

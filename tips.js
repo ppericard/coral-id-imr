@@ -1,7 +1,6 @@
-// "Did you know?" tips (the owner, 2026-11-04: "for players we detect who never, or very very rarely, use photo
-// enlargement, show a 'Did you know?' pop-up [...] Target players without them knowing: those who never used a feature,
-// or once or twice maybe by accident, to remind them it exists. Once a player knows and has used it several times, how
-// often they use it is their preference."). The registry (TIPS) and the pure rules that pick a tip at a break; quiz.js
+// "Did you know?" tips: a reminder that a feature exists, for the players who never or hardly ever used it; once a
+// player has used it several times, how often is their preference. The registry (TIPS) and the pure rules that pick a
+// tip at a break; quiz.js
 // counts the uses (tipNote, tipZoomed), arms the break at Next (breakArm) and shows the card (tipShow, cardShow kind
 // 'tip'). No DOM here: loaded with the quiz (index.html tier 2) and tested in Node (tests/tips.test.js). Rules and the
 // state: docs/ARCHITECTURE.md "Did you know? tips"; the card: docs/DESIGN.md "Cards".
@@ -26,8 +25,8 @@
   const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10};
   const TIPS = [
     {
-      // Photo enlargement (the owner, 2026-11-04; in the logged answers one player enlarged a quiz photo on ~20-25% of
-      // questions, the others 12%, 2%, 2% and 0% of 131). For a player with 20 questions or more here and at most 2
+      // Photo enlargement (in the early logged answers one player enlarged a quiz photo on ~20-25% of questions, the
+      // others 12%, 2%, 2% and 0% of 131). For a player with 20 questions or more here and at most 2
       // photos enlarged ever; best right after a miss on a photo they did not enlarge (when a closer look would have
       // helped), else at any break from 20 questions later (40 for the first). Twice at most, the second 100 questions
       // after the first, and never once they have enlarged 3 photos.

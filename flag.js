@@ -1,4 +1,4 @@
-// "Bad photo" flag, for Pierre only: shown in the browser where the admin page holds his token (reefid-admin-vault).
+// "Bad photo" flag, for the admin only: shown in the browser where the admin page holds his token (reefid-admin-vault).
 // A small ⚑ button follows the photo under the pointer (any page, game or lightbox, every subject), in its top-right
 // corner so it never covers the view label or the game source (top-left). A click records the photo, its subject, its
 // id in that subject's curation, its unit, where it was seen (page, game level, view) and when, in localStorage
@@ -114,8 +114,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = {flagFile,
     btn.hidden = true;
     target = null;
   });
-  // Touch screens have no hover, and a tap on a game photo opens the enlarged view: the flag never showed there
-  // (Pierre, 2026-11-02). It now goes by itself on the biggest photo in view (the question's photo, the enlarged one),
+  // Touch screens have no hover, and a tap on a game photo opens the enlarged view: so there the flag goes by itself on
+  // the biggest photo in view (the question's photo, the enlarged one),
   // after each page change; a tap on another photo still moves it there.
   const touch = matchMedia('(hover: none)').matches;
   let pending = 0;

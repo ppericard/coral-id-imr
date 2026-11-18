@@ -23,6 +23,15 @@ lives in the code.
 - 2026-11-01: "the leaderboard takes long to load": the last board is kept on the device and shown at once, then
   replaced when the fresh one arrives; it is also fetched a few seconds after start-up. `progress.js` `BOARD_C`,
   `boardCached`, `loadBoard`.
+- 2026-11-02, the first RAs playing: "more on each player: their progress, the genera that were easy and less easy for
+  them, when they unlocked each genus, an analysis of a person's path": the admin's player Journey. `admin-journey.js`
+  `renderJourney`. The same day, on it: "bring that page's numbers into the journey" (the Games card, Players' numbers
+  for one player: `jGames`); "you know which question validated the exam" (a genus learned at its last right exam
+  question); "what is this curve based on?" (the learned curve counts only the genera whose time is known).
+- 2026-11-03, Coral basics: "give 2-3 examples on real photos, larger, beautiful photos": the growth forms step shows
+  2-3 large photos per IMR form (`proto/basics.js` `FORMS7`); "many will look at Separate and move on to step 7 without
+  seeing the other wall types": the walls step shows the four types one after the other, its main button "Next wall
+  type" until all are seen (`proto/basics.js`, the walls step).
 - 2026-11-04: "I love this kind of multifactor report… every 1000 new answers… a new section in the admin with several
   sub-pages, with visualisations, reports, graphs, tables": the admin's Analyses group, one report per 1000-answer
   milestone, computed by a GitHub Action and stored in the sheet. `analysis.js`, `admin-analyses.js`.
@@ -32,6 +41,8 @@ lives in the code.
 - 2026-11-04: "what can we learn from each play session, and from sessions in general?": Analyses › Sessions in
   figures (every session in a table, when sessions start, the result along a session and at its end, how sessions end,
   the breaks between them, the players who come back). `analysis.js` `sessDesc`.
+- 2026-11-06: "Journey is per mode, necessarily" and "everything that helps me follow how players' progress goes": one
+  Journey per subject, every subject's progress replayed from its answers. `admin-journey.js` `renderJourney`.
 - 2026-11-07 08:50, of a part of the slate opened by choice (the fish's third circle): "the player must be able to
   unlock them later, notably from My progress": My progress offers "Open them" as its card does. `progress.js`
   `quizBoard` (`[data-opens]`).
