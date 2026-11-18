@@ -6167,38 +6167,34 @@
   // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, lt, vr, streak,
   //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
   //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must
-  //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc must never
-  //   correct it again), rv when given (the rules version it was replayed with: mergeProgress then keeps it over
-  //   an older copy of the same answers), and the variant groups with no right answer in the log (vl, which the exam
-  //   reads over ps: model.js varLeft);
+  //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc
+  //   must never correct it again), rv when given (the rules version it was replayed with: mergeProgress then keeps it
+  //   over an older copy of the same answers), and the variant groups with no right answer in the log (vl, which the
+  //   exam reads over ps: model.js varLeft);
   // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
-  //   under the former model (a record without s.pg, before 2026-11-02: that genus takes the exam again; memRecalc, commit
-  //   of 2026-11-03), and the mark dropped too when the log has a miss after the exam that the game takes it away at
-  //   (r.lm later than s.mx, the time it was passed; 1 before 2026-11-02, so any such miss): misses logged but never in
-  //   the saved copy (a save refused, Codex review #399: 10 misses, pg 0.19, still learned) count as the game counts
-  //   them, and a recalculation alone (no such miss after the exam) keeps the mark; likewise the exam in course ends at
-  //   any miss on the genus, shown or given, later than its start (r.lx after s.ex.ts; an exam saved before it had its
-  //   start time: after the genus's last answer, s.at), as quiz.js answer ends it (Codex review #399: a miss logged over
-  //   a saved exam of 4 questions passed kept its 4); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
-  //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
-  //   (cor: the log does not say which view a photo was shown in);
-  // - the log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): a genus the log has answers on takes the
-  //   replay's record and counts also when the saved copy holds more answers there (they were counted twice: a reply
-  //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
-  //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
-  //   log: dropped);
+  //   under the former model (afterBkt: that genus takes the exam again), and the mark dropped too when the log has a
+  //   miss after the exam that the game takes it away at (r.lm later than s.mx, the time it was passed): misses logged
+  //   but never in the saved copy (a save refused) count as the game counts them, and a recalculation alone keeps the
+  //   mark; likewise the exam in course ends at any miss on the genus, shown or given, later than its start (r.lx after
+  //   s.ex.ts; an exam saved without its start time: after the genus's last answer, s.at), as quiz.js answer ends it; the
+  //   days answered right (dd, dl: the device's calendar days, for the comeback after a break); the last observations
+  //   shown (ro: the log keeps photo files, not observations); right with the corallites in view (cor: the log does not
+  //   say which view a photo was shown in);
+  // - the log is the only reference (rule D9): a genus the log has answers on takes the replay's record and counts, also
+  //   when the saved copy holds more answers there (counted twice: a reply lost then another device's save), its counts
+  //   and recent results only when none of them is replayable; a genus the log has no answer on keeps the saved record
+  //   only if it holds no answer either (its answers are in no log: dropped);
   // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back; the log's count there waits for checkpoints that do not hang on
-  //   it: a follow-up, branch claude/level-count-from-log) with the answer times (rt) of the same side, the later at,
-  //   rv when given; no ability when the log has no answer at all (rule D9; Codex review of #840).
+  //   cards met and the prompts, so it never goes back) with the answer times (rt) of the same side, the later at, rv
+  //   when given; no ability when the log has no answer at all (rule D9).
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
   const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   // vl (replayProgress vars): the unit's variant groups with no right answer in the log, kept on the record so the app's
   // exam asks them (model.js varLeft) even where the photos seen ps, merged with the saved copy below, hold a right answer
-  // the log lacks (one played before the fish answers were logged): the log is the only reference (rule D9; Codex review
-  // #953); quiz.js answer clears a group at a right answer on it (model.js varRight).
+  // the log lacks (one played before the fish answers were logged): the log is the only reference (rule D9); quiz.js
+  // answer clears a group at a right answer on it (model.js varRight).
   const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak', 'vl'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
@@ -6218,10 +6214,9 @@
       const s = isObj(S[g]) ? S[g] : null,
         r = isObj(R[g]) ? R[g] : null;
       if (g === LEVEL) {
-        // One rule for the level (rule D9; Codex reviews of #840): every field that feeds progress (the ability th, vr,
-        // lt, the typed opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the
-        // plain answer count (ok, ko: the clock the checkpoints hang on) keeps the larger of the two until
-        // claude/level-count-from-log.
+        // One rule for the level (rule D9): every field that feeds progress (the ability th, vr, lt, the typed
+        // opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the plain answer count
+        // (ok, ko: the clock the checkpoints hang on) keeps the larger of the two.
         const o = s ? dup(s) : {};
         LEVEL_LOG.forEach(f => (r && r[f] !== undefined ? (o[f] = dup(r[f])) : delete o[f]));
         if (r) {
@@ -6239,7 +6234,7 @@
         out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
         if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
         else if (typeof r.pg === 'number') out[g].pg = r.pg;
-        // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+        // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf).
         ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
         if (r.ty) out[g].ty = r.ty;
         return;
@@ -6262,7 +6257,7 @@
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
         if (afterBkt(s) && s.mx) {
-          // A variant group with no right answer in the log (r.vl, replayProgress vars; Q391 b): the mark goes, silently
+          // A variant group with no right answer in the log (r.vl, replayProgress vars): the mark goes, silently
           // (rule D6), its exam kept as passed but for that group, started at the later of the mark and the last miss so
           // a miss after it ends it (lx), ready at once (at 0: the app's EXAM.gap long past); the next exam question asks
           // the group (model.js examSet), a right answer makes it learned again.
@@ -6278,8 +6273,8 @@
   }
   // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B): the history every device of the
   // account shares, never mixed with this device's own answers not in the sheet yet, which stay the difference P - B and
-  // so go on top in the next three-way merge (Codex review #399, three cases: two devices adopting the same log counted it
-  // twice, an older app's answers were dropped, an unsent answer was taken into the baseline and lost). rec: the sheet's
+  // so go on top in the next three-way merge (otherwise two devices adopting the same log count it twice, an older app's
+  // answers are dropped, or an unsent answer is taken into the baseline and lost). rec: the sheet's
   // replay (replay.rec), M: the record adopted (replayedOf), rv: its rules version, B: the baseline before (the shared
   // saved copy). Per genus:
   // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
@@ -6288,7 +6283,7 @@
   // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
   // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
   //   keeps the larger count); when the sheet sent no level (no answer in the log), B's level, never the adopted one,
-  //   which holds this device's unsent answers (Codex review of #840).
+  //   which holds this device's unsent answers.
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -6319,23 +6314,22 @@
         out[g] = o;
       } else if (!r && b && n(b) > 0) {
         // A unit the log has no answer on whose shared copy counts answers: discarded by the adoption (rule D9), so no
-        // baseline either; this device's unsent answers on it stay the difference and go on top (Codex review of #840).
+        // baseline either; this device's unsent answers on it stay the difference and go on top.
       } else if (b) out[g] = dup(b);
     });
     return out;
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
   // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
-  // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
-  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version: replayedOf of R over
-  // P. No floor (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down; until then a subject could be
-  // replayed with the saved bars as a floor, and fish was).
+  // player by once their saved copy is behind the rules (Code.gs board_; rule D8). R: the replay (with the device's own
+  // answers on top, if any), P: the device's copy, rv: the replay's rules version: replayedOf of R over P. No floor: the
+  // log is the only reference, a bar may go down (rule D9).
   function replayAdopted(R, P, rv) {
     return replayedOf({P: R}, isObj(P) ? P : {}, rv);
   }
 
-  // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
-  // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
+  // Pages opened in a visit (the event 'pages'), to see whether the players who read the genus sheets progress faster.
+  // First-party, one
   // summary a visit, no free text: which pages were open, how many times and for how long (seconds visible, the page in
   // view), and the genus sheets opened: how many times, for how long, how the first one was reached (from: the quiz
   // feedback, a Learn page, My progress, anything else) and whether the genus had already been asked to the player
@@ -6350,8 +6344,8 @@
     GENUS: /^[A-Z][a-z]{2,30}$/,
     FROM: ['quiz', 'learn', 'progress', 'other']
   };
-  // The screen a summary was sent from (Pierre, 2026-11-18: the screen sizes the players really use, to design the
-  // multi-photo game formats): the usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
+  // The screen a summary was sent from (the screen sizes the players really use, for the multi-photo game formats): the
+  // usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
   // ratio to one decimal, the orientation (p: portrait, height >= width, as CSS's orientation; l: landscape), and the
   // width band of its short side (b: how many BANDS edges it is above: 0 ≤360, 1 361-390, 2 391-414, 3 415-600, 4 more),
   // taken on the device from the exact width, since a 10 px grid cannot keep the edges (a 393 px phone rounds to 390).
@@ -6380,7 +6374,7 @@
     };
   }
   // routes: begin
-  // The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
+  // The app's addresses (docs/ARCHITECTURE.md "Pages and routing"; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
   // #<section>/<page>[/<thing>…][?filters], in the words on screen: #learn/genus/Acropora, #practice/duels/A/B,
   // #identify/key?form=B&box=B1, #tools/anatomy, #leaderboard/achievements; Home is the clean URL. A subject other than
   // the corals puts its prefix first (SUBJECTS hash: #fish/practice/quiz), on the pages of the sections that follow the
@@ -6411,12 +6405,12 @@
     board: 'leaderboard',
     ach: 'leaderboard/achievements',
     about: 'about',
-    // Delete my account (sheet v58 selfDelete, #603): a page reached from About, its |done state after the deletion.
+    // Delete my account (Code.gs selfDelete): a page reached from About, its |done state after the deletion.
     'delete-account': 'about/delete-account',
     lab: 'tools',
     idkey: 'identify/key',
     fishkey: 'identify/key',
-    // The live mode (live.js; Pierre, 2026-11-17, Q393): a student's join page, its session code as a filter
+    // The live mode (live.js): a student's join page, its session code as a filter
     // (#live?code=123456, the address the trainer's lobby shows), and the trainer's page.
     live: 'live',
     'live-host': 'live/host'
@@ -6524,7 +6518,7 @@
     if (key != null && Sx && !ROUTE_SUBJ.includes(s0)) return out(null);
     return out(key);
   }
-  // The page name of a page key, logged in the visit summary (sheet v30 'pages') and used for the photo size per page:
+  // The page name of a page key, logged in the visit summary ('pages') and used for the photo size per page:
   // its address's section and page, its things and filters dropped ('learn.genus', 'learn.look-alikes',
   // 'practice.duels', 'identify.key', 'tools.anatomy', 'leaderboard.achievements', 'progress', 'home'), in the corals'
   // words whatever the subject (a page's identity). pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn
@@ -6541,7 +6535,7 @@
   }
   // routes: end
   // routes-migration: begin
-  // The data written under the old addresses and page names (before the URL refonte of 2026-11-05, Q53-Q56), moved once
+  // The data written under the old addresses and page names (before the current URL scheme), moved once
   // (rule W3: no old address is read anywhere else; the app moves its own stored data at start-up, migrateRoutes; the
   // sheet moves its rows once, Code.gs ONCE_ in its own PR). The old addresses were today's page keys, so routeOut is
   // their translation. Delete this with its callers once every device and the sheet have moved.
