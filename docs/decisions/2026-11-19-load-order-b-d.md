@@ -1,14 +1,14 @@
 # Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: docs/spec/loading.md "Load order in tiers", docs/ARCHITECTURE.md
+Date: 2026-11-19. PR: #1175. Rules or docs touched: docs/spec/loading.md "Load order in tiers", docs/ARCHITECTURE.md
 "Overview", docs/ROADMAP.md "Load order, further steps".
 
 ## Context
 
 The load order sends the files in tiers so that what a player waits for never shares a slow line with the rest
 (Pierre, 2026-11-02, the field station at about 86 kbit/s). Two steps were left in ROADMAP: the quiz's tier carried all
-of `learn.js` (about 95 KB, 20 KB gzipped) for a few look-alike helpers, and Home's tier carried all of
-`proto/lab.css` (about 83 KB, 13 KB gzipped) for a few rules My progress and the Genera page take. Both were built on
+of `learn.js` (about 95 KB, 31 KB gzipped) for a few look-alike helpers, and Home's tier carried all of
+`proto/lab.css` (about 83 KB, 16 KB gzipped) for a few rules My progress and the Genera page take. Both were built on
 2026-11-09, never pushed, and lost; this rebuilds them from the ROADMAP row.
 
 ## Decision
@@ -28,7 +28,7 @@ easy to correct (AGENTS.md "Working mode"), and nothing a player sees changes:
 
 ## Consequences
 
-- Tier 2 (the quiz) and tier 1 (Home) are lighter by the bytes the PR reports; the Learn pages wait for tier 3 when
+- Tier 1 (Home) is about 15 KB gzipped lighter and tier 2 (the quiz) about 30 KB; the Learn pages wait for tier 3 when
   opened before it, behind the loading bar, and the Tools wait for the Lab's stylesheet as they wait for its scripts.
 - `tests/tiers.test.js` holds it: no script of the quiz's tier needs a name only a later tier declares, each page's tier
   holds the script that draws it, no rule of `proto/lab.css` matches the markup of the pages before tier 5, and the
