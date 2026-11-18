@@ -7241,6 +7241,20 @@ const darkCards = (p, sel) =>
             )
               se.push(`${n}'s WoRMS page ${JSON.stringify(v).slice(0, 300)}`);
           }
+          // The genus-level leaf's photos are keyed by its photo unit (g:Chromodoris), not its leaf id (gl:g:…): its card
+          // on its WoRMS genus's page shows a cover, and its own page its cover thumbnail (Codex on #1062).
+          {
+            const gh = await sq.evaluate(
+              () =>
+                ([...document.querySelectorAll('.adm-crumbs a')].find(a => a.textContent === 'Chromodoris') || {}).getAttribute?.('href') ||
+                ''
+            );
+            const own = await sq.evaluate(() => !!document.querySelector('#view .adm-sthumb img'));
+            await sq.goto(base + 'admin.html?demo' + gh);
+            await swait(() => document.querySelectorAll('#view .adm-tcard').length > 0, "Chromodoris's WoRMS page");
+            const card = await sq.evaluate(() => !!document.querySelector('#view .adm-tcard[data-ttc="gl:g:Chromodoris"] img'));
+            if (!own || !card) se.push(`the genus-level leaf's WoRMS cover: own page ${own}, card ${card} (${gh})`);
+          }
         }
         // The fish's Tree after the switch: its own part, its own data; back on the sea slugs, the draft as it was.
         await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');

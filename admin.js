@@ -2887,10 +2887,11 @@ function renderFishUnits(id, view = TREE) {
     // default cover is the rule's on the same photos; a species card shows the species' own cover in force.
     const PL = {};
     U.forEach(x => Object.entries(E[x.id].rows).forEach(([s, r]) => (PL[s] = [...r.feat, ...r.rest])));
+    // A genus-level leaf (gl:g:…) and its photos are keyed by the photo unit (its sid, g:…), as the Key's cvOf.
     const cvw = x =>
         nodeCover(
-          x,
-          ttLeaves(TV, x).flatMap(s => PL[s] || []),
+          (TV.node.get(x) || {}).gl ? leafSid(TV, x) : x,
+          ttLeaves(TV, x).flatMap(s => PL[leafSid(TV, s)] || []),
           F,
           fuJ,
           tvLeaf(x)
