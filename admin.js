@@ -416,7 +416,7 @@ function step(from, to, msg) {
 // draft before this click (snap; recomputed only when undo, redo or another tab changed it).
 let ASIG = null,
   FSIG = null,
-  FSIG_F = null, // the fish part FSIG was read from (performance pass, 2026-11-09: below)
+  FSIG_F = null, // the fish part FSIG was read from (below)
   ASIG_OF = null;
 // The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
 // Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Tree) is timed. A click that left the fish
@@ -3689,8 +3689,8 @@ function render() {
   // Opened from its address, the page can be drawn before admin-visits.js is in, as a journey (below).
   if (cur === 'players/visits')
     return typeof renderVisits === 'function' ? renderVisits() : addEventListener('load', () => render(), {once: true});
-  if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
-  if (cur === 'players/groups') return renderGroups(); // the player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18)
+  if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats
+  if (cur === 'players/groups') return renderGroups(); // the player groups (sheet GROUPADM_SHEET)
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
   if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
@@ -4951,7 +4951,7 @@ function loadPages(force) {
         pgsAt = Date.now();
         return (PGS =
           j && j.ok && j.rows
-            ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // v58: an archive's apart (its Journey only)
+            ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // an archive's apart (its Journey only)
             : {err: j && j.error === 'token' ? 'Token refused' : 'Not available'});
       })
       .catch(() => {
@@ -8365,7 +8365,7 @@ async function draftMove() {
       await DW.migrate({d, b: b && b.genera ? b : null});
     }
   } catch (e) {
-    return false; // kept; Sign out tries again, and warns while they stay (Codex review #1078)
+    return false; // kept; Sign out tries again, and warns while they stay
   }
   ['reefid-curation-draft', 'reefid-curation-base'].forEach(k => {
     store.set(k, null);
@@ -8458,7 +8458,7 @@ async function lockOther() {
   sealing(false);
   signingOut = false;
   DW.carryOn(DW.out).then(r => {
-    draftLost = !!r.err; // a failed write back keeps the unload warning (Codex review #1078)
+    draftLost = !!r.err; // a failed write back keeps the unload warning
   });
   toast('Signed out in another tab, but the last changes of this one could not be sealed: Publish them, or Sign out here.', 15000);
 }
@@ -9431,7 +9431,7 @@ function renderHidden() {
 // chance). The views of Activity, Photo stats, To do › Health and the live Analyses views (LIVE_STATS); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
-  GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
+  GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd): {genus: [offset, weighed answers]}
   SMEM = memOf(null),
   SCONF = {},
   SFMT = {},
@@ -9563,7 +9563,7 @@ function loadStats(ratingsOnly) {
           // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
           SMEM = memOf(s.ok && s.mem);
           SCONF = (s.ok && s.conf) || {};
-          SFMT = s.ok ? fmtsOf(s) : {}; // the per-format offsets (sheet v68, core.js fmtOffsetsOf), as the app's PFMT
+          SFMT = s.ok ? fmtsOf(s) : {}; // the per-format offsets (core.js fmtOffsetsOf), as the app's PFMT
         })
       );
   const ga = ratingsOnly
@@ -10078,10 +10078,10 @@ function uprogHtml(u, S) {
 // on the player's Journey (its numbers at the top, per subject); Reports on the row's bar.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  // Last answer, any subject (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
+  // Last answer, any subject (who played most recently, seen on a phone without scrolling sideways),
   // to the minute, sorted by its exact time; the default sort, most recent first.
   ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
-  // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
+  // The devices they used: the distinct devices of their pages-opened summaries (the sheet's Pages tab, loadPages).
   ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
   ['groups', 'Groups', u => groupNames(u).length, 0, 'The groups they are in']
 ];
@@ -10116,7 +10116,7 @@ const SCOLS = [
     (u, S) => (x => (x.s ? `${x.s} <small>· ${x.len < 1 ? '<1' : x.len} min</small>` : '–'))(sxOf(u, S)),
     () => true
   ],
-  // The replayed subject's progress (SUBJECTS replay; the Progress column, sheet script v28).
+  // The replayed subject's progress (SUBJECTS replay; the sheet's Progress column).
   [
     'prog',
     'Progress',
@@ -10126,7 +10126,7 @@ const SCOLS = [
     u => (!u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')),
     S => !!S.replay
   ],
-  // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
+  // Photo exposure (docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
   // (Code.gs exposure_: ex {subject id: [seen, of, hit, asked, units]}). Photos = Seen %; Spread = Spread %, the one to
   // act on: whether the draw used the room it had.
   [
@@ -10190,10 +10190,10 @@ const devsOf = u => {
   }
   return DEVS.by[u.id] ? DEVS.by[u.id].size : 0;
 };
-// The subject a player answered last in (their Journey opens there; Pierre's list, 2026-11-06), else the first.
+// The subject a player answered last in (their Journey opens there), else the first.
 const lastSubj = u => SUBJECTS.reduce((b, S) => (sxOf(u, S).at > sxOf(u, b).at ? S : b), SUBJECTS[0]);
 const journeyHref = u => '#' + lastSubj(u).hash + 'players/list/journey/' + encodeURIComponent(u.name);
-// Sheet v81: each player's photo exposure per subject (ex).
+// Each player's photo exposure per subject (ex), from the player list.
 const exOf = (u, S = ASUBJ) => (u && u.ex && u.ex[S.id]) || null;
 // A cell: the share, its counts in the title; – when the player has no answer on a unit with game photos.
 const exCell = (k, n, tip) => (n ? `<span title="${esc(tip)}">${pct(k, n)}</span>` : '–');
@@ -10205,22 +10205,19 @@ const EXPO_CELL = {
     ),
   spread: (u, S = ASUBJ) => (x => (x ? exCell(x[2], x[3], `${x[2]} of ${x[3]} questions showed a colony new to them`) : '–'))(exOf(u, S))
 };
-// The beta group (sheet v48; Pierre, 2026-11-04: a subject in beta opens to a group he picks here, for now everyone, not
-// by one site-wide switch): for each subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once
-// it opens to all, even with its "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens
-// the subject to them, app.js subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all
-// above the table. Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_). Sheet v58: Archive
-// (userArchive, Board -2) and the Archived fold (users_ archived).
-// Out of the statistics (sheet v115, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
-// the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
+// The beta group (a subject in beta opens to a group the admin picks here, not by one site-wide switch): for each
+// subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once it opens to all, even with its
+// "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens the subject to them, app.js
+// subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all above the table. A delete
+// cleans up everything of the account (Code.gs deleteAccount_). Archive (userArchive, Board -2) and the Archived fold
+// (users_ archived).
+// Out of the statistics (ROADMAP "Security follow-ups"): a player or a device not signed in the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
   `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}">${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
-// Sheet v99: Change the starting answer (users_ userStart; core.js startAdminSet).
-// A player's starting answer per subject, in their bar (Pierre, 2026-11-08, Q228: a fallback card moved a player to the
-// wrong answer; "Change the starting answer" fixes it through the normal sync, never by hand in the sheet): the answer in
-// force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
+// Change the starting answer (users_ userStart; core.js startAdminSet): a player's starting answer per subject, in their
+// bar, fixed through the normal sync, never by hand in the sheet: the answer in force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
 // SUBJECTS start words), then Change / Cancel in the bar (no browser dialog), then one line saying whether it was done.
 // A subject with no answer saved shows nothing: there is nothing to change, the player is asked on their device.
 function startBlock(u) {
@@ -10253,18 +10250,18 @@ function startBlock(u) {
     });
   return rows.some(Boolean) ? `<div class="adm-ustart">${rows.join('')}</div>` : '';
 }
-// Cohorts and staff (sheet v171; Pierre, 2026-11-17: "chaque nouvelle cohorte aurait un leaderboard indépendant", "le
-// staff aurait les droits de 'trainer'"): a player's Cohort select in their bar (one cohort each; New cohort… names a new
+// Cohorts and staff (sheet COHORT_SHEET: each cohort its own leaderboard, the staff the trainer's rights): a player's
+// Cohort select in their bar (one cohort each; New cohort… names a new
 // one, its display name free text; Code.gs userGroup with cohort) and Staff, the trainer role of the instance (roleGrant,
 // roleRevoke). Each has its own leaderboard in the app; the staff leave the others.
 const COHORT_SHEET = 171;
 const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
-// Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
-// arbitraire de groupes"; "Staff" is not a role): one model for the beta groups, the cohorts and the staff (Code.gs
+// Player groups (sheet GROUPADM_SHEET; a player in any number of groups; "Staff" is not a role): one model for the beta
+// groups, the cohorts and the staff (Code.gs
 // groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
 // Groups lists every group with its settings (Board, Beta) and members, makes, renames and deletes an empty one.
-// Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
-// (the Staff toggle, which granted the trainer role, is gone at every version).
+// Roles stay apart: nothing here grants or revokes one. From an older script, the beta group and the cohort (no Staff
+// toggle at any version).
 const GROUPADM_SHEET = 179;
 const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
 const gdefs = () => (USERS && USERS.groupDefs) || [];
@@ -10494,8 +10491,7 @@ function bindGroups() {
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
-  // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale; Codex
-  // review #690).
+  // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale).
   pagesFresh('players/list');
   if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
@@ -10556,10 +10552,9 @@ function renderUsers() {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(u => `<option>${esc(u.name)}</option>`)
       .join('');
-  // A player's games, mix-ups, genera to review and days played are on their Journey page (Pierre, 2026-11-02: one place
-  // for a player's path); the row only opens it and the account tools.
-  // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
-  // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
+  // A player's games, mix-ups, genera to review and days played are on their Journey page (one place for a player's
+  // path); the row only opens it and the account tools.
+  // One compact bar under the row: Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
   const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
       ${SUBJECTS.map(S => uprogHtml(u, S)).join('')}
@@ -10589,10 +10584,11 @@ function renderUsers() {
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
       }${startBlock(u)}</div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
-  // account left (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
+  // account left (anonymous 2) are never a player: they only rate the photos.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
-  // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
+  // A script of version 13 or later gives ids; an older one doesn't, and every answer would look anonymous. With ids an
+  // empty list is fine.
   if ((USERS.v || 0) >= 13)
     (ANS.all || ANS.rows || []).forEach(r => {
       if (named.has(r[0]) || goneRow(r)) return;
@@ -10614,7 +10610,7 @@ function renderUsers() {
           : ago(u.at);
   }
   // Each beta group's line above the table (groupOn): how many players are in it, Add all for the others and Remove all
-  // for those in it (Pierre, 2026-11-17: "un bouton pour supprimer aussi ou enlever tous les gens de la bêta").
+  // for those in it.
   const gLine = SUBJECTS.filter(S => subjGroup(S) && !groupsOn())
     .map(S => {
       if (!groupOn(S))
@@ -10662,7 +10658,7 @@ function renderUsers() {
             ''
           )}</tbody></table></div><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
       : '') +
-    // v58: the archived records, read-only (Pierre, 2026-11-05: archived means kept, never used in normal operation): the
+    // The archived records, read-only (archived means kept, never used in normal operation): the
     // archive's name, its last save, answers and reports, its Journey (marked archived); Delete stays (either mode).
     ((USERS.archived || []).length
       ? `<details class="adm-uremoved"${USERS.archived.some(a => a.name === uDel) ? ' open' : ''}><summary>Archived (${USERS.archived.length})</summary><table class="adm-tbl"><thead><tr><th>Name</th><th>Last saved</th><th>Answers</th><th>Reports</th><th></th></tr></thead><tbody>${USERS.archived
@@ -10712,15 +10708,15 @@ function bindUsers() {
   const done = (msg, j) => {
     if (j && j.ok) {
       toast(msg);
-      // answers moved to another name or deleted: the levels and counts change; v55: a merge or delete also moves or
-      // removes reports, page summaries and log mentions (Codex review #600)
+      // answers moved to another name or deleted: the levels and counts change; a merge or delete also moves or removes
+      // reports, page summaries and log mentions
       sheetAgain('users', 'ans', 'stats', 'reports', 'pages', 'events', 'alerts');
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
     } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
   };
-  // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
+  // Leaderboard (a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
   $v.querySelectorAll('[data-uboard]').forEach(
     b =>
@@ -10755,10 +10751,10 @@ function bindUsers() {
           .catch(() => (toast('Not done (offline).'), render()));
       })
   );
-  // The beta group (sheet v48, groupOn): one player in or out (one click, no confirmation: Remove undoes Add), or every
+  // The beta group (groupOn): one player in or out (one click, no confirmation: Remove undoes Add), or every
   // player not in it yet (Add all, confirmed: a bulk action). Only the group changes; the player's app follows at its next
   // load or save.
-  // The group id is taken when the request leaves: the admin may switch subjects before it returns (Codex review #540).
+  // The group id is taken when the request leaves: the admin may switch subjects before it returns.
   const group = (names, on, msg, gid = ASUBJ.id) =>
     userPost({userGroup: names, group: gid, on})
       .then(j => {
@@ -10782,7 +10778,7 @@ function bindUsers() {
         group(name, on, on ? `"${name}" added to the ${S.name} beta.` : `"${name}" removed from the ${S.name} beta.`, S.id);
       })
   );
-  // A cohort (sheet v171, cohortOn): one player in one cohort, or in none; New cohort… asks its name (free text, the
+  // A cohort (cohortOn): one player in one cohort, or in none; New cohort… asks its name (free text, the
   // name players see above its leaderboard). One change each, no confirmation: the select takes it back (rule A2).
   $v.querySelectorAll('[data-ucohort]').forEach(
     sel =>
@@ -10836,8 +10832,8 @@ function bindUsers() {
         group(L, true, `${L.length} players added to the ${S.name} beta.`, S.id);
       })
   );
-  // Remove all: every player in the group out of it (confirmed: a bulk action, as Add all; Pierre, 2026-11-17, after
-  // adding everyone by mistake). You keep the subject (the admin is never in a group: subjOpen).
+  // Remove all: every player in the group out of it (confirmed: a bulk action, as Add all; it undoes an Add all made by
+  // mistake). You keep the subject (the admin is never in a group: subjOpen).
   $v.querySelectorAll('[data-ugnone]').forEach(
     gn =>
       (gn.onclick = () => {
@@ -10853,7 +10849,7 @@ function bindUsers() {
         group(L, false, `${L.length} players removed from the ${S.name} beta.`, S.id);
       })
   );
-  // Archive (sheet v58, was Rename v20; Pierre 2026-11-02 and 2026-11-05, Q84/Q88): keep a record apart under an archive
+  // Archive: keep a record apart under an archive
   // name ("Pierre-test"), out of normal operation (Board -2: no leaderboard, no achievement share, no beta group, no
   // player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
   // offered to sign out (sync.js archivedOf), then its owner may sign in under it and start empty.
@@ -10863,7 +10859,7 @@ function bindUsers() {
         const name = b.dataset.uarch,
           into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
         if (!into || into === name) return;
-        // A reserved name (core.js reservedName; Pierre, 2026-11-09) is refused here as the sheet refuses it (v119).
+        // A reserved name (core.js reservedName) is refused here as the sheet refuses it.
         if (reservedName(into)) return toast(`"${into}" is a reserved name: please choose another.`);
         if (
           !confirm(
@@ -10907,7 +10903,7 @@ function bindUsers() {
           .catch(() => done('', null));
       })
   );
-  // Change the starting answer (sheet v99, startBlock): Change… shows the answers, one picked asks Change / Cancel, Change
+  // Change the starting answer (startBlock): Change… shows the answers, one picked asks Change / Cancel, Change
   // sends it (users_ userStart: appended to the record's history, the revision bumped so the player's devices merge it at
   // their next sync), and the player's saved copy here takes the new record.
   const sSet = v => ((uStart = v), (uStartMsg = null), render());
@@ -10946,7 +10942,7 @@ function bindUsers() {
           .catch(() => end(false, 'Not changed (offline).'));
       })
   );
-  // Answers without a name (test runs, junk): select ids, then delete all their answers (sheet v17 anonDelete).
+  // Answers without a name (test runs, junk): select ids, then delete all their answers (the sheet's anonDelete).
   const aBoxes = [...$v.querySelectorAll('[data-aid]')],
     aBtn = $v.querySelector('[data-adel]'),
     aSync = () => aBtn && (aBtn.disabled = 'old' in aBtn.dataset || !aBoxes.some(x => x.checked));
@@ -10971,7 +10967,7 @@ function bindUsers() {
         .then(j => done(j && j.ok ? `${j.answers} answer${j.answers === 1 ? '' : 's'} deleted.` : '', j))
         .catch(() => done('', null));
     };
-  // Delete (sheet v55, Pierre 2026-11-05, Q89: two named choices, no default): Delete… shows them in the bar.
+  // Delete (two named choices, no default): Delete… shows them in the bar.
   $v.querySelectorAll('[data-udel]').forEach(
     b =>
       (b.onclick = () => {
@@ -11034,18 +11030,18 @@ function renderStats() {
           ? statsHealth()
           : statsPlayers();
 }
-// Every answer of every account (Pierre, 2026-11-04: no player filter), but those a deleted account left (sheet v55
-// readAnswers anonymous 2): they rate the photos only, never count as a player (Pierre, 2026-11-05, Q86).
+// Every answer of every account (no player filter), but those a deleted account left (readAnswers anonymous 2): they
+// rate the photos only, never count as a player.
 const goneRow = r => r[11] === 2;
 const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
 // A subject's answer rows (ANS.all holds every subject's, ANS.rows the replayed one's), a deleted account's left out: the
 // Players pages read the subject on screen's (Activity, a Journey, a session's summary; the list of players, each
 // subject's in its own columns).
 const rowsOf = (S = ASUBJ) => (ANS ? ofAns('rows:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id).filter(r => !goneRow(r))) : []);
-// Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
+// Recent sessions (who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
-// Players), custom (the custom quiz, quiz|s…, its typed answers included: the genera picked by the player, 2026-11-03),
+// Players), custom (the custom quiz, quiz|s…, its typed answers included: the genera picked by the player),
 // duel (the Duel tab), typed (|t, logged by the typed answers once they are in the quiz).
 const modeOf = m =>
   /^quiz-duel/.test(m)
@@ -11062,8 +11058,7 @@ const sessLen = L => {
   const m = Math.round((L[L.length - 1][1] - L[0][1]) / 6e4);
   return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
 };
-// The sessions unfolded on Recent sessions (Pierre, 2026-11-05: a tap unfolds a session's summary under it, a tap folds
-// it), by player id and first answer time, so a session stays open when the page is drawn again (↻, a saved copy read).
+// The sessions unfolded on Recent sessions (a tap unfolds a session's summary under it, a tap folds it), by player id and first answer time, so a session stays open when the page is drawn again (↻, a saved copy read).
 const SOPEN = new Set();
 // Sessions (Activity's recent ones, a Journey's): a tap (or Enter / Space) on a session unfolds its summary, again folds
 // it; its player's link opens the Journey as before. An unfolded session's panel is as wide as the visible part of the
@@ -11207,8 +11202,8 @@ function activityCard(R) {
   ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
 }
 // answerlog: begin
-// The Answer log's and the Pairs' readings for the subject on screen (fish admin at parity with the corals, Pierre
-// 2026-11-08), pure: tests/answerlog.test.js. Rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode,
+// The Answer log's and the Pairs' readings for the subject on screen (fish admin at parity with the corals), pure:
+// tests/answerlog.test.js. Rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode,
 // photos, expected, ability, new photos, choices, anonymous, ...].
 // The Answer log's Conditions: [name, answers, right] per condition that has answers. Every subject: the photo quiz and
 // the Duel tab. A subject with several views (SUBJECTS views): one view or all of a question's, and with or without its
@@ -11289,7 +11284,7 @@ function fishUnitRec(FA, n, gp) {
 }
 // The mix-ups logged with no other unit among the choices, as core.js confusionOf counts them (a trusted player's wrong
 // answer, its old), split by format: typed answers (core.js fmtOf: a typed question offers no choice) and the others,
-// logged before sheet v10. {typed, old}, each {"shown|answered": count}.
+// logged before the choices were (old). {typed, old}, each {"shown|answered": count}.
 function noChoiceMixups(R) {
   const tr = trustOf(R),
     out = {typed: {}, old: {}};
@@ -11310,8 +11305,9 @@ function noChoiceMixups(R) {
   return out;
 }
 // answerlog: end
-// Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log (analyses/learning/answer-log: what the answers
-// say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
+// Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log
+// (analyses/learning/answer-log: what the answers say, live; one role per admin page): one reading of the answer log,
+// each view its own cards.
 function statsPlayers() {
   const log = cur === 'analyses/learning/answer-log',
     head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
@@ -11323,7 +11319,7 @@ function statsPlayers() {
     return;
   }
   // Activity and the Answer log: the subject on screen's answers (every subject has both; the Corals | Fish switch, rule
-  // A4). Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
+  // A4). Another subject's units are named from its entries (fishAdmin, read once).
   if (!ASUBJ.replay && !FISHA)
     fishAdmin().then(() => (cur === 'players/activity' || cur === 'analyses/learning/answer-log') && FISHA && render());
   const R = rowsOf(),
@@ -11363,7 +11359,7 @@ function statsPlayers() {
       b[1]++;
     })
   );
-  // Genera shown, and how often each was given wrongly (Pierre's rule: that genus is not mastered either).
+  // Genera shown, and how often each was given wrongly (a genus given wrongly is not mastered either).
   const G = {};
   const gg = n => (G[n] = G[n] || {n, s: 0, ok: 0, w: 0});
   R.forEach(r => {
@@ -11372,14 +11368,14 @@ function statsPlayers() {
     g.ok += r[4];
     if (!r[4] && r[3]) gg(r[3]).w++;
   });
-  // Ability per genus (continuous difficulty, sheet v5): the median over players, from their last sync.
+  // Ability per genus (continuous difficulty): the median over players, from their last sync.
   const med = a => {
     const b = a.slice().sort((x, y) => x - y);
     return b.length ? b[Math.floor(b.length / 2)] : null;
   };
   const GT = {};
   ps.forEach(p => Object.entries((p.sum || [])[3] || {}).forEach(([g, t]) => (GT[g] = GT[g] || []).push(t)));
-  // Calibration: expected success of each answer (sheet v5) against the actual result, by band of expected success.
+  // Calibration: expected success of each answer against the actual result, by band of expected success.
   const E = R.filter(r => r[7] != null),
     BANDS = [
       [0, 0.6],
@@ -11408,8 +11404,8 @@ function statsPlayers() {
     mm = ml.length ? ml[0][1] : 1;
   const cond = logConds(R, ASUBJ);
   // A unit's name: its page's link (repUnit); an IMR sub-entry (a genus the IMR course names otherwise: fishAdmin imr)
-  // with its IMR name. Its Elo column only for the subject whose players' levels the sheet sends (sheet v5: the replayed
-  // one, SUBJECTS replay: ANS.players holds its progress's levels).
+  // with its IMR name. Its Elo column only for the subject whose players' levels the sheet sends (the replayed one,
+  // SUBJECTS replay: ANS.players holds its progress's levels).
   const unit = n =>
       repUnit(n, true) +
       (FISHA && FISHA.imr[n]
@@ -11464,8 +11460,8 @@ function statsPlayers() {
     </div>`);
   bindStats();
 }
-// Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
-// coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
+// Where to look for more photos: per genus x view, the reasons the game pool falls short, from coverage (covOf), photo
+// quality and difficulty (STATS Elo), players' levels per genus and their answers.
 function needsOf() {
   const OFF = 1.0,
     PS = photoStats();
@@ -11541,7 +11537,7 @@ function needsOf() {
       if (why.length) out.push({n, v, vt, c, why, sc});
     })
   );
-  // Several zooms (Pierre, 2026-11-01): a game question only shows views of one colony, so a genus needs colonies
+  // Several zooms: a game question only shows views of one colony, so a genus needs colonies
   // photographed at 2+ zoom levels; one row per genus with fewer than 3 of them.
   [...GAME].forEach(n => {
     const V = {};
@@ -11658,7 +11654,7 @@ function needsBody() {
 // (allPhotos), another subject's as the admin reads them (fishAdmin: each fish photo with its family, genus = the family).
 // The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone. A
 // fish photo already handled in the draft (fishRepTile's tools: × excluded, Not this, Removed) is out of the list before
-// it is sorted and cut (Codex review #800): acting on the photos shown brings the next ones in.
+// it is sorted and cut: acting on the photos shown brings the next ones in.
 function healthBad(R, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
@@ -11752,12 +11748,12 @@ const healthMedian = a => {
     k = b.length >> 1;
   return !b.length ? null : b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2;
 };
-// To do › All: one red line at the top when Health finds something wrong (Pierre, 2026-11-03): photos everyone misses,
+// To do › All: one red line at the top when Health finds something wrong: photos everyone misses,
 // genera players are stuck on. Nothing when all is well, or until the answers are loaded. S: the subject on screen (its
 // Health: the fish To do's from its answers and its units, fish admin at parity), never computed before another
 // subject's data are read (fishAdmin: its photos and slate), which it asks for.
-// Computed once per answer log, photo ratings and draft (MEMO, emptied when the draft changes): To do
-// draws itself again as its reads come in, and each draw went over the whole log (Pierre, 2026-11-04: admin speed).
+// Computed once per answer log, photo ratings and draft (MEMO, emptied when the draft changes): To do draws itself
+// again as its reads come in, and each draw would go over the whole log.
 function healthLine(S = ADM0) {
   if (!ANS || ANS.old) return '';
   if (S.sheets && !FISHA) return (fishAdmin(), '');
@@ -11767,7 +11763,7 @@ function healthLine(S = ADM0) {
   return (MEMO[k] = {a: ANS, s: STATS, f: FISHA, v: healthLine0(S)}).v;
 }
 function healthLine0(S) {
-  // the player rows, as the Health page: a deleted account's answers are no player (sheet v55; Codex review #600); another
+  // the player rows, as the Health page: a deleted account's answers are no player; another
   // subject's, its own answers (rowsOf)
   const R = S === ADM0 ? playerRows() : rowsOf(S),
     BY = Object.create(null);
@@ -11784,14 +11780,13 @@ function healthLine0(S) {
     ? `<p class="warn adm-hline" data-hline><a href="#${esc(S.hash)}inbox/todo/health"><b>Health</b></a>: ${L.join(' · ')}</p>`
     : '';
 }
-// Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
-// app works for players, with no new data. One role per admin page (Pierre, 2026-11-04): Inbox › To do › Health
-// (inbox/todo/health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
-// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (analyses/learning/stops, what we learn)
-// has where players stop (sessions = answers less than GAP minutes apart; how long they last; what the short ones
-// ended on) and the genus sheets they open. One reading of the answer log, each view its own sections. The answers and
-// players per day went with Players › Activity (activityCard). Anonymous ids only, like the other stats pages; every
-// account counts (Pierre, 2026-11-04).
+// Health (most players never send feedback): what the answers already logged say about how the app works for players,
+// with no new data. One role per admin page: Inbox › To do › Health (inbox/todo/health, is something wrong?) keeps what
+// needs action: photos everyone misses (maybe mislabelled or bad: a link to the genus page) and genera that don't take
+// off for players; Analyses › Learning › Stops (analyses/learning/stops, what we learn) has where players stop
+// (sessions = answers less than GAP minutes apart; how long they last; what the short ones ended on) and the genus
+// sheets they open. One reading of the answer log, each view its own sections. The answers and players per day are on
+// Players › Activity (activityCard). Anonymous ids only, like the other stats pages; every account counts.
 function statsHealth() {
   const H = HEALTH,
     stops = cur === 'analyses/learning/stops',
@@ -11912,9 +11907,9 @@ function statsHealth() {
 
   const BAD = healthBad(R);
   // Its photo tiles' Not this (a candidate photo: fishRepTile reads FISHC.byF) needs the family pages' data (fishLoad), as
-  // Reports does: read once there are photos to show, and Health drawn again when it comes (Codex review #800).
+  // Reports does: read once there are photos to show, and Health drawn again when it comes.
   if (!stops && ASUBJ.sheets && BAD.length && !FISHC) fishLoad().then(() => cur === 'inbox/todo/health' && ASUBJ.sheets && render());
-  // Each photo with every tool of its page (Q309): a coral photo its genus page's tile (coralRepTile), another subject's its
+  // Each photo with every tool of its page: a coral photo its genus page's tile (coralRepTile), another subject's its
   // family page's (fishRepTile), the numbers in its caption; a coral photo on no genus page, the photo and its numbers.
   const hnum = o =>
       `<span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>`,
@@ -11971,18 +11966,18 @@ function statsHealth() {
     bindF(hp);
     bindQ();
   }
-  // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
+  // The pages summaries come with their own read: the section fills in when they arrive, and is read again
   // once stale.
   if (stops) pagesFresh('analyses/learning/stops');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world'};
-// Confusions (Pierre, 2026-11-01): which genera, photos, colonies (iNat observations) and species players mix up, from
-// the answer log. A pair's rate = mixed up / offered together (needs the choices, logged since sheet v10); its score starts
-// from a prior (declared look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps
-// by the same score (app.js confOf, which also gives a shared growth form a slightly higher start). Answers from before
-// v10 only add to "Before v10" (mix-ups without the choices offered); typed answers, which offer none, to "Typed".
-// The subject on screen's (the Corals | Fish switch, rule A4; fish admin at parity, 2026-11-08): its answers, its units
+// Confusions: which genera, photos, colonies (iNat observations) and species players mix up, from the answer log. A
+// pair's rate = mixed up / offered together (needs the choices logged); its score starts from a prior (declared
+// look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps by the same score
+// (app.js confOf, which also gives a shared growth form a slightly higher start). Answers logged without their choices
+// only add to "Before v10" (mix-ups without the choices offered); typed answers, which offer none, to "Typed".
+// The subject on screen's (the Corals | Fish switch, rule A4; fish admin at parity): its answers, its units
 // (a coral genus's look-alikes and family from data.json, another subject's from its data as fishAdmin reads them:
 // fishUnitRec), its photos (the corals' with their view, another subject's as fishAdmin reads them, each under its unit)
 // and its pairs (the site's compare page for a subject that has one, SUBJECTS pages cmp; else each unit's page).
@@ -12029,7 +12024,7 @@ function statsConf() {
         ba: (C.dir[b + '|' + a] || [0, 0])[1],
         pt,
         sc: confScore(c, pv),
-        // A look-alike from the data (core.js dataLook, 2026-11-04): the games treat it as a declared one.
+        // A look-alike from the data (core.js dataLook): the games treat it as a declared one.
         dl: pt !== 'Look-alike' && dataLook(c, confScore(c, pv))
       };
     })
@@ -12100,7 +12095,7 @@ function statsConf() {
       many
         ? `<button type="button" class="adm-link" data-zo="${esc(o.f)}">${gnm(o.g)} <i>${esc(META[o.f].t || '')}</i></button>`
         : `<button type="button" class="adm-link" data-zf="${esc(o.f)}" data-g="${esc(o.g)}"><i>${esc(o.g)}</i> ${esc(VIEW_T[META[o.f].view] || '')}</button>`,
-    // The mix-ups logged without choices (noChoiceMixups): typed answers, and the answers from before sheet v10.
+    // The mix-ups logged without choices (noChoiceMixups): typed answers, and the answers logged without their choices.
     noCh = (L, t, h) =>
       L.length
         ? `<section class="adm-scard"><h3>${t}</h3><table class="adm-tbl"><thead><tr><th>Shown</th><th>${h}</th><th>n</th></tr></thead><tbody>${L.map(
@@ -12155,7 +12150,7 @@ function statsPhotos() {
     [10, '≥10']
   ])}<span class="note">answers</span></div>`;
   // Far harder than their genus (farHarder), among the photos in play: the photo, its reading and its genus's, the gap.
-  // Its own threshold (FAR.N answers), so it shows whatever the answers filter, an empty one included (Codex review #682).
+  // Its own threshold (FAR.N answers), so it shows whatever the answers filter, an empty one included.
   const FH = farHarder(poolStats().play),
     farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their genus <small>${FH.length}</small></h3>${
       FH.length
@@ -12201,8 +12196,8 @@ function statsPhotos() {
     L.forEach(p => (O[key(p)] = O[key(p)] || []).push(p));
     return O;
   };
-  // A row's reading m: the median of its photos; a genus (off: its offset, ?stats=1 gd, sheet v31) reads for a typical
-  // photo of it, its difficulty offset (Pierre, 2026-11-05), the median when the sheet serves none. Hardest first.
+  // A row's reading m: the median of its photos; a genus (off: its offset, ?stats=1 gd) reads for a typical photo of it,
+  // its difficulty offset, the median when the sheet serves none. Hardest first.
   const rowsOf = (O, T, off) =>
     Object.entries(O)
       .map(([k, a]) => {
@@ -12242,7 +12237,7 @@ function statsPhotos() {
   const x0 = Math.min(-1, Math.floor(ds[0] * 2) / 2),
     x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2),
     X = d => ((100 * (d - x0)) / (x1 - x0)).toFixed(1) + '%';
-  // One lane per view (Pierre, 2026-11-02: the three zoom levels must not mix as photos add up): a dot per photo, its
+  // One lane per view (the three zoom levels must not mix as photos add up): a dot per photo, its
   // size and strength growing with its answers (a pale small dot = a rough rating); the lane's median as a tick; from
   // BOX_MIN photos, a box (quartiles) and whiskers (the farthest photos within 1.5 boxes), behind the dots. Fewer photos
   // get no box: quartiles of 2-4 values would look more precise than they are.
