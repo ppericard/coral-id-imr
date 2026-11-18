@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v186 (2026-11-18)
+
+Comments only, no behaviour change: the comments of the script and of its embedded core.js say what the code does now and why, in short, with pointers to the docs instead of dated quotes, question numbers, version tags and review references (rule W19; Pierre's go for the clean-up, 2026-11-18). The code is token for token the same once comments are stripped; the decisions that were only in the comments moved to `docs/decisions/2026-11-18-decisions-from-code-comments.md`
+
 ## v185 (2026-11-18)
 
 No "apart" groups any more (Pierre, 2026-11-18: "Il peut très bien y avoir un classement général où tout le monde apparait. Il fallait surtout que le staff ne rentre pas en compétition avec les cohortes mensuelles, donc qu'on puisse exclure le staff d'un groupe. Ce que permet déjà les groupes"): the general board shows everyone and a group's board all its members (`groupBoards_`); `groupDo_` ignores `apart`, the Group settings tab's Apart column is written 0 and read no more, `groupDefs` no longer carry it. To keep one player off every board, the admin's Hide (`userBoard`, v20) stays
