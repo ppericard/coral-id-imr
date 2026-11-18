@@ -11331,13 +11331,15 @@ function noChoiceMixups(R) {
 // question g, docs/reviews/2026-11-05-name-confusion-study.md), trusted players only as the pairs: n typed answers, step
 // [spelling steps asked, retyped exactly], and the near-misses, each [shown, text as typed (lower case, trimmed), read as,
 // retyped: 1 exactly, 0 not, null no step, n], the most frequent first: a close typo of the unit shown (right, its spelling
-// step asked) or another unit's name (a typed mix-up). "I don't know" and exact answers are not near-misses.
+// step asked) or another unit's name (a typed mix-up). "I don't know" and exact answers are not near-misses. A removed
+// account's answers (anonymous flag 2: deleted or archived, as goneRow reads it) never show here (rule D7), though they
+// still count in the pooled pairs.
 function typedText(R) {
   const tr = trustOf(R),
     out = {n: 0, step: [0, 0], near: []},
     N = {};
   R.forEach(r => {
-    if (!r[2] || !tr[r[0]] || fmtOf(r[5], 0) !== 'typed') return;
+    if (!r[2] || r[11] === 2 || !tr[r[0]] || fmtOf(r[5], 0) !== 'typed') return;
     out.n++;
     const sp = r[16] === 0 || r[16] === 1 ? r[16] : null,
       a = r[3] || '';

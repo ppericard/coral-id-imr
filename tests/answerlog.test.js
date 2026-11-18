@@ -192,4 +192,7 @@ test('typedText: the typed near-misses as typed and the spelling steps, trusted 
     ['Stylophora', 'seriatopora', 'Seriatopora', null, 1]
   ]);
   assert.deepStrictEqual(typedText(R.slice(0, 12)), {n: 0, step: [0, 0], near: []}, 'nothing typed');
+  // A removed account's answers (anonymous flag 2: deleted or archived) never show, its text nor its steps (rule D7).
+  const gone = R.map(r => (r[0] === 'a' && C.TYPED_RE.test(r[5]) ? Object.assign([...r], {11: 2}) : r));
+  assert.deepStrictEqual(typedText(gone), {n: 0, step: [0, 0], near: []}, 'a removed account');
 });
