@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 179 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 180 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 179;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 180;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -312,6 +312,7 @@ function doPost_(e){
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readAlerts) return json_(readAlerts_(p.token));  // admin (v152): POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
+  if (p.readInfra) return json_(readInfra_(p.token));  // admin (v180): POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // v156: roles step 1
     if (!who) return json_({ok: false, error: 'token'});
@@ -2328,6 +2329,66 @@ function alertIds_(salt){
   const ids = new Set(liveRows_(true).map(r => aid_(r[0], salt))), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
   if (sh && sh.getLastRow() > 1) new Set(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(w => w.indexOf('~anon ') === 0)).forEach(w => ids.add(aid_(w, salt)));
   return ids;
+}
+// POST {readInfra: 1, token} (v180; Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4": the infrastructure dashboard, the numbers
+// to watch before the platform outgrows its free tiers; docs/PAGES.md "Infrastructure health") → {ok, cells, answers, tim,
+// backup}. The instance's players right (gate_), never public. Read-only, no script lock, nothing written (not even an
+// Audit row: reads are not audited), no player, name, id or answer in the reply: counts, tab names (fixed words) and times.
+// - cells: Google's limit counts every cell of every tab's grid (rows x columns as allocated, what getMaxRows and
+//   getMaxColumns say, not only the filled ones), INFRA.CELLS (10 million) for the spreadsheet; the five tabs holding the
+//   most. answers: the Answers tab's filled rows and columns, and its grid.
+// - tim: the Timings tab (TIM) of the last INFRA.DAYS days per operation: calls (the rows' weights summed), the weighted
+//   median, 90th percentile and maximum of Ms (timSum_), slowest p90 first. A row stands for Weight calls (TIM.EVERY).
+// - backup: the Deploy log's last "pCloud backup:" line (backupLog_): when, whether it saved, and its text (a file name
+//   or why not; the log never holds the token or the code: backup_ scrubs them), and the last one that saved.
+const INFRA = {CELLS: 10000000, TOP: 5, DAYS: 7, OPS: 8, LOG: 500};
+function readInfra_(token){
+  if (!gate_(token, 'players', 'readInfra')) return {ok: false, error: 'token'};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), now = Date.now(), tabs = [];
+  let total = 0, answers = {rows: 0, cols: 0, cells: 0};
+  ss.getSheets().forEach(sh => {
+    let r = sh.getMaxRows(), c = sh.getMaxColumns();
+    if (!isFinite(r) || !isFinite(c)) { r = sh.getLastRow(); c = sh.getLastColumn(); }  // a stand-in without a grid
+    total += r * c;
+    tabs.push([String(sh.getName()).slice(0, 40), r, c]);
+    if (sh.getName() === 'Answers') answers = {rows: Math.max(0, sh.getLastRow() - 1), cols: sh.getLastColumn(), cells: r * c};
+  });
+  tabs.sort((a, b) => b[1] * b[2] - a[1] * a[2]);
+  const out = {ok: true, cells: {total: total, limit: INFRA.CELLS, tabs: tabs.length, top: tabs.slice(0, INFRA.TOP)}, answers: answers,
+    tim: {days: INFRA.DAYS, ops: []}, backup: {saved: null, last: null}};
+  try {
+    const t = ss.getSheetByName(TIM.TAB), n = t ? t.getLastRow() - 1 : 0;
+    if (n > 0) out.tim.ops = timSum_(t.getRange(2, 1, n, 7).getValues(), now - INFRA.DAYS * 864e5).slice(0, INFRA.OPS);
+  } catch (e) {}
+  try {
+    const d = ss.getSheetByName('Deploy log'), n = d ? d.getLastRow() - 1 : 0;
+    if (n > 0) {
+      const from = Math.max(2, n + 2 - INFRA.LOG), rows = d.getRange(from, 1, n + 2 - from, 2).getValues();
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const s = String(rows[i][1]);
+        if (s.indexOf('pCloud backup: ') !== 0 || /weekly trigger/.test(s)) continue;
+        const e = {at: new Date(rows[i][0]).getTime() || 0, ok: /^pCloud backup: saved /.test(s), text: s.slice(15, 135)};
+        if (!out.backup.last) out.backup.last = e;
+        if (e.ok) { out.backup.saved = e.at; break; }
+      }
+    }
+  } catch (e) {}
+  return out;
+}
+// The Timings tab's rows [Time, Op, Ms, Rows, Cols, Version, Weight] since a time, per operation: {op, n: calls (weights
+// summed), p50, p90, max: ms, weighted by the rows' weights}, the slowest 90th percentile first.
+function timSum_(rows, since){
+  const by = {};
+  rows.forEach(r => {
+    const t = new Date(r[0]).getTime(), ms = Number(r[2]), w = Number(r[6]) || 1, op = String(r[1]);
+    if (!(t >= since) || !(ms >= 0) || !op) return;
+    (by[op] = by[op] || []).push([ms, w]);
+  });
+  return Object.keys(by).map(op => {
+    const v = by[op].sort((a, b) => a[0] - b[0]), n = v.reduce((s, x) => s + x[1], 0);
+    const q = f => { let c = 0; for (let i = 0; i < v.length; i++) { c += v[i][1]; if (c >= f * n) return v[i][0]; } return v[v.length - 1][0]; };
+    return {op: op, n: Math.round(n), p50: q(0.5), p90: q(0.9), max: v[v.length - 1][0]};
+  }).sort((a, b) => b.p90 - a.p90);
 }
 
 // Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence

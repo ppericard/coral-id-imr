@@ -1,0 +1,7 @@
+{
+  "r2": {
+    "bytes": 6300000000,
+    "at": "2026-11-15",
+    "how": "Cloudflare dashboard, R2, the photo bucket, Metrics (Storage); or rclone size on the bucket with a key that can read it. First figure: docs/reviews/2026-11-15-avif-study.md section 4 (about 6.3 GB). Change bytes and at together; tools/health.py and tools/brief.py warn once it is past 70 % of 10 GB and say when it is a month old."
+  }
+}

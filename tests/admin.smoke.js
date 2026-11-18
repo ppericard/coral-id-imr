@@ -5048,6 +5048,44 @@ async function sealPart(b, base, fails) {
           if (JSON.stringify(a1.rows) !== JSON.stringify(want)) fails.push(`${w}px fish Alerts from v${AV}: ${JSON.stringify(a1)}`);
           await q.close();
         }
+        // The infrastructure card above the Alerts list (Code.gs readInfra_ from admin.js INFRA_SHEET; docs/PAGES.md
+        // "Infrastructure health"): before its version, a line naming it (rule D4); from it the demo's made-up numbers, the
+        // cells (74% of 10 million) flagged and the Answers tab (39%) not, then Pages (42%) and R2 (51%) from GitHub, no
+        // horizontal scroll (this block runs once, at 1280; the 390 px look is checked by eye: rule W17).
+        {
+          const IV = await p.evaluate(() => INFRA_SHEET);
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px Infrastructure page error: ${e.message}`));
+          await q.goto(base + `admin.html?demo&v=${IV - 1}#inbox/todo/alerts`);
+          await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
+          const i0 = await q.evaluate(() => ({
+            text: document.getElementById('view').innerText,
+            rows: [...document.querySelectorAll('.adm-infra tbody tr')].map(tr => tr.cells[0].textContent)
+          }));
+          if (/Infrastructure: |not running yet/.test(i0.text) || i0.rows.join() !== 'Pages site,R2 storage')
+            fails.push(`${w}px Infrastructure before v${IV}: ${JSON.stringify(i0)}`);
+          await q.goto(base + `admin.html?demo&v=${IV}#inbox/todo/alerts`);
+          await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
+          const i1 = await q.evaluate(() => ({
+            rows: [...document.querySelectorAll('.adm-infra tbody tr')].map(
+              tr => [...tr.cells].map(c => c.textContent).join(' | ') + (tr.className ? ' [' + tr.className + ']' : '')
+            ),
+            wide: document.documentElement.scrollWidth > innerWidth + 1
+          }));
+          if (
+            i1.rows.length !== 7 ||
+            !/^Pages site \| 0\.42 GB of 1\.00 GB \| 42%$/.test(i1.rows[5]) ||
+            !/^R2 storage \| 5\.10 GB of 10\.00 GB · by hand \d{4}-\d{2}-\d{2} \| 51%$/.test(i1.rows[6]) ||
+            !/^p90 save \| 0\.9 s · 9800 calls, 7 days \| 18%$/.test(i1.rows[3]) ||
+            !/^Sheet cells \| 7\.40 M of 10\.00 M · 31 tabs \| 74% ! \[adm-warn\]$/.test(i1.rows[0]) ||
+            !/^Answers tab \| 41000 rows × 18 columns · 3\.90 M cells \| 39%$/.test(i1.rows[1]) ||
+            !/^p90 read Answers \| 2\.1 s · 1200 calls, 7 days \| 42%$/.test(i1.rows[2]) ||
+            !/^pCloud backup \| saved 3 days ago \|\s*$/.test(i1.rows[4]) ||
+            i1.wide
+          )
+            fails.push(`${w}px Infrastructure from v${IV}: ${JSON.stringify(i1)}`);
+          await q.close();
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');

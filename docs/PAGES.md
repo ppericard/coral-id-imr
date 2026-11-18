@@ -75,6 +75,7 @@ Every workflow in `.github/workflows/` (`tests/docs.test.js` checks that this ta
 | `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Stages the commit (`git archive`), builds the copy (`tools/build_site.py`: the players' curation, the stamps, the scripts minified; "The build at deploy" below), plays it (`tests/staged.smoke.js`), then publishes it. Commits nothing. | **Yes, the only deployer** |
 | `photos-r2.yml` — Photos to R2 | Push to `main` changing `img/**`, and manual dispatch. Copies `img/` to the Cloudflare R2 bucket and checks it (`tools/r2_sync.sh`); commits nothing. | No |
 | `analyses.yml` — Analyses report | Hourly schedule and manual dispatch (`force`). Reads the answer log and stores the report in the sync sheet (`tools/analyses.js`); skipped without `ANALYSES_ADMIN_TOKEN`; commits nothing. | No |
+| `health.yml` — Health | Hourly schedule (minute 41) and manual dispatch. Checks the live site, the sync script and the infrastructure numbers (`tools/health.py`; "Infrastructure health" below); a failed check fails the job (GitHub e-mails it) and opens one issue labelled `health` unless one is open. The script takes a few seconds (2.4 s by hand, 2026-11-18), a run well under a minute; read-only repository token plus issues, no secret; commits nothing. | No |
 | `learncheck.yml` — Learning check (tier 2) | Manual dispatch only: two versions (`before`, `after`), a subject, the app world, the rated world or both, seeds, questions or answers, the primary declared and its world, the looks, more learnsim options. Runs `tools/learnsim.js` on both versions with the same seeds and `tools/learncmp.js` on them; the report goes to the run's summary (rule L11, docs/LEARNING.md "Validating a learning change"). Commits nothing, no artifact. | No |
 | `clean.yml` — Clean branches and Actions | Weekly schedule (Sundays 18:37 UTC) and manual dispatch (`dry_run` by default, `also_delete`). Deletes merged branches, merge-train branches older than two days, and the runs of workflows no longer on `main`; keeps open-PR branches and its `KEEP` list (docs/HANDOVER.md "Clean branches and Actions"). Commits nothing. | No |
 | `pages-cancel.yml` — Cancel stuck Pages deployment | Manual dispatch only, with the SHA named in the error. Cancels that Pages deployment ("Manual recovery" below). | No |
@@ -101,6 +102,50 @@ The action's 10-minute timeout leaves room inside the 15-minute job timeout for
 cleanup. `deploy-pages` also handles cancellation signals. This prevents ordinary
 Actions queue blockage; **it cannot guarantee that GitHub's Pages backend will
 release an orphan lock**. That is a different state, with its own cancellation API.
+
+## Infrastructure health
+
+Pierre, 2026-11-18 11:21 ("lance 1, 2, 3 et 4"): an hourly check that the platform answers, and the numbers to watch before
+it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.py`, `tools/infra.json`, `tools/brief.py`
+`infra_line`, the sheet's `readInfra_` (`Code.gs`, sheet v180) and the admin's card (`admin.js` `infraRows`); tests
+`tests/infra.test.js` with `tests/infra.fixtures.py` (every request faked: rule D1), `tests/gates.test.js` (`INFRA_SHEET`).
+
+**The hourly check** (`health.yml`, `tools/health.py`; nothing it prints holds a secret, the log is public):
+- the site: `index.html` answers 200 and every `file.js?v=` in it is stamped with 10 hex (an unstamped `?v=N` means the
+  deploy's stamping did not run), and the `data.json?v=…` its preload names answers 200 with JSON;
+- the sync script answers the app's own public read-only request (`?stats=1&av=health`: an `av` that is no build number, so
+  the script writes nothing to Events for it) with `ok` and its `v`; behind `main`'s `VERSION` is a note inside the
+  self-update window (an hour after `Code.gs` last changed on `main`) and a failure after it (`autoUpdate` is stuck);
+- the weekly pCloud backup: **nothing public says when it ran** (the Deploy log is read only through `readInfra`, which needs
+  the admin token), so the check says "not exposed without the admin token" and passes; the admin card shows the backup's age.
+  With `INFRA_TOKEN` in its environment the check reads it and fails when the last save is over 8 days old (tested; not wired:
+  below);
+- each request is tried twice before it fails; a failure fails the job, which GitHub e-mails (to the account that last changed
+  the schedule line), and opens one issue labelled `health` unless one is open (close it once fixed: while it is open, nothing
+  more is written). A number past a limit is a warning, never a failure.
+
+**The numbers** (warning past 70% of a limit, the same rule in `health.py`, `brief.py` and `admin.js`):
+
+| Number | Limit | Where it is read |
+|---|---|---|
+| Pages site size | 1 GB published | `health.py` and the admin card: the blobs of `main`'s tree the deploy keeps (`.gitattributes` export-ignore), before minifying, one API call |
+| R2 storage | 10 GB free tier | **By hand**: `tools/infra.json` (`bytes`, `at`); said stale after 30 days |
+| Sheet cells | 10 million | Admin To do › Alerts, `readInfra_`: every tab's allocated grid (rows × columns) |
+| Answers tab | the same 10 million | the same: its rows, columns and grid |
+| Sheet response times | 5 s (`Code.gs` `TIM.SLOW`, our own budget, not a quota) | the same: the Timings tab's last 7 days, per operation, weighted p50, p90 and max |
+
+- **R2 is measured by hand**: no read-only token exists in CI (the R2 keys the workflows hold upload photos, and their scope is
+  still unchecked: docs/STATUS.md "Pierre's hands"), and a key that can write is not given to an hourly job. To measure: the
+  Cloudflare dashboard, R2, the photo bucket, Metrics (storage); then change `tools/infra.json` (`bytes` and `at` together).
+  First figure: about 6.3 GB on 2026-11-15 ([AVIF study](reviews/2026-11-15-avif-study.md) §4), already 63%.
+- **In `python3 tools/brief.py`** one `Infra:` line, read from the latest Health run's `infra` annotation (three REST calls,
+  inside the brief's 5 s); in the short brief only when a number warns or the check failed.
+- **In the admin** the card above To do › Alerts' list (`readInfra_`, the `players` right, never public; from sheet v180, rule D4),
+  with a "?" paragraph: the five sheet rows live, and the Pages and R2 rows from GitHub with the admin's own token (main's
+  tree and `tools/infra.json`), so those two show before the sheet script has the read. It holds what the hourly job does not.
+- **Not wired, for Pierre**: giving the hourly job `ANALYSES_ADMIN_TOKEN` as `INFRA_TOKEN` (one line in `health.yml`) would add the
+  sheet's cells, its slowest operation and the backup's age to the brief and to the run's public log (counts only, no player).
+  It is the token `analyses.yml` already uses every hour, but it is an access decision, so the integrator asks first.
 
 ## The build at deploy
 
