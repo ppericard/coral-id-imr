@@ -91,8 +91,10 @@ test('a script of the quiz’s tier needs no name that only a later tier declare
     for (const g of all.filter(g => tierOf(g) > 2))
       for (const n of decl[g]) {
         if (all.some(h => tierOf(h) <= 2 && decl[h].has(n))) continue; // declared by an earlier tier too
-        if (uses(src, n) && !new RegExp('typeof ' + n.replace(/\$/g, '\\$') + '\\b').test(src))
-          bad.push(`${f} uses ${n} (${g}, tier ${tierOf(g)})`);
+        const N = n.replace(/\$/g, '\\$');
+        // A local of the same name (const tag = …) is no use of the global.
+        if (new RegExp(`\\b(const|let|var|function)\\s+${N}\\b|[(,]\\s*${N}\\s*[,)=]`).test(src)) continue;
+        if (uses(src, n) && !new RegExp('typeof ' + N + '\\b').test(src)) bad.push(`${f} uses ${n} (${g}, tier ${tierOf(g)})`);
       }
   }
   assert.deepStrictEqual(bad, []);
