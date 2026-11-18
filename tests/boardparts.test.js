@@ -38,7 +38,7 @@ function run(subject = 'fish', ctx0 = {}) {
       ...(ctx0.Q ? {Q: ctx0.Q} : {})
     };
   vm.createContext(ctx);
-  vm.runInContext(code + '\nthis.T = {boardParts, boardUnits, mystT};', ctx);
+  vm.runInContext(code + '\nthis.T = {boardParts, boardTiles, mystT};', ctx);
   return ctx.T;
 }
 const names = x => x.sections.map(s => [s.S.k, s.L]);
@@ -87,13 +87,14 @@ test('every tile the board draws has its level and step: a unit kept in a sectio
     BA = [],
     x = T.boardParts(BA);
   assert.deepStrictEqual(names(x), [['sci', ['g2']]], 'g2 is kept in a section although it is not in play');
-  const units = T.boardUnits(list, BA, x.sections);
-  for (const n of [...list, ...BA, ...x.sections.flatMap(s => s.L), ...x.grid]) assert.ok(units.includes(n), n + ' gets a level and a step');
+  const units = T.boardTiles(list, BA, x.sections);
+  for (const n of [...list, ...BA, ...x.sections.flatMap(s => s.L), ...x.grid])
+    assert.ok(units.includes(n), n + ' gets a level and a step');
   assert.strictEqual([...new Set(units)].length, units.length, 'each unit once');
   const qb = block(SRC, 'function quizBoard() {', '\n}\n', {through: 1, file: 'progress.js'});
   assert.match(qb, /lv = Object\.fromEntries\(shown\.map/, 'the levels are built from every drawn unit');
   assert.match(qb, /st = Object\.fromEntries\(shown\.map/, 'and so are the steps');
-  assert.match(qb, /shown = boardUnits\(list, BA, SECT\)/);
+  assert.match(qb, /shown = boardTiles\(list, BA, SECT\)/);
 });
 
 test('a masked tile names its own unit’s rank, whatever the subject', () => {

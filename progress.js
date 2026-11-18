@@ -69,7 +69,7 @@ function quizBoard() {
   // each set has its own section below (SECT).
   const BA = bonusList(),
     {grid: BO, sections: SECT} = boardParts(BA);
-  const shown = boardUnits(list, BA, SECT),
+  const shown = boardTiles(list, BA, SECT),
     lv = Object.fromEntries(shown.map(n => [n, shownLevel(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
@@ -376,7 +376,7 @@ const boardParts = (BA, sets = SETS(), on = S => !!Q[S.k], rk = rankOf, seen = n
 // Every unit the board draws, once: the slate, the units in play and the sections' units (a section keeps the units met while
 // its set is off, and those are not in play). quizBoard builds each tile's level and step from this list (Codex review #1092:
 // a retained unit with no level threw when its tile rendered and blanked every grid).
-const boardUnits = (list, BA, SECT) => [...list, ...BA, ...SECT.flatMap(x => x.L)].filter((n, i, all) => all.indexOf(n) === i);
+const boardTiles = (list, BA, SECT) => [...list, ...BA, ...SECT.flatMap(x => x.L)].filter((n, i, all) => all.indexOf(n) === i);
 // Header progress pill: always in view; the page itself is #progress.
 function showProg() {
   if (!DATA) return;
