@@ -1702,7 +1702,9 @@ function signOutClear(all) {
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; rule D7)
       ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
       // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; rule D7)
-      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))
+      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k)),
+      // and the mimicry cards' marks, one record of the pairs shown (quiz.js MIMC; rule D7)
+      subjDev(S.id, 'mim')
     ]),
     ACHK,
     'reefid-ach-new',

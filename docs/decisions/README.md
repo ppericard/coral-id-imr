@@ -58,6 +58,7 @@ Newest first.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
 | 2026-11-18 | [Decisions found in the comments of the tools/ scripts](2026-11-18-decisions-from-comments-tools.md) | #1142 |
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |
 | 2026-11-18 | [Decisions from the admin's code comments: kept here when the comments were cleaned](2026-11-18-decisions-from-admin-comments.md) | #1132 |
