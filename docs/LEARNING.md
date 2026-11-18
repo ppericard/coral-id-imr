@@ -1413,18 +1413,15 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 | Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
 | Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ `RATED.CORAL_GD`, the spread of the sheet's genus offsets `gd` |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
-| The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
+| The app's estimates | its own | `--app truth`: told the truth ("fully rated"); `own`: its judged-ease prior alone; `sheet` (the corals): the sheet's photo Elo simulated on the players' own answers |
 | Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
 | Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
 
-The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
-`OPEN.K`, at most `OPEN.MAX` openings in `OPEN.WIN` answers, `RARE`) and runs the real `core.js` (`domStep`,
-`treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
-app's own. **The anchor.** The rated world is anchored on the app world where both reach: at 1,000 fish answers the
-shown score agrees within a few points, on the low side, while the rated world's levels and right rates run lower (its
-learner has no photo memory, the world adds the units' μ and the player's π, and a guess is uniform among the
-choices). So the rated world compares two arms within itself, as the protocol pairs them; its levels and right rates
-are not read against the app world's. The figures are in the notebook.
+The rated world runs the app's own engine (`model.js` whole and the real `core.js`, below). **The anchor.** It was
+checked against the app world on the fish: the shown score agreed, while the rated world's levels and right rates ran
+lower (its learner has no photo memory, the world adds the units' μ and the player's π, and a guess is uniform among
+the choices). So the rated world compares two arms within itself, as the protocol pairs them; its levels and right
+rates are never read against the app world's. The figures are in the notebook.
 
 **Long rated runs: the false-alarm table.** Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which scans
 every record of the player's progress, and the planner reads the bars of every unit in play several times an answer, so
@@ -1500,8 +1497,8 @@ of the slate is covered, at 0.85; the others 0.1. Fish: the lecture RA knows the
 genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others 0.1; the expert
 every family, genus and species at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most common
 families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at 0.02,
-and declines the scientific names (Not now on the set's offer). In the rated world the species units start at a
-profile's low value. First-launch answer with `--choice auto`: the beginner and the casual diver "new", the lecture RA "imr", the
+and declines the scientific names (Not now on the set's offer). In both worlds the species units start at a profile's
+low value. First-launch answer with `--choice auto`: the beginner and the casual diver "new", the lecture RA "imr", the
 others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
 (knows 4 genera in 5 well, the rest hardly) and `spotty` (knows the genera of some IMR lecture groups as an expert does,
 the others hardly).
