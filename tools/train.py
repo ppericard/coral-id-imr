@@ -47,7 +47,7 @@ GREEN = {'success', 'skipped', 'neutral'}
 CHANGES = 'tools/sync/changes'
 RELEASE = 'release'  # the branch the sheet script updates itself from; only this train moves it
 # PRs opened before the description check was written keep the older template: only later ones are checked.
-BODY_FROM = int(os.environ.get('TRAIN_BODY_FROM', '1114'))
+BODY_FROM = int(os.environ.get('TRAIN_BODY_FROM', '1117'))  # #1117 brought the check
 # Pierre's words, quoted and dated: "Pierre, 2026-11-18: «…»" (or "…", “…”), the date and the quote on the same item.
 QUOTE = re.compile(r'Pierre\b[^\n]{0,40}?\b20\d\d-\d\d-\d\d\b[^\n]*?(«[^»]+»|"[^"]+"|“[^”]+”)')
 CALL = re.compile(r"integrator['’]s call", re.I)

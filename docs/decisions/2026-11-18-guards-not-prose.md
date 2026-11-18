@@ -1,6 +1,6 @@
 # Guards rather than prose: what players see, the Bash guard, the night report
 
-Date: 2026-11-18 (Manila, evening). PR: the one adding `tools/guard_bash.py`. Rules or docs touched: AGENTS.md
+Date: 2026-11-18 (Manila, evening). PR: #1117. Rules or docs touched: AGENTS.md
 "Working mode" (a new bullet, and "No permission prompts for Pierre"), `.github/pull_request_template.md`,
 `.claude/settings.json`, `tools/train.py`, `tools/brief.py`, `tools/night.py`, ARCHITECTURE "Tools".
 
