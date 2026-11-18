@@ -50,6 +50,18 @@ const GATES = {
   // The live mode (live.js liveFrom, LIVE_CH: Q393; Code.gs lv_): a reply of the version that serves it is taken; an older
   // script's reply turns the page into one line ('old'), nothing more sent.
   LIVEGAME_SHEET: (v, N) => fn('live.js', 'const liveFrom = ', '\n', 'liveFrom', {LIVEGAME_SHEET: N})(v === undefined ? {} : {v}),
+  // The screen in each pages-opened summary (sync.js viewportOn, pagesScreen; core.js viewportOf, pagesClean): from the
+  // version whose pagesClean keeps it; before, the summary as it was (tests/pages.test.js pagesSend runs both).
+  VIEWPORT_SHEET: (v, N) => {
+    const on = fn('sync.js', 'const viewportOn = ', '\n', 'viewportOn', {sheetV: () => v, VIEWPORT_SHEET: N})();
+    const sent = fn('sync.js', 'const pagesScreen = ', '\nfunction pagesSend', 'pagesScreen', {
+      viewportOn: () => on,
+      viewportOf: require('../core.js').viewportOf,
+      window: {innerWidth: 360, innerHeight: 800, devicePixelRatio: 3}
+    })();
+    assert.strictEqual('vp' in sent, on, 'the screen is sent exactly when the gate is on');
+    return on;
+  },
   // The leaderboard tree sent only when it changed, or the sheet holds another (sync.js treeOn, boardUnits, treesSeen;
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).

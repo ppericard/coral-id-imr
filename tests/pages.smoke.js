@@ -3846,6 +3846,8 @@ async function pagesVisit(b, base) {
       visit: /^[a-z0-9]{8}$/.test(e.vi || ''),
       small: JSON.stringify(e).length < 1200 && !/https?:|\.webp|\.jpg/.test(JSON.stringify(e)),
       noName: !('name' in e) && !('ename' in e),
+      // No screen before the sheet keeps it (sync.js VIEWPORT_SHEET, rule D4): the summary as it was.
+      noScreen: !('vp' in e),
       sent: !posts.length
     };
     if (Object.values(want).some(x => !x)) fails.push(`pages summary (phone): ${JSON.stringify({want, e})}`);
@@ -3875,6 +3877,18 @@ async function pagesVisit(b, base) {
       e = Q.find(x => x.g && x.g[target] && !(x.r || {}).quiz) || {};
     if (!e.g || e.g[target][2] !== 'quiz' || e.g[target][0] !== 1 || posts.length)
       fails.push(`pages summary, sheet in a new tab: ${JSON.stringify({Q, target, posts})}`);
+    await c.close();
+  }
+  // From the sheet version that keeps it (sync.js VIEWPORT_SHEET; Pierre, 2026-11-18), the summary carries the screen,
+  // rounded (core.js viewportOf): this 390 x 800 window at pixel ratio 1, portrait, band 361-390. Queued, never sent.
+  {
+    const N = Number(/const VIEWPORT_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1]),
+      [c, p, posts] = await open(390, N);
+    await p.waitForTimeout(1100);
+    await hide(p);
+    const e = (await queued(p))[0] || {};
+    if (JSON.stringify(e.vp) !== JSON.stringify({w: 390, h: 800, d: 1, o: 'p', b: 1}) || posts.length)
+      fails.push(`pages summary, the screen from v${N}: ${JSON.stringify({vp: e.vp, posts})}`);
     await c.close();
   }
   // A summary queued for one player is sent only under that player (Codex review #423): queued signed out, it becomes

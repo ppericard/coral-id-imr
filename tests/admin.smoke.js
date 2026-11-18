@@ -6782,13 +6782,19 @@ const darkCards = (p, sel) =>
           stack: document.querySelectorAll('[data-visits="time"] i.adm-vgame').length,
           pages: (document.querySelector('[data-visits="pages"]') || {}).textContent || '',
           dev: [...document.querySelectorAll('[data-visits="device"] tbody tr')].map(r => r.textContent.replace(/\s+/g, ' ').trim()),
+          // Screens (Pierre, 2026-11-18): its count, the width bands [band, devices], the most common sizes [size, ratio, devices].
+          scr: ((document.querySelector('[data-visits="screens"] h3 small') || {}).textContent || '').trim(),
+          bands: [...document.querySelectorAll('[data-vsc="bands"] tbody tr')].map(r => [r.cells[0].textContent, r.cells[2].textContent]),
+          sizes: [...document.querySelectorAll('[data-vsc="sizes"] tbody tr')].map(r =>
+            [0, 1, 3].map(i => r.cells[i].textContent.trim()).join(' ')
+          ),
           wide: document.documentElement.scrollWidth - innerWidth
         }));
       // Reached from the fish side by its old address: the shared page, no prefix, the switch inert, the fish side kept.
       await go('fish/players/visits');
       const v0 = await vis();
       if (v0.hash !== '#players/visits' || !v0.off) fails.push(`${w}px Visits: #fish/players/visits at ${v0.hash}, switch inert ${v0.off}`);
-      if (v0.cards !== 'time pages key:coral key:fish sheets first device visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
+      if (v0.cards !== 'time pages key:coral key:fish sheets first device screens visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
       // Both subjects' visits, some only the corals', some only the fish's (Ana's in both, with a game: below); the fish's
       // pages their own rows.
       if (!v0.marks.includes('Corals') || !v0.marks.includes('Fish'))
@@ -6811,6 +6817,35 @@ const darkCards = (p, sel) =>
         !v0.dev.some(t => /^Computer/.test(t))
       )
         fails.push(`${w}px Visits: devices ${JSON.stringify(v0.dev)}`);
+      // Screens: the demo's 16 devices of Visits (admin-demo.js VH, VD), once each, whatever the filters; the players'
+      // visits sent none. A 393 px phone (shown as 390 x 660) counts in 391-414 by the band it sent; the Android tablet
+      // (a mobile browser 800 px wide) and the iPad (a computer's browser 820 px wide) as tablets.
+      const scr = JSON.stringify({scr: v0.scr, bands: v0.bands, sizes: v0.sizes});
+      if (
+        scr !==
+        JSON.stringify({
+          scr: '16 devices, 90 d',
+          bands: [
+            ['≤360', '2'],
+            ['361-390', '2'],
+            ['391-414', '6'],
+            ['415-600', '1'],
+            ['Tablet', '2'],
+            ['Desktop', '3']
+          ],
+          sizes: [
+            '410 × 780 2.6 4',
+            '390 × 660 3 3',
+            '360 × 660 3 2',
+            '380 × 740 2.8 1',
+            '430 × 750 3 1',
+            '800 × 1180 2 1',
+            '820 × 1100 2 1',
+            '1440 × 780 2 1'
+          ]
+        })
+      )
+        fails.push(`${w}px Visits: screens ${scr}`);
       if (once) {
         const click = async (f, v) => {
           errs.length = 0;
@@ -6828,6 +6863,8 @@ const darkCards = (p, sel) =>
         const vt = await click('dev', 'tablet');
         if (!/^\d+Visits \| [1-9]\d*Visitors/.test(vt.kpis) || !vt.dev.every(t => /^Tablet/.test(t)))
           fails.push(`${w}px Visits, Tablet: ${vt.kpis} ${JSON.stringify(vt.dev)}`);
+        // Screens are not filtered: the same devices under any filter.
+        if (vt.scr !== '16 devices, 90 d') fails.push(`${w}px Visits, Tablet: screens filtered ${vt.scr}`);
         await click('dev', 'all');
         await click('who', 'all');
         const vw = await click('by', 'week');
@@ -6849,7 +6886,7 @@ const darkCards = (p, sel) =>
         const vf = await click('subj', 'fish');
         if (
           !/^\d+of \d+Visits without a game \| 2Visitors \| 2Never answered/.test(vf.kpis) ||
-          vf.cards !== 'time pages key:fish first device visitors' ||
+          vf.cards !== 'time pages key:fish first device screens visitors' ||
           !/Families/.test(vf.pages) ||
           vf.fishPages.length ||
           vf.hash !== '#players/visits' ||
@@ -6868,7 +6905,7 @@ const darkCards = (p, sel) =>
         const vc = await click('subj', 'coral');
         if (
           !/^71Visits \| 21Visitors/.test(vc.kpis) ||
-          vc.cards !== 'time pages key:coral sheets first device visitors' ||
+          vc.cards !== 'time pages key:coral sheets first device screens visitors' ||
           /Families/.test(vc.pages)
         )
           fails.push(`${w}px Visits, Corals: ${vc.kpis} ${vc.cards}`);
@@ -6878,7 +6915,7 @@ const darkCards = (p, sel) =>
         await p.click('#help');
         if (await p.$('#admhelp [data-ht="page"]')) await p.click('#admhelp [data-ht="page"]');
         const ht = await p.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
-        if (!/tablet/i.test(ht) || !/a game = a Practice page/i.test(ht) || !/Subject/.test(ht))
+        if (!/tablet/i.test(ht) || !/a game = a Practice page/i.test(ht) || !/Subject/.test(ht) || !/Screens/.test(ht))
           fails.push(`${w}px Visits: help ${ht.slice(0, 80)}`);
         await p.click('#help');
         await go('players/visits');
