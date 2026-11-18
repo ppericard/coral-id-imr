@@ -3856,9 +3856,15 @@ whose look varies by region. Decision record: [2026-11-18-variant-classes](decis
   unit as a trap and duel partner for a photo of the class: FISH_PATH.md "Look-alikes at any rank", view 2), M7 as a
   family pair, the Look-alikes deck for every subject, the admin's ⚠ badge and its one-click lift, the feature frames'
   default.
-- **The check** (rule L11): proportionate, unit tests (`tests/mimicry.test.js`: the gate on made-up pools through the
-  draw, the groups unchanged, the card's photos); no simulation, since the change moves only the photos of seven species
-  and nothing the replay reads.
+- **The check** (rule L11, level 1: the photos of seven species, the draw only). Unit tests (`tests/mimicry.test.js`:
+  the gate on made-up pools through the draw, the groups unchanged, the card's photos). The app world, fish, the five
+  profiles × 5 seeds × 300 questions, against `main`, declared before running: primary `phLate@300:up` (the late-class
+  juveniles that resemble another species come from Open Water). Result (2026-11-18): the primary cannot tell (only 7
+  (profile, seed) pairs reach a unit with 20 answers and a phase photo in 300 questions, all at 0 both ways); every
+  guardrail held at every profile, the paired differences 0 to within 0.001 (true knowledge, units met at 100 and 300,
+  units at Open Water, the first unit at Open Water, the longest plateau, the share under ease 4, families at
+  Advanced). The real log (rule L12) cannot judge a draw change (a replay asks the questions already asked); the app
+  world is what was measured.
 
 ### Juveniles and colour phases in stages (2026-11-15, the first build, replaced on 2026-11-17 by "Juveniles and colour phases on their unit's mastery" above; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
 
