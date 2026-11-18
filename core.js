@@ -418,7 +418,7 @@
   // ?stats=1&s=fish reply (photo ratings, unit offsets and pairs, rated at the rank each question asked) names its
   // subject and is the one this version serves; the app asks for it and keeps it only from here, so an older script,
   // which answers &s=fish with the corals' numbers, changes nothing.
-  const FISHST_SHEET = 186;
+  const FISHST_SHEET = 187;
   const SUBJECTS = [
     {
       id: 'coral',

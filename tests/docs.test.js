@@ -611,11 +611,14 @@ const DOC_BUDGET = {
 };
 // A record has no entry of its own (every decision PR would add one): the same budget for each.
 const RECORD_BUDGET = [8, 200];
+// A sheet script change waiting for its version (tools/sync/changes/<branch>.md: one paragraph, one line) has none either.
+const CHANGE_BUDGET = [4, 1200];
 // Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
 const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
 const budgetOf = f => {
   const key = f.split(path.sep).join('/');
   if (DOC_BUDGET[key]) return DOC_BUDGET[key];
+  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_BUDGET;
   return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
 };
 
