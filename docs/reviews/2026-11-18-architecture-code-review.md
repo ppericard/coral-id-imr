@@ -44,11 +44,12 @@ on every change than they save:
    - The docs reach about 2 MB, and `ARCHITECTURE.md` alone is 710 KB.
 
 None of these is urgent for the players today. All of them slow every agent and every PR. They will decide whether a
-fourth subject, a second organisation or a real backend is a week or a month of work.
+fourth subject, a second organisation or a real backend is one PR or a long series of them (the "Migration path"
+below gives each step's measured time).
 
 ### Top 10 findings (ranked by impact)
 
-| # | Finding | Impact | Effort | Risk of the fix |
+| # | Finding | Impact | Scale (no duration; times in "Migration path") | Risk of the fix |
 |---|---|---|---|---|
 | R1 | Two engines behind one registry: the coral path and a "tree" path named after the fish, which also runs the sea slugs; corals are special-cased through flags (`replay`, `pool.files[0] === 'data.json'`) | High: every feature is built twice or branched; a fourth subject repeats the sea slugs' 44 commits | XL (in M steps) | Medium |
 | R2 | Global mutable state and no modules: about 1,100 top-level names in the player app, `SUBJ`/`P`/`Q`/`FISH` swapped by `inSubject` and `treePull`/`treePush`, 205 `typeof` guards | High: hidden coupling, re-entrancy and async hazards, tests forced to cut source text | L | Medium |
@@ -58,7 +59,7 @@ fourth subject, a second organisation or a real backend is a week or a month of 
 | R6 | `core.js` is a god module: 7,194 lines and 368 exports; storage keys, subjects, licences, fish tree building, the content editor, merges, Elo, achievements, typing, routes, page telemetry, all in one IIFE loaded in tier 1 | Medium-high | M | Low |
 | R7 | The subject configuration is two large registries with about 87 extension points (`SUBJECTS` 43 fields, `UNITS` 44): data, UI copy in HTML strings, server gates, admin page lists and analytics flags mixed | Medium-high | M | Low |
 | R8 | Data formats: `data.json` patched in place by 23 one-shot `apply_*.py` (9 referenced nowhere) while fish and sea slugs are built from sources; `curation.json` (2.7 MB, rule A1) is mostly machine output; corals at its root, others under a key, aliased (`treeCur`); three id schemes, `s:` meaning two things | Medium (high when a second organisation comes) | L | High (costly to undo: questions for Pierre) |
-| R9 | Tests tied to source text: 68 files cut source with `block()` (226 calls), 101 run code in `vm`, 73 read browser files; rule S1 checked lexically; 4 min 15 s locally for 1,864 tests, the slowest ones statistical | Medium | M | Low |
+| R9 | Tests tied to source text: 68 files cut source with `block()` (226 calls), 101 run code in `vm`, 73 read browser files; rule S1 checked lexically; 4 min 15 s locally for 1,864 tests, the slowest ones statistical <!-- effort-ok: a test run time --> | Medium | M | Low |
 | R10 | Docs and comments as a changelog: `ARCHITECTURE.md` 710 KB and `LEARNING.md` 718 KB (each over 150k tokens, more than an agent reads in one pass); 294 of 682 commits touch `ARCHITECTURE.md`; 416 "Pierre, date" and 458 Q-number references in 8 code files | Medium | M | Low |
 
 Lower ranks: R11 (admin.js, 11,720 lines, helpers duplicated with the app), R12 (per-subject Python pipelines), R13
@@ -83,7 +84,8 @@ Lower ranks: R11 (admin.js, 11,720 lines, helpers duplicated with the app), R12 
 
 ### The first steps (cheap and safe; detail in "Migration path")
 
-1. A minify step at deploy (R4): a day of work, about 27 s off a first visit in the field, with no behaviour change.
+1. A minify step at deploy (R4): tooling M, comparable to #783, #786, #811, #960, #1040: median 30 min (range 7 min-40
+   min); about 27 s off a first visit in the field, with no behaviour change.
 2. A gate floor and a deploy order (R3):
    - delete the gates the live script has long passed;
    - make the app deploy wait for the script's new version;
@@ -135,9 +137,9 @@ These are judgements, each with its evidence. They are the parts the redesign be
 | `SUBJECTS` fields (union) / `UNITS` fields (union) | 43 / 44; coral 32 + 18, fish 36 + 39, sea slug 36 + 36 | measured (`node`, parsing `app.js`) |
 | Sheet-version gates (`*_SHEET`) | 34 numeric, from v28 to v167; 17 below v100; `sheetV()` read 27 times | measured |
 | Sea-slug commits / files they touched | 44 commits; app.js 10, Code.gs 9, core.js 9, learn.js 7, admin.js 6, sync.js 4, model.js 4, quiz.js 3, progress.js 3 | measured (`git log --grep`) |
-| Unit tests | 196 files, 55,855 lines, 1,864 tests; 4 min 15 s wall locally (`node tests/run.js`), 702 s summed | measured |
+| Unit tests | 196 files, 55,855 lines, 1,864 tests; 4 min 15 s wall locally (`node tests/run.js`), 702 s summed <!-- effort-ok: a test run time --> | measured |
 | Tests cutting source text | `block()` in 68 files (226 calls); `vm` in 101; browser sources read in 73 | measured |
-| Smokes | 7 files, 21,784 lines; 14 CI jobs, 25.5 job-minutes, about 4.5 min wall; last 100 runs: 82 success, 11 failure, 6 cancelled | measured (`gh run`) |
+| Smokes | 7 files, 21,784 lines; 14 CI jobs, 25.5 job-minutes, about 4.5 min wall <!-- effort-ok: a CI run time -->; last 100 runs: 82 success, 11 failure, 6 cancelled | measured (`gh run`) |
 | Docs | ARCHITECTURE.md 710 KB (743 lines), LEARNING.md 718 KB, ROADMAP.md 197 KB, rules 132 KB; about 2 MB in `docs/` | measured |
 | Commits touching each file (682 since the history rewrite) | ARCHITECTURE.md 294, ROADMAP.md 236, admin.js 117, Code.gs 117, app.js 102, core.js 97 | measured |
 | Decision references in code | "Pierre, 20…" 416 times in core, app, model, quiz; Q-numbers 458 times in 8 files | measured |
@@ -146,7 +148,8 @@ These are judgements, each with its evidence. They are the parts the redesign be
 ## Findings
 
 Each finding gives the problem, the evidence, the proposal (incremental first, redesign where warranted), the effort
-(S under a day, M a few days, L one to two weeks, XL more, all for one agent with reviews) and the risk. Where a step is
+(S, M, L, XL: a rough scale of the change with no duration; the measured agent time of each migration step is in
+"Migration path", from `tools/effort.py`) and the risk. Where a step is
 costly to undo (a data format, a structure other code follows, players' stored data), it says so and lists the question
 for Pierre.
 
@@ -278,7 +281,7 @@ must keep the genus names as unit ids (see R8).
 - `RV_SHEET = 28` (core.js:5677), `PGD_SHEET = 31` (model.js:1454), `RT_SHEET = 32`, `START_SHEET = 36`;
 - 17 below v100, against a live script at v167.
 
-The script updates itself from `main` within about 15 minutes of a merge, so it passed v100 days ago. The gates are not
+The script updates itself from `main` within about 15 minutes of a merge <!-- effort-ok: an update delay, not an effort -->, so it passed v100 days ago. The gates are not
 dead, though:
 
 - `sheetV()` reads a stored number that defaults to 0 (sync.js:1626);
@@ -308,7 +311,7 @@ dead, though:
 
 1. **A deploy order instead of gates (M).**
    - The merge train already knows when `Code.gs` changes. Pages deploys after the train, so the deploy step can wait until the
-     script's replies report the new `VERSION` (it updates itself within about 15 minutes) before it publishes the app.
+     script's replies report the new `VERSION` (it updates itself within about 15 minutes <!-- effort-ok: an update delay, not an effort -->) before it publishes the app.
      `autoUpdate` is a trigger with no public endpoint, so starting it from the deploy would need a new authenticated
      route; waiting needs none.
    - The app then never runs ahead of the script by construction, and rule D4 holds without a gate per feature.
@@ -318,7 +321,7 @@ dead, though:
    - Treat an unknown `sheetV()` as `MIN_SHEET`, a version **already confirmed live** on the sheet, never the version the
      app was built against: Pages deploys on a push to `main` independently of the script's `autoUpdate`, so the build's
      `VERSION` can be ahead of the running script, and flooring to it would switch on new behaviour in that gap (the
-     failure rule D4 prevents). `MIN_SHEET` is the live version the script reported at least a few days earlier (the
+     failure rule D4 prevents). `MIN_SHEET` is the live version the script reported at least a few days earlier <!-- effort-ok: an age, not an effort --> (the
      integrator's `tools/brief.py` reads it), set by hand in a PR and ratcheted up; once the deploy order (step 8) exists
      it can follow the deploy.
    - Delete every gate at or below it, with its old branch.
@@ -570,9 +573,9 @@ Two tests show the cost:
   intent.
 
 Timing:
-- the fast tier (rule W24) takes 4 min 15 s locally for 1,864 tests;
+- the fast tier (rule W24) takes 4 min 15 s locally for 1,864 tests; <!-- effort-ok: a test run time -->
 - the twelve slowest tests (10-32 s each) are statistical model checks and synthetic-log analyses;
-- the smokes are fine: 25.5 job-minutes in parallel, about 4.5 min wall.
+- the smokes are fine: 25.5 job-minutes in parallel, about 4.5 min wall. <!-- effort-ok: a CI run time -->
 
 The failure rate of the last 100 smoke runs (11) is an upper bound on flakiness. Some of those failures were real.
 
@@ -672,7 +675,7 @@ The current model is sound for one organisation and one admin (SECURITY.md). The
 recovery and the bus factor. What this review adds:
 
 - **Deploy on merge to the backend** (R5): move `autoUpdate` to a release branch only the green train moves.
-- **The 4-digit code** stops accidents, not attackers. Five tries per 10 minutes over 10,000 codes is about 14 days to
+- **The 4-digit code** stops accidents, not attackers. Five tries per 10 minutes over 10,000 codes <!-- effort-ok: an attacker's brute-force time, not an effort --> is about 14 days to
   try them all for one name, 7 on average (estimate). That is fine while progress is the only stake. It is not fine once a second organisation's RAs
   or roles depend on it. The API move (R5) is the moment for real sign-in: passkeys or e-mail links (Cloudflare Access is
   free under 50 users, as the study notes).
@@ -786,26 +789,41 @@ This redesign is optional, and the biggest one here. It removes the class of bug
 Each step leaves `main` shippable, runs through the train, and can stop there. The first five change no behaviour that
 players see and are integrator's calls under the merge contract. The later ones carry Pierre's questions.
 
-| Step | What | Effort | Risk | Needs Pierre |
-|---|---|---|---|---|
-| 1 | Minify at deploy, source maps, a smoke on the staged copy (R4) | S | Low | No (deploy detail) |
-| 2 | Gate floor: unknown `sheetV()` = `MIN_SHEET`, a version already confirmed live (never the build's); delete gates below it; a ratchet test (R3) | S | Low | No: it fixes new devices playing retired rules |
-| 3 | Rename `fish*` → `tree*` where the code is the tree engine; capability flags instead of the `data.json` and `replay` proxies (R1) | M | Low | No (a name inside the code) |
-| 4 | Split `core.js` into `core/*.js`, concatenated by `tools/sync_core.py` (R6); a `slow` test tag (R9) | M | Low | No |
-| 5 | Finish F5: `stats_` calls `CORE_`; `autoUpdate` from a release branch the train moves (R5) | M | Low-medium | (h) the release branch is a change to his setup: tell him |
-| 6 | ES modules, leaf first; `SubjectContext` replaces `inSubject`; tests import modules (R2, R9) | L | Medium | No |
-| 7 | Subject manifests and strings files; capabilities; admin pages derived (R7); `html` template, shared `ui/` (R11) | M | Low | No |
-| 8 | Deploy order (server first, then app) and the end of per-feature gates (R3) | M | Medium | Rule D4's implementation: (i) tell him, it keeps his intent |
-| 9 | Schemas for every served file; coral build from sources; one-shot scripts archived (R8) | M | Low | No |
-| 10 | Remove migration layers after one read of the sheet (R3) | S each | Low | (c) |
-| 11 | ADRs; ARCHITECTURE and LEARNING cut to maps and specs; comment pass per module (R10) | M | Low | His OK on the doc structure (rule wording) |
-| 12 | Corals as a tree subject (R1) | XL | Medium | (a), (b) |
-| 13 | Curation split; one id scheme, migrated once (R8) | L | High | (e), (f) |
-| 14 | API contract; then D1 (R5); sync by answers (target) | XL | Medium | (d), (g) |
-| 15 | Shared `taxa` pipeline (R12) | L | Low | No |
+The time column is measured, not guessed (rule W11). For each step I picked a type and a size band from the files it
+will touch (the band is my reading): the type is the one `tools/effort.py` gives a merged PR touching them (engine for
+`core.js`, `model.js`, `quiz.js`; sheet for `Code.gs`; admin; feature for the other app files; content for data; tooling
+for `tools/`, `tests/` and workflows; docs), the band is the lines changed (XS up to 20, S up to 100, M up to 400, L up
+to 1,500, XL above). The time is what `python3 tools/effort.py --estimate TYPE BAND` prints: the five closest merged
+PRs, their median and 25-75% range, from the first commit to green checks. For a step that is a series of PRs (6, 10,
+13, 14) it is one PR of the series, and nothing is multiplied. The measured PRs are code PRs; the data passes the
+steps lean on (a coral build, a schema run) are small next to them.
 
-Steps 1-4 take about one to two weeks of agent work in parallel. Steps 2 and 3 each touch many lines, so they go alone
-on their train. After them, every later step is smaller than it is today.
+| Step | What | Type, band (what it touches) | Measured agent time | Risk | Needs Pierre |
+|---|---|---|---|---|---|
+| 1 | Minify at deploy, source maps, a smoke on the staged copy (R4) | tooling M (a build script, a workflow, a smoke) | comparable to #783, #786, #811, #960, #1040: median 30 min (range 7 min-40 min) | Low | No (deploy detail) |
+| 2 | Gate floor: unknown `sheetV()` = `MIN_SHEET`, a version already confirmed live (never the build's); delete gates below it; a ratchet test (R3) | engine XL (34 gates and their old branches in `core.js`, `model.js`, `app.js`, tests) | built since as #1076: measured 1.6 h (`effort.py --like 1076`), the actual PR | Low | No: it fixes new devices playing retired rules |
+| 3 | Rename `fish*` → `tree*` where the code is the tree engine; capability flags instead of the `data.json` and `replay` proxies (R1) | engine XL (about 1,100 lines mention `fish` or `FISH` in `core.js`, `app.js`, `learn.js`, `quiz.js`, `model.js`, `sync.js`, plus the tests) | comparable to #839, #954, #987, #1062, #1076: median 6.4 h (range 1.6 h-9.6 h) | Low | No (a name inside the code) |
+| 4 | Split `core.js` into `core/*.js`, concatenated by `tools/sync_core.py` (R6); a `slow` test tag (R9) | engine XL (about 7,300 lines of `core.js` move) | comparable to #839, #954, #987, #1062, #1076: median 6.4 h (range 1.6 h-9.6 h) | Low | No |
+| 5 | Finish F5: `stats_` calls `CORE_`; `autoUpdate` from a release branch the train moves (R5) | sheet M (`Code.gs` `stats_`, the deploy workflow) | comparable to #812, #835, #838, #958, #971: median 29 min (range 29 min-58 min) | Low-medium | (h) the release branch is a change to his setup: tell him |
+| 6 | ES modules, leaf first; `SubjectContext` replaces `inSubject`; tests import modules (R2, R9) | engine XL (every JS file, one leaf at a time) | comparable to #839, #954, #987, #1062, #1076: median 6.4 h (range 1.6 h-9.6 h), for one PR of the series | Medium | No |
+| 7 | Subject manifests and strings files; capabilities; admin pages derived (R7); `html` template, shared `ui/` (R11) | engine L (`core.js` `SUBJECTS` and `UNITS`, `app.js`, `admin.js`) | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) | Low | No |
+| 8 | Deploy order (server first, then app) and the end of per-feature gates (R3) | sheet M (the deploy workflow, `Code.gs` `VERSION` reply, the gates) | comparable to #812, #835, #838, #958, #971: median 29 min (range 29 min-58 min) | Medium | Rule D4's implementation: (i) tell him, it keeps his intent |
+| 9 | Schemas for every served file; coral build from sources; one-shot scripts archived (R8) | content+tooling L (`schemas/*.json`, `tools/`, the new `coral.json`) | comparable to #826, #906, #980, #1032, #1069: median 43 min (range 29 min-49 min) | Low | No |
+| 10 | Remove migration layers after one read of the sheet (R3) | engine S (one layer: a few dozen lines of `core.js`) | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h), for one PR of the series | Low | (c) |
+| 11 | ADRs; ARCHITECTURE and LEARNING cut to maps and specs; comment pass per module (R10) | docs XL (about 1.4 MB of docs cut) | comparable to #806, #933, #935, #947, #1033: median 18 min (range 9 min-43 min) | Low | His OK on the doc structure (rule wording) |
+| 12 | Corals as a tree subject (R1) | engine XL (`core.js`, `app.js`, `quiz.js`, the coral data) | comparable to #839, #954, #987, #1062, #1076: median 6.4 h (range 1.6 h-9.6 h) | Medium | (a), (b) |
+| 13 | Curation split; one id scheme, migrated once (R8) | engine XL (`core.js` ids, `Code.gs` through `sync_core.py`, the split data) | comparable to #839, #954, #987, #1062, #1076: median 6.4 h (range 1.6 h-9.6 h), for one PR of the series | High | (e), (f) |
+| 14 | API contract; then D1 (R5); sync by answers (target) | sheet XL (`Code.gs`, a new Worker, `sync.js`) | comparable to #840, #953, #975, #988, #1049: median 41.4 h (range 14.1 h-47.7 h), for one PR of the series | Medium | (d), (g) |
+| 15 | Shared `taxa` pipeline (R12) | tooling L (the per-subject `tools/*.py`) | comparable to #782, #787, #863, #883, #884: median 37 min (range 16 min-46 min) | Low | No |
+
+- **Steps 1-4: about 15 h of agent time.** It is the sum of the figures above (30 min for step 1, 1.6 h for step 2's
+  actual PR #1076, 6.4 h for each of steps 3 and 4, cited in their rows, e.g. #839). A sum of medians is not a measured
+  figure: the ranges do not add up, and running steps in parallel shortens the wall clock, not this sum.
+  <!-- effort-ok: the sum of the figures cited in the rows -->
+- **The earlier text** said steps 1-4 took "about one to two weeks of agent work"; it was a guess, replaced by the
+  figure above (#1076, #839). <!-- effort-ok: the superseded guess, quoted -->
+- Steps 2 and 3 each touch many lines, so they go alone on their train. After them, every later step is smaller than it
+  is today.
 
 ## Questions for Pierre (collected)
 
@@ -843,7 +861,7 @@ Every command below ran from the worktree at `b6e0d263`.
   four-space indent between `const UNITS = {` and `treeAt(SUBJ.id);` in app.js.
 - **Gates:** every `const X_SHEET = N`.
 - **Tests:**
-  - `node tests/run.js`: `# tests 1864`, wall time from `time`, 4 min 15 s on this machine, with the slot free;
+  - `node tests/run.js`: `# tests 1864`, wall time from `time`, 4 min 15 s on this machine, with the slot free; <!-- effort-ok: a test run time -->
   - smoke timings from the GitHub API for run 44191385369;
   - the failure counts from the last 100 runs of `smokes.yml`.
 - **Commits:** `git log --oneline -- <file>` and `git log --grep "sea slug|seaslug" -i`.
