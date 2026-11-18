@@ -214,6 +214,7 @@ function rebase(next) {
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next);
   SAVED.genera = SAVED.genera || {};
+  unitRefresh();
   snap = JSON.stringify(DRAFT);
   memoReset();
   if (TOKEN) {
@@ -5531,12 +5532,26 @@ const unitRead = S => {
     k = ['f', 'ph', 'gm'].filter(x => W[x]);
   return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
     const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
-    const R = !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
-    // the files as read, for the units of the sheet's replay (unitsOf, unitRpl)
-    if (R) R.raw = J;
-    return R;
+    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : unitBuild(S, J);
   });
 };
+// A registry of subject S from its files as read (J: f, ph, gm) under the published curation (SAVED: the content editor's
+// structure and text in force, as the app and unitRpl lay them over the file). raw, the files as read, for the units of the
+// sheet's replay (unitsOf, unitRpl); cur, the curation it was built under (a Publish builds it again: rebase).
+const unitBuild = (S, J) => {
+  const R = repReg(J.f, J.ph, J.gm, unitRankOf(S), S, SAVED);
+  if (R) Object.assign(R, {raw: J, cur: SAVED});
+  return R;
+};
+// The registries read again under the published curation after it changed (a Publish, the base another tab's Publish or a
+// rebase put in): each built again from its files as read; FISHA is the tree subject in force's.
+function unitRefresh() {
+  SUBJECTS.forEach(S => {
+    const R = UNITA[S.id];
+    if (R && R.raw && R.cur !== SAVED) UNITA[S.id] = unitBuild(S, R.raw);
+    if (S === FISHS && UNITA[S.id]) FISHA = UNITA[S.id];
+  });
+}
 // The tree subject in force's (FISHS: FISHA is its registry in UNITA).
 const fishAdmin = () => unitAdmin(FISHS);
 // A family's page (Photos › Tree) under the prefix of the tree subject in force (FISHS, above), or of another subject S.
@@ -7888,6 +7903,7 @@ async function save() {
     SHA = r.content.sha;
     SAVED = clone(out);
     DRAFT = clone(out);
+    unitRefresh();
     if (DW) DW.base();
     saveDraft();
     toast('Published. The public site shows it within a minute or two.' + confNote(conf));
@@ -8305,6 +8321,7 @@ async function draftOpen() {
     adoptBase: c => {
       SAVED = c;
       SAVED.genera = SAVED.genera || {};
+      unitRefresh();
       memoReset();
       setTimeout(render, 0);
     },
@@ -9888,6 +9905,7 @@ function savedPump() {
             intro: P(subjKey(S.id, 'intro')) || {},
             offer: P(subjKey(S.id, 'intro-offer')),
             start: P(startKey(S.id)),
+            quiz: P(subjKey(S.id, 'quiz')),
             reset: P(subjKey(S.id, 'reset')),
             ach
           }),
