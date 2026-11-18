@@ -39,12 +39,12 @@ test('an author or a licence only comes with the page that states it', () => {
   }
 });
 
-// The credits (Pierre, 2026-11-15, #925: "credit the photos now with their original sources"): each lecture photo traced
+// The credits: each lecture photo traced
 // to its original carries on its course record its credit a ("<photographer> / <site>") and pg (the page that states it,
 // the credit's link), as tools/apply_imr_sources.py writes them; one not traced carries neither. Never o (the draw's
 // observation and the photo memory's key: two photos of one species page are two colonies) nor src (an online original).
 // The course records are data.json course and the ones Pierre's exclusions archived in excluded.json (tools/excluded.py:
-// a Publish may move one there at any time, so every traced photo is in one or the other; Codex review #939).
+// a Publish may move one there at any time, so every traced photo is in one or the other).
 test('course records: a traced lecture photo credits its photographer and links its page; never o or src', () => {
   const C = require('../core.js'),
     archived = Object.values(X.photos)
@@ -74,7 +74,7 @@ test('course records: a traced lecture photo credits its photographer and links 
 });
 
 // A traced photo Pierre excludes (its record archived in excluded.json by tools/excluded.py) keeps its credit, so a
-// Restore brings it back credited; the tool credits it there and does not call it missing (Codex review #939).
+// Restore brings it back credited; the tool credits it there and does not call it missing.
 test('apply_imr_sources: a traced photo archived by an exclusion is credited there, not missing', () => {
   const out = JSON.parse(
     require('child_process').execFileSync(
