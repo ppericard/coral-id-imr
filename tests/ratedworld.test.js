@@ -44,6 +44,21 @@ test('the world of a seed: the distributions LEARNING.md states, the same world 
   assert.ok(Math.abs(sd(pi) - RW.RATED.PI) < 0.15, String(sd(pi)));
 });
 
+// Units added never move another draw (2026-11-18: the genera of circles 2 and 3): each genus and species on a stream of
+// its own, so two versions of the app with other units play the same photos and the same other units (the arms pair).
+test('the world of a seed: a genus or species added or taken away moves no other draw', () => {
+  const U = RW.unitsOf('fish'),
+    half = U.extra.filter((n, i) => i % 2),
+    W = RW.world(U, 2),
+    W0 = RW.world({...U, extra: half, sp: U.sp.slice(0, 100)}, 2);
+  assert.deepStrictEqual(W0.eps, W.eps);
+  assert.deepStrictEqual(W0.ease, W.ease);
+  Object.keys(W0.mu).forEach(n => assert.strictEqual(W0.mu[n], W.mu[n], n));
+  // a genus's own offset around its family's, as RATED states
+  const off = U.extra.map(n => W.mu[n] - W.mu[U.rec(n).parent] - ((U.rec(n).look || []).length ? RW.RATED.SIB : 0));
+  assert.ok(Math.abs(sd(off) - RW.RATED.SUB) < 0.05 && Math.abs(mean(off)) < 0.06, `${mean(off)} ${sd(off)}`);
+});
+
 // The species level (2026-11-15): the species units as the app builds them, drawn after everything else so a world
 // without them is the same; a species opens only once its family is at Advanced, in its family's order; its record names
 // the family it starts from (core.js abilityOf from, passed to scoreAnswer as quiz.js answer does).

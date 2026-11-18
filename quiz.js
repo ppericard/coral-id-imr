@@ -55,9 +55,12 @@ const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
-  // read again when the data, the subject or Pierre's curation (its names: curation.json fish.names) changes
-  const c = typeof CUR === 'undefined' ? null : CUR;
-  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ || TYPEN.c !== c) TYPEN = {d: DATA, s: SUBJ, c, L: UNITS[SUBJ.id].names()};
+  // read again when the data, the subject, Pierre's curation (its names: curation.json fish.names) or the subject's own
+  // key (UNITS namesKey: the fish genera in the game, app.js sciNow) changes
+  const c = typeof CUR === 'undefined' ? null : CUR,
+    k = UNITS[SUBJ.id].namesKey ? UNITS[SUBJ.id].namesKey() : '';
+  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ || TYPEN.c !== c || TYPEN.k !== k)
+    TYPEN = {d: DATA, s: SUBJ, c, k, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
 // rk: the rank of the unit asked (app.js rankOf): a typed answer is read among the names of that rank only (a fish

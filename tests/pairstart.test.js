@@ -24,7 +24,7 @@ const F = json('fish.json'),
 // The game: fishGenera over fishGen (the photos in play), and confPrior with isLook, dataSeed and imrFormsOf as the app
 // has them (no curation: the content overlay is not read by the admin's registry either).
 const ctx = {DOM: {EX: 0.9}, CONF: C.CONF, DATA: {key: [], course: {}, gen: {}}};
-['easyCover', 'fishScoreTree', 'fishSpUnits', 'rankWeights'].forEach(k => (ctx[k] = C[k]));
+['easyCover', 'fishScoreTree', 'fishSpUnits', 'fishGenSets', 'rankWeights'].forEach(k => (ctx[k] = C[k]));
 vm.createContext(ctx);
 vm.runInContext(
   [
