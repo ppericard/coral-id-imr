@@ -1,9 +1,10 @@
 require('./slot.js').testGuard();
 // The units' reference photos from iNaturalist's taxon page (tools/fish_refs.py; judging/FISH.md "Reference photos").
-// Pierre, 2026-11-08 (Q229): every photo of the taxon page, the cover and each taxon photo, for every species, not only
-// those whose observation is among the 200 most faved in the box; Q231: never a licence with "no derivatives" (ND), nor
-// all rights reserved: only the licences the rules accept (CC0, CC BY, CC BY-NC). Q230 is open: a photo whose observation
-// lies outside the Indo-West Pacific is listed (`away`), never taken. Offline: a stand-in for the network. Needs python3.
+// Every photo of the taxon page, the cover and each taxon photo, for every species, not only those whose observation is
+// among the 200 most faved in the box; never a licence with "no derivatives" (ND), nor all rights reserved: only the
+// licences the rules accept (CC0, CC BY, CC BY-NC). Until Q230 (out-of-zone photos, ROADMAP) is settled, a photo whose
+// observation lies outside the Indo-West Pacific is listed (`away`), never taken. Offline: a stand-in for the network.
+// Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -63,12 +64,12 @@ print(json.dumps({"got": [[p["id"], o["id"], src] for p, o, src in got], "away":
     [200000, 100000, 'cover'],
     [260000, 130000, 'taxon'],
     [280000, 170000, 'taxon'],
-    // a second photo of one observation: listed too, the game takes it once judged no duplicate (Q218, tools/fish_game.py)
+    // a second photo of one observation: listed too, the game takes it once judged no duplicate (tools/fish_game.py)
     [290000, 130000, 'taxon']
   ]);
-  // The Red Sea photo passes every rule but the region (Q230 open): listed, not taken.
+  // The Red Sea photo passes every rule but the region (Q230 not settled): listed, not taken.
   assert.deepStrictEqual(out.away, [[270000, 'Red Sea']]);
-  // ND, share-alike, all rights reserved and public domain marks are never looked up (Q231).
+  // ND, share-alike, all rights reserved and public domain marks are never looked up.
   assert.deepStrictEqual(out.seen, [200000, 260000, 270000, 280000, 290000]);
   assert.deepStrictEqual(out.usable, [true, true, true, false, false, false, false, false, false]);
 });
@@ -87,7 +88,7 @@ other = Net([("id_above=", {"results": [obs(160000, [200000], taxon=999)]})])
 T = {123: {"photos": [ph(200000, "cc-by")]}}
 print(json.dumps({"o": o["id"], "urls": len(net.urls), "other": FR.pick(other, T, 123, {123}, None, [(100000, 160000)])}))`);
   assert.deepStrictEqual(two, {o: 40000, urls: 2, other: []});
-  // A window of more than 200 observations is read on from the last one read (Codex review #731).
+  // A window of more than 200 observations is read on from the last one read.
   const paged = py(`${NET}
 page1 = {"total_results": 250, "results": [obs(130000 + i, [1000 + i]) for i in range(200)]}
 page2 = {"total_results": 50, "results": [obs(130200 + i, [2000 + i]) for i in range(49)] + [obs(130250, [200000])]}
@@ -183,7 +184,7 @@ test('tools/fish_refs.json: no ND licence in play or listed; a photo left out pe
   );
 });
 
-// The genera the game has (Pierre, 2026-11-18: the scientific genera of circles 2 and 3 are units too; core.js
+// The genera the game has (the scientific genera of circles 2 and 3 are units too; core.js
 // fishGenSets): every genus of a family in play with species of a circle, whatever its circle, never a surprise card's
 // (wink) family's, read under the content editor's circles in force.
 const FISH = `
