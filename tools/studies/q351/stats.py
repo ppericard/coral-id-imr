@@ -83,8 +83,8 @@ def fit(mask, x):
     return th[-1]
 
 
-# The arms' log-odds in each delete-one-player replicate (replay.js jkX: the grid choice redone without that player;
-# Codex review #883). BASE has no grid, so its replicate keeps X['BASE'].
+# The arms' log-odds in each delete-one-player replicate (replay.js jkX: the grid choice redone without that player).
+# BASE has no grid, so its replicate keeps X['BASE'].
 JKX = {a: {q: np.array([np.nan if v is None else v for v in xs], float) for q, xs in D['jkX'][a].items()} for a in ARMS}
 
 

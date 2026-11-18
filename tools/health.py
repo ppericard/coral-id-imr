@@ -41,8 +41,8 @@ REPO = 'ppericard/coral-id-imr'
 SITE = 'https://ppericard.github.io/coral-id-imr/'
 WARN = 0.70  # a warning past 70 % of a limit (the same in tools/brief.py and admin.js)
 # The limits: GitHub Pages' published site 1 GB, Cloudflare R2's free tier 10 GB (both taken as 10^9 bytes a GB, the less
-# generous reading), Google Sheets' 10 million cells a spreadsheet (the figure of the infrastructure request, 2026-11-18;
-# docs/SECURITY.md said 20 million before: to confirm against Google's current limits page), and the Timings tab's 5 s (Code.gs
+# generous reading), Google Sheets' 10 million cells a spreadsheet (the lower of the two figures the docs give: to
+# confirm against Google's current limits page), and the Timings tab's 5 s (Code.gs
 # TIM.SLOW: an operation the script keeps whole whenever it is that slow; our own budget, not a platform quota).
 LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 10 * 10**9, 'slow': 5000}
 BACKUP_DAYS = 8  # the backup is weekly (Sundays about 02:00 Manila)

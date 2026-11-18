@@ -1,20 +1,20 @@
-# Candidate pass of the judging agent (Pierre, 2026-11-01: "a judging agent that pre-sorts by looking at the zoom level,
-# the quality, with the aim of keeping real diversity"; run ON DEMAND, never automatically, over the candidates waiting).
+# Candidate pass of the judging agent: it pre-sorts the candidates waiting by view, quality and diversity, run on
+# demand, never automatically.
 # The agent looks at every candidate photo of a genus (iNaturalist photos waiting in cand.json, whole observations) and
 # writes judging/cand/<Genus>.json (rules: judging/BRIEF.md, "Candidate pass"). Suggestions only: the admin swiper
 # shows the best photo of each view of each observation first, then the other angles, and near-duplicates, poor photos
-# and other genera last. Nothing is deleted or added: Pierre still swipes every photo himself.
+# and other genera last. Nothing is deleted or added: the admin still swipes every photo.
 #
 #   python3 tools/judging_cand.py sheets [Genus ...]   download the photos (judging/cand/img/, not in git) and build one
 #                                                      contact sheet per observation (judging/cand/sheets/<Genus>/); prints
 #                                                      the list to judge: sheet, tile number -> photo id. The photos of the
 #                                                      observation already live or added follow, marked "live" (not to
-#                                                      judge: a candidate near-identical to one is a dup, Pierre 2026-11-03)
+#                                                      judge: a candidate near-identical to one is a dup, rule R1)
 #   python3 tools/judging_cand.py big <photo id>       download the 1024 px version, for a closer look
 #   python3 tools/judging_cand.py detail <photo id>... full-size photo: one sheet per photo, the whole frame and three
 #                                                      100% crops (the two sharpest areas, the centre), to judge quality
-#                                                      at full size as Pierre does (2026-11-03), and a 10% grid to read
-#                                                      a crop box off (judging/cand/detail/)
+#                                                      at full size (judging/BRIEF.md), and a 10% grid to read a crop
+#                                                      box off (judging/cand/detail/)
 #   python3 tools/judging_cand.py todo                 genera with candidates not judged yet (also shown in the admin)
 #   python3 tools/judging_cand.py --check [Genus ...]  check judging/cand/<Genus>.json, write nothing (exit 1 on error)
 #   python3 tools/judging_cand.py [Genus ...]          check, then import every genus that passes into suggest.json "cand"
@@ -43,9 +43,9 @@ KEEP = ('best', 'alt', 'dup')
 # rule C4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
 POLYPS = {'Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea'}
 FIELDS = {'view', 'quality', 'keep', 'form', 'polyps', 'multi', 'genus', 'unsure', 'note', 'crop'}
-# Crop calibration (2026-11-03, blind test on 79 of Pierre's crops): the agent's boxes cut about twice as much as his
-# (it kept 57% of the area, he keeps about 75%); halving each trim brought the overlap with his box from 0.75 to 0.86.
-# The import applies it; re-measure on his corrections (admin) before changing it.
+# Crop calibration (a blind test on 79 of the admin's crops): the agent's boxes cut about twice as much as the admin's
+# (they keep 57% of the area against about 75%); halving each trim brings the overlap with the admin's box from 0.75 to
+# 0.86. The import applies it; re-measure on the admin's corrections before changing it.
 CROP_K = 0.5
 X = C.get('exclude', {})
 
@@ -230,7 +230,7 @@ def cmd_import(names, only_check):
             if x.get('note'): e['n'] = x['note']
             c = x.get('crop')
             if c and c != [0, 0, 1, 1]:
-                l, t, r, b = c  # calibrated toward Pierre's crops (CROP_K): each trim kept at CROP_K of its size
+                l, t, r, b = c  # calibrated toward the admin's crops (CROP_K): each trim kept at CROP_K of its size
                 c = [round(l * CROP_K, 3), round(t * CROP_K, 3), round(1 - (1 - r) * CROP_K, 3), round(1 - (1 - b) * CROP_K, 3)]
                 if (c[2] - c[0]) * (c[3] - c[1]) < 0.97: e['c'] = c  # a trim of a few % is no crop
             Sc[f] = e

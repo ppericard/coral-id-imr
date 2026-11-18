@@ -1,6 +1,6 @@
 # Near-duplicate photos within each genus, crops included (same lecture photo on two slides, the same iNat photo
 # imported twice...). Writes dups.json {"dup": [{genus, keep, f: [others], note}]}, listed in the admin Triage
-# (Keep / Exclude). Only suggestions: nothing is hidden or excluded automatically (Pierre's rule).
+# (Keep / Exclude). Only suggestions: nothing is hidden or excluded automatically.
 # Keep = IMR first, then Pierre's own, then the larger image.
 import json, os, sys
 import numpy as np
