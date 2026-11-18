@@ -1,6 +1,6 @@
 # Decisions kept from code comments: Pierre's words that were only in core.js and Code.gs
 
-Date: 2026-11-18. PR: the comments clean-up of `core.js` and `tools/sync/Code.gs`. Rules or docs touched: none
+Date: 2026-11-18. PR: #1121, the comments clean-up of `core.js` and `tools/sync/Code.gs`. Rules or docs touched: none
 (rule W19: history stays in git and the PRs, a decision goes to docs/decisions/).
 
 ## Context
