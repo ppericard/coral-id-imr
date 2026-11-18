@@ -1594,7 +1594,12 @@ const pagesScreen = () => {
   const vp = viewportOn() ? viewportOf(window.innerWidth, window.innerHeight, window.devicePixelRatio) : null;
   return vp ? {vp} : {};
 };
+// The feedback sheet's tally (core.js PAGES.FB; quiz.js fbShown, fbMoreBind, fbEnd): one count into the visit's summary, which
+// the app already sends when it is left (pagesSend; docs/decisions/2026-11-18-feedback-sheet.md). No gate (rule D4): a
+// sheet script from before it drops the field, as it drops any field it does not know (core.js pagesClean).
+const fbTally = (kind, n) => pagesFb(PV, kind, n);
 function pagesSend() {
+  if (typeof fbEnd === 'function') fbEnd(false); // the sheet still on screen: its seconds so far go in this summary
   const S = pagesTake(PV, Date.now());
   if (!S) return;
   ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...pagesScreen(), ...S, o: pvOwner()});

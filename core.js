@@ -4201,7 +4201,24 @@
     seaPct('sspct20', 20, 'Slime trail', 1),
     seaPct('sspct30', 30, 'Colour chart', 2),
     seaPct('sspct40', 40, 'Torch light', 2),
-    seaPct('sspct50', 50, 'Half the reef', 3)
+    seaPct('sspct50', 50, 'Half the reef', 3),
+    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slugs
+    // have no species unit yet, so their % is the mean of the genera's bars and 100% needs every genus learned (Pierre,
+    // 2026-11-17: "une première version"; names and tiers for his review, docs/decisions/2026-11-18-seaslug-achievements-high.md).
+    seaPct('sspct60', 60, 'Gill and frill', 3),
+    seaPct('sspct70', 70, 'Muck magnet', 3),
+    seaPct('sspct80', 80, 'Slug savant', 3),
+    seaPct('sspct90', 90, 'Nudibranch nerd', 3),
+    // 100% shows rounded (77 genera learned and one at 95% make 100), so it also asks every genus learned (Codex, #1112);
+    // it rests on genera learned, so ACH_LEARN takes it back with a learned mark.
+    [
+      'sspct100',
+      'Every last slug',
+      '100% sea slug progress: every genus learned',
+      3,
+      '📈',
+      s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
@@ -4280,7 +4297,8 @@
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
@@ -6541,7 +6559,14 @@
     MAXS: 86400, // seconds of one page counted at most
     RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
     GENUS: /^[A-Z][a-z]{2,30}$/,
-    FROM: ['quiz', 'learn', 'progress', 'other']
+    FROM: ['quiz', 'learn', 'progress', 'other'],
+    // The answer's feedback sheet (Pierre, 2026-11-18, the feedback sheet study §2 and question (f): "ok pour les 6
+    // recommandations"): four numbers a visit, in this order: the answers whose feedback was shown, those where More was
+    // opened, the seconds the feedback stayed on screen (each answer's capped at FBSEC) and the taps on a link inside it.
+    // Counts only, no answer, unit or time of day; the first number is the denominator.
+    FB: ['shown', 'more', 'sec', 'link'],
+    FBMAX: 10000, // answers (or taps) counted in one summary, at most
+    FBSEC: 120 // seconds one answer's feedback counts at most
   };
   // The screen a summary was sent from (Pierre, 2026-11-18: the screen sizes the players really use, to design the
   // multi-photo game formats): the usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
@@ -6846,7 +6871,14 @@
     if (/^(progress|leaderboard)/.test(n)) return 'progress';
     return 'other';
   }
-  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
+  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0, fb: [0, 0, 0, 0]});
+  // One count of the feedback sheet's tally (PAGES.FB): kind 'shown', 'more', 'sec' (n seconds, capped at FBSEC) or 'link'.
+  function pagesFb(S, kind, n = 1) {
+    const i = PAGES.FB.indexOf(kind),
+      v = Math.round(Number(n));
+    if (i < 0 || !S.fb || !isFinite(v) || v <= 0) return;
+    S.fb[i] += kind === 'sec' ? Math.min(PAGES.FBSEC, v) : v;
+  }
   // The page in view stops counting time (hidden, or another page opens).
   function pagesStop(S, now) {
     const c = S.cur;
@@ -6894,6 +6926,12 @@
     const out = pagesSummary(S);
     S.r = Object.create(null);
     S.g = Object.create(null);
+    // The feedback sheet's four numbers ride the summary and start again; with no summary to carry them (no page was open)
+    // they wait for the next one.
+    if (out && S.fb && S.fb.some(Boolean)) {
+      out.fb = S.fb;
+      S.fb = [0, 0, 0, 0];
+    }
     return out;
   }
   // Whose summary it is (Codex review #423): set when it is queued, so a summary left in the queue (offline, a failed
@@ -6939,6 +6977,11 @@
         k => (g[k] = [n(G[k][0], PAGES.MAXN), n(G[k][1], PAGES.MAXS), PAGES.FROM.includes(G[k][2]) ? G[k][2] : 'other', G[k][3] ? 1 : 0])
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
+    // The feedback sheet's four numbers (PAGES.FB): four numbers or nothing, each clamped; nothing when all are zero.
+    if (Array.isArray(o.fb) && o.fb.length === PAGES.FB.length) {
+      const fb = o.fb.map((v, i) => n(v, PAGES.FB[i] === 'sec' ? PAGES.MAXS : PAGES.FBMAX));
+      if (fb.some(Boolean)) out.fb = fb;
+    }
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
     // The screen (VIEWPORT, sheet v177): rounded and clamped again, whatever the device sent; its band kept when it is
     // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
@@ -7214,6 +7257,7 @@
     pageSubj,
     pageFrom,
     pagesNew,
+    pagesFb,
     pagesStop,
     pagesOpen,
     pagesResume,

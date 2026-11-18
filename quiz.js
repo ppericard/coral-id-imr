@@ -29,7 +29,7 @@ const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
     : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a genus that reaches ${Math.round(100 * DOM.EX)}% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.</p>` : ''}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus's % is the share of its photos you would name alone and typed, as far as your answers on it have shown: a right answer on a hard photo or a typed one raises it most, a mistake takes it back down; it fills up to 95%, and it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
@@ -909,10 +909,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       const [, cp] = photoPair([tp], V[tp.view], tp),
         st0 = $v.querySelector('.qstage'),
         lab = SUBJ.views.length > 1 ? VIEW_LABEL[tp.view] || '' : '';
-      const fig = (p, n, cls, note) =>
-        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+      // The ✓ / ✗ name chips say which photo is which, with no note under them (the short feedback sheet:
+      // docs/decisions/2026-11-18-feedback-sheet.md).
+      const fig = (p, n, cls) =>
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
-      st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
+      st0.innerHTML = fig(tp, target, 'qok') + fig(cp, c, 'qko');
       st0.querySelectorAll('[data-vs]').forEach(
         z =>
           (z.onclick = e => {
@@ -952,17 +954,28 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
-  document.getElementById('after').innerHTML =
-    `${fbBody(target, c, good, idk, again, ph, read, step, photoTaxon(seenPh, target))}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
-    <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
+  document.getElementById('after').innerHTML = fbBody(
+    target,
+    c,
+    good,
+    idk,
+    again,
+    ph,
+    read,
+    step,
+    photoTaxon(seenPh, target),
+    chs,
+    repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})
+  );
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
   if (qq) qq.classList.add('done');
+  fbShown();
+  fbMoreBind();
   if (isStacked()) {
     window.scrollTo(0, 0);
     fitStage();
-    const mo = document.querySelector('#after details');
-    if (mo) mo.ontoggle = fitStage;
+    document.querySelectorAll('#after details').forEach(d => (d.ontoggle = fitStage));
   }
   // Tablet and desktop: the feedback always sits in the answer column, whatever the stage shows (3 views, one view,
   // a mix-up montage or a duel), so it is in the same place after every answer. Phones: bottom sheet.
@@ -1000,18 +1013,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
 // look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
 // typed answer's spelling step (typeStep), said in the verdict's one line. tx: the photo's own taxon (app.js photoTaxon),
 // said in one short line under the verdict (taxonLine), right or wrong.
-function fbBody(target, c, good, idk, again, ph, read, step, tx) {
+function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep = '') {
   const g = GX(target),
     fish = !!g.name,
-    C = !good && GX(c) ? GX(c) : null,
-    own = C && fish ? (g.lk || []).find(([o]) => o === c) : null,
-    apart = C && fish ? (own || (C.lk || []).find(([o]) => o === target) || [])[1] : '',
-    // the source the content editor gave when he reworded that line (app.js fishGenera lksrc; rule C2): said after the
-    // IMR label, which stays
-    asrc = apart ? ((own ? g.lksrc : C.lksrc) || {})[own ? c : target] : null;
+    C = !good && GX(c) ? GX(c) : null;
+  // Behind More: why the answer given is another unit. The pair's own line is the sheet's (fbLine). "This
+  // pair comes back as a duel" is counted when More is opened (fbMoreBind), so a sheet nobody opens keeps its three tellings.
   const vs = C
     ? // The answer's own tips, said as such ("Why not X:" read as the reasons the photo is not X).
-      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt ? (C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : '') : esrcTag(C, 'sum')}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt ? (C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : '') : esrcTag(C, 'sum')}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${again && againLeft() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling. A unit's
   // English name given as information (app.js vernFirst, UNITS vern: the sea slugs') follows its
@@ -1032,17 +1042,117 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
           ? `it's ${name} (often called ${esc(step.oft[1].toLowerCase())})`
           : `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
         : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
+    // A fish entry's names inside it, phases and credits sit flat behind More (the sheet's own More replaced its fold).
     more = fish
-      ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
+      ? `${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
       : // the criteria cited by the source the content editor gave with his edit of them, else the Coral Finder pages
         // (app.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2)
         `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length && g.sum ? `<p class="vs">${esc(g.sum)}${esrcTag(g, 'sum')}</p>` : ''}${(g.crit || []).length ? `<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">${critRef(g)}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
   // empty box draws a bare rounded bar).
-  return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}
-    ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
-    ${more}`;
+  // The short sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): the verdict, the photo's species line (and a
+  // typed answer's reading) and one decisive line; everything else sits in the More panel, hidden until the player opens
+  // it, and More and Next share one row.
+  return `<div class="fb fbs">
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs)}
+    <div class="fbmore" id="fbmore" hidden>${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
+    ${more}${rep}</div>
+  </div>
+  <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
+}
+// The line unit a's record gives for its look-alike b, which names and describes b ("Angelfish: spine on the gill cover"):
+// {t, s} with its source, or null. Any subject's record may hold such lines (rule S1): lk, IMR's own for the pairs it
+// declares (a fish family's: core.js fishGen), else ap, ours for the pairs it does not (app.js fishGenera), each with its
+// source (rule C2: IMR, and the editor's source when he reworded the line, or the family's sources).
+function pairLine(a, b) {
+  const g = GX(a) || {},
+    hit = (g.lk || []).find(([o, t]) => o === b && t);
+  if (hit) return {t: hit[1], s: ['IMR', ((g.lksrc || {})[b] || {}).t].filter(Boolean).join('; ')};
+  return g.ap && g.ap[b] ? {t: g.ap[b], s: (g.apsrc || {})[b] || ''} : null;
+}
+// What the two records say of the pair (a, b): the line that describes a (b's record gives it), then the one that describes b
+// (a's), each when it exists; {t, s}, or null with none. "Butterflyfish: no opercular spine · Angelfish: spine on the gill
+// cover".
+function pairText(a, b) {
+  const L = [pairLine(b, a), pairLine(a, b)].filter(Boolean);
+  return L.length ? {t: L.map(x => x.t).join(' · '), s: [...new Set(L.flatMap(x => x.s.split('; ')).filter(Boolean))].join('; ')} : null;
+}
+// The one decisive line of the feedback sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md):
+// 1. a miss: the line telling the unit shown from the unit answered, both halves; 2. a right answer: the line telling it from
+// a look-alike among the choices (chs: what the player just told apart); 3. else the shown unit's first ID tip or mark, said
+// as "X: ...", its source after it; 4. none (no tip: a fish species, a starred coral genus, a sea slug with no marks): the
+// sheet is the verdict and the species line alone. Never a line made by comparing trait tags (rule C2). A typed answer has
+// no choices (chs empty).
+function fbLine(target, c, good, chs = []) {
+  const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
+  const P =
+    !good && GX(c)
+      ? pairText(target, c)
+      : good
+        ? chs
+            .filter(o => o !== target && GX(o))
+            .map(o => pairText(target, o))
+            .find(Boolean)
+        : null;
+  if (P) return say(esc(P.t), P.s);
+  const g = GX(target);
+  if (!g.qt || !g.qt.length) return '';
+  const lab = String(tipsLabel(g))
+    .replace(/^ID (tips|marks)\s*/, '')
+    .replace(/^\((.*)\)$/, '$1');
+  return say(`${uname(target)}: ${glossAll([g.qt[0]])[0]}`, [lab, (g.qsrc || {}).t].filter(Boolean).join('; '));
+}
+// The feedback sheet's own tally (core.js PAGES.FB, sync.js fbTally): the answers
+// whose sheet was shown, those where More was opened, the seconds it stayed on screen and the taps on a link inside it, four
+// numbers a visit in the pages summary already sent. FBS: the sheet on screen now (when it was drawn, the seconds counted so
+// far, whether More was opened); null when none.
+let FBS = null;
+const fbCount = (k, n) => typeof fbTally === 'function' && fbTally(k, n);
+function fbShown() {
+  fbEnd();
+  FBS = {t: Date.now(), s: 0, k: 0, more: false};
+  fbCount('shown');
+}
+// Counts the seconds the sheet has been on screen since the last time, at most FBSEC for the answer; end: it left the screen.
+// Called when the page is left (app.js route) and when the summary is taken (sync.js pagesSend).
+// The time the app is hidden never counts: hidden, the clock stops (t null), shown again it starts anew.
+function fbEnd(end = true) {
+  if (!FBS) return;
+  const now = Date.now();
+  if (FBS.t !== null) FBS.s = Math.min(PAGES.FBSEC, FBS.s + (now - FBS.t) / 1000);
+  FBS.t = !end && document.visibilityState === 'hidden' ? null : now;
+  const k = Math.round(FBS.s);
+  if (k > FBS.k) fbCount('sec', k - FBS.k);
+  FBS.k = k;
+  if (end) FBS = null;
+}
+if (typeof document !== 'undefined' && document.addEventListener)
+  document.addEventListener('visibilitychange', () => {
+    if (!FBS) return;
+    if (document.visibilityState === 'hidden') fbEnd(false);
+    else if (FBS.t === null) FBS.t = Date.now();
+  });
+// More / Less on the sheet's row: shows or hides the panel behind it; the first opening of an answer is counted, and tells
+// "this pair comes back as a duel" (its own count of three tellings).
+function fbMoreBind() {
+  const b = document.getElementById('fbmbtn'),
+    p = document.getElementById('fbmore'),
+    a = document.getElementById('after');
+  if (!b || !p) return;
+  b.onclick = () => {
+    const open = p.hidden;
+    p.hidden = !open;
+    b.setAttribute('aria-expanded', String(open));
+    b.textContent = open ? 'Less' : 'More';
+    if (open && FBS && !FBS.more) {
+      FBS.more = true;
+      fbCount('more');
+      if (p.querySelector('.again')) againTold();
+    }
+    if (isStacked()) fitStage();
+  };
+  // A tap on a link of the app inside the sheet (the genus sheet, Compare them).
+  a.addEventListener('click', e => e.target.closest && e.target.closest('a[href^="#"]') && fbCount('link'));
 }
 // The content version field of an answer in the subject on screen (app.js contentVer), none when it has none yet.
 const cvField = () => {
@@ -1672,6 +1782,9 @@ const rematchAdd = (pair, at) => {
   rematch = [...rematch, {pair, at}];
   return true;
 };
+// It sits behind More on the short feedback sheet: it counts as told once More is opened (fbMoreBind), never for a sheet that
+// stays short.
+const againLeft = () => store.get('reefid-again-told', 0) < 3;
 const againTold = () => {
   const n = store.get('reefid-again-told', 0);
   if (n >= 3) return false;

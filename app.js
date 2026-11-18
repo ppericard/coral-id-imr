@@ -740,6 +740,16 @@ function fishGenera(X, F) {
         )
       ].join(', ');
     if (E && lks.length) E.lksrc = Object.fromEntries(lks.map(([k, s]) => [k.slice(5), s]));
+    // Its undeclared pairs' lines (fish.json apart: our own words from the family's sources, rule C2): said by the quiz
+    // feedback when the two are mixed up (quiz.js pairHalves), each with the family's sources and the editor's source for
+    // it. Never a look-alike (look, decl and the draw do not read them): the feedback is all they change.
+    if (E && f.apart) {
+      const own = (f.msrc || []).map(x => x.t).join('; ');
+      E.ap = Object.fromEntries(Object.entries(f.apart).filter(([, t]) => t));
+      E.apsrc = Object.fromEntries(
+        Object.keys(E.ap).map(o => [o, [own, ((f.esrc || {})['apart/' + o] || {}).t].filter(Boolean).join('; ')])
+      );
+    }
     // the same for its phase lines, shown under More in the quiz feedback (quiz.js fbBody)
     if (E && f.esrc && f.esrc.phase) E.psrc = f.esrc.phase;
     if (!E || E.qt || !(f.marks || []).length) return;
@@ -1460,8 +1470,9 @@ const subjBtns = () =>
     )
     .join('');
 // The header's subject control for n subjects (one click to change:
-// docs/decisions/2026-11-18-decisions-from-app-comments.md): two subjects, a one-click switch (a [data-subj] button each, as Home's row); three or more, the chip and its menu (a
-// switch of three or more would not fit the header on phones); fewer than two, nothing. Where the two sides do not fit
+// docs/decisions/2026-11-18-decisions-from-app-comments.md): two subjects, a one-click switch (a [data-subj] button
+// each, as Home's row); three or more, the chip and its menu (a switch of three or more would not fit the header on
+// phones); fewer than two, nothing. Where the two sides do not fit
 // (under 380 px while the Sign in pill shows, app.css), the switch shows as one chip with the subject on screen, and one
 // click on it brings the other ([data-flip]).
 const subjCtl = n => (n === 2 ? 'switch' : n > 2 ? 'menu' : '');
@@ -2555,7 +2566,7 @@ const UNITS = {
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
+    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
@@ -3396,6 +3407,7 @@ function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
   QOPEN = false; // a question left unanswered for another page (the quiz draws its next one: question())
+  if (typeof fbEnd === 'function') fbEnd(); // the answer's feedback leaves the screen: its seconds are counted (quiz.js)
   // A tab tapped while the app is still loading (a slow line): Home's doors, or the loading bar for
   // any other page (beforeData); the start-up's own route() opens the page tapped, from the hash.
   if (!DATA) return void beforeData();

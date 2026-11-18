@@ -747,7 +747,8 @@ test('achRevoke and mergeAch: learned-based achievements taken back stay so thro
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ]);
   const snap = (learned, group = false) => ({
     total: 40,
