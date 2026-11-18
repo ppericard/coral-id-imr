@@ -3437,8 +3437,14 @@ replay reads the pooled pairs only for the rows logged before their scoring reco
 coral rows): with the new pairs 15 of 490 player-genus bars move, by at most 0.36 points, less than one day of new
 answers moves them (21 bars, 0.52 points at most), so no rules version (rule D5: the pooled pairs are data the replay
 reads as they are, and a row with its scoring record replays the same whatever they hold, `tests/scorer.test.js`).
-The app world cannot see the change beyond its stats snapshot (learnsim plays with fixed pooled stats and its typed
-answers never reach them): SIMRESULT
+The app world sees the change only through its stats snapshot (learnsim plays with fixed pooled stats and its typed
+answers never reach them): level 1, `tools/learnsim.js` the four profiles × 5 seeds × 300 questions with the pooled
+stats of the real log before and after (the same photo ratings, memory and genus offsets), `tools/learncmp.js`: every
+guardrail held or unclear, none breached (true knowledge at 300 within 0.006 for every profile; units met at 300 40 →
+40 except the beginner's 39.6 → 40.0); unclear (the measure cannot tell): the lecture RA's bar against true knowledge
++0.025 [+0.062], the expert's units at Open Water −1.0 [−2.5], the lecture and strong RA's longest plateau, the
+beginner's units met at 100 −1.4 [−2.3]. Twelve pairs moved by a few hundredths change the traps drawn now and then,
+which sends a seed down another path; nothing points one way across the profiles.
 
 ### Fish on the same model (2026-11-03)
 
