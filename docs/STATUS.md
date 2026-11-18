@@ -47,7 +47,7 @@ the same (acorn, `ast.dump`, parsed YAML); decisions found only in comments move
 
 ## Next
 
-1. Versions one at a time: #1121 (re-assign v188) once Pierre has dismissed its two CodeQL alerts.
+1. Versions one at a time: the `photoFallback`/`photoRetry` host-check fix (v188), then #1121 brought up to date (v189).
 2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): the Matrix fish game (decided; it needs core.js, so after
    #1121); the open rows of `docs/reviews/2026-11-19-backlog-recheck.md`.
 
