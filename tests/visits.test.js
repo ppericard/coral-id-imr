@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Players › Visits (Pierre, 2026-11-08, Q301-Q304; one page for every subject, 2026-11-09): admin-visits.js visitsOf (the
+// Players › Visits (one page for every subject): admin-visits.js visitsOf (the
 // visits from the Pages rows, each marked with its subjects, joined to their load row, who answered and who signed in),
 // devClass (phone, tablet, computer), visitsPick (the filters, Subject among them), visitPeriods (per day or week) and
 // visitKpis, on made-up rows.
@@ -89,7 +89,7 @@ test('visitsOf: one visit per visitor and visit id, every subject, its parts add
   );
   const v2 = by.v2;
   eq(J(v2.P), {home: [1, 5], 'learn.genus': [7, 240], progress: [1, 60]});
-  // Each summary says how it reached a sheet: the parts' counts are kept per source (Codex review #777).
+  // Each summary says how it reached a sheet: the parts' counts are kept per source.
   eq(J(v2.G), {Acropora: [6, 200, {learn: 2, quiz: 4}], Porites: [1, 40, {progress: 1}]});
   assert.strictEqual(v2.s, 305);
   assert.strictEqual(v2.t, at(3, 20), 'its time: its first part');
@@ -251,7 +251,7 @@ test('visitPeriods: per day or week (from Monday), gaps filled, with and without
   assert.strictEqual(ctx.visitPeriods([], at(1), at(1) + 100 * 864e5, 'day').length, ctx.VISITS.MAX, 'the last periods only');
 });
 
-// Codex review #777: a visit left at 10:10 and a new one opened 30 s later on the same device; the second one's load row
+// A visit left at 10:10 and a new one opened 30 s later on the same device; the second one's load row
 // (10:10:30) is never the first one's, whose own load row came at 10:03 (sync.js sends the load row before the summary).
 test("visitsOf: a load row sent after a visit's first summary is the next visit's", () => {
   const R = [
@@ -272,7 +272,7 @@ test("visitsOf: a load row sent after a visit's first summary is the next visit'
   );
 });
 
-// Codex review #836: a visitor's Journey link names its subject: the one filtered, else the one of most of their time.
+// A visitor's Journey link names its subject: the one filtered, else the one of most of their time.
 test("visitorSubj: the visitor's Journey on the subject filtered, else the subject they spent most time on", () => {
   const {visitorSubj} = ctx;
   assert.strictEqual(visitorSubj([by.v7], 'all', ORDER), 'fish', 'a fish-only visitor: their fish Journey');
@@ -285,7 +285,7 @@ test("visitorSubj: the visitor's Journey on the subject filtered, else the subje
   assert.strictEqual(visitorSubj([], 'all', ORDER), 'coral', 'no visit: the first subject');
 });
 
-// Screens (Pierre, 2026-11-18: the sizes the players use, for the multi-photo game formats): the devices of the last 90
+// Screens (the sizes the players use, for the multi-photo game formats): the devices of the last 90
 // days that sent their screen (core.js viewportOf), each once with its most common size, by width band.
 test('screenBand: a phone by the band of its short side, a tablet or a desktop as devClass says', () => {
   const {screenBand} = ctx,
