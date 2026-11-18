@@ -1232,7 +1232,8 @@ function statsStep_(S, m, tr, ex, idx){
 // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
 // vNEXT: a 5th element, the unit whose offset is in that total (PG): a photo shared by units of different ranks (a fish
 // family and its scientific genus, core.js fishSciGen) is rated under the last unit that rated it, so the app swaps that
-// unit's offset for the one of the unit it asks (model.js photoDiff). The corals' photos have one genus: no change.
+// unit's offset for the one of the unit it asks (model.js photoDiff). A coral photo has one genus: no change, unless it
+// was rated last under a genus it has since left (moved or renamed).
 function statsOut_(S){
   const out = {ok: true, photos: nul_(), conf: S.conf, mem: S.mem.map(x => Math.round(x * 100) / 100), memn: S.N.map(x => Math.round(x * 10) / 10), gd: nul_(), fmt: CORE_.fmtFit(S.L)};
   Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3], S.PG[f]]; });

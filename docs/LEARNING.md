@@ -883,7 +883,8 @@ answers, unit]}`, the unit whose offset G is in that total: the last that rated 
 (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first time. A fish photo is shown at several
 ranks (a genus or species question shows its family's photos), so the last unit that rated it may not be the one asked:
 the app then swaps that unit's offset for the offset of the unit asked (`model.js` `photoDiff`), keeping the photo's
-own residual P. A coral photo has one genus, so its total is read as served.
+own residual P. A coral photo has one genus, so its total is read as served, unless it was rated last under a genus it
+has since left (moved or renamed): it then takes its current genus's offset.
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos

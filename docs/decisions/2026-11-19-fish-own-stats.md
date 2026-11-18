@@ -24,6 +24,7 @@ the offset of the unit asked (the sheet names the unit that rated it last; Codex
 ## Consequences
 
 - The fish draw, traps and data look-alikes follow their players' answers from the script version that ships this
-  (`core.js` `FISHST_SHEET`, rule D4); the corals' numbers are unchanged.
+  (`core.js` `FISHST_SHEET`, rule D4); the corals' numbers are unchanged, but for a photo rated last under a genus it
+  has since left, which takes its current genus's offset.
 - The progress is not recalculated: the sheet replays a fish answer from the scoring record it logged.
 - The measurements and the check: docs/archive/learning-notebook.md "The fish's own pooled statistics".

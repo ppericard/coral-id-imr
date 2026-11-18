@@ -626,7 +626,8 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   whole Answers tab 2,000 rows at a time, 60 s at most a run), one `pool3` entry per subject in the script cache (the
   corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, each in parts under 100 KB), and one more
   `?stats=1` request every 10 minutes per device playing the sea slugs or the fish (served from the snapshot's cache; the
-  fish's reply is about 125 KB on 2026-11-18, growing with the photos rated and the pairs offered).
+  fish's reply is about 125 KB on 2026-11-18, about 40 KB more with each photo's unit from vNEXT, growing with the
+  photos rated and the pairs offered; the served reply is cached in parts, `cacheBigPut_`).
 
 **The other readers** use the numbers over all the data, stored, never simplified. The admin's `readStats`
 (`POST {readStats, token, s}`, `s` the subject, the corals without it) is served by `statsAdmin_` from row 2 and **row 4**, the
