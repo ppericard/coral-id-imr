@@ -90,7 +90,11 @@ The visible marks come from these public pages, each read and quoted [read] unle
 - the Australian Museum;
 - the Solitary Islands Underwater Research Group's species pages (SURG);
 - "Fishes of the Maldives" (BOBP/MAG/021, in FAO's repository);
-- two Wikipedia articles, each giving the paper it relies on.
+- two Wikipedia articles (one names the paper it relies on).
+
+How the quotes were taken: the web pages were read through a page reader that returns the passages asked for, so a
+long sentence sometimes came back in two segments, rejoined here with "..." where words were left out. Randall 2005
+and the FAO guide were downloaded as PDFs and quoted from their text directly.
 
 For the sea slugs, the note cites the quotes the survey already read (`tools/seaslug_lookalikes_source.json` and
 `tools/seaslug_lookalikes_cand.json`) and the genus marks of `tools/seaslug_cues.json`, without fetching them again
@@ -273,7 +277,10 @@ The species named in the text but **not in the game data** are marked "not in ou
   - Randall 2005, p. 308: "Four different color forms of the bream mimic different species of Meiacanthus". *M.
     grammistes* is "the model for ... a third color form of juvenile Scolopsis bilineatus" (his fig. 47 is from Luzon)
     [read].
-  - Randall also names two forms for models outside our data: *M. vittatus* and *M. lineatus*.
+  - The bream's other forms, by Randall, resemble *M. oualanensis* (Fiji) and *M. smithi* (the Indian Ocean), and
+    Smith-Vaniz et al. 2001 add *M. lineatus*: none is in our data. *M. vittatus*, in Papua New Guinea, is the model
+    Randall gives for *Petroscirtes breviceps* and the young of *Scolopsis margaritifera* (p. 309-310), not for this
+    bream.
 - **Seen near Dauin**: 26 observers (PH observers 132) and 11.
 - **Marks** [read]:
   1. The juvenile bream: "upper half of body black with two yellow stripes", and "midsides with a broad white
@@ -313,7 +320,7 @@ None of these is a mimicry case. They are classic confusions: two species of one
 - **Marks** [read], from the Australian Museum's Longfin Bannerfish page: the schooling bannerfish "looks very similar,
   but can be distinguished by a more rounded profile under the head and a shorter snout". It adds: "The second black band
   is located further forward on the anal fin".
-  1. The profile under the head: rounded, against nearly straight.
+  1. The profile under the head: more rounded in *H. diphreutes*.
   2. The snout: shorter in *H. diphreutes*.
   3. The second black band's position on the anal fin.
 - The page's spine count (12 against 11) is not used: never a count on a card.
@@ -410,7 +417,7 @@ None of these is a mimicry case. They are classic confusions: two species of one
 - **Marks**:
   1. "Juveniles deep blue with curved circular white bands" (*P. imperator*), against "Juveniles dark blue with white
      and pale blue crescents on their sides" (*P. semicirculatus*). Source: "Fishes of the Maldives", BOBP/MAG/021,
-     FAO, pp. 218-219 [read].
+     FAO, pp. 219-220 [read].
   2. The emperor's juvenile has a complete white ring toward the rear. Reef Life Survey on *P. semicirculatus*:
      "lacking complete circular marking of P. imperator" [search: its page answered 403].
 - **Photos**:
@@ -662,7 +669,8 @@ Plain confusions:
   meleagris*, which is in our data (Randall 2005, p. 318).
 - *Lutjanus bohar*, whose juveniles are compared with *Chromis* damselfishes (Randall 2005, p. 313).
 - *Pseudochromis fuscus*, compared with *Pomacentrus* damselfishes (Randall 2005, p. 318).
-- *Meiacanthus vittatus* and *M. lineatus*, two of the bream's other models.
+- *Meiacanthus oualanensis*, *M. smithi* and *M. lineatus*, the bream's other models, and *M. vittatus*, another model
+  of *Petroscirtes breviceps*.
 - *Coris aygula*, *Siganus vulpinus*, *Epinephelus polyphekadion*, *Canthigaster coronata*, *Abudefduf bengalensis*:
   partners of classic confusions elsewhere, absent from our data.
 
@@ -856,7 +864,7 @@ his eye before the card uses them (rule W10).
 
 ## 11. Searches run and pages read
 
-All on 2026-11-18, 10:25-11:00 Manila.
+All on 2026-11-18, between 10:25 and 10:47 Manila (the clock read at the end).
 
 - The queries hold only scientific names, English common names and general words: no photo, no address of ours, no
   repository or sheet data.
