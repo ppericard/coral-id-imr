@@ -8,11 +8,11 @@ merge, from the PR's `tools/sync/changes/<branch>.md` (rule D3, docs/rules/sheet
 The self-update reads only `const VERSION = N;`, so nothing here changes what the script does.
 
 Entries up to v176 were moved here from the old line 1 word for word (code marks were dropped there, so they are
-missing from those; `docs/SHEET_HISTORY_DETAIL.md` keeps the whole version history `docs/ARCHITECTURE.md` held until
+missing from those; `docs/archive/sheet-history-detail.md` keeps the whole version history `docs/ARCHITECTURE.md` held until
 then, its code marks and its own dates and wording, v2 to v5 included). Their dates: the day ARCHITECTURE.md's version
 history gave, else the day the old line 1 gave for its group of entries, never later than
 the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was that day), though
-`docs/SHEET_HISTORY_DETAIL.md` dates v11 to v31 more exactly (2026-11-01 to 2026-11-03). Some
+`docs/archive/sheet-history-detail.md` dates v11 to v31 more exactly (2026-11-01 to 2026-11-03). Some
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
