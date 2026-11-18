@@ -609,13 +609,16 @@ const DOC_BUDGET = {
   'tools/README.md': [13, 280],
   'tools/sync/changes/README.md': [2, 130]
 };
-// A record has no entry of its own (every decision PR would add one): the same budget for each.
+// A record has no entry of its own (every decision PR would add one): the same budget for each. A sheet script change
+// waiting for its version (tools/sync/changes/<branch>.md, one paragraph, removed at merge) likewise.
 const RECORD_BUDGET = [8, 200];
+const CHANGE_BUDGET = [8, 4000];
 // Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
 const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
 const budgetOf = f => {
   const key = f.split(path.sep).join('/');
   if (DOC_BUDGET[key]) return DOC_BUDGET[key];
+  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_BUDGET;
   return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
 };
 
