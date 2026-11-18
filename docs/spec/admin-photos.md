@@ -374,3 +374,35 @@ lane's median, a box and whiskers from 5 photos; genera and tables by median. **
 photos in play whose own part of the difficulty, the `?stats=1` difficulty minus the genus offset `gd`, is `FAR.D` = 1.5
 logits or more after `FAR.N` = 5 answers or more, the farthest first, each opening the photo (`admin.js` `farHarder`;
 at a genus recognised 4 times in 5, such a photo is recognised about 1 time in 2; `tests/farharder.test.js`).
+
+### Taxa
+
+`#photos/stats/taxa`, every subject's page (`admin.js` `EVERY`, so no `SUBJECTS` `admin` `pages` entry; `admin-taxa.js`
+`renderTaxa`): the taxa that are out of play, or in the game but not ready to be asked, and why. Read-only, from what the
+admin already holds (no sheet call, no file of its own): one row per taxon, its name (its page on the Tree or the genus
+page when it has one: a species in the game of a family, a coral genus; none for a species `out`), its family, and its
+reasons, each with the number or the recorded text behind it. One chip per reason with its count narrows the list; All
+brings it back. A reason is always a field somebody recorded, never a guess: a taxon no field explains says **Reason not
+recorded**.
+
+- **The tree subjects' species** (the fish, the sea slugs; `taxaFish`), from the tree file and the draft:
+  - the file's `out`, the reason `tools/build_fish.py` wrote, one reason per part of "a; b": "family in no circle" is
+    **Outside the circles**, "not confirmed in the Philippines" **Not confirmed in the Philippines**, "not confirmed near
+    Dauin" **Not confirmed near Dauin** (the presence rule C8: no confirmation, not proof of absence), any other text
+    **Out as recorded**, shown as written; an `out` with no text, or a species that is not out and that no family page and
+    no photo count reaches, **Reason not recorded**;
+  - a species not out whose family is in no circle in force, **Outside the circles** with "its family is in no circle in
+    the draft" (the draft's Structure › None, `fuCircle`);
+  - a species in the game, by the photos in play the family pages count (`autosort.js` `fishCov`): **No photo in play**,
+    with the candidates waiting; **Under target**, with its observations in play against its target (`fishTarget`: it
+    still plays).
+- **The corals' genera** (`taxaGenera`): **Key only**, a genus `data.json` holds for the Coral ID Key that no game
+  asks (`core.js` `gameOf`), and **No photo in play** for a game genus with nothing in play in any view (Coverage's `covOf`).
+  Corals have no species rank to curate, so no species is listed.
+- Not listed: a taxon in play at its target. A species the build dropped altogether (`report["drop"]` of
+  `tools/build_fish.py`) is not in `fish.json`, so the admin cannot list it. The sea slugs' genus-level photos (`gl`) are
+  photos of a genus in play, not a waiting taxon, and no field records a taxon "waiting for the species level".
+- The ? help (`HELP.taxa`) says what each reason means. Tested in `tests/taxa.test.js` (the pure functions on made-up data:
+  the known and an unknown `out` text, no reason recorded, a draft circle of None, the counts) and `tests/admin.smoke.js`
+  (each subject's list against a count made from the files, the chips, the links, no sideways scroll, dark at 390 and
+  1280 px).
