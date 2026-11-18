@@ -22,12 +22,14 @@ Integrator's call, made while building the first section (Progress sync), within
   connects to the others, and where each detail lives.
 - Every name another file cites stays in the map as a bold stub that links to its new home, so the citers (Pierre's
   rules, the sheet script's comments, the decision records) need no change.
-- The history is not copied anywhere: it is in git (the base of the PR), the PRs, `tools/sync/HISTORY.md` and these
-  records.
+- In this PR the history of the section was not copied into another doc: it stays in git (the base of the PR), the
+  PRs, `tools/sync/HISTORY.md` and these records. Whether a later section moves the decisions its history holds into
+  records, or copies its old text to `docs/archive/`, as the plan allows, is not settled here.
 
 ## Consequences
 
-The next sections (Data files, Admin, Front end, Subjects, Tools) follow the same shape. `tests/docs.test.js` treats
+The next sections (Data files, Admin, Front end, Subjects, Tools) follow the same shape: a spec file, a map section,
+stubs for the cited names. `tests/docs.test.js` treats
 `docs/spec/*.md` as governing docs (their backticked identifiers must exist, no done list, no manual version bump) and
 fails when a spec file is linked from no ARCHITECTURE section. Specified now in [ARCHITECTURE.md](../ARCHITECTURE.md)
 "Progress sync (Google Sheet)", [spec/sync.md](../spec/sync.md) and [spec/cards.md](../spec/cards.md).

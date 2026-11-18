@@ -339,7 +339,8 @@ one and an older app on one account); the harness is `tests/syncpage.js`.
   throttle. Leaving the app sends a save still waiting for its timer.
 - **"Not saved" shows only once saving has failed `SAVE.RED_N` (3) counted tries in a row over `SAVE.RED_MS` (60 s) at
   least** (with the retries above: at the 5th try, 75 s after the first failure); `pin`, `wait` and `gone` are red at
-  once. The answers stay queued meanwhile and the whole queue goes at the next try.
+  once. The red state is the account record's `SYNC.err` (`net` for a run of failures, else the sheet's error, as
+  `saveFailed` sets it). The answers stay queued meanwhile and the whole queue goes at the next try.
 - The run of failures is kept in the account record (`SYNC.fail`: `n` counted, `hid` cut by the background, `at` the
   first failure, `why`, `d`), so a reload keeps counting.
 - Events (kind `sync`): `save failed: <error>` when the red shows, `save recovered: <error>` when a run with a counted
@@ -843,8 +844,9 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   web app deployment at it (the same `/exec` URL); the `Deploy log` tab records each install or error.
   `installAutoUpdate` checks the API at once (a standard Cloud project with the Apps Script API may be needed:
   HANDOVER.md). If the code was replaced but the deployment failed, the Script Property `AUTO_PENDING` makes the next run
-  finish it. The same trigger then runs the one-shot migrations (`ONCE_`), the leaderboard's replays made ahead, the
-  structure refresh, the pooled statistics' fold and the Timings trim.
+  finish it. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
+  leaderboard's replays made ahead (`boardWarmRun_`, which first reads the structure again, `subjStRefresh_`) and the
+  pooled statistics' fold (`statsFoldRun_`); every run ends with the Timings trim (`timTrim_`).
 - **By hand**, before the one-time setup (HANDOVER.md) or if it fails: copy
   <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs> into Extensions > Apps Script, then
   Deploy > Manage deployments > Edit > New version.
