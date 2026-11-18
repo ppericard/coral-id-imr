@@ -5,72 +5,64 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-18, about 11:15 Manila, by the integrator. **A new integrator starts here, then reads
-[INTEGRATOR.md](INTEGRATOR.md).** Handovers: this file is refreshed about every 90 minutes of work (Pierre, 11:08).
+Written 2026-11-18, about 14:40 Manila, by the integrator. **A new integrator starts here, then reads
+[INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
-Last checked: reports and events: 2026-11-18 ~10:40 Manila (a coral expert's two reports: the repeat photo, fix in
-flight; Mycedium's mnemonic, done in #1084).
+Last checked: reports and events: 2026-11-18 ~10:40 Manila.
 
 ## Now
 
-Main: sheet script **v176** (#1067). Trains: `tools/train.py`; `npx --yes prettier@3.10.1`. Agents: at most 4 that write
-code or run tests, read-only studies on top (W27 as reworded in #1086); model and effort per task (#1086's table).
+Main: sheet script **v177** (#1079). Trains: `tools/train.py`, one at a time (overlapping trains fail on "main moved").
+Agents: at most 4 that write code or run tests, studies on top; model and effort per the table in #1086 (Opus for
+design, engine, security; Sonnet for ordinary code and docs; Haiku for bulk work after a sample test); agents edit files
+only with Write/Edit (no inline code in shell: it makes Pierre approve prompts). Estimates: `tools/effort.py` (#1087).
 
-- **Merged today** (30+): sea slugs out of beta, stats, admin, WoRMS, Structure (#1051, #1060-#1062, #1075); live mode
-  v1 (#1049); staff and cohort boards (#1050); held-out set (#1057); 107 genus presentations (#1074) and the circle 2-3
-  genera (#1067); gate floor `SHEET_FLOOR = 131`, 25 gates deleted (#1076); minify at deploy (#1069); the three reviews
-  (#1064-#1066); the multi-photo study (#1081); fixes #1053, #1072, #1073, #1082, #1084.
-- **Merging** (in order): #1070 fish reference photos → #1079 viewport (v177 assigned).
-- **Open, being finished by their agents**: #1083 content version + attempt id (B4, needs a version); #1078 admin seal
-  model B; player groups (one model for cohorts, staff, beta; agent); repeat-photo fix (a player's report; agent);
-  #1086 rules; #1087 `tools/effort.py`; studies #1071, #1077, #1080, #1085 (answered: merge once Codex-clean); the
-  short feedback sheet study (agent); Anthropic's subagent guidance (docs agent).
-- **#1045**: decided (down; reference from the photo's traits): `refLevel` from traits still to build.
+- **Today, merged** (50+): see `git log`. Since 13:10: #1096 (Code.gs line 1 short, history in tools/sync/HISTORY.md),
+  #1086 rules, #1100, #1097 feedback study, #1085 look-alike pairs, #1041 species step 2 plan, #1103 (--assign tool fix).
+- **Merging, one by one** (`queue.sh 1083 1092 1105 1078`): #1083 content version (v178 assigned; I fixed a docs test:
+  `Code.gs floorRef_` allow-listed as history); #1092 fish grid (I fixed it: its Codex fix declared `boardUnits`, already
+  sync.js's, and progress.js stopped loading: renamed `boardTiles`); #1105 a test that fails on such clashes between
+  the app's scripts; #1078 seal (both Codex threads real, fixed with tests; no version needed).
+- **Next versioned**, one at a time after #1083 (merge main, `--assign`, push, `@codex review`, queue): #1091 player
+  groups (v179), #1101 infra health (INFRA_SHEET to reassign), #1102 release branch (then Pierre adds the `release`
+  ruleset), #1099 per-player reserve (after Pierre).
+- **Waiting for Pierre**: #1104 docs PR 1 (Codex-clean, green; OK on three factual rule wordings: A4 + ui "subject
+  picker", W18 "rewrite done 08/11"; its agent holds PR 2 until it merges); #1099 (B floor 40? "never seen" by
+  observation?); #1093 repeat-photo fix (A rec.); #1045 reference from traits (A rec.; then apply P1 strictly: no medium
+  size, no schools in REF_LOOK); #1095 privacy page (3 points); #1098 one app by role study (a)-(f).
+- **Agents running**: #1106 infra 4 (`tools/unminify.js`: error positions back through the source maps; Codex
+  reviewing); short feedback sheet build (layout A + More counter, Sonnet).
 
 ## Next
 
-The queue, in order (agents take it four at a time):
-
-1. Roles UI (a Roles line in a player's bar: grant role + scope, revoke; Admin › Roles with rights and the audit).
-2. Fish basics from Pierre's Drive decks (folder "IMR fish", `Fish Identification_2026`); C12: lecture photos never
-   upscaled + the 86 Corals of the World originals with exact credit; held-out sets for corals and sea slugs (L5).
-3. Sea slug achievements 60-100%; small fixes (tour, account names, About version, Try again; only the main quiz opens).
-4. Variant classes for every subject with the mimicry class (Open Water of both units, a card, look-alike drills);
-   class B cards; the out-of-region warning; M1-M7 declared pairs (#1085).
-5. Frames model (subject / feature / context), agent-proposed only when sure, live by default, fixed in the admin;
-   light models only after a sample test against a strong one.
-6. Short feedback sheet (after its study); typed answers (L26); live v1 pooled difficulty, then live prep PRs 1-4
-   (familiar live-quiz conventions, our own palette; live answers count without unlocking).
-7. What I learn card (Q400 D, Q401 A, Q402 A, Q403 no switch, Q404 A; two independent teaching trees).
-8. Game formats in the quiz (Same or different?, Odd one out for every subject incl. corals, Down the tree, Life stages).
-9. Coral calibration set (~50 photos to 20+ answers), then the explicit placement test (20-25 adaptive questions).
-10. Architecture steps 3-4 (`fish*` → `tree*`, split `core.js`), then the corals-on-the-tree plan to Pierre (Q406).
-11. Infrastructure watch (R2, the sheet's size and quotas, Pages): alert early; the domain waits until needed.
+1. The merge order above; versions: #1083 v178, #1091 v179, release branch and infra as they come.
+2. Queue (task list): sourced tell-apart lines (40 coral, 9 sea slug pairs) after the feedback sheet; docs
+   restructuring PRs 2+ (after #1104); roles UI and one app
+   by role (after #1098's answers); Fish basics from the Drive decks; C12 lecture photos; sea slug achievements
+   60-100%; small fixes; variant classes with mimicry, cards, the out-of-region warning, pairs M1-M7 (#1085); frames
+   model; typed answers; live fixes and prep (#1077); What I learn card (#1071); game formats; coral calibration set
+   then the explicit placement test (#1080); architecture steps 3-4; species step 2 build (#1041).
+3. Infrastructure watch (R2, sheet cells, quotas, Pages); domain only when needed.
 
 ## Questions for Pierre
 
-Answered this morning (all recorded in the PRs): Q400-Q406, W27, estimates in agent time, P1, P4, C2/D5, L4, L8 no,
-L14 no (packs later), L19 → calibration then an explicit test, F28 → mimicry class, live prep (a)-(e), #1061, seal B,
-staff = a group (groups generalised), multi-photo (a) no restriction / (b) frames / (c) keep the header, pairs (a)-(d).
+Answered today (in their PRs): Q400-Q406, W27, model table, estimates, no inline code, P1, P4, C2/D5, C3, L4, W19 +
+docs plan, licence A (all rights reserved for now), security reporting (enabled), groups model, Trainer/Curator/
+Manager/Admin names, one-app study, placement → calibration then explicit test, feedback sheet (a)-(f), multi-photo,
+pairs, mimicry class, per-player reserve, infra 1-4.
 
-Still open:
-
-- **Viewport band code** (#1079): integrator's call made (keep `b`; the exact width is already in the load event).
-- **Studies to come**: the short feedback sheet; Anthropic's subagent guidance (model and effort table).
-- **Later**: professionalise and the domain (when the infrastructure demands it); architecture (b)-(i).
-- **To read, easy to undo**: #1043 achievements; #1048 gl 30; #1049 points; #1052 cue wording; #1074 marks ≤ 3.
+Still open: #1104 three wordings; #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points (backup "three months" wording; audit rows after deletion; the
+Notes tab); #1098 (a)-(f); genera opening vs the two independent trees (#1041 §6).
 
 Last question number: Q406
 
 ## Pierre's hands
 
-- **Roles**: grant himself the trainer role (to host a live game); the staff group once #groups lands.
-- **pCloud backup**: Script properties › `PCLOUD_UPLOAD_CODE`; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
-- **In the admin**: Light and Cover proposals, then Publish; Points; the 8 unsure fish candidates; a look at the 16
-  non-Philippine *Acanthurus pyroferus* juvenile photos before its mimicry card uses them.
-- Check the "Coral ID analyses" token's type and the R2 token's scope; protect `main`; renew the admin GitHub token
-  before late January 2027.
-- Long term: contact recognised experts per subject for feedback on the app (ROADMAP).
+- **Roles**: grant himself the trainer role to host a live game.
+- **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages, #1085); the 8
+  unsure fish candidates; a look at the 16 non-Philippine *A. pyroferus* juvenile photos.
+- Check the "Coral ID analyses" token's type and the R2 token's scope; renew the admin GitHub token before late January
+  2027. (Done today: `main` protected; pCloud backup live, weekly.)
 
 ## Parked after hours
 
@@ -78,5 +70,5 @@ Last question number: Q406
 
 ## Last stop
 
-2026-11-18 ~11:15 Manila: mid-day handover. Scratchpad holds player-data extracts (`placement/data/`, older ones):
-delete them, never commit them.
+2026-11-18 ~14:40 Manila: handover. Scratchpad holds player-data extracts (`placement/data/`): delete, never commit.
+Queue waiters: never `pgrep -f` a pattern your own command line contains (two waiters deadlocked on it today).

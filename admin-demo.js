@@ -1035,7 +1035,33 @@
       [NOW - 9 * DAY, 'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'],
       [NOW - 40 * DAY, 'limit reached: anon (6000 per 6 h)']
     ];
-    S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}, excluded: []};
+    // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board apart and a cohort, each player's gids.
+    const gdefs = [
+      {id: 'g:demo0001', n: 'Staff', board: 1, apart: 1, beta: '', at: NOW - 5 * DAY},
+      {id: 'g:demo0002', n: 'RA November 2026', board: 1, apart: 0, beta: '', at: NOW - DAY}
+    ];
+    [
+      ['Ana Demo', 'g:demo0001'],
+      ['Mara Demo', 'g:demo0002'],
+      ['Test Demo', 'g:demo0002']
+    ].forEach(([n, g]) => users[n.toLowerCase()] && (users[n.toLowerCase()].gids = [...(users[n.toLowerCase()].gids || []), g]));
+    S = {
+      rows,
+      frows,
+      fana,
+      after: [],
+      users,
+      reports,
+      events,
+      pages,
+      removed: [],
+      list,
+      gen,
+      slate: slateOf(D),
+      pools: {},
+      excluded: [],
+      gdefs
+    };
     S.alerts = alerts;
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     await Promise.all(
@@ -1255,8 +1281,8 @@
         reports: 0,
         size: JSON.stringify(u.data).length,
         groups: (u.groups || []).slice(),
-        // sheet v171 (Code.gs users_): the player's cohort and the staff mark (the trainer role)
-        ...(V >= COHORT_SHEET ? {cohort: u.cohort || '', ...(u.staff ? {staff: 1} : {})} : {})
+        // sheet v171 (Code.gs users_): the player's cohort; GROUPADM_SHEET: the ids of their groups instead
+        ...(V >= GROUPADM_SHEET ? {gids: (u.gids || []).slice()} : V >= COHORT_SHEET ? {cohort: u.cohort || ''} : {})
       };
     });
     const days = {},
@@ -1330,10 +1356,58 @@
       users: Object.values(by),
       removed: S.removed.slice().reverse(),
       archived,
-      excluded: S.excluded.slice()
+      excluded: S.excluded.slice(),
+      ...(V >= GROUPADM_SHEET ? {groupDefs: S.gdefs.map(d => ({...d}))} : {})
     };
   }
   function users(p) {
+    // Sheet GROUPADM_SHEET (Code.gs userGroup, groupDo_): players in or out of any group; a group made, renamed, set or
+    // deleted (an empty one only).
+    if (V >= GROUPADM_SHEET && (p.userGroup || p.groupMake || p.groupEdit || p.groupDrop)) {
+      const gd = id => S.gdefs.find(d => d.id === id),
+        mem = id => Object.values(S.users).filter(u => (u.gids || []).includes(id));
+      if (p.userGroup) {
+        const g = String(p.group || ''),
+          L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
+        if (!gd(g)) return {ok: false, error: 'group'};
+        if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
+        let n = 0;
+        L.forEach(x => {
+          const u = S.users[lc(x)];
+          if (!u || u.board === -2 || (u.gids || []).includes(g) === !!p.on) return;
+          u.gids = p.on ? [...(u.gids || []), g] : u.gids.filter(y => y !== g);
+          n++;
+        });
+        return {ok: true, group: g, n, members: mem(g).length};
+      }
+      const id = p.groupMake ? '' : String(p.groupEdit || p.groupDrop),
+        cur = id ? gd(id) : null,
+        o = p.groupMake || p;
+      if (!p.groupMake && !cur) return {ok: false, error: 'group'};
+      if (p.groupDrop) {
+        if (mem(id).length) return {ok: false, error: 'members'};
+        S.gdefs = S.gdefs.filter(d => d !== cur);
+        return {ok: true, group: id};
+      }
+      const n =
+        o.n === undefined && cur
+          ? cur.n
+          : String(o.n || '')
+              .replace(/\s+/g, ' ')
+              .trim();
+      if (!n || n.length > 40) return {ok: false, error: 'name'};
+      if (S.gdefs.some(d => d !== cur && lc(d.n) === lc(n))) return {ok: false, error: 'exists'};
+      const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0),
+        d = cur || {id: 'g:' + Math.random().toString(16).slice(2, 10), at: Date.now()};
+      Object.assign(d, {
+        n,
+        board: flag('board', cur ? cur.board : 0),
+        apart: flag('apart', cur ? cur.apart : 0),
+        beta: o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '')
+      });
+      if (!cur) S.gdefs.push(d);
+      return {ok: true, group: {...d}};
+    }
     // Sheet v171: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
     if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
       const c = String(p.cohort).replace(/\s+/g, ' ').trim(),
@@ -1348,16 +1422,6 @@
         n++;
       });
       return {ok: true, cohort: c, n, members: Object.values(S.users).filter(u => u.cohort === c).length};
-    }
-    // Sheet v171: the staff, the trainer role (Code.gs roles_ roleGrant, roleRevoke).
-    if (p.roleGrant || p.roleRevoke) {
-      const g = p.roleGrant || p.roleRevoke,
-        u = S.users[lc(g.account || '')];
-      if (g.role !== 'trainer' || g.scope !== 'instance:imr') return {ok: false, error: 'input'};
-      if (!u) return {ok: false, error: 'user'};
-      const was = !!u.staff;
-      u.staff = !!p.roleGrant;
-      return {ok: true, result: p.roleGrant ? (was ? 'held' : 'ok') : was ? 'ok' : 'none'};
     }
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
     if (p.userGroup) {
@@ -1384,7 +1448,7 @@
       const from = u.name;
       delete S.users[lc(from)];
       if ((u.board ?? 1) === -2) return {ok: false, error: 'archived'};
-      S.users[lc(into)] = {...u, name: into, board: -2, groups: []};
+      S.users[lc(into)] = {...u, name: into, board: -2, groups: [], gids: []};
       let answers = 0;
       S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
@@ -1450,6 +1514,7 @@
       b.data = m.data;
       b.rev++;
       if (a.groups) b.groups = [...new Set([...(b.groups || []), ...a.groups])]; // v48: the merged name's beta groups join
+      if (a.gids) b.gids = [...new Set([...(b.gids || []), ...a.gids])]; // GROUPADM_SHEET: every group of the merged name joins
       b.updated = Date.now();
       let answers = 0,
         reports = 0;
@@ -1598,7 +1663,7 @@
         p.userStart ||
         p.statsExclude ||
         p.userGroup ||
-        ((p.roleGrant || p.roleRevoke) && V >= COHORT_SHEET)
+        ((p.groupMake || p.groupEdit || p.groupDrop) && V >= GROUPADM_SHEET)
       )
         return ok(users(p));
       return ok({ok: false, error: 'demo'});

@@ -88,7 +88,13 @@ function makeSheet(name) {
           return range;
         },
         setFontWeight: () => range,
-        setBackgrounds: () => range
+        setBackgrounds: () => range,
+        // The number format of each cell set (sheet.formats['row,col']): '@' is plain text.
+        setNumberFormat(f) {
+          sheet.formats = sheet.formats || {};
+          for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) sheet.formats[`${r + i},${c + j}`] = f;
+          return range;
+        }
       };
       return range;
     }
