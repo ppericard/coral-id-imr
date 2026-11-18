@@ -1,0 +1,651 @@
+require('./slot.js').testGuard();
+// The live mode (sheet v172; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
+// in-memory sheet (rule D1): the trainer check (d) by the script's roles, never the page; the session's state machine;
+// the scoring (b): a right answer plus a speed bonus, timed from the moment the question reached that student; what a
+// student is sent (never the right answer before the reveal); the session in the cache only, never a sheet tab; and the
+// app's own module (live.js) for its gate (rule D4) and its pure helpers.
+const test = require('node:test'),
+  assert = require('node:assert'),
+  fs = require('fs'),
+  path = require('path'),
+  vm = require('vm');
+const {loadCodeGs} = require('./gas.js');
+
+const ROOT = path.join(__dirname, '..');
+const TOK = 'ghp_write000000000000000000';
+const IMR = 'instance:imr';
+const run = (s, js) => vm.runInContext(js, s.ctx);
+const copy = o => JSON.parse(JSON.stringify(o));
+const save = (s, name, pin = '1234') => s.post({name, pin, data: {}, summary: {}, answers: []});
+const grant = (s, account, role) => s.post({roleGrant: {account, role, scope: IMR}, token: TOK});
+// A question as the trainer's page sends it (live.js liveBuild): photos, four choices, the right one's index.
+const Q = (k = 1, f = 'acropora-1') => ({
+  ph: [{f, u: `img/${f}-m.webp`, v: 'wide'}],
+  ch: [
+    ['Montipora', 'Montipora'],
+    ['Acropora', 'Acropora'],
+    ['Porites', 'Porites'],
+    ['Pocillopora', 'Pocillopora']
+  ],
+  k
+});
+// A sheet with a trainer (Tess, the trainer role), a player with no role (Pat), and the clock under the test's hand.
+function setup() {
+  const s = loadCodeGs();
+  let now = Date.UTC(2026, 10, 18, 2, 0, 0);
+  run(s, 'Date.now = () => globalThis.__now();');
+  s.ctx.__now = () => now;
+  s.tick = ms => (now += ms);
+  save(s, 'Tess');
+  save(s, 'Pat');
+  assert.strictEqual(grant(s, 'Tess', 'trainer').ok, true);
+  s.lv = (step, o = {}) => copy(s.post({lv: step, ...o}));
+  return s;
+}
+const start = (s, o = {}) => s.lv('start', {lname: 'Tess', lpin: '1234', s: 'coral', t: 'Group 1', n: 3, lim: 20, ...o});
+
+test('only an account with the trainer role starts a session, checked by the script with its code', () => {
+  const s = setup();
+  // No role: refused, and one Audit row for the refusal (ids only).
+  assert.deepStrictEqual(start(s, {lname: 'Pat'}), {ok: false, error: 'role', v: run(s, 'VERSION')});
+  // A wrong code: refused before any role is read, and it counts towards the account's lock (failed_).
+  assert.strictEqual(start(s, {lpin: '9999'}).error, 'pin');
+  for (let i = 0; i < 5; i++) start(s, {lpin: '9999'});
+  assert.strictEqual(start(s).error, 'wait');
+  run(s, `CacheService.getScriptCache().remove(failKey_('Tess'))`);
+  // No such account, a malformed request, a name / pin pair (a progress save's fields) never taken as the trainer's.
+  assert.strictEqual(start(s, {lname: 'Nobody'}).error, 'user');
+  assert.strictEqual(s.lv('start', {name: 'Tess', pin: '1234', s: 'coral', n: 3, lim: 20}).error, 'input');
+  assert.strictEqual(start(s, {n: 0}).error, 'input');
+  assert.strictEqual(start(s, {lim: 500}).error, 'input');
+  assert.strictEqual(start(s, {s: 'whales'}).error, 'input');
+  // The trainer: a 6-digit code and a key of its own.
+  const r = start(s);
+  assert.strictEqual(r.ok, true);
+  assert.match(r.code, /^\d{6}$/);
+  assert.match(r.tk, /^[a-z0-9]{18}$/);
+  // Audited: the start and the refusal, by anonymous id, never a name.
+  const A = s.sheets.Audit.rows.slice(1).map(x => [x[2], x[3], x[4]]);
+  assert.deepStrictEqual(A.slice(-2), [
+    ['live start', IMR, 'denied'],
+    ['live start', IMR, 'ok']
+  ]);
+  assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
+  // The right is the trainer role's only: an owner or an editor without it is refused (Q364: rights are separate).
+  save(s, 'Owen');
+  grant(s, 'Owen', 'owner');
+  grant(s, 'Owen', 'editor');
+  assert.strictEqual(start(s, {lname: 'Owen'}).error, 'role');
+  assert.strictEqual(run(s, `ROLES.DEF.trainer.rights.includes('live')`), true);
+});
+
+test('a session runs lobby, question, reveal, next, end; students get no right answer before the reveal', () => {
+  const s = setup(),
+    {code, tk} = start(s),
+    host = (o = {}) => s.lv('host', {code, tk, ...o});
+  assert.strictEqual(host().ph, 'lobby');
+  // A wrong key is no trainer.
+  assert.strictEqual(s.lv('host', {code, tk: 'x'.repeat(18), act: 'end'}).error, 'input');
+  // Three students join; the same nickname twice gets a number.
+  const J = ['Mia', 'Leo', 'mia'].map(nick => s.lv('join', {code, nick}));
+  assert.deepStrictEqual(
+    J.map(j => j.name),
+    ['Mia', 'Leo', 'mia 2']
+  );
+  J.forEach(j => assert.match(j.pk, /^[a-z0-9]{16}$/));
+  assert.deepStrictEqual(host().names, ['Mia', 'Leo', 'mia 2']);
+  const poll = j => s.lv('poll', {code, pid: j.pid, pk: j.pk}),
+    ans = (j, c, qi = 0) => s.lv('answer', {code, pid: j.pid, pk: j.pk, qi, c});
+  assert.strictEqual(poll(J[0]).ph, 'lobby');
+  // A reveal or an answer before any question: refused.
+  assert.strictEqual(host({act: 'rev'}).error, 'phase');
+  assert.strictEqual(ans(J[0], 1).error, 'phase');
+  // A question that does not fit is refused, nothing changes.
+  assert.strictEqual(host({act: 'q', q: {...Q(), k: 7}}).error, 'input');
+  assert.strictEqual(host({act: 'q', q: {...Q(), ch: Q().ch.slice(0, 3)}}).error, 'input');
+  assert.strictEqual(host({act: 'q', q: {...Q(), ph: [{f: 'a', u: 'javascript:alert(1)'}]}}).error, 'input');
+  assert.strictEqual(host({act: 'q', q: {...Q(), ph: [{f: 'a', u: 'https://x.org/a" onerror="b'}]}}).error, 'input');
+  assert.strictEqual(host().ph, 'lobby');
+  // The first question: the trainer sees its right answer, a student never.
+  const h1 = host({act: 'q', q: Q(1)});
+  assert.strictEqual(h1.ph, 'q');
+  assert.strictEqual(h1.q.k, 1);
+  const p1 = poll(J[0]);
+  assert.strictEqual(p1.ph, 'q');
+  assert.strictEqual(p1.left, 20000);
+  assert.deepStrictEqual(p1.q.ch[1], ['Acropora', 'Acropora']);
+  assert.ok(!('k' in p1.q) && !('rev' in p1) && !JSON.stringify(p1).includes('"k"'), JSON.stringify(p1));
+  // Answers: Mia right after 5 s of her own clock; Leo wrong; one answer each, the second ignored.
+  poll(J[1]);
+  s.tick(5000);
+  assert.deepStrictEqual(ans(J[0], 1), {ok: true, mine: 1, v: run(s, 'VERSION')});
+  assert.strictEqual(ans(J[0], 2).mine, 1);
+  assert.strictEqual(ans(J[1], 3).ok, true);
+  // Still nothing about right or wrong for the students, and the count for the trainer.
+  assert.ok(!('rev' in poll(J[0])));
+  assert.strictEqual(host().cnt, 2);
+  // A key that is not the student's: refused.
+  assert.strictEqual(s.lv('answer', {code, pid: J[2].pid, pk: J[0].pk, qi: 0, c: 1}).error, 'input');
+  // The reveal: the right choice, each choice's count, own points, the top 5.
+  const r1 = host({act: 'rev'});
+  assert.deepStrictEqual(r1.rev.d, [0, 1, 0, 1]);
+  assert.strictEqual(r1.rev.tot, 2);
+  const v = poll(J[0]);
+  assert.strictEqual(v.ph, 'rev');
+  assert.strictEqual(v.rev.k, 1);
+  assert.strictEqual(v.rev.mine, 1);
+  assert.strictEqual(v.rev.pts, 175); // 100 + 100 x 15 s left of 20
+  assert.strictEqual(v.rank, 1);
+  assert.deepStrictEqual(v.top[0], ['Mia', 175, 1]);
+  assert.strictEqual(poll(J[1]).rev.pts, 0);
+  // Too late once revealed.
+  assert.strictEqual(ans(J[2], 1).error, 'phase');
+  // Next question, then the last; no fourth one (3 planned).
+  assert.strictEqual(host({act: 'q', q: Q(0, 'montipora-2')}).qi, 1);
+  assert.strictEqual(host({act: 'q', q: Q(0)}).error, 'phase');
+  host({act: 'rev'});
+  host({act: 'q', q: Q(2, 'porites-3')});
+  host({act: 'rev'});
+  assert.strictEqual(host({act: 'q', q: Q()}).error, 'phase');
+  const e = host({act: 'end'});
+  assert.strictEqual(e.ph, 'end');
+  assert.strictEqual(e.hist.length, 3);
+  assert.deepStrictEqual(e.hist[0].d, [0, 1, 0, 1]);
+  assert.strictEqual(e.hist[0].t, 'Acropora');
+  assert.deepStrictEqual(e.stand[0], ['Mia', 175, 1]);
+  assert.strictEqual(poll(J[2]).ph, 'end');
+  assert.strictEqual(host({act: 'end'}).error, 'phase');
+  // No join once ended.
+  assert.strictEqual(s.lv('join', {code, nick: 'Zoe'}).error, 'gone');
+  // Nothing of it in any sheet tab: the cache only (the Audit row of the start aside).
+  const tabs = JSON.stringify(Object.values(s.sheets).map(t => t.rows));
+  ['Mia', 'Leo', code].forEach(w => assert.ok(!tabs.includes(w), w));
+});
+
+test('scoring: a right answer and a speed bonus, timed from when the question reached that student', () => {
+  const s = setup();
+  const pts = (ok, ms, lim) => run(s, `lvPoints_(${ok}, ${ms}, ${lim})`);
+  assert.strictEqual(pts(true, 0, 20000), 200);
+  assert.strictEqual(pts(true, 10000, 20000), 150);
+  assert.strictEqual(pts(true, 20000, 20000), 100);
+  assert.strictEqual(pts(true, 25000, 20000), 100);
+  assert.strictEqual(pts(false, 0, 20000), 0);
+  const {code, tk} = start(s),
+    a = s.lv('join', {code, nick: 'Ann'}),
+    b = s.lv('join', {code, nick: 'Ben'});
+  s.lv('host', {code, tk, act: 'q', q: Q(1)});
+  // Ann's phone polls at once; Ben's only 4 s later: each answers 2 s after the question reached them.
+  s.lv('poll', {code, pid: a.pid, pk: a.pk});
+  s.tick(2000);
+  s.lv('answer', {code, pid: a.pid, pk: a.pk, qi: 0, c: 1});
+  s.tick(2000);
+  s.lv('poll', {code, pid: b.pid, pk: b.pk});
+  s.tick(2000);
+  s.lv('answer', {code, pid: b.pid, pk: b.pk, qi: 0, c: 1});
+  const st = s.lv('host', {code, tk}).stand;
+  assert.strictEqual(st[0][1], st[1][1]);
+  assert.strictEqual(st[0][1], 190);
+  // Past the time and its grace: refused.
+  s.lv('host', {code, tk, act: 'rev'});
+  s.lv('host', {code, tk, act: 'q', q: Q(1)});
+  s.lv('poll', {code, pid: a.pid, pk: a.pk});
+  s.tick(20000 + 3001);
+  assert.strictEqual(s.lv('answer', {code, pid: a.pid, pk: a.pk, qi: 1, c: 1}).error, 'phase');
+});
+
+// The script lock as Apps Script holds it: taken by one request until it lets go (tests/gas.js only knows "held by
+// another request", lock.busy, set by hand).
+function exclusive(s) {
+  const L0 = s.ctx.LockService.getScriptLock;
+  s.ctx.LockService.getScriptLock = () => {
+    const l = L0();
+    let mine = false;
+    return {
+      waitLock(ms) {
+        l.waitLock(ms);
+        s.lock.busy = mine = true;
+      },
+      tryLock(ms) {
+        if (!l.tryLock(ms)) return false;
+        return (s.lock.busy = mine = true);
+      },
+      releaseLock() {
+        if (mine) s.lock.busy = mine = false;
+        l.releaseLock();
+      }
+    };
+  };
+}
+test('a reveal and an answer never cross: the reveal holds every answer accepted, and none comes after it (Codex review #1049)', () => {
+  // The trainer's reveal lands in the middle of a student's answer: once after the answer read the session, once as it
+  // writes the student's record.
+  const hooks = {
+    read: `{ const f = lvMe_; lvMe_ = p => { const r = f(p); if (p.lv === 'answer' && globalThis.__race) { const g = globalThis.__race; globalThis.__race = null; g(); } return r; }; }`,
+    write: `{ const f = lvPut_; lvPut_ = (k, o) => { if (/:p:/.test(k) && o.a && o.a[0] && globalThis.__race) { const g = globalThis.__race; globalThis.__race = null; g(); } return f(k, o); }; }`
+  };
+  for (const [at, hook] of Object.entries(hooks)) {
+    const s = setup(),
+      {code, tk} = start(s),
+      a = s.lv('join', {code, nick: 'Ann'});
+    exclusive(s);
+    s.lv('host', {code, tk, act: 'q', q: Q(1)});
+    s.lv('poll', {code, pid: a.pid, pk: a.pk});
+    let mid = null;
+    s.ctx.__race = () => (mid = s.lv('host', {code, tk, act: 'rev'}));
+    run(s, hook);
+    const r = s.lv('answer', {code, pid: a.pid, pk: a.pk, qi: 0, c: 1});
+    assert.ok(mid, `${at}: the reveal came in the middle of the answer`);
+    // A reveal refused for the lock (the trainer's page tries again) is made once the answer let it go.
+    const rev = mid.ok ? mid : s.lv('host', {code, tk, act: 'rev'});
+    assert.strictEqual(rev.ok, true, `${at}: ${JSON.stringify(rev)}`);
+    const pts = s.lv('host', {code, tk}).stand[0][1],
+      p = s.lv('poll', {code, pid: a.pid, pk: a.pk});
+    // Either the answer came first and the reveal holds it, or the reveal came first and the answer was too late: never
+    // points the reveal does not show.
+    assert.strictEqual(rev.rev.tot, r.ok ? 1 : 0, `${at}: answer ${JSON.stringify(r)}, reveal ${JSON.stringify(rev.rev)}`);
+    assert.deepStrictEqual(rev.rev.top[0], ['Ann', pts, r.ok ? 1 : 0], at);
+    assert.strictEqual(pts, r.ok ? 200 : 0, at);
+    assert.strictEqual(p.rev.mine, r.ok ? 1 : -1, at);
+    assert.strictEqual(s.lock.busy, false, `${at}: the lock let go`);
+  }
+});
+
+test('a student is sent their accepted answers once revealed, a reveal missed or not; never one refused (Codex review #1049)', () => {
+  const s = setup(),
+    {code, tk} = start(s),
+    a = s.lv('join', {code, nick: 'Ann'}),
+    poll = (hx = 0) => s.lv('poll', {code, pid: a.pid, pk: a.pk, hx}),
+    ans = (qi, c) => s.lv('answer', {code, pid: a.pid, pk: a.pk, qi, c});
+  // A subject in beta for a group is never hosted (none is today: the sea slugs opened to all on 2026-11-18, #1051; a
+  // group subject is made here).
+  run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'group'");
+  assert.strictEqual(start(s, {s: 'seaslug'}).error, 'input');
+  run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'all'");
+  s.lv('host', {code, tk, act: 'q', q: Q(1)});
+  poll();
+  ans(0, 2);
+  // Nothing revealed yet: nothing to log, and no right answer in the reply.
+  const p0 = poll();
+  assert.strictEqual(p0.hn, 0);
+  assert.ok(!('past' in p0));
+  // Revealed, then the next question opened before Ann's page polled again: her answer still comes, with its right one.
+  s.lv('host', {code, tk, act: 'rev'});
+  s.lv('host', {code, tk, act: 'q', q: Q(0, 'montipora-2')});
+  const p1 = poll();
+  assert.strictEqual(p1.ph, 'q');
+  assert.strictEqual(p1.hn, 1);
+  assert.deepStrictEqual(p1.past, [
+    {qi: 0, t: 'Acropora', c: 'Porites', ch: ['Montipora', 'Acropora', 'Porites', 'Pocillopora'], f: ['acropora-1']}
+  ]);
+  // Once the page has gone through it (hx), not again.
+  assert.ok(!('past' in poll(1)));
+  // An answer refused (too late) is never sent as hers.
+  s.tick(20000 + 3001);
+  assert.strictEqual(ans(1, 0).error, 'phase');
+  s.lv('host', {code, tk, act: 'rev'});
+  const p2 = poll(1);
+  assert.strictEqual(p2.rev.mine, -1);
+  assert.strictEqual(p2.hn, 2);
+  assert.ok(!('past' in p2));
+  // At the end, from the start: only question 0.
+  s.lv('host', {code, tk, act: 'end'});
+  assert.deepStrictEqual(
+    poll().past.map(x => x.qi),
+    [0]
+  );
+});
+
+test('joins: a nickname of plain text, at most 40 a session, a session older than 6 hours is gone', () => {
+  const s = setup(),
+    {code, tk} = start(s);
+  assert.strictEqual(s.lv('join', {code, nick: '  '}).error, 'input');
+  assert.strictEqual(s.lv('join', {code: '12345', nick: 'A'}).error, 'input');
+  assert.strictEqual(s.lv('join', {code: code === '999999' ? '999998' : '999999', nick: 'A'}).error, 'gone');
+  assert.strictEqual(s.lv('join', {code, nick: '<b>Kim</b>\u0007 '}).name, 'bKim/b');
+  for (let i = 0; i < 39; i++) assert.strictEqual(s.lv('join', {code, nick: 'P' + i}).ok, true);
+  assert.strictEqual(s.lv('join', {code, nick: 'Late'}).error, 'full');
+  // The script lock held by a save: the join answers 'lock' (the app tries again), nothing written.
+  const {code: c2} = start(s);
+  s.lock.busy = true;
+  assert.strictEqual(s.lv('join', {code: c2, nick: 'Max'}).error, 'lock');
+  s.lock.busy = false;
+  s.tick(6 * 3600e3 + 1);
+  assert.strictEqual(s.lv('host', {code, tk}).error, 'gone');
+  // An unknown step, and no session code: input.
+  assert.strictEqual(s.lv('dance').error, 'input');
+  assert.strictEqual(s.lv('poll', {code: 'abc', pid: 'x', pk: 'y'}).error, 'gone');
+});
+
+// The app's module (live.js): its gate on the script's version (rule D4) and the pure helpers its screens use.
+function liveModule() {
+  const src = fs.readFileSync(path.join(ROOT, 'live.js'), 'utf8'),
+    ctx = {console, Math, Date, JSON};
+  vm.createContext(ctx);
+  const pure = /\/\/ pure: begin[\s\S]*?\/\/ pure: end/.exec(src);
+  assert.ok(pure, 'live.js keeps its pure helpers between "// pure: begin" and "// pure: end"');
+  vm.runInContext(pure[0] + '\nthis.X = {LIVEGAME_SHEET, liveCode, liveShares, liveMissed};', ctx);
+  return ctx.X;
+}
+test('live.js: the gate is main’s script version + 1 or more; codes, shares and the most-missed questions', () => {
+  const X = liveModule();
+  const v = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]);
+  assert.ok(X.LIVEGAME_SHEET > 161 && X.LIVEGAME_SHEET <= v + 1, `LIVEGAME_SHEET ${X.LIVEGAME_SHEET}, VERSION ${v}`);
+  assert.strictEqual(X.liveCode(' 123 456 '), '123456');
+  assert.strictEqual(X.liveCode('12345'), '');
+  assert.deepStrictEqual(X.liveShares([3, 1, 0, 4], 8), [38, 13, 0, 50]);
+  assert.deepStrictEqual(X.liveShares([0, 0, 0, 0], 0), [0, 0, 0, 0]);
+  const hist = [
+    {qi: 0, t: 'Acropora', k: 1, d: [2, 6, 0, 0], n: 8, ch: ['Montipora', 'Acropora', 'Porites', 'Pocillopora']},
+    {qi: 1, t: 'Favites', k: 0, d: [2, 5, 0, 1], n: 8, ch: ['Favites', 'Dipsastraea', 'Porites', 'Goniastrea']},
+    {qi: 2, t: 'Porites', k: 2, d: [0, 0, 8, 0], n: 8, ch: ['Montipora', 'Acropora', 'Porites', 'Pocillopora']}
+  ];
+  const M = X.liveMissed(hist);
+  assert.deepStrictEqual(
+    M.map(m => [m.t, m.pct, m.wrong]),
+    [
+      ['Favites', 25, 'Dipsastraea'],
+      ['Acropora', 75, 'Montipora']
+    ]
+  );
+});
+
+// The whole of live.js in a vm, every app global it calls stubbed (rule D1: its channel's sheetFetch answered here): the
+// screens' state machines without a browser. reply(body) answers each call: an object, or a Promise (one that rejects is
+// a call that never reached the script).
+function liveApp(reply, extra = {}) {
+  const store = {},
+    calls = [],
+    els = {},
+    btns = [0, 1, 2, 3].map(i => ({dataset: {i: String(i)}, disabled: false, on: false, classList: {}}));
+  btns.forEach(b => (b.classList.toggle = (c, on) => (b.on = !!on)));
+  const ctx = {
+    console,
+    setTimeout: () => 0,
+    clearTimeout: () => {},
+    setImmediate,
+    requestAnimationFrame: () => 0,
+    cancelAnimationFrame: () => {},
+    sessionStorage: {getItem: k => (k in store ? store[k] : null), setItem: (k, v) => (store[k] = v), removeItem: k => delete store[k]},
+    SYNC_URL: 'https://script.google.com/macros/s/x/exec',
+    SYNC: null,
+    sheetFetch: (u, o) => {
+      const body = JSON.parse(o.body);
+      calls.push(body);
+      return Promise.resolve(reply(body)).then(j => ({json: () => ({v: 999, ...j})}));
+    },
+    hashNow: () => 'live',
+    $v: {querySelectorAll: s => (s === '.lvch [data-i]' ? btns : []), querySelector: () => null},
+    document: {getElementById: id => els[id] || null},
+    subjectOf: id => ({id}),
+    subjOpen: () => true,
+    ...extra
+  };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'live.js'), 'utf8'), ctx);
+  els.lvmsg = {textContent: ''};
+  return {ctx, store, calls, btns, els, run: js => vm.runInContext(js, ctx)};
+}
+const settle = async () => {
+  for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));
+};
+const CH4 = [
+  ['Acropora', 'Acropora'],
+  ['Montipora', 'Montipora'],
+  ['Porites', 'Porites'],
+  ['Pocillopora', 'Pocillopora']
+];
+// A student's poll reply on question 0, still open.
+const pollQ = mine => ({ok: true, ph: 'q', qi: 0, n: 3, lim: 20, s: 'coral', left: 8000, mine, me: {n: 'Ann', s: 0, r: 0}, hn: 0});
+const onQuestion = A =>
+  A.run(`LV = {code: '123456', pid: 'p1aaaaaaaa', pk: 'k', name: 'Ann', logged: [], hx: 0, pend: [], mine: {}, right: 0, key: 'q:0', s: 'coral',
+    at: {qi: 0, t0: 0, c: -1, q: {ph: [], ch: ${JSON.stringify(CH4)}}, st: ''}}`);
+
+test('live.js: an answer that never reached the script is sent again at the next poll while the question is open (Codex review #1049)', async () => {
+  let down = true;
+  const A = liveApp(b => (b.lv === 'answer' && down ? Promise.reject(new Error('offline')) : {ok: true, mine: b.c}));
+  onQuestion(A);
+  A.run('liveAnswer(0, 1)');
+  await settle();
+  const sent = () => A.calls.filter(b => b.lv === 'answer');
+  assert.strictEqual(sent().length, 1);
+  assert.ok(A.btns.every(b => b.disabled));
+  // The connection is back: the poll says no answer was accepted; the same choice goes again, and is locked in.
+  down = false;
+  A.run(`liveShow(${JSON.stringify(pollQ(-1))})`);
+  await settle();
+  assert.deepStrictEqual(
+    sent().map(b => [b.qi, b.c]),
+    [
+      [0, 1],
+      [0, 1]
+    ]
+  );
+  assert.strictEqual(A.run('LV.at.c'), 1);
+  assert.ok(A.btns.every(b => b.disabled) && A.btns[1].on);
+  assert.match(A.els.lvmsg.textContent, /locked in/);
+  // Accepted: a later poll sends nothing more.
+  A.run(`liveShow(${JSON.stringify(pollQ(1))})`);
+  await settle();
+  assert.strictEqual(sent().length, 2);
+});
+
+test('live.js: a lost reply is reconciled from the poll; nothing is sent again while an answer is on its way or too late', async () => {
+  // The answer reached the script but its reply was lost: the poll's mine locks it in, nothing sent again.
+  let A = liveApp(b => (b.lv === 'answer' ? Promise.reject(new Error('reply lost')) : {}));
+  onQuestion(A);
+  A.run('liveAnswer(0, 2)');
+  await settle();
+  A.run(`liveShow(${JSON.stringify(pollQ(2))})`);
+  await settle();
+  assert.strictEqual(A.calls.filter(b => b.lv === 'answer').length, 1);
+  assert.match(A.els.lvmsg.textContent, /locked in/);
+  // An answer still on its way: a poll that went before it says -1; it is not sent twice.
+  let hold;
+  A = liveApp(b => (b.lv === 'answer' ? new Promise(ok => (hold = ok)) : {}));
+  onQuestion(A);
+  A.run('liveAnswer(0, 0)');
+  await settle();
+  A.run(`liveShow(${JSON.stringify(pollQ(-1))})`);
+  await settle();
+  assert.strictEqual(A.calls.filter(b => b.lv === 'answer').length, 1);
+  hold({ok: true, mine: 0});
+  await settle();
+  assert.match(A.els.lvmsg.textContent, /locked in/);
+  // Refused as too late: never sent again; and a failed one is not sent once the time is up.
+  A = liveApp(b => (b.lv === 'answer' ? {ok: false, error: 'phase'} : {}));
+  onQuestion(A);
+  A.run('liveAnswer(0, 3)');
+  await settle();
+  A.run(`liveShow(${JSON.stringify(pollQ(-1))})`);
+  await settle();
+  assert.strictEqual(A.calls.filter(b => b.lv === 'answer').length, 1);
+  A = liveApp(b => (b.lv === 'answer' ? Promise.reject(new Error('offline')) : {}));
+  onQuestion(A);
+  A.run('liveAnswer(0, 3)');
+  await settle();
+  A.run(`liveShow(${JSON.stringify({...pollQ(-1), left: 0})})`);
+  await settle();
+  assert.strictEqual(A.calls.filter(b => b.lv === 'answer').length, 1);
+});
+
+test('live.js: an accepted answer waits, kept per tab, until it is logged; a failed subject load is tried again (Codex review #1049)', async () => {
+  let fail = 1;
+  const logged = [],
+    A = liveApp(() => ({}), {
+      SYNC: {name: 'Ann'},
+      UNITS: {fish: {load: () => (fail-- > 0 ? Promise.reject(new Error('fish data not loaded')) : Promise.resolve())}}
+    });
+  // The logging itself (the game's scorer) is checked by tests/live.smoke.js: here, which answers reach it, once each.
+  A.ctx.liveLog = (S, o) => (logged.push(o.qi), 'ok');
+  onQuestion(A);
+  const past = qi => ({qi, t: 'Acropora', c: 'Acropora', ch: CH4.map(c => c[0]), f: ['acropora-1']});
+  const rev = (hn, p) => JSON.stringify({ok: true, ph: 'rev', qi: hn - 1, s: 'fish', hn, ...(p ? {past: p} : {})});
+  A.run(`liveCatch(${rev(1, [past(0)])})`);
+  await settle();
+  // The fish data did not come: nothing logged, the answer still waits, saved with the hx that moved past it.
+  assert.deepStrictEqual(logged, []);
+  const saved = JSON.parse(A.store['reefid-live-me']);
+  assert.strictEqual(saved.hx, 1);
+  assert.deepStrictEqual(
+    saved.pend.map(o => o.qi),
+    [0]
+  );
+  // The next poll (no new answer in it): tried again, logged, gone from the queue.
+  A.run(`liveCatch(${rev(1)})`);
+  await settle();
+  assert.deepStrictEqual(logged, [0]);
+  assert.deepStrictEqual(JSON.parse(A.store['reefid-live-me']).pend, []);
+  // Two drains at once (a poll and the end screen) log each answer once.
+  A.run(`liveCatch(${rev(3, [past(1), past(2)])}); liveFlush(); liveFlush()`);
+  await settle();
+  assert.deepStrictEqual(logged, [0, 1, 2]);
+  // Left out on purpose (a subject the player may not open): out of the queue, never logged, never tried again.
+  A.ctx.subjOpen = () => false;
+  A.run(`liveCatch(${rev(4, [past(3)])})`);
+  await settle();
+  assert.deepStrictEqual(logged, [0, 1, 2]);
+  assert.strictEqual(A.run('LV.pend.length'), 0);
+  // Not signed in: kept for a sign-in, nothing logged.
+  A.ctx.subjOpen = () => true;
+  A.ctx.SYNC = null;
+  A.run(`liveCatch(${rev(5, [past(4)])})`);
+  await settle();
+  assert.deepStrictEqual(logged, [0, 1, 2]);
+  assert.deepStrictEqual(
+    JSON.parse(A.store['reefid-live-me']).pend.map(o => o.qi),
+    [4]
+  );
+});
+
+test('live.js: a page redrawn while an answer is being logged never logs it twice (Codex review #1049)', async () => {
+  let open;
+  const held = new Promise(ok => (open = ok)),
+    logged = [],
+    A = liveApp(() => ({}), {SYNC: {name: 'Ann'}, UNITS: {fish: {load: () => held}}});
+  A.ctx.liveLog = (S, o) => (logged.push(o.qi), 'ok');
+  onQuestion(A);
+  const past = {qi: 0, t: 'Acropora', c: 'Acropora', ch: CH4.map(c => c[0]), f: ['acropora-1']};
+  A.run(`liveCatch(${JSON.stringify({ok: true, ph: 'rev', qi: 0, s: 'fish', hn: 1, past: [past]})})`);
+  await settle();
+  // The route draws the live page again (viewLive: LV made again from the tab's copy) while the fish data is on its way.
+  A.run(`viewLive('live')`);
+  open();
+  await settle();
+  assert.deepStrictEqual(logged, [0]);
+  assert.strictEqual(A.run('LV.pend.length'), 0);
+  assert.deepStrictEqual(JSON.parse(A.store['reefid-live-me']).pend, []);
+  // The next poll finds nothing left to log.
+  A.run(`liveCatch(${JSON.stringify({ok: true, ph: 'rev', qi: 0, s: 'fish', hn: 1})})`);
+  await settle();
+  assert.deepStrictEqual(logged, [0]);
+});
+
+test('live.js: a live miss restarts the mastery exam of the unit shown and of the one named (rule L9; Codex review #1049)', () => {
+  const log = [],
+    P = {
+      Acropora: {ok: 3, ko: 1, ex: {k: 2, v: []}},
+      Montipora: {ok: 4, ko: 0, ex: {k: 3, v: []}},
+      Porites: {ok: 2, ko: 0, ex: {k: 1, v: []}}
+    },
+    id = x => x,
+    zero = () => 0;
+  // The game's scorer and log stubbed (tests/live.smoke.js runs them for real): here, what a miss does to the exams.
+  const A = liveApp(() => ({}), {
+    SYNC: {name: 'Ann'},
+    P,
+    SUBJ: {id: 'coral'},
+    PICKD: {SINGLE: 0},
+    inSubject: (sid, f) => f(),
+    GX: n => (P[n] ? {} : null),
+    introReady: () => true,
+    st: n => P[n],
+    photoLook: () => null,
+    mxRecalc: f => f(),
+    memRecalc: () => {},
+    pmem: zero,
+    scoreIn: id,
+    photoDiff: zero,
+    famOf: zero,
+    confTerm: zero,
+    pgLook: zero,
+    startP: zero,
+    rtOn: () => false,
+    fmtOff: zero,
+    pfmt: zero,
+    fmtOf: zero,
+    domRules: zero,
+    genusDiff: zero,
+    scoreAnswer: () => ({e: 0.5, th0: 0, dm: 0}),
+    speciesShown: () => '',
+    mxKept: () => true,
+    scoreLog: () => '',
+    rankOf: () => 'genus',
+    unitRankOf: () => 'genus',
+    unitName: () => '',
+    holdStep: () => {},
+    startStep: () => {},
+    answeredAt: () => {},
+    logAnswer: a => log.push(a),
+    save: () => {}
+  });
+  const o = c => ({
+    qi: 0,
+    s: 'coral',
+    t: 'Acropora',
+    c,
+    ok: c === 'Acropora',
+    ph: ['acropora-1'],
+    chs: ['Acropora', 'Montipora', 'Porites', 'Pocillopora']
+  });
+  assert.strictEqual(A.ctx.liveLog({id: 'coral'}, o('Montipora')), 'ok');
+  assert.ok(!('ex' in P.Acropora) && !('ex' in P.Montipora), JSON.stringify(P));
+  assert.deepStrictEqual(P.Porites.ex, {k: 1, v: []});
+  assert.strictEqual(log[0].m, 'live');
+});
+
+test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {
+  let loaded = false;
+  const A = liveApp(
+    b =>
+      b.lv === 'host'
+        ? {ok: true, ph: 'lobby', qi: -1, n: 5, lim: 20, s: 'fish', t: 'All fish', names: ['Ann'], cnt: 0, left: 0, stand: []}
+        : {},
+    {
+      hashNow: () => 'live-host',
+      UNITS: {fish: {load: () => Promise.resolve().then(() => (loaded = true))}},
+      // The game's subject switched to synchronously, its data only there once loaded (app.js inSubject).
+      inSubject: (id, f) => (id === 'fish' && loaded ? f() : null),
+      pick: L => L[0]
+    }
+  );
+  A.ctx.hostShow = () => {};
+  A.ctx.liveBuild = t => ({
+    ph: [{f: 'f-1', u: 'img/f-1-m.webp', v: ''}],
+    ch: [
+      [t, t],
+      ['B', 'B'],
+      ['C', 'C'],
+      ['D', 'D']
+    ],
+    k: 0
+  });
+  // The page reloaded on #live/host with the corals in the header: the saved fish game comes back.
+  A.store['reefid-live-host'] = JSON.stringify({
+    code: '123456',
+    tk: 'x'.repeat(18),
+    s: 'fish',
+    t: 'All fish',
+    n: 5,
+    lim: 20,
+    plan: ['Labridae', 'Pomacentridae'],
+    sent: -1
+  });
+  A.run('liveHost()');
+  await settle();
+  assert.strictEqual(A.run('LH.last.ph'), 'lobby');
+  A.run(`hostAct('q')`);
+  await settle();
+  const q = A.calls.find(b => b.lv === 'host' && b.act === 'q');
+  assert.ok(q && q.q, 'the first question was built and sent');
+  assert.strictEqual(q.q.ch[0][0], 'Labridae');
+});

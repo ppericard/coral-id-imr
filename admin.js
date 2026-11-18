@@ -2408,22 +2408,41 @@ function fuTreeOf(U) {
 // five of the key's Chromis). A w: node stores nothing yet (no data shape without Pierre's decision): its page is
 // read-only, its cover the default by the rule. Its tags are read in the Key (fuFilters): a filter passes the Key's leaves
 // (taxtree.js ttPass), shown here with their WoRMS ancestors (ttReach), so the same species in both views. Its problems (a
-// reference or a parent missing, a cycle) are the tree's.
+// reference or a parent missing, a cycle) are the tree's. A leaf with no reference of its own (a genus's genus-level
+// photos, gl; a species with no published name yet) sits under its genus's WoRMS node (fuGenusRef), its id the Key's.
 let TW = null; // {units, T}
+// The WoRMS node of a genus of the tree (gid): its own reference (seaslug.json genera ref), else the WoRMS genus above the
+// first of its species with a reference; '' for none.
+const fuGenusRef = gid => {
+  const g = FISHC.genera[gid] || {},
+    R = FISHC.ref || {};
+  if (g.ref != null) return g.ref;
+  for (const s of g.species || []) {
+    for (let x = (FISHC.species[s] || {}).ref; x != null && R[x]; x = R[x].parent)
+      if (String(R[x].rank).toLowerCase() === 'genus') return x;
+  }
+  return '';
+};
 function fuWormsOf(U) {
   if (TW && TW.units === U) return TW.T;
   const K = fuTreeOf(U),
     L = [...K.node.values()]
-      .filter(n => n.sid && !n.gl)
-      .map(n => ({
-        id: n.id,
-        name: n.name,
-        sci: n.sci,
-        rank: n.rank,
-        it: false,
-        sid: n.sid,
-        ref: FISHC.species[n.sid].ref
-      })),
+      .filter(n => n.sid)
+      .map(n => {
+        const s = n.gl ? null : FISHC.species[n.sid],
+          ref = s ? s.ref : null;
+        return {
+          id: n.id,
+          name: n.name,
+          sci: n.sci,
+          rank: n.rank,
+          it: !!n.it,
+          sid: n.sid,
+          ...(n.gl ? {gl: true} : {}),
+          ref,
+          ...(ref == null || ref === '' ? {at: fuGenusRef(n.gl ? n.sid : s.genus)} : {})
+        };
+      }),
     {nodes, problems} = ttFromRef(L, FISHC.ref || {}, {id: k => 'w:' + k, rank: r => String(r).toLowerCase()});
   nodes.forEach(n => n.ref && !n.sid && n.rank === 'genus' && (n.it = true));
   const T = ttBuild(nodes);
@@ -2868,10 +2887,11 @@ function renderFishUnits(id, view = TREE) {
     // default cover is the rule's on the same photos; a species card shows the species' own cover in force.
     const PL = {};
     U.forEach(x => Object.entries(E[x.id].rows).forEach(([s, r]) => (PL[s] = [...r.feat, ...r.rest])));
+    // A genus-level leaf (gl:g:…) and its photos are keyed by the photo unit (its sid, g:…), as the Key's cvOf.
     const cvw = x =>
         nodeCover(
-          x,
-          ttLeaves(TV, x).flatMap(s => PL[s] || []),
+          (TV.node.get(x) || {}).gl ? leafSid(TV, x) : x,
+          ttLeaves(TV, x).flatMap(s => PL[leafSid(TV, s)] || []),
           F,
           fuJ,
           tvLeaf(x)
@@ -4409,7 +4429,7 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet vNEXT): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it, <b>Remove all</b> takes everyone out of it (both ask first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it, <b>Remove all</b> takes everyone out of it (both ask first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p><p><b>Cohort</b> and <b>Staff</b> (sheet v171; each has its own leaderboard in the app): <b>Cohort</b> in a player's bar puts them in one cohort (one at most; <b>None</b> takes them out); <b>New cohort…</b> asks its name, free text players read above its leaderboard ("RA November 2026"); a cohort exists while it has a member. <b>Staff</b> = the trainer role of the instance: <b>Add</b> / <b>Remove</b>. The staff have their own leaderboard and leave the general one and the cohorts'. Everyone sees every board: their cohort's first, then the staff's, then all players'; the other cohorts behind "Other cohorts". The Groups column shows both; the line above the table counts each cohort and the staff. A merge keeps the kept name's cohort; an archive or a delete takes the player out.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -9795,7 +9815,13 @@ const UCOLS = [
   ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
   // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
   ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
-  ['groups', 'Groups', u => (u.groups || []).length, 0, 'The beta groups they are in']
+  [
+    'groups',
+    'Groups',
+    u => (u.groups || []).length + (u.cohort ? 1 : 0) + (u.staff ? 1 : 0),
+    0,
+    'The beta groups, cohort and staff they are in'
+  ]
 ];
 // A subject's group: [key, title, sort value (u, S), ascending first, tip (S), cell (u, S), shown for S]. sxOf(u, S): the
 // player's answers in S ({n, ok, at, s: sessions, len: their median length in minutes}), from the answer log.
@@ -9977,6 +10003,13 @@ function startBlock(u) {
     });
   return rows.some(Boolean) ? `<div class="adm-ustart">${rows.join('')}</div>` : '';
 }
+// Cohorts and staff (sheet v171; Pierre, 2026-11-17: "chaque nouvelle cohorte aurait un leaderboard indépendant", "le
+// staff aurait les droits de 'trainer'"): a player's Cohort select in their bar (one cohort each; New cohort… names a new
+// one, its display name free text; Code.gs userGroup with cohort) and Staff, the trainer role of the instance (roleGrant,
+// roleRevoke). Each has its own leaderboard in the app; the staff leave the others.
+const COHORT_SHEET = 171;
+const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET;
+const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
 const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= Math.max(GROUP_SHEET, S.sheet || 0);
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
@@ -10061,6 +10094,16 @@ function renderUsers() {
             `<span>${inGroup(u, S) ? 'In' : 'Not in'} the ${esc(S.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-gid="${esc(S.id)}" data-on="${inGroup(u, S) ? 0 : 1}">${inGroup(u, S) ? 'Remove' : 'Add'}</button></span>`
         )
         .join('')}
+      ${
+        cohortOn()
+          ? `<label>Cohort <select data-ucohort="${esc(u.name)}"><option value="">None</option>${[
+              ...new Set([...cohortsOf(), u.cohort].filter(Boolean))
+            ]
+              .map(c => `<option value="${esc(c)}"${c === u.cohort ? ' selected' : ''}>${esc(c)}</option>`)
+              .join('')}<option value="+">New cohort…</option></select></label>
+      <span>${u.staff ? 'Staff' : 'Not staff'} <button type="button" class="adm-fchip" data-ustaff="${esc(u.name)}" data-on="${u.staff ? 0 : 1}">${u.staff ? 'Remove' : 'Add'}</button></span>`
+          : ''
+      }
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
       ${
@@ -10090,7 +10133,7 @@ function renderUsers() {
       : k === 'dev'
         ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
         : k === 'groups'
-          ? esc((u.groups || []).map(g => subjectOf(g).name).join(', ')) || '–'
+          ? esc([...(u.groups || []).map(g => subjectOf(g).name), u.cohort, u.staff ? 'Staff' : ''].filter(Boolean).join(', ')) || '–'
           : ago(u.at);
   }
   // Each beta group's line above the table (groupOn): how many players are in it, Add all for the others and Remove all
@@ -10114,6 +10157,12 @@ function renderUsers() {
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
     gLine +
+    (cohortOn() && U.some(u => u.cohort || u.staff)
+      ? `<p class="adm-ugroup adm-ucoh"><span>${[
+          ...cohortsOf().map(c => `${esc(c)}: <b>${U.filter(u => u.cohort === c).length}</b>`),
+          `Staff: <b>${U.filter(u => u.staff).length}</b>`
+        ].join(' · ')}</span></p>`
+      : '') +
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
@@ -10255,6 +10304,48 @@ function bindUsers() {
           on = b.dataset.on === '1',
           S = subjectOf(b.dataset.gid);
         group(name, on, on ? `"${name}" added to the ${S.name} beta.` : `"${name}" removed from the ${S.name} beta.`, S.id);
+      })
+  );
+  // A cohort (sheet v171, cohortOn): one player in one cohort, or in none; New cohort… asks its name (free text, the
+  // name players see above its leaderboard). One change each, no confirmation: the select takes it back (rule A2).
+  $v.querySelectorAll('[data-ucohort]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        const name = sel.dataset.ucohort,
+          u = USERS.users.find(x => x.name === name) || {},
+          was = u.cohort || '';
+        let c = sel.value;
+        if (c === '+')
+          c = (prompt('New cohort: its name, as players will see it above its leaderboard', '') || '').replace(/\s+/g, ' ').trim();
+        if (c.length > 40) return (toast('A cohort name has 40 characters at most.'), render());
+        if (c === was || (!c && sel.value === '+')) return render();
+        userPost(c ? {userGroup: name, cohort: c, on: true} : {userGroup: name, cohort: was, on: false})
+          .then(j => {
+            if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            u.cohort = c;
+            toast(c ? `"${name}" in ${c}.` : `"${name}" in no cohort.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
+      })
+  );
+  // Staff (sheet v171): the trainer role of the instance (Code.gs roles_), one click each way.
+  $v.querySelectorAll('[data-ustaff]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.ustaff,
+          on = b.dataset.on === '1',
+          g = {account: name, role: 'trainer', scope: 'instance:imr'};
+        b.disabled = true;
+        userPost(on ? {roleGrant: g} : {roleRevoke: g})
+          .then(j => {
+            if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            const u = USERS.users.find(x => x.name === name);
+            if (u) u.staff = on ? 1 : 0;
+            toast(on ? `"${name}" is staff.` : `"${name}" is no longer staff.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
       })
   );
   $v.querySelectorAll('[data-ugall]').forEach(

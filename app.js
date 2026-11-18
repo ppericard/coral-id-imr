@@ -3077,6 +3077,7 @@ function sectionOf(h) {
   if (h === 'board') return 'board';
   if (h === 'ach') return 'board';
   if (h === 'about' || h.startsWith('delete-account')) return 'about'; // no tab: reached from the Home credit line and the ? help
+  if (h === 'live-host' || h === 'live' || h.startsWith('live|')) return 'live'; // no tab: reached by its address (live.js)
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -3488,6 +3489,8 @@ function route() {
   else if (h === 'about' && window.viewAbout) viewAbout();
   // Deleting one's own account (sync.js viewDeleteAccount, sheet v58), linked from About › Privacy and privacy.html.
   else if (h === 'delete-account' || h === 'delete-account|done') viewDeleteAccount(h);
+  // The live mode (live.js; Pierre, 2026-11-17, Q393): a student's join page and the trainer's page.
+  else if ((h === 'live' || h.startsWith('live|') || h === 'live-host') && window.viewLive) viewLive(h);
   // The Fish ID Key, coming soon (home.js): Identify in fish mode.
   else if (h === 'fishkey' && window.viewFishKey) viewFishKey();
   else if (h.startsWith('quiz-duel')) {
@@ -3936,9 +3939,14 @@ let HAVE = 1,
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
   // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
-  // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral ID Key (proto/) 5.
+  // achievements 2 (progress.js is small and the quiz needs it); the live mode 2 (live.js, with the quiz's engine); the
+  // Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
-    !h || h === 'home' || h === 'about' || h.startsWith('delete-account') ? 1 : /^(quiz|genera|g-|cmp|progress|board|ach)/.test(h) ? 2 : 5,
+    !h || h === 'home' || h === 'about' || h.startsWith('delete-account')
+      ? 1
+      : /^(quiz|genera|g-|cmp|progress|board|ach|live)/.test(h)
+        ? 2
+        : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;

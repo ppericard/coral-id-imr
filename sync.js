@@ -1566,7 +1566,11 @@ let pvLast = null,
 // account's name (app.js GROUPS_KEY, subjOpen). A change shows at once: the switches follow (showSubj, the page drawn
 // again), and a subject on screen that this player may no longer have reloads the app on the corals (subjAt), their
 // saved choice and its progress kept. live: false when the app reloads anyway (signIn).
+// Sheet v171: the reply names the player's cohort too ('' for none), kept under the account's name (COHORT_KEY), its
+// board shown first on the Leaderboard (progress.js myCohort). An older script names none and nothing changes.
+const COHORT_KEY = 'reefid-cohort';
 function groupsSeen(j, name, live = true) {
+  if (j && name && typeof j.cohort === 'string') store.set(COHORT_KEY, {n: name, c: j.cohort});
   if (!j || !Array.isArray(j.groups) || !name) return;
   const before = subjGroups().join(),
     g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => subjGroup(S) && S.id === x));
@@ -1889,6 +1893,7 @@ function signOutClear(all) {
   [
     'reefid-account',
     GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
+    COHORT_KEY, // and its cohort (groupsSeen)
     MARK_KEY, // the admin's mark is this account's (markSeen; Codex review #841: never left to the next account of the name)
     // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
     // the comeback belong to this player, Codex review #374).

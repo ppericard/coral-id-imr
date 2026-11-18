@@ -1386,8 +1386,13 @@ const SHEET = () => {
       return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 58} : {ok: false, error: 'pin', v: 58};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     // test-sheet-board: the leaderboard rows the stub serves (GET ?board=1), for the one-level check below.
+    // test-sheet-scopes: what a sheet from progress.js SCOPES_SHEET adds (v, staff, cohorts; Code.gs board_).
     if (q.get('board') && localStorage.getItem('test-sheet-board'))
-      return {ok: true, rows: JSON.parse(localStorage.getItem('test-sheet-board'))};
+      return {
+        ok: true,
+        rows: JSON.parse(localStorage.getItem('test-sheet-board')),
+        ...JSON.parse(localStorage.getItem('test-sheet-scopes') || '{}')
+      };
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
@@ -1870,6 +1875,81 @@ async function signin(base) {
       if (rows.join('|') !== 'Elo 1300|Elo 1080') fails.push('one level: the board shows ' + rows.join(' | '));
     }
   );
+  // Staff and cohort boards (sheet SCOPES_SHEET; Pierre, 2026-11-17): Anna's cohort's board first (its name as its
+  // heading, her row marked there and on the general board), then the staff's, then all players'; the other cohorts in
+  // the "Other cohorts" fold, closed; My progress ranks her on her cohort's board. A reply from the version before: the
+  // one board, untitled, as before.
+  for (const v of ['before', 'from'])
+    await run(
+      () => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234'}));
+        localStorage.setItem('reefid-cohort', JSON.stringify({n: 'Anna', c: 'RA Test 2026'}));
+        localStorage.setItem(
+          'test-sheet-board',
+          JSON.stringify([
+            ['Other P', 60, 1.5],
+            ['Cohort Q', 50, 1],
+            ['Anna', 40, -1]
+          ])
+        );
+      },
+      async p => {
+        const N = await p.evaluate(() => SCOPES_SHEET);
+        await p.evaluate(
+          ([v]) =>
+            localStorage.setItem(
+              'test-sheet-scopes',
+              JSON.stringify({
+                v,
+                staff: [['Staff S', 70, 2]],
+                cohorts: [
+                  {n: 'RA Later 2026', rows: [['Other P', 60, 1.5]]},
+                  {
+                    n: 'RA Test 2026',
+                    rows: [
+                      ['Cohort Q', 50, 1],
+                      ['Anna', 40, -1]
+                    ]
+                  }
+                ]
+              })
+            ),
+          [v === 'from' ? N : N - 1]
+        );
+        await p.evaluate(() => go('progress'));
+        await p.waitForSelector('#pbrank:not([hidden])', {timeout: 8000});
+        const rank = (await p.textContent('#pbrank')).trim().split(' ')[1];
+        await p.evaluate(() => go('board'));
+        await p.waitForFunction(() => document.querySelectorAll('#board .blist li').length >= 3, null, {timeout: 8000});
+        const B = await p.evaluate(() => ({
+          heads: [...document.querySelectorAll('#board > .bscope > .bhead')].map(h => h.textContent),
+          lists: [...document.querySelectorAll('#board > .bscope, #board > .blist')].map(x =>
+            [...x.querySelectorAll('li')].map(li => li.querySelector('.bname').textContent + (li.classList.contains('me') ? '*' : ''))
+          ),
+          more: [...document.querySelectorAll('#board .bmore')].map(d => [
+            d.open,
+            d.querySelector('summary').textContent,
+            d.querySelector('.bhead').textContent
+          ]),
+          wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+        }));
+        const want =
+          v === 'from'
+            ? {
+                rank: '#2',
+                heads: ['RA Test 2026', 'Staff', 'All players'],
+                lists: [['Cohort Q', 'Anna*'], ['Staff S'], ['Other P', 'Cohort Q', 'Anna*']],
+                more: [[false, 'Other cohorts', 'RA Later 2026']],
+                wide: false
+              }
+            : {rank: '#3', heads: [], lists: [['Other P', 'Cohort Q', 'Anna*']], more: [], wide: false};
+        if (JSON.stringify({rank, ...B}) !== JSON.stringify(want))
+          fails.push(`scoped boards (${v} v${N}): ${JSON.stringify({rank, ...B})}`);
+      }
+    );
   // The tour's sign-in step: the same question.
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
