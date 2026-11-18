@@ -94,8 +94,8 @@
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
   // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
   // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a
-  // unit, its look-alikes and their lines shown on the page it opens (learn.js fishGenusLooksOn), its marks in the quiz
-  // feedback (app.js fishGenera qt).
+  // unit, its look-alikes and their lines shown on the page it opens (learn.js treeGenusLooksOn), its marks in the quiz
+  // feedback (app.js treeGenera qt).
   let OWN = null;
   function sheetOwn(R, id, S) {
     if (S && S.content && !S.sheets) return C.contentNodes(S, R).has(id);

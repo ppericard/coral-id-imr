@@ -11244,9 +11244,9 @@ const pairPrior = (a, b, ra, rb) =>
 // A unit's record for pairPrior from another subject's data as fishAdmin reads them (FA: FISHA; gp: its genus prefix,
 // SUBJECTS sheets genus), as the game builds its units (fish admin at parity: Pairs' Starts as is the game's start):
 // a family (a unit of FA.gen) its own record (core.js treeGen: its declared look-alikes, its line, its key group); a genus
-// every other genus of its family, as the game declares them (app.js fishGenera look), so two genera of one family start
+// every other genus of its family, as the game declares them (app.js treeGenera look), so two genera of one family start
 // as look-alikes; a species unit (s:s091) the other species units of its family (FA.spu, core.js treeSpUnits look); a
-// genus or a species with its family's line and key group (app.js fishGenera: fam, forms).
+// genus or a species with its family's line and key group (app.js treeGenera: fam, forms).
 function fishUnitRec(FA, n, gp) {
   const none = {look: [], fam: '', forms: []},
     g = FA && FA.gen[n];
@@ -11682,7 +11682,7 @@ function healthBad(R, S = ASUBJ) {
 // its units (healthUnits): the corals' game genera (GAME), another subject's slate and its genera met in the answers.
 // A subject with sheets at several ranks: its slate (fishAdmin: the app's UNITS slate, the fish families) and, each in a
 // row of its own, the genera its players met (an answer's unit with the genus prefix, SUBJECTS sheets genus: g:Chromis,
-// the scientific genera of app.js fishGenera, offered once a family is learnt; FISHA.slate never holds them).
+// the scientific genera of app.js treeGenera, offered once a family is learnt; FISHA.slate never holds them).
 const healthUnits = (BY, S) => {
   if (!S.sheets) return [...GAME];
   const L = [...((FISHA && FISHA.slate) || [])],

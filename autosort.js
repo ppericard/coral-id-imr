@@ -629,7 +629,7 @@
   }
   // Photo f among the photos L: under its name, else the same photo under another name (core.js treePid: a reference
   // photo fi<id> and its candidate copy fish-<species>-cand-<id> are one photo, and the game plays one copy), as the app
-  // finds his picks (app.js fishCurate); null when it is not there.
+  // finds his picks (app.js treeCurate); null when it is not there.
   const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => treePid(p.f) === treePid(f)))) || null;
   // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
   // confirmation of a juvenile cover (coverJ, below) or of a watermarked one (coverW) goes with the old pick: a new pick on
@@ -762,7 +762,7 @@
     if (c && (!fishJuv(c, j(c.f), F) || fishCoverJ(F, tid, c))) return c;
     return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
   }
-  // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): the admin's ★ pick while in
+  // A leaf's (a species') cover, as the app's sheets show it (learn.js treeSpPhotos, spPhoto): the admin's ★ pick while in
   // play and not a juvenile (or confirmed: fishCoverJ), else its first non-juvenile photo in the page's order (fishOrder),
   // else its first; null for no photo. The default takes a watermarked photo only when the leaf has no adult photo
   // without one (fishWm, as app.js coverFirst); his pick on one holds.

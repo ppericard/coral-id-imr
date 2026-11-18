@@ -42,8 +42,8 @@ const CORE = {
   fishTree: 'treeSheets',
   fishScoreTree: 'treeScoreTree'
 };
-// The player app's tree state and builders (app.js, learn.js): retired outside the admin's files, which keep names of
-// their own (admin.js, admin-*.js, autosort.js, reports.js, analysis.js, points.js, presence.js, taxtree.js).
+// The player app's tree state and builders (app.js, learn.js): retired everywhere too; the admin's files cite them in
+// comments only.
 const APP = {
   FISH: 'TREEU',
   FISHP: 'TREEP',
@@ -75,8 +75,6 @@ const APP = {
   fishGenusRow: 'treeGenusRow',
   fishGenusLookCard: 'treeGenusLookCard'
 };
-const ADMIN = /^(admin[\w-]*|autosort|reports|analysis|points|presence|taxtree)\.js$/;
-
 // Every JS file of the repo and the sheet script, as paths from the root.
 const files = (() => {
   const out = [],
@@ -98,8 +96,9 @@ const word = n =>
   new RegExp('(?<![\\w$])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w$])(?!\\.(?:md|json|js|py|html|css|gs)\\b)');
 // A rules version's text (why:) is history and keeps the names it was written with.
 const lines = src => src.split('\n').filter(l => !/^\s*why:\s*['"`]/.test(l));
-// A test or tool with a FISH of its own (the fish subject, a fixture) is not the app's global.
-const ownFish = src => /(?:const|let|var)\s+FISH\s*=/.test(src);
+// A test or tool with a FISH of its own (the fish subject, a fixture) is not the app's global; the app's own files never
+// have one.
+const ownFish = (f, src) => /^(tests|tools)\//.test(f) && /(?:const|let|var)\s+FISH\s*=/.test(src);
 
 test('the tree engine keeps its tree* names: no retired fish* name comes back', () => {
   const me = 'tests/treenames.test.js',
@@ -107,8 +106,7 @@ test('the tree engine keeps its tree* names: no retired fish* name comes back', 
   for (const f of files) {
     if (f === me) continue;
     const src = fs.readFileSync(path.join(ROOT, f), 'utf8'),
-      inAdmin = !f.includes('/') && ADMIN.test(f),
-      names = [...Object.keys(CORE), ...(inAdmin ? [] : Object.keys(APP).filter(n => n !== 'FISH' || !ownFish(src)))],
+      names = [...Object.keys(CORE), ...Object.keys(APP).filter(n => n !== 'FISH' || !ownFish(f, src))],
       L = lines(src);
     for (const n of names) {
       const w = word(n),
