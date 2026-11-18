@@ -19,7 +19,7 @@ test('photoMetaFish: ease, phase, view and whole from the game records; a photo 
         {f: 'a', e: 5, jt: 'p1g0sl1r'},
         {f: 'b', e: 2, jt: 'o0g0sm1j', ph: 'juvenile'},
         {f: 'c', e: '3', jt: 'h1d0sms', ph: 'male'},
-        // a reference photo: its tags, no ph; its juvenile flag is its phase (Codex review #943)
+        // a reference photo: its tags, no ph; its juvenile flag is its phase
         {f: 'r', e: 4, jt: 'p1g0sm1jr'},
         {f: 'd', jt: 'p1g0sl1'},
         {f: 'e', e: 9},

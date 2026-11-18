@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Fish basics (Pierre, 2026-11-04; docs/FISH_PATH.md "Fish basics"; proto/fishbasics.js): the fish twin of Coral basics, on
+// Fish basics (docs/FISH_PATH.md "Fish basics"; proto/fishbasics.js): the fish twin of Coral basics, on
 // the same engine (proto/basics.js). Checked here without a browser: the module's content run in Node on stubs (every step,
 // view, drawing, word and check), its wiring (the subject's record and feat, the Learn card's trail, the words of the
 // offers, the Lab list and the service worker's), and the rules it must keep: no slide photo, no person's name (rule D2),
@@ -58,7 +58,7 @@ test('Fish basics: the module, its steps and the offers share one set of ids', (
   assert.strictEqual(M.key(), 'reefid-fish-basics');
   const ids = M.steps.map(s => s.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per step');
-  // Body shape first, then the groups (Pierre, 2026-11-04); the dorsal fin is a screen of Fins, never a step.
+  // Body shape first, then the groups; the dorsal fin is a screen of Fins, never a step.
   assert.deepStrictEqual([...ids.slice(0, 2)], ['shape', 'groups']);
   assert.ok(!ids.includes('dorsal'), 'the dorsal fin is the second screen of Fins');
   assert.ok(M.steps.find(s => s.id === 'fins').views.some(v => v.id === 'dorsal'));
@@ -178,7 +178,7 @@ test('Fish basics: its own record and feat, the corals’ left alone', () => {
   assert.match(app, /const basicsKey = \(S = SUBJ\) => subjDev\(S\.id, 'basics'\);/);
   assert.match(app, /\[\(S\.basics \|\| \{\}\)\.feat \|\| '_basics'\]/);
   assert.match(prog, /function achBasics\(feat = \(SUBJ\.basics \|\| \{\}\)\.feat \|\| '_basics'\)/);
-  // The fish's feat grants no achievement yet (the list waits for Pierre's name for it), the corals' still does.
+  // The fish's feat grants no achievement yet (the list waits for the admin's name for it), the corals' still does.
   assert.ok(C.ACH.some(a => a.id === 'basics'));
   assert.ok(!C.FISH_ACH.some(a => /basics/i.test(a.id + a.title)), 'no fish achievement for Fish basics yet');
 });
