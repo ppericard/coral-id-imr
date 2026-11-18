@@ -395,15 +395,10 @@ const ID_ALLOW = [
   {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
   {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
-  {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, tools/sync/HISTORY.md)'},
-  {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
-  {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
-  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
@@ -471,6 +466,33 @@ test('the code identifiers the docs cite in backticks still exist', () => {
     ID_ALLOW.filter(a => !used.has(a.key)).map(a => a.key),
     [],
     'ID_ALLOW entries no doc needs any more: delete them'
+  );
+});
+
+// LEARNING.md describes the learning rules in force; the studies behind them live in docs/archive/learning-notebook.md.
+// Every LEARNING.md "X" cited in the repo names a heading, or the start of a bullet, a paragraph or a bold lead-in, of
+// LEARNING.md (as ARCHITECTURE.md's citations above); a citation of a study names the notebook instead. The archive and
+// this file's own examples are left out.
+test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
+  const doc = read('docs/LEARNING.md'),
+    flat = s => s.replace(/[*"`“”]/g, '').trim(),
+    starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, ''))),
+    bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+  const found = x => {
+    const t = flat(x);
+    return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
+  };
+  const cite = /LEARNING(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const bad = [];
+  for (const f of TEXT_FILES) {
+    if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue;
+    for (const m of read(f).matchAll(cite))
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': LEARNING "' + q[1] + '"');
+  }
+  assert.deepStrictEqual(
+    bad,
+    [],
+    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
   );
 });
 
