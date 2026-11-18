@@ -1,6 +1,6 @@
 # Decisions found in the comments of the tools/ scripts
 
-Date: 2026-11-18. PR: #N. Rules or docs touched: W19.
+Date: 2026-11-18. PR: #1142. Rules or docs touched: W19.
 
 ## Context
 
