@@ -76,6 +76,11 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   threshold set beforehand (agreement and serious errors) does the bulk, a small random sample of the bulk is redone by
   the strong model to catch drift, and the PR reports the figures (Pierre, 2026-11-18: "A valider en comparant avec un
   modèle fort sur un échantillon").
+- **No permission prompts for Pierre**: agents create and change files only with the file tools (Write, Edit), never
+  through shell commands that embed code (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code): such
+  commands can trip the session's safety checks and ask Pierre to approve something he cannot judge. A script an agent
+  needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
+  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???").
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
