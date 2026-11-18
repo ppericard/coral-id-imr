@@ -343,12 +343,13 @@ const drawHas = (n, keep) => {
   return L.some(p => keep(p) && V.f(p) > 0);
 };
 // The photos a pair's drill shows on its unit n (photoSet keep): on the resembling side's units (app.js mimLay u) the
-// photos of the class, on the side resembled (m) its species at the stage that is resembled; null for another unit.
+// photos of the class, on the side resembled (m) its species at the stage that is resembled; never, as on the card, a
+// photo taken outside the region of a species whose look varies by region (ra, rb: loc world); null for another unit.
 const mimSide = (m, n) =>
   m.u.includes(n)
-    ? p => mimIn([m], p) === m
+    ? p => mimIn([m], p) === m && !(m.ra && p.loc === 'world')
     : m.m.includes(n)
-      ? p => p.sp === m.pair.b && ((m.pair.st || {}).b !== 'juvenile' || phaseOf(p) === 'juvenile')
+      ? p => p.sp === m.pair.b && ((m.pair.st || {}).b !== 'juvenile' || phaseOf(p) === 'juvenile') && !(m.rb && p.loc === 'world')
       : null;
 // The keep of pair id's drill on unit n of the two units asked (an Again or a duel), when that side's draw holds such a
 // photo now; null otherwise (any photo of n, as for every pair).
@@ -1805,11 +1806,15 @@ const plausibleK = (t, choices, also = null) => {
   return Math.max(2, choices.filter(n => n === t || n === also || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
 };
 // The choices ch of a question on t with u, the unit its photo of the mimicry class resembles (mimUnit), among them: in
-// the place of the wrong choice that carries u's label, else of the one least confused with t; ch itself when u is there.
+// the place of the wrong choice that carries u's label, else of the weakest look-alike among them (the traps trapsFor
+// gave, as distractors finds them), so the question keeps its number of traps, else of the one least confused with t;
+// ch itself when u is there.
 function mimTrap(t, ch, u) {
   const W = ch.filter(n => n !== t);
   if (!u || ch.includes(u) || !W.length) return ch;
-  const out = W.find(n => choiceKey(n) === choiceKey(u)) || W.reduce((a, n) => (confOf(t, n) < confOf(t, a) ? n : a));
+  const look = W.filter(n => confusable(t, n) || pooledConf(t, n) >= CONF.TRAP),
+    least = L => L.reduce((a, n) => (confOf(t, n) < confOf(t, a) ? n : a)),
+    out = W.find(n => choiceKey(n) === choiceKey(u)) || least(look.length ? look : W);
   return ch.map(n => (n === out ? u : n));
 }
 // Custom quiz (docs/LEARNING.md "Custom quiz: the photo quiz on the genera the player picks"): the photo quiz limited to

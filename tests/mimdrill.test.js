@@ -89,9 +89,13 @@ test('mimUnit: the unit at the rank asked of the species a photo of the class re
   assert.strictEqual(I.mimUnit('g:A1', juv1), 'g:B1');
 });
 
-test('mimTrap: in the place of the wrong choice least confused, or the one of its label; plausible and a look-alike there', () => {
+test('mimTrap: in the place of the weakest trap, or the one of its label; plausible and a look-alike there', () => {
   const M = model(units(), {conf: {'f:C': 0.5, 'f:D': 0.05, 'f:E': 0.3}});
-  assert.deepStrictEqual(M.mimTrap('f:A', ['f:C', 'f:A', 'f:D', 'f:E'], 'f:B'), ['f:C', 'f:A', 'f:B', 'f:E']);
+  // C and E the traps (0.2 or more): E, the weaker, gives its place; the easy choice D stays, so the traps stay two
+  assert.deepStrictEqual(M.mimTrap('f:A', ['f:C', 'f:A', 'f:D', 'f:E'], 'f:B'), ['f:C', 'f:A', 'f:D', 'f:B']);
+  // No trap among the choices: the one least confused
+  const N = model(units(), {conf: {'f:C': 0.15, 'f:D': 0.05, 'f:E': 0.1}});
+  assert.deepStrictEqual(N.mimTrap('f:A', ['f:C', 'f:A', 'f:D', 'f:E'], 'f:B'), ['f:C', 'f:A', 'f:B', 'f:E']);
   const ch = ['f:A', 'f:B', 'f:C', 'f:D'];
   assert.strictEqual(M.mimTrap('f:A', ch, 'f:B'), ch, 'already a choice');
   assert.strictEqual(M.mimTrap('f:A', ch, null), ch, 'no trap');
@@ -132,6 +136,16 @@ test('mimKeep: the pair’s species on each side, only while that side’s draw 
   assert.strictEqual(M.mimKeep('X1', ['f:A', 'f:C'], 'f:C'), null);
 });
 
+test('mimSide: never a photo taken outside the region of a species whose look varies by region, as on the card', () => {
+  const e = {...entry(), ra: true, rb: true},
+    M = model(units(e)),
+    w = {...juv1, loc: 'world'},
+    b = LB.find(p => p.sp === 's2');
+  assert.ok(!M.mimSide(e, 'f:A')(w) && M.mimSide(e, 'f:A')({...juv1, loc: 'ph'}));
+  assert.ok(!M.mimSide(e, 'f:B')({...b, loc: 'world'}) && M.mimSide(e, 'f:B')(b));
+  assert.ok(model(units()).mimSide(entry(), 'f:A')(w), 'a species flagged nowhere: any photo of the class');
+});
+
 test('mimPairs: the class’s duels at the families, once ok and both sides’ draws hold their photos', () => {
   const all = ['f:A', 'f:B', 'f:C', 'g:A1', 'g:B1'],
     none = () => false;
@@ -155,7 +169,7 @@ test('mimPairs: the class’s duels at the families, once ok and both sides’ d
 // quiz.js planPhoto's question (no card, no contrast question), with the game around it stubbed: the unit asked f:A, its
 // three wrong choices f:C, f:D, f:E (f:C the only look-alike), the photo drawn photo, mimUnit by the photo's flag.
 function plan({traps = 1, typed = false, ex = null, metB = true, photo = {f: 'j', cls: 1}, sel = null} = {}) {
-  const M = model(units(), {conf: {'f:C': 0.5, 'f:D': 0.05, 'f:E': 0.1}}),
+  const M = model(units(), {conf: {'f:C': 0.5, 'f:D': 0.05, 'f:E': 0.25}}),
     ctx = {
       pool: () => ['f:A', 'f:B', 'f:C', 'f:D', 'f:E'],
       customSel: () => sel,
@@ -224,12 +238,12 @@ function plan({traps = 1, typed = false, ex = null, metB = true, photo = {f: 'j'
 
 test('planPhoto: a photo of the class puts the unit it resembles among the choices, as a trap counted plausible', () => {
   const q = plan();
-  assert.deepStrictEqual(q[2], ['f:A', 'f:C', 'f:B', 'f:E'], 'in the place of the least confused');
-  assert.strictEqual(q[5], 3, 'one trap and the unit resembled: 3 plausible choices');
+  assert.deepStrictEqual(q[2], ['f:A', 'f:C', 'f:D', 'f:B'], 'in the place of the weaker trap (E)');
+  assert.strictEqual(q[5], 3, 'a trap and the unit resembled: 3 plausible choices');
   // Another photo: the choices as they were
   const o = plan({photo: {f: 'x'}});
   assert.deepStrictEqual(o[2], ['f:A', 'f:C', 'f:D', 'f:E']);
-  assert.strictEqual(o[5], 2);
+  assert.strictEqual(o[5], 3);
   // No trap on the question (a unit's first questions), typed, or the unit resembled not met: nothing changes
   assert.deepStrictEqual(plan({traps: 0})[2], ['f:A', 'f:C', 'f:D', 'f:E']);
   assert.ok(plan({typed: true}).typed && !plan({typed: true})[2].includes('f:B'));
@@ -269,7 +283,7 @@ test('rematchAdd: a mix-up on a photo of the class keeps its pair’s id for its
 
 test('the duels and the Again draw the pair’s species through photoSet’s keep (quiz.js)', () => {
   assert.ok(QSRC.includes("photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))"));
-  assert.ok(QSRC.includes("k = mimKeep(pair.mim, pair, t); // a pair of the mimicry class (duelPick): its species"));
+  assert.ok(QSRC.includes('k = mimKeep(pair.mim, pair, t); // a pair of the mimicry class (duelPick): its species'));
   assert.ok(QSRC.includes("photoSet(t, null, ease, 2, 'qduel', k)]"));
   assert.ok(QSRC.includes("holdEase(), 2, 'duel', mimKeep(pair.mim, pair, t))"));
   assert.ok(QSRC.includes('...mimPairs(list, m => mimSeen(m.pair.id))'));

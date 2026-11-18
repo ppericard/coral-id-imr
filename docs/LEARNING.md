@@ -739,20 +739,22 @@ so the trap arrives with its explanation. Why and who decided: the
   shows on the card; the card takes the form met here first (near Dauin, then the Philippines, the larger views first),
   or waits. Every card photo shows one subject and no watermark (the judged flag `w`). The photo stays in play.
 - **The pair drilled** (FISH_PATH.md "Look-alikes at any rank", view 2; the build's choices:
-  [decision](decisions/2026-11-19-mimicry-pairs-drilled.md)), per photo, never the two whole units as look-alikes (no
-  `look`, no confusion prior, no exam or group change):
+  [decision](decisions/2026-11-19-mimicry-pairs-drilled.md)), per photo, never a declared pair of the two whole units
+  (no `look`, no confusion prior, no opening group); a mix-up there counts in the player's own record of the two units,
+  as any mix-up does:
   - **A trap** (`model.js` `mimUnit`, `mimTrap`; `quiz.js` `planPhoto`): a question whose photo is of the class puts the
     unit of the species it resembles at the rank asked (its family, genus or species unit) among the choices, met and in
-    play (in the custom quiz, selected), in the place of the wrong choice least confused with the unit asked; only on a
-    question with a trap at all (`trapsFor` 1 or more, the exam's included), never typed or with its unit's own card. It
+    play (in the custom quiz, selected), in the place of its weakest trap, so the question keeps the traps `trapsFor`
+    gave; only on a question with a trap at all (the exam's included), never typed or with its unit's own card. It
     counts as plausible there (`plausibleK`, the logged `|kN`) and as a look-alike among the choices (`pgLook`).
   - **Its duel** (`model.js` `mimPairs`; `quiz.js` `duelPick`): the two families, once the pair's card was shown, with
     the classic look-alikes' weight (× 2), in the duels slipped into the photo quiz and the Duel tab.
   - **Its Again**: a mix-up of a photo of the class with the unit it resembles queues the pair's id with its Again
     (`quiz.js` `rematchAdd` `mim`).
   - **The pair's species**: a duel of the pair or that Again shows, on the resembling side, a photo of the class, on the
-    other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), only while that side's draw holds one now
-    (`drawHas`), else any photo of the unit.
+    other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), never, as on the card, a photo taken
+    outside the region of a species flagged regional; only while that side's draw holds one now (`drawHas`), else any
+    photo of the unit.
 - **Not built yet** (ROADMAP "Look-alike pairs between species"): family pairs, the Look-alikes deck for every subject,
   the admin's ⚠ badge and its lift, the feature frames' default.
 

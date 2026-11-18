@@ -2414,8 +2414,8 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
     // The mimicry class drilled (model.js mimUnit, mimTrap): a photo of the class makes the unit of the species it
-    // resembles a trap, once met and in play, in the place of the weakest wrong choice; only on a question that has a
-    // trap at all (traps, the exam's included), never typed or on its unit's own card. It counts as plausible (k) there.
+    // resembles a trap, once met and in play, in the place of the weakest trap; only on a question that has a trap at
+    // all (traps, the exam's included), never typed or on its unit's own card. It counts as plausible (k) there.
     mu0 = typed || !traps || cards.includes(t) ? null : mimUnit(t, (set.shown || [])[0]),
     mu = mu0 && known(mu0) && (sel || list.filter(n => !cards.includes(n))).includes(mu0) && !choiceNames(mu0, t) ? mu0 : null,
     chm = mimTrap(t, ch, mu),

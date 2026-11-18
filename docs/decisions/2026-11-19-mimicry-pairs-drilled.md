@@ -19,21 +19,25 @@ Pierre's decision of 2026-11-18, built here: the model's unit is a trap and a du
 Choices made while building, not decided with Pierre, each easy to change:
 
 - **The trap takes a trap's place**: only on a question that has a trap at all (`trapsFor` 1 or more), in the place of
-  the wrong choice least confused with the unit asked; at the rank asked (a genus question gets the model's genus); met
-  and in play, in the custom quiz only when selected; the exam's photos too. It counts as plausible (the guess rate,
-  logged `|kN`) and as a look-alike among the choices (the progress weight, logged in `sc`), so the score says what the
-  question really was.
+  its weakest trap (the least confused wrong choice when none is a look-alike), so the trap schedule is unchanged; at
+  the rank asked (a genus question gets the model's genus); met and in play, in the custom quiz only when selected; the
+  exam's photos too. It counts as plausible (the guess rate, logged `|kN`) and as a look-alike among the choices (the
+  progress weight, logged in `sc`), so the score says what the question really was.
 - **The duel waits for the card**: the pair duels (slipped into the quiz and in the Duel tab) only once its card was
   shown, at the families as every fish duel, with the classic look-alikes' weight (× 2).
 - **Both sides show the pair**: a duel of the pair, or the Again after a photo of the class was taken for the model's
   unit, shows a photo of the class on the resembling side and the species resembled, at the stage that is resembled, on
-  the other, so the answer is not always the same side; only while that side's draw holds such a photo, else any photo.
-- **The draw and the progress rules stay**: no `look`, no confusion prior, no opening group, exam or replay change, no
-  rules version (rule D5): what an answer logs (its `|kN`, its `sc`) is what any replay reads.
+  the other, so the answer is not always the same side; never, as on the card, a photo taken outside the region of a
+  species flagged regional; only while that side's draw holds such a photo, else any photo.
+- **The draw and the progress rules stay**: no declared pair (`look`), no confusion prior, no opening group, exam or
+  replay change, no rules version (rule D5): what an answer logs (its `|kN`, its `sc`) is what any replay reads.
 
 ## Consequences
 
 - The seven pairs M1-M7 are drilled where their two species' units differ: M5 (two blennies) only as a trap on a genus
-  or species question, with no duel. Level-1 check (rule L11): docs/archive/learning-notebook.md "The mimicry pairs drilled".
+  or species question, with no duel. Level-1 check (rule L11): docs/archive/learning-notebook.md "The mimicry pairs
+  drilled".
+- A mix-up on such a question counts in the player's own record of the two units (`off`, `conf`) as any mix-up does,
+  so the two families can become that player's own trap, duel and exam look-alike, as any pair they keep mixing up.
 - Not built, for Pierre (the PR lists them): the reverse trap (a photo of the model drawing the resembling unit), the
   pair's marks after a mix-up between the two, Find the X on the pair, the share of the class's duels.
