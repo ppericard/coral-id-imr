@@ -749,6 +749,16 @@ function fishGenera(X, F) {
         )
       ].join(', ');
     if (E && lks.length) E.lksrc = Object.fromEntries(lks.map(([k, s]) => [k.slice(5), s]));
+    // Its undeclared pairs' lines (fish.json apart: our own words from the family's sources, rule C2): said by the quiz
+    // feedback when the two are mixed up (quiz.js pairHalves), each with the family's sources and the editor's source for
+    // it. Never a look-alike (look, decl and the draw do not read them): the feedback is all they change.
+    if (E && f.apart) {
+      const own = (f.msrc || []).map(x => x.t).join('; ');
+      E.ap = Object.fromEntries(Object.entries(f.apart).filter(([, t]) => t));
+      E.apsrc = Object.fromEntries(
+        Object.keys(E.ap).map(o => [o, [own, ((f.esrc || {})['apart/' + o] || {}).t].filter(Boolean).join('; ')])
+      );
+    }
     // the same for its phase lines, shown under More in the quiz feedback (quiz.js fbBody; Codex review #957)
     if (E && f.esrc && f.esrc.phase) E.psrc = f.esrc.phase;
     if (!E || E.qt || !(f.marks || []).length) return;
@@ -1558,11 +1568,13 @@ const subjPage = h => {
     !(m === 'sheet' || MODES[tab].some(x => x[0] === m))
   )
     return h;
-  return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
+  // The first page of the section the subject has: never its basics module (a step 0 beside the pages, not a landing page).
+  return MODES[tab].map(x => x[0]).find(k => k !== 'basics' && SUBJ.pages.includes(k)) || '';
 };
 // A tab's words for the subject ("Photo → genus" for corals, "Photo → family" for fish).
 const subjWords = t =>
   t
+    .replace(/\bCoral basics\b/g, basicsWords().name)
     .replace(/\bgenus\b/g, SUBJ.one)
     .replace(/\bGenera\b/g, SUBJ.many[0].toUpperCase() + SUBJ.many.slice(1))
     .replace(/\bgenera\b/g, SUBJ.many);
@@ -2291,6 +2303,22 @@ const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
+    // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
+    // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
+    // read when the card is drawn).
+    basics: {
+      mod: 'basics',
+      name: 'Coral basics',
+      ask: 'New to corals?',
+      kick: 'New to corals',
+      offer:
+        'Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.',
+      lo: 'Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.',
+      all: 'It shows, on real photos, the few words the ID tips use.',
+      card: 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
+      trail: () => ({stops: BASICS_TRAIL, at: BASICS_AT, turn: 3})
+    },
     load: () => Promise.resolve(),
     // Home's doors drawn before data.json, the band's photos once it is in (beforeData).
     doorsFirst: true,
@@ -2360,6 +2388,19 @@ const UNITS = {
   fish: {
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // Its basics module's words (as the corals': proto/fishbasics.js, learn.js BASICS_TRAIL_F). lo and all are for the
+    // "lower" card, off for the fish with their other level-change cards (Pierre, 2026-11-08, the flag below).
+    basics: {
+      mod: 'fishbasics',
+      name: 'Fish basics',
+      ask: 'New to reef fish?',
+      kick: 'New to reef fish',
+      offer: 'Six short steps, about 5 minutes: body shape first, then the identification groups, fins, tails and markings. Then the quiz.',
+      lo: 'Fish basics shows what to look at first: body shape, fins, tail and markings. About 5 minutes.',
+      all: 'It shows what to look at first: body shape, fins, tail and markings.',
+      card: 'Body shape, fins, tails, markings: what to look at first, on drawings and real photos.',
+      trail: () => ({stops: BASICS_TRAIL_F, at: BASICS_AT_F, turn: 2})
+    },
     // Home's words for a subject with no tool of its own yet (home.js viewHome, viewFishKey; the corals' are the page's
     // own): need, what Identify names; before, when the Learn door is for; when, title, desc, btn, soon: the Identify
     // door's; key, the key's page line; learn, practice: the Learn door's two lines where they are not the fish's.
@@ -2560,7 +2601,7 @@ const UNITS = {
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
+    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
@@ -2915,16 +2956,21 @@ const sheetFetch = (url, o) =>
 let SYNC = store.get('reefid-account', null),
   syncTimer = null;
 
-// Coral basics finished (proto/basics.js: every step seen), on this device or on another one (the achievement's feat
-// _basics in the synced achievements record, progress.js). The Home line and the first-launch offers read it.
-const BASICS_KEY = 'reefid-basics';
+// The basics module of a subject finished (Coral basics, Fish basics: proto/basics.js, proto/fishbasics.js; every step
+// seen), on this device or on another one (the done feat in the synced achievements record, progress.js achBasics). Its
+// record (subjDev 'basics': reefid-basics, reefid-fish-basics) and feat (SUBJECTS basics.feat) are the subject's own, so
+// finishing one never hides the other's offers. The Home line and the first-launch offers read it.
 // Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
-const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})._basics);
-// The basics module of the subject on screen (SUBJECTS pages 'basics': Coral basics; no Fish basics yet) not done yet:
-// what "I'm new" and the first-launch question's "lower" card offer, and the Home line. A subject without one offers none.
+const basicsKey = (S = SUBJ) => subjDev(S.id, 'basics');
+const basicsDone = (S = SUBJ) =>
+  !!((store.get(basicsKey(S), {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})[(S.basics || {}).feat || '_basics']);
+// The basics module of the subject on screen (SUBJECTS pages 'basics') not done yet: what "I'm new" and the first-launch
+// question's "lower" card offer, and the Home line. A subject without one offers none. Its words (UNITS basics: name, ask,
+// offer, lo, card, trail) come from basicsWords.
 const basicsDue = () => SUBJ.pages.includes('basics') && !basicsDone();
+const basicsWords = () => UNITS[SUBJ.id].basics || {name: 'Basics'};
 // The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each, in the words
 // of the subject on screen (SUBJECTS start): the tour, the card that asks it, and the fallback card (only: the choices it
 // offers). cur: the current answer, marked.
@@ -3083,8 +3129,9 @@ showCvd();
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [
-    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path.
-    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, on real photos'],
+    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path; Fish basics
+    // (proto/fishbasics.js) is the same tab for the fish (subjWords: the subject's name for it, UNITS basics).
+    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, one step at a time'],
     ['genera', 'Genera', 'Every genus, as photos or ID tips'],
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
@@ -3401,6 +3448,7 @@ function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
   QOPEN = false; // a question left unanswered for another page (the quiz draws its next one: question())
+  if (typeof fbEnd === 'function') fbEnd(); // the answer's feedback leaves the screen: its seconds are counted (quiz.js)
   // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): Home's doors, or the loading bar for
   // any other page (beforeData); the start-up's own route() opens the page tapped, from the hash.
   if (!DATA) return void beforeData();

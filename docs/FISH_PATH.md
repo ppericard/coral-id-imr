@@ -371,7 +371,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice, Fish basics.
+  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice. Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
@@ -405,11 +405,36 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 ## Fish basics (Pierre, 2026-11-04)
 
-The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
-each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
+The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps, one plain sentence
+each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card. **Built**
+(`proto/fishbasics.js` on the same engine; docs/ARCHITECTURE.md "Lab prototypes", "Fish basics"): six steps, **Body shape**
+(seven silhouettes), **The identification groups**, **Fins** (the places of the six parts, then the dorsal fin: one or
+two), **Tail shapes** (six), **Markings** (six) and **One feature to look for** (five); `#fish/learn/basics`, the first
+Learn tab on the fish, the "0 · Fish basics" block of the families page, the Home line and the first-launch offer for "new".
+Its own record and done feat (`SUBJECTS` `basics`), never the corals'. The "lower" card's offer is written (`UNITS` `basics`
+`lo`, `all`) but not shown: the fish's level-change cards are off (`startFb: false`, above) until the level is better calibrated.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule C2
-  holds and the IMR wording is kept (rule C1).
+- **Content**: the **IMR fish presentation** first (Lecture 10, Fish Identification: its slides on anatomy, tail shapes,
+  markings and the identification groups), so rule C2 holds and the IMR wording is kept (rule C1). Its lines are quoted
+  verbatim where the slides define a word (the Words list, `OFFICIAL`), cited as "IMR fish presentation (Lecture 10)", no
+  slide number (the full deck and the light variant number their slides differently). **Read from the text of the light
+  variant only**: the slides of tail shapes ("Caudal Fin Shapes") and markings ("Features & Markings") are pictures with no
+  text, which the connector does not return, so the six tail shapes and six markings are the words the slides' text uses
+  (forked, deeply forked, notch, square, pointed, rounded, heart-shaped; bars, black band over the eye, saddle, false eye)
+  drawn by us. What the text does not define comes from public references, named on screen as "other sources" (rule C1):
+  the fishIDER glossary (CSIRO, fishider.org/en/glossary) for bar, stripe, spot, saddle, ocellus, barbel, operculum and
+  caudal peduncle; Wikipedia ("Fish fin", "Glossary of ichthyology") for the fins' places and for "truncate" and
+  "emarginate". The seven body shapes are drawn from the names of the presentation's groups by shape (Disc-shaped, Small and
+  Large ovals, Sloping heads / tapered bodies, Heavy bodies / large lips, Slender schoolers, Bottom dwellers, Odd-shaped
+  swimmers), the three groups that are not a shape (the swimmers with pectoral fins, the reddish big-eyed fish) left to the
+  identification groups; the last step, **One feature to look for** (scalpels, gill-cover spine, barbels, locking spines),
+  is deck content beyond the list Pierre gave. A trainer or Pierre checks all of it against the pictures (ROADMAP "Fish
+  basics, the rest").
+- **Left out, on purpose**: the "Dive sign" and "Quick quiz" slides and the practice photo slides (no photo of the deck is
+  used: Pierre, 2026-11-04, never the slide photos, none has a credit we can show); the full deck's and the biology lecture's (Lecture 9) taxonomy,
+  anatomy comparison and feeding guilds (the six trophic guilds): not about what to look at first; the survey methods
+  lecture (Lecture 11); the family-level cues of every family (they stay on the families page and sheets); the fish
+  glossary underlining in cues and feedback (ROADMAP "Fish basics, the rest").
 - **The groups are the regional identification key's** (Pierre, 2026-11-04; rule S3): for the Indo-Pacific, the index of
   the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
   shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
@@ -420,14 +445,18 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   identification groups (the book above groups fish by body shape). The module starts with body shape and the identification
   groups, then the vocabulary.
 - **The dorsal fin is not a step of its own**: it is the second screen of the "Fins" step (Pierre, 2026-11-04).
-- **IMR terms kept**: "Band", with a discreet "sources differ" note; the "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
+- **IMR terms kept**: "Band", with a discreet "sources differ" note (the Words list: bar, band and stripe overlap); the
+  "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
 - **Photos and figures** (Pierre, 2026-11-04): never the IMR slide photos (most are not IMR's own, likely from ID books); photos with
-  known rights (Pierre's, iNaturalist), diagrams and figures our own drawings.
+  known rights (Pierre's, iNaturalist), diagrams and figures our own drawings. Built so: every figure is a drawing of ours
+  (a generic reef fish, its parts, the part taught in `--hl`; docs/DESIGN.md), and the only photos are the families' covers of the
+  families page, one per family in its group, each enlarging with its credit (rule P5), picked by the app's own cover
+  (rule P1: the easiest, most reference-like, whoever took it) at the moment they are shown.
 - **Inspiration, never citation**: a local fish ID course Pierre has may inspire the order and the explanations; it is never quoted,
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
-- Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; its photos the easiest, most reference-like ones, whoever took them (rule P1, fish).
+- Its words are the fish glossary to be (underlined in cues and feedback, as Coral basics' words are for corals): **not built
+  yet**, the Words list of the module only (ROADMAP "Fish basics, the rest"). Same component and format as Coral basics.
 
 ## What `fish.json` supports, and the gaps
 
@@ -669,8 +698,8 @@ on families only to an IMR RA with every species open:
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 
-- **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
-  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
+- **Subject switch: two places, one state.** A subject switch (a button per subject) on Home **and** a subject chip in the header next to the logo on
+  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown when a player can open two or more subjects (it was Pierre's alone until fish opened to players).
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
@@ -704,7 +733,9 @@ on families only to an IMR RA with every species open:
 
 ## Open questions for Pierre
 
-1. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
+Questions 1, 2, 4 and 6 are answered; 3 and 5 are still open as designs (the fish exams, the typed common name).
+
+1. **"Twospot wrasse"**: **settled** (Pierre, 2026-11-09, Q319, Q381): the name is right for both species (see "Duplicate common names" above); nothing is asked of IMR.
 2. The display-schedule thresholds and the IMR shift. **Answered (Pierre, 2026-11-04)**: the starting values from learnsim; later,
    with many answers, computed automatically per species from the measured difficulty of answering it with the common name against the
    Latin name ("Name-display schedule").
@@ -733,6 +764,8 @@ on families only to an IMR RA with every species open:
    easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
 
 ## Checks before release
+
+The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
 - **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
   they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.

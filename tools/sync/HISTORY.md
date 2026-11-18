@@ -14,6 +14,18 @@ the next newer entry; for v7 to v34, which no record dates, that is 2026-11-04, 
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v184 (2026-11-18)
+
+The embedded core.js gives the sea slugs the % achievements beyond 50% (`SEASLUG_ACH`: sspct60, sspct70, sspct80, sspct90 and sspct100, every 10 points up to 100%, as the corals' and the fish's climb; Pierre, 2026-11-17, "une première version des succès pour les limaces de mer", the first version stopping at 50%). The script counts a player's achievement ids by their shape (`achs_`, `[a-z0-9]{1,20}`), which the new ids fit, so nothing else in it changes
+
+## v183 (2026-11-18)
+
+The answer's feedback sheet tally (Pierre, 2026-11-18, the feedback sheet study, question (f): "ok pour les 6 recommandations"; how often players open More on the short sheet): a `pages` event may carry `fb`, four numbers, the answers whose feedback was shown, those where More was opened, the seconds the feedback stayed on screen (each answer's capped at 120) and the taps on a link inside it; the embedded `pagesClean` keeps it in the Pages tab's Detail JSON as four integers, each clamped (10000 for a count, 86400 for the seconds), and drops it when it is not four numbers or all are zero (no new column, no new event kind, no new identifier). The app counts and sends it with the summary it already sends, with no gate (rule D4: a script before this one drops the field, as it drops any field it does not know)
+
+## v182 (2026-11-18)
+
+The embedded core.js gains the basics modules' done feat and the fish's page (Pierre, 2026-11-04: Fish basics, the twin of Coral basics; docs/FISH_PATH.md "Fish basics"): `SUBJECTS` carries `basics: {feat}` (the corals' `_basics`, the fish's `_fbasics`), the fish's `pages` hold `'basics'`, and the fish's first-launch "new" line says the basics come first. The script's behaviour does not change: it replays and serves exactly what it did, and a `_fbasics` feat in a player's synced achievements record is kept like the other feats. Nothing is gated on the script's version
+
 ## v181 (2026-11-18)
 
 The script updates itself from the `release` branch, not from `main` (`autoUpdate`, `selfRaw_`; Pierre, 2026-11-18, architecture review R5 question h, approved): only the merge train (`tools/train.py`) moves `release`, after its tree went green, so a commit that reaches `main` without the train (the admin's Publish, the Candidate photos workflow) never reaches the live script. While `release` does not exist (GitHub answers 404 for it) the script reads `main` as before, so the update that brings this line cannot lose its way; any other answer is a failed read and installs nothing, and the manifest always comes from the branch that answered for `Code.gs`. The data files it reads (`data.json`, `curation.json`, the fish files) stay on `main`. The Deploy log's install line and the saved version's description say which branch the code came from
