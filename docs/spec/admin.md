@@ -34,7 +34,7 @@ over the cap).
 | Photos | Candidates | `#photos/candidates` |
 | Photos | Photo review | Quality `#photos/review/quality` · Growth form `#photos/review/growth-form` · Ease `#fish/photos/review/ease` · Phase & framing `#fish/photos/review/phase-framing` · By difficulty `#photos/review/by-difficulty` · Light proposals `#fish/photos/review/light-proposals` · Cover proposals `#fish/photos/review/cover-proposals` |
 | Photos | Look-alikes | `#photos/look-alikes` |
-| Photos | Photo stats | Overview `#photos/stats/overview` · Difficulty `#photos/stats/difficulty` |
+| Photos | Photo stats | Overview `#photos/stats/overview` · Difficulty `#photos/stats/difficulty` · Taxa `#photos/stats/taxa` |
 | Players | Activity | Recent sessions `#players/activity` |
 | Players | Visits | `#players/visits` |
 | Players | List | `#players/list`, a player's Journey `#players/list/journey/<name>`, a device's `#players/list/anon/<id>` |
@@ -121,7 +121,11 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   its tree, `ph` its first photos when it has some, `gm` its game photos, `cand` its candidate photos; `reports.js`
   `repReg`). Each subject's go into its own registry once one of its reports or flags shows (`admin.js` `unitAdmin`,
   `UNITA`), so its reported photo shows on its Reports side from its game file's source, with its unit, the species it is
-  identified as and its credits;
+  identified as and its credits. The registry reads the tree with the content editor's structure and text in force
+  (`core.js` `contentApply` under the published curation, `SAVED`: `admin.js` `unitBuild`), as the app does, so a
+  look-alike pair or a circle edited there shows on Pairs, the Heatmap and the Journey (its photos and family pages stay
+  those of the file as built, so a report on a photo of a family taken out of every circle still shows it); a Publish, a
+  rebase or another tab's Publish builds it again (`unitRefresh`);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort));
 - `origins` and `csrc`, its photo origins (the filter bar's chips) and its candidate sources; `obs`, its word for
@@ -129,8 +133,8 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
 
 ### Which pages a subject has
 
-`hasPage` decides: every Players page (`players/…`), the pages about no subject (`EVERY`: Coverage › Rights, To do ›
-Alerts), a view with work of its own while it has some (`GROUPS` view options `live` and `draw`: Light proposals, Cover
+`hasPage` decides: every Players page (`players/…`), the pages about no subject or read from what every subject holds (`EVERY`: Coverage › Rights, To do ›
+Alerts, Photo stats › Taxa), a view with work of its own while it has some (`GROUPS` view options `live` and `draw`: Light proposals, Cover
 proposals), a tab or view for one unit rank only shown to a subject of that rank (`GROUPS` option `rank`: Photo review's
 Ease, Phase & framing and the proposals, `rank: 'family'`; `SUBJECTS` `rank`), and otherwise what `pages` lists. The
 header shows only the groups, tabs and views of the pages the subject has; an address of a page it does not have says
