@@ -999,15 +999,13 @@ in normal play until it has 20 or more answers, never as a hidden probe; a test 
 - **Sticky**: a member stays while it is in play, even when its genus's share of the 50 falls (the set may then hold a
   few more); a genus whose member left play (Pierre removed it, rated it Poor,
   excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
-  says when it would). Until then the member out of play is simply never drawn. A redraw would waste the answers the
-  members have gathered.
+  says when it would); until then it is never drawn. No redraw: it would waste the members' answers.
 - **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
   sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
   online calibration's bonus (`calBonus`); then 1. Only on a unit the player holds (met, not shaky: the calibration
   questions' condition) and for a photo within one width of the question's target (|x| ≤ 1 in the targeting's
   Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
-  else: the difficulty targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the
-  format and the scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
+  else: targeting, photo memory, variety, format and scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
   file did not come, draws as before.
 - **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
   lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
