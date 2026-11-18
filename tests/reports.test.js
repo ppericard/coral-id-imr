@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The players' reports in the admin (Pierre, 2026-11-08, Q309): a report's status (Done thanks the player through
+// The players' reports in the admin: a report's status (Done thanks the player through
 // curation seen 'rep:<id>'; Stand-by and Dismissed live in curation reps and never thank), the list's order, and what a
 // report is about whatever it was sent from (reports.js repCtx, shared with admin.js).
 const test = require('node:test'),
@@ -146,7 +146,7 @@ test('repCtx: a game report (quiz, duel): the expected unit, the answer, its pho
   assert.strictEqual(d.subj, 'coral');
   const f = repCtx(row({g: 'f:Damselfishes', a: 'f:MoorishIdol', m: 'quiz', ph: 'fi464458713', w: 'fish/practice/quiz'}));
   assert.deepStrictEqual([f.unit, f.ans, f.subj, f.src], ['f:Damselfishes', 'f:MoorishIdol', 'fish', 'game']);
-  // the sea slugs share the fish's sheet prefixes: their page says whose unit it is (Codex review #987)
+  // the sea slugs share the fish's sheet prefixes: their page says whose unit it is
   const s = repCtx(row({g: 'f:Chromodorididae', a: 'f:Polyceridae', m: 'quiz', w: 'seaslug/practice/quiz'}));
   assert.deepStrictEqual([s.unit, s.subj], ['f:Chromodorididae', 'seaslug']);
   assert.strictEqual(repCtx(row({g: 'f:Chromodorididae', m: 'quiz', w: 'seaslug/learn/families'})).subj, 'seaslug');
@@ -212,7 +212,7 @@ test('repCtx: the fields as they are, whatever the row', () => {
   assert.strictEqual(repCtx([]).subj, '');
 });
 
-// Pierre, 2026-11-09: a fish report read "Several corals". A reason names the organism in its subject's words (core.js
+// A reason names the organism in its subject's words, never "Several corals" on a fish report (core.js
 // SUBJECTS several, one), as the player's dialog put it (sync.js REP_WHY); the sheet keeps the key, so old reports too.
 test('repWhyText: a reason in its subject words, every key the dialog sends', () => {
   const fish = repCtx(row({why: 'multi', g: 'f:Wrasses', m: 'quiz'})),
@@ -244,8 +244,8 @@ test('admin.html loads reports.js after core.js and before admin.js', () => {
   assert.ok(at('reports\\.js') > 0 && at('reports\\.js') < at('admin\\.js'), 'reports.js before admin.js');
 });
 
-// Codex review #987: a reported photo of a third subject showed as "missing" on the admin's Reports page (admin.js read the
-// fish's files only). Every subject whose SUBJECTS admin files name its tree and game photos gets a registry from them
+// A reported photo of any subject, not only the fish, is found on the admin's Reports page, never "missing". Every
+// subject whose SUBJECTS admin files name its tree and game photos gets a registry from them
 // (reports.js repReg, admin.js unitRead): each photo of its game file in it, with its credits, the identification it
 // carries, the unit showing it and its source as the file has it (a remote original stays remote), and a report on it
 // goes to that subject's side by its photo alone.

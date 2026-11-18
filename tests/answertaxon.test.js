@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The photo's own species under the verdict, after every answer, right or wrong (Pierre, 2026-11-07 and 2026-11-08, go on
-// 2026-11-09): "This photo: Zigzag wrasse · Halichoeres scapularis". app.js photoTaxon (the one taxon of the photos shown,
+// The photo's own species under the verdict, after every answer, right or wrong: "This photo: Zigzag wrasse ·
+// Halichoeres scapularis". app.js photoTaxon (the one taxon of the photos shown,
 // finer than the unit asked), taxonLine (the line), fishTaxon and coralTaxon (UNITS taxon), run in a vm on the real
 // fish.json, fish-game.json, data.json and cand.json. The line in the real quiz, after the answer and not before:
 // tests/fish.smoke.js.
@@ -50,8 +50,8 @@ test('a fish photo named to the species: its first curated common name, then its
     fish([{f: 'x', sp: 's100'}], 'f:Damselfishes'),
     '<p class="fbsp">This photo: Blackbar chromis · <i>Chromis retrofasciata</i> <small>(now <i>Pycnochromis retrofasciatus</i> in WoRMS)</small></p>'
   );
-  // A PDF spelling shown another way by Pierre's decision (s278, the PDF's "Neoniphon argentus"; 2026-11-14): the name
-  // shown, no "now" beside it; its common name the player's first (Q376 (a)): iNaturalist's default for most players,
+  // A PDF spelling shown another way (s278, the PDF's "Neoniphon argentus"): the name shown, no "now" beside it; its
+  // common name the player's first: iNaturalist's default for most players,
   // the IMR name for a player at IMR.
   assert.strictEqual(
     fish([{f: 'x', sp: 's278'}], 'f:Squirrelfishes'),
@@ -76,7 +76,7 @@ test('a fish photo named to the species: its first curated common name, then its
     ctx.imr = false;
   }
   assert.strictEqual(fish([{f: 'x', sp: 's256'}], 'f:Wrasses'), '<p class="fbsp">This photo: Moon wrasse · <i>Thalassoma lunare</i></p>');
-  // A species no reference names (Q247): the scientific name alone.
+  // A species no reference names: the scientific name alone.
   assert.strictEqual(fish([{f: 'x', sp: 's679'}], 'f:Bigeyes'), '<p class="fbsp">This photo: <i>Priacanthus starnesi</i></p>');
 });
 

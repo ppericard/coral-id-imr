@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The live mode (sheet v172; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
+// The live mode (docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
 // in-memory sheet (rule D1): the trainer check (d) by the script's roles, never the page; the session's state machine;
 // the scoring (b): a right answer plus a speed bonus, timed from the moment the question reached that student; what a
 // student is sent (never the right answer before the reveal); the session in the cache only, never a sheet tab; and the
@@ -71,7 +71,7 @@ test('only an account with the trainer role starts a session, checked by the scr
     ['live start', IMR, 'ok']
   ]);
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
-  // The right is the trainer role's only: an owner or an editor without it is refused (Q364: rights are separate).
+  // The right is the trainer role's only: an owner or an editor without it is refused (rights are separate).
   save(s, 'Owen');
   grant(s, 'Owen', 'owner');
   grant(s, 'Owen', 'editor');
@@ -256,8 +256,7 @@ test('a student is sent their accepted answers once revealed, a reveal missed or
     a = s.lv('join', {code, nick: 'Ann'}),
     poll = (hx = 0) => s.lv('poll', {code, pid: a.pid, pk: a.pk, hx}),
     ans = (qi, c) => s.lv('answer', {code, pid: a.pid, pk: a.pk, qi, c});
-  // A subject in beta for a group is never hosted (none is today: the sea slugs opened to all on 2026-11-18, #1051; a
-  // group subject is made here).
+  // A subject in beta for a group is never hosted (a group subject is made here, whatever the real subjects are).
   run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'group'");
   assert.strictEqual(start(s, {s: 'seaslug'}).error, 'input');
   run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'all'");
