@@ -44,7 +44,8 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PAGES.md](docs/PAGE
 python3 -m http.server 8000     # app: http://localhost:8000   admin on made-up data: http://localhost:8000/admin.html?demo
 ```
 
-Sync and photos still reach the live Apps Script and R2 from a local copy.
+A local copy reads the live photos (R2) and the read-only photo statistics, but never signs in, saves or sends answers:
+`app.js` `LOCAL` turns the sheet off (the error "local copy: the sheet is off"), so tests answer it with `window.SHEET_STUB`.
 
 ## Test
 
