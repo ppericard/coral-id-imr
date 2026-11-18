@@ -8,7 +8,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 Written 2026-11-18, about 18:45 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
-Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since Shannen's 11/17 report).
+Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since the 11/17 report, already handled).
 
 ## Now
 
