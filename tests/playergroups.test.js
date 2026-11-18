@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
 // Player groups (sheet v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
 // groupes"; "Staff" is not a role): one group model replaces the beta groups, the one cohort per player and the staff
-// (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and three settings, board, apart and beta; a player is
-// in any number of groups. Every subject's board reply splits its one ranking (Code.gs board_) into the general board
-// without the members of an apart group (rows) and each board group's (groups); the migration (ONCE_ groups) makes the
+// (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and two settings, board and beta
+// (docs/decisions/2026-11-18-no-apart-groups.md); a player is in any number of groups. Every subject's board reply gives the general board,
+// everyone (rows), and each board group's, its members (groups); the migration (ONCE_ groups) makes the
 // groups of the data before, nothing lost. Against the in-memory sheet only (rule D1); made-up names.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -75,7 +75,7 @@ test('a group: made with a name and settings; its name unique, 40 characters at 
   const r = make(s, '  RA   November 2026 ', {board: true});
   assert.ok(r.ok);
   assert.match(r.group.id, /^g:[0-9a-f]{8}$/);
-  assert.deepStrictEqual({...r.group, id: 0, at: 0}, {id: 0, n: 'RA November 2026', board: 1, apart: 0, beta: '', at: 0});
+  assert.deepStrictEqual({...r.group, id: 0, at: 0}, {id: 0, n: 'RA November 2026', board: 1, beta: '', at: 0});
   ['', '   ', 'x'.repeat(41), 'a\u0007b'].forEach(n => assert.strictEqual(make(s, n).error, 'name', JSON.stringify(n)));
   assert.strictEqual(make(s, 'ra NOVEMBER 2026').error, 'exists', 'another group has that name, case aside');
   assert.strictEqual(make(s, 'Beta', {beta: 'coral'}).error, 'beta', 'beta: only a subject that opens to a group');
@@ -88,8 +88,8 @@ test('a group: made with a name and settings; its name unique, 40 characters at 
   assert.deepStrictEqual(
     L.groupDefs.map(d => [d.n, d.board, d.apart, d.beta]),
     [
-      ['RA November 2026', 1, 0, ''],
-      ['=1+1', 0, 0, '']
+      ['RA November 2026', 1, undefined, ''],
+      ['=1+1', 0, undefined, '']
     ]
   );
   const A = s.sheets.Audit.rows.slice(1).map(x => [x[2], x[4]]);
@@ -135,7 +135,7 @@ test('a player in any number of groups: every reply says which; the boards follo
   assert.strictEqual(join(s, 'Ana', 'g:00000000').error, 'group');
 });
 
-test('apart: its members leave the general board and every other group board, stay members, and come back when they leave it', () => {
+test('no apart: the general board shows everyone, each group board all its members; an old apart is ignored', () => {
   const s = five();
   betaOn(s);
   const staff = id(s, 'Staff', {board: 1, apart: 1}),
@@ -146,48 +146,34 @@ test('apart: its members leave the general board and every other group board, st
   join(s, 'Ben', beta);
   BOARDS.forEach(S => {
     const B = board(s, S);
-    assert.deepStrictEqual(names(B.rows), ['Ana', 'Cy', 'Eve'], S.id + ': the general board without the apart members');
+    assert.deepStrictEqual(names(B.rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve'], S.id + ': everyone on the general board');
     assert.deepStrictEqual(
       scopes(B),
       [
-        ['RA November 2026', ['Ana', 'Cy']],
+        ['RA November 2026', ['Ana', 'Ben', 'Cy']],
         ['Staff', ['Ben', 'Dee']]
       ],
-      S.id + ': Ben only on the apart board'
+      S.id + ': Ben on both of his groups’ boards'
     );
   });
+  assert.strictEqual(s.sheets['Group settings'].rows[1][3], 0, 'the Apart column written 0');
+  // A row an older script wrote with Apart 1 (the staff of v179) changes nothing.
+  s.sheets['Group settings'].rows[1][3] = 1;
+  run(s, 'boardsDrop_()');
+  assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve']);
+  assert.strictEqual(s.post({users: 1, token: TOK}).groupDefs[0].apart, undefined, 'not served');
   const ben = s.get({name: 'Ben', pin: '1234'});
-  assert.deepStrictEqual(
-    [ben.gids, ben.groups],
-    [[nov, staff, beta], [BETA]],
-    'still a member of his other groups; his beta subject stays open'
-  );
-  // A second apart group: a player in both is on both, on no other.
-  const crew = id(s, 'Boat crew', {board: 1, apart: 1});
-  join(s, 'Ben', crew);
-  assert.deepStrictEqual(scopes(board(s))[0], ['Boat crew', ['Ben']]);
-  assert.deepStrictEqual(scopes(board(s))[2], ['Staff', ['Ben', 'Dee']]);
-  // Leaving the apart groups puts Ben back everywhere else at once (the cache dropped).
-  join(s, 'Ben', staff, false);
-  join(s, 'Ben', crew, false);
-  const B = board(s);
-  assert.deepStrictEqual(names(B.rows), ['Ana', 'Ben', 'Cy', 'Eve']);
-  assert.deepStrictEqual(scopes(B)[1], ['RA November 2026', ['Ana', 'Ben', 'Cy']]);
-  // An apart group without a board: its members are on no board.
-  const quiet = id(s, 'Quiet', {apart: 1});
-  join(s, 'Eve', quiet);
-  assert.ok(!names(board(s).rows).includes('Eve'));
-  assert.ok(!board(s).groups.some(g => names(g.rows).includes('Eve')));
+  assert.deepStrictEqual([ben.gids, ben.groups], [[nov, staff, beta], [BETA]]);
 });
 
-test('settings: rename, board and apart on and off, beta; every change reaches the boards at once', () => {
+test('settings: rename, board on and off, beta; every change reaches the boards at once', () => {
   const s = five();
   betaOn(s);
   const g = id(s, 'Staff', {board: 1});
   join(s, ['Ben', 'Dee'], g);
   assert.deepStrictEqual(scopes(board(s)), [['Staff', ['Ben', 'Dee']]]);
-  assert.strictEqual(edit(s, g, {apart: true}).group.apart, 1);
-  assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Cy', 'Eve'], 'apart: the cache followed');
+  assert.strictEqual(edit(s, g, {apart: true}).group.apart, undefined, 'apart ignored');
+  assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve']);
   assert.strictEqual(edit(s, g, {n: 'Crew'}).group.n, 'Crew');
   assert.deepStrictEqual(scopes(board(s)), [['Crew', ['Ben', 'Dee']]], 'renamed: same id, same members');
   assert.strictEqual(edit(s, g, {board: false}).group.board, 0);
@@ -260,7 +246,8 @@ test('rule D7: a merge joins every group of the merged name to the kept one; a d
   board(s); // cached
   assert.ok(s.post({userMerge: {from: 'Ana', into: 'Cy', data: {}}, token: TOK}).ok);
   assert.deepStrictEqual(s.get({name: 'Cy', pin: '1234'}).gids, [c, a, b], "Cy keeps hers and takes Ana's");
-  assert.deepStrictEqual(names(board(s).rows), ['Dee', 'Eve'], 'the cache followed: Cy is apart now');
+  const M = board(s);
+  assert.ok(!names(M.rows).includes('Ana') && !M.groups.some(g => names(g.rows).includes('Ana')), 'the cache followed: Ana is on no board');
   assert.ok(s.post({userDelete: 'Ben', answers: true, token: TOK}).ok);
   assert.ok(s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
   assert.deepStrictEqual(s.sheets.Groups.rows.slice(1), [], 'nobody left in any group');
@@ -303,7 +290,7 @@ const view = s => {
   return {
     rows: names(B.rows),
     boards: scopes(B),
-    defs: L.groupDefs.map(d => [d.id, d.n, d.board, d.apart, d.beta]),
+    defs: L.groupDefs.map(d => [d.id, d.n, d.board, d.beta]),
     gids: Object.fromEntries(L.users.map(u => [u.name, u.gids])),
     beta: ['Ana', 'Ben', 'Dee'].map(n => s.get({name: n, pin: '1234'}).groups)
   };
@@ -313,7 +300,7 @@ test('the migration: beta groups, cohorts and the staff become groups, nothing l
   const s = before();
   betaOn(s);
   const want = {
-    rows: ['Ana', 'Cy', 'Eve', 'Fay'],
+    rows: ['Ana', 'Ben', 'Cy', 'Dee', 'Eve', 'Fay'], // everyone, the staff included
     // the newest first: the staff's by their first grant (today, in this test), a cohort's by its first row
     boards: [
       ['Staff', ['Ben', 'Dee']],
@@ -321,10 +308,10 @@ test('the migration: beta groups, cohorts and the staff become groups, nothing l
       ['RA October 2026', ['Cy']]
     ],
     defs: [
-      ['staff', 'Staff', 1, 1, ''],
-      ['fish', C.subjectOf('fish').name + ' beta', 0, 0, 'fish'],
-      ['cohort:RA October 2026', 'RA October 2026', 1, 0, ''],
-      ['cohort:RA November 2026', 'RA November 2026', 1, 0, '']
+      ['staff', 'Staff', 1, ''],
+      ['fish', C.subjectOf('fish').name + ' beta', 0, 'fish'],
+      ['cohort:RA October 2026', 'RA October 2026', 1, ''],
+      ['cohort:RA November 2026', 'RA November 2026', 1, '']
     ],
     gids: {
       Ana: ['fish', 'cohort:RA November 2026'],
@@ -379,7 +366,7 @@ test('the migration: two cohorts whose names differ by case only both stay; a se
     defs.map(d => d.n),
     ['RA October 2026', 'ra october 2026']
   );
-  assert.strictEqual(edit(s, defs[1].id, {apart: 1}).group.apart, 1, 'not refused as a name taken');
+  assert.strictEqual(edit(s, defs[1].id, {board: 0}).group.board, 0, 'not refused as a name taken');
   assert.strictEqual(edit(s, defs[1].id, {n: 'RA OCTOBER 2026'}).error, 'exists');
 });
 
@@ -412,7 +399,7 @@ test('the board cache: one entry per subject holds every scope; a membership or 
   assert.deepStrictEqual([hit.rows, hit.groups], JSON.parse(JSON.stringify([B.rows, B.groups])));
   save(s, 'Ben', 39);
   assert.deepStrictEqual(names(board(s).rows), names(B.rows), 'served from the cache');
-  [() => join(s, 'Cy', g), () => edit(s, g, {apart: 1}), () => make(s, 'New'), () => grant(s, 'Dee')].forEach((f, i) => {
+  [() => join(s, 'Cy', g), () => edit(s, g, {board: 0}), () => make(s, 'New'), () => grant(s, 'Dee')].forEach((f, i) => {
     board(s);
     assert.ok(s.cache[key], i + ': cached');
     f();
