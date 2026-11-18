@@ -100,6 +100,14 @@
   "kmb2017": {
    "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717)",
    "u": "https://doi.org/10.3897/zookeys.717.21885"
+  },
+  "dvhg2023": {
+   "t": "Donohoo et al. 2023, Hyperdiversity of the genus Halgerda (Marine Biodiversity 53)",
+   "u": "https://doi.org/10.1007/s12526-022-01334-9"
+  },
+  "gosl1995": {
+   "t": "Gosliner 1995, The genus Thuridilla, with a revision of the Elysiidae (Proc. Calif. Acad. Sci. 49)",
+   "u": "https://archive.org/details/biostor-3282"
   }
  },
  "families": {
@@ -299,6 +307,56 @@
      [["ssf-meliviri", "the oral veil"]]
     ]
    ]
+  },
+  "Halgerda": {
+   "marks": [
+    [
+     "A semi-firm, jelly-like body, its back raised into ridges and tubercles",
+     [["dvhg2023", "Introduction, the genus's features (after Bergh 1880 and Fahey and Gosliner 2001)"]]
+    ],
+    [
+     "Low, smooth rims around the rhinophores and the gill tuft",
+     [["dvhg2023", "Introduction, the genus's features (the rhinophore and gill sheaths)"]]
+    ]
+   ]
+  },
+  "Elysia": {
+   "marks": [
+    [
+     "Most stay hidden on the alga they feed on, seldom out in the open",
+     [["gosl1995", "Discussion, p. 45: most Elysia cryptic upon their algal food"]]
+    ]
+   ]
+  },
+  "Thuridilla": {
+   "marks": [
+    ["Long rhinophores", [["gosl1995", "Discussion, p. 45: the derived features of Thuridilla"]]],
+    [
+     "Crawls in the open on shallow reefs; most species are brightly coloured",
+     [["gosl1995", "Introduction, p. 1"], ["gosl1995", "Discussion, p. 45: Thuridilla against Elysia"]]
+    ]
+   ]
+  },
+  "Coryphellina": {
+   "marks": [
+    ["Rhinophores covered in small bumps (papillae)", [["kmb2017", "diagnosis of the genus Coryphellina"]]],
+    ["Rhinophores no longer than the oral tentacles", [["kmb2017", "diagnosis of the genus Coryphellina"]]],
+    [
+     "A narrow body, the cerata in clusters on low bumps along each side",
+     [["kmb2017", "diagnosis and remarks of the genus Coryphellina"]]
+    ]
+   ]
+  },
+  "Phyllidiopsis": {
+   "marks": [
+    [
+     "Rhinophores of varied colours, often in two colours or more",
+     [
+      ["brunck", "External morphology of Phyllidiopsis, p. 19"],
+      ["brunck", "Table 6, the external features of the genera, p. 89"]
+     ]
+    ]
+   ]
   }
  },
  "apart": {
@@ -348,12 +406,7 @@
   "Phyllidiella|Phyllidiopsis": "Brunckhorst's key sets Phyllidiopsis apart by its fused oral tentacles, under the animal; the rhinophore colours read are species marks (SEASLUG.WORLD's Phyllidiella pustulosa against Phyllidiopsis fissurata)"
  },
  "none": {
-  "Halgerda": "the Sea Slug Forum's Halgerda batangas sheet describes its species' colours (an orange network, orange-tipped tubercles), not a feature of the genus",
-  "Ardeadoris": "the Sea Slug Forum's Ardeadoris egretta sheet gives only a white body with a yellow border, which other white chromodorids share",
-  "Elysia": "the sources read describe its species' colours; none tells it from Thuridilla on a photo (the family's parapodia are the family's mark)",
-  "Thuridilla": "the sources read describe its species' colours; none tells it from Elysia on a photo (the family's parapodia are the family's mark)",
-  "Caloria": "no source read yet gives a feature of the genus",
-  "Coryphellina": "the Sea Slug Forum's sheet gives the papillate orange rhinophores of Coryphellina exoptata alone, not of the genus",
-  "Phyllidiopsis": "Brunckhorst's key (couplets 1 and 2, p. 25) sets it apart by its fused oral tentacles and its gut, both under the animal: nothing seen on a photo from above"
+  "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
+  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus"
  }
 }
