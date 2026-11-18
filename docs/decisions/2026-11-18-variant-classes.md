@@ -1,6 +1,6 @@
 # The mimicry class: look-alike species come in once their model is met, with a card
 
-Date: 2026-11-18. PR: #N. Rules or docs touched: C2, C3, C6, P3, D5, D7; LEARNING.md "The mimicry class";
+Date: 2026-11-18. PR: #1133. Rules or docs touched: C2, C3, C6, P3, D5, D7; LEARNING.md "The mimicry class";
 FISH_PATH.md "Juveniles and colour phases"; ARCHITECTURE.md "Front end" (the photo variants); ROADMAP "Look-alike
 pairs between species"; tools/README.md.
 
