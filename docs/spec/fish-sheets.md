@@ -40,10 +40,14 @@ the one "No photo yet" drawing (`NOFISH`, `.nofish`).
 
 `treeGenus`, `#fish/learn/genus/<name>`: the genus, its common name when it has one, its family and IMR entry name; my
 progress once met; the IMR sub-entry's cues, else its ID marks and presentation; the species WoRMS now puts in another
-genus; every species with the filter; "Don't confuse with": the sibling genera IMR gives cues for, then the look-alikes
-a source names and those players mix it up with, each with its source (`treeGenusLooks`). The page bar's previous / next
+genus; every species with the filter; "Don't confuse with": the sibling genera of its family IMR gives cues for, then
+those that have only our ID marks (`treeGenusSibs`: the one with the most species first, the first four at once, the
+others of the family behind "More"; each card shows its marks and the sources they rest on, never IMR's; a subject whose
+sheet words say `sibMarks: false`, the sea slugs, has the first kind only), then the look-alikes a source names and those
+players mix it up with, each with its source (`treeGenusLooks`). A genus whose siblings and look-alikes are none (the
+Goatfishes' *Parupeneus*) shows no section. The page bar's previous / next
 go through its family's genus pages. A genus with one species opens its species' sheet, and the only genus of a family
-its family's (`treeSheets` `go`); its marks and look-alikes are then shown there.
+its family's (`treeSheets` `go`); its marks and look-alikes are then shown there, its sibling genera not.
 
 ## The species sheet
 
