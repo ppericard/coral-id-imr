@@ -55,7 +55,9 @@ function declared(src) {
   }
   return names;
 }
-const uses = (src, n) => new RegExp('(^|[^\\w$.])' + n.replace(/\$/g, '\\$') + '(?![\\w$])(?!\\s*:(?!:))').test(src);
+// A name or a file name as a regular expression that matches it literally.
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const uses = (src, n) => new RegExp('(^|[^\\w$.])' + reEsc(n) + '(?![\\w$])(?!\\s*:(?!:))').test(src);
 
 test('index.html: learn.js after the quiz, the Lab and its stylesheet last, every tier in order', () => {
   const {scripts, css} = tiers();
@@ -79,7 +81,7 @@ test('a script of the quiz’s tier needs no name that only a later tier declare
   const {scripts} = tiers();
   const pre = ['core.js', 'app.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];
   assert.ok(
-    pre.every(f => new RegExp(`href="${f.replace('.', '\\.')}\\?v=\\d+" as="script" data-tier="1"`).test(HTML)),
+    pre.every(f => new RegExp(`href="${reEsc(f)}\\?v=\\d+" as="script" data-tier="1"`).test(HTML)),
     'tier 1 as listed'
   );
   const tierOf = f => (pre.includes(f) ? 1 : scripts[f]);
@@ -91,7 +93,7 @@ test('a script of the quiz’s tier needs no name that only a later tier declare
     for (const g of all.filter(g => tierOf(g) > 2))
       for (const n of decl[g]) {
         if (all.some(h => tierOf(h) <= 2 && decl[h].has(n))) continue; // declared by an earlier tier too
-        const N = n.replace(/\$/g, '\\$');
+        const N = reEsc(n);
         // A local of the same name (const tag = …) is no use of the global.
         if (new RegExp(`\\b(const|let|var|function)\\s+${N}\\b|[(,]\\s*${N}\\s*[,)=]`).test(src)) continue;
         if (uses(src, n) && !new RegExp('typeof ' + N + '\\b').test(src)) bad.push(`${f} uses ${n} (${g}, tier ${tierOf(g)})`);
