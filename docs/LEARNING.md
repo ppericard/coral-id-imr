@@ -819,7 +819,183 @@ their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`).
 
 ## Pooled statistics: photo difficulty and confusions
 
-SPEC-PLACEHOLDER
+What the sync sheet learns from every player's answers together, and how the app reads it, as the code runs it today;
+every value is the code's, and the code wins where this text and it differ. The studies and measurements behind it,
+with their dates, are in the notebook: [docs/archive/learning-notebook.md](archive/learning-notebook.md).
+
+Code: `Code.gs` `stats_` (one pass over a subject's answers, oldest first) and `statsStep_` (one answer), run whole or
+a few rows at a time by `statsFold_`; the browser's copy for the admin and the tests is `core.js` `eloReplay`
+(`trustOf`, `eloOf`, `genusOffsetsOf`, `confusionOf`), kept in step with the sheet (`tests/core.test.js` compares them).
+How the statistics are built, cached and served (the fold, the snapshot, one fold per subject): docs/spec/sync.md
+"Pooled photo statistics". `?stats=1` serves `photos`, `gd`, `mem`, `memn`, `conf` and `fmt`. They set how hard each
+photo is in every player's game and which choices are traps, so they count only players who really play.
+
+### Who counts and how much an answer weighs
+
+- **Who counts** (`Code.gs` `trusted_`, `TRUST = {N: 10, Z: 1.645}`; `core.js` `trustOf`): a player, signed in or a
+  device that never signed in, with `TRUST.N` answers or more whose right answers beat chance with a one-sided z of at
+  least `TRUST.Z`, against each question's guess rate (`core.js` `guessOf`: 1/k, ½ in a duel, 0 typed). Trust is judged
+  on the player's whole log at each build, and a trusted player's every answer counts. The players and devices the admin
+  leaves out of the statistics (`Code.gs` `sxSet_`) count as untrusted, and an answer whose photos belong to another unit
+  (`Code.gs` `photoCheck_`) rates no photo. Only trusted answers move the photos, the unit offsets, the memory offsets,
+  the confusions and the format offsets.
+- **How much an answer weighs**: n / (n + `PHOTO_W.N`) after n answers of the player (`PHOTO_W.N` 10), so a player whose
+  level is still uncertain moves the items little (Glicko's idea). The counts the sheet keeps are weighed the same way;
+  each photo also carries its plain answer count, for the admin's filters.
+- **Everyone starts as a beginner**: the sheet's own player rating starts at `PLAYER0` = −1 (about 45% right on an
+  average photo with 4 choices) and moves after every answer, trusted or not, by 0.6 / (1 + n / 40) × the surprise; it
+  is the player term of the ratings below, never the app's ability ("Ability per genus (Elo) and the global level").
+- **One expectation for everything**: e = g + (1 − g) σ(player − difficulty − memory), the difficulty being the unit's
+  offset plus the mean of the question's photo residuals, + 0.5 for a photo shown alone, and the memory the mean offset
+  of the question's photos for this player. The photos, the unit offset and the memory offsets all move by the same
+  surprise d = right − e.
+- **What an answer is**: the photos seen when answering (a corallites hint left closed is not logged with the answer),
+  the unit shown, the unit given and the choices offered. Names are matched case-blind.
+
+### Hierarchical photo Elo
+
+A photo's difficulty is its unit's offset G, shared by every photo of the unit, plus its own residual P (the player rule
+"global level + genus" of Pelánek et al. 2017, applied to the photos). Each trusted answer, of weight w, moves both:
+
+- P by 0.8 / (1 + n_photo / 10) / (photos shown) × d × w;
+- G by `GENUS_K` / (1 + n_unit / 10) × d × w, `GENUS_K` 0.4 (`Code.gs` and `core.js` in step);
+
+n being the weighed answers so far. Both start at 0, so a photo nobody has answered sits at its unit's offset. A photo's
+unit is the unit shown (every photo of a question is of one colony, rule P4), so no data file or per-unit code is
+needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
+answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
+time.
+
+**In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
+its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
+judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. A unit's
+difficulty is read from the same offsets ("One genus difficulty"). The planned next step, one difficulty split into
+rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
+
+### Photo memory
+
+A photo a player has already been shown is easier for them than for a player meeting it the first time. One rule, in the
+sheet, the admin and the app (`core.js` `MEM`, `memBucket`, `memFam`, `eloReplay`; `Code.gs` `stats_` in step):
+
+- **Buckets** of the player's history with a photo, [shown, right] (the sheet's `H`, the app's `s.ps`): new, shown never
+  right, right once, right twice or more. A question's memory is the mean offset of its photos seen when answering.
+- **New is the reference** (offset 0): a photo's rating is its difficulty for a player meeting it the first time, which
+  is what the game targets and what the mastery exam shows.
+- **Estimated in the same pass** as the photos, on the trusted answers weighed as for the photos: after each answer,
+  each bucket its photos fall in moves by the surprise over the information gathered so far plus the prior's (a Newton
+  step on the log-likelihood). The prior, `MEM.PRIOR` = [0, −0.5, −0.5, −1.5] (from `PHOTO_W.NEW` 0.5 and
+  `PHOTO_W.KNOWN` −1), weighs `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices). Served as `mem`, with
+  `memn`, the trusted answers behind each bucket.
+- **Per subject** (`model.js` `pmem`): the app reads the sheet's offsets (`PMEM`) for the subject the sheet replays
+  with them (`SUBJECTS` `replay`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
+  older sheet or offline (`core.js` `memOf`).
+- **The offsets do not depend on time.** Rule L1 allows the time since a photo was last shown to set its memory; no lag
+  term is in until the lag table shows enough answers per lag band (ROADMAP "Photo memory that fades with time").
+
+**In the app** (`quiz.js` `answer`, `model.js` `famOf`):
+
+- **The expectation** of a question includes the memory of its photos as the player knew them before answering: the
+  ability steps and the global level's, the logged `e`, the opening hold and the comeback's CUSUM, and the domain-score
+  bar's likelihood (the question's difficulty d0 + memory + mix-ups, "One scorer"). A right answer on a remembered
+  photo therefore raises the ability less, and a miss on one lowers it more: the player had been shown that very photo
+  and its answer.
+- **A record on the former moving average** weighs a right answer on a remembered photo by what memory does not explain
+  (`core.js` `pgMemW`): the chance the player had on the same photos new over the chance they had with their memory, at
+  most 1 (× 0.93, 0.87 and 0.84 for the three buckets at the game's target with the offsets first fitted). The unit
+  wrongly given takes no memory term: the memory is of the unit shown.
+- **Spread the repeats** (`model.js` `photoSet`): in the draw a photo already shown weighs × e^offset of its colony's
+  bucket (`model.js` `colonyMem`), so the least remembered come first; a soft factor, never a filter ("What a question
+  shows"). The targeting reads the photo's difficulty as new. The mastery exam keeps its own rule (a photo never shown
+  first).
+- **Saved progress recalculated once, silently** (`core.js` `memRecalc`, `model.js` `memRecalcAll`): a record of the
+  former moving average not yet under this rule (no `s.pm`) is corrected from its photos [shown, right]: its `pg` takes
+  f · pg / (f · pg + 1 − pg), f the mean memory weight of its right answers at the game's target (of a photo's r right
+  answers in n shows, r / n count as its first show, the rest as repeats in the photo's bucket now). It never raises a
+  bar and leaves a learned unit alone; `s.pm` marks the record, which travels with it between devices and accounts
+  (`mergeProgress`, `mergeUsers`), so no record is corrected twice. It runs at load, after each pull of the synced
+  progress and before a record's first answer (`quiz.js` `answer`). A record adopted from the sheet's replay carries
+  `pm` 1 and is never corrected here: this is the fallback for a device that never reached the sheet.
+- **Learned under the former model**: a learned mark on a record with neither `s.pg` nor `s.ds` was passed under
+  Bayesian Knowledge Tracing (`core.js` `afterBkt`), whose exam came too early. `memRecalc` drops its `s.mx` and any
+  `s.ex` at every call (load, pull, answer), and the replay never keeps it (`core.js` `replayedOf`); the unit keeps its
+  bar and takes the exam again. Silent: `model.js` `mxRecalc` tells nothing and the achievements stay
+  (`MXL.QUIET`, rule D6).
+
+### Confusions
+
+`conf` holds per pair of units (A before B alphabetically) [offered together, mixed up], counted on the trusted answers
+that logged their choices: each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
+answer given (`core.js` `confusionOf` counts the same, and also by direction for the admin). The app turns them into
+confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js` `pooledConf`,
+`core.js` `confScore`: "What a question shows", "Known mix-ups").
+
+**Format offsets**: `fmt` is fitted in the same pass on the trusted answers (`core.js` `fmtPoint`, `fmtFit`;
+"Per-format offsets").
+
+### Each subject's own statistics
+
+Every subject with a game photo pool (`SUBJECTS` `pool`: the corals, the fish, the sea slugs) has its own pass over its
+own answers under the same rules, served by `?stats=1&s=<subject>` with the subject named in the reply (the corals
+without `s`). The app reads:
+
+- **The corals'** (`sync.js` `loadStats`): photos, unit offsets, pairs, memory and format offsets.
+- **The sea slugs' own pooled statistics** (`SUBJECTS` `stats`; `sync.js` `loadOwnStats`, kept only from a script that
+  serves them and a reply naming the subject; `model.js` `statsJoin` joins their photo ratings, unit offsets and pairs to
+  the corals' in `PSTAT`, `PGD`, `PCONF`, keyed by the subjects' own ids). Their draw, traps and data look-alikes
+  follow their players' answers: a pair seeded from iNaturalist's identifications (`model.js` `dataSeed`) that is offered
+  together often and seldom mixed up falls under `CONF.TRAP` and stops being a look-alike. Their memory and format
+  offsets stay the prior and none (`pmem`, `pfmt`), as the sheet's replay of them reads none.
+- **Not the fish's**: the sheet rates them (each question at the rank it asked), but the app does not read them (no
+  `SUBJECTS` `stats`), so a fish photo's difficulty is its judged-ease prior and every fish pair keeps its prior.
+
+### Photo exposure
+
+How a player's questions spread over a unit's colonies (the fish's observations), so they learn the unit and not a few
+photos: the calibration share `CAL.RATE` drawn among the colonies never seen, a colony weighed by its share of the views
+in a multi-view question, and a colony counting as seen whatever view of it was shown (`model.js` `colonyMem`), all in
+"What a question shows". The admin's Colony view puts up to `admin.js` `CELL_MAX` (40) colonies of a coral genus in the
+games, per view; the fish have no cap. The study and its simulations are in the notebook.
+
+### Full replay
+
+The reference for a player's progress is the replay of their whole answer log, in time order, under today's rules
+(`core.js` `replayProgress`; rule D9, "The log, the only reference for progress"), done by the sync sheet itself and
+adopted by every device: how it is asked for, kept in the Replayed tabs, adopted and merged is docs/spec/sync.md "Full
+replay".
+
+- **One engine.** The sheet embeds `core.js` (`tools/sync_core.py`), and every answer is scored by `core.js`
+  `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets and pooled pairs for the
+  corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
+  it. An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
+  memory and the mix-ups term taken out of the logged `e` from `MEM_LOGGED` and `CF_LOGGED`, the replay's own put
+  back); a comeback answer's recall counts as 1, and a row with no `e` and `th` counts in the counts only.
+- **What the replay gives and what the device keeps** (`core.js` `replayedOf`): per unit the log has answers on, the
+  replay's record (the bar, counts, recent results, typed questions, photos seen, offers and mix-ups, ability, its level
+  move and volatility, run, variant groups left; the photos seen per photo the larger of the two sides), `pm` 1 and the
+  rules version; for the global level, the replay's ability and the larger answer count. From the device, what the log
+  cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged after it
+  takes it away as the game would (`core.js` `mxKeeps`), a passed exam turned back into one in course while a variant
+  group has no right answer in the log; and the days answered right, the last colonies shown and the corallites seen
+  (`dd`, `dl`, `ro`, `cor`). A unit the log has no answer on keeps the device's record only if it counts no answer
+  either.
+- **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
+  rule appends `{v, at, why, msg}`. A version is not a frozen engine: the sheet always replays with the code's current
+  rules, and a new version only makes every device take the replay once. No version has a card any more (`msg` null;
+  `core.js` `rvMsgs` shows none for a jump that ends on one), and a learned mark the replay takes away is not told
+  (rule D6).
+- **The device's own recalculations** (`memRecalc`, above; `model.js` `domRecalcAll`, a unit record of a subject other
+  than the corals still on the former moving average) only approximate the replay from what a device keeps, for a
+  device that never reached the sheet; a record adopted from the replay is never corrected by them.
+- **The admin** shows the replayed numbers: Players from the sheet's own replay (`Code.gs` `replayedAll_`), the Journey
+  replayed in the browser (`core.js` `replayProgress`), and "↻ saved" beside a value the saved copy still says
+  otherwise.
+
+### What the photo ratings do not use
+
+**Response time: genus and photo** and **Response time as information on difficulty**: the photo ratings, the unit
+offsets and the opening order take no answer time; only a right answer's ability steps do ("Response time"). Two
+studies measured what the time could add on the unit and the photo side, and one option was tried in three simulated
+rounds and not adopted; their records are in the notebook, and the next step is ROADMAP "Time in the photo rating".
 
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
@@ -1001,8 +1177,8 @@ true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--ap
 photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
 with two true difficulties): the sheet's photo Elo simulated. The profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
 log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
-learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`, as "Q315 option 1: what three rounds
-showed" describes); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
+learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`, as the notebook's "Q315 option 1: what three
+rounds showed" describes); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
 and served to every player's app (`PSTAT`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
 against the truth at each checkpoint (`rateErr`, the centred root mean square error; weighed by answers; the
 correlation; the genus offsets' `gdErr`), which learncmp reads as population measures, one value per seed (an exact
