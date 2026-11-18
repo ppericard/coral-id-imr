@@ -1904,13 +1904,14 @@ function signOutClear(all) {
       // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK); st, its structure stamp
       ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'st', 'start', 'wink'].map(k => subjKey(S.id, k)),
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; Codex review #850, rule D7)
-      ...['hold', 'comeback', 'custom-left'].map(k => subjDev(S.id, k)),
+      // and its basics module's record (Coral basics, Fish basics: app.js basicsKey; Codex review #428: done there hid the
+      // next beginner's offers)
+      ...['hold', 'comeback', 'custom-left', 'basics'].map(k => subjDev(S.id, k)),
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; Codex review #851, D7)
       ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
       // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; Codex review #953, D7)
       ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))
     ]),
-    BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,
     'reefid-ach-new',
     'reefid-ach-old', // progress.js ACHOLD: this player's achievements waiting for a subject's data to be recounted
