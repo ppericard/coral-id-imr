@@ -35,6 +35,7 @@ const SHELL = [
   'tips.js?v=3',
   'quiz.js?v=52',
   'learn.js?v=20',
+  'live.js?v=1',
   'flag.js?v=11',
   'quality.json?v=3',
   'picks.json?v=1',

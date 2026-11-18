@@ -52,6 +52,9 @@ const GATES = {
   // Activity's light read every minute while it is open and in view (admin.js liveOn, liveArm; Code.gs live_ readLive):
   // from the version that serves it; before, ↻ by hand only.
   LIVE_SHEET: (v, N) => fn('admin.js', 'const liveOn = ', '\n', 'liveOn', {ANS: v === undefined ? {} : {v}, LIVE_SHEET: N})(),
+  // The live mode (live.js liveFrom, LIVE_CH: Q393; Code.gs lv_): a reply of the version that serves it is taken; an older
+  // script's reply turns the page into one line ('old'), nothing more sent.
+  LIVEGAME_SHEET: (v, N) => fn('live.js', 'const liveFrom = ', '\n', 'liveFrom', {LIVEGAME_SHEET: N})(v === undefined ? {} : {v}),
   // The device's id on every answer it sends (sync.js devField, the save's and the anonymous send's dev; Code.gs
   // logAnswers_ Device; Q312): from the version that writes it; before, nothing more is sent.
   DEV_SHEET: (v, N) => {
