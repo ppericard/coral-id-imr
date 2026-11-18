@@ -7415,6 +7415,14 @@ const darkCards = (p, sel) =>
           const tg2 = await sq.evaluate(() => [...document.querySelectorAll('#view [data-tttag] option')].map(o => o.value));
           if (!tg2.includes('look') || !tg2.includes('look:' + HG) || !tg2.includes('look:g:Hypselodoris|g:Nembrotha'))
             se.push(`their Look-alikes filter ${JSON.stringify(tg2.filter(x => x.startsWith('look')))}`);
+          // Any look-alike: + Pair opens the box with both genera to choose; Cancel closes it, nothing written
+          await sq.selectOption('#view [data-tttag]', 'look');
+          await swait(() => !!document.querySelector('#view [data-stnew]'), 'their + Pair');
+          await sq.click('#view [data-stnew]');
+          await swait(() => !!document.querySelector('#view [data-stbox] [data-st-a] option[value="g:Phyllidia"]'), 'their pair box');
+          await sq.click('#view [data-stbox] [data-sta="cancel"]');
+          await swait(() => !document.querySelector('#view [data-stbox]'), 'their pair box closed');
+          await sq.selectOption('#view [data-tttag]', '');
           await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AHexabranchus');
           await swait(
             () => !!document.querySelector('#view .adm-cstruct[data-stid="g:Hexabranchus"] [data-stp]'),

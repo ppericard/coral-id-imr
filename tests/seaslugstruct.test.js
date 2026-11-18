@@ -338,6 +338,10 @@ test('the sheet: a pair Publish replays a sea-slug player under the pairs in for
   assert.deepStrictEqual(plain(r1.replays.seaslug.rec), plain(want1));
   assert.ok(String(Array.from(s.sheets['Replayed Sea slugs'].rows[1])[3]).endsWith('~' + st1), 'the stamp in the cache identity');
   assert.ok(!save({sts: {seaslug: st1}}).replays, 'applied: nothing more');
+  // the units it replayed with are the pairs in force (on this made-up log the records come out the same either way:
+  // observed, the cause not traced; the stamp and the units are what this test holds)
+  const U = s.ctx.subjRpl_('seaslug').gen;
+  assert.ok(U['g:Chromodoris'].look.includes('g:Nembrotha') && !U['g:Goniobranchus'].look.includes('g:Phyllidiella'));
   // the undo, read at the trigger's next run: the stamp empty again, the first record exactly
   m.cur = CUR;
   s.ctx.subjStRefresh_();
@@ -347,4 +351,28 @@ test('the sheet: a pair Publish replays a sea-slug player under the pairs in for
   assert.strictEqual(s.ctx.subjRpl_('seaslug').st, '');
   // seaslug.json read once per structure (the units under the curation's fingerprint), the curation at each refresh
   assert.ok(m.n.f <= 3 && m.n.cur >= 2, JSON.stringify(m.n));
+});
+
+test('sync.js stNow: each subject says its own stamp, its own tree in force (app.js treeWith), whatever is on screen', () => {
+  const stamps = {fish: 'f1', seaslug: 's1'};
+  let at = 'seaslug';
+  const ctx = {
+    UNITS: {fish: {st: () => stamps[at]}, seaslug: {st: () => stamps[at]}, coral: {}},
+    treeWith: (id, f) => {
+      const was = at;
+      at = id;
+      try {
+        return f();
+      } finally {
+        at = was;
+      }
+    }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(block(src('sync.js'), 'const stNow = ', '\n// {sts:', {file: 'sync.js'}) + '\nthis.stNow = stNow;', ctx);
+  assert.deepStrictEqual(
+    ['fish', 'seaslug', 'coral'].map(id => ctx.stNow({id})),
+    ['f1', 's1', '']
+  );
+  assert.strictEqual(at, 'seaslug', 'the tree on screen back in force');
 });
