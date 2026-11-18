@@ -1,6 +1,5 @@
-# Name roots on the genus sheets (Pierre, 2026-11-14, Q124 d: "Je suis tes recommandations pour tout"; the name
-# study's recommendation: the Latin and Greek roots of genus names, sourced, as a memory aid, the transparent ones
-# first; docs/reviews/2026-11-05-name-confusion-study.md 5.2 and question d). Each genus below gets `root` in
+# Name roots on the genus sheets: the Latin and Greek roots of genus names, sourced, as a memory aid, the transparent
+# ones first (the name study, docs/reviews/2026-11-05-name-confusion-study.md 5.2). Each genus below gets `root` in
 # data.json (gen or x.gen):
 #   p    the parts of the name, in order, that spell it exactly: [form, gloss, word, [source indexes]]; an ending with no
 #        meaning of its own (-ia, -ites, -a) has an empty gloss and no source

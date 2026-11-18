@@ -556,3 +556,125 @@ test('every decision record has its date, its PR, a decision, working links and 
   for (const m of index.matchAll(/^\|[^|]*\|[^|]*\]\(([^)]+)\)/gm))
     assert.ok(fs.existsSync(path.join(dir, m[1])), 'docs/decisions/README.md: the index names ' + m[1] + ', which does not exist');
 });
+
+// Size and line-length budgets: every living doc is bounded in bytes and in its longest line, so a doc cannot grow back
+// without a PR saying so. Each budget is the doc's size a little above its size on main when the budget was set (about 5 %
+// in bytes, rounded up to the KB; about 5 % in the longest line, rounded up to ten), so today's docs pass and growth is
+// caught. A budget is lowered when a doc is cut, never raised without a reason in the PR. [KB, longest line in characters];
+// a null KB leaves the size to the doc's own test above (AGENTS.md).
+const DOC_BUDGET = {
+  'AGENTS.md': [null, 980],
+  'CLAUDE.md': [2, 240],
+  'CONTRIBUTING.md': [5, 130],
+  'README.md': [10, 350],
+  // Set at the doc's size before the Admin section is moved out to a spec: lower it when that is merged.
+  'docs/ARCHITECTURE.md': [417, 15860],
+  'docs/LEARNING.md': [304, 5240],
+  'docs/ROADMAP.md': [117, 1360],
+  'docs/HANDOVER.md': [23, 3140],
+  'docs/INTEGRATOR.md': [22, 210],
+  'docs/BACKUP.md': [13, 150],
+  'docs/DATA.md': [10, 410],
+  'docs/DESIGN.md': [45, 4030],
+  'docs/FISH_PATH.md': [87, 2760],
+  'docs/FORMATS.md': [20, 680],
+  'docs/GLOSSARY.md': [8, 130],
+  'docs/PAGES.md': [25, 1280],
+  'docs/SECURITY.md': [32, 1370],
+  'docs/STATUS.md': [8, 130],
+  'docs/spec/cards.md': [33, 180],
+  'docs/spec/sync.md': [82, 220],
+  'docs/spec/content.md': [16, 130],
+  'docs/spec/data.md': [34, 140],
+  'docs/spec/fish-photos.md': [54, 180],
+  'docs/spec/fish.md': [38, 150],
+  'docs/decisions/README.md': [10, 200], // the index grows by a row per record
+  'docs/rules/README.md': [1, 150],
+  'docs/rules/admin.md': [5, 230],
+  'docs/rules/content.md': [9, 220],
+  'docs/rules/learning.md': [22, 400],
+  'docs/rules/photos.md': [11, 280],
+  'docs/rules/sheet.md': [15, 160],
+  'docs/rules/ship.md': [36, 480],
+  'docs/rules/subjects.md': [5, 130],
+  'docs/rules/ui.md': [8, 150],
+  'docs/reference/genus-overview-2026-10-31.md': [16, 650],
+  'docs/reference/lit-componential-difficulty.md': [36, 700],
+  'docs/reference/lit-photo-memory.md': [30, 470],
+  'docs/reference/lit-response-time.md': [37, 870],
+  'judging/BRIEF.md': [24, 190],
+  'judging/FISH.md': [47, 520],
+  'judging/PROMPT.md': [3, 160],
+  'judging/SEASLUG.md': [17, 500],
+  'tools/README.md': [13, 280],
+  'tools/sync/changes/README.md': [2, 130]
+};
+// A record has no entry of its own (every decision PR would add one): the same budget for each.
+const RECORD_BUDGET = [8, 200];
+// Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
+const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
+const budgetOf = f => {
+  const key = f.split(path.sep).join('/');
+  if (DOC_BUDGET[key]) return DOC_BUDGET[key];
+  return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
+};
+
+test('every living doc has a size and line-length budget, and no budget names a doc that is gone', () => {
+  const living = LIVING_DOCS.filter(f => !DOC_UNBUDGETED.has(f));
+  assert.deepStrictEqual(
+    living.filter(f => !budgetOf(f)),
+    [],
+    "living docs with no budget in DOC_BUDGET (add one a little above the doc's size)"
+  );
+  assert.deepStrictEqual(
+    Object.keys(DOC_BUDGET).filter(f => !living.map(x => x.split(path.sep).join('/')).includes(f)),
+    [],
+    'DOC_BUDGET entries for docs that are not living docs any more: delete them'
+  );
+});
+
+test('every living doc stays within its size and line-length budget', () => {
+  const over = [];
+  for (const f of LIVING_DOCS) {
+    const b = budgetOf(f);
+    if (!b) continue; // the test above names it
+    const src = read(f),
+      kb = Buffer.byteLength(src) / 1024,
+      longest = Math.max(...src.split('\n').map(l => [...l].length));
+    if (b[0] !== null && kb > b[0]) over.push(f + ': ' + kb.toFixed(1) + ' KB, budget ' + b[0] + ' KB');
+    if (longest > b[1]) over.push(f + ': a line of ' + longest + ' characters, budget ' + b[1]);
+  }
+  assert.deepStrictEqual(over, [], 'docs over their budget: shorten or move history to a decision record, never raise the budget by habit');
+});
+
+// README.md and privacy.html name the subjects the app teaches and say which are in beta; both must follow core.js
+// SUBJECTS (its names and its beta flag), so a subject opened, closed or taken out of beta shows up here.
+const SUBJECT_DOCS = ['README.md', 'privacy.html'];
+// A doc known to be behind SUBJECTS, with why: its check must fail until it is fixed, and an entry that now passes fails
+// so it is deleted.
+const SUBJECT_DOCS_BEHIND = {
+  'privacy.html': "its notice for the three subjects is a separate change that waits for Pierre's reading"
+};
+const subjectProblems = f => {
+  const text = read(f).replace(/\s+/g, ' ').toLowerCase();
+  const bad = [];
+  for (const s of require('../core.js').SUBJECTS) {
+    const name = s.name.toLowerCase();
+    if (!text.includes(name)) {
+      bad.push('does not name ' + s.name);
+      continue;
+    }
+    const marked = new RegExp(name + '\\W{0,3}(?:\\(?beta\\b|in beta\\b)|\\bin beta\\W{0,6}' + name).test(text);
+    if (!!s.beta !== marked)
+      bad.push(s.name + (s.beta ? ' is in beta in core.js SUBJECTS, not here' : ' is out of beta in core.js SUBJECTS, in beta here'));
+  }
+  return bad;
+};
+
+test("README.md's and privacy.html's subject lists match core.js SUBJECTS", () => {
+  for (const f of SUBJECT_DOCS) {
+    const bad = subjectProblems(f);
+    if (SUBJECT_DOCS_BEHIND[f]) assert.ok(bad.length > 0, f + ' now matches SUBJECTS: delete its SUBJECT_DOCS_BEHIND entry');
+    else assert.deepStrictEqual(bad, [], f + ': the subjects differ from core.js SUBJECTS (names and beta flags)');
+  }
+});

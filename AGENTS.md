@@ -2,7 +2,8 @@
 
 Read first, every agent (Claude, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
 [`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md);
-where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
+where things are: the documentation map of [`README.md`](README.md); what lives outside GitHub:
+[`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
