@@ -1,7 +1,9 @@
 # Feedback sheet study: a short sheet by default (2026-11-18)
 
-Status: study, docs only. No app code, data file, photo or account was changed. Pierre's choices are in the last
-section, as (a), (b)…; the integrator numbers the ones that need a number.
+Status: study, docs only. No app code, data file, photo or account was changed. **Answered by Pierre, 2026-11-18 (~12:08
+Manila): "ok pour les 6 recommandations"**: questions (a)-(f) in section 6 are decided as recommended (layout A; the
+look-alike cue after a right answer; the first tip when no pair line, never a line made from trait tags; the coral and
+sea-slug lines written, corals first; rule C3's new wording; the More counter shipped with the short sheet).
 
 Why it exists. Pierre, 2026-11-18, 10:42 Manila: "J'avoue que j'ai toujours trouvé la feuille d'explication trop chargée
 et illisible. Perso je ne la lit jamais parce que ya trop de trucs et c'est pas hyper lisible." He approved ("oui") a
@@ -43,8 +45,10 @@ read in a file or a doc; **[guess]** = my judgement.
   of 9. Weighted by the real misses in the Answers tab: **29% of coral misses and 51% of fish-family misses** would get
   a pair line [measured]. Where none exists, the fallback is the right unit's first ID tip, which is often not decisive (a
   Damselfish's first IMR cue is "Small to medium size") [measured]: the gaps want written lines (question (d)).
-- **Effort:** about 12-17 agent hours for the mechanism, the line chooser and the counter; 9-13 more for the missing
-  coral and sea-slug lines (section 5).
+- **Effort** (measured on comparable merged PRs, section 5): the short sheet like #861, #957, #1047, #1060, #1075
+  (median 3.2 h); the line chooser like #820, #822, #828, #873, #958 (median 29 min); the counter like #812, #835, #938,
+  #958, #1051 (median 45 min); the coral lines like #868, #869, #925, #972, #1070 (median 41 min); the sea-slug lines
+  like #868, #869, #894, #972, #1011 (median 17 min).
 
 ## 1. Today's sheet, measured
 
@@ -177,7 +181,7 @@ stayed on screen (each answer's capped at 120 s), and the taps on a link inside 
   tally and `pagesClean` keeps it (clamped integers), copied into `Code.gs` (rule D3: one changes file; nothing to
   gate, rule D4: an older script drops the field, as it drops any field it does not know); `privacy.html` says it in
   one line in its pages paragraph ("how often you open More after an answer, and how long the answer stays on screen").
-  About 2-3 agent hours with a unit test.
+  With a unit test; its effort is in section 5.
 - The Events tab is the wrong place: an event kind needs `EVK` in `Code.gs`, and `ev` keeps one event per key and at
   most 15 a visit (`EV_MAX`), so a counter per answer would be cut [read: `sync.js` `ev`].
 - What it answers that the log cannot: whether More is opened at all, right and wrong, once the short sheet is live;
@@ -311,20 +315,37 @@ recommended (question (c)).
 
 ## 5. Effort, in agent time
 
-Hours of agent work, reviews and two Codex rounds included [guess, one agent].
+Measured, not guessed: `python3 tools/effort.py --estimate TYPE SIZE` (the effort tool, 2026-11-18) gives the agent time
+of comparable merged PRs, from the branch's first commit to green checks (Codex rounds and their fixes inside it). Each
+row: the type and size band the work would have, then the tool's line to cite.
 
-| Work | Hours |
-|---|---|
-| The short sheet (layout A): `fbBody` split into verdict, species line, line and More; the row; CSS for the 3 size classes; every state (right, wrong, typed, duel, Again, Find the X, wink); the montage's notes dropped; help text; DESIGN / ARCHITECTURE; the smokes that read the feedback (pages, draw, fish, sea slugs) | 6-9 |
-| The line chooser, subject-neutral (`lk` read for every subject, both halves, the right-answer rule, the fallback), with unit tests; the fish `apart` lines into `lk` | 3-4 |
-| The More counter in the pages summary (`quiz.js`, `core.js`, `Code.gs` changes file, `privacy.html`, a test) | 2-3 |
-| Corals: a written, sourced line for the 40 slate pairs without one, in our own words (IMR notes first, then the Coral Finder pages; `tests/booktext.test.js` keeps book text out), Pierre's review in the admin | 6-9 |
-| Sea slugs: a line for the 9 declared pairs (the sources already gathered for their cues) | 3-4 |
-| Optional: a "Tell apart" line slot for coral pairs in the content editor, as the fish's | 3-5 |
+| Work | Type, size | Comparable PRs (median, range) |
+|---|---|---|
+| The short sheet (layout A): `fbBody` split into verdict, species line, line and More; the row; CSS for the 3 size classes; every state (right, wrong, typed, duel, Again, Find the X, wink); the montage's notes dropped; help text; DESIGN / ARCHITECTURE; the smokes that read the feedback (pages, draw, fish, sea slugs) | engine+feature, L | comparable to #861, #957, #1047, #1060, #1075: median 3.2 h (range 2.9 h-8.9 h) |
+| The line chooser, subject-neutral (`lk` read for every subject, both halves, the right-answer rule, the fallback), with unit tests; the fish `apart` lines into `lk` | engine+feature, M | comparable to #820, #822, #828, #873, #958: median 29 min (range 29 min-1.6 h); #828 (the species line under the verdict) and #873 (similar names after a mix-up) are feedback PRs |
+| The More counter in the pages summary (`quiz.js`, `core.js`, `Code.gs` changes file, `privacy.html`, a test) | sheet+engine, S | comparable to #812, #835, #938, #958, #1051: median 45 min (range 29 min-58 min) |
+| Corals: a written, sourced line for the 40 slate pairs without one, in our own words (IMR notes first, then the Coral Finder pages; `tests/booktext.test.js` keeps book text out), Pierre's review in the admin | content+tooling, M | comparable to #868, #869, #925, #972, #1070: median 41 min (range 17 min-68 min) |
+| Sea slugs: a line for the 9 declared pairs (the sources already gathered for their cues) | content+tooling, S | comparable to #868, #869, #894, #972, #1011: median 17 min (range 13 min-33 min) |
+| Optional: a "Tell apart" line slot for coral pairs in the content editor, as the fish's | admin, M | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
 
-The mechanism and the counter: about **12-17 hours**; with the coral and sea-slug lines: **21-30**.
+The content rows' comparables are mostly photo and name PRs; writing sourced lines asks more reading, so the coral
+lines are likelier near the top of their range (#1070, 3.2 h, the closest in kind) [my reading].
 
 ## 6. Questions for Pierre
+
+**Answered, 2026-11-18 (~12:08 Manila): "ok pour les 6 recommandations".** Each question below is decided as its
+recommendation:
+
+- (a) layout A, the short bottom sheet;
+- (b) after a right answer, the cue that tells it from a look-alike among the choices, else its first ID tip;
+- (c) no pair line: the right unit's first tip; never a line made by comparing trait tags;
+- (d) the sourced "tell them apart" lines are written for the 40 coral slate pairs and the 9 sea-slug pairs, corals
+  first;
+- (e) rule C3's new wording: one decisive line on the sheet, the ID tips behind More (the rule's text goes in the build
+  PR, quoting this answer);
+- (f) the More counter ships with the short sheet.
+
+The questions as they were asked:
 
 (a) **Which layout?** A, the short bottom sheet (the verdict, the photo's species line, one line, More and Next on one
 row); B, the choices stay in view with the line under them; C, the verdict and the line on the photo. **Recommendation:
