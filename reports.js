@@ -149,9 +149,15 @@
   // {family, look: the other species units of its family (admin.js fishUnitRec: as the game starts its pairs), name: its
   // scientific name, genus: its genus unit (the Heatmap's block, admin-heatmap.js heatUp)}}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
-  // slugs), each photo then shown by its genus.
-  function repReg(f, first, gm, unit) {
+  // slugs), each photo then shown by its genus. S, cur: the subject and the published curation (curation.json), the
+  // content editor's structure and text laid over f as the app lays them (core.js contentApply: a circle, a look-alike
+  // pair, an ID tip edited), so Pairs, the Heatmap and the Journey read the units in force; none: f as it is.
+  function repReg(f, first, gm, unit, S, cur) {
     if (!f || typeof f !== 'object') return null;
+    // the file as built (f0) keeps what reports name: a photo and its family's page even of a family the editor took out of
+    // every circle; the units, the slate and the look-alikes are the file in force's (f)
+    const f0 = f;
+    if (S && cur) f = C.contentApply(S, f, cur);
     const G = (C.treeGameRead(gm) || {}).photos || {},
       F0 = (first && first.photos) || {},
       all = {};
@@ -162,19 +168,21 @@
       spid = Object.create(null),
       spg = Object.create(null),
       imr = Object.create(null);
-    Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (ph[x.f] = {...x, entry: g.id})));
-    (f.families || []).forEach(x => {
+    Object.values(f === f0 ? F.gen : C.treeGen(f0, all, undefined, unit).gen).forEach(g =>
+      g.views.wide.forEach(x => (ph[x.f] = {...x, entry: g.id}))
+    );
+    (f0.families || []).forEach(x => {
       fam[x.id] = x.id;
       (x.genera || []).forEach(g => (fam[g] = fam[g] || x.id));
     });
-    (f.species || []).forEach(x => {
+    (f0.species || []).forEach(x => {
       spid['s:' + x.name] = x.id;
       if (x.genus) spg[x.id] = x.genus;
       if (!x.family) return;
       fam['s:' + x.name] = x.family;
       if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
     });
-    (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
+    (f0.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
     return {
       gen: F.gen,
       ph,
