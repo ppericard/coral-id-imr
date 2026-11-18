@@ -1,9 +1,9 @@
-# Plain words for the glossary (beginner review, 2026-11-03: people who never had the IMR coral lecture). Each term
-# [term, definition, source] gets a 4th field, a first sentence in plain words written for the app (not copied from a
-# source), shown before the sourced definition, which stays as it was with its source. Adds "Polyp" (Corals of the
-# World glossary). Re-runnable: python3 tools/apply_plain_terms.py
-# 2026-11-03, plain words on the genus sheets (tools/apply_plain_sheets.py): MORE adds, at the end of the list, the most
-# frequent words of the genus sheets' scientific lines (IMR notes, ID tips, Coral Finder features) that had no entry yet,
+# Plain words for the glossary, for people who never had the IMR coral lecture. Each term [term, definition, source]
+# gets a 4th field, a first sentence in plain words written for the app (not copied from a source), shown before the
+# sourced definition, which stays as it is with its source. Adds "Polyp" (Corals of the World glossary). Re-runnable:
+# python3 tools/apply_plain_terms.py
+# For the plain words on the genus sheets (tools/apply_plain_sheets.py): MORE adds, at the end of the list, the most
+# frequent words of the genus sheets' scientific lines (IMR notes, ID tips, Coral Finder features) with no entry before,
 # with the Corals of the World glossary's definition and a plain first sentence (app.js GLOSS_PAT underlines them).
 import json
 from datajson import dump  # the one data.json layout (one genus per line)

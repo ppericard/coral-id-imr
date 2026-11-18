@@ -1,5 +1,5 @@
-# Photos out of the repo, step 2 (Pierre's rule, 2026-11-05; docs/ROADMAP.md "Photos out of the repo"): the photos with
-# an online original (src: iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/ and live on R2 only; git
+# Photos out of the repo (docs/ROADMAP.md "Photos out of the repo"): the photos with an online original (src:
+# iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/ and live on R2 only; git
 # keeps the ones with no other backup (IMR lecture photos, Coral Finder book scans, page art).
 #
 #   python3 tools/r2_move.py            the list: what leaves img/ and what stays, counts by kind, owner and genus, size
@@ -10,7 +10,7 @@
 #   --files PATH                        with --verify: writes the img/ paths R2 holds identically to PATH, one per line
 #                                       (for git rm in a sparse checkout, where img/ is not on disk; the files are read
 #                                       from --img DIR, a full checkout's img/)
-# Re-runnable: a photo with an online original that came back to img/ by some old path leaves again.
+# Re-runnable: a photo with an online original that comes back to img/ by some path leaves again.
 import collections, concurrent.futures as cf, hashlib, json, os, re, sys, urllib.error, urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
