@@ -4594,7 +4594,7 @@ fish game in a browser, the answer at which each achievement first enters the re
 with `ss`, modelled on the fish's over the sea slugs' own structure (genera met and at each level, families with every genus at Advanced, the
 nudibranchs and the other taxonomic groups, the first circle). Learning milestones only (rule L8). The % ones, every 10
 points from 10% to 100% (`sspct10` to `sspct100`), read the headline % (the mean of the genera's bars: the sea slugs
-have no score tree and no species unit), so 100% means every genus learned; sspct60 to sspct100 ("Gill and frill", "Muck
+have no score tree and no species unit), so 100% needs (nearly) every genus learned, its exam passed (a bar is 100% only with the learned mark; the mean is rounded; not in `ACH_LEARN`, as the corals' pct100); sspct60 to sspct100 ("Gill and frill", "Muck
 magnet", "Slug savant", "Nudibranch nerd", "Every last slug", all gold) came after the first version; the choices are in
 `docs/decisions/2026-11-18-seaslug-achievements-high.md`. Timing not simulated (`tools/learnsim.js` plays corals and fish
 only). Waiting: the species achievements, once the sea slugs have species units.
