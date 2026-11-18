@@ -2925,10 +2925,10 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   assert.strictEqual(rows[2][21], 'Pomacentrus moluccensis');
 });
 
-// vNEXT (#1041, the species step 2 plan): Species shown blanked any name with a digit, so every answer on a photo of a
+// v170 (#1041, the species step 2 plan): Species shown blanked any name with a digit, so every answer on a photo of a
 // species with no name yet (tools/seaslug_informal.json: Goniobranchus sp. 5) was logged without its species. Its label
 // is kept now, a digit only as the number after "sp. "; everything else is refused as before.
-test('vNEXT Answers: Species shown keeps a species with no name yet (Goniobranchus sp. 5), a fish species unit (s:s091) still logs', () => {
+test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchus sp. 5), a fish species unit (s:s091) still logs', () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000';
   const slug = (id, sp) =>
@@ -3008,7 +3008,7 @@ test('vNEXT Answers: Species shown keeps a species with no name yet (Goniobranch
   assert.deepStrictEqual([srv('n4')[21], srv('n11')[2], srv('n11')[21]], ['', 's:s091', 'Chromis viridis']);
 });
 
-test('vNEXT Answers: every species name of the game files is kept in Species shown', () => {
+test('v170 Answers: every species name of the game files is kept in Species shown', () => {
   const s = loadCodeGs(),
     names = ['fish', 'seaslug'].flatMap(f =>
       require(`../${f}.json`)
