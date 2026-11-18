@@ -67,8 +67,8 @@ scroll clear. `place()` then puts the bubble on the free side (phones: a sheet a
 ### The subject to start with
 
 New players choose the subject they start with. `tour.js` `plan()` works out the steps (`DEF`, keyed `k`) at each step.
-A player with one subject (`app.js` `subjMine`: everyone but the admin and a beta group's members while a subject has
-`open: 'group'`) gets the six steps, with no word of another subject. A player with two subjects or more gets **pick**
+A player with one subject open to them (`app.js` `subjMine`: the subjects `subjOpen` lets them play; a subject with
+`open: 'group'` opens only to the admin and its group's members) gets the six steps, with no word of another subject. A player with two subjects or more gets **pick**
 first, a forced choice like the first-launch question (no Skip, no Next until answered; Escape closes the tour, the
 subject stays as it was): "What do you want to start with?", a line saying the app has that many subjects, each with
 its own progress, switchable any time, and one `.startopt.tpick` button per subject (its icon, name, *beta* tag,
@@ -78,8 +78,8 @@ sign-in, games, progress, help in that subject's words (`UNITS[id].tour[k]` `{t,
 corals'). A subject that opens by signing in during the tour (a group member on a new device: the sheet's reply names
 the group, the page reloads on the sign-in step) adds pick, the new subject's question when it differs from the one
 asked, and swap right after the sign-in step, the earlier steps unchanged; what the tour started with is kept for that
-reload (`sessionStorage` `reefid-tour-open` `{two, s}`). With `open: 'all'` every new player gets the several-subject
-tour with no code change. `tests/pages.smoke.js` part `subjtour`.
+reload (`sessionStorage` `reefid-tour-open` `{two, s}`). The fish and the sea slugs have `open: 'all'`, so
+today every new player gets the several-subject tour. `tests/pages.smoke.js` part `subjtour`.
 
 ## The first-launch question
 

@@ -413,8 +413,9 @@ counted twice. The anonymous request also carries `reset` (the device's `reefid-
 only the answers since. The first-launch answer's prior enters the replay at each answer (`core.js` `replayProgress`
 option `starts`, `startPriorAt`; [cards.md](cards.md#replayed-with-the-progress)).
 
-**Kept.** Replays are stored in the **Replayed** tab: Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the reset,
-in ms, with the first-launch history's fingerprint `core.js` `startFp` and the structure stamp, below), Updated, Record
+**Kept.** Replays are stored in the **Replayed** tab: Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the cache
+identity, `rplSince_`: the reset in ms, then `#` and the first-launch history's fingerprint `core.js` `startFp` when
+there is one, then `~` and the structure stamp when it is not `''`, below), Updated, Record
 (JSON in 45,000-character chunks from column F); a row is reused while the rules version, the row count, the reset, the
 fingerprint and the stamp are the same, and the reply sends that fingerprint with the replay (`fp`). The player's
 Progress data and RAs copy is never written there. Admin delete, merge and rename drop the player's Replayed row. The
