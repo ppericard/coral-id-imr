@@ -119,10 +119,20 @@ Level 1: a new answer source, no change to the engine: the same scorer, the same
 already accepts. Checked with unit tests and smokes only (Pierre, 2026-11-17: long simulations must never happen); no
 learnsim run.
 
+## The lobby's QR code (after version 1)
+
+The trainer's lobby shows a QR code beside the address and the big code: it opens `<site>/#live?code=123456`, the join
+form with the code filled in. The encoder is ours (`live.js` `qrMake`, in the pure section, so unit-tested): byte mode,
+error correction level M, versions 1 to 6 (up to 106 characters; the join address is about 60; versions 7 and up need version-information bits and are left out), the mask chosen by the
+standard's four penalties, drawn as one inline SVG, dark on a light field in both themes (a scanner needs it). No
+library, no host (rule U5). `tests/liveclass.test.js` checks it with a reader written for the test (format bits,
+zigzag, deinterleaving, every block's Reed-Solomon syndromes, the text read back, every version) and with the standard's
+worked example; the live smoke checks the lobby draws it. If the address is too long or the encoder fails, the lobby is
+as before (address and code only). Not checked with a physical phone camera (no decoder on the build machine): a first
+scan in the room is the real test. Decision record: [2026-11-18-live-after-v1](../decisions/2026-11-18-live-after-v1.md).
+
 ## Out of version 1
 
-- A QR code on the lobby screen (needs an encoder of our own: no third-party script, rule U5); the code and the short
-  address are shown big instead.
 - Sea slugs (a subject open to a group only) and the opt-in sets (circles, families, a look-alike set, "my class's
   weakest").
 - A trainer's view of each student by name after the game, cohorts (roles step 2), a session kept beyond the cache.
