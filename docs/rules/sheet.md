@@ -37,13 +37,15 @@ lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-
 ### D3
 
 **Changing `tools/sync/Code.gs`: one changes file in the PR, `VERSION` assigned by the integrator at merge; the script
-updates itself.** A PR never edits `const VERSION` nor the header's history line (line 1): it adds one file,
-`tools/sync/changes/<branch>.md` (its branch name, `/` as `-`), holding its history entry as the header reads (what the
+updates itself.** A PR never edits `const VERSION`, line 1 (the header: the version and its date only) nor
+`tools/sync/HISTORY.md` (the history of the versions, newest first, one `## v<N> (<date>)` entry each): it adds one file,
+`tools/sync/changes/<branch>.md` (its branch name, `/` as `-`), holding its history entry as HISTORY.md reads (what the
 script now does and why, Pierre and the date; no version number). Where its comments or docs name the new version it
 writes `vNEXT`; a new gate on the script's version (rule D4) takes `main`'s `VERSION` + 1. Right before the merge the
 integrator brings the branch up to date with `main` and runs `python3 tools/sheet_version.py --assign`: `VERSION` + 1,
-the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds and
-every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any other, then merged (docs/INTEGRATOR.md).
+line 1 set to the short form for it, the entry written at the top of HISTORY.md and in ARCHITECTURE.md's version history,
+every gate the PR adds and every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any
+other, then merged (docs/INTEGRATOR.md). The self-update reads only `const VERSION = N;`, so line 1 and HISTORY.md are for people.
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
 itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
 "Code.gs"); check the live `v` about 15 minutes after merging, and the sheet's "Deploy log" tab says what happened.
@@ -59,7 +61,8 @@ itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's 
 - The sheet's `VERSION` is not stamped by the deploy (rule W15): `--assign` sets it at merge, never a PR.
 
 *Why:* no more copy and paste by Pierre; two open PRs never collide on the number. *Source:* Pierre, 2026-11-01;
-subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305).
+subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305); the history out of line 1 into
+`tools/sync/HISTORY.md`, 2026-11-18 (Pierre, shown the line: "Pourquoi? Juste pourquoi?").
 
 ### D4
 
