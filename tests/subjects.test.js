@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The subject registry (core.js SUBJECTS, the taxon model: corals and fish on one engine) and the fish adapter
-// (fishGen, fishTypeNames) on the real fish.json and fish-photos.json; each subject's progress kept apart when two
+// (treeGen, treeTypeNames) on the real fish.json and fish-photos.json; each subject's progress kept apart when two
 // accounts merge (mergeUsers).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -111,8 +111,8 @@ test('opening (subjGroup): the beta label and who sees a subject are two fields;
   C.SUBJECTS.forEach(S => assert.ok(S.open === undefined || ['group', 'all'].includes(S.open), `${S.id}.open`));
 });
 
-test('fishGen: the book’s families as engine records, circle 1 = 28 families, winks apart', () => {
-  const X = C.fishGen(F, PH.photos);
+test('treeGen: the book’s families as engine records, circle 1 = 28 families, winks apart', () => {
+  const X = C.treeGen(F, PH.photos);
   assert.strictEqual(X.c1.length, 28);
   assert.deepStrictEqual(
     X.c1,
@@ -172,7 +172,7 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
 // allowed photo host only.
 test('fish-photos.json: no remote photo, the first photos are fish-game.json records in play, the sheet-only photos on R2', () => {
   const ok = new Set(['cc0', 'cc-by', 'cc-by-nc']),
-    GM = C.fishGameRead(read('fish-game.json')).photos,
+    GM = C.treeGameRead(read('fish-game.json')).photos,
     game = new Map(Object.values(GM).flatMap(L => L.map(p => [p.f, p])));
   assert.ok(!('stopgap' in PH), 'the stopgap is retired');
   assert.strictEqual(PH.v, 2);
@@ -180,7 +180,7 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
     assert.ok(
       F.teach.some(t => t.id === id && t.level === 1),
       id
-    ); // listed by teaching entry; fishGen gives each photo to its species' family
+    ); // listed by teaching entry; treeGen gives each photo to its species' family
     assert.ok(L.length && L.length <= 8, `${id}: a few first photos`); // FIRST, or one per family of the entry if more
     L.forEach(p => {
       assert.ok(!p.r, `${p.f}: remote`);
@@ -216,14 +216,14 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
     covers = new Set(
       Object.values((read('curation.json').fish || {}).genera || {})
         .filter(k => k && k.cover)
-        .map(k => C.fishPid(k.cover))
+        .map(k => C.treePid(k.cover))
     ),
     clean = p => !juv(p) && !wm(p);
   Object.entries(PH.photos).forEach(([id, L]) => {
     [gen, fam].forEach(U =>
       new Set(L.map(p => U.get(p.sp)).filter(Boolean)).forEach(u => {
         const A = L.filter(p => U.get(p.sp) === u && !juv(p));
-        if (!A.length || A.some(clean) || A.some(p => covers.has(C.fishPid(p.f)))) return;
+        if (!A.length || A.some(clean) || A.some(p => covers.has(C.treePid(p.f)))) return;
         assert.ok(!GM[id].some(p => U.get(p.sp) === u && clean(p)), `${id} ${u}: only watermarked first photos`);
       })
     );
@@ -241,14 +241,14 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
   );
   // At most one sheet-only photo waits for the next run.
   assert.ok(remote.length <= 1, `remote sheet-only photos: ${remote.join(', ')}`);
-  const X = C.fishGen(F, PH.photos);
+  const X = C.treeGen(F, PH.photos);
   X.c1.forEach(n => assert.ok(X.gen[n].views.wide.length, `${n} has photos before fish-game.json is in`));
   Object.values(X.gen).forEach(g => g.views.wide.forEach(p => assert.ok(!p.r, `${g.id} ${p.f}: remote`)));
 });
 
 test('typed fish names: the IMR name, its parts, the family names, the sub-entries', () => {
-  const X = C.fishGen(F, PH.photos),
-    N = C.fishTypeNames(X.gen),
+  const X = C.treeGen(F, PH.photos),
+    N = C.treeTypeNames(X.gen),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   assert.strictEqual(m('Damselfishes').g, 'f:Damselfishes');
   assert.ok(m('Damselfishes').exact);
@@ -273,8 +273,8 @@ test('typed fish names: the IMR name, its parts, the family names, the sub-entri
 
 test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous, the curated other names (aka)', () => {
   const S = C.subjectOf('fish'),
-    X = C.fishGen(F, PH.photos),
-    N = C.fishTypeNames(X.gen, S.typeDrop),
+    X = C.treeGen(F, PH.photos),
+    N = C.treeTypeNames(X.gen, S.typeDrop),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   assert.strictEqual(S.typeDrop, 'fish');
   assert.strictEqual(C.subjectOf('coral').typeDrop, undefined);
@@ -310,23 +310,23 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
   assert.strictEqual(m('filefishes').g, 'f:Filefishes');
   // a short form within the tolerance of another entry's name or short form is left out (no answer)
   const G = {a: {id: 'a', names: ['Ratfish']}, b: {id: 'b', names: ['Batfish']}, c: {id: 'c', names: ['Goatfish']}},
-    M = C.fishTypeNames(G, 'fish'),
+    M = C.treeTypeNames(G, 'fish'),
     g = t => C.typeMatchIn(M, t, C.typeNormAll);
   assert.strictEqual(g('rat'), null);
   assert.strictEqual(g('bat'), null);
   assert.strictEqual(g('goat').g, 'c');
   assert.strictEqual(g('rat fish').g, 'a');
   // without the word to drop (the corals, or an older call), only the names themselves
-  assert.strictEqual(C.typeMatchIn(C.fishTypeNames(X.gen), 'trigger', C.typeNormAll), null);
+  assert.strictEqual(C.typeMatchIn(C.treeTypeNames(X.gen), 'trigger', C.typeNormAll), null);
 });
 
 // The names study's three plain rules: a name and its other number are one name; a name typed exactly is never read as
-// a slip of another (the name index, fishNameIndex); a name several families share (a family the book splits) is all of
+// a slip of another (the name index, treeNameIndex); a name several families share (a family the book splits) is all of
 // them, never "which one? check the spelling".
 test('typed fish names: singular and plural are one name, a known name is never a slip of another, a shared one is all of them', () => {
   const S = C.subjectOf('fish'),
-    X = C.fishGen(F, PH.photos),
-    N = C.fishTypeNames(X.gen, S.typeDrop, C.fishNameIndex(F)),
+    X = C.treeGen(F, PH.photos),
+    N = C.treeTypeNames(X.gen, S.typeDrop, C.treeNameIndex(F)),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   // the singulars of the book's labels, read exactly as the family (no spelling step, no "which one?")
   [
@@ -385,7 +385,7 @@ test('typed fish names: singular and plural are one name, a known name is never 
   assert.ok(m('pilefishes').near);
   // the name index: the species' listed names and scientific names, the genera's, the kind words (fish.json vn), each
   // with the family it lifts to and its role; a word of a "False ..." name is none
-  const I = C.fishNameIndex(F),
+  const I = C.treeNameIndex(F),
     has = (x, g, vr) => I.some(e => e.x.toLowerCase() === x && e.g === g && e.vr === vr);
   assert.ok(has('peacock razorfish', 'f:Wrasses', 'sp'));
   assert.ok(has('iniistius pavo', 'f:Wrasses', 'ss'));
@@ -433,16 +433,16 @@ test('fish circles on the path (Pierre, 2026-11-06, Q175): no circle opt-in set,
   // beyond: circle 3 opened by choice, offered by a card and My progress, never a ⚙ row.
   assert.deepStrictEqual(S.optin, ['sci', 'beyond']);
   assert.ok(!/data-optin="(c[23]|beyond)"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
-  assert.ok(app.includes('slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : [])'), 'the fish slate holds every circle');
+  assert.ok(app.includes('slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : [])'), 'the fish slate holds every circle');
   // A stored c3 choice is not an opt-in: a merge does not force it on.
   const M = C.mergeUsers({'reefid-sync-fish-quiz': JSON.stringify({c3: true})}, {'reefid-sync-fish-quiz': JSON.stringify({c3: false})});
   assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, false);
 });
 
-test('fishGen order and cover: the easiest, most reference-like photo first, whoever took it (Pierre, 2026-11-06)', () => {
+test('treeGen order and cover: the easiest, most reference-like photo first, whoever took it (Pierre, 2026-11-06)', () => {
   const F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
     PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')).photos,
-    X = C.fishGen(F, PH);
+    X = C.treeGen(F, PH);
   let checked = 0;
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
@@ -466,7 +466,7 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
   // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the reference photo, then the one
   // with more field-guide traits (profile, whole, good light...), then the list's order; the source never counts.
   const T = {families: [{id: 'f:X', name: 'X', sci: ['Xidae'], circle: 1, species: ['s1']}]},
-    Y = C.fishGen(T, {
+    Y = C.treeGen(T, {
       t99: [
         {f: 'own3', src: 'x', sp: 's1', own: true, e: 3, jt: 'p1g0sl1'},
         {f: 'own5', src: 'x', sp: 's1', own: true, e: 5, jt: 'o1g1sm1'},
@@ -486,13 +486,13 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
       {f: 'fiA', src: 'x', sp: 's1', own: true, e: 5, jt: 'p1g0sl1'},
       {f: 'fiB', src: 'x', sp: 's1', e: 5, jt: 'p1g0sl1'}
     ],
-    c1 = C.fishGen(T, {t99: eq}).gen['f:X'].cover,
-    c2 = C.fishGen(T, {t99: eq.slice().reverse()}).gen['f:X'].cover;
+    c1 = C.treeGen(T, {t99: eq}).gen['f:X'].cover,
+    c2 = C.treeGen(T, {t99: eq.slice().reverse()}).gen['f:X'].cover;
   assert.strictEqual(c1, c2, 'the list order decides nothing');
   // Reference level first (core.js refLevel): a source's reference photo (rep) judged very easy comes before an ease-5
   // photo without the reference look; one under ease 4 does not; an ease-5 photo with the look is reference level
   // whoever took it (Pierre's own here).
-  const R = C.fishGen(T, {
+  const R = C.treeGen(T, {
     t99: [
       {f: 'ownref', src: 'x', sp: 's1', own: true, e: 5, jt: 'p1g0sl1'},
       {f: 'own5', src: 'x', sp: 's1', own: true, e: 5, jt: 'o1g1sm1'},
@@ -505,7 +505,7 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     ['ownref', 'rep4', 'own5', 'rep3']
   );
   // Pierre's photo comes first when it is itself the easiest.
-  const Z = C.fishGen(T, {
+  const Z = C.treeGen(T, {
     t99: [
       {f: 'a', src: 'x', sp: 's1', e: 4},
       {f: 'own', src: 'x', sp: 's1', own: true, e: 5}
@@ -543,12 +543,12 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
 
 // Sheet-only fish photos (a species with no game photo may keep one for its sheet, never in the quiz or any game;
 // tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
-// views.wide (model.js photoSet; app.js fishGenera builds the genus units from it), so a photo marked use: 'ref' never
+// views.wide (model.js photoSet; app.js treeGenera builds the genus units from it), so a photo marked use: 'ref' never
 // reaching views.wide is what keeps it out of every game.
-test('sheet-only fish photos: never in an entry’s game photos nor its cover, listed by species in fishGen sheet', () => {
+test('sheet-only fish photos: never in an entry’s game photos nor its cover, listed by species in treeGen sheet', () => {
   const T = {families: [{id: 'f:X', name: 'X', sci: ['Xidae'], circle: 1, species: ['s1', 's2']}]},
     ref = {f: 'fiR', src: 'x', sp: 's2', use: 'ref', e: 5},
-    Y = C.fishGen(T, {t99: [{f: 'fiA', src: 'x', sp: 's1', e: 2}, ref]}, {s3: [{f: 'fiS', src: 'x', sp: 's3'}]});
+    Y = C.treeGen(T, {t99: [{f: 'fiA', src: 'x', sp: 's1', e: 2}, ref]}, {s3: [{f: 'fiS', src: 'x', sp: 's3'}]});
   assert.deepStrictEqual(
     Y.gen['f:X'].views.wide.map(p => p.f),
     ['fiA'],
@@ -563,9 +563,9 @@ test('sheet-only fish photos: never in an entry’s game photos nor its cover, l
     'marked sheet only'
   );
   // An entry whose only photo is sheet-only has no game photo (so no question: no photo, no question).
-  const Z = C.fishGen(T, {t99: [ref]});
+  const Z = C.treeGen(T, {t99: [ref]});
   assert.strictEqual(Z.gen['f:X'].views.wide.length, 0);
-  assert.deepStrictEqual(C.fishGen(T, {t99: []}).sheet, {});
+  assert.deepStrictEqual(C.treeGen(T, {t99: []}).sheet, {});
 });
 
 test('fish-photos.json sheet: the game photo rules, credited, never among the game photos', () => {
@@ -603,7 +603,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
   // Pomacentrus armillatus: the photo is filed under P. opisthostigma on iNaturalist; the name shown stays the PDF's (rule S2).
   assert.strictEqual(SP.get('s105').name, 'Pomacentrus armillatus');
   assert.match(S.s105[0].note, /Pomacentrus opisthostigma/);
-  const X = C.fishGen(F, PH.photos, PH.sheet);
+  const X = C.treeGen(F, PH.photos, PH.sheet);
   assert.deepStrictEqual(Object.keys(X.sheet).sort(), Object.keys(S).sort());
   Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref' || !!S[p.sp]?.some(q => q.f === p.f)), g.id));
 });

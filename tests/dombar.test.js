@@ -488,7 +488,7 @@ test('a non-replayed subject (fish, Q200): its units rebuilt on the device from 
   assert.ok(!again.out && again.saved === 0, 'once per record');
   const Q = {Acropora: {ok: 6, ko: 0, h: '111111', pg: 0.6}};
   assert.ok(!run({id: 'coral', replay: true}, Q).out && Q.Acropora.pg === 0.6, 'a replayed subject waits for the sheet');
-  // A pull read while the fish data is not in (FISH null: GX knows no fish unit) rebuilds nothing,
+  // A pull read while the fish data is not in (TREEU null: GX knows no fish unit) rebuilds nothing,
   // since the rebuild is for good and the difficulty would be the fallback one; it waits for the data.
   const W = {'f:Wrasses': {ok: 6, ko: 0, h: '111111', pg: 0.6}};
   const w = run({id: 'fish', replay: false}, W, () => undefined);

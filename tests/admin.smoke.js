@@ -494,7 +494,8 @@ async function sealPart(b, base, fails) {
     p.on('dialog', d => d.accept());
     // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
     // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
-    // (the hash change and the render a reply starts land within a frame).
+    // (the hash change and the render a reply starts land within a frame). The Analyses pages wait up to 60 s: the demo
+    // fits their report in a Web Worker, which a slow CI runner can take longer than 15 s to finish.
     // SHOTS=<dir>: screenshots of a few states for the PR (2x, the page's own size), else nothing.
     const shot = async (name, sel) => {
       if (!process.env.SHOTS) return;
@@ -507,6 +508,7 @@ async function sealPart(b, base, fails) {
     };
     const settle = async () => {
       await p.evaluate(() => (window.__calm = 0));
+      const timeout = /^#analyses/.test(await p.evaluate(() => location.hash)) ? 60000 : 15000;
       await p
         .waitForFunction(
           () => {
@@ -515,7 +517,7 @@ async function sealPart(b, base, fails) {
             return window.__calm >= 3;
           },
           null,
-          {timeout: 15000, polling: 'raf'}
+          {timeout, polling: 'raf'}
         )
         .catch(async () =>
           fails.push(
@@ -1534,7 +1536,7 @@ async function sealPart(b, base, fails) {
         // Its views: Games and Rights (every subject's, admin.js EVERY).
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
-        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
+        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js treePid), the
         // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
         // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
         // admin.js has its own fishState, of a photo's words) and not in play.
@@ -1544,7 +1546,7 @@ async function sealPart(b, base, fails) {
             inPlay = new Set(
               Object.values(D.play)
                 .flat()
-                .map(x => fishPid(x.f))
+                .map(x => treePid(x.f))
             ),
             sp = new Set(FISHC.units.flatMap(u => u.species).filter(s => FISHC.species[s] && !FISHC.species[s].out));
           let n = 0,
@@ -1554,7 +1556,7 @@ async function sealPart(b, base, fails) {
               const s = window.fishState(F, x.f, orig);
               if (s.st !== null || !sp.has(s.sid)) return;
               all++;
-              if (!inPlay.has(fishPid(x.f))) n++;
+              if (!inPlay.has(treePid(x.f))) n++;
             })
           );
           const col = [...document.querySelectorAll('.adm-fishcovt thead th')].findIndex(t => t.textContent === '+'),
@@ -5486,7 +5488,7 @@ async function sealPart(b, base, fails) {
         await settle();
         await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
         await settle();
-        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
+        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: treePhotoOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
         if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
         await p.click('#undo');
         await settle();
@@ -6347,6 +6349,89 @@ async function sealPart(b, base, fails) {
       const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
       if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
     }
+    // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
+    // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
+    // photo in play; the tree subjects' species with an `out`, and those in the game with no photo in play or under their
+    // target, from autosort.js fishCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
+    // reason chip narrowing the list and All bringing it back, a page on the Tree for a species in the game and none for
+    // one out, no sideways scroll, dark in the dark theme. The sea slugs' list may be empty: the page then says None.
+    for (const [h, subj] of [
+      ['photos/stats/taxa', 'corals'],
+      ['fish/photos/stats/taxa', 'fish'],
+      ['seaslug/photos/stats/taxa', 'seaslug']
+    ]) {
+      await go(h);
+      await p.waitForFunction(() => document.querySelector('#view .adm-taxa'), null, {timeout: 90000}).catch(() => {});
+      const tx = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          S = ASUBJ,
+          rows = [...V.querySelectorAll('tbody tr')],
+          ids = rows.map(r => r.dataset.taxon),
+          chips = [...V.querySelectorAll('[data-taxa]')].map(b => [b.dataset.taxa, Number(b.querySelector('b').textContent)]);
+        let want, outIds;
+        if (S.sheets) {
+          const D = fuData(),
+            C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
+          outIds = FISHC.raw.species.filter(s => s.out).map(s => s.id);
+          want = outIds.length + C.sp.filter(r => !r.n || r.obs < r.tgt).length;
+        } else {
+          const game = new Set(gameOf(DATA));
+          outIds = Object.keys(DATA.gen).filter(n => !game.has(n));
+          want = outIds.length + [...game].filter(n => covViews(n).every(([v]) => !covOf(n, v).n)).length;
+        }
+        return {
+          h: location.hash,
+          rows: rows.length,
+          want,
+          all: chips.length ? chips[0] : null,
+          outOk: outIds.every(id => ids.includes(id)),
+          why: rows.filter(r => !r.children[2].textContent.trim() || /undefined|null/.test(r.textContent)).length,
+          link: S.sheets
+            ? [...V.querySelectorAll('tbody tr')]
+                .map(r => [r.dataset.taxon, !!r.querySelector('a')])
+                .filter(([id]) => !outIds.includes(id))
+                .every(([, a]) => a)
+            : null,
+          outLink: rows.filter(r => outIds.includes(r.dataset.taxon) && S.sheets && r.querySelector('a')).length,
+          chips: chips.length,
+          note: (V.querySelector('p.note') || {}).textContent || '',
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        tx.rows !== tx.want ||
+        !tx.all ||
+        tx.all[0] !== '' ||
+        tx.all[1] !== tx.rows ||
+        !tx.outOk ||
+        tx.why ||
+        tx.link === false ||
+        tx.outLink ||
+        (subj !== 'seaslug' && !tx.rows) ||
+        (!tx.rows && tx.note !== 'None.') ||
+        tx.wide > 0
+      )
+        fails.push(`${w}px #${h}: Taxa ${JSON.stringify(tx)}`);
+      if (tx.chips > 2) {
+        // one reason: its chip's count in the list, All brings the whole list back
+        const nar = await p.evaluate(() => {
+          const b = document.querySelectorAll('#view [data-taxa]')[1],
+            n = Number(b.querySelector('b').textContent),
+            k = b.dataset.taxa;
+          b.click();
+          const V = document.getElementById('view'),
+            one = [...V.querySelectorAll('tbody tr')].length,
+            on = V.querySelector('[data-taxa][aria-pressed="true"]').dataset.taxa;
+          V.querySelector('[data-taxa=""]').click();
+          return {n, one, on, k, back: document.querySelectorAll('#view tbody tr').length};
+        });
+        if (nar.one !== nar.n || nar.on !== nar.k || nar.back !== tx.rows) fails.push(`${w}px #${h}: Taxa chip ${JSON.stringify(nar)}`);
+      }
+      if (tx.rows) {
+        const dkT = await darkCards(p, '#view .adm-tbl th');
+        if (dkT) fails.push(`${w}px #${h}: Taxa, dark theme: still light ${dkT}`);
+      }
+    }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
     // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
@@ -6699,6 +6784,81 @@ async function sealPart(b, base, fails) {
           });
           if (solo.sw || !solo.rows || solo.it !== solo.rows || !solo.fams.includes('Damselfishes'))
             fe.push(`Heatmap, genus questions only ${JSON.stringify(solo)}`);
+          // species questions (the species level's units, s:s091: core.js treeSpUnits): the Species rank on the map, each
+          // unit named by its scientific name, in its genus's block, never by its id (F15)
+          const spWant = await fq.evaluate(() => {
+            const R = rowsOf(),
+              ids = [...new Set(R.map(r => r[0]))].slice(0, 2),
+              ph = Object.keys(FISHA.ph),
+              by = {};
+            Object.entries(FISHA.spu).forEach(([id, u]) => u.genus && (by[u.genus] = by[u.genus] || []).push(id));
+            const G = Object.keys(by)
+              .filter(g => by[g].length >= 2)
+              .slice(0, 2);
+            if (!R.length || ids.length < 2 || G.length < 2) return null;
+            let t = Date.now() - 200 * 60e3;
+            const add = [];
+            ids.forEach(id =>
+              G.forEach(g => {
+                // four choices (as the game asks), five of six right: the player's answers count (core.js trustOf)
+                const [a, c] = by[g],
+                  [d, e] = by[G.find(x => x !== g)];
+                for (let i = 0; i < 6; i++)
+                  add.push(
+                    Object.assign([...R[0]], {
+                      0: id,
+                      1: (t += 1000),
+                      2: a,
+                      3: i ? a : c,
+                      4: i ? 1 : 0,
+                      5: 'quiz',
+                      6: ph[0],
+                      10: `${a} ${c} ${d} ${e}`
+                    })
+                  );
+              })
+            );
+            ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+            render();
+            const gn = g => (FISHA.gen[g] || {}).name || g.replace(/^[a-z]:/, '');
+            return {names: G.flatMap(g => by[g].slice(0, 2).map(id => FISHA.spu[id].name)), fams: G.map(gn)};
+          });
+          if (!spWant) fe.push('no species units to ask in the demo');
+          else {
+            await fq.click('#view [data-sf="hr"][data-v="species"]');
+            await fq.waitForFunction(() => document.querySelector('#view [data-sf="hr"][data-v="species"][aria-pressed="true"]'), null, {
+              timeout: 30000
+            });
+            const hs = await fq.evaluate(() => {
+              const T = document.querySelector('#view .adm-hmt');
+              return T
+                ? {
+                    names: [...T.querySelectorAll('tbody .hm-row')].map(th => th.textContent),
+                    fams: [...T.querySelectorAll('.hm-fam')].map(th => th.title),
+                    ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+                  }
+                : null;
+            });
+            if (!hs || spWant.names.some(n => !hs.names.includes(n)) || spWant.fams.some(g => !hs.fams.includes(g)) || hs.ids.length)
+              fe.push(`Heatmap, species ${JSON.stringify({want: spWant, got: hs})}`);
+            // Pairs names them too (repUnit)
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/pairs'));
+            await fq
+              .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {
+                timeout: 60000
+              })
+              .catch(() => fe.push('Pairs not drawn (species)'));
+            const ps = await fq.evaluate(() => ({
+              txt: document.getElementById('view').textContent,
+              ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+            }));
+            if (ps.ids.length || spWant.names.slice(0, 2).some(n => !ps.txt.includes(n)))
+              fe.push(`Pairs, species ${JSON.stringify({want: spWant.names.slice(0, 2), ids: ps.ids})}`);
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/heatmap'));
+            await fq.waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {
+              timeout: 60000
+            });
+          }
           await fq.click('#view [data-sf="hr"][data-v="family"]');
         }
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
@@ -6922,6 +7082,10 @@ async function sealPart(b, base, fails) {
           !has(jo.cards, /^Circle 3 from answer 50 /) ||
           !has(jo.cards, /^Genus questions from answer 51 · Amphiprion/) ||
           !has(jo.cards, /^Open all families not used/) ||
+          // the opt-in choices of the saved copy (jOptin): Scientific names on, circle 3's offer declined once
+          !has(jo.cards, /^Scientific names on · /) ||
+          !has(jo.cards, /^Families beyond the IMR course off · /) ||
+          !has(jo.cards, /^Families beyond the IMR course offer declined once, the last after answer \d+$/) ||
           has(jo.cards, /genera/) ||
           ['Circle 2', 'Circle 3', 'Genus'].some(m => !jo.marks.includes(m)) ||
           !/Family questions/.test(jo.games) ||
@@ -7111,7 +7275,7 @@ async function sealPart(b, base, fails) {
           await fq.click('#help');
         }
         // Photo stats › Overview on the fish side, on the same answers: the answers per photo in play counted here from the
-        // fish answer log (every answer that showed it, its candidate id and its game id one photo: fishPid), the bands
+        // fish answer log (every answer that showed it, its candidate id and its game id one photo: treePid), the bands
         // and the 3+ count as counted here; the candidate photo missed 9 times by 3 players counted Missed on its family's
         // row, opening Health; its own help (the answers alone, no Elo).
         if (!fe.length && pre.f) {
@@ -7128,12 +7292,12 @@ async function sealPart(b, base, fails) {
                 String(r[6] || '')
                   .split(' ')
                   .filter(Boolean)
-              ).forEach(x => (N[fishPid(x)] = (N[fishPid(x)] || 0) + 1))
+              ).forEach(x => (N[treePid(x)] = (N[treePid(x)] || 0) + 1))
             );
             const D = fuDataM().D,
               sp = FISHC.species,
               play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => D.play[s] || [])),
-              A = play.map(p => N[fishPid(p.f)] || 0),
+              A = play.map(p => N[treePid(p.f)] || 0),
               fam = fishFamOf(FISHA.ph[f].sp),
               name = (FISHC.units.find(u => u.id === fam) || {}).name,
               row = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(r => r.children[0].innerText.trim() === name),
@@ -7149,7 +7313,7 @@ async function sealPart(b, base, fails) {
               ].map(([lo, hi]) => A.filter(x => x >= lo && x <= hi).length),
               three: Number((/(\d+) \(/.exec((document.querySelector('[data-pov="answers"] .note') || {}).textContent || '') || [])[1]),
               wantThree: A.filter(x => x >= 3).length,
-              inPlay: play.some(p => fishPid(p.f) === fishPid(f)),
+              inPlay: play.some(p => treePid(p.f) === treePid(f)),
               name,
               missed: a ? Number(a.textContent) : 0,
               href: a ? a.getAttribute('href') : '',
@@ -7881,7 +8045,7 @@ async function sealPart(b, base, fails) {
           for (const u of FISHC.units) {
             const e = fuFamM(u),
               r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && fishPid(q.f) !== fishPid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
@@ -7973,7 +8137,7 @@ async function sealPart(b, base, fails) {
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && (f.cues || []).length && (f.look || []).some(x => x[1]) && (f.life || []).length),
             lone = F.genera.find(g => g.family === fam.id && T.go(g.id) !== g.id) || F.genera.find(g => T.go(g.id) !== g.id),
             sp = fam.species.find(s => T.sp[s]);
@@ -8159,7 +8323,7 @@ async function sealPart(b, base, fails) {
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && f.circle === 1 && (f.look || []).some(x => T.fam[x[0]] && !T.fam[x[0]].wink)),
             lk = fam.look.find(x => T.fam[x[0]] && !T.fam[x[0]].wink)[0],
             near = new Set([

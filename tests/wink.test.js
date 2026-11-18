@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// The fish surprise cards (quiz.js WINK, winkDue, winkMerge; Pierre, 2026-11-06: his second fish question was the whale
-// shark; the first only after at least 300 fish answers, the next after about 600-700 — 200 and 400 since 2026-11-08; 13:31: each surprise once per
-// player, and that's all, across devices): quiz.js's own code runs in Node on stubs (the player's answer count, the
-// device's storage, the subject's winks).
+// The fish surprise cards (quiz.js WINK, winkDue, winkMerge; docs/spec/fish.md "Winks": the first after 200 fish
+// answers, the next after 400; each surprise once per player, across devices): quiz.js's own code runs in Node on
+// stubs (the player's answer count, the device's storage, the subject's winks).
 const test = require('node:test');
 const assert = require('node:assert');
 const cut = require('./block.js');
@@ -23,7 +22,7 @@ function page({subj = 'fish', n = 0, saved = {}} = {}) {
     n,
     card: false,
     winkUnion: C.winkUnion,
-    fishPid: C.fishPid,
+    treePid: C.treePid,
     easyRank: C.easyRank,
     pick: L => L[Math.floor(Math.random() * L.length)],
     store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
@@ -52,7 +51,7 @@ function play(M, a, b) {
   return out;
 }
 
-// The thresholds, 200 then 400 (Pierre, 2026-11-08), played out.
+// The thresholds, 200 then 400, played out.
 test('none before 200 fish answers, the whale shark just after, the thresher at 400, then never again', () => {
   const M = page();
   assert.deepStrictEqual(play(M, 0, 200), [], 'none before 200');
@@ -126,7 +125,7 @@ test("an account merge keeps both accounts' surprises met; sign-out clears the k
   assert.match(so, /'start', 'wink'\]\.map\(k => subjKey\(S\.id, k\)\)/, 'signOutClear removes reefid-sync-<subject>-wink');
 });
 
-// The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, only its 2-3 really beautiful ones).
+// The wink's photo: a surprise card never shows a bad photo, only one of its 2-3 most beautiful.
 test("winkPhoto: only the wink's chosen photos, those still in the game; none left, the unit's best", () => {
   const M = page(),
     ph = (f, e = 2, jt = 'o1g2sl1') => ({f, e, jt}),
@@ -134,7 +133,7 @@ test("winkPhoto: only the wink's chosen photos, those still in the game; none le
     g = {wink: {photos: ['fish-s400-cand-3', 'fish-s400-cand-4', 'fish-s400-cand-9']}, views: {wide}};
   const got = new Set();
   for (let i = 0; i < 200; i++) got.add(M.winkPhoto(g).f);
-  // fi3 is candidate 3's stopgap copy (one photo); candidate 9 is out of the game (Pierre's curation took it out).
+  // fi3 is candidate 3's stopgap copy (one photo); candidate 9 is out of the game (the curation took it out).
   assert.deepStrictEqual([...got].sort(), ['fi3', 'fish-s400-cand-4'], 'drawn from the chosen photos in the game only');
   g.views.wide = wide.filter(p => p.f !== 'fi3');
   for (let i = 0; i < 50; i++) assert.strictEqual(M.winkPhoto(g).f, 'fish-s400-cand-4', 'one left: that one');

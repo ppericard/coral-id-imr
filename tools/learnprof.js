@@ -10,7 +10,7 @@
 // - groups (corals): the IMR lecture groups in the course's order (learn.js shownGroup: a starred genus in the group of
 //   its look-alikes) until share of the slate is covered (0.6: groups 1 to 7, 26 genera of the 40 with their starred look-alikes);
 // - circle1 (fish): the IMR course's families (circle 1); common (fish): the most common families near Dauin (their
-//   weights in the global score's tree, core.js fishScoreTree) until they carry half of the weight;
+//   weights in the global score's tree, core.js treeScoreTree) until they carry half of the weight;
 // - grp: the lecture groups listed (spotty); m: slate unit i when i % 5 < m (data order: strongBack).
 // gen, the units of the subject's opt-in sets (the fish scientific genera), by their family: lo (default); imr, the IMR
 // genera (app.js imrg) of the families it knows; known, every genus of a family it knows; all. names: common declines

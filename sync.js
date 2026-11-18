@@ -108,13 +108,13 @@ const TREE_SHEET = 143;
 const treeOn = () => sheetV() >= TREE_SHEET;
 // The fish species level (docs/reviews/2026-11-14-species-step1.md): its units open, and count in the global score and
 // its leaderboard tree (app.js UNITS fish tree), only once the sheet keeps the tree in chunks (treeOn) and replays the
-// species units as the game scores them (SPECIES_SHEET: core.js fishReplayGen); before, they stay closed (rule D4). The
+// species units as the game scores them (SPECIES_SHEET: core.js treeReplayGen); before, they stay closed (rule D4). The
 // one predicate every species rule reads.
 const SPECIES_SHEET = 161;
 const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
-// The scientific genera of circles 2 and 3 (core.js fishGenSets; docs/FISH_PATH.md): they open, and count among the
+// The scientific genera of circles 2 and 3 (core.js treeGenSets; docs/FISH_PATH.md): they open, and count among the
 // genera a question offers, only once the sheet replays them as the game scores them and its board tree holds them
-// (GENERA_SHEET: core.js fishReplayGen, fishBoardTree, fishVarTable); before, circle 1's alone (rule D4). The one
+// (GENERA_SHEET: core.js treeReplayGen, treeBoardTree, treeVarTable); before, circle 1's alone (rule D4). The one
 // predicate (app.js sciNow).
 const GENERA_SHEET = 176;
 const generaOn = () => sheetV() >= GENERA_SHEET;
@@ -232,7 +232,7 @@ const rpUnits = S => {
   if (!U || !U.gen) return null;
   return typeof treeWith === 'function' ? treeWith(S.id, () => U.gen()) : U.gen();
 };
-// Its variant table (core.js fishVarTable, rvVars), for the answers replayed here on top, as the sheet reads it: a queued
+// Its variant table (core.js treeVarTable, rvVars), for the answers replayed here on top, as the sheet reads it: a queued
 // right answer on a unit's last variant group keeps its learned mark. Null before it is in; read as rpUnits.
 const rpVars = S => {
   const U = typeof UNITS === 'object' ? UNITS[S.id] : null;
@@ -250,7 +250,7 @@ const rvsAsk = () =>
 // The structure stamps (core.js structStamp; docs/reviews/2026-11-14-sheet-overlay-design.md): a subject whose circles
 // and pairs the content editor may change (SUBJECTS structure) keeps the stamp it was last replayed with (stKey, '' for
 // the base's, travelling as rv does) and says it (sts); another stamp on the sheet brings a replay, its st adopted with
-// it (replayAdoptS). From STRUCT_SHEET only (rule D4); before, the units hold the text slots alone (app.js fishBuild).
+// it (replayAdoptS). From STRUCT_SHEET only (rule D4); before, the units hold the text slots alone (app.js treeBuild).
 const stKey = S => subjKey(S.id, 'st');
 const stApplied = S => String(store.get(stKey(S), '') || '');
 // Each subject from its own script version (core.js structSheet: the fish's STRUCT_SHEET, the corals' PAIRS_SHEET).
@@ -1702,7 +1702,9 @@ function signOutClear(all) {
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; rule D7)
       ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
       // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; rule D7)
-      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))
+      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k)),
+      // and the mimicry cards' marks, one record of the pairs shown (quiz.js MIMC; rule D7)
+      subjDev(S.id, 'mim')
     ]),
     ACHK,
     'reefid-ach-new',

@@ -364,11 +364,11 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
   // reference photo of tools/fish_refs.json judged at the reference level (core.js refLevel), or a photo in play by
   // itself (auto: a candidate judged sure, a reference photo judged sure; tools/fish_game.py in_play), all on R2
   // (fish-game.json; fish-photos.json's first photos are the same records).
-  // The game as it plays: a FishBase photo only while the admin has it in play for that species (core.js fishOn), or a
+  // The game as it plays: a FishBase photo only while the admin has it in play for that species (core.js treePhotoOn), or a
   // judged reference photo, or one in play by itself the admin did not take out.
-  const GM = C.fishGameRead(read('fish-game.json')).photos,
-    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR), PH.sheet);
-  [X, C.fishGen(F, C.fishPhotos(PH.photos, {}, CUR), PH.sheet)].forEach(Y =>
+  const GM = C.treeGameRead(read('fish-game.json')).photos,
+    X = C.treeGen(F, C.treePhotos(PH.photos, GM, CUR), PH.sheet);
+  [X, C.treeGen(F, C.treePhotos(PH.photos, {}, CUR), PH.sheet)].forEach(Y =>
     assert.ok(
       Object.values(Y.gen).some(g => g.views.wide.some(isFb)),
       'FishBase photos in play, the first photos too'
@@ -379,9 +379,9 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
       .filter(isFb)
       .forEach(p =>
         assert.ok(
-          (added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp)) ||
+          (added.has(p.f) && C.treePhotoOn(CUR.fish, p.f, p.sp)) ||
             (refs.has(p.f) && C.refLevel(p)) ||
-            (!!p.auto && C.fishIn(CUR.fish, p, C.fishGone(CUR))),
+            (!!p.auto && C.treePhotoIn(CUR.fish, p, C.treeGone(CUR))),
           `${g.id} ${p.f}: a FishBase game photo outside the rules`
         )
       )
@@ -396,19 +396,19 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
     },
     cur = {...CUR, fish: {...CUR.fish, add: {...CUR.fish.add, [fb.f]: 's091'}, seen: {...CUR.fish.seen}}};
   assert.ok(
-    C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f),
+    C.treePhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f),
     'in play: in the game'
   );
   cur.fish.seen[fb.f] = 1;
-  assert.ok(!C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
-  assert.ok(!C.fishPhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
+  assert.ok(!C.treePhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
+  assert.ok(!C.treePhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
   // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, is in play as
   // a FishBase candidate of s238, so it has no sheet-only copy (a species with no game photo has one: tools/fish_game.py
   // sheet_of) and the sheet shows the game's. The curation may take it out of play again: then the species shows its
   // other photos in play, or the
   // workflow's next run brings no sheet-only copy back by itself (tools/fish_photos.py finds it again on request).
   const inPlay = Object.values(X.gen).flatMap(g => g.views.wide),
-    h = inPlay.find(p => C.fishPid(p.f) === 'bHachl_m0');
+    h = inPlay.find(p => C.treePid(p.f) === 'bHachl_m0');
   assert.ok(!PH.sheet.s238 || !inPlay.some(p => p.sp === 's238'), 's238: a sheet-only photo only with no photo in play');
   if (h) {
     assert.deepStrictEqual(

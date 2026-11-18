@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the corals' text slots and
+// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md): the corals' text slots and
 // look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure, genStructure), the ★ rule kept
 // under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay under it (Code.gs gen_,
 // replay_, stMain_). The edits here are made-up fixtures: the real curation.json holds none.
@@ -431,7 +431,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   [A.gen, A.x.gen].forEach(M => Object.values(M).forEach(g => g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
   const ctx = {
     DATA: A,
-    FISH: null,
+    TREEU: null,
     namesLine: () => '',
     uname: n => `<i>${n}</i>`,
     unameT: n => n,
@@ -456,7 +456,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       block(APP, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'app.js'}),
       block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
-      block(LEARN, 'const esrcOf = (r, k) =>', 'const fishNote', {file: 'learn.js'}),
+      block(LEARN, 'const esrcOf = (r, k) =>', 'const treeNote', {file: 'learn.js'}),
       block(LEARN, 'const lsrcOf = (a, b) =>', 'const isClassic', {file: 'learn.js'}),
       block(QUIZ, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}),
       'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, lsrcEsrc});'

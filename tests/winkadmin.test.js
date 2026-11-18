@@ -9,7 +9,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const A = require('../autosort.js');
-const {fishPid} = require('../core.js');
+const {treePid} = require('../core.js');
 const {FISHT, fishTarget, fishSpecies, fishWinkFold, fishRun, fishQueue, autoCheck} = A;
 
 // Photo names never drawn as a Check (autosort.js autoCheck), so a sure judgment is applied.
@@ -87,9 +87,9 @@ test('fishWinkFold: featured always shown, the surprise card photos first by pho
   const ph = id => ({f: id}),
     feat = [ph('fish-sw-cand-1')],
     rest = ['fi2', 'fi3', 'fi4', 'fi5', 'fi6', 'fi7', 'fi8'].map(ph),
-    // the card names its photos as candidates; the game record of the same photo is fi<id> (core.js fishPid)
+    // the card names its photos as candidates; the game record of the same photo is fi<id> (core.js treePid)
     card = ['fish-sw-cand-7', 'fish-sw-cand-404', 'fish-sw-cand-5'];
-  assert.strictEqual(fishPid('fish-sw-cand-7'), fishPid('fi7'));
+  assert.strictEqual(treePid('fish-sw-cand-7'), treePid('fi7'));
   const R = fishWinkFold({feat, rest}, card);
   assert.deepStrictEqual(R.feat, feat);
   assert.deepStrictEqual(

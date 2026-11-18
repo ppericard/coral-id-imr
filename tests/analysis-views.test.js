@@ -80,7 +80,7 @@ test('a deleted account (flag 2) is in no per-player list and no count of player
   assert.ok(!l.genus || l.genus.every(g => g.players <= 4), 'not in the players per genus');
 });
 
-/* ---------- Player profiles (Pierre, 2026-11-05: Q70-Q73) ---------- */
+/* ---------- Player profiles ---------- */
 test('eigSym: eigenvalues in decreasing order, orthonormal vectors, S v = λ v', () => {
   const R = A.rng(9),
     n = 6,

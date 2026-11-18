@@ -19,7 +19,7 @@ const ROOT = path.join(__dirname, '..'),
   json = f => JSON.parse(src(f)),
   plain = x => JSON.parse(JSON.stringify(x));
 const SEA = C.subjectOf('seaslug'),
-  FISH = C.subjectOf('fish'),
+  TREEU = C.subjectOf('fish'),
   filesOf = S => S.pool.files.map(json);
 
 test("the sea slugs' pool: their genera as the game plays them, from their own files and their own curation part", () => {
@@ -33,13 +33,13 @@ test("the sea slugs' pool: their genera as the game plays them, from their own f
     T = F[0],
     genOf = new Map(T.genera.flatMap(g => g.species.map(s => [s, g.id])));
   // the units: genera only (the families are structure), each a genus of the tree; the photos of the app's units
-  const X = C.fishGen(T, C.fishPhotos({}, C.fishGameRead(F[1]).photos, C.treeCur(SEA, F[2])), undefined, C.unitRankOf(SEA));
+  const X = C.treeGen(T, C.treePhotos({}, C.treeGameRead(F[1]).photos, C.treeCur(SEA, F[2])), undefined, C.unitRankOf(SEA));
   const want = Object.values(X.gen).filter(g => g.rank === 'genus' && g.views.wide.length);
   assert.deepStrictEqual(Object.keys(P).sort(), want.map(g => g.id).sort());
   assert.ok(Object.keys(P).length > 40 && Object.keys(P).every(u => u.startsWith('g:')));
   want.forEach(g => assert.deepStrictEqual(P[g.id].flat().sort(), [...new Set(g.views.wide.map(p => p.f))].sort(), g.id));
   // a photo's genus is its species' (or, agreed at the genus only, its own: gl)
-  const recs = Object.values(C.fishGameRead(F[1]).photos).flat(),
+  const recs = Object.values(C.treeGameRead(F[1]).photos).flat(),
     byF = new Map(recs.map(p => [p.f, p]));
   Object.entries(P).forEach(([u, L]) =>
     L.flat().forEach(f => {
@@ -55,8 +55,8 @@ test("the sea slugs' pool: their genera as the game plays them, from their own f
   assert.ok(!off['g:Chromodoris'].flat().includes(f), 'its own part excludes it');
   assert.deepStrictEqual(fishOnly, P, "the fish's part is not the sea slugs'");
   // the fish's pool built as before: its families, from its four files
-  assert.deepStrictEqual(FISH.pool.as, ['f', 'ph', 'gm', 'cur']);
-  assert.ok(Object.keys(C.unitPool(FISH, filesOf(FISH))).every(u => u.startsWith('f:')));
+  assert.deepStrictEqual(TREEU.pool.as, ['f', 'ph', 'gm', 'cur']);
+  assert.ok(Object.keys(C.unitPool(TREEU, filesOf(TREEU))).every(u => u.startsWith('f:')));
 });
 
 // The site's files the sheet reads from GitHub main (Code.gs pools_, subjGen_): this checkout's.
@@ -71,7 +71,7 @@ const sheet = () =>
 const at = i => new Date(Date.UTC(2026, 10, 10, 0, 0, i)).toISOString();
 // Right answers on one unit of a subject, four choices each: clearly above chance, so their players are trusted.
 const SP = C.unitPool(SEA, filesOf(SEA)),
-  FP = C.unitPool(FISH, filesOf(FISH)),
+  FP = C.unitPool(TREEU, filesOf(TREEU)),
   PAIR = ['g:Chromodoris', 'g:Nembrotha'];
 const answers = (k, n, o) => Array.from({length: n}, (_, i) => ({id: (k + i).toLowerCase(), t: at(i * 40), ok: 1, m: 'quiz', ...o(i)}));
 const coral = k =>
@@ -148,19 +148,19 @@ function app(sheetVersion, reply) {
   const M = src('model.js'),
     S = src('sync.js'),
     T = json('seaslug.json'),
-    X = C.fishGen(T, C.fishPhotos({}, C.fishGameRead(json('seaslug-game.json')).photos, null), undefined, C.unitRankOf(SEA)),
+    X = C.treeGen(T, C.treePhotos({}, C.treeGameRead(json('seaslug-game.json')).photos, null), undefined, C.unitRankOf(SEA)),
     G = vm.createContext({
       easyCover: C.easyCover,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights
     });
   vm.runInContext(
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     G
   );
-  G.fishGenera(X, T);
+  G.treeGenera(X, T);
   const kept = {
       'reefid-photo-stats': {
         v: 160,
@@ -249,5 +249,5 @@ test('the app reads the sea slugs’ own statistics from the script that pools t
     assert.ok(!('reefid-photo-stats-seaslug' in A.kept) && A.M.isDataLook(a, b), JSON.stringify({s: r.s, v: r.v}));
   }
   // the fish read theirs from a version of their own (tests/fishstats.test.js), never the sea slugs'
-  assert.ok(FISH.pool && FISH.stats > SEA.stats);
+  assert.ok(TREEU.pool && TREEU.stats > SEA.stats);
 });

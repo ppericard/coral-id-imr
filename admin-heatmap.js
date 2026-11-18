@@ -25,7 +25,7 @@
 // they are above chance, core.js trustOf, as for everyone). A deleted, merged or archived account has no answers here
 // (rule D7: admin.js rowsOf), so it shows nothing.
 //
-// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, heatPlayers, HEAT) runs in Node too:
+// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, heatPlayers, heatLab, heatUp, HEAT) runs in Node too:
 // tests/heatmap.test.js.
 (function (root) {
   const K = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
@@ -172,7 +172,14 @@
         .map(id => [id, id, 0])
     ];
   }
-  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers};
+  // A unit of another subject's registry (FA: reports.js repReg) by its name: its record's (a family), a fish species
+  // unit (s:s091) its scientific name, else its id's prefix off.
+  const heatLab = (FA, n) =>
+    FA && FA.gen[n] ? FA.gen[n].name : FA && FA.spu && FA.spu[n] ? FA.spu[n].name : String(n).replace(/^[a-z]:/, '');
+  // The unit above a unit in the registry: a fish species unit its genus (FA.spu), a species by its sheet id (s:<name>)
+  // its genus, a genus its family; undefined where it has none.
+  const heatUp = (FA, n) => FA && (((FA.spu || {})[n] || {}).genus || (FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n] || undefined);
+  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers, heatLab, heatUp};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
@@ -254,7 +261,7 @@ function statsHeat() {
     return;
   }
   // a unit's name: a coral genus as it is, another subject's unit by its name (its registry), else its id's prefix off
-  const lab = n => (many ? (FA && FA.gen[n] ? FA.gen[n].name : String(n).replace(/^[a-z]:/, '')) : n),
+  const lab = n => (many ? heatLab(FA, n) : n),
     // trust and the pairs over the subject's whole log, as Pairs reads them; then the rank's part (heatRank)
     // (one player's: their part, by the same rules; each memo kept apart by pk)
     C0 = ofAns('conf:' + S.id + pk, () => confusionOf(R)),
@@ -271,7 +278,7 @@ function statsHeat() {
         k = g && g.ig && (FA.groups || []).find(x => x.n === g.ig);
       return k ? `${k.n}. ${k.title}` : '';
     },
-    up = n => FA && ((FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n]),
+    up = n => heatUp(FA, n),
     blockOf = many ? (ri ? n => (up(n) ? lab(up(n)) : '') : grp) : undefined,
     // below its top rank, the families' blocks in their taxonomic group where its tree sorts them so (its taxa: a family's
     // tg, the Learn page's headings), the group of the nearest unit above that has one

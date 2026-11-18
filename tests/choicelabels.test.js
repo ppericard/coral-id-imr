@@ -33,7 +33,7 @@ function model(imr, look = {}, units = null) {
           .filter(s => s.circle && s.cn)
           .map(s => [
             s.id,
-            // also: its listed names with their spellings (app.js fishGenera), read by model.js choiceKeys
+            // also: its listed names with their spellings (app.js treeGenera), read by model.js choiceKeys
             {name: cnShow(s, imr), also: (s.cn || []).flat(), look: look[s.id] || [], fam: s.family, ig: s.family, forms: []}
           ])
       ),
@@ -174,29 +174,29 @@ test('choiceApart: the first of each label, none of a label taken', () => {
 });
 
 test('no two units of one rank in today’s game share a label: the draw is unchanged where no name is shared', () => {
-  // The fish units (app.js fishGen, fishGenera on the real fish.json): the entries and the scientific genera, by rank; the
+  // The fish units (app.js treeGen, treeGenera on the real fish.json): the entries and the scientific genera, by rank; the
   // corals' genera are their names. Read as model.js choiceKey reads a label.
   const APP = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     PH = read('fish-photos.json'),
     ctx = {
       DOM: {EX: 0.9},
       easyCover: core.easyCover,
-      fishScoreTree: core.fishScoreTree,
-      fishSpUnits: core.fishSpUnits,
-      fishGenSets: core.fishGenSets,
+      treeScoreTree: core.treeScoreTree,
+      treeSpUnits: core.treeSpUnits,
+      treeGenSets: core.treeGenSets,
       rankWeights: core.rankWeights
     };
   vm.createContext(ctx);
   vm.runInContext(
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const X = ctx.fishGenera(core.fishGen(F, PH.photos), F),
+  const X = ctx.treeGenera(core.treeGen(F, PH.photos), F),
     {M} = model(false, {}, X.gen);
   const byRank = {};
   Object.entries(X.gen).forEach(([n, g]) => (byRank[g.rank || ''] = byRank[g.rank || ''] || []).push([M.choiceKey(n), n]));
   assert.ok(Object.keys(byRank).length >= 3, Object.keys(byRank).join(','));
-  // The species units (app.js fishGenera) may share a label: only the shared first names this player type
+  // The species units (app.js treeGenera) may share a label: only the shared first names this player type
   // reads (here outside IMR: imrNow not loaded), each on two species, kept apart by choiceApart (tests below).
   const shared = {};
   Object.entries(byRank).forEach(([rk, L]) => {
@@ -243,7 +243,8 @@ function againOf(GEN) {
     recallAt: () => 1,
     uname: n => GEN[n].name,
     shuffle: L => L,
-    photoSet: () => ({shown: []})
+    photoSet: () => ({shown: []}),
+    mimKeep: () => null // no pair of the mimicry class here
   };
   vm.createContext(ctx);
   vm.runInContext(
@@ -308,6 +309,9 @@ function duelOf(GEN, pairs) {
       UNITS: {fish: {pairs: () => pairs}},
       SUBJ: {id: 'fish'},
       dataLooks: () => [],
+      mimPairs: () => [], // no pair of the mimicry class here
+      mimSeen: () => false,
+      mimKeep: () => null,
       weight: () => 1,
       mixedUp: () => 0,
       confusable: () => false,

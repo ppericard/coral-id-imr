@@ -307,8 +307,8 @@ const anchorsOf = (() => {
 })();
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
-  const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
+  const a = anchorsOf(path.join('docs', 'spec', 'service-worker.md'));
+  // # Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
   assert.ok(anchorsOf(path.join('docs', 'spec', 'fish-photos.md')).has('where-fish-photos-come-from-the-sources-and-the-area-rule'));
@@ -412,9 +412,7 @@ const ID_ALLOW = [
   {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
   {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
-  {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
@@ -567,9 +565,8 @@ const DOC_BUDGET = {
   'CLAUDE.md': [2, 240],
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
-  // Set at the doc's size before the Admin section is moved out to a spec: lower it when that is merged.
-  'docs/ARCHITECTURE.md': [417, 15860],
-  'docs/LEARNING.md': [304, 5240],
+  'docs/ARCHITECTURE.md': [37, 240],
+  'docs/LEARNING.md': [175, 320],
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],
@@ -582,12 +579,34 @@ const DOC_BUDGET = {
   'docs/PAGES.md': [25, 1280],
   'docs/SECURITY.md': [32, 1370],
   'docs/STATUS.md': [8, 130],
+  'docs/spec/admin.md': [32, 380],
+  'docs/spec/admin-photos.md': [35, 140],
+  'docs/spec/admin-players.md': [48, 190],
+  'docs/spec/admin-tree.md': [22, 210],
+  'docs/spec/achievements.md': [18, 130],
+  'docs/spec/basics.md': [14, 130],
+  'docs/spec/front-end.md': [21, 130],
+  'docs/spec/model.md': [23, 130],
+  'docs/spec/quiz.md': [20, 130],
+  'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
   'docs/spec/content.md': [16, 130],
   'docs/spec/data.md': [34, 140],
   'docs/spec/fish-photos.md': [54, 180],
   'docs/spec/fish.md': [38, 150],
+  'docs/spec/subjects.md': [26, 130],
+  'docs/spec/fish-game.md': [12, 130],
+  'docs/spec/fish-sheets.md': [10, 130],
+  'docs/spec/seaslugs.md': [12, 130],
+  'docs/spec/tools.md': [47, 130],
+  'docs/spec/analyses.md': [26, 130],
+  'docs/spec/loading.md': [16, 130],
+  'docs/spec/site.md': [7, 130],
+  'docs/spec/storage.md': [11, 240],
+  'docs/spec/photos.md': [17, 130],
+  'docs/spec/player-reports.md': [8, 130],
+  'docs/spec/deploy.md': [6, 130],
   'docs/decisions/README.md': [10, 200], // the index grows by a row per record
   'docs/rules/README.md': [1, 150],
   'docs/rules/admin.md': [5, 230],
@@ -609,10 +628,10 @@ const DOC_BUDGET = {
   'tools/README.md': [13, 280],
   'tools/sync/changes/README.md': [2, 130]
 };
-// A record has no entry of its own (every decision PR would add one): the same budget for each.
+// A record has no entry of its own (every decision PR would add one): the same budget for each. A sheet script change
+// waiting for its version (tools/sync/changes/<branch>.md, one paragraph, removed at merge) likewise.
 const RECORD_BUDGET = [8, 200];
-// A sheet script change waiting for its version (tools/sync/changes/<branch>.md: one paragraph, one line) has none either.
-const CHANGE_BUDGET = [4, 1200];
+const CHANGE_BUDGET = [8, 4000];
 // Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
 const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
 const budgetOf = f => {

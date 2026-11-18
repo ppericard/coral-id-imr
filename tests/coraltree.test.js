@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Photos › Tree for the corals (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step; Pierre, 2026-11-13: it
-// must work for "coraux, nudibranches ou plantes"): the corals' adapter of the generic tree (taxtree.js), on the real
+// Photos › Tree for the corals (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step: one tree for every
+// subject): the corals' adapter of the generic tree (taxtree.js), on the real
 // data.json and names.json (as the admin holds them: the x genera merged into gen) and on made-up data.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -187,9 +187,9 @@ test('filters: tags on the genera, read through the leaves, the same genera in b
   );
 });
 
-// The Look-alikes filter with the content editor's pairs (admin-content.js pairRows; Codex review #988): a pair he added
-// with + Pair is an option of its own, so its tools in the bar (structBar: Restore, Remove) can be reached; a withdrawn
-// one says so and leaves Any look-alike; a base pair he never touched is as before. Made-up edits on the real data.
+// The Look-alikes filter with the content editor's pairs (admin-content.js pairRows): a pair added with + Pair is an
+// option of its own, so its tools in the bar (structBar: Restore, Remove) can be reached; a withdrawn one says so and
+// leaves Any look-alike; a base pair never edited stays as it is. Made-up edits on the real data.
 test('filters: the look-alikes hold the draft’s pairs, an added one selectable, a withdrawn one out of Any look-alike', () => {
   const C = require('../core.js'),
     {pairRows} = require('../admin-content.js'),
@@ -224,7 +224,7 @@ test('filters: the look-alikes hold the draft’s pairs, an added one selectable
   assert.deepStrictEqual(pass(by('look:Acropora|Porites')), ['Acropora', 'Porites']);
   // Any look-alike: the pairs in force (the added one in, the withdrawn ones out)
   assert.deepStrictEqual(pass(by('look')), ['Acropora', 'Anacropora', 'Porites']);
-  // without the draft's rows, as before: the base's pairs only
+  // without the draft's rows: the base's pairs only
   assert.deepStrictEqual(
     ctFilters(d, {pairs: P0})
       .filter(x => x.grp === 'Look-alikes')

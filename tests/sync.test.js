@@ -2403,10 +2403,10 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
 });
 
 // The other subjects' replays (every player's progress recalculated from their answers): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
-// their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
+// their own rows and units (core.js treeReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
 const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
-  FGEN = C.fishReplayGen(JSON.parse(FJSON));
+  FGEN = C.treeReplayGen(JSON.parse(FJSON));
 // curation.json too: the content editor's structure the fish replay applies (Code.gs subjCur_, sheet overlay step 3).
 const withFish = (n = {c: 0, f: 0, cur: 0}) => ({
   n,
@@ -2435,7 +2435,7 @@ const fa = (id, i, x = {}) =>
     sc: {d: 0, r: 1},
     ...x
   });
-// The variant table the fish replay reads (Code.gs subjVar_, core.js fishVarTable), from the repository's files
+// The variant table the fish replay reads (Code.gs subjVar_, core.js treeVarTable), from the repository's files
 // as the sheet reads them from main (tests/gas.js serves the photo files), made once.
 let FVARS = null;
 const fvars = () =>
@@ -3099,7 +3099,7 @@ test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchu
       slug('n8', 'Goniobranchus sp.5'),
       slug('n9', 'Goniobranchus sp. 5x'),
       slug('n10', 'Goniobranchus sp. 5 =1+1'),
-      // a fish species unit (core.js fishSpUnits: s: and the species id) and its photo's species
+      // a fish species unit (core.js treeSpUnits: s: and the species id) and its photo's species
       fishAns('n11', {
         g: 's:s091',
         a: 's:s084',

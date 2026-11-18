@@ -68,7 +68,7 @@ test('licOf, rightsClass: the app (core.js), the admin (presence.js) and Python 
   Object.values(D.course || {}).forEach(add);
   Object.values(read('cand.json').cand || {}).forEach(add);
   Object.values(read('fish-cand.json').cand || {}).forEach(add);
-  Object.values(C.fishGameRead(read('fish-game.json')).photos || {}).forEach(add);
+  Object.values(C.treeGameRead(read('fish-game.json')).photos || {}).forEach(add);
   Object.values(read('fish-photos.json').photos || {}).forEach(add);
   assert.ok(all.length > 1000, 'photo records read');
   const rec = all.map(p => ({
@@ -146,7 +146,7 @@ test('easyRank: the rights break a tie only, after reference level, ease and ref
   );
 });
 
-test('fishGen: a family cover between equal photos is an open one; an easier NC photo still wins', () => {
+test('treeGen: a family cover between equal photos is an open one; an easier NC photo still wins', () => {
   const T = {
     families: [{id: 'f:X', name: 'X', species: ['s1'], circle: 1}],
     species: [{id: 's1', name: 'Xus one'}]
@@ -154,14 +154,14 @@ test('fishGen: a family cover between equal photos is an open one; an easier NC 
   const ph = (f, e, lic) => ({f, src: 'x', sp: 's1', e, jt: 'p1g1sm1', lic});
   // Every hash order: whichever names the photos carry, the open one leads among equals.
   ['a', 'b', 'c', 'd', 'e'].forEach(x => {
-    const G = C.fishGen(T, {t: [ph(x + 'nc1', 4, 'cc-by-nc'), ph(x + 'nc2', 4, 'cc-by-nc'), ph(x + 'open', 4, 'cc-by')]});
+    const G = C.treeGen(T, {t: [ph(x + 'nc1', 4, 'cc-by-nc'), ph(x + 'nc2', 4, 'cc-by-nc'), ph(x + 'open', 4, 'cc-by')]});
     assert.strictEqual(G.gen['f:X'].cover, x + 'open');
   });
-  const G = C.fishGen(T, {t: [ph('nc', 5, 'cc-by-nc'), ph('open', 4, 'cc0')]});
+  const G = C.treeGen(T, {t: [ph('nc', 5, 'cc-by-nc'), ph('open', 4, 'cc0')]});
   assert.strictEqual(G.gen['f:X'].cover, 'nc');
   // The list the draw reads keeps no licence (model.js photoSet's ties follow it): the hash order.
   const L = ['a', 'b', 'c', 'd', 'e', 'f'].map((x, i) => ph(x, 4, i % 2 ? 'cc-by' : 'cc-by-nc'));
-  const W = C.fishGen(T, {t: L}).gen['f:X'];
+  const W = C.treeGen(T, {t: L}).gen['f:X'];
   assert.deepStrictEqual(
     W.views.wide.map(p => p.f),
     C.easyRank(L, undefined, false).map(p => p.f)
@@ -331,7 +331,7 @@ test("the facet on today's photos: every coral genus and fish species tallied, t
   assert.strictEqual(T.ready, T.own + T.open);
   assert.strictEqual(T.book, 0, 'no Coral Finder book photo since #748 (tests/nobook.test.js)');
   assert.ok(T.own > 0 && T.open > 0 && T.nc > 0 && T.imr > 0, JSON.stringify(T));
-  const fish = Object.values(C.fishGameRead(read('fish-game.json')).photos).flat();
+  const fish = Object.values(C.treeGameRead(read('fish-game.json')).photos).flat();
   const F = P.rightsTally(fish);
   assert.ok(F.n > 500, 'fish photos ' + F.n);
   assert.strictEqual(F.imr + F.book, 0, 'no IMR slide photo for fish (rule P1)');

@@ -64,7 +64,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import inat  # noqa: E402  the one paced, retried iNaturalist client (rule C7)
 import fish_short  # noqa: E402  fish-game.json's short form
-from fetch_fish import lic_ok, PIERRE  # noqa: E402  the fish licence rule; Pierre's iNaturalist login
+from fetch_fish import lic_ok, PIERRE  # noqa: E402  the fish licence rule; the admin's iNaturalist login
 
 BATCH = 200  # observations a request (iNaturalist's most per page)
 FIELDS = 'id,user.login,photos.id,photos.license_code,photos.attribution'

@@ -47,7 +47,7 @@ let TYPEDQ = null,
   TYPEN = null;
 const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind rj)
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
-// For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
+// For fish, every teaching entry and the other names it goes by (core.js treeTypeNames), read as whole names.
 const typeNames = () => {
   // read again when the data, the subject, Pierre's curation (its names: curation.json fish.names) or the subject's own
   // key (UNITS namesKey: the fish genera in the game, app.js sciNow) changes
@@ -216,7 +216,7 @@ const namesLine = (t, c) => {
 const typeUnit = (m, t, sp) => (!m ? '' : typeFits(m, t, sp) ? t : m.shared || m.g === t ? '' : m.g || '');
 // Units as a list in a sentence: "A", "A and B", "A, B and C".
 const unameList = L => L.join(', ').replace(/, ([^,]*)$/, ' and $1');
-// A unit as a name typed reaches it (core.js fishNameIndex: r = {vr, n, of}, its role and how many of its species carry
+// A unit as a name typed reaches it (core.js treeNameIndex: r = {vr, n, of}, its role and how many of its species carry
 // the name): "some Wrasses" for a word only some of its species carry, else "the Shrimpfishes".
 const typeWhose = (g, r = {}) => `${['k', 'gc'].includes(r.vr) && !(r.n && r.n === r.of) ? 'some' : 'the'} ${uname(g)}`;
 // What a name below the family says of unit g (r: its reading, as typeWhose's): "“Iniistius” is a genus of the Wrasses."
@@ -661,7 +661,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
   // the opening hold is the one the question really had.
   const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-    seenPh = ph.filter(p => p !== unseen);
+    seenPh = ph.filter(p => p !== unseen),
+    // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
+    mu = mimUnit(target, seenPh[0]);
   // One scorer (core.js scoreAnswer; docs/LEARNING.md "One scorer"): the question as the game had it, logged as its
   // scoring record (sc, core.js scoreLog) so the full replay meets this very state. d0: the photo difficulty (photoDiff);
   // fam: the memory of the photos seen before this answer (famOf; a hint left closed unseen; pgMemW, pgMissW); cf: the
@@ -683,7 +686,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
-    // |h: a held-out photo shown (core.js fishHeld: only the mastery exam asks them, so …|h|x),
+    // |h: a held-out photo shown (core.js treeHeld: only the mastery exam asks them, so …|h|x),
     // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
     // any answer.
     (ph.some(p => p && p.ho) ? '|h' : '') +
@@ -704,7 +707,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     d0: solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length),
     fam: famOf(target, seenPh),
     cf: confTerm(target, chs, k),
-    look: () => pgLook(target, chs),
+    look: () => pgLook(target, chs, mu),
     R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
     Rc: warm && !good && GX(c) ? recallAt(c) : 1,
     p: startP(),
@@ -721,7 +724,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     mu: genusDiff(target),
     ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
     // A unit never answered starts from the unit its record names (a fish species: its family; core.js abilityOf), as the
-    // sheet's replay does (fishReplayGen from).
+    // sheet's replay does (treeReplayGen from).
     ...(GX(target).from ? {from: GX(target).from} : {}),
     ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
   });
@@ -890,7 +893,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       fitStage();
     }
     // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1);
+    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1, mu && mu === c ? mimOf(target, seenPh[0]).pair.id : '');
   }
   // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
   // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
@@ -951,7 +954,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
   // A Find the X showed four tiles, each of its own unit.
   const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
-    phx = phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
+    phx =
+      mimArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx) ||
+      phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
   if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
@@ -1015,7 +1020,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
 }
 // The line unit a's record gives for its look-alike b, which names and describes b ("Angelfish: spine on the gill cover"):
 // {t, s} with its source, or null. Any subject's record may hold such lines (rule S1): lk, IMR's own for the pairs it
-// declares (a fish family's: core.js fishGen), else ap, ours for the pairs it does not (app.js fishGenera), each with its
+// declares (a fish family's: core.js treeGen), else ap, ours for the pairs it does not (app.js treeGenera), each with its
 // source (rule C2: IMR, and the editor's source when he reworded the line, or the family's sources).
 function pairLine(a, b) {
   const g = GX(a) || {},
@@ -1156,11 +1161,11 @@ function winkDue() {
 }
 // The wink's photo, never a bad one: the unit's ★ Cover while in play (coverP; decision:
 // docs/decisions/2026-11-18-decisions-from-app-comments.md), else one of its chosen photos (wink.photos) still in the
-// game, by photo id (fishPid), else its best (easyRank).
+// game, by photo id (treePid), else its best (easyRank).
 function winkPhoto(g) {
   if (g.coverP) return g.coverP;
-  const want = new Set((g.wink.photos || []).map(fishPid)),
-    L = g.views.wide.filter(p => want.has(fishPid(p.f)));
+  const want = new Set((g.wink.photos || []).map(treePid)),
+    L = g.views.wide.filter(p => want.has(treePid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
 }
 // A surprise card's answer for the log: a game answer's fields for what was shown and answered (ch: renamed ids,
@@ -1311,7 +1316,7 @@ function breakArm(nb, show) {
 // visit's first answers (noOpen), before the first sync, a prompt too close or a card due; leaving it unseen: it returns.
 const ALLMET = {KEY: 'allmet-'};
 // Pure on its inputs (tests call it): L the units in play (pool); met, asked, may (mayOpen) on a unit. A unit met but
-// not asked yet is still opening (app.js fishGate's circle 2 waits for it).
+// not asked yet is still opening (app.js treeGate's circle 2 waits for it).
 const allMetNone = (L, met, asked, may) => L.length > 0 && L.every(n => (met(n) ? asked(n) : !may(n)));
 const allMetTok = k => `allmet:${SUBJ.id}-${k}`;
 const allMetSeen = k => !!store.get(subjDev(SUBJ.id, ALLMET.KEY + k), null) || toldHas(allMetTok(k));
@@ -1386,7 +1391,7 @@ function phaseShow({p, k}, n, brk) {
       ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
     ),
     tx = photoTaxon([p], n),
-    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js fishGenera psrc,
+    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js treeGenera psrc,
     // core.js contentApply esrc; rule C2), else IMR's, the presentation's own words.
     lines = g.phase || [],
     w = phaseOf(p),
@@ -1415,6 +1420,111 @@ function phaseShow({p, k}, n, brk) {
       if (how === 'route') return; // left unseen: it comes back with the next such photo
       store.set(subjDev(SUBJ.id, PHASEC.KEY + k), Date.now());
       toldAdd(phaseTok(k));
+      if (brk) route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+  return d;
+}
+// The mimicry card (docs/LEARNING.md "The mimicry class"): the first question that shows a photo of the mimicry class
+// (model.js mimOf) brings its pair's card at the break at Next: a photo of the species beside one of the species it
+// resembles, the marks that tell them apart, each with its sources, and the sources that state the resemblance. Once per
+// pair and subject: on this device (MIMC.KEY, the pairs shown) and, signed in, on the account's other devices (core.js
+// TOLD 'mim:<subject>-<pair>'), marked only when shown. It takes the break before the phase card, on the same
+// conditions. Its photos (mimPics) show one observation and one subject each (rule P3), never one of a species whose look
+// varies by region taken outside the region (species region, loc world); with no such photo, the card waits.
+const MIMC = {KEY: 'mim'};
+const mimTok = id => `mim:${SUBJ.id}-${id}`;
+const mimSeen = id => !!(store.get(subjDev(SUBJ.id, MIMC.KEY), null) || {})[id] || toldHas(mimTok(id));
+// A photo the card may show: one subject in view (its tags' count 1 or s, or no tags), no watermark (the judged flag w, as
+// Home's tiles), not from outside the region of a species flagged regional (reg).
+const mimPhotoOk = (p, reg) =>
+  !!p &&
+  !p.multi &&
+  (!p.jt || /^[1s]$/.test(String(p.jt).charAt(6))) &&
+  !/w/.test(String(p.jt || '').slice(7)) &&
+  !(reg && p.loc === 'world');
+// The card's two photos for entry m (app.js mimLay), shown with photo p on unit n: p itself when it may show, else another
+// of its species at the stage that resembles, from n's photos; and one of the species it resembles from that species'
+// family, a juvenile when the pair names its juveniles, else an adult first. Each list in its easy order. For a species
+// flagged regional, the form met here first: a photo from near Dauin, then from the Philippines, each the subject's
+// larger views first (the tags' size: large, medium, small). null: none.
+function mimPics(m, p, n) {
+  const st = (m.pair.st || {}).b || 'all',
+    stage = (x, s) => s !== 'juvenile' || phaseOf(x) === 'juvenile',
+    here = x => (x.loc === 'dauin' ? 0 : 3) + Math.max(0, 'lms'.indexOf(String(x.jt || '').charAt(5))),
+    near = (L, reg) => (reg ? (L.map((x, i) => [x, here(x), i]).sort((u, v) => u[1] - v[1] || u[2] - v[2])[0] || [])[0] : L[0]),
+    A = [p, ...(((GX(n) || {}).views || {}).wide || [])].filter(x => x && x.sp === m.sp && stage(x, m.st) && mimPhotoOk(x, m.ra)),
+    B = (((GX(m.fb) || {}).views || {}).wide || []).filter(x => x.sp === m.pair.b && stage(x, st) && mimPhotoOk(x, m.rb)),
+    Bs = st === 'all' && B.some(x => !phaseOf(x)) ? B.filter(x => !phaseOf(x)) : B,
+    a = near(A, m.ra),
+    b = near(Bs, m.rb);
+  return a && b ? [a, b] : null;
+}
+// The first photo of L (the photos shown, each with its unit: {n, p}) whose pair's card is due: {n, p, m}, else null.
+function mimCardOf(L, seen) {
+  for (const {n, p} of L || []) {
+    const m = n && p ? mimOf(n, p) : null;
+    if (m && !seen(m.pair.id) && mimPics(m, p, n)) return {n, p, m};
+  }
+  return null;
+}
+function mimArm(nb, cur, L, hold) {
+  if (!photoQuiz(cur) || hold || !mimCardOf(L, mimSeen)) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const c = mimCardOf(L, mimSeen),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    mimShow(c, true);
+    return true;
+  });
+}
+// A source's short form on the card, its title's first part and its page (Randall 2005, p. 317), linked when it has an
+// address.
+const mimSrc = L =>
+  (L || [])
+    .map(s => {
+      const pg = (String(s.t).match(/p\. \d+$/) || [''])[0],
+        h = String(s.t).split(', ')[0],
+        t = pg && h !== s.t ? `${h}, ${pg}` : h;
+      return s.u ? `<a href="${esc(safeUrl(s.u))}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t);
+    })
+    .join('; ');
+// c: {n, p, m} (mimCardOf); brk: shown at the break, so its close goes on to the next question.
+function mimShow({n, p, m}, brk) {
+  const two = mimPics(m, p, n);
+  if (!two) return null;
+  const [a, b] = two,
+    r = m.pair,
+    // each species by the name the player sees first (app.js cnFirst: the IMR name for a player at IMR), else its
+    // scientific name
+    imr = imrSaid(),
+    cn = x => cnFirst(x, imr),
+    nm = x => (cn(x) ? esc(cn(x)) : `<i>${esc(x.sci)}</i>`),
+    word = x => (phaseOf(x) === 'juvenile' ? ' (juvenile)' : ''),
+    fig = (x, t) => `<figure><img src="${img(x, 's')}" alt="${esc(cn(t) || t.sci)}"><figcaption>${nm(t)}${word(x)}</figcaption></figure>`,
+    marks = (r.marks || [])
+      .map(k => `<li><b>${nm(k.side === 'a' ? m.na : m.nb)}</b>: ${esc(k.t)} <small>(${mimSrc(k.src)})</small></li>`)
+      .join(''),
+    title = m.st === 'juvenile' ? 'Careful: this juvenile resembles another species' : 'Careful: this species resembles another one';
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'tipcard phasecard mimcard',
+    kick: 'Look-alikes',
+    title: esc(title),
+    body: `<div class="phvis">${fig(a, m.na)}${fig(b, m.nb)}</div><ul class="mimmarks">${marks}</ul><p class="mimsrc"><b>Resembles</b>: ${mimSrc(r.says)}</p><p class="credit">${[a, b].map(credit).join('<br>')}</p>`,
+    primary: {text: 'Got it', attr: 'disabled'},
+    esc: 1,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      if (how === 'route') return; // left unseen: it comes back with the next such photo
+      const k = subjDev(SUBJ.id, MIMC.KEY);
+      store.set(k, {...(store.get(k, null) || {}), [r.id]: Date.now()});
+      toldAdd(mimTok(r.id));
       if (brk) route();
     }
   });
@@ -1664,12 +1774,18 @@ let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answe
 // "This pair comes back as a duel in a moment": said the first 3 times only (else it comes with nearly every wrong
 // answer); the pair still comes back every time.
 // Queues the pair of a mix-up (CONTRAST.Q at most, a pair already waiting not twice). True when it is in the queue.
-const rematchAdd = (pair, at) => {
+// mim: the id of the mimicry pair when the photo missed was of the class and the answer the unit it resembles, kept on
+// the entry (a string, as the planner's snapshots copy it) so its Again shows the pair's species.
+const rematchAdd = (pair, at, mim = '') => {
   if (!Array.isArray(rematch)) rematch = rematch ? [rematch] : [];
-  const k = pair.slice().sort().join('|');
-  if (rematch.some(r => r.pair.slice().sort().join('|') === k)) return true;
+  const k = pair.slice().sort().join('|'),
+    r = rematch.find(x => x.pair.slice().sort().join('|') === k);
+  if (r) {
+    if (mim && !r.mim) rematch = rematch.map(x => (x === r ? {...x, mim} : x));
+    return true;
+  }
   if (rematch.length >= CONTRAST.Q) return false;
-  rematch = [...rematch, {pair, at}];
+  rematch = [...rematch, {pair, at, ...(mim ? {mim} : {})}];
   return true;
 };
 // It sits behind More on the short feedback sheet: it counts as told once More is opened (fbMoreBind), never for a sheet that
@@ -2173,7 +2289,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   // A contrast question (CONTRAST): the oldest pair a mix-up queued, CONTRAST.GAP questions after it and after the last one.
   const gap = at - twoAt >= CONTRAST.GAP;
   if (rematch.length && gap && at - rematch[0].at >= CONTRAST.GAP) {
-    const pair = rematch[0].pair,
+    const {pair, mim} = rematch[0],
       // The custom quiz asks only its own genera; and never a genus not met yet (one offered to make up the choices and
       // picked would be opened by the side door, with no card). Nor a unit the other choice names (model.js choiceNames:
       // outside IMR, "Longnose butterflyfish" is a listed name of F. flavissimus, so its Again asks F. longirostris
@@ -2190,13 +2306,15 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       // During a comeback an Again still follows a miss (it corrects it), as a comeback question.
       rustNow();
       const R = cbIn(cur) ? recallAt(t) : 1;
+      // The Again of a mix-up on a photo of the mimicry class (rematchAdd mim) shows the pair's species on either side
+      // (model.js mimKeep), when that side's draw holds one now.
       return Object.assign(
         [
           cur,
           t,
           shuffle(pair.slice()),
           `Again: ${uname(pair[0])} or ${uname(pair[1])}?`,
-          photoSet(t, null, Math.log(R) + ease, 2, 'again')
+          photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))
         ],
         {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
@@ -2247,11 +2365,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     if (pair) {
       twoAt = at;
       twoPair = key(pair);
-      const t = pick(pair);
+      const t = pick(pair),
+        k = mimKeep(pair.mim, pair, t); // a pair of the mimicry class (duelPick): its species
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel')],
+        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel', k)],
         {auto: twoPair, ...(sel ? {custom: 1} : {})}
       );
     }
@@ -2294,14 +2413,21 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, pfmt).
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
+    // The mimicry class drilled (model.js mimUnit, mimTrap): a photo of the class makes the unit of the species it
+    // resembles a trap, once met and in play, in the place of the weakest trap; only on a question that has a trap at
+    // all (traps, the exam's included), never typed or on its unit's own card. It counts as plausible (k) there.
+    mu0 = typed || !traps || cards.includes(t) ? null : mimUnit(t, (set.shown || [])[0]),
+    mu = mu0 && known(mu0) && (sel || list.filter(n => !cards.includes(n))).includes(mu0) && !choiceNames(mu0, t) ? mu0 : null,
+    chm = mimTrap(t, ch, mu),
+    fewm = sel ? chm.filter(n => n !== t && (n === mu || confusable(t, n))).length < 2 : few,
     // The question asked with its genus's card never shows the card's own photo again.
     q = [
       cur,
       t,
-      ch,
+      chm,
       typed ? `Which ${GX(t).one || SUBJ.one}? Type it` : `Which ${GX(t).one || SUBJ.one}?`,
       typed ? {...set, typed: 1} : set,
-      few ? plausibleK(t, ch) : 0
+      fewm ? plausibleK(t, chm, mu) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
   if (typed) q.typed = 1;
@@ -2334,14 +2460,18 @@ function duelPick(list, keep = () => true) {
   // look-alike the Coral Finder names) and the look-alikes from the data (model.js dataLooks), when both are in the list.
   // Never two units one label names (model.js choiceNames: two fish species may share a common name): such a duel would
   // read "Brown damsel or Brown damsel?", and either answer is right.
-  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(
+  // The pairs of the mimicry class too (model.js mimPairs: once their card was shown, mimSeen), each carrying its pair's
+  // id (mim), so the duel shows the pair's species (mimKeep).
+  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list), ...mimPairs(list, m => mimSeen(m.pair.id))].filter(
     ([x, y]) => list.includes(x) && list.includes(y) && !choiceNames(x, y) && !choiceNames(y, x) && keep([x, y])
   );
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
-  // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
+  // the classic look-alikes (compared in the IMR lecture or the Coral Finder text), the mimicry class's among them.
   const w = ps.map(
-      ([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)
+      p =>
+        (weight(p[0]) + weight(p[1])) *
+        (mixedUp(p[0], p[1]) && confusable(p[0], p[1]) ? 3 : confusable(p[0], p[1]) || isClassic(p[0], p[1]) || p.mim ? 2 : 1)
     ),
     t0 = w.reduce((p, q) => p + q, 0);
   let r = Math.random() * t0;
@@ -2379,7 +2509,7 @@ function planDuel(a, b) {
   // hold is on (model.js holdEase), as every question of the photo quiz but an exam: the photo and the single views aim
   // lower (photoSet's shift; a duel has its two choices, no traps). The expectation logged is the photo's own (answer),
   // so it stays that of the photo shown.
-  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel');
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel', mimKeep(pair.mim, pair, t));
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `${uname(pair[0])} or ${uname(pair[1])}?`, set];
 }
 // The Duel tab's relief card (docs/ARCHITECTURE.md "The Duel tab's relief card"): the Duel tab keeps drilling one pair
