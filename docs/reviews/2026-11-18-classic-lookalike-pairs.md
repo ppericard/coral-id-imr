@@ -21,6 +21,10 @@ The pair he named is *Paraluteres prionurus* with *Canthigaster valentini*.
 
 **Nothing enters the game.** No game file, tool or app code changes.
 
+**Answered.** Pierre answered the four questions on 2026-11-18 (about 10:54-10:55 Manila), with a correction to (b),
+and asked for an out-of-region warning: §10 quotes him, §1.2 and §9.5 carry his correction and his warning, and §6.2
+what the Coral Finder says about the four starred genera.
+
 **Labels** (rule W11):
 
 - **[read]**: taken from the page or the PDF itself, and quoted;
@@ -76,6 +80,15 @@ observers near Dauin [guess: the threshold is mine].
 - A classic pair whose second member is rarer stays in the list, flagged: the trap runs from the common species toward
   the rare one, so the card still helps.
 - Pairs below the threshold on the resembling side, or with a member never observed near Dauin, are in §7.
+
+**What the counts measure** (Pierre, 2026-11-18, answering (b): "'rare' parce que les gens ne les prennent pas
+spécifiquement en photos. C'est le problème des mimics ^^ Mais globalement pas rares aux Philippines"):
+
+- An iNaturalist observer count measures what people photograph and post, not how abundant a species is.
+- A species that resembles another is undercounted most: divers take it for its model and do not photograph it for
+  itself, or post it under the model's name.
+- So these counts rank pairs and flag where photos may be short. They never drop a pair on their own: a pair leaves
+  the list only when a source, Pierre or an IMR trainer says it is not met here.
 
 ### 1.3 Sources
 
@@ -187,7 +200,8 @@ The species named in the text but **not in the game data** are marked "not in ou
     juveniles resemble *C. flavissima* (not in our data), and "it would seem that the juvenile surgeonfish has the
     capability of mimicking either species of Centropyge". So which model each of our juvenile photos copies is
     **not verified** [guess: some may show the yellow *C. flavissima* form]. Pierre's eye on the 18 is needed before
-    they serve this card.
+    they serve this card. His answer (2026-11-18): "Merci de mettre un warning sur ces cas", the general warning of
+    §9.5.
 - **Already in the data**: the juvenile class B, "late" (`fish.json` Surgeonfishes `juv`), with its sources.
 
 ### M2. *Paraluteres prionurus* (Mimic filefish) and *Canthigaster valentini* (Black-saddled toby)
@@ -599,11 +613,33 @@ The four:
 | *Duncanopsammia* | *Turbinaria*, *Tubastraea* | Same box ("Vases or tiers"; "No axial corallite > 2 mm") | "Corallites about 6 mm (Turbinaria 2-3 mm)" |
 
 - *Cyphastrea*, the fifth, has its card (*Astreopora* / *Cyphastrea*).
-- Two of the four cards already compare their pair in words: *Alveopora* with *Goniopora*, and *Duncanopsammia* with
-  *Turbinaria*. If those words come from a Coral Finder page or the lecture, the pair would qualify as a classic; the
-  `crit` lines carry no page.
-- Settling the source is not mine (rules C1, C2, C5). The right step is a point in `points.json` for Pierre to check the
-  Coral Finder pages, or a Coral Finder page reference added to those `lsrc` lines (§10 (d)).
+
+**What the Coral Finder says** (Pierre, 2026-11-18, 10:55: "Techniquement tu as accès au pdf du coral finder dans mon
+drive"). Read only, through the Google Drive connector; nothing copied, downloaded into the repository or sent out:
+
+- **Coral Finder 2022** ("Coral Finder 2022.pdf", the edition the deck cites) is on his Drive, but it is 85 scanned
+  pages with no text layer (HANDOVER "Coral Finder 2022"). The connector returns only page markers for it, and the
+  whole file (51 MB) is too large to bring in as an image. So its pages could **not** be read.
+- **An earlier printing** ("Coral finder.pdf", © Russell Kelley 2009, on the same Drive) has a text layer and was read.
+  Its pages are numbered by look-alike page (1 to 29), not as the 2022 book. The 2022 pages below are the ones
+  `data.json` `pages` gives each genus (mapped from the 2022 scan when the coral data was built).
+
+| Pair | What the earlier printing says (our words, a short quotation at most) | 2022 page (`data.json` `pages`) | Classic? |
+|---|---|---|---|
+| *Alveopora* / *Goniopora* | Same page, "Large daytime expanded polyps": *Alveopora* polyps have 12 tentacles and a light skeleton; *Goniopora* has 24 tentacles and a denser skeleton. Each text names the other. | p. 71 (both) | **Yes**: the two are compared in words, as the genus cards' `crit` already say |
+| *Halomitra* / *Herpolitha* | Same page, free-living with many mouths: *Herpolitha* elongate with an axial furrow and secondary mouths; *Halomitra* a light round dome with widely spaced corallites inclined to the margin. The page's comment sets them apart by shape: *Herpolitha* "like skateboards", the others "inverted bowls". | p. 65 (*Herpolitha*), p. 66 (*Halomitra*) | **Yes**, by the page's comment; which 2022 page carries it is to confirm |
+| *Merulina* / *Hydnophora* | Different pages. *Merulina* is compared only with *Platygyra*, *Leptoria* and *Goniastrea* (plates, upgrowths, short valleys fanning out); *Hydnophora*'s massive page says "see also *Merulina*", a pointer to another book, not a comparison. | none shared (*Merulina* 12, 17, 51, 62, 75; *Hydnophora* 11, 41, 43) | **No** in this printing |
+| *Duncanopsammia* / *Turbinaria* | The printing's *Duncanopsammia* is the branching *D. axifuga* (tubular corallites 10-14 mm), on the branching page beside *Tubastraea* and *Echinopora*, set against *Acropora*; *D. peltata* was still *Turbinaria peltata*, so no text compares the two genera. | p. 50 shared (vases or tiers); *Duncanopsammia* also 9 and 74 | **Not in this printing**; the 2022 page 50 may differ |
+
+- **Proposed `lsrc` lines** for the two that qualify, in the deck's form (a follow-up data PR through
+  `tools/datajson.py`, rule W16; the integrator's call, easy to correct, since `look` already holds both pairs and only
+  the Learn deck reads the line's source):
+  - *Alveopora* / *Goniopora*: "Coral Finder p. 71: Alveopora 12 tentacles, Goniopora 24".
+  - *Halomitra* / *Herpolitha*: "Coral Finder p. 65-66: Herpolitha elongate, Halomitra a domed disc".
+- **The other two stay out of the deck** until the 2022 pages are read (rule C2). Pierre's answer (d) asked for a point
+  if the PDF could not be read: the point `coral-finder-starred-pages` in `points.json` (Inbox › To do › Points) asks
+  him to look at the 2022 pages for *Merulina* / *Hydnophora* and *Duncanopsammia* / *Turbinaria*, and to confirm the
+  page of the *Halomitra* comment.
 
 Other local pairs that share only a box or an IMR group are not proposed:
 
@@ -618,7 +654,10 @@ branching or encrusting hard coral is a question for an IMR trainer, not for thi
 
 ## 7. Considered and left out
 
-### 7.1 In the data, not commonly seen near Dauin [measured]
+### 7.1 In the data, few observers near Dauin [measured]
+
+Few observers is not rarity (§1.2): these stay candidates, left out of the 27 only because no player is likely to
+meet them soon, not because they are rare.
 
 Mimicry pairs that a source states:
 
@@ -807,7 +846,27 @@ What follows from it:
 - **This moves the draw, so it moves progress**: a rules version (rule D5), the sheet's replay, and the check of rule
   L11 (the species step 2 plan's ~40 minutes of machine time sets the scale).
 
-### 9.5 Effort, in agent time [guess]
+### 9.5 The out-of-region warning (Pierre, 2026-11-18)
+
+Pierre, on the *A. pyroferus* juvenile photos: "Merci de mettre un warning sur ces cas". The case is general: some taxa
+look different by region, according to a source (a regional mimic such as *A. pyroferus*, whose juveniles resemble *C.
+vrolikii* in the western Pacific and *C. flavissima* farther east; a local colour form). A photo of such a taxon taken
+outside the region shows a form players may never meet here. Built later, with the variant classes:
+
+- **The flag**: a taxon whose look varies by region carries the reason and its source (for *A. pyroferus*, Randall 2005,
+  p. 320-321, and FishBase), in the subject's source file, as `photoTaxon` already carries its reason and source.
+- **The badge**: in the admin, every photo of such a taxon taken outside the Philippines region (its `loc`: `world`)
+  shows a ⚠ badge with the reason and the source.
+- **The default**: those photos stay out of the explanation cards (§9.2, the first meeting of a mimicry photo) and of
+  the feature frames (the photos a card or a sheet puts forward to show a mark).
+- **One click lifts it**: Pierre lifts the warning on a photo he has checked, as any other admin tag (one click with
+  Undo, rule A2); the photo then serves cards and frames as any other.
+- **What it does not do**: the photo stays in play and in the quiz; the warning only keeps it from teaching the
+  regional form.
+- **Who else**: the same flag serves any taxon a source describes as regional, fish or sea slug; none other is
+  flagged in this study.
+
+### 9.6 Effort, in agent time [guess]
 
 | Step | Agent time |
 |---|---|
@@ -816,10 +875,11 @@ What follows from it:
 | The mimicry variant kind and its partner gate, the rules version, the L11 check (machine time apart) | about 3 to 4 h |
 | The per-photo traps across units (FISH_PATH view 2) | about 3 h |
 | Fish species pairs in the admin's structure editor (after #1075) | about 2 h |
+| The out-of-region flag, its admin badge and its default (§9.5) | about 2 h |
 
 The last three wait on species step 2's answers (Q394-Q398) where they touch species units.
 
-## 10. What is Pierre's to validate
+## 10. What is Pierre's to validate, and his answers
 
 **Rules that apply**:
 
@@ -839,28 +899,22 @@ The last three wait on species step 2's answers (Q394-Q398) where they touch spe
 - their layout;
 - the photo pick before Pierre's own.
 
-Questions prepared for the integrator, each with a recommendation:
+**Pierre's answers** (2026-11-18, about 10:54-10:55 Manila, relayed by the integrator), to the questions this study
+asked:
 
-- **(a) Which pairs enter play.**
-  - Recommended: the seven mimicry pairs M1-M7, each stated by a source, as declared pairs, and the twelve confusions
-    C1-C12 as declared species pairs at species step 2.
-  - Two of them could enter now as family pairs, each family having one species here: C11 (cornetfish / trumpetfish)
-    and M7 (convict blenny / striped catfish).
-  - A single yes covers the list. Rule W10: the list is shown once, never item by item.
-- **(b) The rare partner.**
-  - Pairs where one member is seldom seen near Dauin: M2's filefish (3 observers), C1, C6, C7, S2, S8.
-  - Should they enter as pairs or stay Learn cards? Recommended: enter. The trap runs from the common species toward the
-    rare one, and Pierre named M2 himself.
-- **(c) Pairs with no mark yet** (S4, *C. lochi* / *C. willani*; C4 and C9 with one mark each).
-  - A card with one sourced mark, or wait for a second?
-  - Recommended: one sourced mark is enough for a card. A pair with none stays out of the deck.
-- **(d) Corals: the four starred genera without a card** (§6.2).
-  - Recommended: a point in `points.json` for Pierre to check the Coral Finder pages that compare *Alveopora* with
-    *Goniopora* and *Duncanopsammia* with *Turbinaria*, as the genus cards already do in words.
-  - Nothing changes in the deck until a page is cited (rule C2).
-
-The *A. pyroferus* juvenile photos (§3, M1, §8) are not a question: the integrator reminds Pierre once that they need
-his eye before the card uses them (rule W10).
+- **(a) Which pairs enter play**: "ok". M1-M7 enter play now as declared pairs; C1-C12 come with species step 2
+  (#1041). C11 and M7, each between two one-species families, can be family pairs from now on.
+- **(b) The pairs with a member few people photograph near Dauin** (M2's filefish, C1, C6, C7, S2, S8): yes, they stay,
+  with his correction: "'rare' parce que les gens ne les prennent pas spécifiquement en photos. C'est le problème des
+  mimics ^^ Mais globalement pas rares aux Philippines". §1.2 now says what the counts measure, and that they never drop
+  a pair on their own.
+- **(c) A card with one sourced mark**: "ok". One sourced mark is enough for a card; a pair with none (S4, *C. lochi* /
+  *C. willani*) stays out of the deck until a mark is found.
+- **(d) The four starred corals**: "ok" to a point, then (10:55) "Techniquement tu as accès au pdf du coral finder dans
+  mon drive". The reading is in §6.2: two pairs qualify, the other two wait on the 2022 scan, in one point of
+  `points.json`.
+- **The *A. pyroferus* photos**: "Merci de mettre un warning sur ces cas": the general out-of-region warning of §9.5,
+  built later with the variant classes.
 
 ## 11. Searches run and pages read
 
@@ -917,6 +971,9 @@ All on 2026-11-18, between 10:25 and 10:47 Manila (the clock read at the end).
 - **English Wikipedia**: "Spot-tail butterflyfish", "Chromis atripectoralis".
 - **FAO repository**: "Fishes of the Maldives" (BOBP/MAG/021), the angelfish part (`ad471e39.pdf`, two requests
   through a redirect); one HEAD request on a FAO guide PDF the repository already cites.
+- **Pierre's Google Drive** (read only, the Google Drive connector, 2026-11-18 about 11:00 Manila): a title search for
+  "Coral Finder"; "Coral Finder 2022.pdf" (page markers only: scanned, no text layer); "Coral finder.pdf" (the 2009
+  printing, its text read; nothing saved in the repository).
 - **Not readable**:
   - Reef Life Survey (*Aspidontus taeniatus*, *Labroides dimidiatus*: HTTP 403);
   - zoores.ac.cn (a rate-limit page, one request).
