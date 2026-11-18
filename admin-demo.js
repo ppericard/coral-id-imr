@@ -759,7 +759,7 @@
           };
           if (prof === 'ra') {
             add(P, 'home', 1, vint(5, 30));
-            for (let i = vint(1, 3); i--; ) sheet(vpick(['learn', 'learn', 'progress']));
+            for (let i = vint(1, 3); i--;) sheet(vpick(['learn', 'learn', 'progress']));
             if (vr() < 0.5) add(P, 'learn.look-alikes', 1, vint(60, 300));
             add(P, 'progress', 1, vint(30, 200));
           } else if (prof === 'anon') {
@@ -771,7 +771,7 @@
             p0 = vr() < 0.6 ? 'identify.key' : 'home';
             if (p0 === 'home') add(P, 'home', 1, vint(5, 25));
             add(P, 'identify.key', vint(1, 2), vint(180, 1100));
-            for (let i = vint(0, 3); i--; ) sheet(vpick(['learn', 'other', 'other']));
+            for (let i = vint(0, 3); i--;) sheet(vpick(['learn', 'other', 'other']));
             if (vr() < 0.3) add(P, 'learn.compare', 1, vint(40, 200));
             if (vr() < 0.3) add(P, 'tools.anatomy', 1, vint(60, 300));
           } else if (prof === 'second') {
