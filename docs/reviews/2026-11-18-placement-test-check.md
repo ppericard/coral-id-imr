@@ -1,8 +1,9 @@
 # Placement test check: do 10-15 questions place a player? (2026-11-18)
 
 Status: study, read-only. No app code, data file, photo or sheet cell was changed; the sheet was read through the Google
-Sheets connector, every extract stayed in the session's scratchpad. Aggregates only: no name, no per-player row. Pierre's
-choices are in the last section, as (a), (b)…; the integrator numbers the ones that need a number.
+Sheets connector, every extract stayed in the session's scratchpad. Aggregates only: no name, no per-player row.
+**Decided** by Pierre on 2026-11-18 (about 10:55 Manila): choices (a), (b) and (c) all yes; see "Pierre's answer" at the
+end. Nothing is built by this study: the calibration set and the opt-in test are later work.
 
 Why it exists. Pierre, 2026-11-18: would a short placement test work, a hidden one by default (the first 10-15
 questions chosen to estimate the player's level) plus an explicit one players may take or skip? "Est-ce que 10 à 15
@@ -253,19 +254,31 @@ adaptive with ratings off by 0.8. Monte Carlo, 3,000 tests a cell (±0.01-0.02).
   against a lucky start: that places the ends 8-9 times in 10 and the middle about 4 times in 10. 10-15 questions place
   the ends 7.5-9 times in 10.
 - **What its result sets**: variables only (rule L10: the prior p and Coral basics), never a path; its answers count
-  like any answer in progress and photo ratings (rules D9, L3).
+  as evidence like any answer (rules D9, L3), on a unit not opened too, without opening it (Pierre's answer, below).
 - **A check**: learnsim needs an option that runs a test before the quiz (rule L11 level 1, the app world), then the real
   log once players take it (L12).
-- **Effort** [guess, agent time]: the calibration set and its exposure, about half an agent-day plus the players' time
-  to answer (weeks); the test (engine, card, record, tests, the learnsim option and its check), about two agent-days.
+- **Effort** [guess, agent hours]: the calibration set and its exposure, about 4 agent hours, plus the players' time
+  to answer (weeks); the test (engine, card, record, tests, the learnsim option and its check), about 16 agent hours.
 
-## Choices for Pierre
+## Choices for Pierre (answered: "Pierre's answer", below)
 
 - **(a)** No hidden placement test; the first-launch question and the level card stay as they are. Recommended.
 - **(b)** If a test comes: may it ask about units the player has not opened yet (an exception to rule L4, one
   progression path)? Without it, a test cannot tell an expert from a good beginner on their first answers.
 - **(c)** Start a coral calibration set now (a fixed set of about 50 photos shown a little more often until each has
   20 answers), so an opt-in test can be built later? Recommended only if (b) is yes.
+
+## Pierre's answer (2026-11-18, about 10:55 Manila)
+
+"ok" to the recommendation, which decides (a), (b) and (c):
+
+- **(a) No hidden test now.** The first-launch question and the level card stay as they are.
+- **(c) First, a coral calibration set**: about 50 photos, each until it has 20 or more answers, drawn a little more
+  often in normal play, never as hidden probes.
+- **Then (b), an explicit opt-in test** of 20-25 adaptive questions, which may ask about units the player has not
+  opened. Those answers count as evidence on the unit without opening it, as Pierre decided the same morning for the
+  live mode's answers (rule L4's new line: other modes' answers may count on a locked unit, never opening it). The test
+  sets only the starting variables (rule L10), never a path.
 
 ## What this can conclude (rule A5)
 
