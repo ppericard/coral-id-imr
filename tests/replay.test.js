@@ -140,7 +140,7 @@ test('a progress reset: only the answers after it', () => {
 test('replayedOf: the replayed bars with the saved exams, not one passed under the former model', () => {
   const rep = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'C', 'C', 'c0', 'C D E A')], {gen: GEN}).p;
   const saved = {
-    A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned since 2026-11-02: kept
+    A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned under the current model: kept
     C: {L: 0.97, mx: 1, ok: 1, ko: 0, h: '1'}, // learned under BKT: dropped
     D: {pg: 0.82, ex: {k: 2, v: ['wide'], at: 40}, ok: 9, ko: 0, h: '111111111'}, // no answer in the log: dropped (rule D9)
     '~level': {ok: 5, ko: 1, th: 0.3}
@@ -181,7 +181,7 @@ test('tools/memreplay.js prints the replay of a sample log', () => {
   assert.match(out, /Acropora\s+6 answers {2}bar \d+% -> \d+% \(silent recalculation \d+%\)/);
 });
 
-// The sheet's full replay, adopted by the app (2026-11-03): the rules versions, the complete record, going on from a replay.
+// The sheet's full replay, adopted by the app: the rules versions, the complete record, going on from a replay.
 test('RVS: one entry per rules version, RV the last; messages of the versions skipped', () => {
   assert.ok(C.RVS.length >= 1);
   C.RVS.forEach((x, i) => {
@@ -192,12 +192,11 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
     if (x.msg && x.msg.only) assert.strictEqual(x.msg.only, 'changed', 'only: the one condition progress.js rvNoticeAdd knows');
     if (x.msg && x.msg.min !== undefined) assert.ok(x.msg.min >= 0, 'min: points of progress %');
   });
-  // The standard card every version takes (Pierre, 2026-11-03): only to the players whose % moves by 5 points or more.
+  // The standard card every version takes: only to the players whose % moves by 5 points or more.
   assert.deepStrictEqual([C.RV_CARD.only, C.RV_CARD.min], ['changed', 5]);
   assert.match(C.RV_CARD.p, /\{from\}%.*\{to\}%/);
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
-  // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
-  // (Pierre, 2026-11-03).
+  // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %.
   assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
   // A device that skips several versions with the standard card sees it once, at the last of them (the versions before
   // rules version 9's apology).
@@ -211,7 +210,7 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
     [SV - 1],
     'the versions before the apology have the standard card: one card'
   );
-  // The domain-score bar's apology (rules version 9, Pierre 2026-11-06; PR #611's card, Q109): every player whose %
+  // The domain-score bar's apology (rules version 9): every player whose %
   // moved by a point, its PS from the sheet's Notes tab; in a jump it replaces the standard card (it says more).
   assert.strictEqual(SV, 9);
   assert.deepStrictEqual(
@@ -234,16 +233,16 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
     C.rvMsgs(SV - 1, SV).map(x => x.v),
     [SV]
   );
-  // Rules version 10 (the log the only reference, Q322, Q330): no card, nor any card of the versions a jump to it skips.
+  // Rules version 10 (the log the only reference): no card, nor any card of the versions a jump to it skips.
   assert.strictEqual(C.RVS[9].msg, null, 'no card (Pierre, 2026-11-09, Q330)');
   assert.deepStrictEqual(C.rvMsgs(0, 10), [], 'nor a card of a version skipped');
   assert.deepStrictEqual(C.rvMsgs(9, 10), []);
   assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
 });
 
-// Rules version 3 (Codex P1 on #422): the hierarchical photo Elo (sheet v31) adds the genus offset to the expectation the
-// photo memory offsets are fitted against, so the offsets the sheet hands replayProgress move, and with them the bars of a
-// log with repeated photos. Hence a new rules version, so every player adopted under v1 or v2 is replayed again.
+// Rules version 3: the hierarchical photo Elo adds the genus offset to the expectation the photo memory offsets are
+// fitted against, so the offsets the sheet hands replayProgress move, and with them the bars of a log with repeated
+// photos. Hence a rules version of its own, so every player adopted under rules version 1 or 2 is replayed again.
 test('RVS v3: the genus offset moves the memory offsets, and the replayed progress with them', () => {
   const rows = [];
   let t = Date.UTC(2026, 10, 3, 6, 0, 0);
@@ -264,7 +263,7 @@ test('RVS v3: the genus offset moves the memory offsets, and the replayed progre
       'Acropora Porites Favites Montipora'
     ]);
   }
-  // The offsets this log gave before the genus offset (core.js of #399, rules version 1), measured once.
+  // The offsets this log gives without the genus offset (rules version 1), measured once.
   const before = [0, 0.47, -0.79, -1.66],
     now = C.photoMemOf(rows).mem;
   assert.notDeepStrictEqual(now, before, 'the genus offset changes the memory offsets');
@@ -312,8 +311,8 @@ test('replayProgress: the ability, the run, the global level and the times, as q
     if (P[C.LEVEL]) P[C.LEVEL][ok ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d + cf, k);
-    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
-    // The genus given: no Elo step (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo").
+    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7)
+    // The genus given: no Elo step (docs/LEARNING.md "The genus wrongly given in the Elo").
   });
   assert.ok(cfs > 0, 'the mix-up of A with B makes the next question on A harder for this player');
   assert.deepStrictEqual([R.A.th, R.A.vr, R.B.th, R.C.th], [P.A.th, P.A.vr, undefined, P.C.th], 'B, only given wrongly: no ability');
@@ -436,12 +435,12 @@ test('mergeProgress: a record adopted from the replay wins over the copy of the 
   assert.deepStrictEqual([moved.A.pg, moved.A.ok, moved.A.rv], [0.3, 3, undefined]);
 });
 
-// Typed answers (2026-11-03; model.js TYPED, quiz.js answer): the player types the genus, logged quiz|t (quiz|t|x in the
+// Typed answers (model.js TYPED, quiz.js answer): the player types the genus, logged quiz|t (quiz|t|x in the
 // mastery exam) with no choices, the genus read as the answer ('' for "I don't know"). The app scores them with no guess
 // rate (TYPED.k infinite) and a right one in full; the replay must rebuild the same record from the log. The app's side
 // below is quiz.js answer step by step, with model.js's own TYPED, pgWeight, ability, abilityStep and aimP (run from its
 // source): the ability (th, vr), the level it was stepped against (lt) and the global level as the game steps them
-// (Calibration step 2, #415: a genus moves with the global level; the miss weighed against the aim at the player's
+// (Calibration step 2: a genus moves with the global level; the miss weighed against the aim at the player's
 // level), the replay the same.
 test('typed answers: the replay of the log rebuilds the progress the app scored live, its abilities (th, lt) included', () => {
   const vm = require('vm'),
@@ -524,7 +523,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k);
-    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
+    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7)
     ph.forEach(f => {
       const y = ((s.ps = s.ps || {})[f] = s.ps[f] || [0, 0]);
       y[0]++;
@@ -639,7 +638,7 @@ test("replayBase: the shared history only, never this device's unsent answers (C
   assert.strictEqual(base[C.LEVEL].ok, 2);
 });
 
-// Response time (rules version 4, 2026-11-04; core.js RTIME, rtWeight, rtAdd; docs/LEARNING.md "Response time"): the
+// Response time (rules version 4; core.js RTIME, rtWeight, rtAdd; docs/LEARNING.md "Response time"): the
 // app weighs a right answer's two ability steps by its seconds against the player's earlier timed answers, kept in the
 // global level's record (P[LEVEL].rt); the sheet's replay of the log, which reads the same seconds, rebuilds the same
 // abilities and the same record, from scratch or going on from an earlier replay.
@@ -689,7 +688,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
       if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
       else P[C.LEVEL] = C.levelSeed(P);
       abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k, rw);
-      s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
+      s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7)
       C.rtAdd(P[C.LEVEL], rt, k);
       log.push({
         id: 'a' + i,
@@ -715,7 +714,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko], [P[C.LEVEL].ok, P[C.LEVEL].ko], why);
     assert.deepStrictEqual(R[C.LEVEL].rt, P[C.LEVEL].rt, why);
   };
-  // The app weighs its steps by the time (sheet v32, below the gate floor core.js SHEET_FLOOR).
+  // The app weighs its steps by the time (every script at or above the gate floor core.js SHEET_FLOOR does).
   const on = live(),
     rows = on.log.map(a => C.logRow(a, 'me'));
   assert.ok(on.ws.filter(w => w !== 1).length > 20, 'many right answers weighed by their time');
@@ -737,7 +736,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   assert.deepStrictEqual(C.replayBase(rep.P, C.replayedOf(rep, {}, C.RV), C.RV, {})[C.LEVEL].rt, on.P[C.LEVEL].rt);
 });
 
-// rtMedian keeps the record's sorted keys beside it (admin speed, 2026-11-04): the same medians as sorting them each time,
+// rtMedian keeps the record's sorted keys beside it (the admin's speed): the same medians as sorting them each time,
 // through a long record built answer by answer, a record changed outside rtAdd, and a copy of it.
 test('response time: the median with the kept sorted keys equals the median sorted afresh', () => {
   const ref = rt => {
@@ -800,8 +799,7 @@ test('response time: the median of the earlier times, the weight, and the record
   assert.deepStrictEqual(C.mergeProgress(B, P, R)[C.LEVEL].rt, {50: 3, 60: 1, 70: 1, 45: 1});
 });
 
-// Codex review #428 (P1): the live game applies the first-launch prior as the sync script replays it (sheet v36, below
-// the gate floor core.js SHEET_FLOOR; model.js startP), every subject alike.
+// The live game applies the first-launch prior as the sync script replays it (model.js startP), every subject alike.
 test('the first-launch prior in the live ability, as the sheet replays it (Codex review #428)', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
@@ -824,7 +822,7 @@ test('the first-launch prior in the live ability, as the sheet replays it (Codex
   assert.strictEqual(at(C.subjectOf('fish')), at(), 'fish: the same');
 });
 
-// Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOf, fmtOffsetsOf, fmtOff; rules version 6).
+// Per-format offsets (core.js fmtOf, fmtOffsetsOf, fmtOff; rules version 6).
 test('fmtOffsetsOf: a format right more often than its guess rate explains gets a positive offset, from trusted answers', () => {
   const rows = [];
   // Two trusted players: 4-choice questions as expected (80% right at e 0.8), 2-of-4-plausible ones right 95% of the
@@ -850,7 +848,7 @@ test('fmtOffsetsOf: a format right more often than its guess rate explains gets 
   assert.strictEqual(C.fmtOff(F, 'k2'), F.k2[0]);
   assert.strictEqual(C.fmtOff(F, 'exam'), 0);
   assert.strictEqual(C.fmtOff(null, 'k2'), 0);
-  // Read from a ?stats=1 reply (sheet v77), {} from one without them.
+  // Read from a ?stats=1 reply, {} from one without them.
   assert.deepStrictEqual(C.fmtsOf({fmt: F}), F);
   assert.deepStrictEqual(C.fmtsOf({v: 200}), {});
   assert.deepStrictEqual(C.fmtsOf(null), {});
@@ -865,17 +863,18 @@ test('replayProgress with the format offsets: a right 2-choice answer the format
   }
   const th = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.th,
     lv = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P[C.LEVEL].th;
-  // No offsets (an older sheet), or none for this format: exactly as before.
+  // No offsets (an older sheet), or none for this format: exactly as without them.
   assert.strictEqual(th({fmt: {}}), th({}));
   assert.strictEqual(th({fmt: {k4: [0.5, 100]}}), th({}));
   // An offset of +1 on Again questions (2 choices shown): each right answer was expected more, so it moves less, and
   // each miss more; the global level the same way.
   assert.ok(th({fmt: {again: [1, 100]}}) < th({}), [th({fmt: {again: [1, 100]}}), th({})].join(' '));
   assert.ok(lv({fmt: {again: [1, 100]}}) < lv({}));
-  // The domain-score bar takes the offset too (rules version 9, Q146): the right answers the format explains prove less.
+  // The domain-score bar takes the offset too (rules version 9): the right answers the format explains prove less.
   const ds = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.ds;
   assert.ok(ds({fmt: {again: [1, 100]}}) < ds({}), [ds({fmt: {again: [1, 100]}}), ds({})].join(' '));
-  // The moving average (a record of the former rules, dom: false) replays the same as before: the offsets are not its.
+  // The moving average (a record of the former rules, dom: false) replays the same with or without them: the offsets
+  // are not its.
   assert.strictEqual(
     C.replayProgress(rows, {gen: GEN, dom: false, fmt: {again: [1, 100]}}).p.P.A.pg,
     C.replayProgress(rows, {gen: GEN, dom: false}).p.P.A.pg
@@ -899,7 +898,7 @@ test('the format offset is scored by scoreAnswer, logged in the scoring record (
   assert.deepStrictEqual([r1.e, r1.w, P1.A.pg], [r0.e, r0.w, P0.A.pg]);
   assert.deepStrictEqual(C.scoreLog(qi, r1).o, 1.142);
   assert.strictEqual(C.scoreLog(C.scoreIn(q0), r0).o, undefined);
-  // The replay: a row with a scoring record replays its logged o whatever fmt says now (Q132: what the game scored).
+  // The replay: a row with a scoring record replays its logged o whatever fmt says now (what the game scored).
   const rows = [];
   for (let i = 0; i < 8; i++) {
     const r = row('p', i, 'A', i % 4 ? 'A' : 'C', 'a-' + i, 'A C', eAt(1, 0.5, 2), 1);
