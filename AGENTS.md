@@ -68,6 +68,19 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
 - **Research uses every useful source without asking** (Pierre, 2026-11-17): web search engines, guides, forums,
   publishers, databases and their APIs (paced, rule C7); a query holds only public terms (scientific names, general
   words), never the project's data, and every source used is cited (rule C2).
+- **Estimates are in agent time**: the hours of agent work a task takes, reviews and checks included, never human days
+  or weeks. A study or a PR that quotes an estimate from elsewhere converts it first (Pierre, 2026-11-18).
+- **The right model and effort for each task**: the integrator applies the table in docs/INTEGRATOR.md at every agent launch (the Agent tool's `model` and `effort`): design, architecture, the learning engine, security and rule wording with consequences get Opus 5.5 at high effort (Fable 5.2 only where Opus at high effort measurably falls short); ordinary code (game formats, admin pages, fixes, docs) Sonnet 5.5 at medium to high; mechanical, repetitive work Haiku 5.5 at low, after the sample test (next rule). In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through. Opus 5.5 is the integrator's model (Anthropic's guidance, checked 2026-11-18; sources in docs/INTEGRATOR.md). Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents (et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau".
+- **Model choice by measurement**: a task handed to a lighter model (framing, sorting photos, conversions) is first run
+  on a sample of 50-100 items by the strongest model and by the candidates; the cheapest candidate that meets a
+  threshold set beforehand (agreement and serious errors) does the bulk, a small random sample of the bulk is redone by
+  the strong model to catch drift, and the PR reports the figures (Pierre, 2026-11-18: "A valider en comparant avec un
+  modèle fort sur un échantillon").
+- **No permission prompts for Pierre**: agents create and change files only with the file tools (Write, Edit), never
+  through shell commands that embed code (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code): such
+  commands can trip the session's safety checks and ask Pierre to approve something he cannot judge. A script an agent
+  needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
+  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???").
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
@@ -114,7 +127,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
-- **C3** An ID tip is short and simple for anyone; detail goes on the sheet.
+- **C3** An ID tip is short and simple for anyone; detail goes on the sheet; the answer's feedback shows one decisive line, the rest behind "More".
 - **C4** Corals: growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues cite only species present at Dauin or in the Philippines.
@@ -122,10 +135,10 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **C8** Presence: one rule for every species, a species with no name yet by its label (`tools/presence.py`).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish and sea slugs: reference-quality photos first, then easiest, never by source.
+- **P1** A reference photo is chosen on its objective qualities (reference look, judged ease), never by source, for every subject; reference-route photos enter first.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
-- **P4** All photos of one question come from one observation.
+- **P3** No photo of several corals or fish species in games; no book photo anywhere.
+- **P4** A one-photo question shows one observation; a multi-photo format shows different observations.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 - **P6** Corals: no photo of a coral skeleton anywhere.
 
@@ -140,7 +153,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks proportionate to the change, in two worlds, valid statistics.
+- **L11** The simplest algorithm that works; checks proportionate to the change, valid statistics, a hard cap of 40 minutes of compute, level 3 never on this machine.
 - **L12** Check algorithm changes on the real log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
@@ -197,9 +210,10 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
+- **W19** A PR updates the docs that describe what it changes and, when it carries out a decision, adds a short decision record in `docs/decisions/`; history stays in git and the PRs, never in the docs.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
-- **W27** Bounded cost: at most four agents balanced by weight, PRs from `main` only, two Codex rounds then cut the scope.
+- **W27** Bounded cost: at most four agents that write code or run tests (read-only studies on top), PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
 
