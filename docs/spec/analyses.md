@@ -74,9 +74,10 @@ point takes as many as the newest milestone.
 
 ## The report
 
-`analysis.js` `report` gives `{AV, made, answers, M: [milestones], R: {milestone: {n, players, at, fp, B, bse, mt, A:
-{rt, zoom, photo, fmt, conf, learn, back, sess, who, tdiff}}}}`: `B` its bootstrap draws, `bse` 1 for normal bootstrap
-intervals, `mt` `{m1, m2, a, q}` the number of primary and secondary tests and their levels.
+`analysis.js` `report` gives
+`{AV, made, answers, M: [milestones], R: {milestone: {n, players, at, fp, B, bse, mt, A: {…}}}}`, where `A` holds the
+analyses `{rt, zoom, photo, fmt, conf, learn, back, sess, who, tdiff}`: `B` its bootstrap draws, `bse` 1 for normal
+bootstrap intervals, `mt` `{m1, m2, a, q}` the number of primary and secondary tests and their levels.
 
 Each analysis has:
 
@@ -130,16 +131,18 @@ refuses to store a report still over the cap.
 
 `Code.gs` `analyses_`, admin token only (`isAdmin_`):
 
-- POST `{analysesGet: 1, token, head?, subject?}` → `{ok, subject, answers, counts, stored: {answers, made, av, size,
-  at, roster, subject} | null, report?}`: `counts` each subject's answers (`core.js` `subjCounts`, its rows with a
+- POST `{analysesGet: 1, token, head?, subject?}` →
+  `{ok, subject, answers, counts, stored: {answers, made, av, size, at, roster, subject} | null, report?}`: `counts`
+  each subject's answers (`core.js` `subjCounts`, its rows with a
   player, as `readAnswers` serves them); `answers` the asked subject's, else the stored report's, else the replayed
   one's. It reads the tab of the `subject` asked (by default the replayed one).
 - POST `{analysesPut: 1, token, report}` replaces the whole report in the tab of the report's `subject` (none: the
   replayed one): row 2 its meta, then 45,000-character parts, 2.5 MB at most.
 
-One tab per subject (`Code.gs` `anTab_`): the corals' (the replayed subject's) in **Analyses**, the fish's in **Analyses
-Fish**, each other subject's after its name; either call refuses a subject the script does not know (`input`), and
-each stored report goes stale on its own. The admin waits for the script that has the calls (rule D4): an older one
+One tab per subject (`Code.gs` `anTab_`): the corals' (the replayed subject's) in **Analyses**, every other subject's
+in "Analyses" and its `SUBJECTS` `name` (the fish's in **Analyses Fish**); either call refuses a subject the script
+does not know (`input`), and each stored report goes stale on its own. The admin waits for the script that has the
+calls (rule D4): an older one
 answers `input`, and the views say "No report yet".
 
 ## The admin's views (`admin-analyses.js`)

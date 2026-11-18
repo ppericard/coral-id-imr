@@ -23,7 +23,8 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
   (`tools/sheet_version.py`), never a `VERSION` bump.
 - **`photos.py`**: the four photo sizes (`SIZES`, `save()`, `remove()`) and where a photo lives (`online()`: on R2 only;
   `gitonly()`: in git; `every()`; `path()`: a local file, copied from R2 when need be; `url()`); run alone it fills the
-  missing smaller files of `img/`; `--check` (CI), `--r2-list` (for `r2_sync.sh`). [photos.md](photos.md#where-the-files-are).
+  missing smaller files of `img/`; `--check` (CI), `--r2-list` (for `r2_sync.sh`).
+  [photos.md](photos.md#where-the-files-are).
 - **`build_site.py`**: the deploy's build of its staged copy (`pages.yml`; the staged smoke `tests/staged.smoke.js` runs
   it too): `curplay.py`, `stamp_versions.py`, `minify.js`, `stamp_versions.py` again on the minified bytes with the build
   number, `check_versions.py --dir` ([PAGES.md › The build at deploy](../PAGES.md#the-build-at-deploy)).
