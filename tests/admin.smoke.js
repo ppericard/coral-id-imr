@@ -7181,6 +7181,81 @@ const darkCards = (p, sel) =>
           const hc = await sq.$eval('#view .adm-sthumb', t => [t.dataset.f, t.classList.contains('mine')]).catch(() => []);
           if (hc[0] !== fg || !hc[1]) se.push(`the genus-level page's cover ${JSON.stringify(hc)} (chosen ${fg})`);
         }
+        // Their WoRMS view (seaslug.json ref, tools/seaslug_worms.py; Pierre, 2026-11-17: "on garde WoRMS"), drawn by the
+        // fish's fuWormsOf: the same leaves as the Key's, a genus-level leaf and a species with no published name yet under
+        // their genus's WoRMS node, no problem; the switch keeps a species and a genus-level leaf in both directions.
+        {
+          const ww = await sq.evaluate(() => {
+            const K = tvTree(TREE),
+              W = tvTree(TREE_W),
+              leaves = T => T.roots.flatMap(r => ttLeaves(T, r)).sort(),
+              up = id => W.node.get(W.up.get(id)) || {},
+              x = [...W.node.keys()].find(k => k.startsWith('x:'));
+            return {
+              problems: W.problems,
+              same: JSON.stringify(leaves(W)) === JSON.stringify(leaves(K)),
+              roots: W.roots.map(r => W.node.get(r).name),
+              ranks: [...new Set([...W.node.values()].map(n => n.rank))],
+              gl: [up('gl:g:Chromodoris').rank, up('gl:g:Chromodoris').name],
+              x: x ? [up(x).rank, up(x).name === FISHC.genera[FISHC.species[x].genus].name] : [],
+              sp: FISHC.genera['g:Chromodoris'].species[0],
+              path: ttPath(W, 'gl:g:Chromodoris').map(k => W.node.get(k).name)
+            };
+          });
+          if (
+            ww.problems.length ||
+            !ww.same ||
+            ww.roots.join() !== 'Gastropoda' ||
+            !['class', 'order', 'suborder', 'family', 'genus', 'species', 'genus level'].every(r => ww.ranks.includes(r)) ||
+            ww.gl.join() !== 'genus,Chromodoris' ||
+            (ww.x.length && ww.x.join() !== 'genus,true') ||
+            !ww.path.includes('Doridina')
+          )
+            se.push(`the WoRMS tree ${JSON.stringify(ww).slice(0, 400)}`);
+          const sw = () =>
+            sq.evaluate(() => ({
+              hash: location.hash,
+              views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => [a.textContent, a.getAttribute('href')]),
+              crumbs: [...document.querySelectorAll('.adm-crumbs a, .adm-crumbs b')].map(a => a.textContent),
+              tiles: document.querySelectorAll('#view .adm-ftile, #view .adm-sthumb').length
+            }));
+          for (const [id, n] of [
+            [ww.sp, 'a species'],
+            ['gl:g:Chromodoris', 'a genus-level leaf']
+          ]) {
+            const e = encodeURIComponent(id);
+            await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/' + e);
+            await swait(() => document.querySelectorAll('#subnav .adm-views a').length === 2, n + "'s Key page");
+            let v = await sw();
+            const to = (v.views.find(a => a[0] === 'WoRMS') || [])[1];
+            if (to !== '#seaslug/photos/tree/worms/' + e) se.push(`${n}: the switch to WoRMS ${JSON.stringify(v.views)}`);
+            await sq.goto(base + 'admin.html?demo' + to);
+            await swait(() => document.querySelectorAll('.adm-crumbs a').length > 3, n + "'s WoRMS page");
+            v = await sw();
+            const back = (v.views.find(a => a[0] === 'Key') || [])[1];
+            if (
+              back !== '#seaslug/photos/tree/key/' + e ||
+              !v.crumbs.includes('Chromodoris') ||
+              !v.crumbs.includes('Nudibranchia') ||
+              !v.tiles
+            )
+              se.push(`${n}'s WoRMS page ${JSON.stringify(v).slice(0, 300)}`);
+          }
+          // The genus-level leaf's photos are keyed by its photo unit (g:Chromodoris), not its leaf id (gl:g:…): its card
+          // on its WoRMS genus's page shows a cover, and its own page its cover thumbnail (Codex on #1062).
+          {
+            const gh = await sq.evaluate(
+              () =>
+                ([...document.querySelectorAll('.adm-crumbs a')].find(a => a.textContent === 'Chromodoris') || {}).getAttribute?.('href') ||
+                ''
+            );
+            const own = await sq.evaluate(() => !!document.querySelector('#view .adm-sthumb img'));
+            await sq.goto(base + 'admin.html?demo' + gh);
+            await swait(() => document.querySelectorAll('#view .adm-tcard').length > 0, "Chromodoris's WoRMS page");
+            const card = await sq.evaluate(() => !!document.querySelector('#view .adm-tcard[data-ttc="gl:g:Chromodoris"] img'));
+            if (!own || !card) se.push(`the genus-level leaf's WoRMS cover: own page ${own}, card ${card} (${gh})`);
+          }
+        }
         // The fish's Tree after the switch: its own part, its own data; back on the sea slugs, the draft as it was.
         await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
         await swait(
