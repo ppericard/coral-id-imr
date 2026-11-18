@@ -55,7 +55,9 @@
   // up, ref: key}, so its id lives in the adapter's namespace and never meets a leaf's. Nodes come in the order the
   // leaves meet them (a parent before its children). Reported, never fixed silently ({id, why}): a leaf with no
   // reference, or one the table does not have, and a parent the table does not have (the node becomes a root); a cycle
-  // in the table stops the walk, and ttBuild reports and cuts it. Returns {nodes, problems} for ttBuild.
+  // in the table stops the walk, and ttBuild reports and cuts it. A leaf with no reference of its own but an `at` (the key
+  // of the node it sits under: a genus-level leaf, a species with no published name, under its genus) hangs there, `at`
+  // reported like a missing parent when the table lacks it. Returns {nodes, problems} for ttBuild.
   function ttFromRef(leaves, ref, o = {}) {
     const idOf = o.id || (k => String(k)),
       rankOf = o.rank || (r => r),
@@ -90,7 +92,11 @@
     (leaves || []).forEach(l => {
       const n = {...l};
       delete n.up;
-      if (l.ref == null || l.ref === '') problems.push({id: l.id, why: 'no reference'});
+      delete n.at;
+      if ((l.ref == null || l.ref === '') && l.at != null && l.at !== '') {
+        const p = up(l.at, l.id);
+        if (p !== null) n.up = p;
+      } else if (l.ref == null || l.ref === '') problems.push({id: l.id, why: 'no reference'});
       else if (!has(l.ref)) problems.push({id: l.id, why: 'reference not found: ' + l.ref});
       else {
         const p = up(R[l.ref].parent, l.id);

@@ -52,6 +52,9 @@ const GATES = {
   // Activity's light read every minute while it is open and in view (admin.js liveOn, liveArm; Code.gs live_ readLive):
   // from the version that serves it; before, ↻ by hand only.
   LIVE_SHEET: (v, N) => fn('admin.js', 'const liveOn = ', '\n', 'liveOn', {ANS: v === undefined ? {} : {v}, LIVE_SHEET: N})(),
+  // The live mode (live.js liveFrom, LIVE_CH: Q393; Code.gs lv_): a reply of the version that serves it is taken; an older
+  // script's reply turns the page into one line ('old'), nothing more sent.
+  LIVEGAME_SHEET: (v, N) => fn('live.js', 'const liveFrom = ', '\n', 'liveFrom', {LIVEGAME_SHEET: N})(v === undefined ? {} : {v}),
   // The device's id on every answer it sends (sync.js devField, the save's and the anonymous send's dev; Code.gs
   // logAnswers_ Device; Q312): from the version that writes it; before, nothing more is sent.
   DEV_SHEET: (v, N) => {
@@ -153,6 +156,17 @@ const GATES = {
       GROUP_SHEET: 48,
       ASUBJ: null
     })({open: 'group', sheet: N}),
+  // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from v171; before, the one
+  // general board as before, whatever the reply carries.
+  SCOPES_SHEET: (v, N) =>
+    fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
+      SCOPES_SHEET: N,
+      myCohort: () => '',
+      boardMe: () => -1
+    })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
+  // The admin's Cohort select and Staff toggle on a player's bar (admin.js cohortOn; Code.gs userGroup cohort, roles_):
+  // from v171.
+  COHORT_SHEET: (v, N) => fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N})(),
   // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
   // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
   // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug

@@ -68,9 +68,11 @@ def version(src):
 
 
 def flat(entry, md=True):
-    """One line, no trailing separator; for the header (md=False), code marks dropped."""
-    s = re.sub(r'\s+', ' ', entry).strip().rstrip('.;').strip()
-    return s if md else s.replace('`', '')
+    """One line, no trailing separator; for the header (md=False), code marks dropped. The marks go before the spaces are
+    collapsed, so flat(flat(e, False), False) == flat(e, False): unfold() re-folds what fold() wrote and must get the same
+    line (a span such as `sp. ` left two spaces in v170's header, which --check then refused)."""
+    s = entry if md else entry.replace('`', '')
+    return re.sub(r'\s+', ' ', s).strip().rstrip(' .;')
 
 
 def fold(line, n, date, entry):
@@ -202,7 +204,7 @@ def problems(root='.', base=None, main=False):
         txt = read(os.path.join(CHANGES, f), root)
         if not f.endswith('.md'):
             errs.append('%s/%s: a changes file is <branch>.md' % (CHANGES, f))
-        if not flat(txt):
+        if not flat(txt, md=False):
             errs.append('%s/%s: empty: write the history entry (what the script now does, why, Pierre and the date)' % (CHANGES, f))
         elif re.match(r'v\d+\b|' + TOKEN + r'\b', flat(txt)):
             errs.append('%s/%s: the entry starts with a version: leave it out, --assign writes vN' % (CHANGES, f))
@@ -275,7 +277,7 @@ def assign(root='.', date=None, dry=False, base=None):
         sys.exit('✗ --assign needs exactly one file in %s, found %d%s' % (CHANGES, len(files), (': ' + ', '.join(files)) if files else ''))
     path = os.path.join(CHANGES, files[0])
     entry = read(path, root)
-    if not flat(entry):
+    if not flat(entry, md=False):
         sys.exit('✗ %s is empty' % path)
     src = read(GS, root)
     h, old = header(src), version(src)
@@ -318,6 +320,9 @@ def assign(root='.', date=None, dry=False, base=None):
             edits[GS] = gs[:i] + block(edits['core.js']) + gs[j + len(C_END + C_TAIL):]
             said.append('%s: its embedded core.js copied again' % GS)
     said.append('%s: removed' % path)
+    # The header is the one --check reads back (unfold): never write one it would refuse.
+    if header(edits[GS]) is None or unfold(edits[GS].split('\n', 1)[0], h[2]) is None:
+        sys.exit('✗ %s: the folded header line is not one --check accepts: nothing written' % GS)
     if not dry:
         for f, body in edits.items():
             open(os.path.join(root, f), 'w', encoding='utf-8').write(body)

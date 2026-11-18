@@ -375,3 +375,23 @@ test('taxtree: a reference table with gaps: missing parents and references repor
   assert.strictEqual(ttPath(T, 'e').pop(), 'e');
   assert.ok(['a', 'b', 'c', 'd', 'e', 'f'].every(x => T.node.has(x)));
 });
+
+// A leaf with no reference of its own sits under the node `at` names (admin.js fuWormsOf: a genus-level leaf, a species
+// with no published name yet, under its genus's WoRMS node), its own id kept; a reference of its own wins over `at`, an
+// `at` the table lacks is reported as a missing parent (the leaf a root).
+test('taxtree: a leaf placed by at, under the reference node it names', () => {
+  const leaves = [
+      {id: 's1', ref: 7},
+      {id: 'gl:g:Pseudanthias', at: 6, gl: true},
+      {id: 'x:sp1', at: '6'},
+      {id: 's2', ref: 11, at: 6},
+      {id: 'lost', at: 404}
+    ],
+    {nodes, problems} = ttFromRef(leaves, REF, W());
+  assert.deepStrictEqual(problems, [{id: 'lost', why: 'parent not found: 404'}]);
+  const T = ttBuild(nodes);
+  assert.deepStrictEqual(T.kids.get('w:6'), ['s1', 'gl:g:Pseudanthias', 'x:sp1']);
+  assert.deepStrictEqual(ttPath(T, 's2'), ['w:1', 'w:9', 'w:10', 's2']);
+  assert.ok(T.roots.includes('lost'));
+  assert.ok(!('at' in T.node.get('x:sp1')) && T.node.get('gl:g:Pseudanthias').gl);
+});
