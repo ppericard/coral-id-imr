@@ -245,6 +245,7 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       k: 4,
       chs,
       seenPh: ph,
+      mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
       unseen: null,
       ph,
       solo: 0.5,

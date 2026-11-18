@@ -3942,6 +3942,20 @@ one look, no cost.
 - **The real log** (rule L12) cannot judge a draw change: a replay asks the questions already asked. The app world is
   what was measured.
 
+### The mimicry pairs drilled: the level-1 check (2026-11-19)
+
+Rule L11, level 1: the change touches the questions that show a photo of the mimicry class (seven pairs), their choices,
+their duels and Agains, nothing else. Unit tests (`tests/mimdrill.test.js`: the trap through `quiz.js` `planPhoto`, the
+guess rate and the look-alike test, the duels' gate and photos on made-up families) and the fish smoke on the real data
+(the M1 juvenile's trap, its duel from Open Water once its card was shown, each side on the pair's species). The app
+world, fish, the five profiles × 5 seeds × 300 questions, the branch against `main` (29bfc204), `tools/learncmp.js`,
+declared before running: primary `right@300:down` (the trap's cost), one look, no cost.
+
+- **Primary**: the measure cannot tell. The two arms are identical to the last answer (p 1.0, 0 of 25 pairs moved): no
+  run reached a question the change touches in 300 questions (a photo of the class comes from Open Water on its unit).
+- **Guardrails**: every one held at every profile, every paired difference 0.
+- **The real log** (rule L12) cannot judge a change to the choices: a replay asks the questions already asked.
+
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
 
 ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check

@@ -738,10 +738,26 @@ so the trap arrives with its explanation. Why and who decided: the
   `regional`): a photo of a species whose look varies by region, taken outside the Philippines (`loc` `world`), never
   shows on the card; the card takes the form met here first (near Dauin, then the Philippines, the larger views first),
   or waits. Every card photo shows one subject and no watermark (the judged flag `w`). The photo stays in play.
-- **Not built yet** (ROADMAP "Look-alike pairs between species"): the pair drilled in the look-alike formats, family
-  pairs, the Look-alikes deck for every subject, the admin's ⚠ badge and its lift, the feature frames' default.
+- **The pair drilled** (FISH_PATH.md "Look-alikes at any rank", view 2; the build's choices:
+  [decision](decisions/2026-11-19-mimicry-pairs-drilled.md)), per photo, never the two whole units as look-alikes (no
+  `look`, no confusion prior, no exam or group change):
+  - **A trap** (`model.js` `mimUnit`, `mimTrap`; `quiz.js` `planPhoto`): a question whose photo is of the class puts the
+    unit of the species it resembles at the rank asked (its family, genus or species unit) among the choices, met and in
+    play (in the custom quiz, selected), in the place of the wrong choice least confused with the unit asked; only on a
+    question with a trap at all (`trapsFor` 1 or more, the exam's included), never typed or with its unit's own card. It
+    counts as plausible there (`plausibleK`, the logged `|kN`) and as a look-alike among the choices (`pgLook`).
+  - **Its duel** (`model.js` `mimPairs`; `quiz.js` `duelPick`): the two families, once the pair's card was shown, with
+    the classic look-alikes' weight (× 2), in the duels slipped into the photo quiz and the Duel tab.
+  - **Its Again**: a mix-up of a photo of the class with the unit it resembles queues the pair's id with its Again
+    (`quiz.js` `rematchAdd` `mim`).
+  - **The pair's species**: a duel of the pair or that Again shows, on the resembling side, a photo of the class, on the
+    other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), only while that side's draw holds one now
+    (`drawHas`), else any photo of the unit.
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): family pairs, the Look-alikes deck for every subject,
+  the admin's ⚠ badge and its lift, the feature frames' default.
 
-Its level-1 check is in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check").
+Its level-1 checks are in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check", "The
+mimicry pairs drilled: the level-1 check").
 
 ### The held-out photos in the game
 

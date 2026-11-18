@@ -93,10 +93,11 @@ test('mimLay: each resembling species on its family, with the units of the speci
   const m = X.gen['f:Surgeonfishes'].mim;
   assert.strictEqual(m.length, 1);
   assert.deepStrictEqual(
-    {sp: m[0].sp, st: m[0].st, m: m[0].m, fb: m[0].fb, ra: m[0].ra, rb: m[0].rb, na: m[0].na.sci, nb: m[0].nb.sci},
+    {sp: m[0].sp, st: m[0].st, u: m[0].u, m: m[0].m, fb: m[0].fb, ra: m[0].ra, rb: m[0].rb, na: m[0].na.sci, nb: m[0].nb.sci},
     {
       sp: 's035',
       st: 'juvenile',
+      u: ['s:s035', 'g:Acanthurus', 'f:Surgeonfishes'],
       m: ['s:s027', 'g:Centropyge', 'f:Angelfishes'],
       fb: 'f:Angelfishes',
       ra: true,
