@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// Photo review › Light proposals (admin-light.js; Pierre, 2026-11-14: "ok pour (a)"): the light re-judge's proposals
-// (judging/fish-light-q308.json curation) go into Pierre's fish draft only through Accept (the re-judged tags and ease,
-// fishSet) or Keep mine (fish.kept), and a proposal is open only while his tags and ease are still the ones it was made
-// against, the photo still his add in play and not kept; never written to curation.json by a tool (rule A1).
+// Photo review › Light proposals (admin-light.js): the light re-judge's proposals (judging/fish-light-q308.json
+// curation) go into the curator's fish draft only through Accept (the re-judged tags and ease, fishSet) or Keep mine
+// (fish.kept), and a proposal is open only while the curator's tags and ease are still the ones it was made against,
+// the photo still the curator's add in play and not kept; never written to curation.json by a tool (rule A1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -49,9 +49,9 @@ test('a proposal accepted into the draft sets its re-judged tags and ease, and i
   assert.deepStrictEqual(open(lightOpen(P, F).reduce(lightAccept, F)), []);
 });
 
-// A proposal that tags one of his ★ covers juvenile (#942's Boxfishes): Accept asks whether to keep it as the cover
-// (lightCovers names its nodes); kept, the confirmation goes with the tags in one step (Pierre's exception, 2026-11-15:
-// autosort.js fishCoverJ); a cover he confirmed already is not asked about again.
+// A proposal that tags one of the curator's ★ covers juvenile: Accept asks whether to keep it as the cover (lightCovers
+// names its nodes); kept, the confirmation goes with the tags in one step (the confirmed juvenile cover,
+// docs/spec/fish.md; autosort.js fishCoverJ); a cover already confirmed is not asked about again.
 test('a proposal that makes his ★ cover a juvenile: its nodes named, the cover kept with the Accept', () => {
   const x = {photo: 'fish-s1-cand-1', curated: ['p1g0sl1', 3], rejudged: ['o1g0sl1j', 4]},
     F = {...draft(), tags: {...draft().tags, 'fish-s1-cand-1': 'p1g0sl1'}, genera: {'f:A': {cover: 'fi1'}, 'g:B': {cover: 'fi2'}}};
@@ -145,7 +145,7 @@ function proposalsFile(s) {
       assert.ok(Number.isInteger(e) && e >= 1 && e <= 5);
     });
     assert.ok(lightDiff(x).length > 0, x.photo);
-    // never a move to a retired code (count m, before 2026-11-09): fish-s050-cand-79944621 was one, its count kept as his
+    // never a move to a retired code (the retired count m): the curator's count is kept
     assert.ok(!lightRetired(x), `${x.photo}: ${x.curated[0]} -> ${x.rejudged[0]}`);
   });
   assert.ok(lightRetired({curated: ['p1n0sms', 3], rejudged: ['p1g0smm', 3]}));
@@ -155,9 +155,9 @@ function proposalsFile(s) {
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'tools', 'curplay.py'), 'utf8'), /FISH_DROP = \([^)]*'kept'/);
 }
 
-// One judgement per photo (Pierre, 2026-11-15): a second set of proposals (judging/fish-one-judgement.json), read beside
-// the light re-judge's; each proposal carries its set, a Keep mine records that set, and a photo in two sets shows the
-// later set's proposal only, so answering it never reopens the earlier one.
+// One judgement per photo (docs/spec/fish-photos.md): a second set of proposals (judging/fish-one-judgement.json), read
+// beside the light re-judge's; each proposal carries its set, a Keep mine records that set, and a photo in two sets
+// shows the later set's proposal only, so answering it never reopens the earlier one.
 test('several proposal sets: each proposal answered in its own set, a photo proposed twice shows the later one', () => {
   const later = LIGHT_SETS[1].id,
     Q = [

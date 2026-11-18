@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The automatic lock of the unit tests (rule W24; Pierre, 2026-11-05: "the automatic lock of the unit tests"): every
+// The automatic lock of the unit tests (rule W24): every
 // tests/*.test.js starts with `require('./slot.js').testGuard();`, which in a several-file `node --test` run takes the
 // machine slot for the runner, so even a bare `node --test tests/*.test.js` waits its turn. A single file stays unlocked.
 const test = require('node:test'),
@@ -99,8 +99,7 @@ test("node --test with several files waits for the slot, one file does not, and 
   }
 });
 
-// Codex review #1007: the value of a reporter or import option is not a test file, so it never makes a several-file run a
-// single-file one.
+// The value of a reporter or import option is not a test file, so it never makes a several-file run a single-file one.
 test('testFiles: the files a node --test command names, option values excluded', () => {
   const {testFiles} = require('./slot.js');
   assert.deepStrictEqual(testFiles(['a.test.js']), ['a.test.js']);
@@ -110,7 +109,7 @@ test('testFiles: the files a node --test command names, option values excluded',
   assert.deepStrictEqual(testFiles(['--test-name-pattern=merge', 'tests/*.test.js']), ['tests/*.test.js']);
 });
 
-// Codex review #1007: files racing for one runner take one slot between them, and another run's slot is never touched.
+// Files racing for one runner take one slot between them, and another run's slot is never touched.
 test('two files racing for one runner end with one slot, with two slots free', async t => {
   if (!fs.existsSync('/proc/self/stat')) return t.skip('the guard needs /proc (Linux)');
   const {dir, env} = sandbox();

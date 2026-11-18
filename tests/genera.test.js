@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The game genera, defined once (core.js BENTHIC, BONUS, slateOf, gameOf; Pierre, 2026-11-03: no genus-specific case),
+// The game genera, defined once (core.js BENTHIC, BONUS, slateOf, gameOf; no genus-specific case, rules/learning.md),
 // and the candidate refill for the Key-only genera (tools/fetch_local.py, offline: tools/genera.py reads the lists
 // from core.js; key_need, room and --plan never ask iNaturalist). Needs python3, like the other checks.
 const test = require('node:test'),
@@ -72,7 +72,7 @@ print(json.dumps({
   assert.strictEqual(out.A, 7);
   assert.strictEqual(out.Aex, 8, 'an excluded photo is no colony');
   // B, 2 levels in data.json: its macro photos are its close-ups; its medium ones stay apart (admin.js viewOf merges
-  // them into Colony only for a genus switched to 2 levels by curation; Codex review #390): wide 1; macro 3.
+  // them into Colony only for a genus switched to 2 levels by curation): wide 1; macro 3.
   assert.deepStrictEqual(out.Bviews, ['wide', 'macro']);
   assert.strictEqual(out.B, 5 + 5);
   assert.strictEqual(out.Blv3, 5 + 5, 'curation lv 3: Colony and Close-up (medium)');
@@ -151,7 +151,7 @@ test('fetch_local --plan on the real data: game genera keep their caps, a Key-on
   });
 });
 
-// The starred genera open after the genera their card compares them to (Pierre, 2026-11-03; core.js starRefs, starWaits,
+// The starred genera open after the genera their card compares them to (core.js starRefs, starWaits,
 // model.js weighted; docs/LEARNING.md "Starred genera after their reference").
 test('starRefs: every starred genus of the real data has the surveyed references its card names; no other genus has any', () => {
   const slate = slateOf(RAW),
@@ -200,8 +200,8 @@ test('starWaits: a starred genus is not eligible before its references are met, 
   ['R1', 'R2', 'O', 'W', 'Z'].forEach(n => assert.strictEqual(starWaits(D, n, list, met([])), false, n));
 });
 
-// iNaturalist's HTTP 429 (Candidate photos Action, 2026-11-04: the run died on one and Pierre's added photos were not
-// downloaded): fetch_local's get waits and tries again (Retry-After when given), and gives up only after its last wait.
+// iNaturalist's HTTP 429 (a Candidate photos Action run that dies on one leaves the added photos undownloaded):
+// fetch_local's get waits and tries again (Retry-After when given), and gives up only after its last wait.
 test('fetch_local get: waits and retries on 429 and 5xx, honours Retry-After, raises after the last wait', () => {
   const out = JSON.parse(
     py(`
