@@ -5992,14 +5992,21 @@ draw of `main`) against the set, on the same seeds):
   600 questions, 21-50 to 300), the lecture and strong RAs on 15 (6-20, 600). Every guardrail held but one: first Open
   Water −0.5 answers [bound +5.3], units met at 300 −1.2 [−1.8], units at Open Water at 300 +0.7, longest plateau +0;
   lecture and strong RA all held (first Open Water −2.7 and +1.3, plateau −3 and −2, colony repeats +0.8 and −0.8
-  points). **The one left: the beginner's true knowledge at 300 questions, −0.012 [bound −0.020], at the margin
-  (unclear)**, +0.003 at 600: the simulated beginner meets about one genus fewer by question 300 and has caught up by
-  600. A cost the integrator or Pierre accepts or not (the PR's "For Pierre").
-- Compute: about 30 minutes in all (rule L11's cap 40), level 1 only.
+  points). **The one left: the beginner's true knowledge at 300 questions.** The within-one-width condition was chosen
+  after the held-only result on seeds 6-20, so only seeds 21-50 confirm it: there −0.013 [bound −0.023], past the
+  margin's bound though the mean is inside it (unclear); on seeds 6-20 −0.012 [−0.023]; pooled over the 45, −0.012
+  [−0.020]. At 600 questions +0.003 (seeds 1-5 and 6-20; seeds 21-50 stopped at 300). The simulated beginner meets about
+  one genus fewer by question 300 and has caught up by 600. A cost the integrator or Pierre accepts or not (the PR's
+  "For Pierre").
+- Compute: about 30 minutes in all (rule L11's cap 40), level 1 only. The real log cannot judge it (rule L12): its
+  answers were played under the draw before.
 - **Pace** [guess, from the sheet's counts of 2026-11-18]: the members hold 212 answers (median 4); at the traffic of
   the study (about 3,500 coral answers in 17 days) and the share above (+28%), the median member reaches 20 in roughly
-  7 weeks, the starred genera's later (they open after their look-alikes, rule L5). The check measures the share, not
-  real players' pace: `--progress` tells.
+  7 weeks. The tail is slower: in the simulation the least shown quarter of the members came about a quarter less often
+  than the median and the least shown about four times less (pooled minimum 3, lower quartile 8, median 11), so roughly
+  10 weeks or more for that quarter and several months for the slowest, the starred genera's among them (they open after
+  their look-alikes, rule L5). The factor buys about two weeks on the median member (simulated median 9 → 11). The check
+  measures the share, not real players' pace: `--progress` tells.
 
 ### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
@@ -6888,7 +6895,10 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   2026-11-03; its `mem`, sheet v26, the app's photo memory offsets; its `gd` and `v`, sheet v31, the genus offsets).
   `--truth truth.json` (2026-11-03) gives the learner each photo's true difficulty (`{photos: {file: d}, gd: {genus:
   d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
-  app's photo difficulty would change the learner's world too. `--out` writes every run and
+  app's photo difficulty would change the learner's world too. `--set FILE` serves FILE as `calibration-set.json`,
+  `--set none` an empty set (the draw without the calibration set), for a paired comparison on one tree ("The
+  calibration set"); `--truth gen` tells the app every photo has 20 answers, so the set's factor is off in that world.
+  `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
 - **Long runs** (2026-11-08, ROADMAP "learnsim: long runs crash"): a run is one synchronous `page.evaluate`, so the
   page's event loop never turns until it ends. Every `localStorage` write goes through the browser, and its traffic back

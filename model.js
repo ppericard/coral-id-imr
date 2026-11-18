@@ -146,8 +146,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   // The calibration set's factor (setBonus, in w below) holds to the same condition, and to a photo within one width of
-  // the target: on a genus still being learned, or pulling photos the targeting would leave aside, it slowed a simulated
-  // beginner's path (docs/LEARNING.md "The calibration set").
+  // the target, so it never pulls a photo onto a genus still being learned or away from the player's level
+  // (docs/LEARNING.md "The calibration set").
   const held = level(n)[0] !== 'new' && !shaky(n),
     calQ = !shift && held && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n, shift),
