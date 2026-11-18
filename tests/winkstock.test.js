@@ -1,10 +1,10 @@
 require('./slot.js').testGuard();
-// Surprise-only species at 5 photos in the game data (Pierre, 2026-11-15, Q372; 2026-11-08: "4-5 very good reference
-// photos"): the whale shark and the thresher sharks, met only on the surprise cards, keep their 5 best photos in
-// fish-game.json (tools/fish_game.py wink_trim), Pierre's covers, featured photos and own adds and the surprise card's
-// photos always among them; the candidate tools stop at 5 for them (tools/fetch_fish.py WINK_CAP: species_room for the
-// refill and FishBase, --topup skips them). The admin's side is tests/winkadmin.test.js (#914). Offline: fixtures, and
-// the repository's own files for the real data.
+// Surprise-only species at 5 photos in the game data (ROADMAP "Photos per species"): the whale shark and the thresher
+// sharks, met only on the surprise cards, keep their 5 best photos in fish-game.json (tools/fish_game.py wink_trim),
+// the curator's covers, featured photos and own adds and the surprise card's photos always among them; the candidate
+// tools stop at 5 for them (tools/fetch_fish.py WINK_CAP: species_room for the refill and FishBase, --topup skips
+// them). The admin's side is tests/winkadmin.test.js. Offline: fixtures, and the repository's own files for the real
+// data.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

@@ -1,8 +1,9 @@
 require('./slot.js').testGuard();
-// Coral candidates (Pierre, 2026-11-05): no share-alike licences any more (aligned with the fish rules), the share-alike
-// photos already on the site left to him (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation
-// whose identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the Philippines tiers
-// (tools/fetch_local.py expert_ok). Offline: iNaturalist is stubbed. Needs python3, like the other checks.
+// Coral candidates (docs/spec/data.md): no share-alike licences (as for the fish), the share-alike photos already on
+// the site left to the curator (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation whose
+// identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the
+// Philippines tiers (tools/fetch_local.py expert_ok). Offline: iNaturalist is stubbed. Needs python3, like the other
+// checks.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -81,8 +82,8 @@ print(json.dumps({'gone': g1, 'again': g2, 'left': {g: [p['f'] for p in L] for g
   assert.deepStrictEqual(R, {gone: ['a1', 'b1'], again: [], left: {A: ['a2', 'a3', 'a4']}}, 'a licence it cannot read is not dropped');
 });
 
-// A Publish with exclusions (2026-11-06): Pierre's exclusion takes a photo out of every list, kept in excluded.json with its
-// place; his Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
+// A Publish with exclusions: the curator's exclusion takes a photo out of every list, kept in excluded.json with its
+// place; Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
 const EXCL = `import excluded as X
 X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded', 'imrl-p1_i1': 'excluded'}
 X.IDS = {X.pid(f) for f in X.EX} - {None}
@@ -347,7 +348,7 @@ test('saQueue: the share-alike photos on the site, not removed, not kept; never 
   );
 });
 
-// ROADMAP "Taxonomy reference" (Pierre, 2026-11-05, Q49): the candidate search asks the iNaturalist taxon
+// ROADMAP "Taxonomy reference": the candidate search asks the iNaturalist taxon
 // tools/taxonomy.json gives a genus, never a search by name (no homonym guard needed); a genus the file does not hold,
 // or whose taxon is inactive, is skipped, said so, and costs no request.
 test('fetch_local / cand_gaps / coral_presence: the genus taxon comes from tools/taxonomy.json, no name search', () => {

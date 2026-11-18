@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The players' copy of the curation (Pierre, 2026-11-09: "a smaller curation file for players, built at deploy"):
-// tools/curplay.py writes curation-play.json from curation.json, without the admin's working state, and the app reads it
-// (app.js curFetch). Checked here: the copy drops only what it says; the app builds the same games from it as from the
+// The players' copy of the curation, smaller and built at deploy (docs/DATA.md): tools/curplay.py writes
+// curation-play.json from curation.json, without the admin's working state, and the app reads it (app.js curFetch).
+// Checked here: the copy drops only what it says; the app builds the same games from it as from the
 // whole file (the coral genera under applyCuration, applyForms and applySlots, the fish units under app.js treeBuild,
 // the fish photos taken out of play, the reports thanked); and no script the app or the Lab loads reads a field it drops.
 const test = require('node:test'),
@@ -70,9 +70,9 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
       .filter(([, L]) => Object.keys(L).length)
   );
   assert.deepStrictEqual(pa || {}, undone);
-  // A third of the file or less (2026-11-09: 1.33 million characters, 0.50 million in the copy).
+  // A third of the file or less.
   assert.ok(JSON.stringify(PLAY).length < 0.5 * JSON.stringify(FULL).length, `${JSON.stringify(PLAY).length} characters`);
-  // An undone add (none in the real log today) is kept; a decision is not.
+  // An undone add is kept; a decision is not.
   const t = slim({v: 1, fish: {auto: {'2026-11-09': {a: '-a1x', b: 'ate', c: 'r'}, '2026-11-08': {d: 'ate'}}, tags: {a: 'x'}}});
   assert.deepStrictEqual(t, {v: 1, fish: {auto: {'2026-11-09': {a: '-a1x'}}}});
   // The content editor's edits (made up) keep v and src only, never was, t or by, in both parts, nodes and pairs.
@@ -106,7 +106,7 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
     fish: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}},
     seaslug: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}}
   });
-  // His confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ, 2026-11-15) reaches the players.
+  // The curator's confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ) reaches the players.
   const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
   assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
 });
@@ -175,7 +175,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
   const raw = {f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')};
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, PLAY)), JSON.stringify(ctx.run(raw, FULL)));
   assert.deepStrictEqual([...C.treeGone(PLAY)].sort(), [...C.treeGone(FULL)].sort());
-  // With undone automatic adds in the log (made up: the real log has none today), the photos they take out stay out.
+  // With undone automatic adds in the log (made up), the photos they take out stay out.
   const L = Object.values(raw.gm.photos)
       .flat()
       .filter(p => p.auto)
@@ -185,7 +185,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
   assert.ok(L.length, 'automatic photos in fish-game.json');
   assert.deepStrictEqual([...C.treeGone(slim(U))].sort(), [...C.treeGone(U)].sort());
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, slim(U))), JSON.stringify(ctx.run(raw, U)));
-  // With the content editor's edits (made up: none on main today), one of them stale (was differs from the base), the
+  // With the content editor's edits (made up), one of them stale (was differs from the base), the
   // same units from the copy without was, t and by: the app reads v and src only (core.js contentApply).
   const fam = raw.f.families.find(f => (f.cues || []).length && (f.look || []).length),
     lk = fam.look[0][0],
@@ -202,7 +202,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
   };
   const E1 = ctx.run(raw, U);
   assert.deepStrictEqual(E1.gen[fam.id].qt, ['An edited tip']);
-  // The sources reach the units: the tips' (tipsList), the look-alike line's (quiz.js fbBody; Codex review #957).
+  // The sources reach the units: the tips' (tipsList), the look-alike line's (quiz.js fbBody).
   assert.strictEqual(
     JSON.stringify([E1.gen[fam.id].qsrc, E1.gen[fam.id].lksrc]),
     JSON.stringify([{t: 'A made-up source'}, {[lk]: {t: 'A look source'}}])
