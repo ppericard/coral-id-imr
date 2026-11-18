@@ -41,7 +41,7 @@ Read in `index.html` (⚙), `app.js` (`UNITS` `sets` and `opens`), `progress.js`
 | Corals | **Coral basics** | a 5-minute module first | Home, a line in the Learn door ("New to corals? Basics in 5 min ›") for a new player with few answers | Offered to "I'm new" |
 | Corals | Non-IMR genera | Coral ID Key: also rank the rarer genera | ⚙ row, shown on the Key's page only | Off |
 | Fish | **Scientific names** (`sets` `sci`: the scientific genera) | a family's genera join as it reaches Advanced (an IMR player's IMR genera from Open Water, Q219; turned on by hand early, from Open Water, Q240) | ⚙ row "Scientific names On / Off"; offer card at Advanced; My progress box "Turn on scientific names"; a back card for those who had it on before 2026-11-08 | Off; the IMR genera on for "I'm at IMR" |
-| Fish | **Beyond the IMR course** (`opens` `beyond`: circle 3) | 12 more families (frogfishes, ghost pipefishes…); in the % either way (Q204) | an offer card; My progress box "Open the families beyond IMR (n families)"; **never a ⚙ row** (rule U7) | Off until said yes |
+| Fish | **Beyond the IMR course** (`opens` `beyond`: circle 3) | 33 more families in play (frogfishes, ghost pipefishes…); in the % either way (Q204) | an offer card; My progress box "Open the families beyond IMR (n families)"; **never a ⚙ row** (rule U7) | Off until said yes |
 | Fish | Species by common name (`sets` `sp`) | a family's species from its Advanced, at the rank share (Q382) | **no control** (Pierre, 2026-11-03 and 11-04: every player meets them) | On |
 | Fish | Species by scientific name | not built (#1041, Q394-Q398) | planned: the **names choice** "common / scientific / both" at the fish welcome and **as a ⚙ row that replaces "Scientific names"** (#1041, Q396) | - |
 | Fish | Juveniles and colour phases | variants of a unit, on that unit's own mastery (Q391 a); "Learned" asks each group (Q391 b) | no control | On |
@@ -56,7 +56,7 @@ What this inventory shows:
 
 - **The level controls are in three places, none of them visible.** ⚙ holds two (Bonus genera, Scientific names) next
   to the theme; My progress holds three boxes (Open all, Turn on scientific names, Beyond IMR); the cards come once.
-  **On a phone, My progress's boxes sit under the whole board**: for the fish, under 65 tiles, about 1,900 px down a
+  **On a phone, My progress's boxes sit under the whole board**: for the fish, under 65 tiles, about 1,800 px down a
   390 × 844 screen (mockup `before-progress-fish-phone.png`). A player who has not scrolled to the end has never seen
   them.
 - **⚙ is about to grow again**: the names choice (#1041, Q396) was planned as a ⚙ row, the juveniles have no control
@@ -132,7 +132,9 @@ summary with a dot per level (filled: playing; ring: waiting; grey: off), "›".
 - Reach: one tap.
 - Rules: a row inside the Learn door, as the "New to corals? Basics in 5 min" line already is; still one screen, but it
   is an addition to Home, whose rule (U12, "two big doors only") is Pierre's: it needs his OK.
-- Fits one screen: measured, section 13.
+- Fits one screen at 390 × 844 and 1280 × 800 for the three subjects (the photo band gives up the height); **not at
+  360 × 640**, where the band is already at its floor: Home then scrolls by 58 px. There the same entry becomes a link on
+  the door's kicker row, "Learning phase · What I learn ›", which costs no height (measured, section 13).
 - Weakness: an overlay over Home shows the levels away from the board the player's progress lives on.
 
 ### B. A card on My progress
@@ -144,7 +146,8 @@ and the three boxes now at the bottom of the column (Open all, Turn on scientifi
 - Visible: where the player looks at their progress, and "where they stand" is already there.
 - Reach: the Progress tab or the header pill, then the card.
 - Rules: My progress keeps the board first (Pierre, 2026-11-01 and 11-02: the view switch went to the bottom because it
-  hid the badge). A six-row fish card between the badge and the board pushes the board down about 330 px on a phone.
+  hid the badge). The fish card (six rows) is about 700 px tall on a 390 px phone, nearly a screen (the corals' two rows, about 350 px):
+  between the badge and the board it would push the board out of sight.
   So, on phones: **one line under the badge** (the same summary line as A, `rec-progress-fish-phone-light-line.png`),
   which opens the card in place; on desktop the card in the side column, open.
 - Weakness: a player who never opens My progress never sees it.
@@ -162,13 +165,14 @@ A chip "Families + 3 levels ▾" above the quiz, opening the card as a pop-up (`
 ### Pierre's example: a card on Home under the doors
 
 Home must fit one screen from 360 × 640 (DESIGN.md "Home fits one screen", measured in `tests/pages.smoke.js`). The
-fish Home already fills 390 × 844; a full card under the doors (about 330 px for the fish) cannot fit and would turn
+fish Home already fills 390 × 844; a full card under the doors (about 350 px for the corals, 700 px for the fish on a phone) cannot fit and would turn
 Home into a scrolling page. The line of option A is the part of it that fits.
 
 ### Recommended: B, reached from Home by A's line
 
 **The card lives on My progress** (desktop: open in the side column; phones: one line under the badge, opening in
-place), and **Home's Learn door carries A's line**, which goes to My progress with the card open. One card, one home,
+place), and **Home's Learn door carries A's line** (on a screen too short for it, 360 × 640, a link on the door's kicker row
+instead), which goes to My progress with the card open. One card, one home,
 next to where the player stands, and seen at every visit on Home. Mockups: `rec-home-*` and `rec-progress-*`, three
 subjects, two sizes, two themes.
 
@@ -249,7 +253,8 @@ families come from: "the IMR survey families"), the sea slugs none.
 | Fish | "**Had the IMR fish presentation?** 36 families are not open yet…" [Open all families] | "**Had the IMR fish presentation?** Skip the cards…" | [Open all families now] "Had the IMR fish presentation? 36 are not open yet…" |
 | Sea slugs | "**Had a sea slug ID course?** 24 genera are not open yet…" [Open all genera] | "**Had a sea slug ID course?** Skip the cards…" | [Open all genera now] "**Know sea slugs already?** 24 are not open yet: they come one at a time." |
 
-A subject without a course says "Know … already?" (its `start` words: "I know sea slugs well"); the course framing
+The counts are examples (the seeded players of the mockups); the app writes them from the data (rule U8). A subject
+without a course says "Know … already?" (its `start` words: "I know sea slugs well"); the course framing
 comes from a subject's field, so a subject without one never shows it. Moving Open all into the card removes the My
 progress box; the first cards keep theirs (the moment a player meets the pace), with the same wording. A wording is
 the integrator's call (easy to correct).
@@ -289,11 +294,22 @@ Requests to the sync sheet and every host but the photo host were blocked. Files
 
 - **Recommended**: `rec-home-{coral,fish,seaslug}-{phone,desk}-{light,dark}.png`,
   `rec-progress-{coral,fish,seaslug}-{phone,desk}-{light,dark}.png`, the phone line `rec-progress-*-phone-*-line.png`,
-  full pages `rec-progress-*-light-full.png`; Home at 360 × 640: `rec-home-*-small-light.png`.
+  full pages `rec-progress-*-light-full.png`; Home at 360 × 640: `rec-home-*-small-light.png` and, with the kicker link, `rec-home-*-small-kicker-light.png`.
 - **Option A's overlay**: `optA-overlay-fish-{phone,desk}-light.png`. **Option C**: `optC-chip-fish-{phone,desk}-light.png`.
 - **Today**: `before-progress-{coral,fish}-{phone,desk}.png` (full page), `before-settings-{coral,fish}-{phone,desk}.png`.
 
-MEASURED_FIT
+**Measured** (`document.scrollHeight` against the window, after Home redrew):
+
+| Size | Corals | Fish | Sea slugs |
+| --- | --- | --- | --- |
+| 390 × 844, the line in the Learn door | one screen | one screen | one screen |
+| 1280 × 800, the line in the Learn door | one screen | one screen | one screen |
+| 360 × 640, the line in the Learn door | 698 px: scrolls 58 px | 698 px: scrolls 58 px | 698 px: scrolls 58 px |
+| 360 × 640, the link on the kicker row | one screen | one screen | one screen |
+
+The per-level % shown for the fish are the seeded record's own where the app computes them (the families' mean, the
+scientific genera's mean); the species' common-names % is the mean of the first 60 species, an illustration (the
+seeded record does not reach the score's species component).
 
 ## 14. What building it would take
 
