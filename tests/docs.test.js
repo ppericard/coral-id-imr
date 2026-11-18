@@ -307,8 +307,8 @@ const anchorsOf = (() => {
 })();
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
-  const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
+  const a = anchorsOf(path.join('docs', 'spec', 'service-worker.md'));
+  // # Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
   assert.ok(anchorsOf(path.join('docs', 'spec', 'fish-photos.md')).has('where-fish-photos-come-from-the-sources-and-the-area-rule'));
@@ -567,7 +567,7 @@ const DOC_BUDGET = {
   'CLAUDE.md': [2, 240],
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
-  'docs/ARCHITECTURE.md': [302, 11440],
+  'docs/ARCHITECTURE.md': [207, 10330],
   'docs/LEARNING.md': [304, 5240],
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
@@ -585,6 +585,12 @@ const DOC_BUDGET = {
   'docs/spec/admin-photos.md': [35, 140],
   'docs/spec/admin-players.md': [48, 190],
   'docs/spec/admin-tree.md': [22, 210],
+  'docs/spec/achievements.md': [18, 130],
+  'docs/spec/basics.md': [14, 130],
+  'docs/spec/front-end.md': [21, 130],
+  'docs/spec/model.md': [23, 130],
+  'docs/spec/quiz.md': [20, 130],
+  'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
   'docs/spec/content.md': [16, 130],
