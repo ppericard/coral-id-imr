@@ -22,9 +22,8 @@ by the rewrite; `--check` also fails when `data.json` is not as its layers give 
 
 The short names are glossed in [DATA.md › Formats that matter](../DATA.md#formats-that-matter); what they carry:
 
-- `n` the slate number, `fam` the family, `ig` the IMR lecture group, `imr` the lecture cues (verbatim), `qt` the short
-  ID tips, `sum` a short description, `plain` the plain sentence (below; also on every `x.gen` record), `mn` the
-  mnemonic, `crit` the Coral Finder criteria.
+- `n`, `fam`, `ig`, `imr`, `qt`, `sum`, `mn`, `crit` as DATA.md glosses them (`imr` verbatim; `ig`, `imr` and `mn` are
+  the instance's layer, below); `plain` the plain sentence (below; also on every `x.gen` record).
 - `tr` the trait ids, and `trs` the trait ids found in some species only (paliform lobes in some Favites, for
   instance). Every tool reads them through `proto/lab.js` `trHas` (1, 0.5 for some species, 0), `trAll`, `trLabel` and
   `trFits`, never by genus name: a trait of some species is half a match in the Coral ID Key, never eliminated on in the
@@ -89,13 +88,12 @@ tips; `tests/pages.smoke.js` checks the line on Goniastrea's sheet. The fish gen
 
 ### A photo record
 
-The short fields are in [DATA.md](../DATA.md#formats-that-matter): `f` the file stem in `img/`, `ar` width over height
-(the quiz layout), `a` the attribution, `lic`, `o` the original's page (the observation: the draw's colony identity,
-`p.o || p.f`, and the photo memory's key), `t` the taxon, `own` (Pierre's), `loc` (`dauin`, `ph`, `world`), `src` the
-online original while the photo is not downloaded (`r: 1`, remote), `gid: 1` when the iNaturalist observation is not
-Research Grade (candidates; the bonus genera, kept out of games), and `skel: 1` for a coral skeleton photo (rule P6:
-never shown; written by `tools/apply_skeletons.py` from `judging/skeletons.json`; `core.js` `applyCuration` drops it
-from every list, as an excluded photo).
+The short fields (`f`, `ar`, `a`, `lic`, `o`, `t`, `own`, `loc`, `src`, `r: 1`, `gid: 1`, `skel: 1`) are glossed in
+[DATA.md](../DATA.md#formats-that-matter). What they do: `ar` sets the quiz layout; `o`, the observation, is the
+draw's colony identity (`p.o || p.f`) and the photo memory's key; `src` is the online original while the photo is not
+downloaded (`r: 1`, remote); `gid: 1` marks candidates and the bonus genera's photos, kept out of games; a `skel: 1`
+photo is never shown (rule P6: written by `tools/apply_skeletons.py` from `judging/skeletons.json`; `core.js`
+`applyCuration` drops it from every list, as an excluded photo).
 
 **IMR lecture photos** (`course`) carry `imr: true`, `slide` and `v`, their view. Once traced to their original source
 (`tools/imr_sources.json`, written by

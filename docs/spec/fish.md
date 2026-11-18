@@ -219,8 +219,8 @@ why}).
 - `tools/build_fish.py` `add_families` (`genus_root`) builds it on every rebuild (`--regroup` applies an edit offline)
   and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, or a circle-1 genus has
   neither a root nor a reason in `skip`. A fish part may have no word, or be another genus the entry names (fifth item
-  `genus`: "the genus *Pomacentrus*") or the person it says the name honours (`honours`). Circle 1 is read; circles 2-3
-  are not read yet.
+  `genus`: "the genus *Pomacentrus*") or the person it says the name honours (`honours`). Only the circle-1 genera must
+  have a root or a reason.
 - Shown by the same `rootLine` (counting the shared ending among every fish genus, "among the fish") through `learn.js`
   `fishRoot`, on the one sheet the genus opens (`fishTree` `go`): its genus page, its one species' sheet, or its
   family's sheet when it is that family's only genus.
@@ -269,7 +269,8 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   sharp, large, one fish), never by who took them; and makes the first the card's `cover`, so the families list, Home
   and the cards show it too. The app ranks them again on `model.js` `photoDiff` (`app.js` `rankPhotos`, at load and with
   each new photo statistics reply), so the players' ratings take over once fish answers are logged. `model.js` reads `e`
-  in `photoDiff` (the prior), `easyFirst` (very easy photos only until Open Water) and `easyTrust`
+  in `photoDiff` (the prior), in the `RARE` cap (`rareCap`: until a unit reaches Open Water, its photos under ease 4,
+  or its `RARE.FEW` easiest when it has fewer, make at most `RARE.SHARE` of the photos drawn) and in `easyTrust`
   ([LEARNING.md](../LEARNING.md) "Fish: the starter core and judged photos").
 
 ## Covers
@@ -378,7 +379,8 @@ order's first (ROADMAP "The Tree tab").
 - The species most seen is read from `fish.json` `present` (`nearU` distinct Research Grade observers and `nearN`
   observations within the centre's radius, under their first names `dauinU` and `dauin` until the build writes the
   generic ones: `app.js` `nearSeen`, `autosort.js` `fishNear`). The counts are computed once, at build (rule L13); the
-  app only compares them.
+  app only compares them. A genus's "Most met here" line (`app.js` `fishGenera`) follows the commonness index, not
+  these counts.
 - One rule in two copies: the app's `app.js` `seenCover` (the card's photo: `fishCurate` without his pick, `rankPhotos`
   on the rated order; `learn.js` `nodeCover` over the species' photos in play, the sheet-only ones only when none is:
   the family sheet's hero, its look-alike cards, a genus sheet's sibling genus cards) and the admin's `autosort.js`

@@ -127,7 +127,8 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `fi
 
 - **Short** (`shortness`): a species under its cap (the room of `species_room`: the cap net of what Pierre rejected,
   excluded or sent elsewhere and of the pre-sort's sure set-asides), or with fewer than `EASY_NEED` (3) observations
-  holding a very easy photo (ease ≥ `EASY_E`, 4: `model.js` easyFirst's `PDIFF.EARLY` and `PICKD.VARIETY`) in play or
+  holding a very easy photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
+  before Open Water; 3 as `RARE.FEW`) in play or
   sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `fishSure`'s adds, the game photos of
   `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;
   its waiting candidates need the pass or Pierre), listed as `at_cap` by `--refill --plan`.

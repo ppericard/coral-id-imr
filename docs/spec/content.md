@@ -134,8 +134,9 @@ own writer).
 - **The leaderboard's tree** follows the structure in force: the sheet makes it itself with the replay's units
   (`SUBJECTS` `replayed` `tree`, `core.js` `fishBoardTree`, the app's own `UNITS` tree;
   [sync.md › Other subjects' replays](sync.md#other-subjects-replays)).
-- **Not built yet**: each instance's words for its circles, and the build's report of circle-1 genera with no name root
-  (design note step 3).
+- **Not built yet** (design note step 3): each instance's words for its circles, and the build's report of the genera a
+  circle edit brings into circle 1 with no name root (the build requires one only of the circle-1 genera of the base;
+  such a genus shows none on its sheet).
 
 ## The corals' structure: look-alike pairs only
 
