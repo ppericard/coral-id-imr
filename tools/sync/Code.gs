@@ -3394,7 +3394,7 @@ function replayedAll_(users, dcol){
 // https://script.google.com/home/usersettings, the manifest's scopes accepted (running installAutoUpdate asks), and a
 // first manual deploy of this version. A newer file without autoUpdate is never installed (it would end the updates);
 // every attempt that does something is written to the "Deploy log" tab. Anyone who can push to the release branch can
-// change this script, and only the merge train (tools/train.py, rule W26) pushes it: vNEXT (Pierre, 2026-11-18, review R5
+// change this script, and only the merge train (tools/train.py, rule W26) pushes it (from vNEXT; Pierre, 2026-11-18, review R5
 // question h): the script installs the code a green train tested, never a commit that reached main without the train
 // (the admin's Publish, the Candidate photos workflow). Until the branch exists (GitHub answers 404 for it, and only for
 // that) the script reads main as before, so the first update that reads release cannot lose its way; any other answer
