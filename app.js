@@ -2133,27 +2133,20 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //            says so and what comes next, once per reason k; absent (the corals): no card
 //   listBy   a tree subject without a key: the rank its units are grouped by on its Learn list (learn.js viewFishList, one
 //            block per unit of that rank, its parent): the sea slugs' 'family'; absent, one block (the fish: the key's groups)
-// Bonus genera (opt-in; docs/LEARNING.md "Millepora and the bonus genera"): genera off the IMR slate that are common at Dauin and
-// easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
-// tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
-// the Coral Finder (Isopora / Acropora, Leptoseris / Pavona, Sandalolitha / Halomitra, Pleuractis / Lobactis), or not a
-// hard coral at all (Heliopora). Offered once, by a card, when the player has asked every slate genus (quiz.js
-// bonusOfferShow); ⚙ Bonus genera On / Off changes it any time (Q.bon; Off keeps their progress). Once on, they join
-// the genera not met yet and open like the others (model.js weighted, OPEN). They never count in the progress (progPct,
-// the slate tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
-// Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
-// The list: core.js BONUS.
-// Fish circles (fish.json, per family: its best species' circle; docs/FISH_PATH.md). Circle 1: the families the IMR
-// course teaches (IMR's list of survey fish); circle 2: seen now and then on the SVS videos (barracudas); circle 3: the
-// families divers look for around Dauin, muck diving above all. Every circle is on the path and counts in the progress.
-// Circles 2 and 3 open after the IMR course's families, as its continuation (fishGate): circle 2 by itself once every
-// circle-1 family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3 and the player said yes (UNITS
-// fish opens, the card at the threshold, My progress any time after). Its families count in the fish % open or not (100%
-// is everything known, circle 3 included). Within what may open, the usual weighted opening (model.js openPick).
-// The circle-3 threshold reads the fish score's circle-1 Entries component (core.js treeScore by[1].entries, the
-// circle-1 families weighted by how common their species are): 55%, where the simulated players reach it at the same
-// answer as the plain mean's 50% (docs/LEARNING.md "Fish: the global score, built"). Without the subject's score (core.js
-// SUBJECTS fish score), the plain mean of the circle-1 families at 50%.
+
+// Bonus genera (opt-in; the list: core.js BONUS; docs/LEARNING.md "Millepora and the bonus genera"): Coral Finder genera
+// common at Dauin (data.json "x", tools/build_extra.py) with a look-alike on the slate, or no hard coral at all. Offered
+// once, by a card, when every slate genus has been asked (quiz.js bonusOfferShow); ⚙ Bonus genera turns them on or off
+// any time (Q.bon; off keeps their progress). Once on, they open like the others (model.js weighted, OPEN), never count in
+// the progress, and their ID tips are the Coral Finder's, labelled as such. Game photos: Research Grade or Pierre's own,
+// never multi-coral (tools/apply_bonus.py).
+
+// Fish circles (fish.json, per family: its best species' circle; docs/FISH_PATH.md): 1, the families the IMR course
+// teaches; 2, seen now and then on the SVS videos; 3, the families divers look for around Dauin. All count in the progress,
+// open or not. Circles 2 and 3 open after circle 1 (fishGate): circle 2 once every circle-1 family has been asked, circle
+// 3 once circle 1 reaches FISH_C3 and the player said yes (UNITS fish opens). FISH_C3 reads the fish score's circle-1
+// Entries component (core.js treeScore by[1].entries): 55%, which simulated players reach when the plain mean reaches 50%
+// (docs/LEARNING.md "Fish: the global score, built"); without that score, the plain mean at 50%.
 const FISH_C3 = {entries: 0.55, mean: 0.5};
 const fishC3 = () => {
   const h = headScore();
