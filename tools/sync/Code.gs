@@ -1140,12 +1140,12 @@ function statsStep_(S, m, tr, ex, idx){
   try { pk = !tr || photoCheck_(idx, S.sid, sg, fs) !== 'other'; } catch (e) {}  // a check that fails flags nothing
   if (!pk) S.skip.photos++;
   const P = S.P, PG = S.PG, sig = x => 1 / (1 + Math.exp(-x)), g = guess_(mode, ch), ra = S.R[w] = S.R[w] || [PLAYER0, 0];
-  // v115 (review of #801): only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
+  // Only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
   // the served difficulty's offset); any other names a photo's genus only while no rating answer has (a photo nobody
   // rated, served at weight 0), so a left-out or flagged answer moves no photo difficulty and adds no offset.
-  const rt = tr && pk, go = rt ? (S.G[sg] = S.G[sg] || [0, 0]) : S.G[sg] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
+  const rt = tr && pk, go = rt ? (S.G[sg] = S.G[sg] || [0, 0]) : S.G[sg] || [0, 0];  // the genus offset, shared by the photos of the genus
   const ph = fs.map(f => ((rt || !(f in PG)) && (PG[f] = sg), P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
-  // One expectation for the photos and the player, with the player's memory of these photos (v26).
+  // One expectation for the photos and the player, with the player's memory of these photos.
   const Hw = S.H[w] = S.H[w] || nul_(), hb = fs.map(f => Hw[f] || 0), mem = S.mem;
   const s = sig(ra[0] - b - hb.reduce((t, k) => t + mem[k], 0) / hb.length), e = g + (1 - g) * s, d = ok - e, n = ra[1];
   // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
@@ -1164,41 +1164,41 @@ function statsStep_(S, m, tr, ex, idx){
 }
 // What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers]}, conf, mem, memn, gd,
 // fmt}, the public ?stats=1 reply (stats_ adds ras and skip for the admin).
-// [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
-// photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
-// v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
+// [difficulty, weighed answers, weighed right, answers]: the 4th is the plain count of the answers that rated the photo,
+// for the admin's filters (a photo answered once weighs under 1). The difficulty served is the photo's total, its
+// genus's offset + its residual; gd the offsets.
 function statsOut_(S){
   const out = {ok: true, photos: nul_(), conf: S.conf, mem: S.mem.map(x => Math.round(x * 100) / 100), memn: S.N.map(x => Math.round(x * 10) / 10), gd: nul_(), fmt: CORE_.fmtFit(S.L)};
   Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3]]; });
   Object.keys(S.G).forEach(n => out.gd[n] = [Math.round(S.G[n][0] * 100) / 100, Math.round(S.G[n][1] * 10) / 10]);
   return out;
 }
-// read (v115): true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
+// read: true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
 // when not cached (pools_); otherwise (a replay under the lock) only the cached pools are used, so nothing is fetched
 // under the lock (the pools are warmed by the public stats every app asks for, and by the admin's player list).
 // The stats are cached with chk: 1 once their photos were checked against every subject's pool (a read, or every pool
 // cached); stats made under the lock with a pool not cached yet are cached with chk: 0, which a read never takes: it
-// reads the pools and makes them again (Codex review #801), and a replay under the lock takes them as they are.
-// v134: the whole log folded in one go (statsStep_, statsOut_); the public ?stats=1 is served from the snapshot the
-// trigger folds a few rows at a time (statsServed_, statsFold_) and comes here only while there is none.
-// sid (v137, Q123 j for the fish): the subject whose answers are rated (statsSid_: the corals by default, as before),
-// each with the same rules over its own rows (subjRows_) and its own cache (statsKey17_).
+// reads the pools and makes them again, and a replay under the lock takes them as they are.
+// The whole log folded in one go (statsStep_, statsOut_); the public ?stats=1 is served from the snapshot the trigger
+// folds a few rows at a time (statsServed_, statsFold_) and comes here only while there is none.
+// sid: the subject whose answers are rated (statsSid_: the corals by default), each with the same rules over its own
+// rows (subjRows_) and its own cache (statsKey17_).
 function stats_(read, sid){
   sid = statsSid_(sid);
   const cache = CacheService.getScriptCache(), hit = cache.get(statsKey17_(sid));
   if (hit) { const v = JSON.parse(hit); if (!read || v.chk) return v; }
-  const t0 = Date.now();  // v130: a build is timed (the Timings tab), its read of the Answers tab apart
-  // v115 (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
+  const t0 = Date.now();  // a build is timed (the Timings tab), its read of the Answers tab apart
+  // Every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
   // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: nul_(), ras: {}, conf: nul_(), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: nul_(), fmt: {}};
   if (!sh || sh.getLastRow() < 2) return out;
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
   const rows = subjRows_(sid).filter(r => r[0]), M = rows.map((r, i) => statsMini_(r, i, lc_(r[0]))).sort(statsOrder_);
   const trust = trusted_(M.map(m => [m[2], m[5], m[6], m[2].indexOf('~anon ') === 0, m[9]]));
-  // v115: the players and devices the admin left out of the statistics (sxSet_) count as untrusted: they rate nothing.
+  // The players and devices the admin left out of the statistics (sxSet_) count as untrusted: they rate nothing.
   const salt = anonSalt_(), sx = sxSet_(), EX = nul_(), isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
   Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
-  // v115: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
+  // An answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
   const idx = (() => { try { return photoIdx_(read ? undefined : true); } catch (e) { return null; } })();  // every subject's; fetched only when read
   out.chk = read || (idx && idx.n >= CORE_.SUBJECTS.filter(S => S.pool).length) ? 1 : 0;  // a pool missing under the lock: 0
   const S = statsNew_(0, [], t0, '', sid);
@@ -1206,19 +1206,18 @@ function stats_(read, sid){
   const o = statsOut_(S);
   ['photos', 'conf', 'mem', 'memn', 'gd', 'fmt'].forEach(k => { out[k] = o[k]; });
   out.skip = S.skip;
-  // v55: the answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
-  const arch = archivedSet_();  // v58: an archive's answers rate the photos, never a player either
+  // The answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
+  const arch = archivedSet_();  // an archive's answers rate the photos, never a player either
   Object.keys(S.R).forEach(n => { if (n.indexOf('~deleted ') !== 0 && !arch.has(n)) out.ras[aid_(n, salt)] = [Math.round(S.R[n][0] * 100) / 100, S.R[n][1]]; });
   try { cache.put(statsKey17_(sid), JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   tim_('stats build', t0, rows.length, LOG.length);
   return out;
 }
 
-// v134 (Q123 j, Pierre 2026-11-14: "j first", the pooled stats built incrementally; the storage study's plan): the
-// photo stats the app asks for (?stats=1) are no longer made from a read of the whole Answers tab at each request (the
-// cache, 100 KB a value, would no longer hold them by December, and the read grows with the log): the 15-minute trigger
-// folds the new rows into a snapshot, a few thousand at a time, and the request reads the snapshot. Corals only (the
-// subject stats_ rates); fish follow in their own change.
+// The pooled stats built incrementally (docs/ARCHITECTURE.md "Progress sync (Google Sheet)"): the photo stats the app
+// asks for (?stats=1) are not made from a read of the whole Answers tab at each request (the read grows with the log,
+// and the cache holds 100 KB a value): the 15-minute trigger folds the new rows into a snapshot, a few thousand at a
+// time, and the request reads the snapshot.
 // Exactly what stats_ makes from the whole log, run for run (tests/statsfold.test.js), which takes care: stats_ reads the
 // answers oldest first by their time, not in the tab's order, decides who is trusted on each player's whole log, leaves
 // out the ids sxSet_ lists and checks the photos against today's game pools. So the fold keeps two parts:
@@ -1231,7 +1230,7 @@ function stats_(read, sid){
 // folded (statsPoolFp_), the Answers tab rewritten (a sign-in's anonymous answers moved to the name, a merge, a delete, a
 // one-shot migration: statsDirty_), a new script version, the snapshot missing or unreadable, the cursor's row no longer
 // the one it read. Meanwhile the last snapshot is served (same version, at most STATS.AGE old), and none at all after a
-// delete, merge or archive (rosterChanged_: statsDirty_ drops it), when ?stats=1 makes stats_ as before.
+// delete, merge or archive (rosterChanged_: statsDirty_ drops it), when ?stats=1 makes stats_.
 // The tab (STATS.TAB): row 2 the reply served (no player data: what ?stats=1 always sent), row 3 the fold (Note: when
 // and why it was built), each JSON in CHUNK-character cells from column G. The fold holds, by admin id (aid_, never a
 // name, rule D2), what the rules need per player: trust counters, ability, photo memory buckets, and the pending answers
@@ -1239,18 +1238,15 @@ function stats_(read, sid){
 // reads it, and a new format rebuilds it. Rule D7: any delete, merge or archive (rosterChanged_) blanks it at once
 // (statsDirty_), before the next run builds it again without the account. The cursor is mirrored in the Script Property
 // STATS.PROP; the two disagreeing (a run cut between its writes) rebuild too.
-// v137 (Q123 j for the fish, Pierre 2026-11-14: "j (pooled stats built incrementally, per subject) first"): every
-// subject with game photos (core.js SUBJECTS pool: the corals, the fish, the sea slugs from v167) has its own fold, snapshot and reply, made by the
-// same rules over its own answers (stats_(read, sid)): its tab (statsTab_: Stats for the corals, "Stats Fish"), its
-// cursor (statsProp_), its cache (statsCacheKey_), served by ?stats=1&s=<subject> (the corals without s, as before).
-// One mark of a rewrite of the log (STATS.DIRTY) for all of them, and every subject's fold blanked by a delete, merge or
-// archive. The app reads only the corals' reply so far (the fish's, at most an hour old, waits for a change of its own).
-// v145 (the step #882 and #940 left next; Pierre, 2026-11-15, Q357: "numbers over all the data, stored, never
-// simplified"): the other readers of stats_ read the snapshot too, and make stats_ only when it is not served (missing,
-// stale, another version, older than the last delete, merge or archive): the admin's readStats (statsAdmin_: row 2 and
-// row 4, the admin part, each player's ability by admin id and the answers left out, written by the same run), the
-// replays (rplMake_, replayedAll_: statsServed_, the corals' photo memory, pairs, formats and genus offsets as before).
-// Row 4 holds admin ids only, never a name (rule D2), and is blanked with rows 2 and 3 (statsDirty_, rule D7).
+// Every subject with game photos (core.js SUBJECTS pool) has its own fold, snapshot and reply, made by the same rules
+// over its own answers (stats_(read, sid)): its tab (statsTab_: Stats for the corals, "Stats Fish"), its cursor
+// (statsProp_), its cache (statsCacheKey_), served by ?stats=1&s=<subject> (the corals without s). One mark of a
+// rewrite of the log (STATS.DIRTY) for all of them, and every subject's fold blanked by a delete, merge or archive.
+// The other readers of stats_ read the snapshot too, and make stats_ only when it is not served (missing, stale,
+// another version, older than the last delete, merge or archive): the admin's readStats (statsAdmin_: row 2 and row 4,
+// the admin part, each player's ability by admin id and the answers left out, written by the same run), the replays
+// (rplMake_, replayedAll_: statsServed_). Row 4 holds admin ids only, never a name (rule D2), and is blanked with rows 2
+// and 3 (statsDirty_, rule D7).
 const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 3, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, LOCK_MS: 10000, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
 const STATS_DATA = STATS.HEAD.length - 1;  // the first chunk's index (column G)
 // The subjects with pooled stats (those with game photos), and the one a request or a call names: the corals when it
@@ -1312,7 +1308,7 @@ function statsPoolFp_(S, idx){
 // The Answers tab was rewritten (relabel_, dropRows_, a one-shot migration): the fold starts again at the next run.
 // all (rosterChanged_: an account left normal operation, or who is left out of the statistics changed; anonDelete):
 // the fold's player data is blanked now (rule D7) and the snapshot served goes too, so ?stats=1 makes stats_ until the
-// fold is rebuilt. v137: every subject's. v145: the admin part (row 4) too.
+// fold is rebuilt; every subject's, the admin part (row 4) too.
 function statsDirty_(all){
   try { PropertiesService.getScriptProperties().setProperty(STATS.DIRTY, Date.now() + ':' + Math.random()); } catch (e) {}  // a new mark each time
   if (!all) return;
@@ -1329,8 +1325,8 @@ function statsDirty_(all){
 const statsOk_ = (g, part) => !!g && String(g.meta[0]) === part && Number(g.meta[1]) === VERSION &&
   Date.now() - (new Date(g.meta[2]).getTime() || 0) <= STATS.AGE && Number(g.meta[4]) >= rosterAt_();
 // The public stats from the snapshot: cached (statsCacheKey_, in parts: cacheBigPut_), else row 2 of the tab when it
-// may be served (statsOk_). null otherwise: the caller makes stats_ as before. sid (v137): the subject (statsSid_).
-// v145: also what the replays read (rplMake_, replayedAll_): it reads no pool and takes no lock.
+// may be served (statsOk_). null otherwise: the caller makes stats_. sid: the subject (statsSid_). Also what the
+// replays read (rplMake_, replayedAll_): it reads no pool and takes no lock.
 function statsServed_(sid){
   if (!STATS.ON) return null;
   const c = CacheService.getScriptCache(), key = statsCacheKey_(sid);
@@ -1345,12 +1341,12 @@ function statsServed_(sid){
     return o;
   } catch (e) { return null; }
 }
-// v145: the admin's readStats from the snapshot, exactly what stats_(true, sid) sends (tests/statsfold.test.js): the
+// The admin's readStats from the snapshot, exactly what stats_(true, sid) sends (tests/statsfold.test.js): the
 // reply served (row 2) with the admin part the same run wrote (row 4; both carry the run's start in Note): each player's
 // ability by admin id less those of a deleted account's answers (the fold's D) and less the players archived now (stats_
 // leaves both out by name: archivedSet_), and the answers left out (skip). Read from the tab, never cached (the admin
 // asks rarely, and a delete has no cache to drop). null when either part may not be served (statsOk_), they are from two
-// runs, or the log is empty (stats_ then sends no skip): the caller makes stats_(true, sid) as before.
+// runs, or the log is empty (stats_ then sends no skip): the caller makes stats_(true, sid).
 function statsAdmin_(sid){
   if (!STATS.ON) return null;
   try {
@@ -1367,7 +1363,7 @@ function statsAdmin_(sid){
 // One run of the fold (the 15-minute trigger: statsFoldRun_). Reads the rows after the cursor, STATS.ROWS at a time,
 // at most STATS.RUN_ROWS and STATS.BUDGET ms a run (at least one step); once it has read the whole tab it settles what
 // is older than STATS.LAG, folds the rest on top and writes what is served. A run that stops before the end writes its
-// progress and the next one goes on. o: sid (v137: the subject, statsSid_); for tests now (the clock the lag reads),
+// progress and the next one goes on. o: sid (the subject, statsSid_); for tests now (the clock the lag reads),
 // rows, max, budget. Returns {why: why the fold was started again ('' when not), read, settled, pending, caught: it
 // reached the last row, ms}.
 function statsFold_(o){
@@ -1408,7 +1404,7 @@ function statsFold_(o){
       read += k;
       const fresh = [];
       let late = false;
-      // v145: a deleted account's answers marked on this fold (D), not in K, which outlives a reset.
+      // A deleted account's answers marked on this fold (D), not in K, which outlives a reset.
       v.forEach((r, i) => { if (!mine(r)) return; const w = lc_(r[0]), m = statsMini_(r, S.c + 2 + i, key(w)); if (w.indexOf('~deleted ') === 0) S.D[m[2]] = 1; if (S.h !== null && m[1] < S.h) late = true; fresh.push(m); });
       if (late) { S = reset('late answer'); continue; }
       fresh.forEach(m => S.pend.push(m));
@@ -1443,12 +1439,12 @@ function statsFold_(o){
   if (caught) {
     S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx));
     served = JSON.stringify(statsOut_(S));
-    // v145: the admin part (statsAdmin_): the abilities as stats_ rounds them, and skip, with the pending answers too.
+    // The admin part (statsAdmin_): the abilities as stats_ rounds them, and skip, with the pending answers too.
     const ras = {};
     Object.keys(S.R).forEach(x => { if (!(x in S.D)) ras[x] = [Math.round(S.R[x][0] * 100) / 100, S.R[x][1]]; });
     admin = JSON.stringify({ras: ras, skip: S.skip});
   }
-  // Written under the script lock (Codex review #882), which every rewrite of the log and every delete, merge or archive
+  // Written under the script lock, which every rewrite of the log and every delete, merge or archive
   // holds: one of them while this run read the log, or now, and nothing is written (what this run folded is stale; the
   // next run rebuilds), so a fold never puts back what a delete just blanked (rule D7). The lock busy: the next run.
   const stale = {why: why, read: read, settled: settled, pending: S.pend.length, caught: false, ms: Date.now() - t0, stale: true};
@@ -1460,7 +1456,7 @@ function statsFold_(o){
     statsPut_(tab, 3, ['state', VERSION, new Date(), S.c, S.roster, note], json);
     props.setProperty(PROP, JSON.stringify({c: S.c, at: S.at, v: VERSION}));
     if (served !== null) {
-      // v145: both parts stamped with the run (Note), so the admin's reader never mixes two runs.
+      // Both parts stamped with the run (Note), so the admin's reader never mixes two runs.
       const at = new Date(), stamp = 'run ' + t0;
       statsPut_(tab, 4, ['admin', VERSION, at, S.c, S.roster, stamp], admin);
       statsPut_(tab, 2, ['served', VERSION, at, S.c, S.roster, stamp], served);
@@ -1472,8 +1468,8 @@ function statsFold_(o){
 }
 // From the 15-minute trigger (autoUpdate, when up to date, after the leaderboard's replays): one run of the fold, unless
 // the trigger run is already long (STATS.UNTIL from its start: the next run folds). The Deploy log says when a build
-// for a new version (or the first) is complete, and a failure. v137: each subject's fold in turn (statsSubjects_), the
-// next one only while the run is not long.
+// for a new version (or the first) is complete, and a failure. Each subject's fold in turn (statsSubjects_), the next
+// one only while the run is not long.
 function statsFoldRun_(log){
   if (!STATS.ON) return;
   statsSubjects_().forEach(sid => {
@@ -1486,11 +1482,11 @@ function statsFoldRun_(log){
   });
 }
 
-// Players' reports (v7): from a game, after the answer, a player says the expected genus is probably wrong (and may say
-// which genus it is), the photo shows several corals, the photo is bad, or something else, with an optional note.
+// Players' reports: from a game, after the answer, a player says the expected genus is probably wrong (and may say
+// which genus it is), the photo shows several corals, the photo is bad, or something else, with an optional note; also
+// from an enlarged photo, a genus sheet or any page (Mode = game, photo, sheet or page; Where = the page).
 // One row per report in the "Reports" tab. The reporter is the sync name when its code matches ("Verified" 1),
 // else the name typed or nothing ("Verified" 0). Nothing here changes the photos: Pierre decides in the admin Triage.
-// v8: also from an enlarged photo, a genus sheet or any page (feedback): Mode = game, photo, sheet or page; Where = the page.
 const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Where', 'Id'];
 const WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', info: 'Wrong information', bug: 'Bug', idea: 'Suggestion', other: 'Other'};
 const text_ = (x, n) => safe_(String(x == null ? '' : x).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, n));
@@ -1499,19 +1495,19 @@ function logReports_(p){
   if (!L.length) return {ok: true, rep: true};
   const lock = lock_();
   try {
-    if (over_('reports', 300)) return {ok: false, error: 'busy'};  // v12 flood cap, checked under the lock
+    if (over_('reports', 300)) return {ok: false, error: 'busy'};  // flood cap, checked under the lock
     const name = String(p.rname || '').trim().slice(0, 40), pin = String(p.rpin || '').trim();
     let ok = 0, who = name;
-    // v55: a device still signed in with a removed account (Removed: its name and code): its reports go under the name it
+    // A device still signed in with a removed account (Removed: its name and code): its reports go under the name it
     // joined (a merge, Verified 1), or under no name at all (deleted, Verified 0), never under the removed name.
-    // The removal is checked whatever the code throttle says (Codex review #600): a throttled name verifies nothing, but
+    // The removal is checked whatever the code throttle says: a throttled name verifies nothing, but
     // a removed account's name and code still never put the removed name on a report.
     if (name && /^\d{4}$/.test(pin)) { const h = hash_(name, pin), g = gone_(name, h);
       if (blocked_(name)) { if (g) { who = g.into; ok = 0; } }
       else { const ra = sheet_('RAs', HEAD), r = find_(ra, name);
         if (r && ra.getRange(r, 7).getValue() === h) ok = 1;
         else if (g) { who = g.into; ok = g.into ? 1 : 0; } else if (r) failed_(name); } }
-    // v58 (Codex review #603): the generation the report was queued under (racct, sync.js acct), whatever the code or its
+    // The generation the report was queued under (racct, sync.js acct), whatever the code or its
     // throttle: no account of the name any more, or another generation of it (the record archived, the name taken again
     // since, with any code), and the report has no reporter, never the new account's.
     if (who && who === name && typeof p.racct === 'string' && p.racct) { const ra = sheet_('RAs', HEAD), r = find_(ra, name);
@@ -1519,8 +1515,8 @@ function logReports_(p){
       if (!r || (d._acct && d._acct !== p.racct)) { who = ''; ok = 0; } }
     const sh = sheet_('Reports', REP), n = sh.getLastRow() - 1;
     const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
-    // v34: a unit is a genus name or a fish teaching id (t01): letters first, then letters, digits, spaces or dashes;
-    // v46: or a fish scientific genus (g:Platax); v69: or a fish family (f:Damselfishes), an old entry id renamed to it.
+    // A unit is a genus name, a scientific genus (g:Platax) or a family (f:Damselfishes; an old entry id renamed to
+    // it): letters first, then letters, digits, spaces or dashes.
     const G = /^([fg]:)?[A-Za-z][A-Za-z0-9 -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const un = x => CORE_.SUBJECTS.reduce((y, S) => CORE_.renamedId(S, y), x);
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(who), ok, WHY[r.why], word_(un(r.g), G, 40), word_(un(r.a), G, 40),
@@ -1531,12 +1527,12 @@ function logReports_(p){
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }
-// v57 (Pierre, 2026-11-05, Q66: when the admin marks a report done, the player who sent it is told once that it helped):
+// For "Your feedback helped" (core.js helpedDue: the player who sent a report the admin marks done is told once):
 // the ids of one player's reports, those sent signed in under their name with their code (Verified 1), oldest first, the
 // last REPS_MAX. The admin's Done is not here (curation.json seen 'rep:<id>', public): the app checks these ids against
 // it, with the ids it kept itself (an anonymous device's reports, matched on the device that sent them). Ids only: no
 // reason, note or anything the admin wrote. A name whose account was deleted and taken again by someone else (Removed
-// tab: another code may pick it) gets only the reports sent after its last removal (Codex review #581).
+// tab: another code may pick it) gets only the reports sent after its last removal.
 const REPS_MAX = 50;
 function repsOf_(name){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Reports'), n = sh ? sh.getLastRow() - 1 : 0, me = lc_(name);
@@ -1549,9 +1545,9 @@ function repsOf_(name){
     .filter(r => lc_(r[1]) === me && Number(r[2]) === 1 && r[REP.length - 1] && (new Date(r[0]).getTime() || 0) > cut)
     .map(r => String(r[REP.length - 1])).slice(-REPS_MAX);
 }
-// POST {readReports: 1, token} (v8) → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
-// suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
-// GitHub token can write to the repository (the admin page's token; Pierre, 2026-11-01: "all admins"). The token is
+// POST {readReports: 1, token} → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
+// suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them:
+// anyone whose GitHub token can write to the repository (the admin page's token). The token is
 // checked with GitHub once and remembered 10 minutes by its hash only; it is never stored. Sent by POST, so it stays
 // out of URLs and logs. Needs the script's "connect to an external service" permission (asked once on redeploy).
 const REPO = 'ppericard/coral-id-imr';
@@ -1565,33 +1561,32 @@ function isAdmin_(token){
   return ok;
 }
 
-// Roles step 1 (v156; Pierre, 2026-11-13, Q342-Q349: scoped roles, enforced here by one can_() check and an audit log,
-// never by the page; Q364, 2026-11-15: rights are separate, the platform admin may grant himself a role and the grant is
-// logged; ROADMAP "Roles, instances and cohorts", docs/SECURITY.md "Roles and the Audit tab").
+// Roles (docs/SECURITY.md "Roles and the Audit tab"; docs/ROADMAP.md "Roles, instances and cohorts"): scoped roles,
+// enforced here by one can_() check and an audit log, never by the page; rights are separate, and the platform admin may
+// grant himself a role, the grant logged.
 // A grant is one account, one role, one scope; one account may hold several. Kept in the Roles tab (one row a grant:
 // Account, Role, Scope, Since, Code hash), not in columns of the RAs tab: an account holds any number of grants, and the
 // RAs columns are read by position. A grant holds only for the account it was made for (its name and its code hash), and
 // a delete, a merge (its from) or an archive drops its grants (rolesDrop_, rule D7), never moves them.
 // The player role is every account's and is not stored. Scopes: 'platform', 'instance:<id>' (this sheet serves one
-// instance, INSTANCE_: Q343, one shared sheet for now), later 'cohort:<id>' (roles step 2).
-// The admin token (isAdmin_: a GitHub token that can push to the repository) is the platform admin as today and passes
-// every right: whoever can push to main can change this script. Q364's separation holds for the rights an account holds
-// by its grants: an account holding only the platform admin role is refused an instance's players or content until it
-// holds that instance's role. Until a later step lets an account act by its name and code, every privileged endpoint
-// is reached with the token only (caller_), so who may do what is unchanged.
+// instance, INSTANCE_), later 'cohort:<id>'.
+// The admin token (isAdmin_: a GitHub token that can push to the repository) is the platform admin and passes every
+// right: whoever can push to main can change this script. The separation of rights holds for an account's grants: an
+// account holding only the platform admin role is refused an instance's players or content until it holds that
+// instance's role. Every privileged endpoint is reached with the token only for now (caller_).
 const INSTANCE_ = 'imr', INST_SCOPE_ = 'instance:' + INSTANCE_;
 const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code hash'], SEED: 'ROLES_SEED',
-  // Q342: each role, the scope kind it is granted at and the rights it gives there. The platform admin's grant right
-  // reaches every scope (Q364: he may grant himself a role); every other right is the grant's own scope only.
+  // Each role, the scope kind it is granted at and the rights it gives there. The platform admin's grant right reaches
+  // every scope (he may grant himself a role); every other right is the grant's own scope only.
   DEF: {
     admin: {at: 'platform', rights: ['platform', 'grant']},  // the code, the base database, creating instances
     owner: {at: 'instance', rights: ['players', 'settings', 'grant']},  // grants roles in the instance, its players and settings
     editor: {at: 'instance', rights: ['content']},  // every right on the instance's content, no code, no players' data
-    // creates cohorts and follows them (roles step 2); hosts a live game (v172, lvStart_; Pierre, 2026-11-17, Q393 d); no content
+    // creates cohorts and follows them; hosts a live game (lvStart_); no content
     trainer: {at: 'instance', rights: ['cohorts', 'live']}
   },
-  // Pierre today (the task of 2026-11-15): platform admin, and owner and content editor of the IMR instance. Given once
-  // to the admin's account (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
+  // Pierre's: platform admin, and owner and content editor of the IMR instance. Given once to the admin's account
+  // (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
   SEEDS: [['admin', 'platform'], ['owner', INST_SCOPE_], ['editor', INST_SCOPE_]]};
 // A role's definition, own entries only: a role named like Object.prototype's members (constructor, __proto__) is none.
 const roleDef_ = role => (Object.prototype.hasOwnProperty.call(ROLES.DEF, String(role)) ? ROLES.DEF[String(role)] : null);
@@ -1622,15 +1617,15 @@ function caller_(token){
   const t = String(token || '');
   return isAdmin_(t) ? {token: true, id: tokId_(t)} : null;
 }
-// The Audit tab: one row per privileged action (Q342): Time, Admin id (the caller's: an account's anonymous id aid_, or
+// The Audit tab: one row per privileged action: Time, Admin id (the caller's: an account's anonymous id aid_, or
 // the token's tokId_; never a name), Action (a fixed word of the code, with a role and "(self)" for a grant), Scope,
 // Result ('ok' or the error answered), Target id (the anonymous id of the account it is about, never a name; blank when
 // none). Every change is written; a read is not (the admin page reads every minute: Players › Activity's readLive writes
 // nothing); a refusal is written at most AUDIT.DENY times every 6 hours (over_; anyone can send one). Nothing reads it
 // in normal operation: it outlives the accounts it names by id only (rule D7).
 const AUDIT = {TAB: 'Audit', HEAD: ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id'], DENY: 20};
-// One Audit row: true once written. v159: a row that could not be written is a line in the Deploy log (roleLog_), never
-// silent and never thrown to the request (the seed of 2026-11-16 left a grant without its row, and nobody saw why).
+// One Audit row: true once written. A row that could not be written is a line in the Deploy log (roleLog_), never
+// silent and never thrown to the request.
 function audit_(id, action, scope, result, target){
   try { sheet_(AUDIT.TAB, AUDIT.HEAD).appendRow([new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || '')]); return true; }
   catch (e) { roleLog_('Audit row not written (' + action + ', ' + scope + ', ' + result + '): ' + errText_(e)); return false; }
@@ -1644,7 +1639,7 @@ function roleLog_(what){
     sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), safe_(('Roles: ' + what).slice(0, 500))]);
   } catch (e) {}
 }
-// v159: does the grant (role, scope) of the account with this anonymous id have its Audit row? The last 'ok' grant or
+// Does the grant (role, scope) of the account with this anonymous id have its Audit row? The last 'ok' grant or
 // revoke of that role and scope for that id is a grant. A grant held without one was written by a try that failed before
 // its row (grantPut_ writes it then).
 function grantAudited_(role, scope, id){
@@ -1680,7 +1675,7 @@ function rolesDrop_(name, by){
   return n;
 }
 // One grant written (or found already held) for the live account (name, h). Under the script lock (the caller holds it).
-// v159: a role change is never without its Audit row. Everything the row needs is computed before the grant is written;
+// A role change is never without its Audit row. Everything the row needs is computed before the grant is written;
 // a grant held without its 'ok' row (grantAudited_: an earlier try wrote it, then failed) gets that row now and answers
 // 'ok', as the try that wrote it would have; a row that cannot be written throws, after its Deploy log line (audit_), so
 // the seed is not marked done and its next try writes the row.
@@ -1694,9 +1689,9 @@ function grantPut_(name, h, role, scope, by, self){
 }
 // Pierre's grants (ROLES.SEEDS), given once to the admin's account the first time the admin page reads the answer log
 // with the token, signed in to it (answers_, its code checked): a property marks it done, so a revoke or a delete is
-// never silently granted again, and no other account ever gets it this way. Audited as self-grants by the token (Q364).
-// v159: the property is set only once every grant has its Audit row (grantPut_); a try that failed is finished by the
-// next one, which writes 'ok' for a grant the failed try wrote without its row.
+// never silently granted again, and no other account ever gets it this way. Audited as self-grants by the token.
+// The property is set only once every grant has its Audit row (grantPut_); a try that failed is finished by the next
+// one, which writes 'ok' for a grant the failed try wrote without its row.
 function rolesSeed_(name, h, who){
   const pr = PropertiesService.getScriptProperties();
   if (pr.getProperty(ROLES.SEED)) return false;
@@ -1715,8 +1710,8 @@ function rolesSeed_(name, h, who){
 // POST {roles: 1, token} → {ok, grants: [{name, id, role, scope, since}]}: every grant (the token sees names already).
 // POST {roleGrant: {account, role, scope}, token} → {ok, result: 'ok' | 'held'}; {roleRevoke: {account, role, scope},
 // token} → {ok, result: 'ok' | 'none'}. Errors: token, input (an unknown role, or a scope it is not granted at), user (no
-// such account), archived. Each grant and revoke is audited, a self-grant marked "(self)" (Q364): the account's own, or,
-// with the token, the admin's account's (ADMIN_ACCT). No page sends them yet (roles step 1: no granting UI).
+// such account), archived. Each grant and revoke is audited, a self-grant marked "(self)": the account's own, or, with
+// the token, the admin's account's (ADMIN_ACCT). No page sends them yet (no granting UI).
 function roles_(p){
   const g = p.roleGrant || p.roleRevoke, act = p.roleGrant ? 'grant' : 'revoke';
   if (!g) {
@@ -1747,20 +1742,20 @@ function roles_(p){
   } finally { lock.releaseLock(); }
 }
 
-// The live mode (v172; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): a trainer and a group of
-// students answer the same photo questions at the same time, through this script, polled (Q393 a). Everything lives in
+// The live mode (docs/reviews/2026-11-18-live-mode-design.md): a trainer and a group of students answer the same photo
+// questions at the same time, through this script, polled. Everything lives in
 // the script cache, never in a sheet tab: the session (LV key lv:<code>, written by the trainer's calls only), the roster
 // (lv:<code>:r, written by joins only, under the script lock) and one value per student (lv:<code>:p:<pid>, written by
 // that student's calls only, which the app sends one at a time), so two writers never race on one value. A reveal and an
 // answer also take the script lock, for a moment each (LV.LOCK at most): the reveal freezes every answer accepted before
-// it, and an answer re-checks the phase under the lock, so none lands after a reveal that missed it (Codex review #1049).
+// it, and an answer re-checks the phase under the lock, so none lands after a reveal that missed it.
 // Each value is kept LV.TTL seconds from its last write (the cache's most: 6 hours); a session older than LV.MAX counts as
 // ended.
-// POST {lv: 'start', lname, lpin, s, t, n, lim} (the trainer's account in lname / lpin, never name / pin: a script before
-// v172 answers 'input' and never takes it for a progress save) → {ok, code, tk}; {lv: 'host', code, tk, act?, q?} →
-// the trainer's view (lvHostView_); {lv: 'join', code, nick} → {ok, pid, pk, name}; {lv: 'poll', code, pid, pk, hx} → the
-// student's view (lvView_; hx: how many revealed questions the page went through); {lv: 'answer', code, pid, pk, qi, c} → {ok}. Errors: input, role, pin, wait, archived, user,
-// gone (no such session, or ended), phase, full, busy, lock.
+// POST {lv: 'start', lname, lpin, s, t, n, lim} (the trainer's account in lname / lpin, never name / pin: an older
+// script answers 'input' and never takes it for a progress save) → {ok, code, tk}; {lv: 'host', code, tk, act?, q?} →
+// the trainer's view (lvHostView_); {lv: 'join', code, nick} → {ok, pid, pk, name}; {lv: 'poll', code, pid, pk, hx} →
+// the student's view (lvView_; hx: how many revealed questions the page went through); {lv: 'answer', code, pid, pk, qi,
+// c} → {ok}. Errors: input, role, pin, wait, archived, user, gone (no such session, or ended), phase, full, busy, lock.
 const LV = {TTL: 21600, MAX: 6 * 3600e3, PLAYERS: 40, JOINS: 400, GRACE: 3000, QMAX: 30, LIM: [5, 120], BASE: 100, BONUS: 100, TOP: 5, LOCK: 5000};
 const lvKey_ = (code, k) => 'lv:' + code + (k ? ':' + k : '');
 const lvCode_ = x => (/^\d{6}$/.test(String(x || '')) ? String(x) : '');
@@ -1774,7 +1769,7 @@ function lvSession_(code){ const S = code && lvGet_(lvKey_(code)); return S && D
 // sheet). A nickname: 1 to 20 of them.
 const lvText_ = (x, n) => String(x == null ? '' : x).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
 const lvNick_ = x => lvText_(x, 20);
-// The points of an answer (Q393 b): a right one LV.BASE plus up to LV.BONUS for the time left (ms used of limMs), else 0.
+// The points of an answer: a right one LV.BASE plus up to LV.BONUS for the time left (ms used of limMs), else 0.
 function lvPoints_(ok, ms, limMs){
   if (!ok) return 0;
   const f = Math.max(0, Math.min(1, 1 - ms / limMs));
@@ -1822,7 +1817,7 @@ function lvStart_(p){
   const who = lvTrainer_(p);
   if (who.error) return {ok: false, error: who.error};
   const n = Math.round(Number(p.n)), lim = Math.round(Number(p.lim)), sid = String(p.s || '');
-  // A subject open to every player only: one in beta for a group (open: 'group') is never hosted (Codex review #1049).
+  // A subject open to every player only: one in beta for a group (open: 'group') is never hosted.
   if (!(n >= 1 && n <= LV.QMAX) || !(lim >= LV.LIM[0] && lim <= LV.LIM[1]) || !CORE_.SUBJECTS.some(S => S.id === sid && S.open !== 'group')) return {ok: false, error: 'input'};
   let code = '';
   for (let i = 0; i < 20 && !code; i++) { const c = String(100000 + Math.floor(Math.random() * 900000)); if (!lvGet_(lvKey_(c))) code = c; }
@@ -1870,7 +1865,7 @@ function lvHost_(p){
   const now = Date.now();
   if (String(p.act || '') === 'rev') {
     // The reveal freezes the answers (lvAct_): the students' records read and the session written under the script lock,
-    // as an answer is (lvAnswer_), so every answer accepted is in it and none comes after it (Codex review #1049).
+    // as an answer is (lvAnswer_), so every answer accepted is in it and none comes after it.
     const lock = lock_(LV.LOCK);
     try {
       const L = lvPlayers_(code), e = lvAct_(S, 'rev', null, L, now);
