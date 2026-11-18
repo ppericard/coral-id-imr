@@ -8,8 +8,8 @@ confusions" at `7d57ce92` (both 2026-11-18), "Simulation (`tests/profiles.smoke.
 (2026-11-19), "Multifactor analyses (admin Analyses, 2026-11-04)" at `1ce0178f` (2026-11-19), "Considered and not
 adopted" and "Decision log" at `6c4c05d1` (2026-11-19), "What each number measures (read this first)", "Real-answer
 replay (`tools/abilityeval.js`): judging a paired difference (2026-11-05)" and "Validating a learning change (rule
-L11; validated by Pierre on 2026-11-08, #735)" at `e6062d3c` (2026-11-19). Its relative links were given `../` so they still resolve from
-this folder; the section names it cites are those of LEARNING.md then and are not kept up to date.
+L11; validated by Pierre on 2026-11-08, #735)" at `5f30276b` (2026-11-19). Its relative links were given `../` so they
+still resolve from this folder; the section names it cites are those of LEARNING.md then and are not kept up to date.
 
 Where this notebook and LEARNING.md or the code differ, LEARNING.md and the code say what runs now: a value or a rule
 here may since have changed. New studies go to `docs/reviews/`; this file only takes further parts moved out of

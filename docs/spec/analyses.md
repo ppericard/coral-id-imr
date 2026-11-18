@@ -153,7 +153,8 @@ subject's only from a reply that names it, else "No report yet") and only draws 
 another subject's side its words for the units are that subject's (`SUBJECTS` `analyses` `one`, `many`: "family or
 genus", "families and genera") and each unit is named, not shown by its id (`anWords`, after drawing), its look-alikes
 its own (`anGen`). Where its report tells the ranks asked apart (the fish's families, genera and species units:
-[LEARNING.md](../LEARNING.md) "Multifactor analyses", The rank asked), the views that list units draw each rank apart under "Family
+[LEARNING.md](../LEARNING.md) "Multifactor analyses", The rank asked), the
+views that list units draw each rank apart under "Family
 questions", "Genus questions", "Species questions" (`anRk`; words `anWords` leaves as they are), Formats adds a By the
 rank asked table and What makes a photo hard a Rank asked one, and the Overview ends on one line naming the Analyses
 views it does not have (`anNotHere`: "Not for fish yet: Difficulty › Photos, …"). Recompute here runs on that subject's
