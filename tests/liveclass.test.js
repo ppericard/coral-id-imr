@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The live mode (sheet vNEXT; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
+// The live mode (sheet v172; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
 // in-memory sheet (rule D1): the trainer check (d) by the script's roles, never the page; the session's state machine;
 // the scoring (b): a right answer plus a speed bonus, timed from the moment the question reached that student; what a
 // student is sent (never the right answer before the reveal); the session in the cache only, never a sheet tab; and the

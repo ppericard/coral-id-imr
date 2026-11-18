@@ -162,7 +162,7 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 - **Grants**: the Roles tab, one row a grant (Account, Role, Scope, Since, Code hash). Roles and what they give:
   `admin` at `platform` (the code, the base database, creating instances; it may grant any role at any scope), `owner`
   at an instance (its players, its settings, granting its roles), `editor` at an instance (its content), `trainer` at
-  an instance (`live`: hosting a live game, sheet vNEXT; its cohorts, from roles step 2). The player role is every
+  an instance (`live`: hosting a live game, sheet v172; its cohorts, from roles step 2). The player role is every
   account's and is not stored. This sheet serves
   one instance, `instance:imr` (`Code.gs` `INSTANCE_`; Q343, one shared sheet for now).
 - **One check**: every privileged endpoint calls `gate_(token, right, action)`, which asks `can_(caller, right,
@@ -171,10 +171,10 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 - **The admin token is the platform admin, with every right.** A token that can push to the repository can change this
   script, so no right is withheld from it. Q364's separation holds for the grants an account holds: an account holding
   only `admin` is refused an instance's players and content until it holds that instance's role.
-- **Callers today: the token** (`caller_`), **and one account endpoint**: starting a live game (sheet vNEXT, below)
+- **Callers today: the token** (`caller_`), **and one account endpoint**: starting a live game (sheet v172, below)
   takes the account's name and code (`lname`, `lpin`) and asks `can_` for its `live` right. Letting a granted account
   act with its name and code elsewhere is a later step (the editors' relay, the trainer view).
-- **Live games** (sheet vNEXT; Pierre, 2026-11-17, Q393; [the design note](reviews/2026-11-18-live-mode-design.md)): a
+- **Live games** (sheet v172; Pierre, 2026-11-17, Q393; [the design note](reviews/2026-11-18-live-mode-design.md)): a
   session is started only by an account holding the trainer role (`lvTrainer_`: its code checked against the RAs tab,
   a wrong one counting towards the name's 10-minute lock as a load's does, an archived account refused, then
   `can_(…, 'live', 'instance:imr')`); one Audit row a start (`live start`), refusals capped as every refusal. The

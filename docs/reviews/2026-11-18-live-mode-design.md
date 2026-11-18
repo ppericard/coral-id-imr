@@ -22,7 +22,7 @@ Every call is one `POST` to the sync script (`sheetFetch`, so a local copy or a 
 D1), a JSON body with `lv` naming the step. No step carries `name`/`pin` (the trainer's account goes in `lname`/`lpin`):
 a script older than this one answers them `input`
 and never takes one for a progress save. The app takes a reply as the live mode's only when the script reports
-`v >= LIVEGAME_SHEET` (rule D4; `vNEXT`, main's `VERSION` + 1); an older script's reply turns the page into one line,
+`v >= LIVEGAME_SHEET` (rule D4; v172); an older script's reply turns the page into one line,
 "Live games are not available yet", and nothing else is sent.
 
 | Step | Who | Sends | Gets |

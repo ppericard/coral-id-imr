@@ -12,7 +12,7 @@
 // pure: begin
 // The sync script version that serves the live mode (rule D4): main's VERSION + 1 when written (tools/sheet_version.py
 // --assign sets it at merge). A reply of an older script turns the mode off with a line, nothing sent again.
-const LIVEGAME_SHEET = 162;
+const LIVEGAME_SHEET = 172;
 // Polling: a student every 2 s, the trainer every 1.5 s, neither once the game ended. Defaults and choices of the
 // trainer's setup. TRAPS: the look-alike traps among the 3 wrong choices (model.js distractors). WAIT: one call's limit.
 const LIVE = {POLL: 2000, HOST: 1500, WAIT: 15000, NQ: [5, 10, 15, 20], LIM: [10, 20, 30], N0: 10, LIM0: 20, TRAPS: 2};
