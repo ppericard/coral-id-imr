@@ -1248,7 +1248,7 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), false, 'in no group: closed');
-  const g = s.post({groupMake: {n: 'Fish beta', beta: fish.id}, token: TOK}).group.id; // vNEXT: a group whose beta is fish
+  const g = s.post({groupMake: {n: 'Fish beta', beta: fish.id}, token: TOK}).group.id; // v179: a group whose beta is fish
   assert.ok(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).ok);
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), true, 'the load reply opens it');

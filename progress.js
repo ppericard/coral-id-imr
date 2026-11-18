@@ -557,7 +557,7 @@ const myCohort = () => {
 // first (Code.gs board_), and rows, the general board without the members of an apart group. The page shows the boards of
 // the player's own groups first, each under its name, then All players; every other group's behind a closed "Other
 // groups", as for the cohorts before (an empty one left out there).
-const GROUPS_SHEET = 177;
+const GROUPS_SHEET = 179;
 // The ids of the player's groups, null when this account was never told (sync.js groupsSeen).
 const myGroups = () => {
   const o = store.get(GROUPS_KEY, null);

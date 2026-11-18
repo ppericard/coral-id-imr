@@ -57,7 +57,7 @@ const ENDPOINTS = [
   ['userData', () => ({userData: 'Ana'})],
   ['userBoard', () => ({userBoard: 'Ana', hide: true})],
   ['userGroup', () => ({userGroup: 'Ana', group: 'g:00000000', on: true})],
-  // vNEXT: the groups themselves (tests/playergroups.test.js)
+  // v179: the groups themselves (tests/playergroups.test.js)
   ['groupMake', () => ({groupMake: {n: 'RA Test', board: 1}})],
   ['groupEdit', () => ({groupEdit: 'g:00000000', n: 'RA Test 2'})],
   ['groupDrop', () => ({groupDrop: 'g:00000000'})],

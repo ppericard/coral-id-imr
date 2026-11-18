@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Player groups (sheet vNEXT; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
+// Player groups (sheet v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
 // groupes"; "Staff" is not a role): one group model replaces the beta groups, the one cohort per player and the staff
 // (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and three settings, board, apart and beta; a player is
 // in any number of groups. Every subject's board reply splits its one ranking (Code.gs board_) into the general board
@@ -275,7 +275,7 @@ test('rule D7: a merge joins every group of the merged name to the kept one; a d
   );
 });
 
-// The migration (ONCE_ groups, rule W3): the data before vNEXT, written as the script before wrote it.
+// The migration (ONCE_ groups, rule W3): the data before v179, written as the script before wrote it.
 function before() {
   const s = five();
   save(s, 'Fay', 3, '9999');

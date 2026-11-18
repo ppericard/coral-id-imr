@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 178 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 179 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 178;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 179;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -264,7 +264,7 @@ function load_(name, row, q){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v58: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
-  // v48: the subjects in beta the player's groups open (groupsOf_), [] for none; vNEXT: gids, the ids of their groups (the
+  // v48: the subjects in beta the player's groups open (groupsOf_), [] for none; v179: gids, the ids of their groups (the
   // Leaderboard shows their boards first). A failure leaves both out (the app keeps what it had).
   try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}
   try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
@@ -320,7 +320,7 @@ function doPost_(e){
     return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // v156: roles step 1 (roles_)
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude; vNEXT groupMake, groupEdit, groupDrop)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude; v179 groupMake, groupEdit, groupDrop)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
@@ -436,7 +436,7 @@ function doPost_(e){
   // timeout, and those failed). The answers this save logged are in the tab by now.
   // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
   // another device's must not keep the order it replayed them in): the app takes it after a send.
-  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // v48, vNEXT gids: as the load reply
+  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // v48, v179 gids: as the load reply
   try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
@@ -2577,7 +2577,7 @@ function board_(sid){
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
     // v171 (Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle cohorte aurait un
-    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"); vNEXT, the groups (Pierre,
+    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"); v179, the groups (Pierre,
     // 2026-11-18): the one ranking above, split by who is where (groupBoards_), each scope keeping its order and its first
     // 200: rows, the general board, without the members of an apart group; groups, [{id, n, rows}] every group with a
     // board. An app from before reads rows as before. The groups unreadable: rows unsplit, as before.
@@ -2798,14 +2798,14 @@ function devBlank_(name){
   if (c) rg.setValues(v);
   return c;
 }
-// Player groups (vNEXT; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
+// Player groups (v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
 // groupes"; the staff are a group, not a role, and the group model replaces the beta groups (v48), the one cohort per
 // player and the staff of v171; ARCHITECTURE.md "Player groups"). A group has an id, a name and three settings: board
 // (it has its own leaderboard), apart (its members leave the general board and every other group's, as the staff did)
 // and beta ('' or the subject it opens, as a beta group did: core.js SUBJECTS open: 'group', subjGroup). A player is in
 // any number of groups. Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and
 // Groups, one row a membership (Group: the group's id, Name: the player's, Added), as the beta groups were kept. Ids:
-// 'g:' and 8 random characters for a group made from vNEXT; a group the migration made keeps the Group cell its rows had
+// 'g:' and 8 random characters for a group made from v179; a group the migration made keeps the Group cell its rows had
 // (a subject's id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns
 // its player's groups from the load and save replies (groups: the subjects in beta they open, as before; gids: their
 // groups' ids); the admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group
@@ -2915,7 +2915,7 @@ function groupDo_(p){
   return {ok: true, group: d};
 }
 // groups-migration: begin
-// vNEXT (Pierre, 2026-11-18, "ok" to the group model; rule W3): the groups the data before this version held, made
+// v179 (Pierre, 2026-11-18, "ok" to the group model; rule W3): the groups the data before this version held, made
 // groups once (ONCE_ groups), nothing lost. Each distinct Group cell of the Groups tab is a group whose id is that cell
 // (its rows stay as they are, the date of its first row its Added): a subject's id is that subject's beta group ("<subject
 // name> beta", beta: that subject, as it opened it), 'cohort:<name>' a cohort (named <name>, with a board), any other cell
@@ -2924,7 +2924,7 @@ function groupDo_(p){
 // role); their role stays theirs.
 // groupsBefore_ reads them without writing (groupState_ until the migration ran), groupsMigrate_ writes them, under the
 // script lock, from ONCE_ or from the first change to a group or a membership before it (groupsNow_), and only once.
-// Remove this block, and the lines marked groups-migration, once the Deploy log shows "one-shot groups" (vNEXT live).
+// Remove this block, and the lines marked groups-migration, once the Deploy log shows "one-shot groups" (v179 live).
 const GSTAFF_ = 'staff';
 const groupsMigrated_ = () => !!PropertiesService.getScriptProperties().getProperty('ONCE_groups');
 function groupsBefore_(){
@@ -3007,7 +3007,7 @@ function deleteAccount_(name, all, by){
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
-  dropRows_(GROUPS.TAB, name, 2);  // v48: out of every group (vNEXT: the staff's too; a group itself holds no player data)
+  dropRows_(GROUPS.TAB, name, 2);  // v48: out of every group (v179: the staff's too; a group itself holds no player data)
   rolesDrop_(name, by || '');  // v156: its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
   sxMove_(name, all ? '' : del);  // v115: out of the statistics stays out, under the id the answers keep
   // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
@@ -3111,7 +3111,7 @@ function usersDo_(p, who){
     } finally { lock.releaseLock(); }
   }
   // v48: {userGroup: name | [names], group, on: true|false, token} adds players to a group, or removes them (groupSet_);
-  // answers how many changed and the group's members. vNEXT: group is any group's id (groupState_), not only a subject's
+  // answers how many changed and the group's members. v179: group is any group's id (groupState_), not only a subject's
   // beta group; v171's cohort form is gone. Under the script lock, as a rename or a merge could otherwise move a name
   // between the read and the write; every board's cache is dropped (the groups' boards follow).
   if (p.userGroup) {
@@ -3126,7 +3126,7 @@ function usersDo_(p, who){
       return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
     } finally { lock.releaseLock(); }
   }
-  // vNEXT: the groups themselves (groupDo_): make, rename or set, delete an empty one.
+  // v179: the groups themselves (groupDo_): make, rename or set, delete an empty one.
   if (p.groupMake || p.groupEdit || p.groupDrop) {
     const lock = lock_();
     try { groupsNow_(); return groupDo_(p); } finally { lock.releaseLock(); }  // groups-migration: groupsNow_
@@ -3258,7 +3258,7 @@ function usersDo_(p, who){
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
       pagesMove_(from, into);
-      // v48: the merged name's groups join the kept name's (each once); vNEXT: every group, the kept name keeps its own too.
+      // v48: the merged name's groups join the kept name's (each once); v179: every group, the kept name keeps its own too.
       groupsNow_();  // groups-migration
       groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
@@ -3304,7 +3304,7 @@ function usersDo_(p, who){
   if (rp && rp.getLastRow() > 1) rp.getRange(2, 2, rp.getLastRow() - 1, 1).getValues().forEach(r => { const u = by[lc_(r[0])] || arch[lc_(r[0])]; if (u) u.reports++; });
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
-  // v48: the subjects in beta each player's groups open; vNEXT: gids, the ids of their groups, and every group's settings
+  // v48: the subjects in beta each player's groups open; v179: gids, the ids of their groups, and every group's settings
   // (groupDefs: [{id, n, board, apart, beta, at}], in the order they were made).
   const gs = groupState_(), gm = groupMap_(gs);
   out.users.forEach(u => { const g = gm[lc_(u.name)]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; });
@@ -3640,7 +3640,7 @@ const ONCE_ = {
   },
   // fishunits-migration: end
   // groups-migration: begin
-  // vNEXT: the beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
+  // v179: the beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
   groups: () => groupsMigrate_()
   // groups-migration: end
 };

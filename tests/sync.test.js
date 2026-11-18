@@ -1166,7 +1166,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
-// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch); vNEXT: a
+// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch); v179: a
 // group whose beta setting names the subject (Code.gs groupDo_; tests/playergroups.test.js has the rest of the model).
 test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
   const s = seed();
@@ -1217,7 +1217,7 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
 });
 
 // v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all opens
-// to everyone, its group's members kept (vNEXT: the group stays, its beta setting opens nothing until it is back to 'group').
+// to everyone, its group's members kept (v179: the group stays, its beta setting opens nothing until it is back to 'group').
 test("groups (v53): a subject that opens to all opens nothing through a group, whatever its beta label; back to 'group', its members count again", () => {
   const s = seed();
   const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
