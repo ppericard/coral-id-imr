@@ -1,7 +1,7 @@
 'use strict';
 require('./slot.js').testGuard();
-// Docs that every PR touches must not conflict between open PRs (Pierre, 2026-11-04: "we lose a huge amount of time
-// resolving conflicts"): no running "done" list that every PR appends to (rule W19).
+// Docs that every PR touches must not conflict between open PRs (resolving conflicts costs a lot of time): no running
+// "done" list that every PR appends to (rule W19).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -27,16 +27,16 @@ test('the archived done list stays frozen', () => {
   );
 });
 
-// Codex review #502: since #499 the deploy stamps the version numbers; no doc may tell a PR to bump them by hand or to
-// run the retired check_versions.py flags (--fix, --base, --no-base).
+// The deploy stamps the version numbers: no doc may tell a PR to bump them by hand or to run the retired
+// check_versions.py flags (--fix, --base, --no-base).
 test('the docs never tell a PR to bump version numbers by hand', () => {
   for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
     assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
 });
 
-// Governance refonte PR B (Pierre, 2026-11-05): docs/STATUS.md is the one place for where things stand, written by the
-// integrator only and overwritten, never appended, so it must stay short; it replaced the evening log, whose name must not
-// come back anywhere (the archive and the copied reviews are history and keep their words).
+// docs/STATUS.md is the one place for where things stand, written by the integrator only and overwritten, never
+// appended, so it must stay short; the retired evening log's name must not come back anywhere (the archive and the
+// copied reviews are history and keep their words).
 const STATUS = read('docs/STATUS.md');
 
 test('docs/STATUS.md exists, has its sections and stays within its budget', () => {
@@ -92,7 +92,7 @@ test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
   ]);
 });
 
-// Codex review #561: a cancelled or stale check never succeeded, so the brief must not call the PR green.
+// A cancelled or stale check never succeeded, so the brief must not call the PR green.
 test('tools/brief.py calls a PR green only when every check succeeded', () => {
   const {execFileSync} = require('child_process');
   const sum = runs =>
@@ -117,11 +117,11 @@ test('tools/brief.py calls a PR green only when every check succeeded', () => {
   assert.match(sum([done('success'), done('stale')]), /^NOT GREEN 1\/2/);
 });
 
-// Codex security review #561: a hook runs at every session start and prompt, so it must not run code from whatever
-// branch is checked out: it runs main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no
-// module planted in the checkout is imported), with the checkout's path from CLAUDE_PROJECT_DIR.
-// Codex review #561: the brief's version probe is a read-only GET like the app's; without an app version (av) the sync
-// script takes it for an app before 2026-11-03 and writes an "old" row in Events. It must leave Events untouched.
+// A hook runs at every session start and prompt, so it must not run code from whatever branch is checked out: it runs
+// main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no module planted in the checkout is
+// imported), with the checkout's path from CLAUDE_PROJECT_DIR.
+// The brief's version probe is a read-only GET like the app's; without an app version (av) the sync script would take
+// it for an old app and write an "old" row in Events. It must leave Events untouched.
 test("the brief's live-version probe writes nothing to the sheet", () => {
   const {execFileSync} = require('child_process');
   const q = execFileSync('python3', ['-B', '-c', 'import sys; sys.path.insert(0, "tools"); import brief; print(brief.STATS_QUERY)'], {
@@ -167,10 +167,10 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
 });
 
-// Governance refonte PR C (Pierre, 2026-11-05): AGENTS.md is the short constitution every agent reads (Codex reads only
-// its first 32 KiB by default), and every standing rule has one stable ID by theme, defined once in docs/rules/<topic>.md
-// as a "### <ID>" heading. The two numbered lists it replaced (the standing rules and the steps of "how to make a
-// change") are gone: no compatibility with the old numbers (alpha, rule W3).
+// AGENTS.md is the short constitution every agent reads (Codex reads only its first 32 KiB by default), and every
+// standing rule has one stable ID by theme, defined once in docs/rules/<topic>.md as a "### <ID>" heading. The old
+// numbered lists (the standing rules and the steps of "how to make a change") are never cited: no compatibility with
+// the old numbers (alpha, rule W3).
 const AGENTS = read('AGENTS.md');
 const RULE_FILES = {C: 'content', P: 'photos', L: 'learning', U: 'ui', A: 'admin', S: 'subjects', D: 'sheet', W: 'ship'};
 const RULES = new Map(); // id -> file
@@ -265,7 +265,7 @@ test('no reference to the retired rule numbers or to the judging brief under its
   );
 });
 
-// Repo hygiene audit (2026-11-08): the living docs' relative links and anchors resolve, every ARCHITECTURE.md "X" cited
+// The living docs' relative links and anchors resolve, every ARCHITECTURE.md "X" cited
 // anywhere names a section or a lead-in that exists, and docs/PAGES.md lists every workflow. Offline: files only. The
 // copied reviews and the frozen archive are history and keep their links.
 const LIVING_DOCS = TEXT_FILES.filter(
@@ -279,7 +279,7 @@ const anchorsOf = (() => {
   const memo = new Map();
   return f => {
     if (memo.has(f)) return memo.get(f);
-    const src = fenceless(read(f)), // a heading's code keeps its text in GitHub's anchors (Codex review #741)
+    const src = fenceless(read(f)), // a heading's code keeps its text in GitHub's anchors
       seen = new Map(),
       out = new Set();
     for (const m of src.matchAll(/^#{1,6}[ \t]+(.*)$/gm)) {
@@ -303,7 +303,7 @@ const anchorsOf = (() => {
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
   const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`) and ### Fish photos (the sources and the area rule) (Codex review #741).
+  // ### Service worker (`sw.js`) and ### Fish photos (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
   assert.ok(a.has('fish-photos-the-sources-and-the-area-rule'));
@@ -369,7 +369,7 @@ test('docs/PAGES.md lists every workflow, and only workflows that exist', () => 
   );
 });
 
-// Governance refonte, the identifier-existence check (Pierre, 2026-11-05): the code identifiers the governing docs cite in
+// The identifier-existence check: the code identifiers the governing docs cite in
 // backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
 // follows or takes over from. ROADMAP and STATUS name work to come and are overwritten daily, README / PAGES / FORMATS / DESIGN
 // have no habit of naming code, and the archive and the copied reviews are history. Offline: files only. Two forms count:
@@ -474,8 +474,8 @@ test('the code identifiers the docs cite in backticks still exist', () => {
   );
 });
 
-// Studies written from 2026-11-19 cite the measured PRs behind every effort figure (Pierre, 2026-11-18: the estimates
-// "sont toujours dans les choux"): tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
+// Studies written from 2026-11-19 cite the measured PRs behind every effort figure (estimates alone prove wrong):
+// tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
 // #NNN on its line or bullet. Older studies are history and keep their words.
 test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/effort.py --check)', () => {
   const {spawnSync} = require('child_process');

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The genus wrongly given in the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the app's
+// The genus wrongly given in the Elo (docs/LEARNING.md "The genus wrongly given in the Elo"): the app's
 // own Elo (core.js eloStep, as model.js abilityStep runs it, replayed by tools/abilityeval.js) replayed on a made-up answer log of a strong
 // player whose misses fall on look-alikes. The old rule (a: a full miss step on the genus given, at difficulty 0,
 // its uncertainty never shrinking) drags every genus the player confuses down; the rule the app now follows (e: no
@@ -70,7 +70,7 @@ test('a weak player is not over-rated without the step', () => {
   assert.ok(res.e.all.ll <= res.a.all.ll + 0.005, `log-loss e ${res.e.all.ll} a ${res.a.all.ll}`);
 });
 
-// Codex review of #413: the game genera include Millepora (core.js gameOf), as the app's GX; a sheet export is replayed
+// The game genera include Millepora (core.js gameOf), as the app's GX; a sheet export is replayed
 // in time order (a stable sort of its text times); the group table takes every group any rule reached.
 test('Millepora wrongly given counts as a game genus (the old penalty and the false-alarm marker)', () => {
   const {GAME} = require('../tools/abilityeval.js');
@@ -100,7 +100,7 @@ test('the group table takes the union of the groups of every rule', () => {
   assert.deepStrictEqual(groupsOf(res, ['a', 'e+L']), ['k2', 'level 0-0.75', 'level>=0.75']);
 });
 
-// Global level and genus (2026-11-03, docs/LEARNING.md "Global level and genus"): the app's ability, levelMove and
+// Global level and genus (docs/LEARNING.md "Global level and genus"): the app's ability, levelMove and
 // abilityStep (core.js abilityOf, levelMove, eloStep, as model.js calls them on its P; shared with the full replay).
 function appModel() {
   const C = require('../core.js'),
@@ -195,7 +195,7 @@ test('the level a genus was stepped against travels with its ability between dev
   assert.strictEqual(prog.A.lt, undefined);
 });
 
-// Beginners and experts (2026-11-03, docs/LEARNING.md "Beginners and experts"): the success aimed for follows the global
+// Beginners and experts (docs/LEARNING.md "Beginners and experts"): the success aimed for follows the global
 // level, 85% up to 0.5, 75% from 1.5, a straight line between, flat outside; the photo's aim (aimOff) follows it.
 test('the success aimed for follows the global level, with no cliff', () => {
   const fs = require('fs'),
@@ -222,7 +222,7 @@ test('the success aimed for follows the global level, with no cliff', () => {
   const easy = ctx.M.aimOff(4);
   ctx.P = {'~level': {th: 2}};
   assert.ok(easy > ctx.M.aimOff(4) + 0.5, `${easy} vs ${ctx.M.aimOff(4)}`);
-  // Per-format offsets (Q138, core.js fmtOff): a format found easier by df gets a photo df harder, so the question is
+  // Per-format offsets (core.js fmtOff): a format found easier by df gets a photo df harder, so the question is
   // still right with the aimed chance in its format: 1/k + (1 - 1/k) sig(aimOff(k, df) + df) = aimP.
   ctx.P = {'~level': {th: 1}};
   near(ctx.M.aimOff(2, 0), ctx.M.aimOff(2));
@@ -231,7 +231,7 @@ test('the success aimed for follows the global level, with no cliff', () => {
   near(0.5 + 0.5 * sg(ctx.M.aimOff(2, 1.14) + 1.14), ctx.M.aimP());
 });
 
-// Codex review #415: the level bands come from one reference level, whatever the model replayed (--model) or the rule
+// The level bands come from one reference level, whatever the model replayed (--model) or the rule
 // (+L): two models whose levels step differently put the same answers in each band.
 test('the level bands are the same answers whatever the model or the rule', () => {
   const fs = require('fs'),
@@ -259,7 +259,7 @@ test('the level bands are the same answers whatever the model or the rule', () =
   );
 });
 
-// Codex review #425: the known mix-ups' term in the replay. Rows with choices, misses on the look-alike, so the term is
+// The known mix-ups' term in the replay. Rows with choices, misses on the look-alike, so the term is
 // not zero.
 function logCh(n, seed, t0) {
   const G = ['Acropora', 'Montipora', 'Porites', 'Goniopora', 'Favites', 'Dipsastraea', 'Platygyra', 'Leptoria'],
@@ -296,7 +296,7 @@ test("an answer logged with the app's own mix-ups term does not count it twice",
   );
 });
 
-// Response time as a weak signal (2026-11-03, docs/LEARNING.md "Response time"): tools/abilityeval.js's +T (a right
+// Response time as a weak signal (docs/LEARNING.md "Response time"): tools/abilityeval.js's +T (a right
 // answer's genus step times clamp(1 - k z, 0.5, 1.5), z its log seconds against the player's own median so far), its
 // leave-one-player-out choice of k, and answers without time left alone.
 function timedLog(n, seed, player) {
@@ -333,7 +333,7 @@ function timedLog(n, seed, player) {
 }
 
 test('response time: no seconds logged, no change; a factor of 1 is the app step exactly', () => {
-  const rows = log(1, 200, 3), // no Seconds column (an app before sheet v23)
+  const rows = log(1, 200, 3), // no Seconds column (an older app's rows)
     {res} = evaluate(rows, {variants: ['e', 'e+T1', 'e+S1+G', 'e+H1'], min: 1});
   ['e+T1', 'e+S1+G', 'e+H1'].forEach(v => assert.strictEqual(res[v].all.ll, res.e.all.ll, v));
   const t = timedLog(200, 5, 'p1'),
@@ -358,7 +358,7 @@ test('response time: where speed tells knowledge, the weighted step predicts bet
   assert.strictEqual(res.e.scored.filter(o => o.r.p === 'p1' && o.z === null).length, RT.MIN);
 });
 
-// Codex review #431. The level bands' seed: a first answer right, stepped bigger by +U or a time rule before the level
+// The level bands' seed: a first answer right, stepped bigger by +U or a time rule before the level
 // is seeded, leaves the bands as they are.
 test('response time: the level bands hold the same answers whatever the time rule, from the first answer', () => {
   const rows = timedLog(120, 7, 'p1');
@@ -417,7 +417,7 @@ test('response time: a player with only answers logged before sheet v5 does not 
   ['p1', 'p2', 'p3'].forEach(p => assert.ok(res['e+T*'].picks[p]));
 });
 
-// Codex review #431: --player limits the output, never the players k is chosen on.
+// --player limits the output, never the players k is chosen on.
 test('response time: with --player, k is still chosen on the other players', () => {
   const rows = [1, 2, 3].flatMap(i => timedLog(150, 20 + i, 'p' + i)),
     all = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]]}).res,
@@ -427,7 +427,7 @@ test('response time: with --player, k is still chosen on the other players', () 
   assert.deepStrictEqual(one.res['e+T*'].train.p1, all['e+T*'].train.p1);
 });
 
-// The app's own rule (core.js RTIME, rtWeight, rtAdd; rules version 4, 2026-11-04), replayed by +A, is the rule measured
+// The app's own rule (core.js RTIME, rtWeight, rtAdd; rules version 4), replayed by +A, is the rule measured
 // as +T1.5+G: the same predictions answer by answer, so the real-log figures of +T*+G stand for what the app does.
 test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, and --rtfit reads the time terms', () => {
   const C = require('../core.js'),
@@ -450,7 +450,7 @@ test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, 
   assert.ok(isFinite(q.next.b) && q.next.n > 100);
 });
 
-// Players as the unit of the paired comparison (docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580; docs/LEARNING.md
+// Players as the unit of the paired comparison (docs/reviews/2026-11-05-stats-methods-study.md §5.2; docs/LEARNING.md
 // "Real-answer replay"). A made-up scored log where clustering matters: one dominant player (400 answers) whose answers
 // the second rule predicts better, five small players (20 answers each) whose answers it predicts worse. Per answer the
 // dominant player decides alone and the interval is narrow; with the players as the unit it is much wider and the
@@ -521,7 +521,7 @@ test('sign-flip test over players: exact with few players, seeded Monte Carlo wi
   assert.ok(Math.abs(tQuantile(0.975, 4) - 2.7764) < 1e-3);
   assert.ok(Math.abs(tQuantile(0.975, 100) - 1.984) < 1e-3);
 });
-// Codex review #583: the standard errors stay linear in the number of answers (a large export must not take minutes).
+// The standard errors stay linear in the number of answers (a large export must not take minutes).
 test('paired difference: linear in the number of answers', () => {
   const {paired} = require('../tools/abilityeval.js'),
     r = rng(9),
