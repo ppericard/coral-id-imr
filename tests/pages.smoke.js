@@ -1386,8 +1386,13 @@ const SHEET = () => {
       return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 58} : {ok: false, error: 'pin', v: 58};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     // test-sheet-board: the leaderboard rows the stub serves (GET ?board=1), for the one-level check below.
+    // test-sheet-scopes: what a sheet from progress.js SCOPES_SHEET adds (v, staff, cohorts; Code.gs board_).
     if (q.get('board') && localStorage.getItem('test-sheet-board'))
-      return {ok: true, rows: JSON.parse(localStorage.getItem('test-sheet-board'))};
+      return {
+        ok: true,
+        rows: JSON.parse(localStorage.getItem('test-sheet-board')),
+        ...JSON.parse(localStorage.getItem('test-sheet-scopes') || '{}')
+      };
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
@@ -1870,6 +1875,81 @@ async function signin(base) {
       if (rows.join('|') !== 'Elo 1300|Elo 1080') fails.push('one level: the board shows ' + rows.join(' | '));
     }
   );
+  // Staff and cohort boards (sheet SCOPES_SHEET; Pierre, 2026-11-17): Anna's cohort's board first (its name as its
+  // heading, her row marked there and on the general board), then the staff's, then all players'; the other cohorts in
+  // the "Other cohorts" fold, closed; My progress ranks her on her cohort's board. A reply from the version before: the
+  // one board, untitled, as before.
+  for (const v of ['before', 'from'])
+    await run(
+      () => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234'}));
+        localStorage.setItem('reefid-cohort', JSON.stringify({n: 'Anna', c: 'RA Test 2026'}));
+        localStorage.setItem(
+          'test-sheet-board',
+          JSON.stringify([
+            ['Other P', 60, 1.5],
+            ['Cohort Q', 50, 1],
+            ['Anna', 40, -1]
+          ])
+        );
+      },
+      async p => {
+        const N = await p.evaluate(() => SCOPES_SHEET);
+        await p.evaluate(
+          ([v]) =>
+            localStorage.setItem(
+              'test-sheet-scopes',
+              JSON.stringify({
+                v,
+                staff: [['Staff S', 70, 2]],
+                cohorts: [
+                  {n: 'RA Later 2026', rows: [['Other P', 60, 1.5]]},
+                  {
+                    n: 'RA Test 2026',
+                    rows: [
+                      ['Cohort Q', 50, 1],
+                      ['Anna', 40, -1]
+                    ]
+                  }
+                ]
+              })
+            ),
+          [v === 'from' ? N : N - 1]
+        );
+        await p.evaluate(() => go('progress'));
+        await p.waitForSelector('#pbrank:not([hidden])', {timeout: 8000});
+        const rank = (await p.textContent('#pbrank')).trim().split(' ')[1];
+        await p.evaluate(() => go('board'));
+        await p.waitForFunction(() => document.querySelectorAll('#board .blist li').length >= 3, null, {timeout: 8000});
+        const B = await p.evaluate(() => ({
+          heads: [...document.querySelectorAll('#board > .bscope > .bhead')].map(h => h.textContent),
+          lists: [...document.querySelectorAll('#board > .bscope, #board > .blist')].map(x =>
+            [...x.querySelectorAll('li')].map(li => li.querySelector('.bname').textContent + (li.classList.contains('me') ? '*' : ''))
+          ),
+          more: [...document.querySelectorAll('#board .bmore')].map(d => [
+            d.open,
+            d.querySelector('summary').textContent,
+            d.querySelector('.bhead').textContent
+          ]),
+          wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+        }));
+        const want =
+          v === 'from'
+            ? {
+                rank: '#2',
+                heads: ['RA Test 2026', 'Staff', 'All players'],
+                lists: [['Cohort Q', 'Anna*'], ['Staff S'], ['Other P', 'Cohort Q', 'Anna*']],
+                more: [[false, 'Other cohorts', 'RA Later 2026']],
+                wide: false
+              }
+            : {rank: '#3', heads: [], lists: [['Other P', 'Cohort Q', 'Anna*']], more: [], wide: false};
+        if (JSON.stringify({rank, ...B}) !== JSON.stringify(want))
+          fails.push(`scoped boards (${v} v${N}): ${JSON.stringify({rank, ...B})}`);
+      }
+    );
   // The tour's sign-in step: the same question.
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
@@ -2364,12 +2444,13 @@ async function noticesAfterSync(base) {
 // links to its step; done = every step seen, with its achievement. Returns the failures.
 // Fish opens to all since 2026-11-06 (Q158): a check about the corals-only onboarding (one subject: the start question
 // first, no subject pick) serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
+// The corals alone: every other subject back to a group (fish and, since 2026-11-17, the sea slugs open to all).
 const oneSubject = c =>
   c.route(
     u => new URL(u).pathname === '/core.js',
     async r => {
       const res = await r.fetch();
-      await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+      await r.fulfill({response: res, body: (await res.text()).replaceAll("open: 'all'", "open: 'group'")});
     }
   );
 async function startSmoke(b, base) {
@@ -4558,7 +4639,8 @@ async function subjTour(b, base) {
         const res = await r.fetch(),
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
-        await r.fulfill({response: res, body: mode === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+        // every subject but the corals back to a group (fish and, since 2026-11-17, the sea slugs open to all)
+        await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
     await c.addInitScript(mode => {
@@ -4654,12 +4736,12 @@ async function subjTour(b, base) {
       fails.push(`subject tour, no group: ${JSON.stringify(all.map(s => [s.n, s.h, s.subj]))}`);
     await c.close();
   }
-  // 2. In the fish group: the choice first, forced, both subjects (fish with its beta tag); Fish picked: saved, the fish
+  // 2. In the fish group: the choice first, forced, both subjects (fish out of beta since 2026-11-17); Fish picked: saved, the fish
   // question, then where to switch (the Home row spotlit), the rest in fish words; Back shows the pick kept.
   {
     const [c, p] = await open('group');
     const s0 = await bub(p);
-    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish+beta' || s0.next || s0.skip || !/two subjects/.test(s0.text))
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish' || s0.next || s0.skip || !/two subjects/.test(s0.text))
       fails.push(`subject tour, group: the choice ${JSON.stringify(s0)}`);
     await p.keyboard.press('ArrowRight');
     await p.waitForTimeout(300);
@@ -4744,7 +4826,9 @@ async function subjTour(b, base) {
   {
     const [c, p] = await open('all');
     const s0 = await bub(p);
-    if (!s0 || s0.n !== '1 / 8' || s0.pick.length !== 2) fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
+    // the three subjects, the sea slugs with their beta tag, fish out of beta (Pierre, 2026-11-17)
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish,seaslug+beta')
+      fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
     await tap(p, '#tour [data-pick="coral"]', 'step');
     await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
     const s1 = await bub(p),

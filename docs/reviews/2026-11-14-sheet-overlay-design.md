@@ -747,3 +747,25 @@ them before it merges.
    `by`, the commit message, the Inbox line. *Needs:* steps 3 and 6, question (k).
 8. **Corals:** their slot lists and pairs at the genus rank (checking the ★ rule, L5), with the Tree's coral step.
    *Needs:* steps 1-4.
+   *Built (2026-11-15):* `SUBJECTS` coral `content`: one rank, the genus, on `data.json` `gen` and `x.gen` (`plain`, `qt`,
+   `mn` and `imr` marked IMR's, `sum`, `crit`, `lsrc/<other genus>`, `check`, `info`; hidden `imr`, `sum` and `crit` stay
+   empty, as their readers read them); `structure`: pairs only, in `look` (no circles: the slate stays out, section 6),
+   written on both records by `core.js` `genStructure`. **The ★ rule** (L5): a starred genus opens after the surveyed
+   look-alikes its own `look` names in its lecture group (`starRefs`), so a withdrawal could leave one with none
+   (Alveopora and Halomitra have a single look-alike): it would open at any time and show in no group. The apply keeps the
+   rule: `starHold`, the corals' `structure` `pairs` `hold`, read where the entries' states are made (`structEntries`),
+   refuses such a withdrawal (orphaned, why `hold`: kept, never applied, so the app, the admin, the stamp and the sheet
+   agree), after every addition (an added surveyed look-alike makes it safe) and in key order (two devices' withdrawals
+   merged keep the first, hold the other); the admin turns that Withdraw off ("★ rule"). An added pair may move a starred
+   genus to the lecture group most of its look-alikes are in, or give it another reference: it still opens after them
+   (checked on the real data for every starred genus with every one of its pairs withdrawn, `tests/coralcontent.test.js`).
+   The app lays the text slots over `data.json` always, the pairs from the sheet script that replays under them
+   (`core.js` `PAIRS_SHEET`, `structSheet`; rule D4). **The sheet's coral replay** runs under the pairs in force, keyed by
+   the stamp, as the fish's (`Code.gs` `gen_` through `subjRpl_`, `stMain_`, `boardRpl_`, `replayedAll_`); the pairs count
+   where an answer has no scoring record (the rows from before v61). The admin's coral Tree carries the same editors
+   (`admin-coraltree.js`, `admin-content.js` made subject-generic: `sheetOwn` per subject, a Structure box with no
+   circle, the add box named by `SUBJECTS` `one`). Left: the admin's Photos › Look-alikes page and the coral Tree's pair
+   filters list the base's pairs (`classicPairs`), as the fish's; a reworded look-alike line or an added pair's source
+   decides whether the pair is "classic" (`learn.js` `isClassic`: it cites the IMR lecture or the Coral Finder), which
+   weighs the duels' draw and lists it on the Look-alikes page, never the progress; the coral look-alike pairs of the IMR
+   lecture still sit in the sources with the Coral Finder's (`data.json` `look`, `lsrc`; step 5's note), not split here.

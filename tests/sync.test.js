@@ -1188,7 +1188,9 @@ test("groups (v53): a subject that opens to all has no group, whatever its beta 
   open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
   assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
   open('all');
-  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'fish').beta", s.ctx), 'the beta label kept');
+  // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
+  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
+  assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
   assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
   assert.ok(
@@ -1798,15 +1800,22 @@ const C = require('../core.js'),
   vm = require('vm'),
   {execFileSync} = require('child_process');
 const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
+  CJSON0 = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
   GEN = (d => {
     const out = {};
     [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
     return out;
   })(JSON.parse(DJSON));
-// data.json from GitHub, served here (counted); anything else is the default stub.
+// data.json from GitHub, served here (counted), and curation.json, whose look-alike pairs the coral replay lays over it
+// (Code.gs subjRpl_; design note v2, step 8); anything else is the default stub.
 const withData = (n = {c: 0}) => ({
   n,
-  fetch: url => (/\/main\/data\.json$/.test(url) ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON}) : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON})
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON0}
+        : null
 });
 const qa = (id, i, x = {}) =>
   ans(id, {
@@ -1994,8 +2003,9 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
-  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
+  // Three times in all: once for the replay's units under the content editor's pairs (subjRpl_, design note v2 step 8),
+  // once for the slate (dataJson_), once for the photo pool of the list (v81 pools_), each then cached.
+  assert.strictEqual(f.n.c, 3, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});
@@ -2282,10 +2292,23 @@ const fa = (id, i, x = {}) =>
     sc: {d: 0, r: 1},
     ...x
   });
+// The variant table the fish replay reads (Code.gs subjVar_, core.js fishVarTable; Q391 b), from the repository's files
+// as the sheet reads them from main (tests/gas.js serves the photo files), made once.
+let FVARS = null;
+const fvars = () =>
+  FVARS ||
+  (FVARS = (S =>
+    S.replayed.vars(
+      JSON.parse(FJSON),
+      ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(f =>
+        JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'))
+      ),
+      S
+    ))(C.subjectOf('fish')));
 const fishWant = (L, id, o = {}) =>
   C.replayProgress(
     L.map(a => C.logRow(a, id)),
-    {gen: FGEN, ...o}
+    {gen: FGEN, vars: fvars(), ...o}
   )[id].P;
 
 test('sheet replays per subject: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
@@ -2319,7 +2342,7 @@ test('sheet replays per subject: the fish progress replayed from its own answers
     "the corals' tab keeps the corals' record only"
   );
   // Reused while the rows are the same (a marker comes back); fish.json read once (cached), never for the photo pools
-  // under the script lock (sheet v115).
+  // under the script lock (sheet v115), the variant table made with the units (Code.gs subjRpl_).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
   assert.strictEqual(f.n.f, 1);
@@ -2900,6 +2923,105 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
     ]
   );
   assert.strictEqual(rows[2][21], 'Pomacentrus moluccensis');
+});
+
+// v170 (#1041, the species step 2 plan): Species shown blanked any name with a digit, so every answer on a photo of a
+// species with no name yet (tools/seaslug_informal.json: Goniobranchus sp. 5) was logged without its species. Its label
+// is kept now, a digit only as the number after "sp. "; everything else is refused as before.
+test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchus sp. 5), a fish species unit (s:s091) still logs', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  const slug = (id, sp) =>
+    ans(id, {
+      g: 'g:Goniobranchus',
+      a: 'g:Goniobranchus',
+      ph: 'seaslug-goniobranchus-sp5-cand-2617827',
+      ch: 'g:Goniobranchus g:Hypselodoris',
+      s: 'seaslug',
+      rk: 'genus',
+      tn: 'Goniobranchus',
+      ta: 'Goniobranchus',
+      sp
+    });
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      slug('n1', 'Goniobranchus sp. 5'),
+      slug('n2', 'Goniobranchus sp. 5, Goniobranchus reticulatus'),
+      slug('n3', 'Goniobranchus sp. 12'),
+      // still refused: a digit anywhere but the number after "sp. " that ends a name, 4 digits, no letter first
+      slug('n4', 'Goniobranchus 5'),
+      slug('n5', 'Goniobranchus sp. 5000'),
+      slug('n6', '=Goniobranchus sp. 5'),
+      slug('n7', '5 Goniobranchus sp. 5'),
+      slug('n8', 'Goniobranchus sp.5'),
+      slug('n9', 'Goniobranchus sp. 5x'),
+      slug('n10', 'Goniobranchus sp. 5 =1+1'),
+      // a fish species unit (core.js fishSpUnits: s: and the species id) and its photo's species
+      fishAns('n11', {
+        g: 's:s091',
+        a: 's:s084',
+        ch: 's:s091 s:s084 s:s102',
+        m: 'quiz-duel|s:s091|s:s084',
+        rk: 'species',
+        tn: 'Blue-green chromis',
+        ta: 'Black-axil chromis',
+        sp: 'Chromis viridis'
+      })
+    ]
+  });
+  const R = s.sheets.Answers.rows.slice(1),
+    row = id => R.find(r => r[7] === id);
+  assert.deepStrictEqual(
+    ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10'].map(id => row(id)[21]),
+    ['Goniobranchus sp. 5', 'Goniobranchus sp. 5, Goniobranchus reticulatus', 'Goniobranchus sp. 12', '', '', '', '', '', '', '']
+  );
+  assert.deepStrictEqual(row('n1').slice(17, 22), ['seaslug', 'genus', 'Goniobranchus', 'Goniobranchus', 'Goniobranchus sp. 5']);
+  assert.deepStrictEqual(
+    [2, 3, 5, 11, 17, 18, 19, 20, 21].map(i => row('n11')[i]),
+    [
+      's:s091',
+      's:s084',
+      'quiz-duel|s:s091|s:s084',
+      's:s091 s:s084 s:s102',
+      'fish',
+      'species',
+      'Blue-green chromis',
+      'Black-axil chromis',
+      'Chromis viridis'
+    ],
+    'a fish species unit and its photo species, as before'
+  );
+  // readAnswers (the admin's Journey and Analyses) serves the rows in the tab's order, the label at 21 as it is.
+  const rows = s.post({readAnswers: 1, token: T}).rows,
+    srv = id => rows[R.indexOf(row(id))];
+  assert.strictEqual(rows.length, R.length);
+  assert.ok(rows.every(r => r.length === 23));
+  assert.deepStrictEqual(srv('n1').slice(17, 22), ['seaslug', 'genus', 'Goniobranchus', 'Goniobranchus', 'Goniobranchus sp. 5']);
+  assert.deepStrictEqual(
+    [srv('n1')[2], srv('n1')[3], srv('n1')[6]],
+    ['g:Goniobranchus', 'g:Goniobranchus', 'seaslug-goniobranchus-sp5-cand-2617827']
+  );
+  assert.deepStrictEqual([srv('n4')[21], srv('n11')[2], srv('n11')[21]], ['', 's:s091', 'Chromis viridis']);
+});
+
+test('v170 Answers: every species name of the game files is kept in Species shown', () => {
+  const s = loadCodeGs(),
+    names = ['fish', 'seaslug'].flatMap(f =>
+      require(`../${f}.json`)
+        .species.map(x => x.name)
+        .filter(Boolean)
+    );
+  assert.ok(names.includes('Goniobranchus sp. 5'));
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: names.map((sp, i) => fishAns('sn' + i, {sp}))});
+  const kept = s.sheets.Answers.rows.slice(1).map(r => r[21]);
+  assert.deepStrictEqual(
+    names.filter((n, i) => kept[i] !== n),
+    []
+  );
 });
 
 test('v60: a tab from before v60 (15 columns, no cells beyond) reads the new fields as the default subject', () => {

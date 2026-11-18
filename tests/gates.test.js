@@ -124,11 +124,26 @@ const GATES = {
   // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
   // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
   STRUCT_SHEET: (v, N) => {
-    const on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
-        STRUCT_SHEET: N,
+    // core.js structSheet: a subject's own version (SUBJECTS structure sheet), else STRUCT_SHEET
+    const structSheet = S => (S && S.structure && S.structure.sheet ? S.structure.sheet() : N),
+      S = {id: 'fish', structure: {}, replayed: {}},
+      on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
+        structSheet,
         rpOn: (S, x) => Number(x) >= 112
-      })({id: 'fish', structure: {}, replayed: {}}, v),
-      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {STRUCT_SHEET: N, sheetV: () => (v === undefined ? 0 : v)})();
+      })(S, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {structSheet, sheetV: () => (v === undefined ? 0 : v)})(S);
+    assert.strictEqual(on, app, 'the app and the sync agree');
+    return on;
+  },
+  // The corals' look-alike pairs (design note v2, step 8; sync.js stOn, app.js structOn through core.js structSheet, the
+  // corals' SUBJECTS structure sheet; Code.gs stMain_, gen_ under the pairs): their stamp said and a replay under a new one
+  // adopted, the pairs laid over data.json, from the script that replays the corals under them (tests/coralcontent.test.js);
+  // before, the text slots alone, nothing sent.
+  PAIRS_SHEET: (v, N) => {
+    const structSheet = S => (S && S.structure && S.structure.sheet ? S.structure.sheet() : 146),
+      S = {id: 'coral', replay: true, structure: {sheet: () => N}},
+      on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {structSheet, rpOn: S => !!S.replay})(S, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {structSheet, sheetV: () => (v === undefined ? 0 : v)})(S);
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },
@@ -141,6 +156,58 @@ const GATES = {
       GROUP_SHEET: 48,
       ASUBJ: null
     })({open: 'group', sheet: N}),
+  // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from v171; before, the one
+  // general board as before, whatever the reply carries.
+  SCOPES_SHEET: (v, N) =>
+    fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
+      SCOPES_SHEET: N,
+      myCohort: () => '',
+      boardMe: () => -1
+    })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
+  // The admin's Cohort select and Staff toggle on a player's bar (admin.js cohortOn; Code.gs userGroup cohort, roles_):
+  // from v171.
+  COHORT_SHEET: (v, N) => fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N})(),
+  // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
+  // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
+  // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug
+  // with the corals' board). The fish's replay and board keep their own versions.
+  SEASLUGRP_SHEET: (v, N) => {
+    const C = require('../core.js'),
+      SS = C.subjectOf('seaslug'),
+      FI = C.subjectOf('fish');
+    assert.strictEqual(SS.replayed.sheet, N);
+    assert.strictEqual(SS.boardSheet, N);
+    const rpOn = fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: C.REPLAYS_SHEET}),
+      boardV = fn('progress.js', 'const boardV = ', '\n', 'boardV', {BOARD_SHEET: 95}),
+      ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {boardV}),
+      live = fn('progress.js', 'const boardLive = ', '\n', 'boardLive', {boardV, board0: () => C.SUBJECTS[0], sheetV: () => v}),
+      j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
+    if (v !== undefined && v >= C.REPLAYS_SHEET) assert.strictEqual(rpOn(FI, v), true, "the fish's replay from its own version");
+    if (v !== undefined && v >= 95) assert.strictEqual(ok(j, false, FI), true, "the fish's board from its own version");
+    const on = rpOn(SS, v);
+    assert.strictEqual(ok(j, false, SS), on, 'the board with the replay');
+    assert.strictEqual(live(SS), on, 'the board live with the replay');
+    return on;
+  },
+  // The sea slugs' own pooled statistics (core.js SUBJECTS seaslug stats; Code.gs ?stats=1&s=seaslug, statsSubjects_):
+  // the app asks for them (sync.js loadOwnStats) from the script that pools them; before, an older script would answer
+  // &s=seaslug with the corals', so nothing is asked (and a reply not naming the sea slugs is never kept:
+  // tests/seaslugstats.test.js).
+  SEASLUGST_SHEET: (v, N) => {
+    const SS = require('../core.js').subjectOf('seaslug');
+    assert.strictEqual(SS.stats, N);
+    let asked = '';
+    fn('sync.js', 'function loadOwnStats(', '\n// A switch to a subject', 'loadOwnStats', {
+      SYNC_URL: 'https://sheet.invalid/exec',
+      SUBJ: SS,
+      sheetV: () => (v === undefined ? 0 : v),
+      appVer: () => 1,
+      ownStatsAt: {},
+      fetch: u => ((asked = u), new Promise(() => {}))
+    })();
+    if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
+    return !!asked;
+  },
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
@@ -201,7 +268,10 @@ const GATES = {
   // Another subject's leaderboard (progress.js boardOk, Code.gs board_ &s=<id>): from v95; an older script answers with
   // the first subject's board, never shown as another's. The first subject's board is shown from any script.
   BOARD_SHEET: (v, N) => {
-    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {BOARD_SHEET: N}),
+    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {
+        BOARD_SHEET: N,
+        boardV: fn('progress.js', 'const boardV = ', '\n', 'boardV', {BOARD_SHEET: N})
+      }),
       j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
     assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
     return ok(j, false);

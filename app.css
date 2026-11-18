@@ -6181,6 +6181,36 @@ html.touring .unlock {
   bottom: 6px;
   box-shadow: 0 0 0 3px var(--k);
 }
+/* The juveniles and phases card (quiz.js phaseShow): the photo just answered beside one of the same species in another
+   phase, each with its phase under it. */
+.phvis {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+}
+.phvis figure {
+  margin: 0;
+  width: 132px;
+}
+.phvis img {
+  display: block;
+  width: 100%;
+  height: 99px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--photo-bg);
+  box-shadow: var(--shadow);
+}
+.phvis figcaption {
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.phasecard .fbsp,
+.phasecard .phlines {
+  margin: 0 0 8px;
+}
 .tipcard h3:focus,
 .reliefcard h3:focus,
 .allmet h3:focus,
@@ -6628,6 +6658,30 @@ html.touring .unlock {
 }
 .board {
   max-width: 640px;
+}
+/* Staff and cohort boards (progress.js boardScopes): each under a small heading; the other cohorts in a quiet fold. */
+.bscope + .bscope,
+.bmore {
+  margin-top: 20px;
+}
+.bhead {
+  margin: 0 0 8px;
+  font-size: var(--fs-s);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bmore > summary {
+  cursor: pointer;
+  width: max-content;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bmore > .bscope {
+  margin-top: 16px;
 }
 .blist {
   list-style: none;

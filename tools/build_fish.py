@@ -137,7 +137,7 @@ import inat  # noqa: E402  (the one paced, retried client: WoRMS 0.3 s, iNatural
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
 # A teaching node's fields after its species, in fish.json's order (teach_out); LAYER_TEXT: those of the instance's
 # layer that the offline modes lay again (relay).
-TAIL = ("aka", "often", "sl", "cues", "look", "phase", "dimorph", "juv", "why", "note")
+TAIL = ("aka", "often", "sl", "cues", "look", "phase", "dimorph", "juv", "varAt", "why", "note")
 LAYER_TEXT = ("cues", "look", "phase")
 
 
@@ -543,7 +543,7 @@ def add_families(o, key, declared=()):
     name, on the family that holds most species of that entry, the first in order on a tie), imrWith (the IMR entry
     that teaches its species when another family carries it: the Soapfishes, taught with IMR's Groupers), sl, cues
     (IMR's, verbatim), look ([[family id, IMR's words]]), lsrc ({family id: where the pair comes from}, as data.json
-    gen lsrc), phase, dimorph, juv, why, note, wink (the IMR entry's, or the teaching node's for circles 2-3), genera,
+    gen lsrc), phase, dimorph, juv, varAt (its photo variants' own thresholds, core.js VAR_AT), why, note, wink (the IMR entry's, or the teaching node's for circles 2-3), genera,
     species (in their teaching nodes' order: commonness)}.
     declared: the source's "look" (the instance's layer, tools/instances/imr/fish.json), look-alike groups of families declared beyond the IMR course, each {src, key (the
     key whose family labels the ids name; applied only while that key is in force), groups [[family id, ...]], note
@@ -640,7 +640,7 @@ def add_families(o, key, declared=()):
                 r["look"] = look
                 imr = "IMR fish presentation" + (", slide " + ", ".join(map(str, t["sl"])) if t.get("sl") else "")
                 r["lsrc"] = {b: imr for b, _ in look}
-            for k in ("phase", "dimorph", "juv", "why", "note", "wink"):
+            for k in ("phase", "dimorph", "juv", "varAt", "why", "note", "wink"):
                 if t.get(k):
                     r[k] = t[k]
         r["genera"] = list(dict.fromkeys(sp[sid]["genus"] for sid in f["species"]))
