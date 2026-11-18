@@ -5113,6 +5113,9 @@ const darkCards = (p, sel) =>
         fails.push(`To do › Reports, a game report's bar: ${JSON.stringify(r)}`);
       // Stand-by: below the open ones, never thanked (not in seen); Publish counts it.
       const h0 = await p.evaluate(() => HIST.length);
+      // The demo draws on the live curation.json, which holds Pierre's own report statuses (a report he dismissed, 2026-11-18):
+      // what Reopen must leave is the reports' statuses as they were before this one's changes, not an empty list.
+      const reps0 = await p.evaluate(() => JSON.stringify(DRAFT.reps || null));
       await p.click(card('demorep0') + ' [data-rst="wait"]');
       await settle();
       r = await info('demorep0');
@@ -5163,7 +5166,7 @@ const darkCards = (p, sel) =>
       await p.evaluate(c => document.querySelector(c).closest('details').setAttribute('open', ''), card('demorep0'));
       await p.click(card('demorep0') + ' [data-rst="open"]');
       await settle();
-      if ((await st('demorep0')).s !== 'open' || (await p.evaluate(() => JSON.stringify(DRAFT.reps || null))) !== 'null')
+      if ((await st('demorep0')).s !== 'open' || (await p.evaluate(() => JSON.stringify(DRAFT.reps || null))) !== reps0)
         fails.push(`To do › Reports: Reopen left a status ${await p.evaluate(() => JSON.stringify(DRAFT.reps))}`);
       // A sheet report: its genus page, Attach a photo (its genus's photos), the photo then on the card with its tools,
       // kept in this tab only (never in the draft).
@@ -7127,20 +7130,25 @@ const darkCards = (p, sel) =>
         const [f0, f1] = await sq.$$eval('#view section.adm-row:not([data-sid^="g:"]) .adm-ftile', L =>
           L.slice(0, 2).map(t => t.dataset.f)
         );
+        // The fish's own part of the draft must not move with the sea slugs' tools. It is not compared to the published
+        // part: the fish auto-sort runs at each load and puts the live candidates still waiting into the draft (the refills
+        // of 2026-11-18 left some), so the part is first let settle (a second run changes nothing), then taken as the baseline.
+        await sq.evaluate(() => fishAutoRun());
+        const fish0 = await sq.evaluate(() => JSON.stringify(DRAFT.fish));
         await sq.click(`.adm-ftile[data-f="${f0}"] [data-fu="remove"]`);
         await sq.click(`.adm-ftile[data-f="${f1}"] [data-fu="feat"]`);
         const fg = await sq.$eval('#view section.adm-row[data-sid="g:Chromodoris"] .adm-ftile', t => t.dataset.f).catch(() => '');
         if (fg) await sq.click(`.adm-ftile[data-f="${fg}"] [data-fu="cover"]`);
         const s1 = await sq.evaluate(
-          ([f0, f1, fg]) => ({
+          ([f0, f1, fg, fish0]) => ({
             seen: ((DRAFT.seaslug || {}).seen || {})[f0],
             feat: JSON.stringify(((DRAFT.seaslug || {}).genera || {})['f:Chromodorididae']),
             cover: (((DRAFT.seaslug || {}).genera || {})['g:Chromodoris'] || {}).cover === fg,
-            fish: JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish),
+            fish: JSON.stringify(DRAFT.fish) === fish0,
             out: Object.keys(output()).includes('seaslug'),
             sum: String(pubSummary())
           }),
-          [f0, f1, fg]
+          [f0, f1, fg, fish0]
         );
         if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
           se.push(`the tools ${JSON.stringify(s1)}`);
@@ -7344,9 +7352,12 @@ const darkCards = (p, sel) =>
           const S = document.querySelector('#view .adm-fsw');
           return {f: S.dataset.f, s: S.dataset.s, chk: !!document.querySelector('#view [data-fq="chk"]')};
         });
+        // the fish part as the load's auto-sort leaves it (see the baseline above), this page being a new load
+        await sq.evaluate(() => fishAutoRun());
+        const fish1 = await sq.evaluate(() => JSON.stringify(DRAFT.fish));
         await sq.click('#view .adm-fsw [data-add]');
         const ca = await sq.evaluate(f => ((DRAFT.seaslug || {}).add || {})[f], cf.f),
-          fishSame = await sq.evaluate(() => JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish));
+          fishSame = await sq.evaluate(f1 => JSON.stringify(DRAFT.fish) === f1, fish1);
         if (cf.chk || ca !== cf.s || !fishSame) se.push(`their Candidates ${JSON.stringify({...cf, ca, fishSame})}`);
         if (se.length) fails.push(`Sea slugs' photo pages: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
