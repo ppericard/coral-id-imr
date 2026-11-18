@@ -295,6 +295,62 @@ async function sealPart(b, base, fails) {
   await R.waitForFunction(() => typeof snap !== 'undefined' && snap !== null, null, {timeout: 60000});
   const rl = await R.evaluate(() => ({dw: DW, busy: draftBusy()}));
   if (rl.dw !== null || !rl.busy) fails.push(F + `a store whose first read failed was used, or leaving did not warn ${JSON.stringify(rl)}`);
+  // The one-time move of a draft kept in localStorage before the store (draftMove): its edit is in the draft and the
+  // store, and both keys are gone (a context of its own: an empty store)
+  const vc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await vc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const V = await vc.newPage();
+  V.on('pageerror', e => errs.push(e.stack || e.message));
+  await V.addInitScript(f => {
+    if (sessionStorage.getItem('smoke-moved')) return;
+    sessionStorage.setItem('smoke-moved', '1');
+    localStorage.setItem(
+      'demo:reefid-curation-draft',
+      JSON.stringify({v: 1, genera: {}, quality: {[f]: 3}, _tab: {rev: 'old.1', seen: null}})
+    );
+    localStorage.setItem('demo:reefid-curation-base', JSON.stringify({v: 1, genera: {}}));
+  }, P[4]);
+  await V.goto(base + 'admin.html?demo#photos/quality');
+  await V.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && DW.seen && !DW.busy, null, {timeout: 60000});
+  const mo = await V.evaluate(
+    f => ({
+      draft: (DRAFT.quality || {})[f],
+      keys: ['demo:reefid-curation-draft', 'demo:reefid-curation-base'].filter(k => localStorage.getItem(k) !== null),
+      tab: '_tab' in DRAFT
+    }),
+    P[4]
+  );
+  const ms = await stored(V);
+  if (mo.draft !== 3 || mo.keys.length || mo.tab || !ms.draft)
+    fails.push(F + `the draft kept in localStorage did not move into the store ${JSON.stringify({mo, ms})}`);
+  // The site's ?draft preview (app.js curation) reads the admin's store (the real one: the preview is never the demo's)
+  const W = await vc.newPage();
+  await W.goto(base + 'privacy.html');
+  await W.evaluate(
+    () =>
+      new Promise((ok, ko) => {
+        const r = indexedDB.open('reefid-admin-draft', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('draft');
+        r.onerror = ko;
+        r.onsuccess = () => {
+          const t = r.result.transaction('draft', 'readwrite');
+          t.objectStore('draft').put(
+            {j: JSON.stringify({v: 1, genera: {}, quality: {'smoke-preview': 1}}), rev: 'x.1', seen: null},
+            'draft'
+          );
+          t.oncomplete = () => (r.result.close(), ok());
+          t.onerror = ko;
+        };
+      })
+  );
+  await W.goto(base + 'index.html?draft');
+  await W.waitForFunction(() => typeof curation === 'function', null, {timeout: 60000});
+  const pv = await W.evaluate(() => curation().then(c => (c.quality || {})['smoke-preview'] || null));
+  if (pv !== 1) fails.push(F + `the site's ?draft preview did not read the admin's stored draft (${pv})`);
+  await vc.close();
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }
