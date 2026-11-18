@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The learning fixes of 2026-11-04 (docs/LEARNING.md "Opening pace", "Easier questions when a run goes wrong", "Known
-// mix-ups", "Look-alikes from the data", "The apology card"): model.js's and quiz.js's own code run in Node on stubs (the
-// player's record P, the cards, the store), core.js's pure rules directly.
+// The opening pace and its neighbours (docs/LEARNING.md "Opening pace", "Easier questions when a run goes wrong",
+// "Known mix-ups", "Look-alikes from the data", "The apology card"): model.js's and quiz.js's own code run in Node on
+// stubs (the player's record P, the cards, the store), core.js's pure rules directly.
 const test = require('node:test');
 const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
@@ -105,9 +105,9 @@ test('opening pace: the first cards count, Open all and a genus closed again do 
   assert.strictEqual(M.openRecent().length, 0);
 });
 
-// A unit stuck shaky (Pierre, 2026-11-12, Q338: "option a, B10 après 200 réponses"; docs/LEARNING.md "A unit stuck
-// shaky"): from OPEN.STUCK_FROM answers so far (answersSoFar, the stub's n), a genus still shaky after OPEN.STUCK of its
-// own answers takes no place of OPEN.K in openChance; before, every shaky genus takes its place, as before. Every genus
+// A unit stuck shaky (docs/LEARNING.md "A unit stuck shaky"): from OPEN.STUCK_FROM answers so far (answersSoFar, the
+// stub's n), a genus still shaky after OPEN.STUCK of its own answers takes no place of OPEN.K in openChance; before
+// OPEN.STUCK_FROM answers, every shaky genus takes its place. Every genus
 // at difficulty 0, its ability set by the stub (shaky: under OPEN.P on 4 choices).
 function stuckModel() {
   const P = {},
@@ -208,7 +208,7 @@ test('known mix-ups: model.js confTerm, the most over the choices, only with 3 o
 test('look-alikes from the data: core.js dataLook, CONF.N offers and a pooled score of CONF.TRAP', () => {
   assert.deepStrictEqual([C.CONF.N, C.CONF.TRAP], [20, 0.2]);
   const sc = (c, prior) => C.confScore(c, prior);
-  // The pair of 2026-11-03: 30 offers, 8 mix-ups, two genera sharing a growth form (prior 0.08): 0.227.
+  // A pair seen in the real data: 30 offers, 8 mix-ups, two genera sharing a growth form (prior 0.08): 0.227.
   assert.strictEqual(C.dataLook([30, 8], sc([30, 8], C.CONF.FORM)), true);
   // Enough mix-ups but too few offers.
   assert.strictEqual(C.dataLook([15, 6], sc([15, 6], C.CONF.FORM)), false);
@@ -402,8 +402,8 @@ test('the apology card: only to a player who felt it (20 answers in the window, 
   assert.strictEqual(C.sorryFelt(C.sorryOf({log: log(40), cards: {}, total: 40, h: 1.2, first})), false);
   // Cards kept from before their times were (no time): they say nothing about the window.
   assert.strictEqual(C.sorryOf({log: log(25, before), cards: {A: [0, 1], B: [0, 1]}, total: 25, h: 3.5, first}).n, 0);
-  // Signed in: the answers sent are no longer on the device; counted from the last card before the window. The strong
-  // player of 2026-11-03: 46 answers since the card at 184, 7 cards in 16 answers in the window, the hold at 3.22.
+  // Signed in: the answers sent are no longer on the device; counted from the last card before the window. A strong
+  // player of that window: 46 answers since the card at 184, 7 cards in 16 answers in the window, the hold at 3.22.
   const t = s => Date.parse('2026-11-03T' + s + 'Z'),
     cards = {A: [0, 1, t('02:29:00'), 's'], B: [184, 0, t('04:46:00'), 'c']};
   [199, 202, 204, 206, 208, 211, 215].forEach((a, i) => (cards['N' + i] = [a, 0, t('12:59:00') + i * 30000, 'c']));
@@ -454,8 +454,8 @@ test('the apology card: greeted by the first word of the sign-in name, else "Hi!
   assert.match(C.sorryText('', Date.parse('2026-11-04T03:00:00Z'), 0).p, /^Yesterday morning we adjusted/);
 });
 
-// One genus difficulty (Pierre, 2026-11-06, Q133; docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus
-// offset (PGD, ?stats=1 gd), plus the mean judged-ease prior of a unit's judged photos (the fish); never the mean of its
+// One genus difficulty (docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus offset (PGD, ?stats=1
+// gd), plus the mean judged-ease prior of a unit's judged photos (the fish); never the mean of its
 // photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
 test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior for judged photos', () => {
   const src = read('model.js'),

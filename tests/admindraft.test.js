@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // The admin's draft store (admin-draft.js, model B of the sign-out seal: docs/reviews/2026-11-09-admin-signout-seal.md):
 // two or three admin "tabs" over one stand-in IndexedDB (tests/fakeidb.js: transactions one at a time, all or nothing,
-// ended by an await), real Web Crypto, and the encryption or decryption held where the six review rounds of #798 found a
-// race between tabs. Each of those findings (their Codex thread ids) has its test here.
+// ended by an await), real Web Crypto, and the encryption or decryption held at each point where two tabs can race.
+// Each of those races has its test here.
 const test = require('node:test'),
   assert = require('node:assert');
 const fakeIDB = require('./fakeidb.js');

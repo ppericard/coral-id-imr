@@ -220,12 +220,12 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 
 | Touching… | Read (ARCHITECTURE = docs/ARCHITECTURE.md) |
 |---|---|
-| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" |
-| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context"; [spec/fish-photos.md](docs/spec/fish-photos.md) |
+| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" and [spec/tools.md](docs/spec/tools.md) |
+| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" and [spec/photos.md](docs/spec/photos.md); [spec/fish-photos.md](docs/spec/fish-photos.md) |
 | The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md); [spec/model.md](docs/spec/model.md) |
 | Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" and [spec/front-end.md](docs/spec/front-end.md) |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" |
-| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
+| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" and [spec/analyses.md](docs/spec/analyses.md) |
+| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects" and [spec/subjects.md](docs/spec/subjects.md), "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
 | Why something was decided (a decision, Pierre's words) | [docs/decisions/](docs/decisions/README.md): the index; a PR that carries out a decision adds a record (rule W19) |

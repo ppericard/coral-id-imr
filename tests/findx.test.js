@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Find the X (ROADMAP "Game modes"; Pierre, 2026-11-03, Q321 D1, 2026-11-09): one name, four photos, fish only, slipped
+// Find the X (ROADMAP "Game modes"): one name, four photos, fish only, slipped
 // into the photo quiz like the duels (quiz.js FIND, planFind, planPhoto), logged with its own mode |f and scored as a
 // 4-choice quiz answer. quiz.js planFind runs in a vm with model.js distractors (its own code) and the game around them
 // stubbed; the scoring through quiz.js answer's own question (scoreIn) and core.js scoreAnswer, replayed from the log.
@@ -99,7 +99,7 @@ test('the draw share: about FIND.P of the questions that could be one', () => {
 });
 
 test('never on a unit not met, never with a unit not met, never without 3 other met units with a tile', () => {
-  // t not met: no question, and no random number drawn (the draw goes on as before).
+  // t not met: no question, and no random number drawn (the draw goes on unchanged).
   let W = planner({met: 'BCDEF'.split(''), P: 1});
   assert.strictEqual(W.plan('A'), null);
   assert.strictEqual(W.rnd.n, 0, 'nothing drawn for a unit not met');
@@ -369,7 +369,7 @@ test("the preload: a Find the X fetches its four tiles, never its question's pho
   ctx.AWAY = true;
   assert.strictEqual(JSON.stringify(ctx.pfUrls(q)), JSON.stringify(set.find.map(x => `img:${x.p.f}:s`)));
   ctx.AWAY = false;
-  // Any other question as before: its photos at 480 px then full size, then the views shown after the answer.
+  // Any other question: its photos at 480 px then full size, then the views shown after the answer.
   const plainQ = ['quiz', 'B', ['B', 'C', 'D'], 'Which B?', {shown: [{f: 'b1'}], reveal: [{f: 'b2'}]}];
   assert.strictEqual(JSON.stringify(ctx.pfUrls(plainQ)), JSON.stringify(['img:b1:s', 'full:b1:1', 'img:b2:s', 'full:b2:2']));
 });
