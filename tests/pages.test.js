@@ -159,14 +159,14 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, nothing 
           PVI: 'visit0001',
           answersSoFar: () => 12,
           pvOwner: () => 'a:dev0000001',
-          ev: (k, o) => sent.push([k, o])
+          ev: (k, o) => sent.push([k, o]),
+          // The gate and the script version the app last saw, as sync.js has them (sheetV: 0 before any reply).
+          VIEWPORT_SHEET: N,
+          sheetV: () => Number(v) || 0
         };
       vm.createContext(ctx);
       vm.runInContext(
-        block(src, 'const viewportOn = ', '\nfunction pagesSend() {', {file: 'sync.js'}).replace(
-          'const viewportOn = ',
-          `const VIEWPORT_SHEET = ${N}, sheetV = () => ${JSON.stringify(v)} || 0;\nconst viewportOn = `
-        ) +
+        block(src, 'const viewportOn = ', '\nfunction pagesSend() {', {file: 'sync.js'}) +
           block(src, 'function pagesSend() {', '\n}\n', {through: 1, file: 'sync.js'}) +
           '\npagesSend();',
         ctx

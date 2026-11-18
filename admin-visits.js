@@ -365,6 +365,25 @@ function vData() {
   VMEMO = {p: PGS, e: EVS, a: ANS, u: USERS, v};
   return v;
 }
+// The Screens card: the devices of the last 90 days by width band, then the most common sizes (screensOf). Not filtered,
+// so it is drawn even when the filters keep no visit.
+function vScreens(now) {
+  const SC = screensOf(PGS.rows || [], now);
+  return `<section class="adm-scard adm-hsec" data-visits="screens"><h3>Screens <small>${SC.n} devices, ${VISITS.SCREEN_DAYS} d</small></h3>${
+    SC.n
+      ? `<div class="adm-tscroll"><table class="adm-tbl" data-vsc="bands"><thead><tr><th>Width</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.bands
+          .map(b => `<tr><td>${esc(b.k)}</td><td>${sbar(b.n, SC.n)}</td><td class="n">${b.n}</td><td class="n">${pct(b.n, SC.n)}</td></tr>`)
+          .join(
+            ''
+          )}</tbody></table></div><h3 class="adm-vh3">Most common sizes</h3><div class="adm-tscroll"><table class="adm-tbl" data-vsc="sizes"><thead><tr><th>Size</th><th class="n" title="Pixel ratio">Ratio</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.sizes
+          .map(
+            z =>
+              `<tr><td>${z.w} × ${z.h}</td><td class="n">${z.d}</td><td>${sbar(z.n, SC.n)}</td><td class="n">${z.n}</td><td class="n">${pct(z.n, SC.n)}</td></tr>`
+          )
+          .join('')}</tbody></table></div>`
+      : '<p class="note">None yet.</p>'
+  }</section>`;
+}
 function renderVisits() {
   status();
   const here = cur,
@@ -440,7 +459,8 @@ function renderVisits() {
       head(V.length ? vDay(P.since) : '') +
       filt +
       warn.map(t => `<p class="note">${esc(t)}</p>`).join('') +
-      '<p class="note">No visit.</p>';
+      '<p class="note">No visit.</p>' +
+      `<div class="adm-sgrid">${vScreens(now)}</div>`;
     bindVisits();
     return;
   }
@@ -605,24 +625,7 @@ function renderVisits() {
   const first = `<section class="adm-scard adm-hsec" data-visits="first"><h3>First page</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Page</th><th></th><th class="n">Visits</th><th class="n"></th></tr></thead><tbody>${fRows}</tbody></table></div>
     <h3 class="adm-vh3">Device</h3><div class="adm-tscroll"><table class="adm-tbl" data-visits="device"><thead><tr><th>How</th><th></th><th class="n">Visits</th><th class="n">Visitors</th></tr></thead><tbody>${dRows}</tbody></table></div></section>`;
 
-  // Screens: the devices of the last 90 days by width band, then the most common sizes (screensOf; not filtered).
-  const SC = screensOf(PGS.rows || [], now),
-    screens = `<section class="adm-scard adm-hsec" data-visits="screens"><h3>Screens <small>${SC.n} devices, ${VISITS.SCREEN_DAYS} d</small></h3>${
-      SC.n
-        ? `<div class="adm-tscroll"><table class="adm-tbl" data-vsc="bands"><thead><tr><th>Width</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.bands
-            .map(
-              b => `<tr><td>${esc(b.k)}</td><td>${sbar(b.n, SC.n)}</td><td class="n">${b.n}</td><td class="n">${pct(b.n, SC.n)}</td></tr>`
-            )
-            .join(
-              ''
-            )}</tbody></table></div><h3 class="adm-vh3">Most common sizes</h3><div class="adm-tscroll"><table class="adm-tbl" data-vsc="sizes"><thead><tr><th>Size</th><th class="n" title="Pixel ratio">Ratio</th><th></th><th class="n">Devices</th><th class="n"></th></tr></thead><tbody>${SC.sizes
-            .map(
-              z =>
-                `<tr><td>${z.w} × ${z.h}</td><td class="n">${z.d}</td><td>${sbar(z.n, SC.n)}</td><td class="n">${z.n}</td><td class="n">${pct(z.n, SC.n)}</td></tr>`
-            )
-            .join('')}</tbody></table></div>`
-        : '<p class="note">None yet.</p>'
-    }</section>`;
+  const screens = vScreens(now);
 
   // Visitors: one row each, the newest visit first; a row unfolds their visits; the name opens their Journey.
   const VL = [];
