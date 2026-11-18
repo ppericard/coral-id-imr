@@ -1039,32 +1039,34 @@ Methods, shared by every analysis:
   a whole report fits the Action's time as the log grows (`report`; the options `--boot` and `--boot-history`).
   Recompute here reuses the stored report's milestones for the very same answers, gives its newest milestone and a live
   point of every answer 199 draws read as a normal interval (the estimate ± 1.96 times the draws' standard deviation,
-  never beyond the draws' range: `BSE`), and any other milestone the model's own interval only. Seeded: the same
+  never beyond the draws' range: `BSE`; some 200 draws pin a standard error, percentiles need about 1,000: Efron &
+  Tibshirani 1993), and any other milestone the model's own interval only. Seeded: the same
   answers give the same intervals. Each bootstrap refit starts from the full fit of the same model (`WARM`: the same
   fit in fewer steps); a draw where no answer moves a column gives no value for it (`drawn`), never the full fit's or 0.
 - **Verdicts** (`verdictOf`, final after `correct`). *Clear*: its adjusted p at most its family's level (below), so its
   interval at that level leaves the null value out (0, or the app's own guess rate). *No clear effect*: not clear, and
   its 95% interval lies within the smallest effect that would matter on each side of the null value: 0.1 on log time
-  (about 10%), 0.25 logit, 5 points for a guess rate or a right − expected, 0.1 logit for the learning and forgetting slopes and for
-  Time and difficulty's effects per log unit of time. *Not enough data yet*: with the answers that would carry it to
-  either verdict, its interval at the level it faces leaving the null value out or its 95% interval inside the margin,
-  whichever needs fewer (never fewer than it has), assuming the interval shrinks as 1/√n (slower when the players are
-  few), rounded up to the hundred, or to 500 from 1,000 (`nice`); an interval wider than 20 gives no number. A spread
-  (SD) never goes below 0: clear when its lower bound is above a tenth of its smallest effect, no clear effect when its
-  upper bound is under that effect. *No such answers yet*: no answer moves the effect. *Not in the answer log*: what the
-  log cannot measure.
+  (about 10%), 0.25 logit, 5 points for a guess rate or a right − expected, 0.1 logit for the learning and forgetting
+  slopes and for Time and difficulty's effects per log unit of time. *Not enough data yet*: with the answers that would
+  carry it to either verdict, its interval at the level it faces leaving the null value out or its 95% interval inside
+  the margin, whichever needs fewer (never fewer than it has), assuming the interval shrinks as 1/√n (slower when the
+  players are few), rounded up to the hundred, or to 500 from 1,000 (`nice`); an interval wider than 20 gives no
+  number. A spread (SD) never goes below 0: clear when its lower bound is above a tenth of its smallest effect, no
+  clear effect when its upper bound is under that effect. *No such answers yet*: no answer moves the effect. *Not in
+  the answer log*: what the log cannot measure.
 - **Multiple testing** (`analysis.js` `PRIMARY`, `pOf`, `holm`, `bh`, `correct`). A milestone holds about 40 effects,
-  each at 95%: about 2 would read clear by chance alone. So each analysis declares the effects it exists to answer,
-  chosen before looking at any result (**the primary effects**, below), tested together under **Holm** (`ALPHA` 0.05:
-  the chance that even one of them reads clear by chance, whatever the dependence between them); every other effect is
-  secondary, exploratory, tested together under **Benjamini-Hochberg** (`FDR` 0.05: among the exploratory effects read
-  clear, about 5% at most are chance, on average; valid for independent or positively dependent tests), a lead to
-  re-test on later answers before acting on it. An effect's p comes from its 95% interval (the wider) read as a normal
-  one on the side facing the null value, so p < 0.05 exactly when that interval leaves the null value out; an SD is
-  tested against a tenth of its smallest effect, from its lower bound before the cut at 0. The estimate and its 95%
-  interval stay as they are, the verdict uses the adjusted p, and the admin shows the adjusted p only in the verdict's
-  tooltip. Each tested effect stores its family (`fam` 1 primary, 2 exploratory), `p`, the adjusted `pa`, and `alo` /
-  `ahi`, its interval at the level its rank faces (it leaves the null value out exactly when the effect is clear). Typed
+  each at 95%: about 2 would read clear by chance alone, and at least one would about 85% of the time. So each analysis
+  declares the effects it exists to answer, chosen before looking at any result (**the primary effects**, below),
+  tested together under **Holm** (`ALPHA` 0.05: the chance that even one of them reads clear by chance, whatever the
+  dependence between them); every other effect is secondary, exploratory, tested together under **Benjamini-Hochberg**
+  (`FDR` 0.05: among the exploratory effects read clear, about 5% at most are chance, on average; valid for independent
+  or positively dependent tests), a lead to re-test on later answers before acting on it. An effect's p comes from its
+  95% interval (the wider) read as a normal one on the side facing the null value, so p < 0.05 exactly when that
+  interval leaves the null value out; an SD is tested against a tenth of its smallest effect, from its lower bound
+  before the cut at 0. The estimate and its 95% interval stay as they are, the verdict uses the adjusted p, and the
+  admin shows the adjusted p only in the verdict's tooltip (rule A2). Each tested effect stores its family (`fam` 1
+  primary, 2 exploratory), `p`, the adjusted `pa`, and `alo` / `ahi`, its interval at the level its rank faces (it
+  leaves the null value out exactly when the effect is clear). Typed
   answers in Learning curves are read as right answers against the typical question's, which has a guess floor they
   lack, so their null is the coefficient at which they are right as often (log 1.5 at 75% right with a ¼ guess floor),
   not 0 (`nul`). Not tested: the answers to reach 80% (a number, not a comparison), an effect with no estimate, and the
@@ -1126,8 +1128,9 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    given wrongly, as the app counts it) + Again asked after it + typed + exam + comeback + (player) + (unit) +
    (0 + practice | player) + (0 + practice | unit): each player's and each unit's own learning slope around the common
    one, uncorrelated with its level, the practice centred on the answers' mean so each level is the level at typical
-   practice; their spreads (`sd_gslope`, `sd_pslope`), read as the gain from twice as many answers either side of the
-   common slope, exploratory as every SD. **Answers to reach 80%** beyond guessing (`MASTER` 0.8, `toMaster`): on a
+   practice (a slope is a factor with weights, `factor`, whose curvature `glmm` takes exactly); their spreads
+   (`sd_gslope`, `sd_pslope`), read as the gain from twice as many answers either side of the common slope,
+   exploratory as every SD. **Answers to reach 80%** beyond guessing (`MASTER` 0.8, `toMaster`): on a
    typical unit and per unit at its own slope (0 when the start is already there, 999 when a flat slope never gets
    there), its interval from 1,000 seeded draws of the intercept and the slope together and of the unit's own level and
    slope (`masterCI`), widened by the bootstrap's; *Clear* once the interval's top is under 999, else not enough data
@@ -1138,9 +1141,9 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    "Comeback after a break"). Right answers by the time since, in bands from under 30 minutes to 10 days or more.
 8. **Sessions** (100 answers, 10 session ends; a session ends after 30 minutes without an answer, `GAP`):
    Kaplan-Meier of the length (a session still open, its last answer under 30 minutes before the log's end, censored)
-   and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (log seconds
-   against the player's median) + log position + (player). Beside it, sessions in figures (`sessDesc`): counts and
-   means, no model (ARCHITECTURE.md "Analyses").
+   and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (log
+   seconds against the player's median) + log position + (player). Beside it, sessions in figures (`sessDesc`):
+   counts and means, no model (ARCHITECTURE.md "Analyses").
 9. **Player profiles** (`profiles`): a description of how each player plays, never named types (from about 30 players
    at the earliest: Dalmaijer et al. 2022). Each player's last `PROF_N` 300 answers (all when fewer); a player under
    `PROF_MIN` 100 is greyed and left out of the tree, the map and the groups, one under `PROF_LOW` 20 not shown; 3
@@ -1224,10 +1227,10 @@ Views of how effects and units relate, each descriptive unless it says otherwise
   its rate shrunk towards its pair's model rate by `MIX_K` 20 offers' worth, so a direction shows only with many offers.
   Across: the 3 cells most mixed up between two families, 2 mix-ups at least, above a typical pair's rate (a colony
   photo, 4 choices). **Its stability** (`mixStab`, `mixFams`): in each bootstrap draw of the Confusions model, the
-  draw's own families (the same cut); each family's best Jaccard with one of them (0 when none shares a unit), averaged over
-  the draws; stable from 0.75 (Hennig 2007, as the player profiles' groups). The admin names the stable families as
-  found again when the players are drawn again, the others as not stable yet; without draws (the demo), not checked
-  yet. The cut stays at 0.8: a stable height is read, not searched for.
+  draw's own families (the same cut); each family's best Jaccard with one of them (0 when none shares a unit),
+  averaged over the draws; stable from 0.75 (Hennig 2007, as the player profiles' groups). The admin names the stable
+  families as found again when the players are drawn again, the others as not stable yet; without draws (the demo),
+  not checked yet. The cut stays at 0.8: a stable height is read, not searched for.
 - **The Wright map** (`wrightOf`, in Learning curves): players and units on the Learning model's one scale, the log-odds
   of recognising beyond guessing for a typical question. A player's place = the intercept + the practice slope at their
   own current practice (the median answers already given on the unit over their last 300 answers) + their own effect,
@@ -1288,8 +1291,9 @@ Views of how effects and units relate, each descriptive unless it says otherwise
 **Tests.** Synthetic answer logs whose true effects are known (`synth`, `TRUTH`) check that the fits give them back
 within the tests' tolerances (`tests/analysis.test.js`), the correction and the structure views on planted nulls and
 effects (`tests/analysis-verdicts.test.js`), the interactions (`tests/analysis-ix.test.js`), the per-unit slopes and
-their spreads (`tests/analysis-slopes.test.js`), the model checks (`tests/analysis-checks.test.js`), the profiles
-(`tests/analysis-views.test.js`), the rank effects (`tests/analysis-ranks.test.js`) and the judged photo features
+their spreads (`tests/analysis-slopes.test.js`), the model checks (`tests/analysis-checks.test.js`), the profiles and
+Time and difficulty on a planted link between a photo's time and its difficulty (`TRUTH.td`;
+`tests/analysis-views.test.js`), the rank effects (`tests/analysis-ranks.test.js`) and the judged photo features
 (`tests/fishphotofactors.test.js`). The admin demo (`demoLog`) plays the same generator on the real photos; it plays
 look-alikes as mix-ups (`TRUTH.mix`: a look-alike offered is picked 4 times as often as another unit when the answer is
 wrong), so the demo's map has families. Known limits: the photo SDs come out a little low (PQL's known shrinkage); a
