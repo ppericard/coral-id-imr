@@ -4066,6 +4066,29 @@ and the sea slugs too, and which photos the exam asks; a hard cap of 40 minutes 
   the primary may well read "cannot tell"; #1057's A/A run showed the Open Water measures move by a breach's size
   between two runs of nearly the same pool at 10 seeds, so a breach there is read against that.
 
+**Results** (2026-11-18, `main` 1ad6267d against 56f0406e; one look, `tools/learncmp.js`; about 28 minutes of machine
+time in all, a first fish app-world pair lost to a browser crash on both arms at once and the branch's app-world and
+rated arms run again after Codex's review of #1099, whose seeded player id the app had ignored):
+- **Primary, rated world, fish, `learned@1000:down`: no clear difference** (pooled sign-flip T +1.82, p 0.65, exact;
+  beginner 0.2 → 0.0, strongRA 8.8 → 11.2, expert 9.2 → 8.8 units learned; 3 of 15 pairs down). As expected, few exams
+  by 1,000 answers: the measure cannot tell.
+- **App world, fish and corals, 300 questions: every guardrail held or unclear, none breached.** Fish: true knowledge,
+  Open Water (first unit, units at 300), the share under ease 4, units met, families at Advanced held; unclear: E for
+  the beginner (+0.003, bound +0.044) and its longest plateau (52 → 61, bound +25). Corals: true knowledge, E, units met
+  at 300 held; unclear: the beginner's first unit at Open Water (86.8 → 97.2, bound +38.3), units at Open Water at 300
+  for the strongRA (12.6 → 12.4, bound −2.6), the plateau (beginner, expert), units met at 100 (beginner).
+- **Rated world, four breaches**, every other guardrail held or unclear:
+  - fish, the global score at 1,000, expert: 42.0 → 40.8 (−1.2, bound −1.8; margin −1.0); unclear for the beginner
+    (−0.2) and the strongRA (−0.6);
+  - fish, the longest plateau, expert: 116 → 147 answers (+31, bound +40; margin +23); strongRA unclear (+11);
+  - corals, the global score at 1,000, beginner: 30.2 → 27.2 (−3.0, bound −4.8; margin −1.0);
+  - corals, units at Open Water at 1,000, beginner: 12.8 → 10.0 (−2.8, bound −4.7; margin −2); its first unit at Open
+    Water reads unclear the other way (213 → 195).
+  True knowledge held at 300 and 1,000 for every profile in both subjects. The fish arms differ by which observations
+  are held back and by the genera of circles 2 and 3 now holding some (2,319 against 1,946), the corals' by 96 colonies
+  newly held back in 14 genera; at 5 seeds, and with #1057's A/A run moving these pacing measures by a breach's size,
+  they may be the run's path as much as the change. Not run further: a breach goes to Pierre with the PR (rule L11).
+
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
 
 Replaced on 2026-11-18 by the per-player reserve (above): what follows is #1057's set and its checks, kept for the record.

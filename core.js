@@ -1962,6 +1962,21 @@
       });
       if (!g.noex && keys.size) U.push([id, S, keys.size]);
     });
+    // An observation any of whose photos, game photo or not, is a card's or one the reserve never takes stays practice:
+    // a cover Pierre keeps on the sheet only still shows its colony (Codex review #1099). The counts above read the
+    // game photos alone.
+    Object.entries(X.gen).forEach(([id, g]) => {
+      if (!g || g.wink) return;
+      [
+        ...Object.values(g.views || {}).flat(),
+        ...Object.values(g.sl || {}).flatMap(s => Object.values(s || {}).flatMap(L => (Array.isArray(L) ? L : []))),
+        g.coverP
+      ].forEach(p => {
+        if (!p || !p.f || !resOut(p, cards)) return;
+        const M = P.get(String(p.sp || id));
+        if (M && M.has(fishObs(p))) M.set(fishObs(p), false);
+      });
+    });
     const E = new Map(), // species: its eligible observations in the player's order
       cap = new Map(), // species: the most it may reserve (RESERVE.keep left in practice)
       held = new Map(); // species: its reserved observations

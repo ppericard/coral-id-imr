@@ -197,6 +197,15 @@ test('reserveSplit: a coral genus’s views and game lists (applySlots sl), ever
   assert.strictEqual(C.heldOf(g2, 'wide').length, 15);
   assert.ok(!C.heldOf(g2).some(p => /-ref$/.test(p.f)), 'no sheet-only photo held for the exam');
   assert.ok(!g2.views.wide.some(p => R2.has('Acropora ' + C.fishObs(p))), 'the reserved colonies leave the sheet too');
+  // Codex review #1099: a cover kept on the sheet only still shows its colony: none of that colony's photos is held.
+  for (const k of R2) {
+    const i = +k.split(' ')[1],
+      v3 = {wide: v2.wide.slice()},
+      cv = {...v2.wide[i], f: v2.wide[i].f + '-cover'},
+      g3 = {id: 'Acropora', views: {wide: [...v3.wide, cv]}, sl: {wide: {feat: [], game: v3.wide.slice()}}, cover: cv.f, coverP: cv};
+    assert.ok(!C.reserveOf({gen: {Acropora: g3}}, 'p').has(k), k + ': its sheet-only cover is on the card');
+    break;
+  }
 });
 
 // The real units: the fish (fishGen, app.js fishGenera), the sea slugs (the same tree engine) and the corals (data.json
