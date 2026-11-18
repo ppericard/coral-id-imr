@@ -1,5 +1,5 @@
 # Photos out of the repo (docs/ROADMAP.md "Photos out of the repo"): the photos with an online original (src:
-# iNaturalist, the owner's own iNaturalist photos, FishBase) leave img/ and live on R2 only; git
+# iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/ and live on R2 only; git
 # keeps the ones with no other backup (IMR lecture photos, Coral Finder book scans, page art).
 #
 #   python3 tools/r2_move.py            the list: what leaves img/ and what stays, counts by kind, owner and genus, size

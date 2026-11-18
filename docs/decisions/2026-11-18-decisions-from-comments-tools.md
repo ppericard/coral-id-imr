@@ -17,8 +17,11 @@ and where it lives in the code.
   diversity", run on demand, never automatically. Decided the candidate pass of the judging agent: suggestions only, the
   admin still swipes every photo. `tools/judging_cand.py`.
 - 2026-11-03, review of the plain sentences: Pierre has seen pale Seriatopora at Dauin, so the IMR "black corallites"
-  becomes "neat rows"; of the lecture's mnemonic "Serius Black" he is "not a fan, a better one or none". Decided the
-  mnemonic from the name itself (Latin *seriatus*, in rows). `tools/apply_imr_corrections.py` `SERIA_MN`.
+  becomes "neat rows"; of the lecture's mnemonic "Serius Black": not a fan, a better one or none (paraphrased).
+  Decided the mnemonic from the name itself (Latin *seriatus*, in rows). `tools/apply_imr_corrections.py` `SERIA_MN`.
+- 2026-11-04, after the research report on Favites: "the least bad option" for traits found in some species of a genus
+  only (`data.json` `gen[g].trs`, read through `proto/lab.js` `trHas`); quoted elsewhere only in `docs/archive/`.
+  `tools/apply_some_species.py`.
 - 2026-11-03: "objective metrics to break ties". Decided the photo metrics (sharpness, size, colour cast) as
   tie-breakers and sanity flags only, never to decide alone. `tools/photo_metrics.py`, `admin.js` `autoPlan`.
 

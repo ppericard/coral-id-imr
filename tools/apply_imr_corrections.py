@@ -1,6 +1,6 @@
 # Approved corrections to the IMR wording: where the references checked for the plain sentences
 # (tools/plain_sources.json) differ from the lecture wording, these four lines follow the references. An approved
-# exception to rule C1, for these four lines only. The ID tips themselves are corrected in
+# exception to rule C1. The ID tips themselves are corrected in
 # tools/id_tips.txt (tools/apply_id_tips.py); this script corrects the lecture notes (gen[g].imr, review slides included),
 # the mnemonic, the short description (sum) and Herpolitha's "to check" note. Re-runnable: python3 tools/apply_imr_corrections.py
 # The lecture notes and the mnemonic live in the IMR instance's coral layer (tools/instances/imr/coral.json): written

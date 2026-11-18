@@ -107,7 +107,7 @@ def sheet_pick(taxon, observations):
     for p, src in [(taxon.get("default_photo"), "cover")] + [(tp.get("photo"), "taxon") for tp in taxon.get("taxon_photos") or []]:
         if p and sheet_ok(p, held.get(p.get("id")), inat):
             return p, held[p["id"]], src
-    for o in observations:  # iNaturalist's order, whoever observed (the owner's own take no priority)
+    for o in observations:  # iNaturalist's order, whoever observed (Pierre's own take no priority)
         for p in o.get("photos") or []:
             if sheet_ok(p, o, inat):
                 return p, o, "obs"
