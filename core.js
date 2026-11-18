@@ -5790,8 +5790,7 @@
   // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
   // sid: the subject whose rules versions they are (rvsOf: the corals' RVS by default, fish FISH_RVS).
   const rvMsgs = (from, to, skip = false, sid) => {
-    // No card for a recalculation any more (Pierre, 2026-11-09 ~14:45 Manila, Q330): a jump to a version without a card
-    // shows none, not even the card of a version it skips.
+    // A jump to a version without a card (rule D6) shows none, not even the card of a version it skips.
     const V = (sid ? rvsOf(sid) : RVS).find(x => x.v === to);
     if (V && !V.msg) return [];
     const L = (sid ? rvsOf(sid) : RVS)
@@ -5800,79 +5799,58 @@
     return L.some(x => x.msg.kind === 'apology') ? L.filter(x => x.msg !== RV_CARD) : L;
   };
 
-  // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
-  // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
-  // (the weights above, pgStep, the photo memory, the ability step), as if every answer had been played under them. The
-  // reference recalculation, done by the sync sheet itself (Code.gs replay_, in the reply to a sign-in, load or save
-  // when the player's stored replay is older than RV or covers fewer rows than the log has) and adopted by the app
-  // (sync.js replayAdopt). The device's own recalculations (memRecalc from s.ps, pgOf from the last 10 results s.h) only
-  // approximate it from what a device keeps: they remain the fallback for a device that never reaches the sheet.
-  // docs/LEARNING.md "Full replay".
+  // Full replay (docs/LEARNING.md "Full replay"): every player's progress rebuilt from the sheet's answer log, in time
+  // order, with today's rules, as if every answer had been played under them. The reference recalculation, done by the
+  // sync sheet itself (Code.gs replay_, in the reply to a sign-in, load or save when the player's stored replay is older
+  // than RV or covers fewer rows than the log has) and adopted by the app (sync.js replayAdopt). The device's own
+  // recalculations (memRecalc, pgOf) are only the fallback for a device that never reaches the sheet.
   // rows: the answer log (sheet readAnswers rows, Code.gs rowOf_, or the app's own log through logRow: [id, time ms,
   // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here),
-  // seconds to answer (null without), (13, 14: unused here), the scoring record (15: scoreRec, null before it)]; the
-  // seconds weigh a right answer's ability steps, rtWeight). Every answer goes through scoreAnswer, the game's own
-  // scorer. o: gen (data.json
-  // genera, Millepora and the bonus genera included: look-alikes `look`, family `fam`), mem (photo memory offsets,
-  // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
-  // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js), time
-  // (false: no response time, the rule before rules version 4),
-  // fmt (the per-format offsets, ?stats=1 fmt, sheet v77, rules version 8: for a row without a scoring record; a row
-  // with one replays the offset it logged, o; none: 0),
-  // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
-  // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
-  // dom (false: the former moving average, rules before version 9), gd (the genus offsets for rows logged without them).
-  // Returns {id: {P: {genus: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
-  // n, used, rep}}: per genus the domain-score bar's log posterior dp and bar ds (domStep; pg, the former moving average,
-  // for a record of the start copy that holds one, or with dom false), right / wrong answers, the last 10
-  // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
-  // s.conf), u = answers that moved the bar, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
-  // the genus shown only, never on the genus wrongly given),
-  // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss on it, shown or
-  // given (lx, a time: it ends an exam in course), the last one that took the progress below the learned mark's keep
-  // rule (lm, a time: keepsMark); the global level LEVEL as the
-  // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
-  // replayed (used: with e and th) and on a photo already shown (rep).
-  // A row logged with its scoring record (2026-11-06, Q132: index LOG_SC) is scored with what the game had then: its photo
-  // difficulty d0, photo memory, mix-ups term, look-alike test, recall and hint, so the replay gives exactly the state the
-  // game had, whenever and wherever it runs (the device, the sheet, the admin), whatever pooled stats each holds; only
-  // the rules (this file) can change it. A row logged before it: as follows.
-  // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
-  // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. A typed answer (|t,
-  // 2026-11-03; kOf) has no guess rate (k infinite: e = sig(th - d)), counts in full when right (pgRightW) and was
-  // logged with no choices, as quiz.js answer scores it. Since the photo memory
-  // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam;
-  // since the known mix-ups (CF_LOGGED) it includes the app's mix-ups term too (cf, model.js confTerm), taken out the
-  // same way, and the replay adds its own to every answer, older ones included (today's rule).
-  // Approximations of such a row, explicit: the ability th and the photos are those the app logged (the game would have drawn others
-  // under other rules; the weights use the logged th, the replayed th is the app's step over the recovered
-  // difficulties); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
-  // look-alike test and the mix-ups term are the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the
-  // player's own; confGap) with a prior from the look-alikes and the family only (the app also gives CONF.FORM to genera
-  // sharing an IMR growth form, which the sheet does not know: on such a pair the pooled score starts from 0.03 instead
-  // of 0.08, so the replayed term is larger while the pair's pooled offers are few, the same once they are many);
-  // a miss on the genus wrongly given weighs the chance the player had on it with its ability as replayed (the app's own
-  // at that moment is not logged; the same when the replay goes on from the app's record, sync.js); every photo of a
-  // right answer counts as recognised (the app does not count a corallites photo answered
-  // without opening it, which the log leaves out anyway). Answers logged without e and th (before sheet v5) count in
-  // ok/ko/h only, and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
-  const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // PR #387 merged: the app's logged e includes the photo memory
-  // From the known mix-ups (PR #425, live 2026-11-03 15:35 UTC: 23:35 Asia/Taipei, the instant of tools/abilityeval.js
-  // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
-  // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
+  // seconds to answer (null without), (13 to 21: unused here), the scoring record (LOG_SC: scoreRec, null without)]).
+  // Every answer goes through scoreAnswer, the game's own scorer. o:
+  //   gen     the units: data.json genera, Millepora and the bonus genera included (look-alikes look, family fam)
+  //   mem     photo memory offsets (?stats=1 mem; the prior without); conf: the pooled pairs (?stats=1 conf)
+  //   since   {id: time ms}: only the answers after a progress reset
+  //   memory  false: no photo memory (a what-if, tools/memreplay.js); time: false: no response time
+  //   fmt     the per-format offsets (?stats=1 fmt), for a row without a scoring record (one with it replays its own o)
+  //   start   {id: player}: a replay to go on from, as returned here (the sheet's, with this device's unconfirmed
+  //           answers on top); copied, never changed
+  //   onAnswer(row, {d, fam, cf, k, w, look}); dom: false, the moving average instead of the domain-score bar; gd: the
+  //           genus offsets for rows logged without them; vars: the variant table (below); starts: the first-launch
+  //           records by player
+  // Returns {id: {P: {genus: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok,
+  // ko, th, vr, at, rt}}, n, used, rep}}: per genus the bar's log posterior dp and bar ds (domStep; pg for a start record
+  // that holds one, or with dom false), right / wrong answers, the last 10 results, the photos [shown, right], the
+  // choices offered beside it and the genera given instead, u = answers that moved the bar, the ability th and its
+  // volatility vr (on the genus shown only, never on the genus wrongly given), the run of right answers, the last answer
+  // (at), a look-alike duel won (du), the last miss on it, shown or given (lx: it ends an exam in course), the last one
+  // that took the progress below the keep rule (lm: keepsMark); the global level LEVEL as the app keeps it; per player
+  // the rows read (n), replayed (used) and on a photo already shown (rep).
+  // A row with its scoring record (LOG_SC) is scored with what the game had then, so the replay gives exactly the
+  // state the game had, wherever it runs, whatever pooled stats each place holds; only the rules (this file) change it.
+  // An older row: its difficulty d (+ 0.5 for a photo shown alone) is recovered from what the app logged, e = 1/k +
+  // (1 - 1/k) sig(th - d), th the ability then (a typed answer: k infinite, e = sig(th - d)). From MEM_LOGGED the logged
+  // e includes the photo memory (fam), from CF_LOGGED the mix-ups term too (cf), both taken out again here and replaced
+  // by the replay's own. Approximations of such a row: the ability th and the photos are those the app logged; a
+  // comeback question's recall is taken as 1; the look-alike test and the mix-ups term have a prior from the look-alikes
+  // and the family only (the sheet does not know the growth forms behind CONF.FORM); a miss on the genus wrongly given
+  // weighs its ability as replayed; every photo of a right answer counts as recognised. Rows without e and th count in
+  // ok/ko/h only and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
+  const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // from then the app's logged e includes the photo memory
+  // From then the app's logged e includes its mix-ups term (model.js confTerm; the instant tools/abilityeval.js CF_FROM
+  // reads on the sheet's wall clock), taken out again here. An app not yet updated logs a few answers without it after.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
-  // The first-launch record's history (reefid-sync-coral-start h, Codex review #428): an append-only list of timestamped
+  // The first-launch record's history (reefid-sync-coral-start h): an append-only list of timestamped
   // events, merged between devices as a union (startUnion), from which the current answer, the silent ease and the prior
   // at any time are derived (startNorm, startPriorAt). A choice event: [c, answers then, time, via] (via tour, card,
   // fallback, inferred). An ease event (Coral basics on the "lower" card, model.js startEase): [the band below, answers
   // then, time, 'ease', the answer it eased, the time of that answer's choice event]; it applies from its time until the
-  // next choice event, and only while that very choice event is the one in force (Codex review #428: matched by its code
-  // alone, an ease taken on know@100 also eased an independent know@200 from another device). A record of before the
-  // history (no h): its answer as one choice event at its t, and its ease field (if any) as one ease event. An ease event
-  // without the choice's time (written before 2026-11-04): bound, within its own record, to the latest choice of that
-  // answer at or before the ease.
-  // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old (Codex review
-  // #428: a cap at 10 dropped the earliest answers' prior). Nor is the list compacted: an event that repeats the answer
+  // next choice event, and only while that very choice event is the one in force (matched by its code alone, an ease
+  // taken on know@100 would also ease an independent know@200 from another device). A record without h: its answer as
+  // one choice event at its t, and its ease field (if any) as one ease event. An ease event without the choice's time
+  // (an old record): bound, within its own record, to the latest choice of that answer at or before the ease.
+  // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old. Nor is the
+  // list compacted: an event that repeats the answer
   // in force can matter again once another device's events are merged in between (know@100, know@300 merged with
   // imr@200: "know" from 300 on), so dropping it would not commute with the union. START_CAP is only a safety bound, far
   // above any real history (a player gives one answer, rarely changes it, and a fallback card comes once per answer and
@@ -5930,7 +5908,7 @@
     return {ch, ez};
   }
   // A short fingerprint of a record's history (the sheet's replay cache, Code.gs replay_: a replay made with another
-  // history is not reused; Codex review #428): '' with no record.
+  // history is not reused): '' with no record.
   function startFp(rec) {
     const ev = startEventsOf(rec);
     if (!ev.length) return '';
@@ -5939,7 +5917,7 @@
     for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
     return h.toString(36);
   }
-  // The first-launch answer's prior at time t (2026-11-03, CHOICE): the eased band's while an ease is in force, else the
+  // The first-launch answer's prior at time t (CHOICE): the eased band's while an ease is in force, else the
   // answer's, 0 before the first answer (the player then played as the default player). The replay steps the ability
   // with it (o.starts).
   function startPriorAt(rec, t) {
@@ -5985,19 +5963,18 @@
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
   }
   // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
-  // userStart, sheet v99; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
-  // player's saved copy (keysIn names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
+  // userStart), e.g. after a fallback card moved a player to the wrong answer. data: the player's saved copy (keysIn
+  // names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
   // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
   // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
   // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
   // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
   // (startPriorAt). The fallback window starts again from this event, as an answer given in the app does (model.js
-  // startSet; Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level card must
-  // still be offered"): its answers (w), the opening hold seen in it (hd), its epoch (wt) and a verdict waiting for its
-  // card (v) were about the former answer and go, so no card comes from the answers given under it; the checkpoints
-  // count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the app. The
-  // copy under the key's name from before the rename (keyLegacy, which an app
-  // of before it still reads) gets the same record when the copy holds it. null when nothing is to change: an unknown
+  // startSet), so the level card can still come if the player turns out much better: its answers (w), the opening hold
+  // seen in it (hd), its epoch (wt) and a verdict waiting for its card (v) were about the former answer and go; the
+  // checkpoints count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the
+  // app. The copy under the key's old name (keyLegacy, which an old app still reads) gets the same record when the copy
+  // holds it. null when nothing is to change: an unknown
   // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
   // Returns {data, start: the new record}.
   function startAdminSet(data, s, c, now) {
@@ -6035,8 +6012,8 @@
       fmt = o.fmt || {},
       memory = o.memory !== false,
       time = o.time !== false,
-      // dom: false, the rules before version 9 (the former moving average); gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for
-      // the rows logged without them.
+      // dom: false, the moving average; gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for the
+      // rows logged without them.
       dom = o.dom !== false,
       gdv = g => {
         const x = (o.gd || {})[g];
@@ -6052,7 +6029,7 @@
       return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
     };
     const pooledOf = (t, n) => confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
-    // Known mix-ups (model.js confTerm, #425): the most, over the choices, of the player's own score of the pair above
+    // Known mix-ups (model.js confTerm): the most, over the choices, of the player's own score of the pair above
     // the pooled one (confGap), on the record before this answer, on a question with 3 or more plausible choices; it adds
     // to the question's difficulty for the ability, the level and a miss's weight, as quiz.js answer adds it to dm.
     const confTermOf = (P, t, chs, k) =>
@@ -6111,10 +6088,10 @@
         q.muc = sc && typeof sc.n === 'number' ? sc.n : gdv(c);
         if (sc) Object.assign(q, {df: sc.o || 0, dt: sc.t || 0, S: sc.s || 1});
         if (sc) {
-          // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
-          // replay leaves it out (memory: false, a what-if).
+          // Logged by the scorer: what the game scored with, as it was then; the memory as logged unless the replay
+          // leaves it out (memory: false, a what-if).
           Object.assign(q, {d0: sc.d, fam: memory ? sc.f || 0 : 0, cf: sc.c || 0, look: !!sc.l, R: sc.r === undefined ? 1 : sc.r});
-          // The format's offset as logged (o, Q138): 0 for an answer scored before the offsets or without them.
+          // The format's offset as logged (o): 0 for an answer scored without the offsets.
           Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h, df: sc.o || 0});
         } else if (replayable) {
           // A row logged before the scorer: its difficulty recovered from the logged e (rounded to 0.01), its memory and
@@ -6125,7 +6102,7 @@
             dl = th - Math.log(qq / (1 - qq)), // the difficulty in the logged expectation
             // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
             d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0);
-          // The format's offset from today's pooled fit (fmt, sheet v77, rules version 8), as its memory and mix-ups.
+          // The format's offset from today's pooled fit (fmt), as its memory and mix-ups.
           const df = fmtOff(fmt, fmtOf(mode, chs.length));
           Object.assign(q, {d0: d, fam: memory ? fam : 0, cf, th, df, look: () => chs.some(x => lookOf(pl.P, t, x))});
         }
@@ -6149,8 +6126,8 @@
         }
       });
     // vars (a subject's variant table, fishVarTable; Code.gs rplMake_): each unit's variant groups with no photo answered
-    // right in the log (vl: varLeftOf at a full bar, a learned unit's), which take a learned mark away (replayedOf; Q391 b,
-    // rules D8, D9). This device's answers replayed on top of the sheet's pass the same table (sync.js rpVars); without vars
+    // right in the log (vl: varLeftOf at a full bar, a learned unit's), which take a learned mark away (replayedOf; rules
+    // D8, D9). This device's answers replayed on top of the sheet's pass the same table (sync.js rpVars); without vars
     // (the corals; an app without its table yet), vl stays as it came.
     if (o.vars)
       Object.values(out).forEach(pl =>
