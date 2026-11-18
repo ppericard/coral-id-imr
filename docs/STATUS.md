@@ -13,7 +13,9 @@ Last checked: reports and events: 2026-11-17 ~06:15 Manila (none needing action)
 ## Now
 
 Main: sheet script **v172** (#1049). Every PR merges through a train, even alone (#1001). `npx --yes prettier@3.10.1`
-(the machine's default is 3.8.1). At most 4 code agents at once (conflicts and machine load); read-only agents aside.
+(the machine's default is 3.8.1). Agents (W27): at most 4 that write code or run tests (conflicts, machine load); read-only studies on top (Pierre,
+2026-11-18: "C'est des agents en lecture seule", "ça évite aussi de trop charger la machine lors des tests"; the
+rule's wording follows in the rules PR).
 
 - **Merged 11-18**: #1051 fish out of beta, sea slugs open to all; #1060, #1061, #1062 sea slug stats, admin, WoRMS
   (v167-v169); #1053 (v170); #1050 staff and cohort boards (v171); #1049 live mode v1 (v172); #1069 minify at deploy
