@@ -1,7 +1,7 @@
 # Sealing the admin draft at sign-out: design note (2026-11-09)
 
-> **Status since:** Pierre chose model B (2026-11-18, 09:23 Manila: build it now). Built on
-> `claude/admin-seal-model-b` from `main` (`admin-draft.js`, ARCHITECTURE "Admin back-office"), each race below with its
+> **Status since:** Pierre chose model B (2026-11-18, 09:23 Manila: build it now). Built in
+> #1078 (`admin-draft.js`, ARCHITECTURE "Admin back-office"), each race below with its
 > test in `tests/admindraft.test.js`; the parked branch `claude/admin-signout-seal` can go once it is merged. What
 > changed from the plan in section 4: no gzip, no base stored as changes and no seal list (IndexedDB has no 5 M-character
 > limit; one record per token instead), no `navigator.locks` (the transactions order everything), and the generation
