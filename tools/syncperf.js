@@ -1,4 +1,4 @@
-// Bytes and round trips per answer of the progress sync with the lighter saves (sheet v116; docs/ROADMAP.md "Lighter
+// Bytes and round trips per answer of the progress sync with the lighter saves (docs/ROADMAP.md "Lighter
 // saves on slow lines"), and what that costs on the slow lines of tools/perf.js. Not run by CI;
 // the numbers are for reading (the PR quotes them). Locally: node tools/syncperf.js [answers]
 // The app's own sync.js runs in Node against the sync script on an in-memory sheet (tests/syncpage.js), so every request

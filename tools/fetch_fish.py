@@ -401,7 +401,7 @@ def usable_obs(o, used, excl):
     if not own and o.get("g") != "research":
         return None
     if tier_of(o) == "world" and not in_iwp(o.get("ll")):
-        return None  # abroad outside the Indo-West Pacific (Pierre's own too: the colour forms differ there)
+        return None  # abroad outside the Indo-West Pacific (the admin's own too: the colour forms differ there)
     P = [p for p in o["ph"] if lic_ok(p[2], own) and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
     if not P:
         return None
@@ -930,12 +930,12 @@ def run(args):
                 plan[sid]["add"] = {}
                 continue
             # Every photo of an observation: one already among the candidates brings its other photos (usable_obs leaves
-            # out those taken), unless Pierre sent one of its photos to another species or out of the fish (its
+            # out those taken), unless the admin sent one of its photos to another species or out of the fish (its
             # identification is in doubt: nothing more of it).
             known = {p["o"] for p in L if p["f"] in moved}
             Q = queries(photo_taxon(s))
             got, more, pools = {}, {}, {}
-            # Pierre's own, asked for every species: fish.json present.own is a count from the last build, so a species
+            # The admin's own, asked for every species: fish.json present.own is a count from the last build, so a species
             # he identified since would otherwise never get his photos.
             names = ["own", *TIERS]
             # A refill reads on (pages) while a search brings fewer usable photos than the room, so a species whose
