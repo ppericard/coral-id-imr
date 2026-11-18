@@ -1,6 +1,6 @@
 # Player groups: no "apart" setting; group changes show at once
 
-Date: 2026-11-18 (Manila). PR: the one that adds this file (branch `claude/groups-saving`). Docs touched:
+Date: 2026-11-18. PR: #1113. Docs touched:
 ARCHITECTURE.md "Player groups" and the leaderboard line, SECURITY.md "The staff are a group, not a role".
 
 ## Context
