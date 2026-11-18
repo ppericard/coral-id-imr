@@ -177,7 +177,8 @@ def passes(o, want):
     return verdict(o, want) == "ok"
 
 
-# The rough regions of an observation outside the box (the order matters: the first that holds), for the admin's list.
+# The rough regions of an observation outside the box (the order matters: the first that holds), for the photos
+# listed under `away` (never taken) while the question of photos outside the box is open.
 # Longitudes east of 180 are negative (the dateline at -180): Fiji, Samoa and Tonga straddle it. The Maldives come before
 # the Arabian Sea, whose box reaches 78 E (a northern Maldives atoll read "Arabian Sea"), and India's east coast is the
 # Bay of Bengal; New Zealand, the Cook, Line and Marshall Islands have boxes of their own before what is left of the

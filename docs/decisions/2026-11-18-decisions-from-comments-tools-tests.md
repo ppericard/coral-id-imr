@@ -1,6 +1,6 @@
 # Decisions found in the comments of tools/ and tests/
 
-Date: 2026-11-18. PR: the comment cleanup of `tools/` and `tests/`. Rules or docs touched: W19.
+Date: 2026-11-18. PR: #1127. Rules or docs touched: W19.
 
 ## Context
 
@@ -11,7 +11,7 @@ and where it lives in the code.
 
 ## Decisions
 
-- 2026-11-01: "lighter photos for the slow connections common in the Philippines". Decided the four sizes of every
+- 2026-11-01: lighter photos for the slow connections common in the Philippines (paraphrased). Decided the four sizes of every
   site photo (1600, 960, 480, 240 px WebP), the app picking the smallest that covers each box; the app stays fluid on
   a poor connection. `tools/photos.py` `SIZES`; checked by `tests/net.smoke.js`.
 - 2026-11-02: players never reload by hand. Decided that a new version, once it has taken over in the background,
