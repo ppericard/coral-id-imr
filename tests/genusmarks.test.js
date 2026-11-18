@@ -165,6 +165,7 @@ const ctx = {
   easyCover: C.easyCover,
   fishScoreTree: C.fishScoreTree,
   fishSpUnits: C.fishSpUnits,
+  fishGenSets: C.fishGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
