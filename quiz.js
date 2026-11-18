@@ -94,8 +94,8 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
 // Binds a typed form (docs/ARCHITECTURE.md "Typed questions"): done(m, text, sp, rj) once answered, m the unit read
 // ({g, old, exact}) or null for "I don't know". A text read as no unit, or as two, is no answer but a nudge to check it
 // (typeKind); rj: those texts in order (TYPEDQ_RJ, 40 characters each). rk, one: the rank asked and its word (typeMatch).
-// o.t, the unit asked: the spelling step (core.js typeVerdict): its name typed close is right but retyped once after "So
-// close!" (Show me skips it); sp = {r: 1 when retyped exactly, else 0; text: the retype}. o.close(): the retype is asked
+// o.t, the unit asked: the spelling step (core.js typeVerdict): its name typed close is right but retyped once after a
+// warm "So close!" (never a cold no: docs/decisions/2026-11-18-decisions-from-app-comments.md; Show me skips it); sp = {r: 1 when retyped exactly, else 0; text: the retype}. o.close(): the retype is asked
 // (the quiz stops its clock: the seconds logged are the recognition's, not the spelling's).
 function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
   const inp = form.querySelector('input'),
@@ -1260,7 +1260,8 @@ const promptOk = () => {
 };
 const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // One-time hint that a photo enlarges (most players never knew they could): a bubble over the question's first photo
-// from the ZHINT.AT-th answer, once per device (ZHINT_KEY, also set by an enlargement). Never over an overlay (it waits
+// from the ZHINT.AT-th answer, once per device and never once a photo was enlarged there (ZHINT_KEY: 'seen' or
+// 'zoomed'). Never over an overlay (it waits
 // while unanswered; not promptOk's spacing: it asks nothing); gone at the first tap or key or after ZHINT.MS, every tap
 // let through.
 const ZHINT = {AT: 1, DELAY: 600, MS: 6000};

@@ -3311,8 +3311,8 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
-  // On Home (its own subject row) the header's control steps aside, keeping its room (app.css .subjc[data-home]; docs/
-  // DESIGN.md "Subject switch"); a switch with the focus hands it to the same subject's button in Home's row.
+  // On Home (its own subject row) the header's control steps aside, keeping its room (app.css .subjc[data-home];
+  // docs/DESIGN.md "Subject switch"); a switch with the focus hands it to the same subject's button in Home's row.
   const home = !h || h === 'home',
     fa = document.activeElement,
     fsj = home && fa && fa.closest && fa.closest('#view .hsubj, #subjc') ? fa.dataset.subj || SUBJ.id : '';
@@ -3522,7 +3522,7 @@ document.addEventListener('keydown', e => {
   }
 });
 // Install the app (docs/ARCHITECTURE.md "Install the app"): our button calls the browser's prompt (beforeinstallprompt)
-// or, on iPhone and iPad Safari, the card shows the steps. Offered once on a touch screen, from INSTALL.VISITS visits or
+// or, on iPhone and iPad Safari, the card shows the steps. Offered once on a touch screen (rule U4), from INSTALL.VISITS visits or
 // INSTALL.ANSWERS answers, on Home at a calm moment (a prompt: promptOk, noticeLater); ⚙ keeps a row any time.
 // reefid-install (this device): {n: visits, t: the last load, x: the card closed (time), in: installed (time)}.
 const INSTALL = {KEY: 'reefid-install', VISITS: 3, ANSWERS: 10, GAP: 30 * 60000, WAIT: 1500};

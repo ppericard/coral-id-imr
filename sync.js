@@ -164,8 +164,9 @@ const syncGet = (a = SYNC, info = {}) => {
 // dataDelta, dataSum; else 'delta': all again), gzipped (zipOk), with no load first (skipPull; else 'stale' + the load).
 const sdOf = me =>
   me && me.sd && typeof me.srv === 'number' && me.sd.rev === me.srv && me.sd.d && typeof me.sd.d === 'object' ? me.sd.d : null;
-// A load still: the page's first sync (repsPulled), answers logged from a refused save (lg), anonymous ones (anon), no
-// account generation (acct), a send whose reply never came (base[1]: only a load tells whether it was saved).
+// A sync still loads first on the page's first sync (repsPulled), with answers logged from a refused save (lg) or
+// anonymous ones (anon), with no account generation (acct), or after a send whose reply never came (base[1]: only a load
+// tells whether it was saved).
 const skipPull = me => repsPulled && !!sdOf(me) && !!me.acct && !me.lg && !me.anon && !SUBJECTS.some(S => me[S.base[1]]);
 // The saved copy a load's reply holds (the copy, or this device's own when same).
 function sdSeen(me, j) {
@@ -1337,8 +1338,8 @@ function sendEvents() {
       evBusy = false;
     });
 }
-// App errors (script errors, promise rejections), only from the app's own script files: injected scripts (extensions,
-// wallets) report against the page or no file, cross-origin ones as "Script error."; "ResizeObserver loop…" is harmless.
+// App errors (script errors, promise rejections), only from the app's own script files: injected scripts (iOS Firefox's
+// __firefox__, a wallet's window.ethereum) report against the page or no file, cross-origin ones as "Script error."; "ResizeObserver loop…" is harmless.
 // Photo and stylesheet load errors are handled where they retry.
 const ownError = (msg, file) =>
   String(file || '').startsWith(location.origin) && /\.js(\?|$)/.test(String(file)) && !/ResizeObserver loop/.test(msg);
@@ -1897,7 +1898,8 @@ document.getElementById('sync').hidden = !SYNC_URL;
 
 // Deleting one's own account (docs/ARCHITECTURE.md "Pages and routing"; decision:
 // docs/decisions/2026-11-18-decisions-from-app-comments.md): #about/delete-account, linked from About › Privacy and the
-// privacy notice, never a menu. Code, confirm, Code.gs selfDelete_, then signOutClear(true); signed out: how to.
+// privacy notice, never a menu. Signed in: the code, a second confirmation, Code.gs selfDelete_ deletes everything,
+// then signOutClear(true). Signed out: how to delete an account.
 function viewDeleteAccount(h) {
   const box = body => `<h2 class="vh">Delete my account</h2><div class="about delacct">${body}</div>`,
     what = `<section><h3>What is deleted</h3><p>Deleting your account permanently deletes your data:</p><ul>
