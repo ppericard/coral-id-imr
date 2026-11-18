@@ -82,17 +82,17 @@ the engine). Each record:
   data is in (`tests/fishhome.test.js`). `get` lists a tree subject's files (`f` its tree, `ph` its first photos, `gm` its
   game photos, `ho` the fish's held-out set); the fish's three are in the `sw.js` shell, the sea slugs' are not. A
   file that does not come (`json()` answers `{}`) is refused (`treeHome`, `treeLoad`), so nothing empty is kept and the
-  app opens on the corals until a later try. `fishBuild` makes `FISH` again whenever `build()` applies a new curation.
+  app opens on the corals until a later try. `treeBuild` makes `TREEU` again whenever `build()` applies a new curation.
 - **The units.** `slate()`, the units the games teach and the progress counts (the corals' `slateOf(DATA)`; a tree
   subject's circles 1 to 3); `core()`, what Open all opens (`model.js` `introLeft`; the slate if absent); `gate(n)`,
-  whether unit n may open now (`model.js` `mayOpen`; the fish's and the sea slugs' `fishGate`); `opens`, slate parts
+  whether unit n may open now (`model.js` `mayOpen`; the fish's and the sea slugs' `treeGate`); `opens`, slate parts
   opened on a yes (the fish's circle 3); `done()`, the card once every unit is met
   ([fish-game.md](fish-game.md#circles-and-the-gate)); `circles()`, for the achievements.
 - **Opt-in sets** (`sets`): each set's units, when its offer is due, the card's words and its ⚙ row; `bonusList`,
   `setOf`, `isBonus`, `bonusOfferDue`, `bonusOfferShow` and `bonusSet` are generic. The corals' `bon`, the fish's `sci`
   and `sp` ([fish-game.md](fish-game.md#fish-scientific-genera)); none for the sea slugs.
 - **Typed names**: `names()` and `norm`. The corals: `typeNamesOf` and `typeNorm`, the first word. The fish:
-  `fishTypeNames` and `typeNormAll`, the whole name: the unit's names (`core.js` `fishNames`: the IMR name, its parts,
+  `treeTypeNames` and `typeNormAll`, the whole name: the unit's names (`core.js` `treeNames`: the IMR name, its parts,
   families, sub-entries, the curated other names `aka` of `tools/fish_source.json`, such as Tang, and its names in common
   use `often`, such as Clownfish, right but corrected gently in the verdict line: `fishOften`, `oft`, `quiz.js`
   `typeStep`), the name index, and the species units' names (`cnTypeNames`); with `SUBJECTS` `typeDrop` (`fish`), each
@@ -101,13 +101,13 @@ the engine). Each record:
   genus of the game (`treeTypeOther`).
 - **The photo's taxon** (`taxon(p, n)`): the photo's own taxon, finer than the unit n asked, said in one short line
   under the verdict after every answer, right or wrong (`app.js` `photoTaxon`, `taxonLine`, `.fbsp`). The fish:
-  `fishTaxon`, the species the photo is in play for (`sp`, `FISH.sps`), its first common name for the player and its PDF
+  `treeTaxon`, the species the photo is in play for (`sp`, `TREEU.sps`), its first common name for the player and its PDF
   name with the WoRMS name beside it (rule S2). The corals: `coralTaxon`, the photo's iNaturalist species, only inside
   the genus asked and only when Research Grade or Pierre's own, else nothing. The sea slugs: [seaslugs.md](seaslugs.md).
   Tests: `tests/answertaxon.test.js`, `tests/fish.smoke.js`. `species(p)` gives the species logged with an answer.
 - **Pages.** `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
   `viewGenera` / `viewFishList`), `sheet(id)` (a sheet: `viewGenus` / `viewFishSheet`), `bar(id)` (a tree subject's page
-  bar on its sheets, `learn.js` `fishBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
+  bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),
   `hello` (the cards that introduce the subject, [below](#the-subjects-card)), `about` (its lines in About and credits,
   shown only to a player it is open to, `subjMine`), `door` and `land` (Home's words and tiles), `pick` and `tour` (the
@@ -118,7 +118,7 @@ the engine). Each record:
 ## Records
 
 Every unit is read through `GX(n)`: coral genera by name (`DATA.gen`, `DATA.x.gen`), a tree subject's units by id
-(`FISH.gen`, built by `core.js` `fishGen` for the tree in force; ids and genus names never meet). A fish family record
+(`TREEU.gen`, built by `core.js` `treeGen` for the tree in force; ids and genus names never meet). A fish family record
 has the fields the engine reads on a genus: `look` (its look-alikes' ids), `lsrc` (the IMR fish presentation), `qt` (the
 IMR cues), `forms` (its group in the identification key in force, so the first wrong choices come from other groups as
 coral ones come from other growth forms: `imrFormsOf` returns a record's own `forms`), `group` and `ig` (that group),

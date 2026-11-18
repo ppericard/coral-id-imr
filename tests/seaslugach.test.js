@@ -15,9 +15,9 @@ const ROOT = path.join(__dirname, '..'),
 const S = C.subjectOf('seaslug'),
   L = S.achs();
 
-// progress.js achSnap over the sea slugs' units (core.js fishGen at the genus, as the app's), each genus at level lv(n).
+// progress.js achSnap over the sea slugs' units (core.js treeGen at the genus, as the app's), each genus at level lv(n).
 function snapOf(lv, pct = 0) {
-  const X = C.fishGen(SF, {}, undefined, C.unitRankOf(S)),
+  const X = C.treeGen(SF, {}, undefined, C.unitRankOf(S)),
     slate = [...X.c1, ...X.c2, ...X.c3],
     ctx = {
       ...C,
@@ -87,7 +87,7 @@ test("the nudibranchs' taxonomic groups are seaslug.json's, and the other groups
 
 test('the sea slug snapshot: genera, families and taxonomic groups from seaslug.json', () => {
   // every genus of the Chromodorididae at Advanced, every other genus met only
-  const X0 = C.fishGen(SF, {}, undefined, 'genus'),
+  const X0 = C.treeGen(SF, {}, undefined, 'genus'),
     {snap, X, slate} = snapOf(n => (X0.gen[n].parent === 'f:Chromodorididae' ? 3 : 1));
   assert.strictEqual(snap.total, SF.genera.length);
   assert.strictEqual(snap.met, slate.length);
@@ -129,7 +129,7 @@ test('none on an empty snapshot, every one at full marks, the levels and groups 
   const hi = new Set(C.newAch(snapOf(() => 3, 65).snap, {}, L));
   assert.ok(hi.has('sspct60') && !hi.has('sspct70'));
   // Advanced on the nudibranchs only: Naked gills, not Beyond nudibranchs
-  const X = C.fishGen(SF, {}, undefined, 'genus'),
+  const X = C.treeGen(SF, {}, undefined, 'genus'),
     nudi = snapOf(n => (C.SEA_NUDI.includes(X.gen[X.gen[n].parent].tg) ? 3 : 1)).snap,
     g2 = new Set(C.newAch(nudi, {}, L));
   assert.ok(g2.has('ssnudi') && !g2.has('ssother'));

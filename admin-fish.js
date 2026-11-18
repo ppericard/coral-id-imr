@@ -265,14 +265,14 @@ const candSpecies = () =>
     ? {...Object.fromEntries(Object.keys(FISHC.genera || {}).map(g => [g, {tgt: FISHS.admin.target}])), ...FISHC.species}
     : FISHC.species;
 // The photos of a species in play (the admin's keep holds the add, never other species one could take for the subject:
-// core.js fishOther), its own candidates first, then any other photo added to it.
+// core.js treeOther), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
   const L = Object.entries(F.add || {})
-      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
+      .filter(([f, s]) => s === sid && treePhotoOn(F, f, sid) && !treeOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
       .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG[TK] || {})[f]}) || {f}),
-    seen = new Set(L.map(p => fishPid(p.f)));
+    seen = new Set(L.map(p => treePid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
-  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(fishPid(p.f)) && seen.add(fishPid(p.f)) && L.push(p));
+  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(treePid(p.f)) && seen.add(treePid(p.f)) && L.push(p));
   return L;
 };
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (the admin's ✕

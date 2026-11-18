@@ -3,8 +3,8 @@
 // offset, drawn from the distributions below (RATED, the one place they are stated), and the app's own engine runs on
 // it in Node: core.js (scoreAnswer, the bar's domStep, the Elo, treeScore) and model.js loaded whole in a vm (the aim,
 // the start's lean, photoSet with its Gaussian photo choice and RARE, typed questions, drawW, shaky, OPEN.K, openPace,
-// openRight, openPick, the exam), the fish units built as the app builds them (core.js fishGen and fishPhotos, app.js
-// fishGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
+// openRight, openPick, the exam), the fish units built as the app builds them (core.js treeGen and treePhotos, app.js
+// treeGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
 // the path allows one (openPace, openRight, openChance), the target drawn among the units met (nextTarget),
 // a unit opened on a card asked as soon as it is ready; no Again, duel or comeback (they are not in the rated world).
 // Both subjects: the fish units built as the app builds them (above), the corals' too (coralUnits); --learner count or item.
@@ -16,7 +16,7 @@
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
 // - each family's difficulty mu ~ N(0, FAM^2), + LOOK when it has declared look-alikes; each scientific genus's mu ~ its
-//   family's + N(0, SUB^2), + SIB when it has sibling genera; each species unit's (the species level, app.js fishGenera
+//   family's + N(0, SUB^2), + SIB when it has sibling genera; each species unit's (the species level, app.js treeGenera
 //   X.spl, by common name) the same way from its family, drawn after the photos so the rest of a seed's world is kept;
 // - each photo's own part eps (one per photo file): normal N(0, EPS^2); tail, the same with TAIL.SHARE of the photos
 //   TAIL.ADD harder; t3, a t with 3 degrees of freedom scaled to the same sd. A question on unit n with photo f has the
@@ -80,22 +80,22 @@ const idHash = id => {
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
-// The fish units as the app builds them (app.js fishBuild without the curation's covers, which change no game photo).
+// The fish units as the app builds them (app.js treeBuild without the curation's covers, which change no game photo).
 let XCACHE = null;
 function fishUnits() {
   if (XCACHE) return XCACHE;
   const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
     F = J('fish.json'),
     ph = J('fish-photos.json'),
-    gm = C.fishGameRead(J('fish-game.json')),
+    gm = C.treeGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
-    // the held-out set, out of the views (core.js fishHeld; model.js examSet), when the file exists (else none)
+    // the held-out set, out of the views (core.js treeHeld; model.js examSet), when the file exists (else none)
     HO = fs.existsSync(path.join(ROOT, 'fish-holdout.json')) ? J('fish-holdout.json') : {},
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
-    fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  const held = C.fishHeld ? C.fishHeld(HO, gm.photos, CUR) : undefined,
-    X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
+    treeGenera = vm.runInContext('(' + cut(src, 'function treeGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
+  const held = C.treeHeld ? C.treeHeld(HO, gm.photos, CUR) : undefined,
+    X = treeGenera(C.treeGen(F, C.treePhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
   return (XCACHE = X);
 }
 
@@ -147,7 +147,7 @@ function unitsOf(subject) {
       slate: [...X.c1, ...X.c2, ...X.c3],
       extra: X.sci,
       setK: 'sci',
-      // the species units (app.js fishGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
+      // the species units (app.js treeGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
       // a family's from its Advanced, one at a time in its order (app.js spPlay); the score's tree with them
       sp: X.spl || [],
       rec: n => X.gen[n],

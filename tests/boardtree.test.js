@@ -73,12 +73,12 @@ test('the sheet: a 30,000-character tree is kept in chunks under the 9 kB limit,
   assert.deepStrictEqual(logRows(s), [], 'nothing logged');
 });
 
-// The species level's own tree (core.js fishScoreTree with the species on, one unit per species: s:s091): the sheet keeps
+// The species level's own tree (core.js treeScoreTree with the species on, one unit per species: s:s091): the sheet keeps
 // it, reads it back whole and ranks the board by treeScore over it, the species' common names counted.
 test('the sheet: the species level’s tree, on the real fish.json, is kept, read back and ranks the board', () => {
   const s = loadCodeGs(),
     F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
-    T = C.fishScoreTree(C.fishGen(F, {}), F, true),
+    T = C.treeScoreTree(C.treeGen(F, {}), F, true),
     units = T.s.flatMap(e => e[3] || []);
   assert.ok(units.length > 600 && units.every(u => /^s:s\d+$/.test(u)), units.length + ' species units');
   const r = save(s, {fish: T});

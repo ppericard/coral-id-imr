@@ -23,7 +23,7 @@ function page({subj = 'fish', n = 0, saved = {}} = {}) {
     n,
     card: false,
     winkUnion: C.winkUnion,
-    fishPid: C.fishPid,
+    treePid: C.treePid,
     easyRank: C.easyRank,
     pick: L => L[Math.floor(Math.random() * L.length)],
     store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}

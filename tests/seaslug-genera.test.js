@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The sea slugs learn genera, not families (Pierre, 2026-11-16: "s'il y a un apprentissage à faire, c'est pas au niveau
 // des familles, c'est au niveau des genres"): core.js SUBJECTS seaslug unitRank 'genus' makes the genera the units of its
-// circles from the start (core.js fishGen unit, fishGenUnits; app.js fishGenera completes them), its families structure
+// circles from the start (core.js treeGen unit, treeGenUnits; app.js treeGenera completes them), its families structure
 // only, no opt-in genus set; one engine (rule S1): the fish, whose SUBJECTS has no unitRank, keep their families first and
 // their scientific genera as the opt-in set, unchanged.
 const test = require('node:test'),
@@ -19,19 +19,19 @@ const ROOT = path.join(__dirname, '..'),
 const SEA = C.subjectOf('seaslug'),
   FISHS = C.subjectOf('fish'),
   F = json('seaslug.json'),
-  GM = C.fishGameRead(json('seaslug-game.json')),
-  photos = () => C.fishPhotos({}, GM.photos, C.treeCur(SEA, json('curation.json')));
+  GM = C.treeGameRead(json('seaslug-game.json')),
+  photos = () => C.treePhotos({}, GM.photos, C.treeCur(SEA, json('curation.json')));
 
-// fishGenera as app.js has it (its core.js helpers, as the app has them).
+// treeGenera as app.js has it (its core.js helpers, as the app has them).
 const ctx = {
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
-  fishGenSets: C.fishGenSets,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
-vm.runInContext(block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;', ctx);
+vm.runInContext(block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;', ctx);
 
 test('the subject field: the sea slugs play their genera from the start, the fish and the corals their own rank', () => {
   assert.strictEqual(SEA.unitRank, 'genus');
@@ -48,8 +48,8 @@ test('the subject field: the sea slugs play their genera from the start, the fis
   assert.deepStrictEqual([SEA.one, SEA.many, SEA.optin], ['genus', 'genera', []]);
 });
 
-test('core.js fishGen unit genus: every genus of the circles a unit, in its best species’ circle; families structure only', () => {
-  const X = C.fishGen(F, photos(), undefined, C.unitRankOf(SEA)),
+test('core.js treeGen unit genus: every genus of the circles a unit, in its best species’ circle; families structure only', () => {
+  const X = C.treeGen(F, photos(), undefined, C.unitRankOf(SEA)),
     all = [...X.c1, ...X.c2, ...X.c3];
   assert.strictEqual(X.unit, 'genus');
   // every genus of seaslug.json, each once, by its circle (tools/seaslug_game.py: its best species')
@@ -87,22 +87,22 @@ test('core.js fishGen unit genus: every genus of the circles a unit, in its best
   assert.deepStrictEqual(X.winks, []);
 });
 
-test('the fish are unchanged: their own rank gives fishGen the families as before, with no unit mark', () => {
+test('the fish are unchanged: their own rank gives treeGen the families as before, with no unit mark', () => {
   const FJ = json('fish.json'),
     PH = json('fish-photos.json'),
-    ph = C.fishPhotos(PH.photos, C.fishGameRead(json('fish-game.json')).photos, null),
-    a = C.fishGen(FJ, ph, PH.sheet),
-    b = C.fishGen(FJ, ph, PH.sheet, C.unitRankOf(FISHS));
+    ph = C.treePhotos(PH.photos, C.treeGameRead(json('fish-game.json')).photos, null),
+    a = C.treeGen(FJ, ph, PH.sheet),
+    b = C.treeGen(FJ, ph, PH.sheet, C.unitRankOf(FISHS));
   assert.deepStrictEqual(b, a);
   assert.ok(!('unit' in a));
   assert.ok(a.c1.every(n => n.startsWith('f:')) && a.c1.length > 20);
   // and the sea slugs' tree read at the family (no unitRank) is the families' game it was
-  const s = C.fishGen(F, photos());
+  const s = C.treeGen(F, photos());
   assert.deepStrictEqual([...s.c1, ...s.c2, ...s.c3].sort(), F.families.map(f => f.id).sort());
 });
 
-test('app.js fishGenera on genera from the start: each completed in its own circle, every species of the circles, no opt-in set', () => {
-  const X = ctx.fishGenera(C.fishGen(F, photos(), undefined, 'genus'), F);
+test('app.js treeGenera on genera from the start: each completed in its own circle, every species of the circles, no opt-in set', () => {
+  const X = ctx.treeGenera(C.treeGen(F, photos(), undefined, 'genus'), F);
   assert.deepStrictEqual(plain(X.sci), []);
   F.genera.forEach(G => {
     const g = X.gen[G.id];
@@ -115,17 +115,17 @@ test('app.js fishGenera on genera from the start: each completed in its own circ
     assert.ok(!g.views.wide.length || g.cover === C.easyCover(g.views.wide).f, G.id);
   });
   assert.ok(X.c2.some(n => X.gen[n].circle === 2) && X.c3.every(n => X.gen[n].circle === 3));
-  // the fish: their scientific genera stay an opt-in set (FISH.sci), in every circle (Pierre, 2026-11-18), each in its
+  // the fish: their scientific genera stay an opt-in set (TREEU.sci), in every circle (Pierre, 2026-11-18), each in its
   // family's circle
   const FJ = json('fish.json'),
-    Y = ctx.fishGenera(C.fishGen(FJ, {}), FJ);
+    Y = ctx.treeGenera(C.treeGen(FJ, {}), FJ);
   assert.ok(Y.sci.length > 200 && Y.sci.every(n => Y.gen[n].circle === Y.gen[Y.gen[n].parent].circle && Y.gen[n].rank === 'genus'));
   assert.ok([1, 2, 3].every(c => Y.sci.some(n => Y.gen[n].circle === c)));
   assert.ok(Y.c1.every(n => n.startsWith('f:')));
 });
 
 test('every sea-slug genus in play has photos at the photo target (Q377: start 6 a species)', () => {
-  const X = C.fishGen(F, photos(), undefined, 'genus'),
+  const X = C.treeGen(F, photos(), undefined, 'genus'),
     T = json('tools/seaslugs.json').photoTarget;
   [...X.c1, ...X.c2, ...X.c3].forEach(n => assert.ok(X.gen[n].views.wide.length >= T.start, `${n}: ${X.gen[n].views.wide.length}`));
 });
@@ -134,9 +134,9 @@ test('every sea-slug genus in play has photos at the photo target (Q377: start 6
 // (model.js distractors), the typed names (quiz.js typeMatch) and the log (quiz.js rk) read the sea slugs' genera as the
 // fish's families and their families as another rank.
 test('rankOf and the logged rank: the units’ rank is the subject’s own, in each subject', () => {
-  const X = ctx.fishGenera(C.fishGen(F, photos(), undefined, 'genus'), F),
+  const X = ctx.treeGenera(C.treeGen(F, photos(), undefined, 'genus'), F),
     FJ = json('fish.json'),
-    Y = ctx.fishGenera(C.fishGen(FJ, {}), FJ),
+    Y = ctx.treeGenera(C.treeGen(FJ, {}), FJ),
     R = {};
   const c = {SUBJ: null, GX: n => R[n], unitRankOf: C.unitRankOf};
   vm.createContext(c);
@@ -158,9 +158,9 @@ test('rankOf and the logged rank: the units’ rank is the subject’s own, in e
 // A typed answer on a sea-slug genus question reads the genera only; a family name typed is told so (quiz.js typeKind:
 // a question below the tree's top rank, as a fish genus question), never read as a slip of a genus.
 test('typed: a sea-slug genus question reads genera, and a family typed gets the “that is a family” nudge', () => {
-  const X = ctx.fishGenera(C.fishGen(F, photos(), undefined, 'genus'), F),
+  const X = ctx.treeGenera(C.treeGen(F, photos(), undefined, 'genus'), F),
     Q = src('quiz.js'),
-    names = C.fishTypeNames(X.gen, '', []),
+    names = C.treeTypeNames(X.gen, '', []),
     c = {
       SUBJ: SEA,
       GX: n => X.gen[n],
@@ -184,13 +184,13 @@ test('typed: a sea-slug genus question reads genera, and a family typed gets the
   assert.strictEqual(c.typeKind('Zzzz', ''), '');
 });
 
-// The circles open as the fish's (app.js fishGate), counting genera: circle 2 once every circle-1 genus has been asked
+// The circles open as the fish's (app.js treeGate), counting genera: circle 2 once every circle-1 genus has been asked
 // (and met), circle 3 once circle 1's plain mean reaches FISH_C3 (the sea slugs have no score).
-test('fishGate on the sea slugs’ genera: circle 2 after every circle-1 genus asked, circle 3 at 50% on circle 1', () => {
-  const X = C.fishGen(F, photos(), undefined, 'genus'),
+test('treeGate on the sea slugs’ genera: circle 2 after every circle-1 genus asked, circle 3 at 50% on circle 1', () => {
+  const X = C.treeGen(F, photos(), undefined, 'genus'),
     st = {asked: new Set(), score: 0},
     g = {
-      FISH: X,
+      TREEU: X,
       GX: n => X.gen[n],
       asked: n => st.asked.has(n),
       introduced: n => st.asked.has(n),
@@ -200,28 +200,28 @@ test('fishGate on the sea slugs’ genera: circle 2 after every circle-1 genus a
   vm.createContext(g);
   vm.runInContext(
     block(APP, 'const FISH_C3 = {', '\n// Every family in play met', {file: 'app.js'}) +
-      '\nthis.fishGate = fishGate; this.FISH_C3 = FISH_C3;',
+      '\nthis.treeGate = treeGate; this.FISH_C3 = FISH_C3;',
     g
   );
   const [a2, a3] = [X.c2[0], X.c3[0]];
   assert.ok(
-    X.c1.every(n => g.fishGate(n)),
+    X.c1.every(n => g.treeGate(n)),
     'circle 1 always'
   );
   X.c1.slice(0, -1).forEach(n => st.asked.add(n));
-  assert.deepStrictEqual([g.fishGate(a2), g.fishGate(a3)], [false, false], 'one circle-1 genus not asked yet');
+  assert.deepStrictEqual([g.treeGate(a2), g.treeGate(a3)], [false, false], 'one circle-1 genus not asked yet');
   st.asked.add(X.c1[X.c1.length - 1]);
-  assert.deepStrictEqual([g.fishGate(a2), g.fishGate(a3)], [true, false]);
+  assert.deepStrictEqual([g.treeGate(a2), g.treeGate(a3)], [true, false]);
   st.score = 0.49;
-  assert.strictEqual(g.fishGate(a3), false);
+  assert.strictEqual(g.treeGate(a3), false);
   st.score = 0.5;
-  assert.strictEqual(g.fishGate(a3), true);
+  assert.strictEqual(g.treeGate(a3), true);
 });
 
 test('UNITS seaslug: no opt-in set, the genera in its words', () => {
   const U = block(APP, '\n  seaslug: {', '\ntreeAt(SUBJ.id);', {file: 'app.js'});
   assert.ok(/\n    sets: \[\]\n/.test(U), 'no opt-in set');
-  assert.ok(!/sciOpen|FISH\.sci/.test(U), 'no scientific-genera set');
+  assert.ok(!/sciOpen|TREEU\.sci/.test(U), 'no scientific-genera set');
   assert.ok(/Name the sea slug genus in the photo/.test(U) && /To learn a sea slug genus/.test(U));
   assert.ok(!/sea slug famil/i.test(U.replace(/\/\/[^\n]*/g, '')), 'no family wording left for the player');
 });
@@ -292,11 +292,11 @@ test('the taxonomic groups: Doridina, Cladobranchia, then the other orders; ever
     assert.ok(G.aphia[f.name] > 0, f.name);
   });
   // read by the engine: each family's tg and the tree's taxa; display only (the genera's draw fields are their own)
-  const X = C.fishGen(F, photos(), undefined, 'genus');
+  const X = C.treeGen(F, photos(), undefined, 'genus');
   assert.deepStrictEqual(X.taxa, F.taxa);
   F.families.forEach(f => assert.strictEqual(X.gen[f.id].tg, f.tgroup, f.id));
   const FJ = json('fish.json'),
-    Y = C.fishGen(FJ, {});
+    Y = C.treeGen(FJ, {});
   assert.ok(!('taxa' in Y) && Object.values(Y.gen).every(g => !('tg' in g)));
 });
 

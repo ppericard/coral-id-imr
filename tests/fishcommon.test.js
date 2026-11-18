@@ -166,7 +166,7 @@ test('the name a player sees first and multiple choice shows: the IMR name at IM
     assert.strictEqual(cnFirst(x, false), x.cn[0][0], x.name);
     assert.strictEqual(cnFirst(x, true), IMR(x) ? x.cn[x.cni][0] : x.cn[0][0], x.name);
   });
-  // Old app versions read cn[0][0] alone (an older fishTaxon): the main name, never a regional one.
+  // Old app versions read cn[0][0] alone (an older treeTaxon): the main name, never a regional one.
   GAME.filter(x => x.cnr).forEach(x => assert.ok(!x.cnr.flat().includes(x.cn[0][0]), x.name));
 });
 
@@ -235,8 +235,8 @@ test('regional names: accepted when typed, never listed, never another speciesâ€
   const pic = P[byName('Plectorhinchus picus').id];
   assert.ok(pic.dropped.some(x => x.regional && x.name === 'Painted sweetlips' && x.sharedWith.includes('Diagramma pictum')));
   assert.strictEqual(C.typeVerdict(match('Painted sweetlips'), byName('Diagramma pictum').id), 'exact');
-  // The family's typed answers read them too (core.js fishNameIndex: 'sp', a species of that family).
-  const idx = C.fishNameIndex(F, {});
+  // The family's typed answers read them too (core.js treeNameIndex: 'sp', a species of that family).
+  const idx = C.treeNameIndex(F, {});
   assert.ok(idx.some(x => x.x === 'Swallowtail puller' && x.g === s.family && x.vr === 'sp'));
 });
 

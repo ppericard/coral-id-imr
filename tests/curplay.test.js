@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The players' copy of the curation (Pierre, 2026-11-09: "a smaller curation file for players, built at deploy"):
 // tools/curplay.py writes curation-play.json from curation.json, without the admin's working state, and the app reads it
 // (app.js curFetch). Checked here: the copy drops only what it says; the app builds the same games from it as from the
-// whole file (the coral genera under applyCuration, applyForms and applySlots, the fish units under app.js fishBuild,
+// whole file (the coral genera under applyCuration, applyForms and applySlots, the fish units under app.js treeBuild,
 // the fish photos taken out of play, the reports thanked); and no script the app or the Lab loads reads a field it drops.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -63,7 +63,7 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
     {auto: pa, content: pfc, ...pfrest} = pf || {};
   assert.deepStrictEqual(pfrest, frest);
   assert.deepStrictEqual(pfc, slimC(fc));
-  // The fish auto-sort log keeps only its undone adds ('-a…', core.js fishGone), day by day.
+  // The fish auto-sort log keeps only its undone adds ('-a…', core.js treeGone), day by day.
   const undone = Object.fromEntries(
     Object.entries(fa || {})
       .map(([d, L]) => [d, Object.fromEntries(Object.entries(L || {}).filter(([, c]) => /^-a/.test(String(c))))])
@@ -143,15 +143,15 @@ test('the coral games from the players copy: the same genera, views, covers and 
 test('the fish units from the players copy: the same photos in play, covers and featured photos', () => {
   const src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = {
-      fishGen: C.fishGen,
-      fishHeld: C.fishHeld,
-      fishPhotos: C.fishPhotos,
+      treeGen: C.treeGen,
+      treeHeld: C.treeHeld,
+      treePhotos: C.treePhotos,
       easyRank: C.easyRank,
       easyCover: C.easyCover,
-      fishPid: C.fishPid,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treePid: C.treePid,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       refLevel: C.refLevel,
       contentApply: C.contentApply,
       treeCur: C.treeCur,
@@ -160,21 +160,21 @@ test('the fish units from the players copy: the same photos in play, covers and 
     };
   vm.createContext(ctx);
   vm.runInContext(
-    "let FISH = null, FISHRAW = null, CUR = null, FISHF = null, TREE_AT = 'fish';\n" +
+    "let FISH = null, TREERAW = null, CUR = null, TREEF = null, TREE_AT = 'fish';\n" +
       // a scientific genus's species line names each species by the player's first name (cnFirst; imrNow: not at IMR)
       block(src, 'const cnList = s =>', '\n};\n', {through: 1, file: 'app.js'}) +
       'const imrNow = () => false;\n' +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
-      block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
-      block(src, 'const fishBuild = () => {', 'const treeLoad = id =>', {file: 'app.js'}) +
+      block(src, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
+      block(src, 'const treeBuild = () => {', 'const treeLoad = id =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
-      '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); };',
+      '\nthis.run = (raw, cur) => { TREERAW = raw; CUR = cur; return treeBuild(); };',
     ctx
   );
   const raw = {f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')};
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, PLAY)), JSON.stringify(ctx.run(raw, FULL)));
-  assert.deepStrictEqual([...C.fishGone(PLAY)].sort(), [...C.fishGone(FULL)].sort());
+  assert.deepStrictEqual([...C.treeGone(PLAY)].sort(), [...C.treeGone(FULL)].sort());
   // With undone automatic adds in the log (made up: the real log has none today), the photos they take out stay out.
   const L = Object.values(raw.gm.photos)
       .flat()
@@ -183,7 +183,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
     U = structuredClone(FULL);
   U.fish = {...U.fish, auto: {...(U.fish.auto || {}), '2026-11-09': Object.fromEntries(L.map(p => [p.f, '-a1x']))}};
   assert.ok(L.length, 'automatic photos in fish-game.json');
-  assert.deepStrictEqual([...C.fishGone(slim(U))].sort(), [...C.fishGone(U)].sort());
+  assert.deepStrictEqual([...C.treeGone(slim(U))].sort(), [...C.treeGone(U)].sort());
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, slim(U))), JSON.stringify(ctx.run(raw, U)));
   // With the content editor's edits (made up: none on main today), one of them stale (was differs from the base), the
   // same units from the copy without was, t and by: the app reads v and src only (core.js contentApply).
@@ -232,7 +232,7 @@ test('no script the app or the Lab loads reads a field the players copy drops', 
     ];
   assert.ok(files.includes('app.js') && files.includes('core.js') && files.includes('quiz.js'), files.join(' '));
   // What reads the curation's dropped fields: its tags, ease or auto, on the curation (CUR, cur, c) or its fish part
-  // (F, .fish). The one reader allowed: core.js fishGone, of the undone adds the copy keeps.
+  // (F, .fish). The one reader allowed: core.js treeGone, of the undone adds the copy keeps.
   const BAD = [
     /\b(?:CUR|cur|c|F|fish)\s*(?:\)\s*)?(?:\.|\?\.)\s*(?:tags|ease)\b/,
     /\.fish\b[^;\n]*\.(?:tags|ease)\b/,
@@ -259,5 +259,5 @@ test('no script the app or the Lab loads reads a field the players copy drops', 
     [],
     'a player script reads a field tools/curplay.py drops: keep it in curation-play.json, or read it another way'
   );
-  assert.ok(hits.length === 1, 'core.js fishGone still reads fish auto: ' + hits.join(' | '));
+  assert.ok(hits.length === 1, 'core.js treeGone still reads fish auto: ' + hits.join(' | '));
 });

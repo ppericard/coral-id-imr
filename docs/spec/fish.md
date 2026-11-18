@@ -7,7 +7,7 @@ part was decided is in [docs/decisions/](../decisions/README.md), [FISH_PATH.md]
 the held-out set) are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model in
 [ARCHITECTURE.md](../ARCHITECTURE.md) "Subjects (the taxon model)"; the content editor's edits laid over `fish.json` in
 [content.md](content.md). The fish run on the same engine as the corals: the app reads the file through `core.js`
-`fishGen`.
+`treeGen`.
 
 ## Files
 
@@ -34,7 +34,7 @@ the held-out set) are in [fish-photos.md](fish-photos.md); the subject's place i
   `not` (the AphiaIDs it covers / leaves out), `species` (the ids of its species in the game, the most commonly met
   around Dauin first: "Commonness" below), `sl`, `cues`, `look` ([teaching id, how to tell it apart]), `phase`, `sub`
   (the sub-entries IMR names inside an entry: Chromis / Dascyllus / Pomacentrus / Anemonefish, Bannerfish, Surgeonfish /
-  Unicornfish). The units are built from it (`core.js` `fishGen`), and the tools read it (`fish_photos.py`, the judging,
+  Unicornfish). The units are built from it (`core.js` `treeGen`), and the tools read it (`fish_photos.py`, the judging,
   the photo tools, `tools/holdout.py`).
 
 A species belongs to the node whose `ref` holds its nearest ancestor (the most specific wins), its genus being the genus
@@ -60,8 +60,8 @@ The game's units are not the IMR entries: the IMR course is a tag ([plan](../rev
   `gen` `lsrc`) names IMR's slide, then the declared source (`IMR fish presentation, slide 10 and Pierre, 2026-11-06`).
   A family id that is not a family stops the build. They seed the traps and the confusion groups until pooled fish
   answers exist (rule L7).
-- **The game reads them**: `core.js` `fishGen` (one unit per family; the starter core is the families of `start`'s
-  entries; typed names: the book's, IMR's and the scientific ones), `app.js` `fishGenera` (the genera inside their
+- **The game reads them**: `core.js` `treeGen` (one unit per family; the starter core is the families of `start`'s
+  entries; typed names: the book's, IMR's and the scientific ones), `app.js` `treeGenera` (the genera inside their
   family), `model.js` `openPick` ("I'm at IMR" opens the IMR-tagged units first).
 - Old entry ids saved on a device or in an account (t01) move to their family at every load (`app.js` `unitsRenamed`,
   `sync.js`: `core.js` `renameUnits`; Groupers keeps IMR's Groupers, the Soapfishes start unmet).
@@ -188,10 +188,10 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
   them, `w` for one species' word; never a word of a "False …" name or a family's own name), written by
   `tools/fish_names.py` (offline summary; `--check`, run by `tests/fish.test.js`) through `tools/build_fish.py`
   `add_families` (every build path, `--commonness` included).
-- The app completes it from `fish.json` itself (`core.js` `fishNameIndex`: `sp` a listed species name, `ss` a species'
+- The app completes it from `fish.json` itself (`core.js` `treeNameIndex`: `sp` a listed species name, `ss` a species'
   scientific name, `gs` a genus's, `gc` a genus's common name, each with `sc`, the species it designates) and Pierre's
-  exceptions (`curation.json` `fish` `names`); `fishGen` `scopes` gives the IMR genera and sub-entries their species.
-- `fishTypeNames` reads every name as the family it lifts to, with `sc` when it names part of it only (one key of a
+  exceptions (`curation.json` `fish` `names`); `treeGen` `scopes` gives the IMR genera and sub-entries their species.
+- `treeTypeNames` reads every name as the family it lifts to, with `sc` when it names part of it only (one key of a
   family read by two names takes the wider); `typeFits(m, t, sp)` says whether a reading names unit t as the photo shows
   it (sp: the photo's species, `quiz.js` from `app.js` `photoTaxon`; unknown: read as before). A name of part of the
   family not designating the photo is a mistake with no unit given (`quiz.js` `typeUnit`); a name several families share
@@ -222,7 +222,7 @@ why}).
   `genus`: "the genus *Pomacentrus*") or the person it says the name honours (`honours`). Only the circle-1 genera must
   have a root or a reason.
 - Shown by the same `rootLine` (counting the shared ending among every fish genus, "among the fish") through `learn.js`
-  `fishRoot`, on the one sheet the genus opens (`fishTree` `go`): its genus page, its one species' sheet, or its
+  `treeRoot`, on the one sheet the genus opens (`treeSheets` `go`): its genus page, its one species' sheet, or its
   family's sheet when it is that family's only genus.
 - `tests/roots.test.js` (every meaning and word in the ETYFish entry, every circle-1 genus rooted or skipped),
   `tests/fish.smoke.js` (Zanclus's species sheet, Amphiprion's genus page).
@@ -243,7 +243,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 - A label the book does not print is added only by Pierre's decision, its note saying so: *Thresher sharks*
   (Alopiidae) in group 20, Sharks & Rays (seen on the reefs in the Philippines, at Malapascua above all), so the
   thresher wink has a group too.
-- `fish.json` `key` = the key in force without its labels (`fishGen` `key`, `groups`); the app shows the key's numbers
+- `fish.json` `key` = the key in force without its labels (`treeGen` `key`, `groups`); the app shows the key's numbers
   and titles, `cite` on the families page and `short` everywhere else (one edit changes both).
 - `python3 tools/build_fish.py --regroup` applies the key to `fish.json` again offline from its own reference tree
   (after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of `fish.json`); `--regroup --check` (run by
@@ -253,7 +253,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 ## Starter core and judged photos
 
 - `fish.json` `start` (from the IMR instance's layer, `tools/instances/imr/fish.json`) lists the circle-1 entries met
-  first (`fishGen` marks them `first`, `model.js` `openPick` opens them before any other).
+  first (`treeGen` marks them `first`, `model.js` `openPick` opens them before any other).
 - `dimorph: true` on a teaching entry whose presentation phase lines say the sexes or colour phases differ (Parrotfish,
   Anthias).
 - `juv` on every circle-1 entry: its juvenile class (A, B, C, mixed with `early` / `late` genera or species, ns),
@@ -264,7 +264,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 - Each judged photo carries `e` (ease 1-5), `jt` (its tags) and maybe `c` (a proposed crop `[l, t, r, b]`, never
   applied), written by `tools/fish_judge.py` from `tools/fish_judge.json` (rubric: `judging/FISH.md`;
   `tools/fish_photos.py` applies them again on a rebuild, `--check` tells whether the file is current).
-- `fishGen` orders each entry's photos with `easyRank`: the easiest first, by the judged ease, then the most
+- `treeGen` orders each entry's photos with `easyRank`: the easiest first, by the judged ease, then the most
   reference-like by their tags (`refScore`: the reference flag `r`, then profile, whole fish, good light, no colour loss,
   sharp, large, one fish), never by who took them; and makes the first the card's `cover`, so the families list, Home
   and the cards show it too. The app ranks them again on `model.js` `photoDiff` (`app.js` `rankPhotos`, at load and with
@@ -278,16 +278,16 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 ### Pierre's choices per family in the app
 
 `curation.json` `fish` `genera` `{unit id: {cover, feat: {species id: [f]}, ok}}` (the admin's Tree page, `autosort.js`
-`fishPick`) is applied after the build (`app.js` `fishBuild` → `fishCurate`, run again whenever the curation is):
+`fishPick`) is applied after the build (`app.js` `treeBuild` → `treeCurate`, run again whenever the curation is):
 
 - **★ Cover** becomes the unit's `coverP`, which `cover()` reads first (as a coral genus's), so the Learn families list,
   the family sheet's hero and its look-alike cards, the first-meeting cards, My progress, a wink's surprise card and
   Home show it (Home's landscape tiles and the Identify door's art only when it suits them, `home.js` `tilePhoto`; the
   Learn band shows, one a day, it or one of the family's reference photos that suit a tile, among those served from R2,
   `landPool`, `bandPhoto`, `dayPick`), while it is among the unit's game photos (`views.wide`, matched by photo id:
-  `core.js` `fishPid`), else the default cover (below); `rankPhotos` never takes his pick back.
+  `core.js` `treePid`), else the default cover (below); `rankPhotos` never takes his pick back.
 - **Feature** becomes `featP` `{species id: [photo]}`, the photos still in play of that species in his order, which lead
-  that species' photos on the sheets (`learn.js` `fishSpPhotos`), as the admin's page shows them (`fishOrder`).
+  that species' photos on the sheets (`learn.js` `treeSpPhotos`), as the admin's page shows them (`fishOrder`).
 - **A genus's and a species' ★ Cover** sit in the same map under their `fish.json` ids, `{cover}` only (`g:Chromis`,
   `s091`), set on the Tree tab's node pages: ★ Cover on a genus's or a species' own page sets that node's cover; ★ Cover
   elsewhere (a report, Health) sets the family's. The rank words are read from `core.js` `SUBJECTS` `sheets`, broadest
@@ -297,14 +297,14 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   cover).
 - **Another subject** (a nudibranch or plant key, or the corals at more than one rank) needs only data: its ranks in
   `SUBJECTS` `sheets`, its tree on its unit page (the fish page's `fishUnits`: units, then nodes, then leaves), and its
-  covers read by node id at build (as `fishCurate` does from `fish.json`); the keys, `fishCover`, `fishDrop` and the
+  covers read by node id at build (as `treeCurate` does from `fish.json`); the keys, `fishCover`, `fishDrop` and the
   Publish summary take any rank. The corals today have one rank (the genus: their covers are `curation.json`
   `genera[n].cover`) and no unit page of this kind.
 - In the app a genus unit (circle 1) takes its cover as its `coverP`, as a family (`cover()`: its Learn card,
-  first-meeting card, My progress); a genus with no unit and a species get it in `FISH.covers` `{id: photo}`, while it
-  is in play as a photo of that genus or species. `learn.js` `genCover` (a genus's cover: `coverP`, else `FISH.covers`)
+  first-meeting card, My progress); a genus with no unit and a species get it in `TREEU.covers` `{id: photo}`, while it
+  is in play as a photo of that genus or species. `learn.js` `genCover` (a genus's cover: `coverP`, else `TREEU.covers`)
   leads the genus's row on the family sheet (then the first photo of its other species) and its card among the sibling
-  genera on a genus sheet (the genus sheet has no hero), and `fishSpPhotos` puts the species' cover first (then his
+  genera on a genus sheet (the genus sheet has no hero), and `treeSpPhotos` puts the species' cover first (then his
   featured photos, then the game's order): its tile, the first photo of its sheet.
 - A photo leaving play (Remove, ×, Not this, a count that takes it out, Out of play and Reject in Candidates:
   `autosort.js` `fishDrop`) leaves every cover and featured list it was in, one Undo step. Neither touches the games'
@@ -327,8 +327,8 @@ cover like any other. The default rule alone never takes a juvenile.
   juvenile; a new pick, taking it off, Remove or an accepted Cover proposal drop it (`fishCover`, `fishDrop`,
   `admin-covers.js` `coverAccept`).
 - Every reader takes a confirmed one as his cover in force: `fishCoverOf`, `fishLeafCover` and the species ★ inside
-  `fishCoverRule`; `nodeCover` (`by: 'mine'`, `jok`), the Cover proposals; the app's `fishCurate` (`app.js` `coverOk`:
-  `coverP` and `FISH.covers` marked `cj`), `seenCover`'s species pick, `learn.js` `spPhoto` and `spSheetPhotos`, Home's
+  `fishCoverRule`; `nodeCover` (`by: 'mine'`, `jok`), the Cover proposals; the app's `treeCurate` (`app.js` `coverOk`:
+  `coverP` and `TREEU.covers` marked `cj`), `seenCover`'s species pick, `learn.js` `spPhoto` and `spSheetPhotos`, Home's
   landscape tile (`home.js` `landOk`) and `tools/fish_game.py` `first_photos`.
 - In the admin, ★ Cover on a juvenile tile asks first ("This photo is a juvenile. Use it as the cover anyway?":
   `admin-covers.js` `JUV_Q`; yes sets the cover with its confirmation, `fishCoverYes`, one Undo step). A pick on one he
@@ -340,9 +340,9 @@ cover like any other. The default rule alone never takes a juvenile.
   asks the same question, naming the node (`lightCovers`; yes keeps the cover, confirmed in the same Undo step,
   `lightAccept`'s `keep`; no accepts the tags and leaves the cover ignored until he confirms it).
 - The admin finds his pick as the app does, under its name, else the same photo under its other name (`autosort.js`
-  `fishAt`, `core.js` `fishPid`: a reference photo `fi<id>` and its candidate copy `fish-<species>-cand-<id>` are one
-  photo, and the game plays one copy). In the app `fishCurate` ignores an unconfirmed juvenile pick (no `coverP`, no
-  `FISH.covers`), and every default skips juveniles while the unit has another photo (the card's cover in `fishCurate`
+  `fishAt`, `core.js` `treePid`: a reference photo `fi<id>` and its candidate copy `fish-<species>-cand-<id>` are one
+  photo, and the game plays one copy). In the app `treeCurate` ignores an unconfirmed juvenile pick (no `coverP`, no
+  `TREEU.covers`), and every default skips juveniles while the unit has another photo (the card's cover in `treeCurate`
   and `rankPhotos`, the family hero and look-alike cards, the sibling genus cards: `seenCover`; `adultFirst`: a species'
   one photo `spPhoto`, Home's landscape tiles `home.js` `tilePhoto`); a unit of juveniles only keeps its first; the
   species sheet shows its adults first, the juveniles apart (`learn.js` `spSheetPhotos`).
@@ -379,9 +379,9 @@ order's first (ROADMAP "The Tree tab").
 - The species most seen is read from `fish.json` `present` (`nearU` distinct Research Grade observers and `nearN`
   observations within the centre's radius, under their first names `dauinU` and `dauin` until the build writes the
   generic ones: `app.js` `nearSeen`, `autosort.js` `fishNear`). The counts are computed once, at build (rule L13); the
-  app only compares them. A genus's "Most met here" line (`app.js` `fishGenera`) follows the commonness index, not
+  app only compares them. A genus's "Most met here" line (`app.js` `treeGenera`) follows the commonness index, not
   these counts.
-- One rule in two copies: the app's `app.js` `seenCover` (the card's photo: `fishCurate` without his pick, `rankPhotos`
+- One rule in two copies: the app's `app.js` `seenCover` (the card's photo: `treeCurate` without his pick, `rankPhotos`
   on the rated order; `learn.js` `nodeCover` over the species' photos in play, the sheet-only ones only when none is:
   the family sheet's hero, its look-alike cards, a genus sheet's sibling genus cards) and the admin's `autosort.js`
   `fishCoverOf` (the family's and the genus headings' default thumbs on the Tree page; the species records it reads

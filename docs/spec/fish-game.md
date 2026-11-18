@@ -28,7 +28,7 @@ the PRs.
 ### Circles and the gate
 
 **Every circle on the path and in the progress**: `UNITS.fish` `slate` = the families of circles 1, 2 and 3, `core`
-= circle 1 (what Open all opens, `model.js` `introLeft`), `gate` = `fishGate` (`model.js` `mayOpen`): circle 2 may open
+= circle 1 (what Open all opens, `model.js` `introLeft`), `gate` = `treeGate` (`model.js` `mayOpen`): circle 2 may open
 once every circle-1 family has been met and asked; circle 3 once `fishC3` holds (`app.js` `FISH_C3`: circle 1's Entries
 component of the global score at 55%, else, without that score, circle 1's plain mean at 50%) and the player said yes to
 its card or in My progress (`UNITS.fish` `opens`, the `beyond` choice); then the usual weighted opening (`openPick`, the
@@ -55,11 +55,11 @@ Pierre's ★ Cover of the unit while in play (`coverP`), else one of the wink's 
 
 ## Fish scientific genera
 
-`app.js` `fishGenera` adds one unit per genus of `fish.json` holding species of a family in play (key `g:<genus>`,
+`app.js` `treeGenera` adds one unit per genus of `fish.json` holding species of a family in play (key `g:<genus>`,
 `rank: 'genus'`, `one: 'genus'`, `parent` its family, its family's group as `forms`, its sibling genera as `look`, the
 IMR sub-entry's cues when one names it (else its own ID marks,
 [fish-sheets.md](fish-sheets.md#genus-presentation-and-id-marks)), its species and the family's photos of them) to
-`FISH.gen`, and `FISH.sci` lists them; the admin's `fishGen` is
+`TREEU.gen`, and `TREEU.sci` lists them; the admin's `treeGen` is
 unchanged. The genera of circles 2 and 3 are in the game once the sheet replays them (`sciNow`, `sync.js` `generaOn`,
 rule D4). Tests: `tests/fishunits.test.js`.
 
@@ -84,11 +84,11 @@ rule D4). Tests: `tests/fishunits.test.js`.
 
 docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, step 1, by common name".
 
-- **Units**: `core.js` `fishSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
-  `s:s091`; its family's other species as `look`; `from` its family). `app.js` `fishGenera` builds each record:
+- **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
+  `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each record:
   `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl: []`, `noex`,
   its family's photos of that species, `sci` its scientific name, `also` its listed names, `name` the player's first
-  common name (a getter, `cnFirst`). `FISH.spl` lists them.
+  common name (a getter, `cnFirst`). `TREEU.spl` lists them.
 - **Opening** (the species): the set `sp` in `UNITS` fish `sets` (`auto` only: no offer, no switch). `app.js` `spPlay`
   gives each family at Advanced its species met and the next one, in its commonness order. **The rank share**
   (docs/LEARNING.md "The rank share"): `model.js` `SHARE`, one rule for every unit with a `parent` (the fish scientific
@@ -105,18 +105,18 @@ docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, ste
   `question`, `.csn`; `app.js` `uplain`: a unit with `sci` is upright). Typed answers read every listed and regional name
   as the unit's (`UNITS` fish `names`, `cnTypeNames`). `model.js` `choiceKeys` keeps a wrong choice off any listed name
   of the target.
-- **Score and gate**: the tree with the species (`FISH.treeSp`, `fishScoreTree(X, F, true)`) only when `app.js` `spOn`
+- **Score and gate**: the tree with the species (`TREEU.treeSp`, `treeScoreTree(X, F, true)`) only when `app.js` `spOn`
   (`sync.js` `speciesOn`: `TREE_SHEET` and `SPECIES_SHEET`, rule D4). The sheet's replay lists the species units with
-  their `from` (`core.js` `fishReplayGen`), so a species picked wrongly and a species' start replay as the game scores
+  their `from` (`core.js` `treeReplayGen`), so a species picked wrongly and a species' start replay as the game scores
   them.
 - **Rest**: the first species card carries the milestone line (the set's `card`, a function of the unit). The
-  achievements fsp1, fsp10 and fsp50 read `achSnap` `setsAdv.sp`. A species unit opens its species sheet (`fishTree`
+  achievements fsp1, fsp10 and fsp50 read `achSnap` `setsAdv.sp`. A species unit opens its species sheet (`treeSheets`
   `spOf` reads `s:s091`).
 
 ## The fish global score
 
 docs/FISH_PATH.md "My progress (fish)", docs/LEARNING.md "Fish: the global score, built". `core.js` `treeScore(P, T, K)`,
-one computation over the subject's tree (`core.js` `fishScoreTree`, built with `FISH`, `UNITS.fish.tree()`: the
+one computation over the subject's tree (`core.js` `treeScoreTree`, built with `TREEU`, `UNITS.fish.tree()`: the
 families with their weight and circle, the species packed by genus while they have no unit of their own, `null` common
 names for a species with none) with the subject's constants (`SUBJECTS` fish `score`, the one switch): the % shown
 (`pct`), `raw`, the components (`entries`, `genera`, `common`, `scientific`, `S`, `credit`), the same per circle (`by`)

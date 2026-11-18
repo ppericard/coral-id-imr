@@ -3657,7 +3657,7 @@ async function credits(b, base) {
     }, fish);
     const p = await c.newPage();
     await p.goto(base + hash);
-    await p.waitForFunction(fish => window.APP_READY && (!fish || (typeof FISH === 'object' && FISH && SUBJ.id === 'fish')), fish, {
+    await p.waitForFunction(fish => window.APP_READY && (!fish || (typeof TREEU === 'object' && TREEU && SUBJ.id === 'fish')), fish, {
       timeout: 30000
     });
     await p.waitForTimeout(500);
@@ -4229,7 +4229,7 @@ async function fishBasicsCheck(b, base) {
     await p.waitForSelector('.bx-gfam figure', {timeout: 15000}).catch(() => fails.push(`${W} groups: no family tile`));
     const grp = await p.evaluate(() => {
       const picks = [...document.querySelectorAll('.bx-picks button')].map(x => Number(x.textContent));
-      const key = ((FISH || {}).groups || []).filter(g => slateGenera().some(n => GX(n).group === g.n)).map(g => g.n);
+      const key = ((TREEU || {}).groups || []).filter(g => slateGenera().some(n => GX(n).group === g.n)).map(g => g.n);
       return {
         picks,
         key,

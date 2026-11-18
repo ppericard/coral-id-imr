@@ -223,7 +223,7 @@ test('the fish board: the replay of the log as the app adopts it, no floor (Q330
     rec = C.replayProgress(
       FIX.fish.answers('anafish').map(a => C.logRow(a, 'ana')),
       // the variant table the sheet made and keeps (Code.gs subjVar_, from the cache: nothing fetched again)
-      {gen: C.fishReplayGen(JSON.parse(FJSON)), vars: s.ctx.subjVar_('fish')}
+      {gen: C.treeReplayGen(JSON.parse(FJSON)), vars: s.ctx.subjVar_('fish')}
     ).ana.P,
     M = C.replayAdopted(rec, high, C.rvOf('fish'));
   assert.deepStrictEqual(keptOf(s, 'fish', 'Ana'), rec, "the sheet's replay, not floored");
@@ -233,7 +233,7 @@ test('the fish board: the replay of the log as the app adopts it, no floor (Q330
 });
 
 // "Learned" asks each variant group (a fish rules version): the sheet's replay
-// decides from the answer log (rule D9) with the variant table it makes (Code.gs subjVar_, core.js fishVarTable), so the
+// decides from the answer log (rule D9) with the variant table it makes (Code.gs subjVar_, core.js treeVarTable), so the
 // fish board follows for every player at once (rule D8), whoever never reconnects.
 test('Learned and the variant groups on the fish board: a mark without each group right in the log goes, for every player at once', () => {
   const S = C.subjectOf('fish'),

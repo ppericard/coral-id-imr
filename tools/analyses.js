@@ -37,7 +37,7 @@ const metaOf = (subject = C.replaySubject()) => {
     rk = A.rankRef(S),
     m =
       k === 'judged'
-        ? {ph: {}, fph: A.photoMetaFish(C.fishGameRead(rd(S.admin.files.gm)))}
+        ? {ph: {}, fph: A.photoMetaFish(C.treeGameRead(rd(S.admin.files.gm)))}
         : k
           ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))}
           : {ph: {}};

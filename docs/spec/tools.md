@@ -266,7 +266,7 @@ The fish content and photos themselves: [fish.md](fish.md), [fish-photos.md](fis
   photo rules, FishBase's photos) → `tools/fish_refs.json`, by species, and `away`: the taxon-page photos outside the
   Indo-West Pacific, listed only with their rough region (`region()`; `--relabel` labels the list again after a change
   to it, offline); for every game species, every genus the game has (`game_genera`, the game's genus units as `app.js`
-  `fishGenera` has them: every circle's, a surprise card's family excepted) and every entry's family; `--genera` asks
+  `treeGenera` has them: every circle's, a surprise card's family excepted) and every entry's family; `--genera` asks
   only the genera with no reference photo yet and adds theirs, the rest kept (`add_genera`). Judged ones join the game
   photos ([fish-photos.md › Reference photos](fish-photos.md#candidates-from-inaturalist-toolsfetch_fishpy)).
 - **`judging_fish.py`**: the fish candidate pass on the fish rubric (`judging/FISH.md` "Candidates"): contact sheets,
@@ -315,14 +315,14 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     rotation changed is listed with its old files, `iv` bumped).
   - **The genus look-alikes** (`genus_looks`, from `tools/seaslug_lookalikes_cand.json`): a genus's `look`, the genera a
     literature set of the survey names with it (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers; the
-    set's members rule C6 keeps), are **declared**: `app.js` `fishGenera` adds them to its `look` (the family's other
-    genera, `core.js` `fishGenUnits`) and its `decl` (the confusion groups), `UNITS.seaslug` `pairs` makes them the duels,
+    set's members rule C6 keeps), are **declared**: `app.js` `treeGenera` adds them to its `look` (the family's other
+    genera, `core.js` `treeGenUnits`) and its `decl` (the confusion groups), `UNITS.seaslug` `pairs` makes them the duels,
     and they stay look-alikes whatever the players answer. Its `dlook`, the genera across families only iNaturalist's
-    identifications show (the file's genus pairs, not `genusOnly`), are **data** look-alikes: `fishGenera` `dl`;
+    identifications show (the file's genus pairs, not `genusOnly`), are **data** look-alikes: `treeGenera` `dl`;
     `model.js` `dataSeed` gives the pair the declared prior (`confPrior`, `CONF.LOOK`), so it is a trap and a data
     look-alike (`isDataLook`, `dataLooks`: duels, sheets) from the start, until the pooled answers bring its score under
-    `CONF.TRAP`. `lsrc` holds each one's sources `[{t, u}]`, said on the sheets (`learn.js` `fishGenusLooks`,
-    `fishGenusLookCard`: a genus's page, or the family's or the species' sheet it opens, `fishGenusLooksOn`). A pair
+    `CONF.TRAP`. `lsrc` holds each one's sources `[{t, u}]`, said on the sheets (`learn.js` `treeGenusLooks`,
+    `treeGenusLookCard`: a genus's page, or the family's or the species' sheet it opens, `treeGenusLooksOn`). A pair
     inside one family adds nothing (the siblings already are look-alikes); the species pairs wait for the species level.
     A species judged later enters at the next build.
   - **The sea slugs without a species name**: a species of `tools/seaslug_informal.json` (*Goniobranchus* sp. 5 of Soong
@@ -333,9 +333,9 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     `spLinks`), its genus's circle, `present` from its label's counts; while the species are not units it is a species
     sheet, and its photos in play play for its genus.
   - **Genus-level photos**: the sure judgements of a genus's genus-level candidates are in play with `sp` the genus's id
-    and `gl: 1`, at most the cap, once the genus's photos in play reach the start; `core.js` `fishGen` sends them to the
-    genus's family and `fishGenUnits` (`fishGlOf`) to that genus unit only, never to a species (`app.js` `fishGenera`,
-    `fishCurate` alike; `fishTaxon` names no species for them).
+    and `gl: 1`, at most the cap, once the genus's photos in play reach the start; `core.js` `treeGen` sends them to the
+    genus's family and `treeGenUnits` (`treeGlOf`) to that genus unit only, never to a species (`app.js` `treeGenera`,
+    `treeCurate` alike; `treeTaxon` names no species for them).
   - **R2**: `--r2 [--out DIR] [--max N]` downloads the photos in play that R2 lacks with the fish's pipeline
     (`tools/fish_game.py` `download`: an iNaturalist photo host only, Pierre's crop else the judge's, his rotation, the
     four sizes) into `r2-upload/`, and lists them without `r` (`ar`, `cr`, `iv`), the original kept as the fallback; a
@@ -399,7 +399,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   `build`) checks them (a source on every line, https, at most 80 characters, no number, a species named only among the
   genus's game species, rule C6; every circle-1 genus in marks or none; every source used) and puts `marks`, `msrc`,
   `mby` on `seaslug.json`'s genera and families, as on a fish genus (`tools/fish_genus_marks.json`), so the fish engine
-  shows them unchanged: `learn.js` `genMarks` and `fishMarks` on the sheets, `app.js` `fishGenera` in the quiz feedback
+  shows them unchanged: `learn.js` `genMarks` and `fishMarks` on the sheets, `app.js` `treeGenera` in the quiz feedback
   ("ID marks (Sea Slug Forum, …)"); `python3 tools/seaslug_cues.py` prints what it covers. Its `apart` holds the
   declared genus pairs' tell-apart lines (`apart_of`, the same checks, on a declared pair only, one side or both) and
   `apartNone` the pairs left without one, with why; every declared pair is in one of them

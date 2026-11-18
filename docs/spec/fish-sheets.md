@@ -2,7 +2,7 @@
 
 The fish have a sheet per family, genus and species (`SUBJECTS` fish `sheets`; study
 [docs/reviews/2026-11-05-fish-sheets-study.md](../reviews/2026-11-05-fish-sheets-study.md), option B): `learn.js`
-`viewFishSheet`, read from `fish.json` alone (`core.js` `fishTree`: families, genera, species by id; the families in the
+`viewFishSheet`, read from `fish.json` alone (`core.js` `treeSheets`: families, genera, species by id; the families in the
 key's order; `go(id)`, the sheet an id opens), so they stand whatever the game's units are. The sea slugs read the same
 sheets in their own words ([seaslugs.md](seaslugs.md)). The content the sheets show is built into `fish.json` by
 `tools/build_fish.py` ([fish.md](fish.md)); the content editor's edits are laid over it ([content.md](content.md)). This
@@ -30,20 +30,20 @@ from the families page (each family's name opens its sheet; its photo enlarges) 
 - the juveniles and phases (IMR's phase lines, the sourced juvenile note, up to 4 juvenile-tagged photos);
 - a report link.
 
-Every species list has the **"Opened for me" filter, on each time a sheet opens** (`fishTiles`, a `.seg`, `fishMine`):
+Every species list has the **"Opened for me" filter, on each time a sheet opens** (`treeTiles`, a `.seg`, `fishMine`):
 a species counts as opened once its family is at Advanced, its scientific genus is met, or its own species unit is met
-(`spOpen`). The page bar's previous / next go through the families the families page shows (`fishShown`: every family
+(`spOpen`). The page bar's previous / next go through the families the families page shows (`treeShown`: every family
 on the path, circles 1 to 3, both families of an entry renamed into two; never a wink). A species without a photo shows
 the one "No photo yet" drawing (`NOFISH`, `.nofish`).
 
 ## The genus page
 
-`fishGenus`, `#fish/learn/genus/<name>`: the genus, its common name when it has one, its family and IMR entry name; my
+`treeGenus`, `#fish/learn/genus/<name>`: the genus, its common name when it has one, its family and IMR entry name; my
 progress once met; the IMR sub-entry's cues, else its ID marks and presentation; the species WoRMS now puts in another
 genus; every species with the filter; "Don't confuse with": the sibling genera IMR gives cues for, then the look-alikes
-a source names and those players mix it up with, each with its source (`fishGenusLooks`). The page bar's previous / next
+a source names and those players mix it up with, each with its source (`treeGenusLooks`). The page bar's previous / next
 go through its family's genus pages. A genus with one species opens its species' sheet, and the only genus of a family
-its family's (`fishTree` `go`); its marks and look-alikes are then shown there.
+its family's (`treeSheets` `go`); its marks and look-alikes are then shown there.
 
 ## The species sheet
 
@@ -54,7 +54,7 @@ single-species genus row:
 - its family and genus, "★ IMR most sighted #n", "On the IMR reference list" and "Confirmed near Dauin" or "Not
   confirmed near Dauin" (`present.near`, rule C8's words); its size and depth ([below](#size-and-depth));
 - its rank in its family by the commonness index (`cmi`);
-- its photos, in `easyRank` order (`fishSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
+- its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
@@ -74,7 +74,7 @@ for. Where a source differs from IMR, a point goes to `points.json` (rule C5).
 
 **A family IMR gives no cue for** (circles 2 and 3, the Soapfishes) has 1 to 3 ID marks of its own, what to look at on a
 photo, each checked against two sources at least (its `src`: FishBase, Fishes of Australia, Reef Life Survey,
-iNaturalist, the Australian Museum), in our own words. `app.js` `fishGenera` makes them the family unit's tips (`qt`)
+iNaturalist, the Australian Museum), in our own words. `app.js` `treeGenera` makes them the family unit's tips (`qt`)
 under a label naming those sources (`tl`, "ID marks (FishBase, Fishes of Australia)", never IMR's), so the feedback, the
 first-meeting card, the families page and the cards show them where they show IMR's cues.
 
@@ -112,6 +112,6 @@ count.
 {plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues (rule C1:
 they stay apart), a mark with a number, a line too long, a species named that is not one of its own, or a genus in play
 of any circle without a presentation, or with neither marks nor a reason (`--marks`, a hidden flag, points the build at
-another file for `tests/genusmarks.test.js`). `app.js` `fishGenera` makes the marks a genus unit's tips (`qt`) under "ID
+another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks a genus unit's tips (`qt`) under "ID
 marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
-`learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `fishRoot`).
+`learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `treeRoot`).
