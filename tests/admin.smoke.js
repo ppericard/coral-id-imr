@@ -1534,7 +1534,7 @@ async function sealPart(b, base, fails) {
         // Its views: Games and Rights (every subject's, admin.js EVERY).
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
-        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
+        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js treePid), the
         // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
         // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
         // admin.js has its own fishState, of a photo's words) and not in play.
@@ -1544,7 +1544,7 @@ async function sealPart(b, base, fails) {
             inPlay = new Set(
               Object.values(D.play)
                 .flat()
-                .map(x => fishPid(x.f))
+                .map(x => treePid(x.f))
             ),
             sp = new Set(FISHC.units.flatMap(u => u.species).filter(s => FISHC.species[s] && !FISHC.species[s].out));
           let n = 0,
@@ -1554,7 +1554,7 @@ async function sealPart(b, base, fails) {
               const s = window.fishState(F, x.f, orig);
               if (s.st !== null || !sp.has(s.sid)) return;
               all++;
-              if (!inPlay.has(fishPid(x.f))) n++;
+              if (!inPlay.has(treePid(x.f))) n++;
             })
           );
           const col = [...document.querySelectorAll('.adm-fishcovt thead th')].findIndex(t => t.textContent === '+'),
@@ -5486,7 +5486,7 @@ async function sealPart(b, base, fails) {
         await settle();
         await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
         await settle();
-        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
+        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: treePhotoOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
         if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
         await p.click('#undo');
         await settle();
@@ -7111,7 +7111,7 @@ async function sealPart(b, base, fails) {
           await fq.click('#help');
         }
         // Photo stats › Overview on the fish side, on the same answers: the answers per photo in play counted here from the
-        // fish answer log (every answer that showed it, its candidate id and its game id one photo: fishPid), the bands
+        // fish answer log (every answer that showed it, its candidate id and its game id one photo: treePid), the bands
         // and the 3+ count as counted here; the candidate photo missed 9 times by 3 players counted Missed on its family's
         // row, opening Health; its own help (the answers alone, no Elo).
         if (!fe.length && pre.f) {
@@ -7128,12 +7128,12 @@ async function sealPart(b, base, fails) {
                 String(r[6] || '')
                   .split(' ')
                   .filter(Boolean)
-              ).forEach(x => (N[fishPid(x)] = (N[fishPid(x)] || 0) + 1))
+              ).forEach(x => (N[treePid(x)] = (N[treePid(x)] || 0) + 1))
             );
             const D = fuDataM().D,
               sp = FISHC.species,
               play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => D.play[s] || [])),
-              A = play.map(p => N[fishPid(p.f)] || 0),
+              A = play.map(p => N[treePid(p.f)] || 0),
               fam = fishFamOf(FISHA.ph[f].sp),
               name = (FISHC.units.find(u => u.id === fam) || {}).name,
               row = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(r => r.children[0].innerText.trim() === name),
@@ -7149,7 +7149,7 @@ async function sealPart(b, base, fails) {
               ].map(([lo, hi]) => A.filter(x => x >= lo && x <= hi).length),
               three: Number((/(\d+) \(/.exec((document.querySelector('[data-pov="answers"] .note') || {}).textContent || '') || [])[1]),
               wantThree: A.filter(x => x >= 3).length,
-              inPlay: play.some(p => fishPid(p.f) === fishPid(f)),
+              inPlay: play.some(p => treePid(p.f) === treePid(f)),
               name,
               missed: a ? Number(a.textContent) : 0,
               href: a ? a.getAttribute('href') : '',
@@ -7881,7 +7881,7 @@ async function sealPart(b, base, fails) {
           for (const u of FISHC.units) {
             const e = fuFamM(u),
               r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && fishPid(q.f) !== fishPid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
@@ -7973,7 +7973,7 @@ async function sealPart(b, base, fails) {
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && (f.cues || []).length && (f.look || []).some(x => x[1]) && (f.life || []).length),
             lone = F.genera.find(g => g.family === fam.id && T.go(g.id) !== g.id) || F.genera.find(g => T.go(g.id) !== g.id),
             sp = fam.species.find(s => T.sp[s]);
@@ -8159,7 +8159,7 @@ async function sealPart(b, base, fails) {
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && f.circle === 1 && (f.look || []).some(x => T.fam[x[0]] && !T.fam[x[0]].wink)),
             lk = fam.look.find(x => T.fam[x[0]] && !T.fam[x[0]].wink)[0],
             near = new Set([

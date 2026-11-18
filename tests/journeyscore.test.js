@@ -41,30 +41,30 @@ function admin(rows, saved, cur) {
   return ctx;
 }
 
-// The app's fish units and score tree (app.js fishGenera over fishGen, its UNITS fish tree with the species level on).
+// The app's fish units and score tree (app.js treeGenera over treeGen, its UNITS fish tree with the species level on).
 function appTree(A) {
   const ctx = {
     DOM: {EX: 0.9},
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const X = C.fishGen(A, {});
-  return {tree: ctx.fishGenera(X, A).treeSp, slate: [...X.c1, ...X.c2, ...X.c3]};
+  const X = C.treeGen(A, {});
+  return {tree: ctx.treeGenera(X, A).treeSp, slate: [...X.c1, ...X.c2, ...X.c3]};
 }
 
 const LEARN = 'f:Soldierfishes';
 // A made-up player's fish answers on families, scientific genera and species units (the replay's units), with mix-ups
 // among look-alikes, as the sheet logs them.
 function log(A, who) {
-  const G = C.fishReplayGen(A),
+  const G = C.treeReplayGen(A),
     U = Object.keys(G).sort(),
     out = [];
   let x = 11;
@@ -116,7 +116,7 @@ const IN = F.families.find(f => f.circle === 3 && !f.wink).id,
       saved = {[LEARN]: {ok: 60, ko: 0, ds: 0.9, mx: Date.UTC(2026, 10, 9, 20)}, 'f:Wrasses': {ok: 1, ko: 0, ds: 0.1}},
       // the app: the sheet's replay (Code.gs rplMake_: its units and variant table under the structure in force), adopted
       // over the saved copy (sync.js replayAdoptS), scored over the app's tree (model.js headPct)
-      rec = C.replayProgress(rows, {gen: C.fishReplayGen(A), vars: S.replayed.vars(A, [F, PH, GM, c], S)}).aid1.P,
+      rec = C.replayProgress(rows, {gen: C.treeReplayGen(A), vars: S.replayed.vars(A, [F, PH, GM, c], S)}).aid1.P,
       P = C.replayAdopted(rec, saved),
       app = appTree(A),
       appPct = C.treeScore(P, app.tree, S.score).pct,
@@ -131,7 +131,7 @@ const IN = F.families.find(f => f.circle === 3 && !f.wink).id,
     assert.strictEqual(pg.learned, appLearned, 'Learned: the families learned, as My progress counts them');
     assert.strictEqual(pg.total, app.slate.length);
     // the leaderboard's % for the same player (Code.gs board_: treeScore over the tree the sheet makes)
-    assert.strictEqual(C.treeScore(P, C.fishBoardTree(A), S.score).pct, pg.pct);
+    assert.strictEqual(C.treeScore(P, C.treeBoardTree(A), S.score).pct, pg.pct);
     // the saved copy's own %, by the same computation (↻ saved)
     assert.strictEqual(pg.saved.pct, C.treeScore(saved, app.tree, S.score).pct);
     // the families' mean the admin showed before is another number
@@ -158,7 +158,7 @@ test('a subject the sheet replays with no global score (the sea slugs): its repl
     A = C.contentApply(T, f, CUR),
     X = admin([], {}, CUR),
     M = X.unitRpl(T, f, null, null, CUR),
-    G = C.fishGen(A, {}, undefined, C.unitRankOf(T));
+    G = C.treeGen(A, {}, undefined, C.unitRankOf(T));
   assert.strictEqual(JSON.stringify(M.rgen), JSON.stringify(T.replayed.gen(A)), "the sheet's replay units");
   assert.strictEqual(JSON.stringify(M.slate), JSON.stringify([...G.c1, ...G.c2, ...G.c3]), 'the app slate (its genera)');
   assert.strictEqual(M.tree, null);

@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The held-out set in the game (ROADMAP "A held-out photo set"): core.js fishHeld, fishObs, fishPhotos held, fishGen and
-// fishGenUnits held; model.js examSet, genusDiff; the |h log token on the exam's answers; the sheet's replay deciding
+// The held-out set in the game (ROADMAP "A held-out photo set"): core.js treeHeld, treeObs, treePhotos held, treeGen and
+// treeGenUnits held; model.js examSet, genusDiff; the |h log token on the exam's answers; the sheet's replay deciding
 // alike (rules D8, D9). Exam only, no practice probe. docs/LEARNING.md "The held-out photos in the game".
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -15,15 +15,15 @@ const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
   json = f => JSON.parse(read(f));
 
-test('fishObs: the observation as fish-holdout.json names it (tools/holdout.py obs_of)', () => {
-  assert.strictEqual(C.fishObs({f: 'x', o: 'https://www.inaturalist.org/observations/123'}), '123');
-  assert.strictEqual(C.fishObs({f: 'x', o: '123'}), '123', 'the short form, as the file has it');
+test('treeObs: the observation as fish-holdout.json names it (tools/holdout.py obs_of)', () => {
+  assert.strictEqual(C.treeObs({f: 'x', o: 'https://www.inaturalist.org/observations/123'}), '123');
+  assert.strictEqual(C.treeObs({f: 'x', o: '123'}), '123', 'the short form, as the file has it');
   const fb = 'https://www.fishbase.se/photos/PicturesSummary.php?ID=1&what=species&pic=A_u0.jpg';
-  assert.strictEqual(C.fishObs({f: 'x', o: fb}), fb, 'a FishBase page whole');
-  assert.strictEqual(C.fishObs({f: 'fish-s001-cand-9'}), 'fish-s001-cand-9', 'no observation: the file');
+  assert.strictEqual(C.treeObs({f: 'x', o: fb}), fb, 'a FishBase page whole');
+  assert.strictEqual(C.treeObs({f: 'fish-s001-cand-9'}), 'fish-s001-cand-9', 'no observation: the file');
 });
 
-test('fishHeld: the file’s observations by species, less those of a photo Pierre picked (★ cover or featured)', () => {
+test('treeHeld: the file’s observations by species, less those of a photo Pierre picked (★ cover or featured)', () => {
   const H = {held: {s1: ['10', '11', '12'], s2: ['20']}},
     game = {
       t: [
@@ -33,17 +33,17 @@ test('fishHeld: the file’s observations by species, less those of a photo Pier
         {f: 'fish-s2-cand-200', sp: 's2', o: '20'}
       ]
     };
-  assert.deepStrictEqual([...C.fishHeld(H, game, null)].sort(), ['s1 10', 's1 11', 's1 12', 's2 20']);
-  // His cover by another name of the same photo (fishPid: its reference copy) and a featured photo count as practice.
+  assert.deepStrictEqual([...C.treeHeld(H, game, null)].sort(), ['s1 10', 's1 11', 's1 12', 's2 20']);
+  // His cover by another name of the same photo (treePid: its reference copy) and a featured photo count as practice.
   const cur = {fish: {genera: {'f:A': {cover: 'fi100'}, 'f:B': {feat: {s1: ['fish-s1-cand-120']}}, 'f:C': null}}};
-  assert.deepStrictEqual([...C.fishHeld(H, game, cur)].sort(), ['s1 11', 's2 20']);
-  assert.strictEqual(C.fishHeld({}, game, cur).size, 0, 'no file: nothing held out');
-  assert.strictEqual(C.fishHeld(null, game, cur).size, 0);
+  assert.deepStrictEqual([...C.treeHeld(H, game, cur)].sort(), ['s1 11', 's2 20']);
+  assert.strictEqual(C.treeHeld({}, game, cur).size, 0, 'no file: nothing held out');
+  assert.strictEqual(C.treeHeld(null, game, cur).size, 0);
   // Keyed by species: the same observation id under another species is not held out.
-  assert.ok(!C.fishHeld(H, game, null).has('s2 10'));
+  assert.ok(!C.treeHeld(H, game, null).has('s2 10'));
 });
 
-test('fishPhotos and fishGen: held-out photos marked ho, in the unit’s held list, never in its views or its cover', () => {
+test('treePhotos and treeGen: held-out photos marked ho, in the unit’s held list, never in its views or its cover', () => {
   const p = (f, sp, o, e = 3) => ({f, sp, o, src: 'x', e}),
     game = {t: [p('a', 's1', '1', 5), p('b', 's1', '2'), p('c', 's2', '3', 5), p('d', 's2', '4')]},
     F = {
@@ -55,7 +55,7 @@ test('fishPhotos and fishGen: held-out photos marked ho, in the unit’s held li
       ]
     },
     held = new Set(['s1 1', 's2 3']),
-    L = C.fishPhotos({}, game, null, held);
+    L = C.treePhotos({}, game, null, held);
   assert.deepStrictEqual(
     L.t.map(x => [x.f, !!x.ho]),
     [
@@ -67,24 +67,24 @@ test('fishPhotos and fishGen: held-out photos marked ho, in the unit’s held li
   );
   assert.ok(!game.t[0].ho, 'a copy: the file’s record untouched');
   assert.deepStrictEqual(
-    C.fishPhotos({}, game, null).t.map(x => !!x.ho),
+    C.treePhotos({}, game, null).t.map(x => !!x.ho),
     [false, false, false, false],
     'without the set (the sheet, the admin, the tools) every photo as before'
   );
-  const X = C.fishGen(F, L, {}),
+  const X = C.treeGen(F, L, {}),
     E = X.gen['f:A'];
   assert.deepStrictEqual(E.views.wide.map(x => x.f).sort(), ['b', 'd']);
   assert.deepStrictEqual(E.held.map(x => x.f).sort(), ['a', 'c']);
   assert.ok(['b', 'd'].includes(E.cover), 'the card’s photo is a practice one, though the held-out ones are easier');
-  // A subject played at the genus (fishGenUnits): its genus units too.
-  const G = C.fishGen(F, L, {}, 'genus').gen['g:A'];
+  // A subject played at the genus (treeGenUnits): its genus units too.
+  const G = C.treeGen(F, L, {}, 'genus').gen['g:A'];
   assert.deepStrictEqual(G.views.wide.map(x => x.f).sort(), ['b', 'd']);
   assert.deepStrictEqual(G.held.map(x => x.f).sort(), ['a', 'c']);
   // No held key without a held-out photo (the sheet's units unchanged).
-  assert.ok(!('held' in C.fishGen(F, C.fishPhotos({}, game, null), {}).gen['f:A']));
+  assert.ok(!('held' in C.treeGen(F, C.treePhotos({}, game, null), {}).gen['f:A']));
 });
 
-// The app's units as app.js fishBuild makes them on the real files: fishGen over fishPhotos with the set, fishGenera,
+// The app's units as app.js treeBuild makes them on the real files: treeGen over treePhotos with the set, treeGenera,
 // nothing more.
 let APP = null;
 function appUnits() {
@@ -94,27 +94,27 @@ function appUnits() {
     ctx = {
       DOM: {EX: 0.9},
       easyCover: C.easyCover,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights
     };
   vm.createContext(ctx);
   vm.runInContext(
-    cut(read('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    cut(read('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
   const cur = C.treeCur(S, Fs[3]),
-    gm = C.fishGameRead(Fs[2]).photos,
+    gm = C.treeGameRead(Fs[2]).photos,
     H = json('fish-holdout.json'),
-    held = C.fishHeld(H, gm, cur),
-    build = h => ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur, h), Fs[1].sheet, C.unitRankOf(S)), Fs[0]);
+    held = C.treeHeld(H, gm, cur),
+    build = h => ctx.treeGenera(C.treeGen(Fs[0], C.treePhotos(Fs[1].photos, gm, cur, h), Fs[1].sheet, C.unitRankOf(S)), Fs[0]);
   return (APP = {X: build(held), X0: build(undefined), held, H, cur, gm});
 }
 
 test('the real set: no unit shows a held-out photo; each unit’s photos are its views and its held list, as before', () => {
   const {X, X0, held, H} = appUnits(),
-    isHeld = p => held.has(p.sp + ' ' + C.fishObs(p));
+    isHeld = p => held.has(p.sp + ' ' + C.treeObs(p));
   assert.ok(held.size > 1000 && held.size <= Object.values(H.held).flat().length, 'the set: ' + held.size);
   let nh = 0;
   Object.values(X.gen).forEach(g => {
@@ -143,22 +143,22 @@ test('Pierre’s ★ covers and featured photos stay practice, whatever the file
       Object.values(G)
         .flatMap(k => (k ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
         .filter(Boolean)
-        .map(C.fishPid)
+        .map(C.treePid)
     ),
     inPlay = Object.values(gm)
       .flat()
-      .filter(p => picks.has(C.fishPid(p.f)));
+      .filter(p => picks.has(C.treePid(p.f)));
   const held = new Set(
     Object.values(X.gen)
       .flatMap(g => g.held || [])
-      .map(p => C.fishObs(p))
+      .map(p => C.treeObs(p))
   );
-  inPlay.forEach(p => assert.ok(!held.has(C.fishObs(p)), p.f + ' held out'));
+  inPlay.forEach(p => assert.ok(!held.has(C.treeObs(p)), p.f + ' held out'));
   // and a pick in the file is taken out of the set
   const one = inPlay[0];
   if (one) {
-    const H = {held: {[one.sp]: [C.fishObs(one)]}};
-    assert.strictEqual(C.fishHeld(H, gm, cur).size, 0);
+    const H = {held: {[one.sp]: [C.treeObs(one)]}};
+    assert.strictEqual(C.treeHeld(H, gm, cur).size, 0);
   }
 });
 
@@ -301,8 +301,8 @@ test('the app loads the set for the fish only, with Home’s files, and builds i
     sw = read('sw.js');
   assert.match(app, /ho: \(\) => json\('fish-holdout\.json\?v=1'\)/);
   assert.strictEqual((app.match(/json\('fish-holdout\.json/g) || []).length, 1, 'the fish’s files only (the sea slugs have none)');
-  assert.match(app, /held = fishHeld\(ho, /);
-  assert.match(app, /fishCurate\(fishGenera\(fishGen\(f, fishPhotos\(ph\.photos, gm\.photos, C, held\)/);
+  assert.match(app, /held = treeHeld\(ho, /);
+  assert.match(app, /treeCurate\(treeGenera\(treeGen\(f, treePhotos\(ph\.photos, gm\.photos, C, held\)/);
   assert.ok(sw.includes("'fish-holdout.json?v=1'"), 'offline with the shell');
   // model.js reads both lists for the unit's difficulty and the exam (the variant groups the sheet's replay reads).
   const model = read('model.js');

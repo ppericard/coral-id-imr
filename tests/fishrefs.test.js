@@ -185,7 +185,7 @@ test('tools/fish_refs.json: no ND licence in play or listed; a photo left out pe
 });
 
 // The genera the game has (the scientific genera of circles 2 and 3 are units too; core.js
-// fishGenSets): every genus of a family in play with species of a circle, whatever its circle, never a surprise card's
+// treeGenSets): every genus of a family in play with species of a circle, whatever its circle, never a surprise card's
 // (wink) family's, read under the content editor's circles in force.
 const FISH = `
 F = {"families": [{"id": "f:A", "circle": 1, "genera": ["g:Alpha"]}, {"id": "f:B", "circle": 3, "genera": ["g:Beta", "g:Gamma"]},

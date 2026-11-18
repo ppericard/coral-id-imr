@@ -29,7 +29,7 @@ Free-text answers: `model.js` `TYPED`, `typedP`, `examTyped`; `quiz.js` `typeFor
   genus's scientific name." / "“Damselfishes” is a family: this question needs a genus's scientific name.", the same
   whatever the photo's unit, never for a scientific name (`tests/typedrej.test.js`, `tests/fish.smoke.js`).
 - **Fish names** ([FISH_PATH.md](../FISH_PATH.md) "Typed family names"): every name also in the other number (`core.js`
-  `typeForms`); the names of the name index (`fishNameIndex`, passed by `app.js` `UNITS` fish `names`; "The name index"
+  `typeForms`); the names of the name index (`treeNameIndex`, passed by `app.js` `UNITS` fish `names`; "The name index"
   in [fish.md](fish.md)) read as the family they lift to; a name turned off reads as `{known}` (no unit, a line saying
   so; at a genus question, the common-name nudge); a name several units share, typed exactly, reads as `{shared}`
   (`quiz.js` `typeUnit`: right on any of them, else no unit given, so it is scored as a miss on the photo's unit only,
@@ -89,9 +89,9 @@ know"; `quiz.js` `fbBody`, `fbLine`, `pairText`, `pairLine`; styles `.fb.fbs`, `
   `lk` (which the line labels "IMR"): the coral slate pairs' in `data.json` `ap` and `apsrc` on each slate record
   (Millepora's in `x.gen`), written by `tools/apply_coral_apart.py` from the hand-kept `tools/coral_apart.json` (its
   `none` holds the pairs left with the first tip, and why); the fish's in `fish.json` `apart` (the undeclared fish
-  pairs, read by `app.js` `fishGenera`; never a look-alike: `look` and the draw do not read it); the sea slugs' declared
+  pairs, read by `app.js` `treeGenera`; never a look-alike: `look` and the draw do not read it); the sea slugs' declared
   genus pairs' in `tools/seaslug_cues.json` `apart` (`apartNone` the rest), laid by `tools/seaslug_cues.py` `apart_of`
-  on `seaslug.json` genera `apart` and `apsrc` and read by `app.js` `fishGenera` as the genus's `ap` and `apsrc`. A side
+  on `seaslug.json` genera `apart` and `apsrc` and read by `app.js` `treeGenera` as the genus's `ap` and `apsrc`. A side
   may be missing when no source gives the other unit's feature; each side names and describes its own unit.
 - Tests: `tests/tellapart.test.js` (on the real files), `tests/booktext.test.js` (the coral `ap` lines too),
   `tests/fbsheet.test.js`; the smoke part `names` (`tests/pages.smoke.js` `namesCheck`).

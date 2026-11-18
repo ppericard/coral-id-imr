@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
+// The fish scientific genera (app.js treeGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
 // everyone once a family is at Advanced, a family's genera from its Advanced; for a player at IMR, the genera the IMR
 // course names alone come without the offer from their family's Open Water, Naso only of the surgeonfishes; a photo of
 // another genus keeps its family as the answer.
@@ -17,27 +17,27 @@ const F = json('fish.json'),
   PH = json('fish-photos.json'),
   APP = src('app.js');
 
-// fishGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
+// treeGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
 // core.js, as the app has it (the card photo, the fish score's tree, the species units)
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
-  fishGenSets: C.fishGenSets,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
 vm.runInContext(
   [
     block(src('model.js'), 'const LV_AT = ', '\n', {through: 1, file: 'model.js'}),
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(APP, 'function sciOpen(L, score, met, imr, hand) {', '\n}\n', {through: 1, file: 'app.js'}),
-    'this.fishGenera = fishGenera; this.sciOpen = sciOpen; this.LV_AT = LV_AT;'
+    'this.treeGenera = treeGenera; this.sciOpen = sciOpen; this.LV_AT = LV_AT;'
   ].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, C.fishGameRead(json('fish-game.json')).photos, null)), F); // the photos in play
+const X = ctx.treeGenera(C.treeGen(F, C.treePhotos(PH.photos, C.treeGameRead(json('fish-game.json')).photos, null)), F); // the photos in play
 ctx.GX = n => X.gen[n];
 const fam = n => X.gen[n].parent,
   // scores: family -> score; met: the genera already met
@@ -206,7 +206,7 @@ test('Q238: the IMR families first for anyone who ever answered imr (openPick re
   assert.ok(pick.includes('if (imrSaid()) {') && !pick.includes("c === 'imr'"));
 });
 
-// The genera of circles 2 and 3 (docs/FISH_PATH.md "Levels"): every circle's genera (core.js fishGenSets), each as
+// The genera of circles 2 and 3 (docs/FISH_PATH.md "Levels"): every circle's genera (core.js treeGenSets), each as
 // circle 1's: in
 // its family's circle, its sibling genera as look-alikes, its family's line, opened at its family's Advanced, counted in
 // the score's tree; a surprise card's genus none.
@@ -254,9 +254,9 @@ test('every circle: the genera of circles 2 and 3 are units as circle 1’s are'
 // generaOn, GENERA_SHEET); before, circle 1's alone; every one where sync.js is not loaded.
 test('the gate: the genera of circles 2 and 3 from the sheet that replays them (rule D4)', () => {
   const now = on => {
-    const c = {FISH: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
+    const c = {TREEU: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
     vm.createContext(c);
-    vm.runInContext(block(APP, 'const sciNow = ', '\n', {through: 1, file: 'app.js'}).replace('const sciNow', 'this.sciNow'), c);
+    vm.runInContext(block(APP, 'const sciNow = ', ': [];\n', {through: 1, file: 'app.js'}).replace('const sciNow', 'this.sciNow'), c);
     return plain(c.sciNow());
   };
   assert.deepStrictEqual(now(true), plain(X.sci));

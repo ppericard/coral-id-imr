@@ -17,7 +17,7 @@ const {loadCodeGs} = require('./gas.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const CORAL = C.subjectOf('coral'),
-  FISH = C.subjectOf('fish'),
+  TREEU = C.subjectOf('fish'),
   SEA = C.subjectOf('seaslug');
 // The sheet's checks on an id (Code.gs logAnswers_ ID, the 20 characters it keeps) and on a content version (CV).
 const ID = /^[a-z0-9]{1,20}$/,
@@ -129,20 +129,20 @@ const FILES = ['a1b2c3d4e5', 'f0f0f0f0f0', '0123456789', 'h1x2'];
 const cv = (S, cur = CUR(), files = FILES, st = '') => C.contentVersion(S, cur, files, st);
 
 test('core.js contentVersion: a letter first and 12 characters at most, the same for the same content, per subject', () => {
-  for (const S of [CORAL, FISH, SEA]) {
+  for (const S of [CORAL, TREEU, SEA]) {
     assert.match(cv(S), CVRE, S.id);
     assert.ok(cv(S).length <= 12);
     assert.strictEqual(cv(S), cv(S), 'deterministic');
   }
   // Each subject its own (the same files and curation, another part of it).
-  assert.strictEqual(new Set([cv(CORAL), cv(FISH), cv(SEA)]).size, 3);
+  assert.strictEqual(new Set([cv(CORAL), cv(TREEU), cv(SEA)]).size, 3);
   // Nothing at all yet: still a version, the sheet's form.
   assert.match(C.contentVersion(CORAL, null, [], ''), CVRE);
-  assert.match(C.contentVersion(FISH, undefined, [null, undefined, ''], undefined), CVRE);
+  assert.match(C.contentVersion(TREEU, undefined, [null, undefined, ''], undefined), CVRE);
 });
 
 test('core.js contentVersion: it changes whenever a data file, the subject’s curation or the structure in force does', () => {
-  for (const S of [CORAL, FISH, SEA]) {
+  for (const S of [CORAL, TREEU, SEA]) {
     const base = cv(S),
       k = S.admin.cur;
     // A data file changed (its deploy hash), one more or one fewer, or the same files in another order.
@@ -158,7 +158,7 @@ test('core.js contentVersion: it changes whenever a data file, the subject’s c
     if (k) c1[k].add.new1 = 's002';
     else c1.quality['acropora-1'] = 2;
     assert.notStrictEqual(cv(S, c1), base, S.id);
-    // The exclusions every subject reads (CUR_SHARED: fishGone, fishPhotos read the root's exclude).
+    // The exclusions every subject reads (CUR_SHARED: treeGone, treePhotos read the root's exclude).
     const c2 = CUR();
     c2.exclude['fi9'] = 'excluded';
     assert.notStrictEqual(cv(S, c2), base, S.id);
@@ -172,17 +172,17 @@ test('core.js contentVersion: another subject’s curation leaves a subject’s 
   f.fish.seen.fi6 = 1;
   assert.strictEqual(cv(CORAL, f), cv(CORAL));
   assert.strictEqual(cv(SEA, f), cv(SEA));
-  assert.notStrictEqual(cv(FISH, f), cv(FISH));
+  assert.notStrictEqual(cv(TREEU, f), cv(TREEU));
   // The corals' own choices (quality, covers, crops: the root): the tree subjects' versions stay.
   const c = CUR();
   c.quality['acropora-9'] = 1;
   c.genera.Porites = {cover: 'porites-1'};
   c.crop = {'porites-1': [0, 0, 1, 1]};
-  assert.strictEqual(cv(FISH, c), cv(FISH));
+  assert.strictEqual(cv(TREEU, c), cv(TREEU));
   assert.strictEqual(cv(SEA, c), cv(SEA));
   assert.notStrictEqual(cv(CORAL, c), cv(CORAL));
   // The curation's parts as curPart takes them.
-  assert.deepStrictEqual(Object.keys(C.curPart(FISH, CUR())).sort(), ['exclude', 'fish']);
+  assert.deepStrictEqual(Object.keys(C.curPart(TREEU, CUR())).sort(), ['exclude', 'fish']);
   assert.deepStrictEqual(Object.keys(C.curPart(SEA, CUR())).sort(), ['exclude', 'seaslug']);
   assert.deepStrictEqual(Object.keys(C.curPart(CORAL, CUR())).sort(), ['content', 'exclude', 'genera', 'quality', 'v']);
   assert.strictEqual(C.curPart(CORAL, null), null);
@@ -192,16 +192,16 @@ test('core.js contentVersion: another subject’s curation leaves a subject’s 
 test('core.js contentVersion: on the real curation, each subject’s version moves only with its own part', () => {
   const cur = JSON.parse(read('curation.json')),
     v = S => cv(S, cur);
-  for (const S of [CORAL, FISH, SEA]) assert.match(v(S), CVRE);
-  const fish0 = v(FISH),
+  for (const S of [CORAL, TREEU, SEA]) assert.match(v(S), CVRE);
+  const fish0 = v(TREEU),
     coral0 = v(CORAL);
   cur.fish.seen = {...cur.fish.seen, zz9: 1};
-  assert.notStrictEqual(v(FISH), fish0);
+  assert.notStrictEqual(v(TREEU), fish0);
   assert.strictEqual(v(CORAL), coral0);
-  // The only root key the tree subjects read is the exclusions (core.js CUR_SHARED): fishGone and fishPhotos read
+  // The only root key the tree subjects read is the exclusions (core.js CUR_SHARED): treeGone and treePhotos read
   // cur.exclude, and no other key of the root (the tree engine reads its own part, cur.fish, through treeCur).
   const src = read('core.js'),
-    tree = block(src, 'const fishGone = (cur, F = (cur && cur.fish) || {}) =>', '// mine: Pierre');
+    tree = block(src, 'const treeGone = (cur, F = (cur && cur.fish) || {}) =>', '// mine: Pierre');
   assert.deepStrictEqual([...new Set(tree.match(/\bcur && cur\.(\w+)/g))].sort(), ['cur && cur.exclude', 'cur && cur.fish']);
 });
 
@@ -217,7 +217,7 @@ function appVer(extra = {}) {
   return Object.assign(ctx.X, {ctx});
 }
 const resp = (url, j) => ({ok: true, url, json: () => Promise.resolve(j)});
-// Inputs as build and fishBuild keep them on the units they make (not enumerable).
+// Inputs as build and treeBuild keep them on the units they make (not enumerable).
 const made = (o, cvIn) => Object.defineProperty(o, 'cvIn', {value: {v: '', ...cvIn}});
 
 test('app.js fileVer: a file read with ?v= has that version, a copy by spread too; one without, a hash of its content made once', async () => {
@@ -227,9 +227,9 @@ test('app.js fileVer: a file read with ?v= has that version, a copy by spread to
   // Out of sight: no JSON, key list or structured clone holds it.
   assert.deepStrictEqual(Object.keys(d), ['gen']);
   assert.strictEqual(JSON.stringify(d), '{"gen":{}}');
-  // A copy by spread keeps it (fish-game.json through core.js fishGameRead).
+  // A copy by spread keeps it (fish-game.json through core.js treeGameRead).
   assert.strictEqual(X.fileVer({...d, photos: {}}), '0123abcdef');
-  assert.strictEqual(X.fileVer(C.fishGameRead({...d, photos: {}})), '0123abcdef');
+  assert.strictEqual(X.fileVer(C.treeGameRead({...d, photos: {}})), '0123abcdef');
   // A copy never deployed: its frozen number.
   assert.strictEqual(X.fileVer(await X.okJson(resp('/fish.json?v=6', {a: 1}))), '6');
   // No ?v= (the sea slugs' files): a hash of its content, the same for the same content, another for another.
@@ -256,12 +256,12 @@ test('app.js contentVer: the corals’ from DATA, a tree subject’s from its ow
       TREE_OF: {},
       TREE_AT: 'fish',
       DATA: null,
-      FISH: null,
+      TREEU: null,
       contentVersion: (...a) => (calls++, C.contentVersion(...a))
     }),
     G = X.ctx;
   assert.strictEqual(X.contentVer(CORAL), '', 'no units made yet');
-  assert.strictEqual(X.contentVer(FISH), '');
+  assert.strictEqual(X.contentVer(TREEU), '');
   assert.strictEqual(X.contentVer(undefined), '');
   const raw = await X.okJson(resp('/data.json?v=aaaaaaaaaa', {gen: {}})),
     fj = await X.okJson(resp('/fish.json?v=bbbbbbbbbb', {families: []})),
@@ -269,9 +269,9 @@ test('app.js contentVer: the corals’ from DATA, a tree subject’s from its ow
     cur = CUR(),
     files = [raw, {gf: {}}, {q: 1}, {}];
   G.DATA = made({gen: {}}, {S: CORAL, cur, st: '', files});
-  G.FISH = made({gen: {}}, {S: FISH, cur, st: 'st1', files: [fj, {photos: {}}, {}, {photos: {}}]});
+  G.TREEU = made({gen: {}}, {S: TREEU, cur, st: 'st1', files: [fj, {photos: {}}, {}, {photos: {}}]});
   const c = X.contentVer(CORAL),
-    f = X.contentVer(FISH);
+    f = X.contentVer(TREEU);
   assert.match(c, CVRE);
   assert.match(f, CVRE);
   assert.notStrictEqual(c, f);
@@ -281,19 +281,19 @@ test('app.js contentVer: the corals’ from DATA, a tree subject’s from its ow
   assert.strictEqual(X.fileVer(raw), 'aaaaaaaaaa');
   // Its first answer makes it; the next ones read it.
   X.contentVer(CORAL);
-  X.contentVer(FISH);
+  X.contentVer(TREEU);
   assert.strictEqual(calls, 2);
   // The fish's game photos came: new units, another version; the corals' stay.
-  G.FISH = made({gen: {}}, {S: FISH, cur, st: 'st1', files: [fj, {photos: {}}, {}, C.fishGameRead(gm)]});
-  assert.notStrictEqual(X.contentVer(FISH), f);
+  G.TREEU = made({gen: {}}, {S: TREEU, cur, st: 'st1', files: [fj, {photos: {}}, {}, C.treeGameRead(gm)]});
+  assert.notStrictEqual(X.contentVer(TREEU), f);
   assert.strictEqual(X.contentVer(CORAL), c);
   // A tree subject not in force: its own units' (TREE_OF), never the units of the one in force.
-  G.TREE_OF.seaslug = {FISH: made({gen: {}}, {S: SEA, cur, st: '', files: [{a: 1}, {photos: {}}, {}, {photos: {}}]})};
+  G.TREE_OF.seaslug = {TREEU: made({gen: {}}, {S: SEA, cur, st: '', files: [{a: 1}, {photos: {}}, {}, {photos: {}}]})};
   const sv = X.contentVer(SEA);
   assert.match(sv, CVRE);
-  assert.notStrictEqual(sv, X.contentVer(FISH));
+  assert.notStrictEqual(sv, X.contentVer(TREEU));
   G.TREE_AT = 'seaslug';
-  G.FISH = G.TREE_OF.seaslug.FISH;
+  G.TREEU = G.TREE_OF.seaslug.TREEU;
   assert.strictEqual(X.contentVer(SEA), sv);
   // A failure never stops the answer: no version.
   const Y = appVer({
@@ -306,7 +306,7 @@ test('app.js contentVer: the corals’ from DATA, a tree subject’s from its ow
   assert.strictEqual(Y.contentVer(CORAL), '');
 });
 
-test('app.js: build and fishBuild keep what their units were made from, out of sight; every data file reaches okJson', () => {
+test('app.js: build and treeBuild keep what their units were made from, out of sight; every data file reaches okJson', () => {
   const src = read('app.js'),
     flat = x => x.replace(/\s+/g, ' ');
   assert.ok(
@@ -316,14 +316,14 @@ test('app.js: build and fishBuild keep what their units were made from, out of s
   );
   assert.ok(
     flat(src).includes(
-      "Object.defineProperty(FISH, 'cvIn', { value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''}, configurable: true });"
+      "Object.defineProperty(TREEU, 'cvIn', { value: {S, cur: CUR, st: TREEST, files: [TREERAW.f, TREERAW.ph, TREERAW.ho, TREERAW.gm], v: ''}, configurable: true });"
     )
   );
-  // Before DATA is set and after FISH is made: what contentVer reads is the units in force.
+  // Before DATA is set and after TREEU is made: what contentVer reads is the units in force.
   const b = block(src, 'function build() {', '\n}\n', {file: 'app.js'});
   assert.ok(b.indexOf("Object.defineProperty(d, 'cvIn'") < b.indexOf('DATA = d;'));
-  const fb = block(src, 'const fishBuild = () => {', '\n};\n', {file: 'app.js'});
-  assert.ok(fb.indexOf('FISH = fishCurate(') < fb.indexOf("Object.defineProperty(FISH, 'cvIn'"));
+  const fb = block(src, 'const treeBuild = () => {', '\n};\n', {file: 'app.js'});
+  assert.ok(fb.indexOf('TREEU = treeCurate(') < fb.indexOf("Object.defineProperty(TREEU, 'cvIn'"));
   assert.ok(/getR\('data\.json\?v=\d+'\)[\s\S]{0,200}\.then\(okJson\)/.test(src));
   assert.ok(/getR\('forms\.json\?v=\d+'\)\s*\.then\(okJson\)/.test(src));
   assert.ok(/const json = u =>\s*getR\(u\)\s*\.then\(okJson\)/.test(src));

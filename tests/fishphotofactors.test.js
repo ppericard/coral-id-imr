@@ -35,7 +35,7 @@ test('photoMetaFish: ease, phase, view and whole from the game records; a photo 
   });
   assert.deepStrictEqual(A.photoMetaFish(null), {});
   // the real file: every photo the game plays with an ease
-  const G = C.fishGameRead(JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8'))),
+  const G = C.treeGameRead(JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8'))),
     R = A.photoMetaFish(G),
     n = Object.values(G.photos)
       .flat()
@@ -140,7 +140,7 @@ test('the fish and the sea slugs read their judged features: core.js SUBJECTS, t
   });
   const tool = fs.readFileSync(path.join(ROOT, 'tools/analyses.js'), 'utf8');
   // each from its own game file (SUBJECTS admin files gm), the tool and the admin's Recompute here alike
-  assert.match(tool, /k === 'judged'\s*\? \{ph: \{\}, fph: A\.photoMetaFish\(C\.fishGameRead\(rd\(S\.admin\.files\.gm\)\)\)\}/);
+  assert.match(tool, /k === 'judged'\s*\? \{ph: \{\}, fph: A\.photoMetaFish\(C\.treeGameRead\(rd\(S\.admin\.files\.gm\)\)\)\}/);
   assert.match(fs.readFileSync(path.join(ROOT, 'admin-analyses.js'), 'utf8'), /fetch\(S\.admin\.files\.gm, /);
   assert.strictEqual(C.subjectOf('fish').admin.files.gm, 'fish-game.json');
   // 15: the rank asked told apart (tests/analysis-ranks.test.js)

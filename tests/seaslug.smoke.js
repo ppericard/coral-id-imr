@@ -6,7 +6,7 @@
 // 2. the admin opens the sea-slug quiz: 4 genera by their scientific names (its units from the start, core.js SUBJECTS
 //    unitRank), a photo from the game file (iNaturalist, stubbed here: nothing leaves the machine),
 //    answers right and wrong, the photo's species named under the verdict; 30 questions, every one on a circle-1 genus
-//    (circle 2 opens once every circle-1 genus has been asked: app.js fishGate), each logged at the genus, no family
+//    (circle 2 opens once every circle-1 genus has been asked: app.js treeGate), each logged at the genus, no family
 //    asked and no opt-in genus offer; the genera page in blocks of their families, a family sheet, a genus sheet, Home's
 //    doors and the key page in the sea slugs' words; the switch to the fish and back swaps the tree in force (app.js
 //    treeAt), each subject's progress kept apart; their English names (seaslug.json en) never in a
@@ -120,7 +120,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await p.goto(base + '#seaslug/practice/quiz');
     await ready(p);
     await qa.ready(p);
-    // Its units: the genera (core.js fishGen unit 'genus'); circle 1, a genus's best species' circle (seaslug.json).
+    // Its units: the genera (core.js treeGen unit 'genus'); circle 1, a genus's best species' circle (seaslug.json).
     const fams = new Set(F.families.map(f => f.id)),
       gens = new Set(F.genera.map(g => g.id)),
       c1 = new Set(F.genera.filter(g => g.circle === 1).map(g => g.id));
@@ -179,7 +179,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       `2: the verdict does not give the genus's English name: "${v.verdict}"`
     );
     // More answers, right and wrong (30 in all), every one on a circle-1 genus: circle 2 waits until every circle-1 genus
-    // has been asked (fishGate), more than 30 answers away; no family asked, no opt-in genus offer (no SETS).
+    // has been asked (treeGate), more than 30 answers away; no family asked, no opt-in genus offer (no SETS).
     const seen = [q.a.t];
     for (let i = 0; i < 29; i++) {
       // Next, and the first-meeting cards of the genera that open, closed as a player's Got it would
@@ -294,7 +294,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       ['g:Goniobranchus', 'Hexabranchus', /iNaturalist identifications/],
       ['g:Hexabranchus', 'Hypselodoris', /Sea Slug Forum message 'Juvenile Hexabranchus from Philippines'/]
     ]) {
-      await p.goto(base + (await p.evaluate(x => hr('g-' + fishGo(x)), g)));
+      await p.goto(base + (await p.evaluate(x => hr('g-' + treeGo(x)), g)));
       const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .hubsec .lt')].map(a => a.innerText.replace(/\s+/g, ' '))),
         ok = await p
           .waitForFunction(
@@ -363,9 +363,9 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await p.waitForFunction(() => /Sea slug ID key/.test(document.querySelector('#view').innerText), null, {timeout: 15000});
     // The switch to the fish and back: each tree in force in turn.
     await p.evaluate(() => setSubject(SUBJECTS.find(S => S.hash === 'fish/').id));
-    await p.waitForFunction(() => TREE_AT === SUBJ.id && FISH && FISH.gen['f:Damselfishes'], null, {timeout: 30000});
+    await p.waitForFunction(() => TREE_AT === SUBJ.id && TREEU && TREEU.gen['f:Damselfishes'], null, {timeout: 30000});
     await p.evaluate(() => setSubject(SUBJECTS.find(S => S.hash === 'seaslug/').id));
-    await p.waitForFunction(() => TREE_AT === SUBJ.id && FISH && FISH.gen['f:Chromodorididae'] && !FISH.gen['f:Damselfishes'], null, {
+    await p.waitForFunction(() => TREE_AT === SUBJ.id && TREEU && TREEU.gen['f:Chromodorididae'] && !TREEU.gen['f:Damselfishes'], null, {
       timeout: 30000
     });
     // Its leaderboard (core.js SUBJECTS seaslug board, boardSheet): asked as &s=seaslug and shown only

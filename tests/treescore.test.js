@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The fish global score (its formula, the commonness weights and the square-root display; docs/FISH_PATH.md "My
-// progress (fish)"): core.js rankWeights, treeScore and fishScoreTree, and the
+// progress (fish)"): core.js rankWeights, treeScore and treeScoreTree, and the
 // subject's constants (SUBJECTS fish score).
 const test = require('node:test');
 const assert = require('node:assert');
@@ -134,18 +134,18 @@ test('treeScore: a species packed with others of its genus scores the same', () 
   assert.deepStrictEqual(C.treeScore(P, U, K), C.treeScore(P, Pk, K));
 });
 
-test('fishScoreTree on fish.json: every family of the slate, every game species once, weights by commonness', () => {
+test('treeScoreTree on fish.json: every family of the slate, every game species once, weights by commonness', () => {
   const gen = {},
     c = {1: [], 2: [], 3: []};
-  // the slate as core.js fishGen makes it: every family but the surprise cards' (winks, never asked)
+  // the slate as core.js treeGen makes it: every family but the surprise cards' (winks, never asked)
   F.families.forEach(f => ((gen[f.id] = {circle: f.circle}), f.wink || c[f.circle].push(f.id)));
-  // the scientific genera of every circle (core.js fishGenSets), never a surprise card's
+  // the scientific genera of every circle (core.js treeGenSets), never a surprise card's
   F.genera.forEach(g => {
     const f = F.families.find(x => x.id === g.family);
     if (f && !f.wink) gen[g.id] = {rank: 'genus'};
   });
   const X = {c1: c[1], c2: c[2], c3: c[3], gen},
-    Tr = C.fishScoreTree(X, F),
+    Tr = C.treeScoreTree(X, F),
     sp = new Map(F.species.map(s => [s.id, s])),
     game = F.families.filter(f => !f.wink).flatMap(f => f.species.filter(id => sp.has(id))),
     w = C.rankWeights(game.map(id => (sp.get(id).present || {}).dauinU || 0)),

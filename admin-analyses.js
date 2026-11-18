@@ -2560,7 +2560,7 @@ function anRecompute() {
   ]).then(go);
 }
 // A tree subject's game file (core.js SUBJECTS admin files gm: fish-game.json, seaslug-game.json), its records whole
-// (core.js fishGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
+// (core.js treeGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
 const ANGAME = {},
   ANGAMEP = {};
 const anGame = S =>
@@ -2571,7 +2571,7 @@ const anGame = S =>
         fetch(S.admin.files.gm, {cache: 'no-cache'})
           .then(r => (r.ok ? r.json() : {}))
           .catch(() => ({}))
-          .then(G => (ANGAME[S.id] = fishGameRead(G) || {})));
+          .then(G => (ANGAME[S.id] = treeGameRead(G) || {})));
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
 addEventListener('resize', () => {
