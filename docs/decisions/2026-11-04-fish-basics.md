@@ -1,6 +1,6 @@
 # Fish basics: the fish twin of Coral basics, on the same engine, from the IMR fish presentation
 
-Date: 2026-11-04. PR: the one that built it. Rules or docs touched: C1, C2, P1, P5, S1, S3, U2; docs/FISH_PATH.md "Fish basics",
+Date: 2026-11-04. PR: #1108. Rules or docs touched: C1, C2, P1, P5, S1, S3, U2; docs/FISH_PATH.md "Fish basics",
 docs/ARCHITECTURE.md "Lab prototypes".
 
 ## Context
@@ -20,8 +20,14 @@ presentation (Lecture 10) holds the content: anatomy, tail shapes, markings and 
   subject, six steps (shape, groups, fins, tails, markings, one feature), seven body-shape silhouettes named from the presentation's
   groups by shape, drawings for everything taught and the families' covers for the groups, and no achievement for it yet (its name
   and tier are his).
-- Where the deck's slides are pictures (tail shapes, markings), the connector returned no text: the words its text uses are drawn,
-  and the two slides are to be checked against the drawings (ROADMAP "Fish basics, the rest").
+- Where the deck's slides are pictures (tail shapes, markings), the connector returned no text: the words its text uses are drawn.
+  Checked on 2026-11-18 once Pierre converted the decks to Google Slides (Lecture 10, light version, slides 5 and 6): the tails
+  slide ("Tails of fishes", Koaw.org) shows pointed, rounded, truncate (square), emarginate (notched), forked, deeply forked and
+  lunate; the markings slide shows stripes, bar, blotches, saddle blotch, band, spots, dots and maxillary streak. The six tails
+  and six markings taught are all in the deck: "heart-shaped" is the deck's own word for *Dascyllus* (slide 8), the eye band
+  and the false eye are in its text. The seven body shapes are the deck's groups by shape (its other groups, "swim with
+  pectoral fins" and "reddish / big eyes", are not shapes). Step 6 ("one feature to look for") is kept; dropping it is a
+  one-line change if Pierre prefers.
 
 ## Consequences
 
