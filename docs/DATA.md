@@ -1,7 +1,11 @@
 # Data files
 
 What each data file holds, who writes it and who reads it. The root of the repository serves the app as it is, so its
-JSON files are the data the site loads. The long description of each is in [ARCHITECTURE.md](ARCHITECTURE.md) "Data files".
+JSON files are the data the site loads. This is the short table; the details behind each row, field by field, are in
+[spec/data.md](spec/data.md) (the corals, `curation.json`, the suggestion files, presence, rights and licences, the
+instance), [spec/fish.md](spec/fish.md) (`fish.json`), [spec/fish-photos.md](spec/fish-photos.md) (the fish photo
+files) and [spec/content.md](spec/content.md) (the content editor's edits), mapped in [ARCHITECTURE.md](ARCHITECTURE.md)
+"Data files".
 
 Three writers exist besides a pull request:
 

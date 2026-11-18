@@ -49,13 +49,13 @@ ROOT = bf.ROOT
 OUT = ROOT / "fish-photos.json"
 bf.CACHE = ROOT / "tools" / ".cache" / "fish-photos.json"
 DAUIN = (9.19, 123.26)
-# Pierre's licence rules (2026-11-03, the fish photo lists): never share-alike, never ND (a crop is a derivative).
+# The fish licence rules: never share-alike, never ND (a crop is a derivative).
 LIC1, LIC2 = "cc0,cc-by", "cc-by-nc"
-# The species that may keep a sheet-only photo (Pierre, 2026-11-05; see the top): fish.json species ids, the circle-1
-# species with no game photo nor candidate. Chromis agilis (iNaturalist: Pycnochromis agilis), Siganus margaritiferus,
-# Pomacentrus armillatus (filed under P. opisthostigma), Halichoeres chlorocephalus, H. marginatus. Asked at each run; a
-# species that has a photo in play since (H. chlorocephalus: FishBase's, 2026-11-15) loses its sheet-only photo at the next
-# Candidate photos run (tools/fish_game.py sheet_of). Add an id to try another.
+# The species that may keep a sheet-only photo (see the top): fish.json species ids, the circle-1 species with no game
+# photo nor candidate. Chromis agilis (iNaturalist: Pycnochromis agilis), Siganus margaritiferus, Pomacentrus
+# armillatus (filed under P. opisthostigma), Halichoeres chlorocephalus, H. marginatus. Asked at each run; a species
+# that has a photo in play (H. chlorocephalus: FishBase's) loses its sheet-only photo at the next Candidate photos run
+# (tools/fish_game.py sheet_of). Add an id to try another.
 SHEET = ["s088", "s061", "s105", "s238", "s244"]
 
 
@@ -107,7 +107,7 @@ def sheet_pick(taxon, observations):
     for p, src in [(taxon.get("default_photo"), "cover")] + [(tp.get("photo"), "taxon") for tp in taxon.get("taxon_photos") or []]:
         if p and sheet_ok(p, held.get(p.get("id")), inat):
             return p, held[p["id"]], src
-    for o in observations:  # iNaturalist's order, whoever observed (Pierre, 2026-11-06: his own take no priority)
+    for o in observations:  # iNaturalist's order, whoever observed (Pierre's own take no priority)
         for p in o.get("photos") or []:
             if sheet_ok(p, o, inat):
                 return p, o, "obs"
@@ -174,8 +174,8 @@ def sheet(F):
     out = {}
     for s in want:
         mine = [o for o in O if ((o.get("taxon") or {}).get("min_species_taxon_id") or (o.get("taxon") or {}).get("id")) == s["inat"]]
-        # iNaturalist first (the cover, the taxon's photos, the observations), then FishBase (Pierre, 2026-11-05: FishBase
-        # is a fish photo source; the same rules), its main picture first.
+        # iNaturalist first (the cover, the taxon's photos, the observations), then FishBase (a fish photo source, under
+        # the same rules), its main picture first.
         p = sheet_photo(s, T.get(s["inat"]) or {"id": s["inat"]}, mine, names) or sheet_fishbase(s, FB.get(s["id"]))
         if p:
             out[s["id"]] = [p]
