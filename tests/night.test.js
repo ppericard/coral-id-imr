@@ -1,0 +1,101 @@
+'use strict';
+require('./slot.js').testGuard();
+// The night report (Pierre, 2026-11-18: "un bilan chiffré le matin"; his day starts about 05:00 Manila): tools/night.py on
+// saved snapshots (no network), and tools/brief.py --night-due, the once-a-day line of the UserPromptSubmit hook.
+const test = require('node:test'),
+  assert = require('node:assert'),
+  fs = require('fs'),
+  os = require('os'),
+  path = require('path'),
+  {execFileSync, spawnSync} = require('child_process');
+const ROOT = path.join(__dirname, '..');
+
+const py = body =>
+  execFileSync('python3', ['-B', '-c', 'import json,sys; sys.path.insert(0, "tools"); import night\n' + body], {cwd: ROOT, timeout: 10000})
+    .toString()
+    .trim();
+
+test('the night: yesterday 17:30 to today 05:00 Manila, or to now before 05:00', () => {
+  const w = utc =>
+    JSON.parse(
+      py(
+        `from datetime import datetime; print(json.dumps([t.isoformat() for t in night.window(datetime.fromisoformat(${JSON.stringify(utc)}))]))`
+      )
+    );
+  // 2026-11-18 08:00 Manila
+  assert.deepStrictEqual(w('2026-11-18T00:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T05:00:00+08:00']);
+  // 2026-11-18 03:00 Manila: the night so far
+  assert.deepStrictEqual(w('2026-11-17T19:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T03:00:00+08:00']);
+  // 2026-11-18 19:00 Manila: still last night, the coming one is not over
+  assert.deepStrictEqual(w('2026-11-18T11:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T05:00:00+08:00']);
+});
+
+const report = snap => {
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'night-')), 'snap.json');
+  fs.writeFileSync(f, JSON.stringify(snap));
+  const r = spawnSync('python3', [path.join(ROOT, 'tools/night.py'), '--json', f], {encoding: 'utf-8', timeout: 10000});
+  assert.strictEqual(r.status, 0, r.stderr);
+  return r.stdout;
+};
+const NIGHT = {start: '2026-11-17T17:30:00+08:00', end: '2026-11-18T05:00:00+08:00'};
+
+test('a night with work: merged PRs and their agent time, red trains, what is still open and why, the queue', () => {
+  const out = report({
+    ...NIGHT,
+    merged: [
+      {n: 1053, title: 'Staff and cohort boards', agent_min: 50},
+      {n: 1057, title: 'Exam reserve', agent_min: 100},
+      {n: 1060, title: 'Docs', agent_min: null}
+    ],
+    trains: [
+      {branch: 'train/20261117-1200', conclusion: 'success', failed: []},
+      {branch: 'train/20261117-1300', conclusion: 'failure', failed: ['Smokes: failure']}
+    ],
+    opened: [{n: 1061, title: 'Sea slug editor', why: 'needs-pierre, green'}],
+    queue: ['Fish basics (#1108)', 'Sea slug achievements 60-100%'],
+    prs: {1108: 'open, checks running'}
+  });
+  assert.match(out, /^Night Tue 17 Nov 17:30 → Wed 18 Nov 05:00 \(Manila\)/);
+  assert.match(out, /Merged: 3 PRs, 2\.5 h of agent time/);
+  assert.match(out, /#1053 Staff and cohort boards \(50 min\)/);
+  assert.match(out, /#1060 Docs \(agent time not measured\)/);
+  assert.match(out, /Trains: 2 run, 1 red\n {2}train\/20261117-1300: Smokes: failure/);
+  assert.match(out, /Opened and still open: 1\n {2}#1061 Sea slug editor: needs-pierre, green/);
+  assert.match(out, /Night queue: 2 items, 1 started/);
+  assert.match(out, /Fish basics \(#1108\) \[#1108 open, checks running\]/);
+  assert.match(out, /Sea slug achievements 60-100% \[NOT STARTED\]/);
+  assert.doesNotMatch(out, /Nothing merged/);
+});
+
+test('an empty night says so, and a missing queue is named', () => {
+  const out = report({...NIGHT, merged: [], trains: [], opened: [], queue: null, prs: {}});
+  assert.match(out, /Merged: 0 PRs\n/);
+  assert.match(out, /Night queue: none written in docs\/STATUS\.md/);
+  assert.match(out, /⚠ Nothing merged and no PR opened during the night\./);
+});
+
+test('the queue is read from STATUS "## Night queue", "None" meaning empty', () => {
+  const q = s => JSON.parse(py(`print(json.dumps(night.queue(${JSON.stringify(s)})))`));
+  assert.deepStrictEqual(q('# Status\n\n## Night queue\n\n- Fish basics (#1108)\n- Sea slug\n  achievements\n\n## Last stop\n\nx\n'), [
+    'Fish basics (#1108)',
+    'Sea slug achievements'
+  ]);
+  assert.deepStrictEqual(q('## Night queue\n\n- None\n'), []);
+  assert.strictEqual(q('## Now\n\nx\n'), null);
+});
+
+test('brief.py --time --night-due: the night report line once a Manila day, from 05:00 only, offline', () => {
+  const mark = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mark-')), 'day');
+  const env = {...process.env, BRIEF_NIGHT_MARK: mark, HTTPS_PROXY: 'http://127.0.0.1:9', https_proxy: 'http://127.0.0.1:9', GH_TOKEN: ''};
+  const run = (...a) =>
+    execFileSync('python3', [path.join(ROOT, 'tools/brief.py'), '--time', ...a], {env, timeout: 5000})
+      .toString()
+      .trim()
+      .split('\n');
+  assert.strictEqual(run('--night-due', '--at', '04:59').length, 1, 'before 05:00: the night is not over');
+  const first = run('--night-due', '--at', '05:01');
+  assert.strictEqual(first.length, 2);
+  assert.match(first[1], /^Night report due .*python3 tools\/night\.py/);
+  assert.strictEqual(run('--night-due', '--at', '09:00').length, 1, 'once a day');
+  assert.strictEqual(run('--at', '05:01').length, 1, 'without --night-due: the one time line');
+});

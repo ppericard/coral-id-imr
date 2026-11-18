@@ -30,7 +30,7 @@ def out(o):
 m = re.match(r'pulls/(\d+)$', path)
 if m and method == 'GET':
     p = st['prs'][m.group(1)]
-    out({'state': p.get('state', 'open'), 'base': {'ref': 'main'}, 'draft': p.get('draft', False), 'title': p['title'],
+    out({'state': p.get('state', 'open'), 'base': {'ref': 'main'}, 'draft': p.get('draft', False), 'title': p['title'], 'body': p.get('body'),
          'labels': [{'name': l} for l in p.get('labels', [])],
          'head': {'sha': g('rev-parse', 'refs/pull/%s/head' % m.group(1)), 'repo': {'full_name': 'o/r'}}})
 m = re.match(r'commits/(\w+)/check-runs', path)
@@ -120,7 +120,7 @@ const fixture = () => {
       JSON.stringify({prs: Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, {title: 'PR ' + n}])), train_runs: runs('success'), ...o})
     );
   setState();
-  const train = (...a) =>
+  const trainEnv = (more, ...a) =>
     spawnSync('python3', [TRAIN, ...a], {
       cwd: clone,
       encoding: 'utf-8',
@@ -135,9 +135,11 @@ const fixture = () => {
         GIT_AUTHOR_NAME: 'T',
         GIT_AUTHOR_EMAIL: 't@example.com',
         GIT_COMMITTER_NAME: 'T',
-        GIT_COMMITTER_EMAIL: 't@example.com'
+        GIT_COMMITTER_EMAIL: 't@example.com',
+        ...more
       }
     });
+  const train = (...a) => trainEnv({}, ...a);
   const calls = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf-8').trim().split('\n') : []);
   const og = (...a) => execFileSync('git', ['-C', origin, ...a], {encoding: 'utf-8'}).trim();
   const trains = () => og('for-each-ref', '--format=%(refname)', 'refs/heads/train/').split('\n').filter(Boolean);
@@ -168,6 +170,7 @@ const fixture = () => {
     setState,
     runs,
     train,
+    trainEnv,
     calls,
     og,
     trains,
@@ -229,6 +232,59 @@ test('a PR not ready (needs-pierre, a draft, red checks, a sheet changes file) s
     assert.match(r.stdout, /#4: still holds tools\/sync\/changes\/claude-x\.md: assign its sheet VERSION first/);
     assert.match(r.stdout, /#5: not green on its head \w+ \(smoke \(fish\): failure\)/);
     assert.deepStrictEqual(f.trains(), []);
+  } finally {
+    f.done();
+  }
+});
+
+// AGENTS.md "What players will see comes from Pierre" (Pierre, 2026-11-18): from TRAIN_BODY_FROM on, the description is
+// part of the contract. PRs 1-6 stand for PRs past that number here.
+const BODY = (players, choices = 'None') =>
+  `## What and why\n\nX.\n\n## Choices I made (need Pierre)\n\n<!-- a comment -->\n\n${choices}\n\n` +
+  `## Players see or play differently?\n\n<!-- No / Yes -->\n\n${players}\n\n## Tests\n\nRan.\n`;
+
+test('the description: "Choices I made" None, and each change players see quoted from Pierre with its date or marked integrator\'s call', () => {
+  const f = fixture();
+  try {
+    f.setState({
+      prs: {
+        1: {title: 'PR 1', body: BODY('No.')},
+        2: {
+          title: 'PR 2',
+          body: BODY(
+            "Yes:\n- The exam keeps photos for the end (Pierre, 2026-11-17: «Je pensais qu'on gardait des photos pour la fin»).\n- The button turns grey while saving (integrator's call, easy to correct)."
+          )
+        },
+        3: {title: 'PR 3', body: BODY('Yes:\n- Probes slipped into the quiz, as Pierre wanted.')},
+        4: {title: 'PR 4', body: BODY('No', 'The order of the tabs.')},
+        5: {title: 'PR 5', body: BODY('')}
+      }
+    });
+    const env = {TRAIN_BODY_FROM: '1'};
+    const r = f.trainEnv(env, '--dry-run', '1', '2', '3', '4', '5');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.doesNotMatch(r.stdout, /#1:/);
+    assert.doesNotMatch(r.stdout, /#2:/);
+    assert.match(
+      r.stdout,
+      /#3: "Players see" names a change with neither Pierre's words quoted and dated nor "integrator's call": "Probes slipped/
+    );
+    assert.match(r.stdout, /#4: "Choices I made" is not None/);
+    assert.match(r.stdout, /#5: "Players see or play differently\?" is empty/);
+    const good = f.trainEnv(env, '--dry-run', '1', '2');
+    assert.strictEqual(good.status, 0, good.stdout + good.stderr);
+    assert.deepStrictEqual(f.trains(), []);
+  } finally {
+    f.done();
+  }
+});
+
+test('a PR before TRAIN_BODY_FROM keeps the older template: its description is not checked', () => {
+  const f = fixture();
+  try {
+    f.setState({prs: {1: {title: 'PR 1', body: 'An old description, no sections.'}}});
+    const r = f.trainEnv({TRAIN_BODY_FROM: '2'}, '--dry-run', '1');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   } finally {
     f.done();
   }
