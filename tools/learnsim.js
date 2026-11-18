@@ -1259,8 +1259,9 @@ async function run(browser, base, name, seed) {
   await ctx.addInitScript(([st, sv, subj, aid]) => {
     localStorage.setItem('reefid-tour', '"done"');
     // The simulated player's anonymous id, one per profile and seed (simId): their reserve (core.js reserveOf), the same
-    // at every run of that pair, another for another pair, as for real players.
-    localStorage.setItem('reefid-anon-id', aid);
+    // at every run of that pair, another for another pair, as for real players. JSON, as the app's store reads it (a bare
+    // string fails JSON.parse and anonId would make a random one: Codex review #1099).
+    localStorage.setItem('reefid-anon-id', JSON.stringify(aid));
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
     // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js SHEET_FLOOR).
     localStorage.setItem('reefid-sheet-v', String(sv));

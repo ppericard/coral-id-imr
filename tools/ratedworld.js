@@ -81,7 +81,9 @@ const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
 // The fish units as the app builds them (app.js fishBuild without the curation's covers, which change no game photo),
-// every photo in its unit's views: each simulated player's reserve is split out in engine (core.js reserveOf).
+// every photo in its unit's views: each simulated player's reserve is split out in engine (core.js reserveOf). Pierre's
+// ★ covers and featured photos (curation.json fish genera, by fishPid, as app.js fishCurate reads them) stay practice in
+// the app (the cards'): X.picks, given to reserveOf as covers so it leaves them out too (Codex review #1099).
 let XCACHE = null;
 function fishUnits() {
   if (XCACHE) return XCACHE;
@@ -93,7 +95,19 @@ function fishUnits() {
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
     fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  const X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), F);
+  const X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), F),
+    pick = new Set(
+      Object.values((CUR.fish && CUR.fish.genera) || {})
+        .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
+        .filter(Boolean)
+        .map(C.fishPid)
+    );
+  X.picks = Object.fromEntries(
+    [...new Set(Object.values(X.gen).flatMap(g => (g.views.wide || []).filter(p => pick.has(C.fishPid(p.f))).map(p => p.f)))].map((f, i) => [
+      'pick' + i,
+      {f}
+    ])
+  );
   return (XCACHE = X);
 }
 
@@ -150,7 +164,7 @@ function unitsOf(subject) {
       sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
-      covers: X.covers || {},
+      covers: X.picks || {},
       core: X.c1,
       c3: X.c3,
       tree: X.treeSp || X.tree,

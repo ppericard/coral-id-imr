@@ -185,6 +185,18 @@ test('reserveSplit: a coral genus’s views and game lists (applySlots sl), ever
   });
   assert.strictEqual(views.wide.length, 50, 'the lists given are not changed (the rated world shares them)');
   assert.strictEqual(sl.wide.game.length, 50);
+  // Codex review #1099: a photo Pierre keeps on the sheet only (curation use 'ref': in the view, not in the game list)
+  // never reaches the exam through the reserve, and never counts as a game photo.
+  const v2 = {wide: []};
+  for (let i = 0; i < 50; i++) v2.wide.push(col(i, 'wide'));
+  const ref = v2.wide.map(p => ({...p, f: p.f + '-ref'})),
+    g2 = {id: 'Acropora', views: {wide: [...v2.wide, ...ref]}, sl: {wide: {feat: [], game: v2.wide.slice()}}},
+    X2 = {gen: {Acropora: g2}},
+    R2 = C.reserveOf(X2, 'p');
+  C.reserveSplit(X2, R2);
+  assert.strictEqual(C.heldOf(g2, 'wide').length, 15);
+  assert.ok(!C.heldOf(g2).some(p => /-ref$/.test(p.f)), 'no sheet-only photo held for the exam');
+  assert.ok(!g2.views.wide.some(p => R2.has('Acropora ' + C.fishObs(p))), 'the reserved colonies leave the sheet too');
 });
 
 // The real units: the fish (fishGen, app.js fishGenera), the sea slugs (the same tree engine) and the corals (data.json
@@ -401,8 +413,24 @@ test('learnsim and the rated world: the reserved photos get their own simulated 
     seed = src.slice(src.indexOf('const GEN_D = {};'), src.indexOf('PSTAT = ps;'));
   assert.match(seed, /\.\.\.heldAll\(g\)\]\.forEach\(p => \{/);
   assert.match(seed, /GEN_D\[p\.f\] = d;/);
-  assert.match(src, /localStorage\.setItem\('reefid-anon-id', aid\)/);
+  // JSON, as the app's store reads it (Codex review #1099: a bare id was dropped and a random one made)
+  assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\(aid\)\)/);
   assert.match(read('tools/ratedworld.js'), /C\.reserveSplit\(\{gen: G\}, R\)/);
+});
+
+// Codex review #1099: the rated world leaves Pierre's curated ★ covers and featured photos in practice, as the app does.
+test('the rated world: a simulated player reserves no photo of Pierre’s picks; the same id, the same reserve', () => {
+  const RW = require('../tools/ratedworld.js'),
+    U = RW.unitsOf('fish'),
+    picks = new Set(Object.values(U.covers).map(p => p.f)),
+    W = RW.world(U, 1),
+    gens = id => RW.engine(U, W, {seed: 1, id}).G,
+    G = gens('~anon sim strongRA 1'),
+    held = Object.values(G).flatMap(g => C.heldOf(g));
+  assert.ok(picks.size > 0 && held.length > 1000, `${picks.size} picks, ${held.length} reserved photos`);
+  assert.ok(!held.some(p => picks.has(p.f)), 'a curated pick reserved');
+  const again = Object.values(gens('~anon sim strongRA 1')).flatMap(g => C.heldOf(g).map(p => p.f));
+  assert.deepStrictEqual(again.sort(), held.map(p => p.f).sort());
 });
 
 test('the app splits every subject’s units for the player (no file, no subject named), and reads both lists', () => {

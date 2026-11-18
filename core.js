@@ -1912,10 +1912,14 @@
     h ^= h >>> 16;
     return (h >>> 0).toString(16).padStart(8, '0');
   };
-  // Every photo of unit g in play, every view: its views and its game lists (applySlots sl: the corals' IMR lecture photos).
-  const unitPics = g => [
-    ...new Set(Object.entries((g && g.views) || {}).flatMap(([v, L]) => [...(L || []), ...(((g.sl || {})[v] || {}).game || [])]))
-  ];
+  // The game photos of unit g in view v, as the games read them (app.js gamePics): its game list (applySlots sl: the
+  // corals' IMR lecture photos in, a photo Pierre keeps on the sheet only out), else its view.
+  const resGame = (g, v) => {
+    const s = ((g && g.sl) || {})[v];
+    return (s ? s.game : ((g && g.views) || {})[v]) || [];
+  };
+  // Every game photo of unit g, every view.
+  const unitPics = g => [...new Set(Object.keys({...((g && g.views) || {}), ...((g && g.sl) || {})}).flatMap(v => resGame(g, v)))];
   // A photo that a card shows, or one the reserve never takes on its own (Pierre's own, IMR's, a reference one).
   const resOut = (p, cards) => !!(p.own || p.imr || p.rep || refLevel(p) || (cards && (cards.has(p.f) || cards.has(fishPid(p.f)))));
   // The files shown on the cards of the units X ({gen, covers}): each unit's cover and ★ pick (coverP), its featured photos
@@ -2015,9 +2019,11 @@
         keep = L => L.filter(p => !out(p)),
         held = {},
         put = (v, L) => (held[v] = [...new Set([...(held[v] || []), ...L.filter(out).map(ho)])]);
+      // held from the game photos only (resGame: with a game list, never a photo Pierre keeps on the sheet only, Codex
+      // review #1099); a reserved colony's other photos leave the views all the same
       if (Object.values(g.views).some(L => Array.isArray(L) && L.some(out)))
         g.views = Object.fromEntries(
-          Object.entries(g.views).map(([v, L]) => [v, Array.isArray(L) && L.some(out) ? (put(v, L), keep(L)) : L])
+          Object.entries(g.views).map(([v, L]) => [v, Array.isArray(L) && L.some(out) ? (!(g.sl || {})[v] && put(v, L), keep(L)) : L])
         );
       if (Object.values(g.sl || {}).some(s => Object.values(s || {}).some(L => Array.isArray(L) && L.some(out))))
         g.sl = Object.fromEntries(
