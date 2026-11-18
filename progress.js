@@ -268,7 +268,8 @@ function quizBoard() {
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
-  // v171: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one).
+  // v171: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one);
+  // GROUPS_SHEET: their own groups' boards, then the general one.
   const rank = B => {
     const a = document.getElementById('pbrank'),
       L = B && B.rows ? boardScopes(B).top.find(x => boardMe(x.rows) >= 0) : null,
@@ -494,7 +495,8 @@ const loadBoard = (S = boardSubj()) => {
       .then(j => (boardOk(j, first, S) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, staff: j.staff, cohorts: j.cohorts, t: Date.now(), v: j.v});
+        if (!j.err)
+          store.set(subjDev(S.id, BOARD_C), {rows: j.rows, staff: j.staff, cohorts: j.cohorts, groups: j.groups, t: Date.now(), v: j.v});
         else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
@@ -514,10 +516,36 @@ const myCohort = () => {
   const o = store.get(COHORT_KEY, null);
   return SYNC && o && typeof o.c === 'string' && String(o.n).toLowerCase() === SYNC.name.trim().toLowerCase() ? o.c : null;
 };
-// The boards of a reply, in the page's order: {top: [{k, t, rows}], others: [{k, t, rows}]}; one untitled board before
-// SCOPES_SHEET, or when there is neither a staff nor a cohort board to show.
+// Player groups (sheet GROUPS_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
+// arbitraire de groupes"): a reply from GROUPS_SHEET carries groups, [{id, n, rows}] every group with a board, the newest
+// first (Code.gs board_), and rows, the general board without the members of an apart group. The page shows the boards of
+// the player's own groups first, each under its name, then All players; every other group's behind a closed "Other
+// groups", as for the cohorts before (an empty one left out there).
+const GROUPS_SHEET = 175;
+// The ids of the player's groups, null when this account was never told (sync.js groupsSeen).
+const myGroups = () => {
+  const o = store.get(GROUPS_KEY, null);
+  return SYNC && o && Array.isArray(o.ids) && String(o.n).toLowerCase() === SYNC.name.trim().toLowerCase() ? o.ids : null;
+};
+// The boards of a reply, in the page's order: {top: [{k, t, rows}], others: [{k, t, rows}], more: the fold's title}; one
+// untitled board before SCOPES_SHEET, or when there is no other board to show.
 function boardScopes(B) {
   const one = {top: [{k: 'all', t: '', rows: B.rows}], others: []};
+  if (Number(B.v) >= GROUPS_SHEET && Array.isArray(B.groups)) {
+    const G = B.groups.filter(g => g && typeof g.n === 'string' && Array.isArray(g.rows)),
+      m = myGroups(),
+      // Never told (a reply before the account's first load): the boards that list the player.
+      mine = g => (m ? m.includes(g.id) : boardMe(g.rows) >= 0),
+      own = G.filter(mine),
+      others = G.filter(g => !mine(g) && g.rows.length);
+    return !own.length && !others.length
+      ? one
+      : {
+          top: [...own.map(g => ({k: 'group', t: g.n, rows: g.rows})), {k: 'all', t: 'All players', rows: B.rows}],
+          others: others.map(g => ({k: 'other', t: g.n, rows: g.rows})),
+          more: 'Other groups'
+        };
+  }
   if (!(Number(B.v) >= SCOPES_SHEET) || !Array.isArray(B.staff)) return one;
   const C = (Array.isArray(B.cohorts) ? B.cohorts : []).filter(c => c && typeof c.n === 'string' && Array.isArray(c.rows)),
     m = myCohort(),
@@ -532,7 +560,7 @@ function boardScopes(B) {
 }
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
-  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your cohort has its own leaderboard, shown first, and the staff theirs; the staff are not on the others. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your groups' leaderboards come first; the members of some groups, the staff for one, are on their group's only. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
   const S = boardSubj(),
     C = boardCached(S);
@@ -586,7 +614,9 @@ function paintBoard(B, S = boardSubj()) {
     when +
     note +
     sc.top.map(part).join('') +
-    (sc.others.length ? `<details class="bmore"><summary>Other cohorts</summary>${sc.others.map(part).join('')}</details>` : '');
+    (sc.others.length
+      ? `<details class="bmore"><summary>${sc.more || 'Other cohorts'}</summary>${sc.others.map(part).join('')}</details>`
+      : '');
   const bs = box.querySelector('#bsign');
   if (bs) bs.onclick = e => document.getElementById('signb').onclick(e);
   const m = box.querySelector('.me');

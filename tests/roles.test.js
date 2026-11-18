@@ -56,8 +56,11 @@ const ENDPOINTS = [
   ['users', () => ({users: 1})],
   ['userData', () => ({userData: 'Ana'})],
   ['userBoard', () => ({userBoard: 'Ana', hide: true})],
-  ['userGroup', () => ({userGroup: 'Ana', group: 'fish', on: true})],
-  ['userGroup', () => ({userGroup: 'Ana', cohort: 'RA Test', on: true})], // v171: a cohort (tests/scopes.test.js)
+  ['userGroup', () => ({userGroup: 'Ana', group: 'g:00000000', on: true})],
+  // vNEXT: the groups themselves (tests/playergroups.test.js)
+  ['groupMake', () => ({groupMake: {n: 'RA Test', board: 1}})],
+  ['groupEdit', () => ({groupEdit: 'g:00000000', n: 'RA Test 2'})],
+  ['groupDrop', () => ({groupDrop: 'g:00000000'})],
   ['userStart', () => ({userStart: 'Ana', s: 'coral', c: 'imr'})],
   ['statsExclude', () => ({statsExclude: 'AbCd1234', on: true})],
   ['anonDelete', () => ({anonDelete: ['AbCd1234']})],
@@ -73,6 +76,9 @@ const WRITES = new Set([
   'analysesPut',
   'userBoard',
   'userGroup',
+  'groupMake',
+  'groupEdit',
+  'groupDrop',
   'userStart',
   'statsExclude',
   'anonDelete',

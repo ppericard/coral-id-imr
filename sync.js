@@ -1555,13 +1555,16 @@ let pvLast = null,
 // saved choice and its progress kept. live: false when the app reloads anyway (signIn).
 // Sheet v171: the reply names the player's cohort too ('' for none), kept under the account's name (COHORT_KEY), its
 // board shown first on the Leaderboard (progress.js myCohort). An older script names none and nothing changes.
+// Sheet GROUPS_SHEET (player groups; Pierre, 2026-11-18): gids, the ids of every group the player is in, kept beside the
+// beta groups (GROUPS_KEY ids), their boards shown first on the Leaderboard (progress.js myGroups).
 const COHORT_KEY = 'reefid-cohort';
 function groupsSeen(j, name, live = true) {
   if (j && name && typeof j.cohort === 'string') store.set(COHORT_KEY, {n: name, c: j.cohort});
   if (!j || !Array.isArray(j.groups) || !name) return;
   const before = subjGroups().join(),
-    g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => subjGroup(S) && S.id === x));
-  store.set(GROUPS_KEY, {n: name, g});
+    g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => subjGroup(S) && S.id === x)),
+    ids = Array.isArray(j.gids) ? j.gids.filter(x => typeof x === 'string') : null;
+  store.set(GROUPS_KEY, {n: name, g, ...(ids ? {ids} : {})});
   if (!live || subjGroups().join() === before) return;
   if (!subjOpen(SUBJ)) return location.reload();
   showSubj();
@@ -1877,7 +1880,7 @@ function signOutClear(all) {
   // The first-meeting cards too (Codex review #350): the next player meets their own genera.
   [
     'reefid-account',
-    GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
+    GROUPS_KEY, // the beta groups and the player's groups are this account's (app.js subjOpen, progress.js myGroups)
     COHORT_KEY, // and its cohort (groupsSeen)
     MARK_KEY, // the admin's mark is this account's (markSeen; Codex review #841: never left to the next account of the name)
     // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and

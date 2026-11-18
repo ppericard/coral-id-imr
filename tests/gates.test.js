@@ -118,19 +118,36 @@ const GATES = {
     fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
       subjGroup: S => S.open === 'group',
       USERS: v === undefined ? {} : {v},
-      ASUBJ: null
+      ASUBJ: null,
+      groupsOn: () => false
     })({open: 'group', sheet: N}),
   // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from v171; before, the one
   // general board as before, whatever the reply carries.
   SCOPES_SHEET: (v, N) =>
     fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
       SCOPES_SHEET: N,
+      GROUPS_SHEET: Infinity,
       myCohort: () => '',
       boardMe: () => -1
     })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
-  // The admin's Cohort select and Staff toggle on a player's bar (admin.js cohortOn; Code.gs userGroup cohort, roles_):
-  // from v171.
-  COHORT_SHEET: (v, N) => fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N})(),
+  // The player groups' boards (progress.js boardScopes; Code.gs board_ groups): from the version that serves them, the
+  // player's own groups' boards first, then All players; before, whatever the reply carries, as before.
+  GROUPS_SHEET: (v, N) =>
+    fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
+      SCOPES_SHEET: Infinity,
+      GROUPS_SHEET: N,
+      myGroups: () => ['g:1'],
+      myCohort: () => '',
+      boardMe: () => -1
+    })({ok: true, rows: [['A', 1, null]], groups: [{id: 'g:1', n: 'G', rows: [['B', 2, null]]}], ...(v === undefined ? {} : {v})}).top
+      .length > 1,
+  // The admin's Cohort select on a player's bar (admin.js cohortOn; Code.gs userGroup cohort): from v171, until the
+  // player groups (GROUPADM_SHEET) take its place.
+  COHORT_SHEET: (v, N) =>
+    fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N, groupsOn: () => false})(),
+  // The player groups in the admin (admin.js groupsOn: a player's groups as chips, Players › Groups; Code.gs userGroup,
+  // groupMake, groupEdit, groupDrop): from the version that has them; before, the beta group and the cohort as before.
+  GROUPADM_SHEET: (v, N) => fn('admin.js', 'const groupsOn = ', '\n', 'groupsOn', {USERS: v === undefined ? {} : {v}, GROUPADM_SHEET: N})(),
   // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
   // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
   // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug
