@@ -128,6 +128,7 @@
   //   adoptBase(c)         another tab published: c is the new base
   //   merge(shared, mine, other)  two tabs' merge (core.js mergeTabs with admin.js's reconciles): {draft, share, changed}
   //   clean(d, b)          true when draft d holds nothing unpublished over base b
+  //   rebase({d, b})       a sealed draft d made on base b, re-based on the published curation (as an unlock does)
   //   post(msg)            tells the other tabs (BroadcastChannel): a hint only, every write checks the store itself
   //   gone(state)          a write was refused: the store was sealed since this tab last wrote (a sign-out in another tab)
   function ddbTab(o) {
@@ -137,6 +138,7 @@
       storedJ: null, // the draft that revision holds, as this tab's JSON when the two are the same draft
       bid: null, // the base this tab last wrote or took in
       baseDirty: false, // SAVED changed here (a Publish, a rebase, the start): written with the next draft
+      baseN: 0, // how many times it changed: a write clears baseDirty only if no change came after the base it stored
       n: 0,
       revs: {}, // revision → JSON: the drafts this tab wrote or took in (the merge base when another tab writes on one)
       K: null, // {key, mark} of the token, once unlocked
@@ -183,12 +185,14 @@
             const rev = newRev(),
               N = {...S, gen: T.gen, rev};
             api.put('draft', {j, rev, seen: S.rev || null});
+            let bn = null;
             if (T.baseDirty || !S.bid) {
               N.bid = rid();
+              bn = T.baseN;
               api.put('base', {j: JSON.stringify(o.saved()), id: N.bid});
             }
             api.put('state', N);
-            api.out = {took, rev, j, bid: N.bid};
+            api.out = {took, rev, j, bid: N.bid, bn};
           });
         })
       );
@@ -217,7 +221,8 @@
             T.seen = r.rev;
             T.storedJ = r.j;
             T.bid = r.bid;
-            T.baseDirty = false;
+            // A Publish or rebase made while this write was on its way stays to write (Codex review #1078).
+            if (r.bn === T.baseN) T.baseDirty = false;
             o.post({t: 'w'});
           }
           if (r.refused) T.out = r.refused;
@@ -230,6 +235,7 @@
     };
     T.base = () => {
       T.baseDirty = true;
+      T.baseN++;
     };
     // True when this tab's token signed out (in another tab) after this tab last wrote: it must lock.
     T.mine = S => !!T.K && ((S && S.outs) || {})[T.K.mark] > T.gen;
@@ -311,7 +317,13 @@
         taken = new Set();
       for (let i = 0; i < TRIES; i++) {
         const r = await T.sync();
-        if (r.refused) return T.intoSeal(); // this token signed out in another tab meanwhile
+        // This token signed out in another tab meanwhile: what this tab holds goes into that seal. Another token's sign out
+        // only moved the generation on: this tab's draft is written back in it, then sealed (Codex review #1078).
+        if (r.refused) {
+          if (T.mine(r.refused)) return T.intoSeal();
+          await T.carryOn(r.refused);
+          continue;
+        }
         if (r.err) throw r.err;
         const v = await ddbRead(o.db, ['state', k]),
           S = v.state || {gen: 0},
@@ -321,7 +333,12 @@
           taken.add(old.id);
           const p = await openRec(o.subtle, T.K, old).catch(() => null);
           if (p) {
-            const m = o.merge(o.saved(), o.draft(), JSON.parse(p.j));
+            // re-based on the published curation first, as an unlock does (Codex review #1078)
+            const m = o.merge(
+              o.saved(),
+              o.draft(),
+              o.rebase ? o.rebase({d: JSON.parse(p.j), b: p.b ? JSON.parse(p.b) : null}) : JSON.parse(p.j)
+            );
             if (m.changed) o.adopt(m.draft);
           }
           continue;

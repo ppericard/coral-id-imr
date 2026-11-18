@@ -223,6 +223,30 @@ async function sealPart(b, base, fails) {
   st = await stored(C);
   if (st.draft || st.base || !st.seal || st.gen !== 2 || st.q[P[3]] !== 1 || st.q[P[1]] !== 3)
     fails.push(F + `a rating made while the seal was encrypted was lost, or a plain draft was left ${JSON.stringify(st)}`);
+  // No IndexedDB (Codex review #1078): nothing is kept, so Sign out with an edit made in this visit warns and stays
+  await sc.unroute(/\/admin\.js(\?|$)/);
+  const N = await sc.newPage();
+  await N.addInitScript(() => {
+    indexedDB.open = () => {
+      throw new Error('no IndexedDB here');
+    };
+  });
+  await N.goto(base + 'admin.html?demo#photos/quality');
+  await N.waitForFunction(() => typeof snap !== 'undefined' && snap !== null && typeof DW !== 'undefined', null, {timeout: 60000});
+  const nb = await N.evaluate(f => {
+    DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1};
+    saveDraft();
+    $('signout').click();
+    return {dw: DW, lost: draftLost};
+  }, P[4]);
+  await N.waitForTimeout(500);
+  const na = await N.evaluate(() => ({
+    token: TOKEN,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || '',
+    layer: !!document.querySelector('.adm-sealing')
+  }));
+  if (nb.dw !== null || !nb.lost || na.token !== 'demo' || !/could not be sealed/.test(na.toast) || na.layer)
+    fails.push(F + `without IndexedDB, Sign out did not warn and stay with the visit's edit ${JSON.stringify({nb, na})}`);
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }

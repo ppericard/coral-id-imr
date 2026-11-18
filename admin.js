@@ -7944,8 +7944,9 @@ async function start() {
   }
   if (DW) {
     await draftMove();
-    const rb = x => (x.b ? mergeCur(x.b, x.d, SAVED) : mergeOld(x.d, SAVED));
-    L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, rb(plain), rb(sealed)) : rb(sealed))).catch(() => L);
+    L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, draftRebase(plain), draftRebase(sealed)) : draftRebase(sealed))).catch(
+      () => L
+    );
     if (L.failed)
       setTimeout(() => toast('Your draft sealed at your last sign out could not be opened (storage full): it is kept.', 8000), 0);
   }
@@ -8126,6 +8127,10 @@ const sess = {
   }
 };
 store.set(SESSION, null); // drop the plain copy older versions kept in localStorage
+// A draft with nothing unpublished over base b (Sign out takes it off rather than sealing it), and a sealed draft d made
+// on base b re-based on the published curation, as at the start (a draft from before bases only adds).
+const draftClean = (d, b) => canon(merge3(b, d, b)) === canon(merge3(b, b, b)),
+  draftRebase = x => (x.b ? mergeCur(x.b, x.d, SAVED) : mergeOld(x.d, SAVED));
 // The draft store (admin-draft.js), opened at the start: this tab's side of it (DW), the token's key and mark once
 // unlocked, and the channel that tells the other admin tabs of a write or a sign-out. The demo has a store of its own.
 async function draftOpen() {
@@ -8161,7 +8166,8 @@ async function draftOpen() {
         r = repsReconcile(shared, mine, m.draft);
       return {...m, draft: typeof contentShells === 'function' ? contentShells(mine, r) : r};
     },
-    clean: (d, b) => canon(merge3(b, d, b)) === canon(merge3(b, b, b)),
+    clean: draftClean,
+    rebase: draftRebase,
     post: m => {
       try {
         if (DCH) DCH.postMessage(m);
@@ -8257,7 +8263,9 @@ async function signOut() {
   if (btn) ((btn.disabled = true), (btn.textContent = 'Sealing…'));
   sealing(true);
   ptFlush(); // a note being typed reaches the draft first
-  let ok = !DW;
+  // No store (IndexedDB unavailable): nothing was kept, so only a draft with nothing unpublished signs out at once
+  // (Codex review #1078: the warning, not the edits made in this visit lost).
+  let ok = !DW && draftClean(DRAFT, SAVED);
   try {
     if (DW) ok = !!(await DW.seal());
   } catch (e) {}

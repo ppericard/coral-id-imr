@@ -64,9 +64,10 @@ async function tab(idb, id, token, G = gates(), o = {}) {
     adoptBase: c => (s.saved = c),
     merge: (sh, mi, ot) => mergeTabs(sh, mi, ot),
     clean: (d, b) => canon(merge3(b, d, b)) === canon(merge3(b, b, b)),
+    rebase: x => (x.b ? merge3(x.b, x.d, s.saved) : x.d),
     post: () => {},
     gone: S => s.gone.push(S),
-    ...(o.hooks || {})
+    ...(typeof o.hooks === 'function' ? o.hooks(s) : o.hooks || {})
   });
   s.T = T;
   s.db = db;
@@ -406,6 +407,66 @@ test('Codex 4510374178: opening a seal writes the draft, its base and drops the 
   assert.strictEqual(await sealOf(idb, 'tok'), null);
   const v = await store(idb);
   assert.ok(v.draft && v.base);
+});
+
+test('Codex #1078: a sign out of another token just before this one’s still seals this one’s draft', async () => {
+  const idb = fakeIDB(),
+    A = await tab(idb, 'A', 'tok-a'),
+    B = await tab(idb, 'B', 'tok-b');
+  await B.click('p5', 1);
+  await A.T.sync();
+  await A.T.seal(); // A signs out first: B's next write is refused, but B was not signed out
+  assert.deepStrictEqual(await B.T.seal(), {sealed: true});
+  assert.strictEqual((await sealOf(idb, 'tok-b')).quality.p5, 1);
+  const v = await store(idb);
+  assert.strictEqual(v.draft, undefined);
+  assert.ok(JSON.parse(JSON.stringify(v.state)).outs && Object.keys(v.state.outs).length === 2);
+});
+
+test('Codex #1078: a Publish made while a write is on its way keeps its base for the next write', async () => {
+  const idb = fakeIDB();
+  let pub = null;
+  const A = await tab(idb, 'A', 'tok', gates(), {
+    // the write's transaction reads the draft; right after (before it commits) a Publish changes the base
+    hooks: s => ({
+      snap: () => {
+        const j = JSON.stringify(s.draft);
+        if (pub) (setImmediate(pub), (pub = null));
+        return j;
+      }
+    })
+  });
+  let second = null;
+  pub = () => {
+    A.saved = {...clone(A.saved), quality: {p1: 3}}; // the draft is now the published curation
+    A.draft = clone(A.saved);
+    A.T.base();
+    second = A.T.sync();
+  };
+  await A.click('p1', 3);
+  await second;
+  await A.T.sync();
+  const v = await store(idb);
+  assert.deepStrictEqual(JSON.parse(v.base.j), A.saved);
+  assert.deepStrictEqual(JSON.parse(v.draft.j), A.saved);
+});
+
+test('Codex #1078: a seal left from before is re-based on the published curation before this sign out takes it in', async () => {
+  let full = false;
+  const idb = fakeIDB({failPut: k => full && k === 'base'}),
+    A = await tab(idb, 'A', 'tok');
+  await A.click('p2', 1); // edits p2 only; p1 is 2 as published then
+  await A.T.seal();
+  const pub = {...clone(SAVED0), quality: {p1: 3}}; // p1 published as 3 from elsewhere since
+  full = true;
+  const B = await tab(idb, 'B', 'tok', gates(), {saved: pub}); // the seal cannot be opened into the store: it stays
+  full = false;
+  assert.ok(B.L.failed);
+  await B.T.sync();
+  await B.T.seal();
+  const s = await sealOf(idb, 'tok');
+  assert.strictEqual(s.quality.p2, 1);
+  assert.strictEqual(s.quality.p1, 3); // never the old published value as an edit
 });
 
 test('a second Sign out while the first seals leaves one seal and loses nothing', async () => {
