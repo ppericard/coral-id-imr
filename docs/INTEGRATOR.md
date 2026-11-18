@@ -31,6 +31,13 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
 
 - **Keep the four agent slots full from the whole queue** (Pierre, 11-14: "Tu lances tout ce que tu peux lancer…
   Qui t'as demandé de te limiter ?"): when a slot frees, the next decided item starts; never offer him a short list.
+  Broken again on 11-18 afternoon (one agent for about three hours, Pierre: "On a une liste de 80+ taches en attente"):
+  the integrator worked from a short task list half marked "after Pierre" and kept briefing for "after the merge". So:
+  the turn an agent reports, the next one starts, before any merge work; every `send_later` check-in counts the
+  running agents first; the source is `docs/reviews/2026-11-18-backlog-inventory.md` and ROADMAP, not a short list.
+- **Never end a turn without the next `send_later` check-in** (11-18: none was set after 16:15, nothing woke the
+  integrator for two hours while an agent sat on a permission prompt). An agent waiting on a prompt: tell Pierre in
+  one line and tell the agent how to do without it.
 - **Filter an agent's "Choices I made" before passing it on**: what is easy to correct afterwards ships as your call.
 - **A rule said to be Pierre's quotes his words.** #558 (11-05) wrote "never merged on silence… even when it looks
   reversible" as his; he never said it (11-14) and it is gone. Paraphrase only as "integrator's reading".
@@ -267,28 +274,22 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   grid column never wider than the screen, the row wraps. #709's safety net (an invisible card closes itself after
   2.5 s, now also checking left/right) and its events (`empty card closed`, `left with a card open`) stay: read the
   Events tab now and then for any other card that hides. Lesson: test every new card at 390 px with a long list.
-- **Open PRs**: STATUS "Now". #664
-  (engine coherence review) merged as a reference doc; its re-check is done (ROADMAP row): C1 decided by Pierre on 2026-11-09 (Q316: componential difficulty model; Q136 reopened with it). #637 (photos rated against the genus ability, Q136) was
-  closed unmerged; its branch stays (ROADMAP "Photos rated against the genus ability"). The old worktree
-  `photo-genus-ability` (2 commits not on the remote head) is in a pre-rewrite clone: patches only, never a push.
-- **Branch `claude/fish-todo-wip`** (no PR): unfinished, untested follow-up of #686's audit, fish.exclude matched by
-  photo id (fishOn / fishPhotos) and the fish To do without the coral-only sections. Finish, renumber Code.gs, PR.
-- **Priority after the rewrite** (Pierre, 2026-11-08): first everything that speeds up development (Q305 a, b, d and
-  the CI speed study's first changes), then the rest: ROADMAP "Backlog in priority order" is the one list.
-- **Backlog, in Pierre's earlier order of interest** (ROADMAP rows):
-  1. the **species level and the global fish score** (decided 11-04: 100% only with common and scientific names of
-     every species; the path is a tree; a right genus is partial credit);
-  2. the fish families' ID marks are in (#773, the 40 with no IMR cue); genus and species ID marks are left;
-  3. the **species after a family or genus answer** (Pierre asked again on 11-08 ~20:10: species, common and scientific
-     name; morning question: before the species level?);
-  4. **photo rotation in the admin** (#793, waiting for Codex);
-  5. per-subject **photo stats and Health** in the admin (#800, waiting for Codex);
-  6. the **exam over two visits** on fixed-difficulty photos; **ability uncertainty** (Glicko / Kalman, #651's remedy);
-  7. the new bar's **live confirmation** (seeds 61-90) and its **τ baseline**, held until after the fish rush;
-  8. #641's confusion-group questions a-j and #651's 5 choices for Pierre (not numbered yet).
-- **Pierre's hands** (STATUS): covers for the 11 fish families with no reference-level photo, the 8 unsure candidates
-  left in the admin, the expert analyses' photos to check, the rewrite's follow-up (deleting his backup when he says so;
-  no GitHub Support purge, his choice). The R2 crops are gone (2026-11-09); old branches go through the "Clean branches
-  and Actions" workflow (docs/HANDOVER.md).
+- **Where each kind of open work lives** (never copied here, so it cannot go stale):
+  - **PRs in flight, questions waiting, what runs and what is next**: [STATUS.md](STATUS.md) ("Now", "Next", "Questions
+    for Pierre", "Pierre's hands"), and the PR list `python3 tools/brief.py` prints.
+  - **Ideas agreed but not built, and their order**: [ROADMAP.md](ROADMAP.md) ("Backlog in priority order" is the one
+    list; Pierre, 2026-11-08: first everything that speeds up development, then the rest).
+  - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the
+    LEARNING.md or ARCHITECTURE.md section the rule or record names.
+- **Branches without a PR** (state on 2026-11-18; `tools/brief.py` lists them): `claude/fish-todo-wip` is moot since
+  #931 retired the stopgap it fixed (ROADMAP "Fish admin at parity"): delete it with the "Clean branches and Actions"
+  workflow (docs/HANDOVER.md). `claude/admin-signout-seal` and `claude/level-count-from-log` keep their design notes
+  (`docs/reviews/2026-11-09-admin-signout-seal.md`; the level count needs checkpoints that are not absolute counts).
+  `claude/photo-genus-ability` is the branch of #637 (photos rated against the genus ability, Q136), closed unmerged
+  (ROADMAP "Engine coherence review"); a clone made before the 2026-11-08 rewrite never pushes it (patches only).
+- **Lesson kept from #710** (the stuck dimmed screen, 2026-11-07): a card with a long list pushed itself off screen on a
+  390 px phone behind its backdrop. Test every new card at 390 px with a long list; #709's safety net (an invisible card
+  closes itself after 2.5 s; events `empty card closed`, `left with a card open`) stays, so read the Events tab now and
+  then for any other card that hides.
 - **Local clutter**: gone. On 11-11 the old clone's worktrees and branches were deleted and local `main` realigned
   on GitHub's (Pierre); a clone made before the rewrite still never pushes.

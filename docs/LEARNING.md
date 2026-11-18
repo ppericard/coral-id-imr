@@ -1356,7 +1356,13 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
   0.95), the over-estimate of the genera opened at once at their first question 0.13 → 0.12 (lecture RA), 0.05 → 0.08
   (strong RA).
 - **Coral basics first** ("new"): offered, never forced (about 5 minutes, then the quiz). The simulated learner does not
-  read Coral basics (it learns genera from questions and cards only), so its effect is not in the tables: ROADMAP.
+  read Coral basics (it learns genera from questions and cards only), so its effect is not in the tables: ROADMAP. The fish
+  have the same with **Fish basics** (docs/FISH_PATH.md "Fish basics"): the answer's variables are the same for both
+  subjects for now, so "new" offers the subject on screen's module first (`SUBJECTS` `pages` 'basics', `app.js`
+  `basicsDue`, `UNITS` `basics` for each one's words); a subject without one (the sea slugs) offers none. The "lower" card
+  is the corals' only for now: the fish's level-change cards are off (`UNITS` `startFb: false`, Pierre, 2026-11-08), so
+  Fish basics' words for it (`lo`, `all`) wait, and `startEase` (nothing there reads a subject) is never taken on the fish.
+  learnsim does not model Fish basics either.
 
 Simulated (`node tools/learnsim.js --seeds 5 --questions 300 --choice …`, no `--stats`, same seeds 1-5; "today" = the
 code before, the same as the answer "new"), the right answer per profile: true knowledge of the slate at 100 / 300
@@ -4649,7 +4655,9 @@ confuse; names proposed for when they are built; fsp1, fsp10 and fsp50 came with
   name top out at 95% once the species level is on; 100% needs the scientific species names.
 - At the species level: fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with
   both names at Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
-- Fish basics: fbasics, with the module.
+- Fish basics: fbasics. The module is built (docs/FISH_PATH.md "Fish basics") and its done feat `_fbasics` is set and synced
+  (`progress.js` `achBasics`), but no achievement tests it yet: its name and tier are Pierre's to choose (the corals' "Coral
+  basics" is one 📖 bronze), so none is invented here.
 - Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
   every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
   the score's own weights); X chosen with the species level.

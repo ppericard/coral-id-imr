@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 181 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 183 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 181;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 183;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -4445,8 +4445,11 @@ const CORE_ = (function () { const module = {exports: {}};
       // quality, sharpness, source, from data.json, curation.json, quality.json and metrics.json). The admin's words for
       // its units are its one and many.
       analyses: {photos: true},
-      // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
+      // basics: Coral basics (proto/basics.js), step 0 of the Learn path. Its record stays on the device (subjDev 'basics':
+      // reefid-basics, cleared with the progress at sign-out) and its done feat is in the synced achievements record
+      // (basics.feat), read by app.js basicsDone; a subject whose pages hold no 'basics' has none.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      basics: {feat: '_basics'},
       // The text slots its content editor may edit on a genus sheet (docs/reviews/2026-11-14-sheet-overlay-design.md v2,
       // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
       // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
@@ -4595,7 +4598,10 @@ const CORE_ = (function () { const module = {exports: {}};
       // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
       // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
-      pages: ['genera', 'sheet', 'quiz'],
+      // basics: Fish basics (proto/fishbasics.js, Pierre 2026-11-04: the twin of Coral basics), step 0 of the Learn path;
+      // its own record (reefid-fish-basics) and done feat (the corals' are not touched by it).
+      pages: ['basics', 'genera', 'sheet', 'quiz'],
+      basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
       // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
@@ -4646,11 +4652,11 @@ const CORE_ = (function () { const module = {exports: {}};
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
-      // profiles later). No Fish basics yet (pages): "new" offers none until it exists.
+      // profiles later). "new" offers Fish basics first (pages 'basics', as the corals' offers Coral basics).
       start: {
         q: 'How well do you know reef fish?',
         opts: {
-          new: ['I’m new to reef fish', 'Start from scratch: a few easy families first.'],
+          new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
           imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
@@ -10546,7 +10552,14 @@ const CORE_ = (function () { const module = {exports: {}};
     MAXS: 86400, // seconds of one page counted at most
     RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
     GENUS: /^[A-Z][a-z]{2,30}$/,
-    FROM: ['quiz', 'learn', 'progress', 'other']
+    FROM: ['quiz', 'learn', 'progress', 'other'],
+    // The answer's feedback sheet (Pierre, 2026-11-18, the feedback sheet study §2 and question (f): "ok pour les 6
+    // recommandations"): four numbers a visit, in this order: the answers whose feedback was shown, those where More was
+    // opened, the seconds the feedback stayed on screen (each answer's capped at FBSEC) and the taps on a link inside it.
+    // Counts only, no answer, unit or time of day; the first number is the denominator.
+    FB: ['shown', 'more', 'sec', 'link'],
+    FBMAX: 10000, // answers (or taps) counted in one summary, at most
+    FBSEC: 120 // seconds one answer's feedback counts at most
   };
   // The screen a summary was sent from (Pierre, 2026-11-18: the screen sizes the players really use, to design the
   // multi-photo game formats): the usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
@@ -10851,7 +10864,14 @@ const CORE_ = (function () { const module = {exports: {}};
     if (/^(progress|leaderboard)/.test(n)) return 'progress';
     return 'other';
   }
-  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
+  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0, fb: [0, 0, 0, 0]});
+  // One count of the feedback sheet's tally (PAGES.FB): kind 'shown', 'more', 'sec' (n seconds, capped at FBSEC) or 'link'.
+  function pagesFb(S, kind, n = 1) {
+    const i = PAGES.FB.indexOf(kind),
+      v = Math.round(Number(n));
+    if (i < 0 || !S.fb || !isFinite(v) || v <= 0) return;
+    S.fb[i] += kind === 'sec' ? Math.min(PAGES.FBSEC, v) : v;
+  }
   // The page in view stops counting time (hidden, or another page opens).
   function pagesStop(S, now) {
     const c = S.cur;
@@ -10899,6 +10919,12 @@ const CORE_ = (function () { const module = {exports: {}};
     const out = pagesSummary(S);
     S.r = Object.create(null);
     S.g = Object.create(null);
+    // The feedback sheet's four numbers ride the summary and start again; with no summary to carry them (no page was open)
+    // they wait for the next one.
+    if (out && S.fb && S.fb.some(Boolean)) {
+      out.fb = S.fb;
+      S.fb = [0, 0, 0, 0];
+    }
     return out;
   }
   // Whose summary it is (Codex review #423): set when it is queued, so a summary left in the queue (offline, a failed
@@ -10944,6 +10970,11 @@ const CORE_ = (function () { const module = {exports: {}};
         k => (g[k] = [n(G[k][0], PAGES.MAXN), n(G[k][1], PAGES.MAXS), PAGES.FROM.includes(G[k][2]) ? G[k][2] : 'other', G[k][3] ? 1 : 0])
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
+    // The feedback sheet's four numbers (PAGES.FB): four numbers or nothing, each clamped; nothing when all are zero.
+    if (Array.isArray(o.fb) && o.fb.length === PAGES.FB.length) {
+      const fb = o.fb.map((v, i) => n(v, PAGES.FB[i] === 'sec' ? PAGES.MAXS : PAGES.FBMAX));
+      if (fb.some(Boolean)) out.fb = fb;
+    }
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
     // The screen (VIEWPORT, sheet v177): rounded and clamped again, whatever the device sent; its band kept when it is
     // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
@@ -11219,6 +11250,7 @@ const CORE_ = (function () { const module = {exports: {}};
     pageSubj,
     pageFrom,
     pagesNew,
+    pagesFb,
     pagesStop,
     pagesOpen,
     pagesResume,
