@@ -3321,7 +3321,7 @@ function pools_(only, ups){
     return files[name] = v;
   };
   CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
-    const k = 'pool3' + S.id, hit = cacheBigGet_(c, k);  // v161: pool3, the species units' parents (unitUp_)
+    const k = 'pool3' + S.id, hit = cacheBigGet_(c, k);  // pool3: with the species units' parents (unitUp_)
     if (hit) { try { const v = JSON.parse(hit); if (v && v.p) { out[S.id] = v.p; if (ups) ups[S.id] = v.u || {}; } return; } catch (e) {} }
     if (only === true || (only && only !== S.id)) return;
     let P = null, U = {};
@@ -3333,7 +3333,7 @@ function pools_(only, ups){
   });
   return out;
 }
-// v115: a value over the script cache's 100 KB a value (Apps Script CacheService) is put in parts of CACHE_PART
+// A value over the script cache's 100 KB a value (Apps Script CacheService) is put in parts of CACHE_PART
 // characters (at most 3 bytes each in UTF-8: under 100 KB), k + '#' + i, then k as '#<parts>'; one part gone and it is
 // read as missing (null), so the caller builds it again. A short value is put as it is (a value never starts with '#').
 const CACHE_PART = 32000;
@@ -3355,12 +3355,10 @@ function cacheBigGet_(c, k){
   const keys = Array.from({length: Number(v.slice(1)) || 0}, (_, i) => k + '#' + i), got = keys.length ? c.getAll(keys) : {};
   return keys.length && keys.every(x => typeof got[x] === 'string') ? keys.map(x => got[x]).join('') : null;
 }
-// v115 (review of #801): a subject's units above the ones its pool holds, from its first pool file: fish.json's genera
-// (g:Chromis) and species (by sheet id, s:Chromis ternatensis, and by id) to their family (f:Damselfishes), the unit
-// the fish pool groups its photos under (core.js unitPool); {} for a file without them (the corals' data.json).
-// v161 (Codex review #975): and the species units of the species level by their unit id, s: and the species id (s:s084,
-// core.js fishSpUnits), so a species question's photos are its family's; cached under a new key (pool3), so the parent
-// units a script before them cached are never read.
+// A subject's units above the ones its pool holds, from its first pool file: fish.json's genera (g:Chromis) and
+// species (by sheet id, s:Chromis ternatensis, by id, and by unit id, s:s084: core.js fishSpUnits) to their family
+// (f:Damselfishes), the unit the fish pool groups its photos under (core.js unitPool); {} for a file without them (the
+// corals' data.json).
 function unitUp_(F){
   const up = Object.create(null);
   if (!F || !Array.isArray(F.genera)) return up;
@@ -3373,8 +3371,8 @@ function unitUp_(F){
   });
   return up;
 }
-// v115 (Pierre, 2026-11-08, ROADMAP "Security follow-ups": check server-side that an answer's photos belong to the unit
-// shown): every subject's game photos (pools_, the compact list the games draw from) as {at: {photo: ['subject|unit', …]},
+// The server-side check that an answer's photos belong to the unit shown (docs/ROADMAP.md "Security follow-ups"): every
+// subject's game photos (pools_, the compact list the games draw from) as {at: {photo: ['subject|unit', …]},
 // up: {subject id: its parent units, unitUp_}, n: how many subjects' pools it holds}; null when no pool could be read
 // (then no answer is checked).
 function photoIdx_(only){
@@ -3389,7 +3387,7 @@ function photoIdx_(only){
 // flagged: such an answer is logged and counts for the player as any other, and only rates no photo (stats_).
 // The unit is also taken as the subject renamed it (core.js renamedId: an old fish entry t01 is f:Damselfishes) and as
 // its parent unit (unitUp_: a fish genus g:Chromis or species s:Chromis ternatensis is its family's, whose photos the
-// fish pool groups; review of #801).
+// fish pool groups).
 function photoCheck_(idx, sid, unit, fs){
   if (!idx || !fs.length) return 'ok';
   const S = CORE_.SUBJECTS.find(x => x.id === sid), up = own_(idx.up, sid) || {}, own = lc_(unit), keys = [];
@@ -3418,18 +3416,18 @@ function photoAlert_(name, rows){
   c.put(k, '1', 21600);
   sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('photos not of the unit shown: ' + id + ' (' + n + ' of ' + rows.length + ' answers)')]);
 }
-// v42 (Pierre, 2026-11-04: admin pages slow on his phone; Players read every player's saved copy, one call each, to
-// replay their progress itself): each player of the list gets rp: [progress %, learned, the saved copy's progress %],
+// So the admin's Players page need not read every player's saved copy, one call each, on a phone: each player of the
+// list gets rp: [progress %, learned, the saved copy's progress %],
 // the full replay of their log as the admin showed it (core.js replayProgress over their rows since their last reset,
 // with their first-launch answer, the photo memory and pooled confusions of stats_; then replayedOf with their saved
 // copy, pctOf and learnedOf over the slate). Computed here once (rule L12): the replay record is the one the
 // Replayed tab keeps (replay_), reused while the rules, the player's row count and reset are the same, made and stored
 // otherwise. No rp without data.json (gen_) or for a broken saved copy: the admin then reads that player's copy itself.
 function replayedAll_(users, dcol){
-  const gen = gen_(), list = slate_(), stM = subjSt_(CORE_.replaySubject());  // v163: its structure stamp ('' none)
+  const gen = gen_(), list = slate_(), stM = subjSt_(CORE_.replaySubject());  // its structure stamp ('' none)
   if (!gen || !list || !users.length || stM === null) return;
-  // v145: the pooled stats from the snapshot (statsServed_), else stats_ as before.
-  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = statsServed_() || stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // v119: by player, no prototype
+  // The pooled stats from the snapshot (statsServed_), else stats_.
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = statsServed_() || stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // by player, no prototype
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
@@ -3444,7 +3442,7 @@ function replayedAll_(users, dcol){
       P = JSON.parse(dataKey_(data, 'progress') || '{}');
     } catch (e) { return; }
     if (!P || typeof P !== 'object') return;
-    // v163: under the structure stamp in force (the Replayed tab's cache identity, rplSince_, as replay_ keys it)
+    // Under the structure stamp in force (the Replayed tab's cache identity, rplSince_, as replay_ keys it)
     const since = resetOf_(data), start = startOf_(data), fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stM),
       rows = (mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
     let rec = null;
@@ -3452,7 +3450,7 @@ function replayedAll_(users, dcol){
       try { rec = JSON.parse(c.r.slice(5).map(String).join('') || '{}'); } catch (e) { rec = null; }
     }
     if (!rec) {
-      // v119: the player's own entry only (a player named constructor never takes the map's inherited member).
+      // The player's own entry only (a player named constructor never takes the map's inherited member).
       const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}}),
         rep = Object.prototype.hasOwnProperty.call(R, k) ? R[k] : null;
       rec = rep ? rep.P : {};
@@ -3467,7 +3465,8 @@ function replayedAll_(users, dcol){
     u.rp = [CORE_.pctOf(G, list), CORE_.learnedOf(G, list), CORE_.pctOf(P, list)];
   });
 }
-// Self-update from GitHub (v11; Pierre, 2026-11-01: "find a way to redeploy the script without me"). A time trigger
+// Self-update from GitHub, so the script redeploys without anyone (docs/ARCHITECTURE.md "Progress sync (Google
+// Sheet)"; docs/decisions/2026-11-18-release-branch.md). A time trigger
 // (installAutoUpdate, run once by hand in the editor) calls autoUpdate every 15 minutes: when tools/sync/Code.gs on the
 // release branch carries a higher VERSION, the script replaces its own code with it (and its manifest with tools/sync/appsscript.json),
 // saves a new version and points the existing web app deployment(s) at it, through the Apps Script API with the
@@ -3475,10 +3474,10 @@ function replayedAll_(users, dcol){
 // https://script.google.com/home/usersettings, the manifest's scopes accepted (running installAutoUpdate asks), and a
 // first manual deploy of this version. A newer file without autoUpdate is never installed (it would end the updates);
 // every attempt that does something is written to the "Deploy log" tab. Anyone who can push to the release branch can
-// change this script, and only the merge train (tools/train.py, rule W26) pushes it (from v181; Pierre, 2026-11-18, review R5
-// question h): the script installs the code a green train tested, never a commit that reached main without the train
-// (the admin's Publish, the Candidate photos workflow). Until the branch exists (GitHub answers 404 for it, and only for
-// that) the script reads main as before, so the first update that reads release cannot lose its way; any other answer
+// change this script, and only the merge train (tools/train.py, rule W26) pushes it: the script installs the code a
+// green train tested, never a commit that reached main without the train
+// (the admin's Publish, the Candidate photos workflow). While the branch does not exist (GitHub answers 404 for it, and
+// only for that) the script reads main, so the first update that reads release cannot lose its way; any other answer
 // (a 5xx, a rate limit, no network) is a failed read, never a reason to take main's code. One branch per run: the
 // manifest comes from the branch that answered for Code.gs. The data files the script reads (data.json, curation.json,
 // the fish files) stay on main: they are data, and the admin's Publish and the photo workflow are how they change.
@@ -3496,7 +3495,7 @@ function installAutoUpdate(){
   Logger.log(msg);
   return msg;
 }
-// v130: each run is timed (the Timings tab: timStart_, timEnd_), and trims that tab (timTrim_) whatever it did.
+// Each run is timed (the Timings tab: timStart_, timEnd_), and trims that tab (timTrim_) whatever it did.
 function autoUpdate(){
   timStart_(TIM.EVERY_TRIGGER);
   TIM_.op = 'trigger';
@@ -3505,7 +3504,7 @@ function autoUpdate(){
 function autoUpdate_(){
   const log = m => sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), String(m).slice(0, 500)]);
   try {
-    let branch = SELF_BRANCH;  // v181: the release branch, main only while that branch does not exist
+    let branch = SELF_BRANCH;  // the release branch, main only while that branch does not exist
     const get = f => UrlFetchApp.fetch(selfRaw_(branch) + f + '?t=' + Date.now(), {muteHttpExceptions: true});
     let src = get('Code.gs');
     if (src.getResponseCode() === 404) { branch = SELF_FALLBACK; src = get('Code.gs'); }
@@ -3537,14 +3536,14 @@ function autoUpdate_(){
   } catch (e) { log('error: ' + e.message); return 'error'; }
 }
 
-// One-shot data migrations (Pierre, 2026-11-04, alpha: no backward compatibility, rule W3): the code that
+// One-shot data migrations (rule W3: no backward compatibility): the code that
 // brings one moves the stored data once, then only the new names exist. Run by autoUpdate when it finds itself up to
 // date, so by the new code itself, within 15 minutes of its install; a Script Property (ONCE_<name>) marks each one done,
 // the Deploy log says what it changed. A failed one is tried again at the next run.
 const ONCE_ = {
   // tz-migration: begin
-  // v44: every answer logged before the UTC offset column came from players on Philippine time (Pierre, 2026-11-04):
-  // the empty UTC offset cells of the rows there now get +480; a cell that holds a value is never touched.
+  // Every answer logged before the UTC offset column came from players on Philippine time: the empty UTC offset cells
+  // of the rows there get +480; a cell that holds a value is never touched.
   tz: () => {
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), col = LOG.indexOf('UTC offset') + 1;
     if (!sh || sh.getLastRow() < 2) return 'UTC offset: no answers';
@@ -3558,10 +3557,10 @@ const ONCE_ = {
   },
   // tz-migration: end
   // removedcleanup-migration: begin
-  // v55 (Pierre, 2026-11-05, Q91: yes to a one-shot logged cleanup): what removals before v55 left in normal operation.
-  // The Replayed rows of devices that never signed in whose answers are no longer in Answers (claimed at sign-in or
-  // deleted by anonDelete, which did not drop them then), and the reports of accounts deleted outright (a Removed row
-  // with no Into) sent under that name before its removal (v55 deletes or anonymises them at delete time). Counts only.
+  // What older removals left in normal operation: the Replayed rows of devices that never signed in whose answers are
+  // no longer in Answers (claimed at sign-in or deleted by anonDelete), and the reports of accounts deleted outright (a
+  // Removed row with no Into) sent under that name before its removal (a delete now deletes or anonymises them). Counts
+  // only.
   removedcleanup: () => {
     const ss = SpreadsheetApp.getActiveSpreadsheet(), an = ss.getSheetByName('Answers'), names = new Set();
     if (an && an.getLastRow() > 1) an.getRange(2, 1, an.getLastRow() - 1, 1).getValues().forEach(r => names.add(lc_(r[0])));
@@ -3583,17 +3582,17 @@ const ONCE_ = {
   },
   // removedcleanup-migration: end
   // fishunits-migration: begin
-  // v69 (Pierre, 2026-11-06, Q159: yes): the fish units became the book's families (f:Damselfishes), not the IMR entries
-  // (t01). The fish rows logged before: Genus shown, Answered, Mode, Choices, Taxon shown and Taxon answered renamed with
+  // The fish units are the book's families (f:Damselfishes), not the IMR entries (t01). The older fish rows: Genus
+  // shown, Answered, Mode, Choices, Taxon shown and Taxon answered renamed with
   // one map per row (core.js renameLogEntry: the species shown decides a split entry, so a right answer stays right);
   // the Reports tab's Expected and Answered by the entry's family. Answers logged after it come renamed (logAnswers_).
   fishunits: () => {
     const ss = SpreadsheetApp.getActiveSpreadsheet(), an = ss.getSheetByName('Answers'), out = [];
     const RS = CORE_.SUBJECTS.filter(S => S.renamed), C = n => LOG.indexOf(n);
     // Only the six renamed columns are written back, each a whole column, and only when one of its cells changed: every
-    // value in them passed a letters-first check when logged, so none can read as a formula (Codex review #654: writing
-    // whole rows back would drop the apostrophe safe_() put before a name or a typed answer).
-    // v100: the tab's v60 columns by name (Species shown), and its rows through logRows_ (a column added since reads blank).
+    // value in them passed a letters-first check when logged, so none can read as a formula (writing whole rows back
+    // would drop the apostrophe safe_() put before a name or a typed answer).
+    // The tab's columns by name (Species shown), and its rows through logRows_ (a column added since reads blank).
     if (an && an.getLastRow() > 1 && an.getLastColumn() >= C('Species shown') + 1) {
       const n = an.getLastRow() - 1, v = logRows_(an, LOG.length), cols = ['Genus shown', 'Answered', 'Mode', 'Choices', 'Taxon shown', 'Taxon answered'];
       const nv = cols.map(c => v.map(r => [r[C(c)]])), key = ['g', 'a', 'm', 'ch', 'tn', 'ta']; let k = 0;
@@ -3621,7 +3620,7 @@ const ONCE_ = {
   },
   // fishunits-migration: end
   // groups-migration: begin
-  // v179: the beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
+  // The beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
   groups: () => groupsMigrate_()
   // groups-migration: end
 };
@@ -3629,7 +3628,7 @@ const ONCE_ = {
 // code installed), after the one-shot migrations, even when one fails (it is tried again at the next run); the Deploy log says how many were made, only when some were, and a failure.
 function boardWarmRun_(log){
   const t0 = Date.now();
-  // v146: the curation read again first (subjStRefresh_), so a structure Publish reaches every player within 15 minutes.
+  // The curation read again first (subjStRefresh_), so a structure Publish reaches every player within 15 minutes.
   try { subjStRefresh_(); } catch (e) { log('structure read failed: ' + e.message); }
   try { const n = boardWarm_(); tim_('board warm', t0, '', ''); if (n) log('leaderboard: ' + n + ' replay' + (n === 1 ? '' : 's') + ' made for players behind the rules (v' + VERSION + ')'); }
   catch (e) { log('leaderboard replays failed: ' + e.message); }
@@ -3639,17 +3638,17 @@ function once_(log){
   Object.keys(ONCE_).forEach(k => {
     if (props.getProperty('ONCE_' + k)) return;
     const lock = LockService.getScriptLock(); lock.waitLock(30000);
-    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); statsDirty_(); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }  // v134: it may rewrite Answers
+    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); statsDirty_(); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }  // statsDirty_: it may rewrite Answers
     catch (e) { log('one-shot ' + k + ' failed: ' + e.message); }
     finally { lock.releaseLock(); }
   });
 }
 
-// Players who never sign in (v12, Pierre 2026-11-01: their answers should still improve the photo ratings and the
-// confusions). POST {anon: random device id, anonAnswers: [...]}: logged like a signed-in player's, under the name
+// Players who never sign in: their answers still improve the photo ratings and the confusions. POST {anon: random
+// device id, anonAnswers: [...]}: logged like a signed-in player's, under the name
 // "~anon <id>" (no name, no code). Signing in later moves them to the name (doPost, p.anon). Caps: 100 answers per
 // request, 600 per id and 6000 for all anonymous players every 6 hours; over that: {ok: false, error: 'busy'}.
-function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress reset, the replay's cutoff (v28)
+function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress reset, the replay's cutoff
   const id = String(p.anon || '');
   if (!/^[a-z0-9]{8,16}$/.test(id)) return {ok: false, error: 'input'};
   const L = p.anonAnswers.slice(0, 100);
@@ -3659,11 +3658,11 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     const f = freshAnswers_(L);
     if (f.fresh.length && (over_('a:' + id, 600, f.fresh.length) || over_('anon', 6000, f.fresh.length))) return {ok: false, error: 'busy'};
     logAnswers_('~anon ' + id, f.fresh, f.seen, p.dev);
-    // v28: a device that never signed in gets its full replay too, under its anonymous id (replay_), when its app
-    // applied an older rules version.
+    // A device that never signed in gets its full replay too, under its anonymous id (replay_), when its app applied an
+    // older rules version.
     const out = {ok: true, log: true};
-    TIM_.op = 'anon save';  // v130: timed as a whole, to its reply (timEnd_)
-    // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
+    TIM_.op = 'anon save';  // timed as a whole, to its reply (timEnd_)
+    // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's).
     try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
@@ -3685,8 +3684,8 @@ function over_(key, limit, n){
   return false;
 }
 
-// Backup of the whole spreadsheet to Pierre's pCloud (v139; Pierre, 2026-11-15: "OK, launch the pCloud backup PR";
-// docs/BACKUP.md). Once a week (trigger backupWeekly) and from the sheet's menu (Reef ID > Back up to pCloud now): every
+// Backup of the whole spreadsheet to Pierre's pCloud (docs/BACKUP.md). Once a week (trigger backupWeekly) and from the
+// sheet's menu (Reef ID > Back up to pCloud now): every
 // tab is read here (SpreadsheetApp, the scope the script already has), written as one .xlsx built in the script (no
 // Drive export: that needs a Drive scope the manifest does not hold, and autoUpdate installs the manifest as it is: a
 // scope added there is expected to stop the web app and the 15-minute trigger until Pierre authorises it; not tried, so
