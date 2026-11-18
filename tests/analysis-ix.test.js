@@ -103,7 +103,7 @@ test('interactions: none for a subject whose photos have one view (the fish); th
 });
 
 test('enlarging × view: the levels are the predicted chances without and with enlarging, at the typical habit', () => {
-  // Codex review #829: balanced log, half the answers enlarged by every player, true logits 0 without and 2 with on a
+  // Balanced log, half the answers enlarged by every player, true logits 0 without and 2 with on a
   // colony photo (1 and 1 on corallites); the app's expectation an offset of 0
   const R = A.rng(9),
     D = [];
@@ -121,7 +121,7 @@ test('enlarging × view: the levels are the predicted chances without and with e
 });
 
 test('format × practice: a format asked only after practice still enters the test', () => {
-  // Codex review #829: typed answers only from the 2nd answer on a genus on (the app's TYPED) were left out
+  // typed answers only from the 2nd answer on a genus on (the app's TYPED) are still tested
   const {photos, meta, look} = synthMeta(),
     pl = Array.from({length: 12}, (_, i) => ['P' + i, ((i % 5) - 2) * 0.3, 600, 0.1]),
     D = A.prep(A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 2}), meta).filter(a => !a.typed || a.n >= 2);
@@ -131,7 +131,7 @@ test('format × practice: a format asked only after practice still enters the te
 });
 
 test('admin: a compacted milestone still shows its interactions’ verdicts', () => {
-  // Codex review #829: compact keeps the tests, the view drew them only for a full milestone
+  // compact keeps the tests, and the view draws them for a compacted milestone too
   const vm = require('vm'),
     src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
     ctx = vm.createContext({

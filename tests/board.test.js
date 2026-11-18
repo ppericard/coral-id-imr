@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The leaderboard recalculated with today's rules (sheet v118; Pierre, 2026-11-09, rule D8: "whenever progress is
-// recalculated, the leaderboard must be recalculated automatically, even if people do not reconnect"): a player whose
+// The leaderboard recalculated with today's rules (rule D8: recalculated with progress, even for players who do not
+// reconnect): a player whose
 // saved copy applied an older rules version of a subject is ranked on that subject's board by the progress their app
 // will hold once it adopts the replay of their log (core.js replayAdopted), from the replay kept in the Replayed tab
 // (made ahead by the 15-minute trigger, Code.gs boardWarm_); a player up to date keeps their saved values. Made-up names.
@@ -170,7 +170,7 @@ test('a player behind the rules: every board shows the replayed progress and lev
     s = loadCodeGs({fetch: f.fetch});
   play(s, 'Ana', '1234', {}); // behind every subject's rules (no version applied)
   play(s, 'Ben', '1111', Object.fromEntries(BOARDED.map(S => [S.id, C.rvOf(S.id)]))); // up to date
-  // Before the trigger: nothing replayed yet, the saved copies as before; the board fetches nothing and replays nothing.
+  // Before the trigger: nothing replayed yet, the saved copies as saved; the board fetches nothing and replays nothing.
   const n0 = s.fetched.length;
   BOARDED.forEach(S => {
     assert.deepStrictEqual(
@@ -232,7 +232,7 @@ test('the fish board: the replay of the log as the app adopts it, no floor (Q330
   FUNITS.filter(u => high[u] && !rec[u] && (high[u].ok || high[u].ko)).forEach(u => assert.ok(!M[u], u));
 });
 
-// "Learned" asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b; fish rules version 3): the sheet's replay
+// "Learned" asks each variant group (a fish rules version): the sheet's replay
 // decides from the answer log (rule D9) with the variant table it makes (Code.gs subjVar_, core.js fishVarTable), so the
 // fish board follows for every player at once (rule D8), whoever never reconnects.
 test('Learned and the variant groups on the fish board: a mark without each group right in the log goes, for every player at once', () => {
@@ -263,7 +263,7 @@ test('Learned and the variant groups on the fish board: a mark without each grou
     '1111',
     FIX.fish.answers('benfish').map((a, i) => (i < 2 ? {...a, ph: i ? phs : juv} : a))
   );
-  // Before the trigger: both learned on the board, as their saved copies (behind fish rules version 3) say.
+  // Before the trigger: both learned on the board, as their saved copies (behind the current fish rules) say.
   const pct = P => C.pctOf(P, FUNITS);
   assert.deepStrictEqual(
     board(s, S).map(r => r[1]),
@@ -391,7 +391,7 @@ test('a new rules version of any subject leaves no board stale: the players up t
   });
 });
 
-// Codex review #810 (rule D7): a replay made outside the lock while the account is deleted never brings its rows back.
+// Rule D7: a replay made outside the lock while the account is deleted never brings its rows back.
 test('an account deleted while the trigger replays it: none of its replays written, the other players still are', () => {
   const hook = {},
     f = withAll(undefined, hook),
@@ -442,7 +442,7 @@ test('answers logged while the trigger replays: that replay dropped, made again 
   assert.deepStrictEqual(board(s, S), [shown(s, S, 'Ana')]);
 });
 
-// Codex review #810: a player named after a member of Object.prototype is an entry like any other.
+// A player named after a member of Object.prototype is an entry like any other.
 test('players named constructor, __proto__, toString: every board served, their replays made', () => {
   const f = withAll(),
     s = loadCodeGs({fetch: f.fetch}),
