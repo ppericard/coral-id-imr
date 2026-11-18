@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// The sea slugs learn genera, not families (Pierre, 2026-11-16: "s'il y a un apprentissage à faire, c'est pas au niveau
-// des familles, c'est au niveau des genres"): core.js SUBJECTS seaslug unitRank 'genus' makes the genera the units of its
-// circles from the start (core.js treeGen unit, treeGenUnits; app.js treeGenera completes them), its families structure
-// only, no opt-in genus set; one engine (rule S1): the fish, whose SUBJECTS has no unitRank, keep their families first and
-// their scientific genera as the opt-in set, unchanged.
+// The sea slugs learn genera, not families (docs/ARCHITECTURE.md "Sea slugs"): core.js SUBJECTS seaslug unitRank
+// 'genus' makes the genera the units of its circles from the start (core.js treeGen unit, treeGenUnits; app.js
+// treeGenera completes them), its families structure only, no opt-in genus set; one engine (rule S1): the fish, whose
+// SUBJECTS has no unitRank, keep their families first and their scientific genera as the opt-in set.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -66,7 +65,7 @@ test('core.js treeGen unit genus: every genus of the circles a unit, in its best
     const g = X.gen[G.id],
       sp = new Set(G.species);
     assert.deepStrictEqual([g.rank, g.name, g.parent, g.circle, g.species], ['genus', G.name, G.family, G.circle, G.species], G.id);
-    // its family's photos of its species, every one of them, and its own genus-level photos (gl, Q389 (1))
+    // its family's photos of its species, every one of them, and its own genus-level photos (gl)
     assert.deepStrictEqual(
       g.views.wide.map(p => p.f),
       X.gen[G.family].views.wide.filter(p => sp.has(p.sp) || (p.gl && p.sp === G.id)).map(p => p.f),
@@ -115,8 +114,7 @@ test('app.js treeGenera on genera from the start: each completed in its own circ
     assert.ok(!g.views.wide.length || g.cover === C.easyCover(g.views.wide).f, G.id);
   });
   assert.ok(X.c2.some(n => X.gen[n].circle === 2) && X.c3.every(n => X.gen[n].circle === 3));
-  // the fish: their scientific genera stay an opt-in set (TREEU.sci), in every circle (Pierre, 2026-11-18), each in its
-  // family's circle
+  // the fish: their scientific genera stay an opt-in set (TREEU.sci), in every circle, each in its family's circle
   const FJ = json('fish.json'),
     Y = ctx.treeGenera(C.treeGen(FJ, {}), FJ);
   assert.ok(Y.sci.length > 200 && Y.sci.every(n => Y.gen[n].circle === Y.gen[Y.gen[n].parent].circle && Y.gen[n].rank === 'genus'));
@@ -269,9 +267,9 @@ test('the Journey: a sea-slug genus question is no "Genus questions" step; a fis
   );
 });
 
-// The Learn page's taxonomic groups (Pierre, 2026-11-16: the families in logical taxonomic groups, the true nudibranchs
-// apart; his "parfait !" on Nudibranchia first, Doridina then Cladobranchia, then the other sea slugs by order), from
-// WoRMS's classification (tools/seaslug_groups.json, rule C2) into seaslug.json taxa and each family's tgroup.
+// The Learn page's taxonomic groups (the families in logical taxonomic groups, the true nudibranchs apart: Nudibranchia
+// first, Doridina then Cladobranchia, then the other sea slugs by order), from WoRMS's classification
+// (tools/seaslug_groups.json, rule C2) into seaslug.json taxa and each family's tgroup.
 test('the taxonomic groups: Doridina, Cladobranchia, then the other orders; every family in one; the fish have none', () => {
   const G = json('tools/seaslug_groups.json'),
     titles = F.taxa.groups.map(g => g.title);

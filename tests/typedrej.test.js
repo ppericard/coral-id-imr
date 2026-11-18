@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// Typed answers (Pierre, 2026-11-08, Q237): every text the form refuses before the answer is logged with it ("c'est
-// essentiel. Et c'est vrai pour tout le jeu, partout": quiz.js typeBind rj, answer rj, Code.gs v100 Rejected tries), and
-// on a genus question a common name or a family name is told so, with a nudge that gives nothing away (core.js
-// typeElse, quiz.js typeKind, typeKindMsg): never a scientific name, the same whatever the photo's genus.
+// Typed answers: every text the form refuses before the answer is logged with it, everywhere in the game (quiz.js
+// typeBind rj, answer rj, Code.gs Rejected tries), and on a genus question a common name or a family name is told so,
+// with a nudge that gives nothing away (core.js typeElse, quiz.js typeKind, typeKindMsg): never a scientific name, the
+// same whatever the photo's genus.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs'),
@@ -130,7 +130,7 @@ test('typeElse: a family name, a common name, or nothing (the spelling message a
   assert.strictEqual(kindOf('Reticulated damselfish'), 'common', "a species' listed common name, not the PDF's (fish.json cn)");
   assert.strictEqual(kindOf('xyzfish'), '');
   assert.strictEqual(kindOf(''), '');
-  // A scientific genus name, in the game or not, is never a common name: the spelling message as before.
+  // A scientific genus name, in the game or not, is never a common name: the plain spelling message.
   for (const g of SCI) assert.strictEqual(kindOf(g), '', g);
   // Every name of every family reads as something (never the spelling message), and as no genus.
   for (const o of NAMES.filter(o => rankOf(o.g) !== 'genus' && !SCI.some(s => C.typeNormAll(s) === o.k))) {

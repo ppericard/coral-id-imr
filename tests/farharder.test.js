@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The calibration goal (Pierre, 2026-11-06, Q192; docs/reviews/2026-11-06-photo-exposure-study.md §4, §7.6): the admin
+// The calibration goal (docs/reviews/2026-11-06-photo-exposure-study.md §4, §7.6): the admin
 // flags the photos in play far harder than their genus (admin.js farHarder: the photo's own part of its difficulty, its
 // ?stats=1 difficulty minus its genus's offset gd, of FAR.D logits or more after FAR.N answers or more), the farthest
 // first; RATE.MIN is the first answers each photo should get (3).
@@ -37,7 +37,7 @@ test('farHarder: 1.5 logits or more above the genus after 5 answers or more, the
       a3: [1.85, 6, 2, 8], // residual 1.45: within
       b1: [1.8, 8, 2, 9], // residual 2.0: flagged, first
       b2: [-2.5, 9, 9, 9], // far easier: never flagged
-      c1: [3, 9, 0, 9] // a genus with no offset (before sheet v31): none
+      c1: [3, 9, 0, 9] // a genus with no offset (a sheet that sends none): none
     },
     play = ['a1', 'a2', 'a3', 'b1', 'b2', 'c1', 'zz'].map(f => ({f, genus: f[0].toUpperCase(), view: 'wide'}));
   const {RATE, FAR, farHarder} = load(S, GD);

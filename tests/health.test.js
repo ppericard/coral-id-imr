@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// Health › Photos everyone misses counts players, not answers (Pierre, 2026-11-05): admin.js photoAnswers, missedBy,
+// Health › Photos everyone misses counts players, not answers: admin.js photoAnswers, missedBy,
 // manyMiss and everyoneMisses (between `// everyone: begin` / `end`), the one rule Health, To do's Health line, the
 // session summary's "hard for everyone" (healthBad) and the demo data (admin-demo.js) share. Made-up rows:
 // [id, time, genus shown, answered, right, mode, photos].
@@ -99,10 +99,10 @@ test('healthBad, the session summary and the demo all use the one rule', () => {
   assert.match(demo, /photoAnswers\(/);
 });
 
-// Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
-// follows the Corals | Fish switch. The sheets a subject's players opened: the corals' genus sheets from the summary's
-// genera, the fish's from its sheet page, a visit with no fish page not a fish visit. A page name is in the corals' words
-// (core.js pageName), so a fish sheet of every rank is logged fish.learn.genus: the fixture holds what is really logged.
+// Fish admin at parity: Stops follows the Corals | Fish switch. The sheets a subject's players opened: the corals'
+// genus sheets from the summary's genera, the fish's from its sheet page, a visit with no fish page not a fish visit. A
+// page name is in the corals' words (core.js pageName), so a fish sheet of every rank is logged fish.learn.genus: the
+// fixture holds what is really logged.
 test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pages", () => {
   const C = require('../core.js'),
     {sheetVisit, sheetsTitle, stopWord} = new Function(
@@ -139,7 +139,7 @@ test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pa
 // Health on the fish side (fish admin at parity): the fish photos everyone misses, counted on their answers (the sheet
 // rates the corals' photos only), each with its family; the fish units players are stuck on: its slate (families only,
 // as core.js treeGen's c1-c3 that fishAdmin reads) and the scientific genera met in the answers (g:Chromis). The corals'
-// side reads its own photos and genera as before.
+// side reads its own photos and genera.
 test('Health per subject: the fish photos and units, the corals untouched', () => {
   const C = require('../core.js'),
     [coral, fish] = [C.subjectOf('coral'), C.subjectOf('fish')],
@@ -181,7 +181,7 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
     [['fa', 'f:Damselfishes', 6, 3]],
     'the fish photo with its family; the coral photo is no fish photo'
   );
-  // a fish photo handled in the draft (× excluded, Not this, Removed) leaves the list before it is cut (Codex review #800)
+  // a fish photo handled in the draft (× excluded, Not this, Removed) leaves the list before it is cut
   for (const k of ['exclude', 'out', 'seen']) {
     env.DRAFT.fish = {[k]: {fa: k === 'out' ? 's2' : 1}};
     assert.deepStrictEqual(F.healthBad(R), [], `a photo in fish ${k}: handled`);

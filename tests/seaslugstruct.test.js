@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The sea slugs' structure and look-alike lines in the content editor (Pierre, 2026-11-18, on #1061's two open items:
-// "Option 2 : on le construit maintenant"):
+// The sea slugs' structure and look-alike lines in the content editor:
 // - a genus's look-alike line (core.js SUBJECTS seaslug content genus lsrc/<other genus>), a list of sources {t, u}, the
 //   slot type srcs, laid over seaslug.json as every text slot (contentApply, the overlay's {v, src, was, t}), kept against
 //   a rebuilt base (stale: his stays in force; absorbed), edited in the admin's Sheet box (admin-content.js sheetVal,
@@ -8,7 +7,7 @@ require('./slot.js').testGuard();
 // - their look-alike pairs between genera (SUBJECTS seaslug structure: srcsStructure), the stamp (structStamp), and the
 //   sheet's replay of a sea-slug player under the pairs in force (Code.gs subjRpl_, replays_), as the fish's and the
 //   corals' (tests/structure.test.js, tests/coralcontent.test.js). The edits here are made up: the real curation.json holds
-//   none (A1: only Pierre's Publish writes it).
+//   none (A1: only the admin's Publish writes it).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -278,7 +277,7 @@ test('the admin: every genus of a subject played at the genus has the boxes, one
   assert.ok(g && !AC.sheetOwn(FI, g.id, C.subjectOf('fish')));
 });
 
-// ---- The sheet (Code.gs): a sea-slug player replayed under the pairs in force, keyed by the stamp (Q363 h A) ----
+// ---- The sheet (Code.gs): a sea-slug player replayed under the pairs in force, keyed by the stamp ----
 
 const SRV = C.rvOf('seaslug');
 // GitHub main as the sheet reads it: seaslug.json, and a curation.json the test changes.

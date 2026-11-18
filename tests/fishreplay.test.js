@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish progress replayed by the sheet (ROADMAP "Fish progress replayed from the answer log"; Pierre, 2026-11-08):
+// The fish progress replayed by the sheet (ROADMAP "Fish progress replayed from the answer log"):
 // the units the replay reads (core.js treeReplayGen, built by Code.gs from fish.json alone) are the app's (core.js
 // treeGen and app.js treeGenera over fish.json and its photos): the same units, look-alikes and family lines.
 const test = require('node:test'),
@@ -40,7 +40,7 @@ test("treeReplayGen: the app's fish units, their look-alikes and family lines, f
   assert.strictEqual(got['s:s091'].from, 'f:Damselfishes');
 });
 
-// The genera of circles 2 and 3 (Pierre, 2026-11-18, "lance"): the sheet's replay reads them as the app makes them, so a
+// The genera of circles 2 and 3: the sheet's replay reads them as the app makes them, so a
 // wrong pick of a circle-2 genus counts against the genus picked too (rule L2), as the game counts it; the board's tree
 // (treeBoardTree) credits them as the app's; the variant table holds them as the app's units do.
 test('treeReplayGen: a circle-2 genus is replayed as the app scores it', () => {
@@ -76,7 +76,7 @@ test('treeReplayGen: a circle-2 genus is replayed as the app scores it', () => {
   assert.ok(T.s.some(e => e[1] === 'g:Aeoliscus'));
 });
 
-// The sea slugs' replay (their leaderboard, Pierre, 2026-11-17; rule D8): the units the sheet reads from seaslug.json
+// The sea slugs' replay (their leaderboard; rule D8): the units the sheet reads from seaslug.json
 // (core.js SUBJECTS seaslug replayed: treeReplayGen at the genus) are the app's (treeGen at its unitRank, app.js
 // treeGenera): its genera with their sibling genera as look-alikes and their family's line, its families as structure.
 test("treeReplayGen at the genus: the app's sea slug units, from seaslug.json alone", () => {
@@ -111,6 +111,6 @@ test('the subjects the sheet replays besides the corals: fish and the sea slugs,
   );
   assert.strictEqual(C.replaySubject(), 'coral');
   assert.ok(C.rvOf('fish') >= 1 && C.rvsOf('fish') !== C.RVS && C.rvOf('coral') === C.RV);
-  // No floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down).
+  // No floor: the log is the only reference, a bar may go down (docs/LEARNING.md).
   assert.ok(!('floor' in C.subjectOf('fish').replayed) && typeof C.replayFloor === 'undefined');
 });

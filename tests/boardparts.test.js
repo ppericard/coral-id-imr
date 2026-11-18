@@ -1,10 +1,9 @@
 require('./slot.js').testGuard();
-// My progress, where the units of the opt-in sets show (Pierre, 2026-11-18, Q404 A, Q402 A; the bug: a fish player at IMR with
-// scientific names off saw ~17 "?" tiles after the 65 families, one tooltipped "A family you have not met yet", for
-// scientific genera in play). progress.js boardParts and mystT run in Node on stubs, as tests/mystery.test.js and
-// tests/unlockcount.test.js: the families' grid holds the units at the slate's own rank only; every other set has its own
-// section, shown once it is on or has a unit met, its units not met (the "?" tiles) only while it is on; a "?" says its own
-// rank; one code path for every subject (rule S1).
+// My progress, where the units of the opt-in sets show: a fish player at IMR with scientific names off sees no "?"
+// tiles called families for the scientific genera in play. progress.js boardParts and mystT run in Node on stubs, as
+// tests/mystery.test.js and tests/unlockcount.test.js: the families' grid holds the units at the slate's own rank only;
+// every other set has its own section, shown once it is on or has a unit met, its units not met (the "?" tiles) only
+// while it is on; a "?" says its own rank; one code path for every subject (rule S1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

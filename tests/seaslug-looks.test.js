@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The sea slugs' genus look-alikes (Pierre, 2026-11-17, Q390 D, on the survey docs/reviews/2026-11-17-seaslug-lookalikes-
-// survey.md): the genus pairs a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers)
-// enter as declared look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show
-// enter as data look-alikes, which the players' answers can drop; the species pairs wait for the species level.
+// The sea slugs' genus look-alikes (the survey docs/reviews/2026-11-17-seaslug-lookalikes-survey.md): the genus pairs
+// a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers) enter as declared
+// look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show enter as data
+// look-alikes, which the players' answers can drop; the species pairs wait for the species level.
 // - tools/seaslug_game.py genus_looks writes them into seaslug.json (genus look, dlook, lsrc) from
 //   tools/seaslug_lookalikes_cand.json;
 // - app.js treeGenera reads them (look, decl, lsrc, dl), model.js seeds the data look-alikes (dataSeed, isDataLook,
@@ -107,7 +107,7 @@ test('seaslug.json: the declared genus pairs across families of the survey, each
   // the pairs only iNaturalist shows, among them the survey's (§6.1)
   ['Hexabranchus', 'Phyllidia'].forEach(o => assert.ok(byName.Goniobranchus.dlook.includes(byName[o].id), o));
   assert.ok(byName.Chromodoris.dlook.includes('g:Nembrotha'));
-  // the species pairs wait: the one decided species pair (Q377) is the only species look
+  // the species pairs wait: the one decided species pair is the only species look
   assert.deepStrictEqual(
     F.species.filter(s => s.look).map(s => s.name),
     ['Hexabranchus lacer', 'Hexabranchus sanguineus']
@@ -198,7 +198,7 @@ test('model.js: a seeded pair is a data look-alike from the start, on the declar
   // mixed up 8 times in 20: still one
   M = model({'A|B': [20, 8]});
   assert.ok(M.isDataLook('A', 'B'));
-  // a pair nobody seeded still needs CONF.N offers and the trap score (core.js dataLook), as before
+  // a pair nobody seeded still needs CONF.N offers and the trap score (core.js dataLook)
   assert.ok(!model({'A|D': [10, 8]}).isDataLook('A', 'D'));
   assert.ok(model({'A|D': [20, 8]}).isDataLook('A', 'D'));
 });

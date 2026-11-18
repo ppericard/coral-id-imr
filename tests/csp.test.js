@@ -23,8 +23,8 @@ for (const page of ['index.html', 'admin.html'])
     }
   });
 
-// Every remote photo the admin shows (the fish candidates in fish-cand.json: iNaturalist and, since 2026-11-05, FishBase;
-// the fish auto decisions panel draws them) comes from a host the admin's img-src allows (Codex review #562).
+// Every remote photo the admin shows (the fish candidates in fish-cand.json: iNaturalist and FishBase; the fish auto
+// decisions panel draws them) comes from a host the admin's img-src allows.
 test('admin.html: img-src allows every host of the fish candidates', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8'),
     csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1],
@@ -42,9 +42,9 @@ test('admin.html: img-src allows every host of the fish candidates', () => {
   hosts.forEach(h => assert.ok(img.includes(h), `${h} missing from admin.html img-src`));
 });
 
-// When R2 fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05: Photos out
-// of the repo, step 1): every host of those originals (data.json, cand.json, fish-photos.json and fish-game.json src: iNaturalist,
-// FishBase) must be allowed by the app's img-src, or the fallback would be blocked.
+// When R2 fails, a photo with an online original is read from it (core.js photoAway): every host of those originals
+// (data.json, cand.json, fish-photos.json and fish-game.json src: iNaturalist, FishBase) must be allowed by the app's
+// img-src, or the fallback would be blocked.
 test('index.html: img-src allows every host of the photos’ online originals', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
     csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1],
