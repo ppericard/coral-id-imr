@@ -55,8 +55,8 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   "Sheet script vN assigned at merge", `@codex review`). None is committed as a tool yet: rebuild them first thing as
   small scripts. A docs-only PR has 5 checks, not 17.
 - **Test every new card at 390 px with a long list**: a card with a long list once pushed itself off screen behind its
-  backdrop. The safety net stays (an invisible card closes itself after 2.5 s; the events `empty card closed` and `left
-  with a card open`): read the Events tab now and then for any other card that hides.
+  backdrop. The safety net stays (an invisible card closes itself after 2.5 s; the events `empty card closed` and
+  `left with a card open`): read the Events tab now and then for any other card that hides.
 
 ## Working with Pierre
 

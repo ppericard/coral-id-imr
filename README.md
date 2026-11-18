@@ -81,7 +81,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
 | [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
 | [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
-| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; where things are and what lives outside GitHub |
+| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; setting up, the sheet script's redeploy and what lives outside GitHub |
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
 | [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
 | [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
@@ -92,7 +92,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
 | [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
 | [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history |
-| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos |
+| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos (`judging/PROMPT.md`: what to paste) |
 | [privacy.html](privacy.html) | The privacy notice players see |
 
 ## Content and rights
