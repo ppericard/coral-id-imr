@@ -116,6 +116,19 @@ def gh(path):
     return json.loads(r.stdout or 'null')
 
 
+def gh_all(path, key=None, stop=None, pages=20):
+    """Every page of a list (path ends with per_page=100): page=N until a short page; `key` picks the list out of an
+    object (workflow_runs); `stop(item)` true on a page's last item ends early (lists sorted newest first)."""
+    out = []
+    for page in range(1, pages + 1):
+        got = gh('%s&page=%d' % (path, page))
+        got = got.get(key, []) if key else got
+        out += got
+        if len(got) < 100 or (stop and got and stop(got[-1])):
+            return out
+    return out
+
+
 def agent_minutes(n):
     """tools/effort.py's agent time for one merged PR (cached by effort.py), or None."""
     try:
@@ -131,11 +144,12 @@ def snapshot(now):
     s, e = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
     inside = lambda iso: iso and s <= parse(iso) < e  # noqa: E731
     base = 'repos/%s' % REPO
-    closed = gh('%s/pulls?state=closed&sort=updated&direction=desc&per_page=100' % base)
+    # Closed PRs newest-updated first, until one updated before the night (a merge updates the PR).
+    closed = gh_all('%s/pulls?state=closed&sort=updated&direction=desc&per_page=100' % base, stop=lambda p: parse(p['updated_at']) < s)
     merged = [{'n': p['number'], 'title': p['title']} for p in closed if inside(p.get('merged_at'))]
-    open_prs = gh('%s/pulls?state=open&per_page=100' % base)
+    open_prs = gh_all('%s/pulls?state=open&per_page=100' % base)
     span = '%s..%s' % (s.strftime('%Y-%m-%dT%H:%M:%SZ'), e.strftime('%Y-%m-%dT%H:%M:%SZ'))
-    runs = gh('%s/actions/runs?created=%s&per_page=100' % (base, span)).get('workflow_runs', [])
+    runs = gh_all('%s/actions/runs?created=%s&per_page=100' % (base, span), key='workflow_runs')
     with ThreadPoolExecutor(8) as ex:
         for m, t in zip(merged, ex.map(agent_minutes, [m['n'] for m in merged])):
             m['agent_min'] = t

@@ -257,11 +257,12 @@ test('the description: "Choices I made" None, and each change players see quoted
         },
         3: {title: 'PR 3', body: BODY('Yes:\n- Probes slipped into the quiz, as Pierre wanted.')},
         4: {title: 'PR 4', body: BODY('No', 'The order of the tabs.')},
-        5: {title: 'PR 5', body: BODY('')}
+        5: {title: 'PR 5', body: BODY('')},
+        6: {title: 'PR 6', body: BODY('Yes:')}
       }
     });
     const env = {TRAIN_BODY_FROM: '1'};
-    const r = f.trainEnv(env, '--dry-run', '1', '2', '3', '4', '5');
+    const r = f.trainEnv(env, '--dry-run', '1', '2', '3', '4', '5', '6');
     assert.strictEqual(r.status, 1, r.stdout + r.stderr);
     assert.doesNotMatch(r.stdout, /#1:/);
     assert.doesNotMatch(r.stdout, /#2:/);
@@ -271,6 +272,7 @@ test('the description: "Choices I made" None, and each change players see quoted
     );
     assert.match(r.stdout, /#4: "Choices I made" is not None/);
     assert.match(r.stdout, /#5: "Players see or play differently\?" is empty/);
+    assert.match(r.stdout, /#6: "Players see" says Yes but names no change/);
     const good = f.trainEnv(env, '--dry-run', '1', '2');
     assert.strictEqual(good.status, 0, good.stdout + good.stderr);
     assert.deepStrictEqual(f.trains(), []);
@@ -292,6 +294,25 @@ test('a PR before TRAIN_BODY_FROM keeps the older template: its description is n
 
 // Integrator review of #1117: "None" followed by an explanation is None; a STATUS handover and Dependabot's PRs carry no
 // template sections and still ride trains (rules W26, W9).
+// Codex review #1117: a numbered list is one item per entry, so a source on one change does not cover the next.
+test('the description check reads numbered lists item by item', () => {
+  const f = fixture();
+  try {
+    f.setState({
+      prs: {
+        1: {title: 'PR 1', body: BODY("Yes:\n1. The button turns grey (integrator's call).\n2. Replace the progression model.")},
+        2: {title: 'PR 2', body: BODY("Yes:\n1) The button turns grey (integrator's call).\n2) Pierre, 2026-11-18: «ok pour la liste».")}
+      }
+    });
+    const r = f.trainEnv({TRAIN_BODY_FROM: '1'}, '--dry-run', '1', '2');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /#1: "Players see" names a change .*"Replace the progression model\./);
+    assert.doesNotMatch(r.stdout, /#2:/);
+  } finally {
+    f.done();
+  }
+});
+
 test('the description check accepts "None. …", a STATUS handover and a Dependabot PR', () => {
   const f = fixture();
   try {

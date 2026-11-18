@@ -74,6 +74,23 @@ test('an empty night says so, and a missing queue is named', () => {
   assert.match(out, /⚠ Nothing merged and no PR opened during the night\./);
 });
 
+// Codex review #1117: a busy night has more than 100 workflow runs; every page is read.
+test('lists are read page by page until a short page, or until the stop item', () => {
+  const out = py(`
+pages = {1: [{'i': i} for i in range(100)], 2: [{'i': 100 + i} for i in range(100)], 3: [{'i': 200}]}
+calls = []
+def fake(path):
+    calls.append(path)
+    return {'workflow_runs': pages[int(path.rsplit('=', 1)[1])]}
+night.gh = fake
+all_runs = night.gh_all('x?per_page=100', key='workflow_runs')
+calls_all = len(calls)
+night.gh = lambda path: pages[int(path.rsplit('=', 1)[1])]
+early = night.gh_all('x?per_page=100', stop=lambda p: p['i'] >= 99)
+print(json.dumps([len(all_runs), calls_all, len(early)]))`);
+  assert.deepStrictEqual(JSON.parse(out), [201, 3, 100]);
+});
+
 test('the queue is read from STATUS "## Night queue", "None" meaning empty', () => {
   const q = s => JSON.parse(py(`print(json.dumps(night.queue(${JSON.stringify(s)})))`));
   assert.deepStrictEqual(q('# Status\n\n## Night queue\n\n- Fish basics (#1108)\n- Sea slug\n  achievements\n\n## Last stop\n\nx\n'), [

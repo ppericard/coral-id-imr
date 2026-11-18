@@ -45,8 +45,47 @@ WAY_OUT = (
 )
 
 
+def substitutions(command):
+    """The commands inside $(…) and `…` outside single quotes: the shell runs them even inside double quotes."""
+    out, i, n, single = [], 0, len(command), False
+    while i < n:
+        c = command[i]
+        if c == "'" and not single and (i == 0 or command[i - 1] != '\\'):
+            j = command.find("'", i + 1)
+            i = n if j < 0 else j + 1  # a single-quoted span: no substitution inside
+            continue
+        if command.startswith('$(', i) and not command.startswith('$((', i):
+            depth, j = 1, i + 2
+            while j < n and depth:
+                if command[j] == "'":
+                    k = command.find("'", j + 1)
+                    j = n if k < 0 else k + 1
+                    continue
+                depth += {'(': 1, ')': -1}.get(command[j], 0)
+                j += 1
+            out.append(command[i + 2:j - 1])
+            i = j
+            continue
+        if c == '`':
+            j = command.find('`', i + 1)
+            out.append(command[i + 1:j if j >= 0 else n])
+            i = n if j < 0 else j + 1
+            continue
+        i += 1
+    return out
+
+
+# `$(cat <<'EOF' … EOF)` only turns the heredoc's text into an argument (a commit message): text, not code.
+TEXT_HEREDOC = re.compile(r'\s*cat\s+<<-?\s*([\'"]?)([A-Za-z_]\w*)\1[ \t]*\n.*?\n\s*\2\s*$', re.S)
+
+
 def reason(command):
     """Why the command is refused, or None."""
+    for inner in substitutions(command or ''):
+        if not TEXT_HEREDOC.fullmatch(inner):
+            why = reason(inner)
+            if why:
+                return why
     text = REVIEWED.sub(' ', QUOTED.sub(' Q ', command or ''))
     for pat, what in PATTERNS:
         if pat.search(text):

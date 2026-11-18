@@ -83,9 +83,12 @@ def body_problems(body):
     if not sees:
         why.append('"Players see or play differently?" is empty: write No, or each change with its source')
     elif not re.match(r'(?i)no\b', sees):
-        items = [i for i in re.split(r'\n(?=\s*[-*] )', sees) if i.strip() and not re.fullmatch(r'(?i)\s*yes\s*:?\s*', i)]
-        bad = [i.strip().lstrip('-* ')[:60] for i in items if not (QUOTE.search(i) or CALL.search(i))]
-        if bad:
+        # One item per list entry (-, *, + or 1. / 1)); a leading "Yes" or "Yes:" alone is no change.
+        items = [i for i in re.split(r'\n(?=\s*(?:[-*+]|\d+[.)])\s)', sees) if i.strip() and not re.fullmatch(r'(?i)\s*yes\s*[:.]?\s*', i)]
+        bad = [re.sub(r'^\s*(?:[-*+]|\d+[.)])\s*', '', i)[:60] for i in items if not (QUOTE.search(i) or CALL.search(i))]
+        if not items:
+            why.append('"Players see" says Yes but names no change: give each one with its source')
+        elif bad:
             why.append('"Players see" names a change with neither Pierre\'s words quoted and dated nor "integrator\'s call": %s'
                        % '; '.join('"%s…"' % b for b in bad))
     return why
