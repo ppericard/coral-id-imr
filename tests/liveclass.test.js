@@ -540,6 +540,69 @@ test('live.js: a page redrawn while an answer is being logged never logs it twic
   assert.deepStrictEqual(logged, [0]);
 });
 
+test('live.js: a live miss restarts the mastery exam of the unit shown and of the one named (rule L9; Codex review #1049)', () => {
+  const log = [],
+    P = {
+      Acropora: {ok: 3, ko: 1, ex: {k: 2, v: []}},
+      Montipora: {ok: 4, ko: 0, ex: {k: 3, v: []}},
+      Porites: {ok: 2, ko: 0, ex: {k: 1, v: []}}
+    },
+    id = x => x,
+    zero = () => 0;
+  // The game's scorer and log stubbed (tests/live.smoke.js runs them for real): here, what a miss does to the exams.
+  const A = liveApp(() => ({}), {
+    SYNC: {name: 'Ann'},
+    P,
+    SUBJ: {id: 'coral'},
+    PICKD: {SINGLE: 0},
+    inSubject: (sid, f) => f(),
+    GX: n => (P[n] ? {} : null),
+    introReady: () => true,
+    st: n => P[n],
+    photoLook: () => null,
+    mxRecalc: f => f(),
+    memRecalc: () => {},
+    pmem: zero,
+    scoreIn: id,
+    photoDiff: zero,
+    famOf: zero,
+    confTerm: zero,
+    pgLook: zero,
+    startP: zero,
+    rtOn: () => false,
+    fmtOff: zero,
+    pfmt: zero,
+    fmtOf: zero,
+    domRules: zero,
+    genusDiff: zero,
+    scoreAnswer: () => ({e: 0.5, th0: 0, dm: 0}),
+    speciesShown: () => '',
+    mxKept: () => true,
+    scoreLog: () => '',
+    rankOf: () => 'genus',
+    unitRankOf: () => 'genus',
+    unitName: () => '',
+    holdStep: () => {},
+    startStep: () => {},
+    answeredAt: () => {},
+    logAnswer: a => log.push(a),
+    save: () => {}
+  });
+  const o = c => ({
+    qi: 0,
+    s: 'coral',
+    t: 'Acropora',
+    c,
+    ok: c === 'Acropora',
+    ph: ['acropora-1'],
+    chs: ['Acropora', 'Montipora', 'Porites', 'Pocillopora']
+  });
+  assert.strictEqual(A.ctx.liveLog({id: 'coral'}, o('Montipora')), 'ok');
+  assert.ok(!('ex' in P.Acropora) && !('ex' in P.Montipora), JSON.stringify(P));
+  assert.deepStrictEqual(P.Porites.ex, {k: 1, v: []});
+  assert.strictEqual(log[0].m, 'live');
+});
+
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {
   let loaded = false;
   const A = liveApp(

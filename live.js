@@ -499,7 +499,9 @@ function liveLog(S, o) {
       const res = scoreAnswer(P, q),
         sp = speciesShown(ph);
       if (!good) [t, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
+      // A miss restarts the mastery exam of the unit shown and of the one named (rule L9), as quiz.js answer does.
       if (!good) delete s.ex;
+      if (!good && GX(c) && P[c]) delete P[c].ex;
       const ans = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         t: o.at || new Date().toISOString(),

@@ -273,10 +273,14 @@ async function shot(p, name) {
   // Sam's answers reach the sheet through the account's usual sync (or still wait in its queue): mode 'live', scored.
   await S[0].p.evaluate(() => typeof syncSoon === 'function' && syncSoon());
   await S[0].p.waitForTimeout(3000);
-  const inQueue = await S[0].p.evaluate(() => ((SYNC && SYNC.log) || []).filter(a => a.m === 'live').map(a => [a.g, a.a, a.ok, !!a.sc]));
+  // By answer id: one still in the queue while the save that carries it is on its way is on the sheet too, and counts once;
+  // an answer logged twice has two ids.
+  const inQueue = await S[0].p.evaluate(() =>
+    ((SYNC && SYNC.log) || []).filter(a => a.m === 'live').map(a => [a.g, a.a, a.ok, !!a.sc, a.id])
+  );
   const A = s.sheets.Answers ? s.sheets.Answers.rows.slice(1).filter(r => r && r[0]) : [],
-    logged = A.filter(r => r[5] === 'live').map(r => [r[0], r[2], r[3], r[4], !!r[22]]);
-  const sam = [...inQueue.map(a => ['Sam', ...a]), ...logged];
+    logged = A.filter(r => r[5] === 'live').map(r => [r[0], r[2], r[3], r[4], !!r[22], r[7]]);
+  const sam = [...new Map([...inQueue.map(a => ['Sam', ...a]), ...logged].map(a => [a[5], a])).values()];
   check(sam.length === N, `4: ${sam.length} live answers of Sam logged or queued, not ${N}: ${JSON.stringify(sam)}`);
   check(
     sam.every(a => a[0] === 'Sam' && a[3] === 1 && a[1] === a[2] && a[4]),
