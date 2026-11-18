@@ -10,6 +10,7 @@ adopted" and "Decision log" at `6c4c05d1` (2026-11-19), "What each number measur
 replay (`tools/abilityeval.js`): judging a paired difference (2026-11-05)" and "Validating a learning change (rule
 L11; validated by Pierre on 2026-11-08, #735)" at `5f30276b` (2026-11-19). Its relative links were given `../` so they
 still resolve from this folder; the section names it cites are those of LEARNING.md then and are not kept up to date.
+A real player's name is replaced by a label (rule D2, which has no exception for an archive).
 
 Where this notebook and LEARNING.md or the code differ, LEARNING.md and the code say what runs now: a value or a rule
 here may since have changed. New studies go to `docs/reviews/`; this file only takes further parts moved out of
@@ -6832,7 +6833,7 @@ Two views show how effects and genera relate (the multifactor visualisation stud
   sign-in, is what tells a real player from a bot or a test run. Signing in still saves the progress, for the trainer
   and on any device, and puts the player on the leaderboard.
 - 2026-11-02, Pierre: the photo ratings must move quickly, the first players being RAs and experts who all bring real
-  information (Pierre, Emmy, and an anonymous player who is probably IMR staff): `PHOTO_W.N` 30 → 10 (sheet v18). The
+  information (Pierre, a named RA, and an anonymous player who is probably IMR staff): `PHOTO_W.N` 30 → 10 (sheet v18). The
   10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). `TRUST.N` stays 10: it counts a player's
   answers, which every real player passes quickly (lowered to 5 for a moment, when it read as answers per photo; there
   is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To

@@ -5916,7 +5916,7 @@ const PARTS = [
       await left(q3, '#learn/genus/Porites');
       const bf = await q3.evaluate(() => location.hash);
       if (bf !== '#practice/quiz') fails.push(`${w}px Back after Forward onto a closed photo: ${bf}`);
-      // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
+      // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz.
       await q3.evaluate(() => (location.hash = 'practice/quiz'));
       await drawn(q3);
       await q3.evaluate(() => (location.hash = 'learn/genus/Porites'));

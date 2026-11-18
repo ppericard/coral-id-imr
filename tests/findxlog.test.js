@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// A Find the X's photo tapped in the log (Pierre, 2026-11-15, Q371: "ok pour A"): the Answers tab's last column, Photo
+// A Find the X's photo tapped in the log: the Answers tab's last column, Photo
 // answered, holds the file stem of the photo the player tapped (quiz.js answer pa), so the species taken for another
 // family can be read from it (fish-game.json); checked as Photos; blank for any other answer and the rows logged
-// before; sent only from PA_SHEET (core.js logOut, sync.js, rule D4); information only: no score, replay or reader
+// without it; sent only from PA_SHEET (core.js logOut, sync.js, rule D4); information only: no score, replay or reader
 // reads it. Every check runs on the in-memory sheet (tests/gas.js, rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -63,7 +63,7 @@ test("Code.gs: a Find the X answer stores the photo tapped, a save's and an anon
     ['a2', 'fi202'],
     ['a3', 'fi203']
   ]);
-  // The rest of the row as before: the unit of the photo tapped in Answered, the unit's own photo in Photos.
+  // The rest of the row is unchanged: the unit of the photo tapped in Answered, the unit's own photo in Photos.
   const R = s.sheets.Answers.rows,
     H = R[0],
     r = R[1];
@@ -107,7 +107,7 @@ test('Code.gs: any other answer and an app before it log it blank; a tab made be
     pas(s).map(r => r[1]),
     ['', '', '']
   );
-  // A tab made before the column (25 columns, Device last): the next answer adds its header, the older rows read blank,
+  // A tab made without the column (25 columns, Device last): the next answer adds its header, the older rows read blank,
   // every value they held where it was.
   const t = loadCodeGs();
   save(t, 'Ana', [fx('a1'), quiz('a2')]);

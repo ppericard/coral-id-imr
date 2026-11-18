@@ -1,5 +1,5 @@
 # Tags every iNaturalist photo in data.json with where it was taken: loc = dauin (within 40 km of Dauin),
-# ph (elsewhere in the Philippines) or world. Pierre's own photos are all from Dauin. IMR lecture photos
+# ph (elsewhere in the Philippines) or world. The admin's own photos are all from Dauin. IMR lecture photos
 # (course) are left untagged and shown in every mode. Run after the build scripts.
 # iNaturalist through tools/inat.py (rule C7): 200 observations a request (iNaturalist's most), about one a second.
 import math

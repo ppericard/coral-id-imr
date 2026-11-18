@@ -70,7 +70,7 @@ function opened() {
   return M;
 }
 
-// The card that offered Open all went (Pierre, 2026-11-12, Q337); Open all itself stays, the same on the first cards and
+// The card that offered Open all is gone; Open all itself stays, the same on the first cards and
 // in My progress: every genus left opens at once, ready (no card each), recorded with where it came from.
 test('Open all from the first cards and from My progress: every genus left at once, ready, its record', () => {
   for (const via of ['card', 'progress']) {
@@ -146,7 +146,7 @@ test('Keep them all: nothing closes, the card is never due again, a later Open a
 
 test('One at a time: every genus opened at once closes, answered or not; the others and every answer stay', () => {
   const M = opened();
-  // D answered right since Open all, E answered wrong, F never asked.
+  // D answered right after Open all, E answered wrong, F never asked.
   M.ctx.P.D = {ok: 2, ko: 1, th: 0.4};
   M.ctx.P.E = {ok: 0, ko: 2};
   M.play(6, 0.8, false);

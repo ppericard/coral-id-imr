@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The faster typed-answer reading (performance pass, 2026-11-09): core.js typeDist keeps three rows of its matrix
-// instead of the whole one, typeMatchIn skips a name whose length is further from the text's than its tolerance, and
-// typeElse reads its lists' names once per norm. Each gives exactly the answers of the code before, kept here as the
-// reference: the same distances, matches and nudges on the real fish and coral names, their slips and random texts.
+// The faster typed-answer reading: core.js typeDist keeps three rows of its matrix instead of the whole one,
+// typeMatchIn skips a name whose length is further from the text's than its tolerance, and typeElse reads its lists'
+// names once per norm. Each gives exactly the answers of the plain code, kept here as the reference: the same
+// distances, matches and nudges on the real fish and coral names, their slips and random texts.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -10,7 +10,7 @@ const test = require('node:test'),
 const C = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 
-// The code before the pass, word for word.
+// The plain code the fast one replaces, word for word.
 function distRef(a, b) {
   const d = Array.from({length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
@@ -130,8 +130,8 @@ test('typeMatchIn: the same reading as before, fish common names and coral gener
   [...textsOf(fishRaw.filter((_, i) => i % 7 === 0)), 'Reef goby z'].forEach(t => {
     const m = C.typeMatchIn(fishSome, t, C.typeNormAll),
       ref = matchRef(fishSome, t, C.typeNormAll);
-    // A name two species share (Twotone / Two-tone wrasse) reads as both since Q319 (shared), where the code before
-    // read "which one?" (near) on the same species: the sample meets one since the main names came first (Q376).
+    // A name two species share (Twotone / Two-tone wrasse) reads as both (shared), where the reference reads "which
+    // one?" (near) on the same species: the sample meets one because the main names come first.
     if (m && m.shared) assert.deepStrictEqual([...m.shared].sort(), [...ref.near].sort(), t);
     else assert.deepStrictEqual(m, ref, t);
     if (!m) none++;

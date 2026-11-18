@@ -1,7 +1,7 @@
 'use strict';
 require('./slot.js').testGuard();
 // The admin's Journey and Players bar give a fish player's Progress and Learned as their app shows them (fish admin at
-// parity, ROADMAP "Fish admin at parity"; Pierre, 2026-11-08): admin.js progOf replays the player's fish answers with the
+// parity, ROADMAP "Fish admin at parity"): admin.js progOf replays the player's fish answers with the
 // units, variant table and structure the sync sheet's fish replay reads (unitRpl: Code.gs subjRpl_, rplMake_), keeps the
 // saved copy's mastery exams as the app does when it adopts that replay (core.js replayAdopted), and gives the % over the
 // tree the app scores and the leaderboard ranks by (unitPct: core.js treeScore over app.js UNITS fish tree, Code.gs
@@ -71,7 +71,7 @@ function log(A, who) {
   const rnd = () => (x = (x * 48271) % 2147483647) / 2147483647;
   for (let i = 0; i < 760; i++) {
     // mostly a few families and their genera and species, so some bars climb; at the end a run of right answers on
-    // LEARN, the family the saved copy has learned (one with no variant photos: its mark stays, Q391 b)
+    // LEARN, the family the saved copy has learned (one with no variant photos: its mark stays)
     const pool =
         i >= 700 ? [LEARN] : i % 3 ? U.filter(u => /^f:(Damsel|Butterfly|Surgeon|Wrasse)/.test(u) || /^g:(Chromis|Chaetodon)/.test(u)) : U,
       g = pool[Math.floor(rnd() * pool.length)],
@@ -134,7 +134,7 @@ const IN = F.families.find(f => f.circle === 3 && !f.wink).id,
     assert.strictEqual(C.treeScore(P, C.treeBoardTree(A), S.score).pct, pg.pct);
     // the saved copy's own %, by the same computation (↻ saved)
     assert.strictEqual(pg.saved.pct, C.treeScore(saved, app.tree, S.score).pct);
-    // the families' mean the admin showed before is another number
+    // the families' mean (pctOf) is another number
     assert.notStrictEqual(C.pctOf(pg.G, app.slate), pg.pct);
     assert.strictEqual(X.unitPct(S, X.M, P), appPct);
   })

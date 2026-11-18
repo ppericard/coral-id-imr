@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The sea-slug species list and its popularity signals (tools/build_seaslugs.py; Pierre, 2026-11-15, Q369): the parsing
+// The sea-slug species list and its popularity signals (tools/build_seaslugs.py): the parsing
 // of the replies and pages, and the stars and circles rules, on made-up data with a stubbed network (nothing leaves the
 // machine); and tools/seaslugs.json derives as written.
 const test = require('node:test'),
