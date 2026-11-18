@@ -5,7 +5,7 @@ The studies, measurements, options weighed and not adopted, and first versions o
 LEARNING.md copied word for word, with its dates, question numbers, PR numbers and Pierre's words, as it stood when it
 moved: "The player's own model (app)" at `origin/main` `2b4277ac`, "Pooled statistics: photo difficulty and
 confusions" at `7d57ce92` (both 2026-11-18), "Simulation (`tests/profiles.smoke.js`, CI)" at `d883e3ea`
-(2026-11-19), "Multifactor analyses (admin Analyses, 2026-11-04)" at `b3fd1657` (2026-11-19). Its relative links were
+(2026-11-19), "Multifactor analyses (admin Analyses, 2026-11-04)" at `1ce0178f` (2026-11-19). Its relative links were
 given `../` so they still resolve from this folder; the section names it cites are those of LEARNING.md then and are
 not kept up to date.
 
