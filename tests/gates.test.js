@@ -60,7 +60,7 @@ const GATES = {
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
   TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
   // The fish species level (sync.js speciesOn: its units open and count in the score's tree once the sheet replays them,
-  // core.js fishReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
+  // core.js treeReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
   SPECIES_SHEET: (v, N) =>
     fn('sync.js', 'const speciesOn = ', '\n', 'speciesOn', {
       treeOn: () => (v === undefined ? 0 : v) >= 143,
@@ -68,7 +68,7 @@ const GATES = {
       SPECIES_SHEET: N
     })(),
   // The scientific genera of circles 2 and 3 (sync.js generaOn: they open and count among the genera a question offers
-  // once the sheet replays them, core.js fishGenSets; app.js sciNow reads it): from the version that holds them.
+  // once the sheet replays them, core.js treeGenSets; app.js sciNow reads it): from the version that holds them.
   GENERA_SHEET: (v, N) => fn('sync.js', 'const generaOn = ', '\n', 'generaOn', {sheetV: () => v, GENERA_SHEET: N})(),
   // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
   // serves it; before, an older script answers 'input' and the page names the version it waits for.

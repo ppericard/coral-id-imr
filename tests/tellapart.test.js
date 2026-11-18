@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The tell-apart lines of the coral slate pairs and the sea slugs' declared genus pairs
 // (docs/decisions/2026-11-18-tellapart-lines.md): written in tools/coral_apart.json (laid on
 // data.json ap, apsrc by tools/apply_coral_apart.py) and tools/seaslug_cues.json apart (laid on seaslug.json genera apart,
-// apsrc by tools/seaslug_cues.py, read by app.js fishGenera), they reach the feedback sheet's one decisive line through
+// apsrc by tools/seaslug_cues.py, read by app.js treeGenera), they reach the feedback sheet's one decisive line through
 // quiz.js pairLine and pairText, read here from the real files.
 // node --test tests/tellapart.test.js
 const test = require('node:test'),
@@ -82,25 +82,25 @@ test('every declared slate pair has a line or a reason in none; the lines are ou
   Object.keys(A.none).forEach(k => assert.strictEqual(coral.pairText(...k.split('|')), null, k));
 });
 
-// The sea slugs: app.js fishGenera on the real tree, as tests/seaslug-looks.test.js builds it.
+// The sea slugs: app.js treeGenera on the real tree, as tests/seaslug-looks.test.js builds it.
 const F = json('seaslug.json'),
   S = json('tools/seaslug_cues.json'),
   SEA = C.subjectOf('seaslug'),
-  GM = C.fishGameRead(json('seaslug-game.json')),
+  GM = C.treeGameRead(json('seaslug-game.json')),
   ctx = {
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
 vm.createContext(ctx);
 vm.runInContext(
-  block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+  block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
   ctx
 );
-const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(SEA, json('curation.json'))), undefined, C.unitRankOf(SEA));
-ctx.fishGenera(X, F);
+const X = C.treeGen(F, C.treePhotos({}, GM.photos, C.treeCur(SEA, json('curation.json'))), undefined, C.unitRankOf(SEA));
+ctx.treeGenera(X, F);
 const slug = pairs(n => X.gen[n]);
 
 test('a sea slug mix-up reads the declared pair line from the built genera, with its sources', () => {

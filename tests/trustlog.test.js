@@ -15,9 +15,9 @@ const {page, SV, withData, loadCodeGs} = require('./syncpage.js');
 
 const DATA = require('../data.json'),
   GEN = {...((DATA.x && DATA.x.gen) || {}), ...DATA.gen},
-  FGEN = C.fishReplayGen(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'))),
+  FGEN = C.treeReplayGen(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'))),
   CORAL = Date.UTC(2026, 10, 1, 9, 47), // the coral log's first answer
-  FISH = Date.UTC(2026, 10, 6, 5, 7), // the fish log's first answer
+  TREEU = Date.UTC(2026, 10, 6, 5, 7), // the fish log's first answer
   H = 3600000;
 const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora', 'Favites', 'Fungia', 'Goniopora', 'Turbinaria', 'Pavona', 'Galaxea'];
 const FU = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses', 'f:Groupers'];
@@ -87,14 +87,14 @@ test('small excesses on some units (one to three answers counted twice): correct
 });
 
 test('fish only: the fish replay wins, the answers from before the fish log dropped, no floor', () => {
-  const A = Array.from({length: 20}, (_, i) => ans('f' + i, FU[i % 5], i % 3 !== 2, FISH + 30 * H + i * 30000, FU)),
+  const A = Array.from({length: 20}, (_, i) => ans('f' + i, FU[i % 5], i % 3 !== 2, TREEU + 30 * H + i * 30000, FU)),
     rep = replay(A, FGEN),
     once = C.replayedOf(rep, {}, C.rvOf('fish')),
     saved = inflate(once, (u, r) => (u === 'f:Damselfishes' || u === 'f:Wrasses' ? [(r.ok || 0) + 2, r.ko || 0] : null));
   assert.deepStrictEqual(counts(C.replayAdopted(rep.P, saved, C.rvOf('fish'))), counts(once));
   // Played before the fish log began (the first logged fish answer in the log's first minute): its 17 answers from
   // before are in no log, so they go (the log is the only reference), four on each of four families, one on a fifth.
-  const B = Array.from({length: 20}, (_, i) => ans('p' + i, FU[i % 5], i % 3 !== 2, FISH + 30000 + i * 60000, FU)),
+  const B = Array.from({length: 20}, (_, i) => ans('p' + i, FU[i % 5], i % 3 !== 2, TREEU + 30000 + i * 60000, FU)),
     pre = replay(B, FGEN),
     early = C.replayedOf(pre, {}, C.rvOf('fish')),
     extra = {'f:Damselfishes': 4, 'f:Butterflyfishes': 4, 'f:Angelfishes': 4, 'f:Wrasses': 4, 'f:Groupers': 1},
@@ -206,7 +206,7 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
     const fish = rnd() < 0.4,
       U = fish ? FU : G,
       gen = fish ? FGEN : GEN,
-      t0 = (fish ? FISH : CORAL) + int(200 * H),
+      t0 = (fish ? TREEU : CORAL) + int(200 * H),
       A = Array.from({length: 3 + int(30)}, (_, i) => ans('q' + k + 'x' + i, U[int(U.length)], rnd() < 0.7, t0 + i * 45000, U)),
       rep = replay(A, gen),
       once = C.replayedOf(rep, {}, 1),

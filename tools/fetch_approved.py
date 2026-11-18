@@ -69,7 +69,7 @@ if '--all-remote-unused' in sys.argv:
             p['r'] = 1; gone += 1
 if done or gone: dump_all(d)
 print(f'downloaded {done} into {OUT}/ (upload: tools/r2_sync.sh {OUT}), made remote {gone}')
-# --fish: the fish photos the admin put in play (curation.json fish, core.js fishOn), from iNaturalist or
+# --fish: the fish photos the admin put in play (curation.json fish, core.js treePhotoOn), from iNaturalist or
 # FishBase, into the same folder, and fish-game.json, which the fish game reads (tools/fish_game.py).
 if '--fish' in sys.argv:
     import fish_game

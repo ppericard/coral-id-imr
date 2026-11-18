@@ -88,12 +88,12 @@ one page to see, sort and manage the players, names joined to the anonymous stat
 - **Photos and Spread**, in the subject of the admin's switch: `ex` of `Code.gs` `users_`, computed by `exposure_` with
   `core.js` `exposureOf` over that subject's rows (`subjRows`) against its game photos per unit grouped by colony
   (`pools_`, `core.js` `unitPool` over the site's files `SUBJECTS` `pool` names: `slots` = `data.json` + `curation.json`
-  through `applyCuration` / `applySlots` / `gameOf`, `entries` = the fish files through `fishPhotos` / `fishGen`, units
+  through `applyCuration` / `applySlots` / `gameOf`, `entries` = the fish files through `treePhotos` / `treeGen`, units
   under the ids the log holds, `renamedId`; read from GitHub main, cached 6 hours per subject, nothing stored). Photos =
   Seen %, the distinct game photos shown out of the game photos of the units met; Spread = Spread %, in time order, of
   the questions on a unit asked while it still had game colonies the player had never been shown, the share that showed
   one (a photo out of play now counts as a colony of its own); the cells' titles give the counts; the fish genus units,
-  built in `app.js` `fishGenera`, are not in the pool.
+  built in `app.js` `treeGenera`, are not in the pool.
 - **Progress and Learned are the full replay** (`progOf` in `admin.js`): the admin shows the values the player will
   have, not the stale copy of a player who has not reopened the app. The player list carries each player's replay
   computed by the sheet once (`Code.gs` `replayedAll_`, `rp` = [progress %, learned, the saved copy's %] over the slate,
@@ -416,7 +416,7 @@ logs every sheet in the corals' words; `sheetVisit`), the corals' from the summa
 B→A) and the same score the quiz uses for traps (the prior shown as Look-alike / Family / Key group / Other, `admin.js`
 `pairPrior`; the corals' slightly higher start for a shared growth form is not shown; the fish's start is the game's,
 `model.js` `confPrior`, for families, genera and species: `fishUnitRec` reads a family's declared look-alikes, a genus's
-sibling genera, a species unit's sibling species (`reports.js` `repReg` `spu`, `core.js` `fishSpUnits`) and the family's
+sibling genera, a species unit's sibling species (`reports.js` `repReg` `spu`, `core.js` `treeSpUnits`) and the family's
 group of the identification key, Key group; `tests/pairstart.test.js` checks every pair on the real `fish.json`). A pair
 no source declares that qualifies as a look-alike from the data (`core.js` `dataLook`: `CONF.N` 20 offers or more, score
 `CONF.TRAP` or more) says "look-alike from the data" in its Starts as column, counted in a KPI: the duels, the Again and

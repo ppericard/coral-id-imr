@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
   });
   const p = await ctx.newPage();
   await p.goto(base + '#practice/quiz');
-  await p.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && SUBJ.id === 'fish', null, {timeout: 60000});
+  await p.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU && SUBJ.id === 'fish', null, {timeout: 60000});
   const out = await p.evaluate(
     ({ENTRIES, STAGES, DRAWS, CALIB}) => {
       Object.assign((SUBJ.calib = {...(SUBJ.calib || {})}), CALIB);

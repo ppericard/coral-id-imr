@@ -187,10 +187,10 @@ vm.runInContext(
   block(APP, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +
     block(APP, "// The photo's own taxon, said in one short line", '// Every unit of a rank in', {file: 'app.js'}) +
     block(APP, 'function treeTypeOther(rk) {', '\n}\n', {file: 'app.js', through: 1}) +
-    '\nvar FISHRAW = null, FISH = null, SUBJ = {id: "s"};\n' +
-    'var UNITS = {s: {vern: id => treeVern(id), taxon: p => { const t = fishTaxon(FISH && FISH.sps, p, false); return t ? {...t, common: vernFirst(t.id)} : t; }}, f: {}};\n' +
+    '\nvar TREERAW = null, TREEU = null, SUBJ = {id: "s"};\n' +
+    'var UNITS = {s: {vern: id => treeVern(id), taxon: p => { const t = treeTaxon(TREEU && TREEU.sps, p, false); return t ? {...t, common: vernFirst(t.id)} : t; }}, f: {}};\n' +
     'this.M = {vernOf, vernFirst, vernSrcs, photoTaxon, taxonLine, treeTypeOther};\n' +
-    'this.set = (F, k) => { FISHRAW = {f: F}; FISH = {sps: Object.fromEntries(F.species.map(s => [s.id, s]))}; SUBJ = {id: k}; };',
+    'this.set = (F, k) => { TREERAW = {f: F}; TREEU = {sps: Object.fromEntries(F.species.map(s => [s.id, s]))}; SUBJ = {id: k}; };',
   ctx
 );
 

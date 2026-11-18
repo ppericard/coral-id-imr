@@ -57,24 +57,25 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
   });
 });
 
-// The fish game photos (core.js fishPhotos, the same code the app runs, on the real fish-game.json, fish-photos.json and
+// The fish game photos (core.js treePhotos, the same code the app runs, on the real fish-game.json, fish-photos.json and
 // curation.json): a photo the admin rejected, excluded or sent to another species (Not this) never plays for the
-// species it was taken from; a curated photo only while it is in play (core.js fishOn).
+// species it was taken from; a curated photo only while it is in play (core.js treePhotoOn).
 test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
-  const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
+  const {treeGen, treePhotos, treePid, treePhotoIn, treeGone} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
-    X = fishGen(read('fish.json'), fishPhotos(PH.photos, require('../core.js').fishGameRead(read('fish-game.json')).photos, CUR), PH.sheet),
-    gone = fishGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
+    X = treeGen(read('fish.json'), treePhotos(PH.photos, require('../core.js').treeGameRead(read('fish-game.json')).photos, CUR), PH.sheet),
+    gone = treeGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
     no = new Map();
-  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
-  Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
+  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(treePid(f), f)));
+  Object.keys(CUR.exclude || {}).forEach(f => no.set(treePid(f), f));
   Object.values(X.gen).forEach(g =>
     g.views.wide.forEach(p => {
       // A curated photo (fish-game.json): one the admin added, or one in play by itself (auto), while the admin has not
-      // decided against it (core.js fishIn).
-      if (/-cand-/.test(p.f) && !p.from) return assert.ok(fishIn(F, p, gone) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
-      assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
+      // decided against it (core.js treePhotoIn).
+      if (/-cand-/.test(p.f) && !p.from)
+        return assert.ok(treePhotoIn(F, p, gone) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      assert.ok(!no.has(treePid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(treePid(p.f))}`);
     })
   );
 });

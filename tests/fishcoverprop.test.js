@@ -88,7 +88,7 @@ test('the proposals list: his cover in force beside the rule’s pick, with its 
   assert.strictEqual(prop({genera: {'f:A': {cover: 'gone'}}}), null);
   assert.strictEqual(prop({genera: {'f:A': {cover: 'fi9'}}}), null);
   assert.strictEqual(prop({genera: {'f:A': {cover: 'fi3'}}, phase: {fi3: 'juvenile'}}), null);
-  // the same photo under another name (its candidate copy, core.js fishPid) is the same pick
+  // the same photo under another name (its candidate copy, core.js treePid) is the same pick
   assert.strictEqual(
     coverProposal('f:A', [...L, {f: 'fish-s2-cand-4', sp: 's2', rep: true}], {genera: {'f:A': {cover: 'fish-s2-cand-4'}}}, j, seen()),
     null
@@ -228,7 +228,7 @@ test('a node page’s cover and why (Photos › Tree): his ★, else the rule on
 
 // Pierre's pick under one name, the game's copy under the other (a ★ cover fi<id>, a reference photo judged adult, back in
 // play as its candidate copy fish-<species>-cand-<id> judged a juvenile, which the admin may call "out of play"): the
-// admin finds it as the app does (app.js fishCurate: the name, else core.js fishPid) and says why.
+// admin finds it as the app does (app.js treeCurate: the name, else core.js treePid) and says why.
 test('his ★ cover under the other name of the same photo (reference fi<id>, candidate fish-<species>-cand-<id>)', () => {
   const pair = [
     ['fi7', 'fish-s1-cand-7'],

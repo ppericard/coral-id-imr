@@ -138,7 +138,7 @@ test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pa
 
 // Health on the fish side (fish admin at parity): the fish photos everyone misses, counted on their answers (the sheet
 // rates the corals' photos only), each with its family; the fish units players are stuck on: its slate (families only,
-// as core.js fishGen's c1-c3 that fishAdmin reads) and the scientific genera met in the answers (g:Chromis). The corals'
+// as core.js treeGen's c1-c3 that fishAdmin reads) and the scientific genera met in the answers (g:Chromis). The corals'
 // side reads its own photos and genera as before.
 test('Health per subject: the fish photos and units, the corals untouched', () => {
   const C = require('../core.js'),

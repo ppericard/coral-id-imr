@@ -22,7 +22,7 @@ const {
 } = require('../reports.js');
 const {SUBJECTS, merge3} = require('../core.js');
 const CORAL = SUBJECTS.find(s => !s.hash),
-  FISH = SUBJECTS.find(s => s.hash);
+  TREEU = SUBJECTS.find(s => s.hash);
 // A sheet row: [id, time, reporter, verified, reason, expected, answered, suggested, note, mode, photos, where].
 const row = (o = {}) => [
   o.id || 'r1',
@@ -127,11 +127,11 @@ test('repsReconcile: a status merged from two sides stays whole, the draft winni
 
 test('unitSubj: prefixed and renamed ids are the fish, any other id the corals', () => {
   assert.strictEqual(unitSubj('Acropora'), CORAL);
-  assert.strictEqual(unitSubj('f:Damselfishes'), FISH);
-  assert.strictEqual(unitSubj('g:Chromis'), FISH);
-  assert.strictEqual(unitSubj('s:Chromis ternatensis'), FISH);
-  const old = Object.keys(FISH.renamed.ids)[0];
-  assert.strictEqual(unitSubj(old), FISH);
+  assert.strictEqual(unitSubj('f:Damselfishes'), TREEU);
+  assert.strictEqual(unitSubj('g:Chromis'), TREEU);
+  assert.strictEqual(unitSubj('s:Chromis ternatensis'), TREEU);
+  const old = Object.keys(TREEU.renamed.ids)[0];
+  assert.strictEqual(unitSubj(old), TREEU);
   assert.strictEqual(unitSubj(''), null);
 });
 
@@ -151,8 +151,8 @@ test('repCtx: a game report (quiz, duel): the expected unit, the answer, its pho
   assert.deepStrictEqual([s.unit, s.subj], ['f:Chromodorididae', 'seaslug']);
   assert.strictEqual(repCtx(row({g: 'f:Chromodorididae', m: 'quiz', w: 'seaslug/learn/families'})).subj, 'seaslug');
   // an old fish entry id is read as the family it was renamed into
-  const old = Object.keys(FISH.renamed.ids)[0];
-  assert.strictEqual(repCtx(row({g: old, m: 'quiz', w: 'fish/practice/quiz'})).unit, FISH.renamed.ids[old]);
+  const old = Object.keys(TREEU.renamed.ids)[0];
+  assert.strictEqual(repCtx(row({g: old, m: 'quiz', w: 'fish/practice/quiz'})).unit, TREEU.renamed.ids[old]);
 });
 
 test('repCtx: an enlarged photo, a sheet, the ID marks: not games', () => {
@@ -175,18 +175,18 @@ test('repCtx: Send feedback, from anywhere', () => {
   // from Home: about no unit and no subject, shown on every side
   const h = repCtx(row({why: 'idea', m: 'page', w: 'home'}));
   assert.deepStrictEqual([h.src, h.game, h.unit, h.photos.length, h.subj], ['page', false, '', 0, '']);
-  assert.ok(repOn(h, CORAL) && repOn(h, FISH));
+  assert.ok(repOn(h, CORAL) && repOn(h, TREEU));
   assert.strictEqual(repCtx(row({m: 'page', w: 'about'})).subj, '');
   assert.strictEqual(repCtx(row({m: 'page', w: 'leaderboard'})).subj, '');
   assert.strictEqual(repCtx(row({m: 'page', w: ''})).subj, '');
   // from a game, with the question's unit and photos (app.js helpEnd, quiz.js qNow)
   const q = repCtx(row({why: 'bug', g: 'Acropora', m: 'page', ph: 'a-3', w: 'practice/quiz'}));
   assert.deepStrictEqual([q.src, q.unit, q.photos.join(), q.subj], ['page', 'Acropora', 'a-3', 'coral']);
-  assert.ok(repOn(q, CORAL) && !repOn(q, FISH));
+  assert.ok(repOn(q, CORAL) && !repOn(q, TREEU));
   // from a game, sent by an app that did not carry them: the game's subject, no unit
   const f = repCtx(row({why: 'bug', m: 'page', w: 'fish/practice/quiz'}));
   assert.deepStrictEqual([f.unit, f.subj], ['', 'fish']);
-  assert.ok(!repOn(f, CORAL) && repOn(f, FISH));
+  assert.ok(!repOn(f, CORAL) && repOn(f, TREEU));
   // from a sheet: the sheet's unit
   const s = repCtx(row({why: 'info', m: 'page', w: 'learn/genus/Pocillopora'}));
   assert.deepStrictEqual([s.unit, s.subj], ['Pocillopora', 'coral']);
@@ -217,9 +217,9 @@ test('repCtx: the fields as they are, whatever the row', () => {
 test('repWhyText: a reason in its subject words, every key the dialog sends', () => {
   const fish = repCtx(row({why: 'multi', g: 'f:Wrasses', m: 'quiz'})),
     coral = repCtx(row({why: 'multi', g: 'Acropora', m: 'quiz'}));
-  assert.strictEqual(repWhyText(fish, FISH), 'Several fish species');
+  assert.strictEqual(repWhyText(fish, TREEU), 'Several fish species');
   assert.strictEqual(repWhyText(coral, CORAL), 'Several corals');
-  assert.strictEqual(repWhyText(repCtx(row({why: 'wrong', g: 'f:Wrasses', m: 'photo'})), FISH), 'Wrong family');
+  assert.strictEqual(repWhyText(repCtx(row({why: 'wrong', g: 'f:Wrasses', m: 'photo'})), TREEU), 'Wrong family');
   assert.strictEqual(repWhyText(repCtx(row({why: 'wrong', g: 'Acropora', m: 'quiz'})), CORAL), 'Wrong answer');
   assert.strictEqual(repWhyText(repCtx(row({why: 'nope'})), CORAL), 'nope');
   assert.strictEqual(repWhyText(repCtx(row({why: '__proto__'})), CORAL), '__proto__');
@@ -250,7 +250,7 @@ test('admin.html loads reports.js after core.js and before admin.js', () => {
 // carries, the unit showing it and its source as the file has it (a remote original stays remote), and a report on it
 // goes to that subject's side by its photo alone.
 test('repReg: every subject with files: its game photos, their credits, identification, unit and source', () => {
-  const {fishGameRead} = require('../core.js'),
+  const {treeGameRead} = require('../core.js'),
     json = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
     withFiles = SUBJECTS.filter(S => S.admin.files);
   assert.ok(withFiles.length >= 2, 'the subjects with sheets at several ranks name their files');
@@ -261,7 +261,7 @@ test('repReg: every subject with files: its game photos, their credits, identifi
       gm = json(W.gm),
       R = repReg(f, W.ph ? json(W.ph) : null, gm),
       fam = new Map((f.species || []).map(x => [x.id, x.family])),
-      inGame = Object.values(fishGameRead(gm).photos).flat();
+      inGame = Object.values(treeGameRead(gm).photos).flat();
     assert.ok(R && inGame.length, `${S.id}: a registry and game photos`);
     let n = 0;
     inGame

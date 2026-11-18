@@ -13,7 +13,7 @@ in [sync.md › Full replay](sync.md#full-replay).
 The sources and the instance's layer are resolved at build into the built file (`fish.json`, `data.json`,
 `seaslug.json`: the base; [data.md › The instance's layer](data.md#the-instances-layer)). The edits sit in the
 instance's curation, `curation.json` `content`, and are applied after the base by one function, `core.js`
-`contentApply(S, file, curation)`, which the app runs before the units are made (`fishBuild`, into `FISHF`, which
+`contentApply(S, file, curation)`, which the app runs before the units are made (`treeBuild`, into `TREEF`, which
 `learn.js` `ftree` reads too) and the admin runs on its draft. It returns the file itself when nothing applies, and
 copies only the records it changes.
 
@@ -24,7 +24,7 @@ its name in the map, `t` `text` or `list`, `imr` for the IMR's words, `f` the re
 
 - **The fish**: a family's `cues`, `phase`, `look/<id>`, `marks`, `life`, `apart/<id>`, `juv.note` and `note`; a
   genus's `cues` and `note`; a species' `note`. The free `note` is written to the record's `enote` (a wink family's
-  `note` is its surprise card's line, read as its feedback summary) and shown on the sheet (`learn.js` `fishNote`). A
+  `note` is its surprise card's line, read as its feedback summary) and shown on the sheet (`learn.js` `treeNote`). A
   keyed slot (`look/<id>`, `apart/<id>`) exists only where the base holds that line, and its edit changes the words
   only: the line is the pair, and pairs are structure. Names, presence, size and depth are not slots.
 - **The corals** (design note step 8): one rank, the genus, its records in `data.json` `gen` and `x.gen` by name (`at`
@@ -41,7 +41,7 @@ its name in the map, `t` `text` or `list`, `imr` for the IMR's words, `f` the re
 - **The sea slugs**: a family's and a genus's `marks`, the `note` on every rank, and a genus's `lsrc/<other genus>`, its
   look-alike line, of type `srcs`: a list of sources `{t, u}` replaced whole, as `tools/seaslug_game.py` `genus_looks`
   writes them (a specialist source's for a declared pair, iNaturalist's counts for a data one), shown under the other
-  genus on the sheet's Don't confuse with (`learn.js` `fishGenusLooks`); hidden, the pair keeps an empty list. In the
+  genus on the sheet's Don't confuse with (`learn.js` `treeGenusLooks`); hidden, the pair keeps an empty list. In the
   admin's Sheet box, one source a line, its words then `|` and its link (`admin-content.js` `sheetVal`, `srcsText`),
   with no Source and Link of the edit's own (the value is its sources). Every genus has the boxes, one the app opens as
   its family or its one species included (`sheetOwn`: a subject whose units are its genera).
@@ -79,11 +79,11 @@ its new id's.
 
 Rule C2: every clue carries its source.
 
-- An edited tip's source becomes the unit's `qsrc` (`fishGen`; `app.js` `fishGenera` for the marks that stand for
+- An edited tip's source becomes the unit's `qsrc` (`treeGen`; `app.js` `treeGenera` for the marks that stand for
   missing tips and for a genus's tips), shown under the tips wherever they are (`app.js` `tipsList`: the quiz feedback,
   the cards, the ID tips view).
-- An edited look-alike line's source goes after its own in `lsrc` (`fishLookSrc`) and, by the other family's id, in the
-  unit's `lksrc` (`app.js` `fishGenera`), which the quiz feedback's decisive line says after "IMR;" (`quiz.js`
+- An edited look-alike line's source goes after its own in `lsrc` (`treeLookSrc`) and, by the other family's id, in the
+  unit's `lksrc` (`app.js` `treeGenera`), which the quiz feedback's decisive line says after "IMR;" (`quiz.js`
   `pairLine`; the IMR label stays).
 - The phase lines' source becomes `psrc`, said under them in the feedback's More, and a wrong answer's tips name theirs
   after "would show".
@@ -102,7 +102,7 @@ own writer).
   each entry's state: orphaned for a node the base lacks (the editor moves or removes a family of the base, never brings
   one in: that needs a teaching node in the instance's layer, through a PR), a circle not declared, a pair key out of
   order, or a value not 1 or `null`.
-- **The fish** (`core.js` `fishStructure`): a family's circle is written onto the family, its genera, its species and
+- **The fish** (`core.js` `treeStructure`): a family's circle is written onto the family, its genera, its species and
   each teaching node holding its species (its families' smallest circle in force), and `start` keeps the circle-1
   teaching nodes. In no circle, the family and its genera are left out and its species are `out` ("family in no
   circle"), as the build leaves out a family no teaching node holds, with every look-alike line to it. A withdrawn pair
@@ -113,11 +113,11 @@ own writer).
   admin and the sheet compute it with this one function (the players' copy gives the sheet's), and it is never stored
   in `curation.json`.
 - **The app** lays the structure over its units only once a reply says the sync script replays under it (`core.js`
-  `STRUCT_SHEET`, rule D4; `app.js` `fishBuild`, `FISHON`, `FISHST`; the units are made again at the next page change
+  `STRUCT_SHEET`, rule D4; `app.js` `treeBuild`, `TREEON`, `TREEST`; the units are made again at the next page change
   when a reply crosses it, `structSeen`); before, the text slots alone.
 - **The sheet** replays under it ([sync.md › Other subjects' replays](sync.md#other-subjects-replays)).
 - **The agents' photo tools** read the circles in force (`tools/fish_inforce.py` `in_force`, the circle part of
-  `fishStructure`, read from `curation.json`, never written; `tests/structure.test.js` checks the two agree):
+  `treeStructure`, read from `curation.json`, never written; `tests/structure.test.js` checks the two agree):
   `tools/fetch_fish.py` and `fetch_fishbase.py` (the species of their circles), `fish_judge.py` (circle 1's very easy
   photos), `fish_refs.py` (the genera the game has, every circle's; the species photographed stay `fish.json`'s, so a
   family out of the game keeps its reference photos) and `fish_game.py` (the download order only).
@@ -132,7 +132,7 @@ own writer).
   pair's (`fishPairs` keys by `contentPairKey`); a withdrawn pair has none, and its photo pair stays in `mont`, unused,
   for its return.
 - **The leaderboard's tree** follows the structure in force: the sheet makes it itself with the replay's units
-  (`SUBJECTS` `replayed` `tree`, `core.js` `fishBoardTree`, the app's own `UNITS` tree;
+  (`SUBJECTS` `replayed` `tree`, `core.js` `treeBoardTree`, the app's own `UNITS` tree;
   [sync.md › Other subjects' replays](sync.md#other-subjects-replays)).
 - **Not built yet** (design note step 3): each instance's words for its circles, and the build's report of the genera a
   circle edit brings into circle 1 with no name root (the build requires one only of the circle-1 genera of the base;
@@ -173,9 +173,9 @@ a specialist source names).
   look-alike it was: never both, as in the build), and its line is the record's own for that genus (a data pair's
   iNaturalist counts) with the editor's source after it, else his source, else `EDITOR_PAIR` as its one source.
 - **What a pair edit does to players**: the duels, the confusion groups' declared pairs and the sheet's Don't confuse
-  with follow (`app.js` `fishGenera` `look`, `decl`; `UNITS` seaslug `pairs`), and every sea-slug player's progress is
+  with follow (`app.js` `treeGenera` `look`, `decl`; `UNITS` seaslug `pairs`), and every sea-slug player's progress is
   replayed under the pairs in force at their next sync (the structure stamp; their board follows, rule D8). A family's
-  genera stay each other's look-alikes (traps, the replay's look) whatever is withdrawn (`fishGenUnits`); the data
+  genera stay each other's look-alikes (traps, the replay's look) whatever is withdrawn (`treeGenUnits`); the data
   look-alikes stay the players' answers' to drop.
 - No circles: a genus's circle is its best species', from the build.
 - The app lays the pairs over its units and says their stamp (`UNITS` seaslug `st`, read with its own tree in force:

@@ -51,7 +51,7 @@ const GEN = {
   Merulina: {sum: 'A summary, not a tip', look: ['Porites']},
   's:s091': {name: 'Ternate chromis', rank: 'species', qt: null, lk: []}
 };
-// a fish record has its IMR sub-entries and phases (core.js fishGen), none here
+// a fish record has its IMR sub-entries and phases (core.js treeGen), none here
 Object.values(GEN)
   .filter(g => g.name)
   .forEach(g => Object.assign(g, {sub: [], phase: []}));
