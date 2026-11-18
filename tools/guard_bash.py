@@ -24,12 +24,12 @@ QUOTED = re.compile(r'"(?:\\.|[^"\\])*"|\'[^\']*\'')
 # Opt is one option word of an interpreter before its code flag (python3 -I -c, node --no-warnings -e).
 OPT = r'(?:-[\w-]+\s+)*'
 PATTERNS = [
-    (re.compile(r'(?<!<)<<(?!<)-?\s*\w'), 'a heredoc'),
+    (re.compile(r'(?<!<)<<(?!<)-?\s*[A-Za-z_]'), 'a heredoc'),  # a marker is a word; $((1<<3)) is arithmetic
     (re.compile(r'\bpython[\d.]*\s+' + OPT + r'-[A-Za-z]*c\b'), '`python -c`'),
     (re.compile(r'\b(?:node|deno|bun)\s+' + OPT + r'(?:-e|-p|--eval|--print)\b'), '`node -e`'),
     (re.compile(r'\b(?:perl|ruby)\s+' + OPT + r'-[A-Za-z]*e\b'), '`perl -e` / `ruby -e`'),
     (re.compile(r'\bsed\s+(?:-[\w-]+\s+)*(?:-[A-Za-z]*i|--in-place)'), '`sed -i`'),
-    (re.compile(r'(?<![\w-])(?:ba|z|da|k)?sh\s+' + OPT + r'-[A-Za-z]*c\b'), '`bash -c`'),
+    (re.compile(r'(?<![\w.-])(?:ba|z|da|k)?sh\s+' + OPT + r'-[A-Za-z]*c\b'), '`bash -c`'),  # not `x.sh -c`
     # An interpreter at the end of a pipe with no script named reads its code from the pipe (`| python3 -`, `| bash`).
     (re.compile(r'\|\s*(?:python[\d.]*|node|perl|ruby|(?:ba|z|da|k)?sh)(?:[ \t]+-[\w-]*)*[ \t]*(?=$|\n|;|&|\||\))'), 'code piped into an interpreter'),
 ]

@@ -60,6 +60,8 @@ const ALLOWED = [
   'ssh -c aes128-ctr host',
   'gh api repos/o/r/pulls/1 | head -5',
   'cat <<< "a here-string"',
+  'echo $((1<<3))',
+  'bash x.sh -c 5',
   'ls -la tools | wc -l'
 ];
 
@@ -100,9 +102,12 @@ test(".claude/settings.json runs main's copy of the guard before every Bash comm
   assert.ok(!/\|\s*python3/.test(cmd), 'never piped: the pipe would take the place of the event on stdin');
 });
 
-test('the read-only allowlist never allows a command that deletes or rewrites', () => {
+// Integrator review of #1117: a prefix rule allows every argument, so nothing that runs a command it is given
+// (tests/slot.js runs what follows --), any JS file (node --test), writes a file (git diff/show/log --output) or runs a
+// program (git fetch --upload-pack) may be on the list.
+test('the read-only allowlist never allows a command that deletes, writes or runs what it is given', () => {
   const s = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude', 'settings.json'), 'utf-8'));
   for (const rule of s.permissions.allow) {
-    assert.ok(!/\b(rm|mv|find|git (branch|push|reset|checkout|clean|rebase))\b/.test(rule), rule);
+    assert.ok(!/\b(rm|mv|find|node|npx|slot\.js|git (branch|push|reset|checkout|clean|rebase|diff|show|log|fetch))\b/.test(rule), rule);
   }
 });

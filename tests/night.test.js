@@ -97,5 +97,8 @@ test('brief.py --time --night-due: the night report line once a Manila day, from
   assert.strictEqual(first.length, 2);
   assert.match(first[1], /^Night report due .*python3 tools\/night\.py/);
   assert.strictEqual(run('--night-due', '--at', '09:00').length, 1, 'once a day');
+  fs.rmSync(mark);
+  assert.strictEqual(run('--night-due', '--at', '19:26').length, 1, 'not in the evening, even in a fresh checkout');
+  assert.strictEqual(run('--night-due', '--at', '11:00').length, 1, 'the morning window ends at 11:00');
   assert.strictEqual(run('--at', '05:01').length, 1, 'without --night-due: the one time line');
 });

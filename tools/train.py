@@ -11,8 +11,9 @@ nothing is re-run):
    check green on its head, no file left in tools/sync/changes/ (a PR that changes Code.gs gets its VERSION first:
    tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). From PR
    BODY_FROM on, its description too (AGENTS.md "What players will see comes from Pierre"; Pierre, 2026-11-18):
-   "Choices I made" says None, and "Players see or play differently?" says No, or gives each change with Pierre's
-   words quoted and dated ("Pierre, 2026-11-18: «…»") or marked "integrator's call". The rest of the merge contract
+   "Choices I made" starts with None, and "Players see or play differently?" says No, or gives each change with Pierre's
+   words quoted and dated ("Pierre, 2026-11-18: «…»") or marked "integrator's call"; a STATUS handover ("STATUS: …")
+   and Dependabot's PRs are exempt. The rest of the merge contract
    (Codex findings answered, threads resolved) is the integrator's to check before it names a PR here.
 2. Builds the train in a temporary worktree without the photos: origin/main, then each head merged in order. A conflict
    stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main, by main's copy
@@ -64,13 +65,19 @@ def section(body, title):
     return m.group(1).strip() if m else None
 
 
+def exempt(p):
+    """PRs whose description is not the template's: a STATUS handover (title "STATUS: …", rule W26 sends it through a
+    train) and Dependabot's version bumps (rule W9)."""
+    return p.get('title', '').startswith('STATUS:') or (p.get('user') or {}).get('login') == 'dependabot[bot]'
+
+
 def body_problems(body):
     """What the PR description lacks for the merge contract (AGENTS.md "Working mode"): [] when it is fine."""
     why = []
     choices = section(body, 'Choices I made')
     if choices is None:
         why.append('its description has no "Choices I made" section (.github/pull_request_template.md)')
-    elif not re.fullmatch(r'(?i)none\.?', choices):
+    elif not re.match(r'(?i)none\b', choices):
         why.append('"Choices I made" is not None: those choices wait for Pierre')
     sees = section(body, 'Players see')
     if not sees:
@@ -125,7 +132,7 @@ def ready(n, top):
         why.append('labelled needs-pierre: it waits for Pierre')
     if (p['head'].get('repo') or {}).get('full_name') != REPO:
         why.append('from another repository')
-    if int(n) >= BODY_FROM:
+    if int(n) >= BODY_FROM and not exempt(p):
         why += body_problems(p.get('body'))
     sha = p['head']['sha']
     runs = api('commits/%s/check-runs?per_page=100' % sha).get('check_runs', [])

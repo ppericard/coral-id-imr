@@ -89,7 +89,7 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
   demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???"). Enforced:
   `tools/guard_bash.py`, a PreToolUse hook, refuses these commands at once with the way out, for every agent of a
-  session; `.claude/settings.json` allows the read-only commands that recur (git log, diff, show…, the test runner).
+  session; `.claude/settings.json` allows a few read-only commands that recur (git status, ls, wc, the project's report tools).
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).

@@ -2,7 +2,7 @@
 
 ## Summary
 
-I counted **172 rule items**: the 87 rule IDs in `docs/rules/` plus the glossary, 24 rules in AGENTS.md (Rule 0, the Working mode bullets, "Writing a rule down", the Ship checklist and the Review guidelines), and 60 habits in docs/INTEGRATOR.md. Of these, 61 are product, learning or content decisions and 111 are process rules. **Words now: 24,592** (AGENTS.md 3,633; docs/rules/ 16,481, of which ship.md is 5,439; INTEGRATOR.md 4,478; CLAUDE.md adds 93). **Words after the proposal: about 13,500** (−45 %). Most of the cut falls on process text: AGENTS "Working mode", ship.md and INTEGRATOR.md go from about 11,900 words to about 3,600. About 1,500 words are moved rather than deleted: how-to text goes to the tools' `--help` or docstrings, the L11 method goes to LEARNING.md, and pipeline detail goes to ARCHITECTURE.md. **Classes: KEEP 79, GUARD 35, MERGE 31, DELETE 27.** For the 111 process rules alone: KEEP 24, GUARD 30, MERGE 30, DELETE 27. The 61 product rules split KEEP 55, GUARD 5, MERGE 1, and none is deleted. Some trims remove history phrases from Pierre's decisions; they never change a decision. Six of the GUARD rows are covered by the guards PR now being built (the PreToolUse Bash hook, the read-only allowlist, the "Players see" check in train.py and `brief.py --night`). Thirteen are already enforced by an existing tool or test, so only their prose goes. The rest need a new check, listed in the table.
+I counted **172 rule items**: the 87 rule IDs in `docs/rules/` plus the glossary, 24 rules in AGENTS.md (Rule 0, the Working mode bullets, "Writing a rule down", the Ship checklist and the Review guidelines), and 60 habits in docs/INTEGRATOR.md. Of these, 61 are product, learning or content decisions and 111 are process rules. **Words now: 24,592** (AGENTS.md 3,633; docs/rules/ 16,481, of which ship.md is 5,439; INTEGRATOR.md 4,478; CLAUDE.md adds 93). **Words after the proposal: about 13,500** (−45 %). Most of the cut falls on process text: AGENTS "Working mode", ship.md and INTEGRATOR.md go from about 11,900 words to about 3,600. About 1,500 words are moved rather than deleted: how-to text goes to the tools' `--help` or docstrings, the L11 method goes to LEARNING.md, and pipeline detail goes to ARCHITECTURE.md. **Classes: KEEP 79, GUARD 35, MERGE 31, DELETE 27.** For the 111 process rules alone: KEEP 24, GUARD 30, MERGE 30, DELETE 27. The 61 product rules split KEEP 55, GUARD 5, MERGE 1, and none is deleted. Some trims remove history phrases from Pierre's decisions; they never change a decision. Six of the GUARD rows are covered by the guards PR now being built (the PreToolUse Bash hook, the read-only allowlist, the "Players see" check in train.py and `tools/night.py`). Thirteen are already enforced by an existing tool or test, so only their prose goes. The rest need a new check, listed in the table.
 
 Pattern found. The rules that hold are the ones a tool or test enforces: W24 through `tests/slot.js`, W26 and D3 through `train.py` and `sheet_version.py`, and S1, P3, P6, C7, C8 and D8 through their tests. Each of these has had no relapse since its guard landed. The rules that relapsed are prose about agent behaviour that nothing checks:
 
@@ -31,7 +31,7 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 
 | ID / location | Content | Class | Evidence | Proposal |
 |---|---|---|---|---|
-| Rule 0 | After 17:30 Manila the integrator asks Pierre nothing | K | Rewritten 4 times (#447, #512, #515, #965); INTEGRATOR 11-14: "He nearly dropped the rule over its misapplication"; no relapse recorded since 11-15 | Keep the one sentence. The hooks already print the window (`brief.py --time`); `brief.py --night` (guards PR) carries the morning part |
+| Rule 0 | After 17:30 Manila the integrator asks Pierre nothing | K | Rewritten 4 times (#447, #512, #515, #965); INTEGRATOR 11-14: "He nearly dropped the rule over its misapplication"; no relapse recorded since 11-15 | Keep the one sentence. The hooks already print the window (`brief.py --time`); `tools/night.py` (guards PR) carries the morning part |
 | Rule 0 bullets | Time comes from the hook; what "asks nothing" means | D | Repeated in INTEGRATOR twice (11-14 habit, "Working with Pierre") | The hook line already says it. Keep only "questions wait in STATUS" |
 | WM: one integrator | The main agent integrates; subagents never merge | K | No relapse found | — |
 | WM: launch decided work at once | Never hold decided work in a queue | K | Relapsed: 11-12 "pourquoi tu me demandes mon avis pour un ordre", 11-14 "Qui t'as demandé de te limiter ?", studies still capped after 11-14 (Pierre, 11-18) | Keep. The relapse comes from the competing cap in W27: see decision 1 |
@@ -48,7 +48,7 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 | WM: "tu", "Pierre" | Address in French | M | Repeated in INTEGRATOR "Language" | One line inside W1 |
 | WM: questions to Pierre | Numbering, batches, recommendation | M | About 250 words here plus about 200 in INTEGRATOR "Questions", W7 and the "Don't ask the obvious" habit; docs.test.js already checks numbering | One home here, cut to about 90 words |
 | WM: data access | Read the sheet freely; writes only with Pierre's one-off OK | G | Used once (`card.rv8.ps`); nothing stops a write but attention | `.claude/settings.json` `ask` rule on the Sheets/Drive write tools: see decision 7 |
-| WM: reports and events | Read them at start and each morning | K | `brief.py` reminds | `brief.py --night` (guards PR) covers the morning |
+| WM: reports and events | Read them at start and each morning | K | `brief.py` reminds | `tools/night.py` (guards PR) covers the morning |
 | WM: Dependabot | The integrator merges once green | M | Repeats W9 | Delete here; W9 holds it |
 | WM: `needs-pierre` label | Reminder label; PR opened ready | M | Exists: `train.py` refuses the label and drafts | One line in W6 |
 | WM: claude.ai Projects mode | Each thread its own integrator | D | Hypothetical since 11-05; never used | Delete (with W22's last sentence) |
@@ -65,7 +65,7 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 | W3 | Alpha: no backward compatibility | K | Pierre's engineering decision | — |
 | W4 | Many prototypes; Pierre judges by taps | K | Pierre's working preference | — |
 | W5 | Ideas not built go to ROADMAP | M | W19 already says "deferred = add a row" | Into W19 |
-| W6 | No work sleeps on a branch | G | 11-09: work lost on unpushed branches (INTEGRATOR); exists: `brief.py` lists branches without a PR; `train.py` refuses drafts | One line. `brief.py --night` (guards PR) lists the branches each morning |
+| W6 | No work sleeps on a branch | G | 11-09: work lost on unpushed branches (INTEGRATOR); exists: `brief.py` lists branches without a PR; `train.py` refuses drafts | One line. `tools/night.py` (guards PR) lists the branches each morning |
 | W7 | Fix by default; never re-ask | M | Repeats merge contract item 2 and the questions bullet | Into AGENTS questions |
 | W8 | Independent reviews: an open mission | K | Applied (the docs audit cites it) | — |
 | W9 | Latest stable tools | G | Exists: `stack_check.py --check` in CI, `--latest` in the brief, Dependabot | One line; the details go to `stack_check.py --help` |
@@ -178,7 +178,7 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 | WwP: merge continuously | Few open PRs | D | Repeats launch-at-once and trains | — |
 | WwP: never ask him to click | Integrator does GitHub chores | M | — | Into the small-choices bullet |
 | WwP: Rule 0 | — | D | Repeats AGENTS | — |
-| WwP: quota 7 %, morning task disabled | 11-06 state | D | Obsolete state | Guards PR (`brief.py --night`) |
+| WwP: quota 7 %, morning task disabled | 11-06 state | D | Obsolete state | Guards PR (`tools/night.py`) |
 | Real people: names | Never on GitHub | D | Repeats D2 | — |
 | Real people: expert anchors | Two coral experts, one fish expert; Pierre for families | M | Pierre's 11-06/07 decision | Move to sheet.md, next to D2 (roles only) |
 | Hard limits: sheet read-only | — | M | — | Into AGENTS data access |

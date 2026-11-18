@@ -24,9 +24,9 @@ généralement à 5h du mat".
 2. **Guards, not text, against code in the shell.** A PreToolUse hook (`tools/guard_bash.py`) refuses those commands at
    once and gives the way out. A read-only allowlist covers the commands that recur.
 3. **An audit of the rules.** It sorts each rule into keep, replace by a guard, merge or delete, and its decisions go
-   to Pierre. It is a separate study, not in this PR.
+   to Pierre: `docs/reviews/2026-11-18-rules-audit.md`, a study in this PR; none of its proposals is applied here.
 4. **A night report** (`tools/night.py`). It covers 17:30 to 05:00 Manila, and the UserPromptSubmit hook says it is
-   due at his first message after 05:00.
+   due at his first message between 05:00 and 11:00 (once a day per checkout).
 
 ## Consequences
 

@@ -30,7 +30,7 @@ def out(o):
 m = re.match(r'pulls/(\d+)$', path)
 if m and method == 'GET':
     p = st['prs'][m.group(1)]
-    out({'state': p.get('state', 'open'), 'base': {'ref': 'main'}, 'draft': p.get('draft', False), 'title': p['title'], 'body': p.get('body'),
+    out({'state': p.get('state', 'open'), 'base': {'ref': 'main'}, 'draft': p.get('draft', False), 'title': p['title'], 'body': p.get('body'), 'user': {'login': p.get('user', 'claude')},
          'labels': [{'name': l} for l in p.get('labels', [])],
          'head': {'sha': g('rev-parse', 'refs/pull/%s/head' % m.group(1)), 'repo': {'full_name': 'o/r'}}})
 m = re.match(r'commits/(\w+)/check-runs', path)
@@ -284,6 +284,25 @@ test('a PR before TRAIN_BODY_FROM keeps the older template: its description is n
   try {
     f.setState({prs: {1: {title: 'PR 1', body: 'An old description, no sections.'}}});
     const r = f.trainEnv({TRAIN_BODY_FROM: '2'}, '--dry-run', '1');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  } finally {
+    f.done();
+  }
+});
+
+// Integrator review of #1117: "None" followed by an explanation is None; a STATUS handover and Dependabot's PRs carry no
+// template sections and still ride trains (rules W26, W9).
+test('the description check accepts "None. …", a STATUS handover and a Dependabot PR', () => {
+  const f = fixture();
+  try {
+    f.setState({
+      prs: {
+        1: {title: 'PR 1', body: BODY('No.', 'None. Every product choice is a question in STATUS.')},
+        2: {title: 'STATUS: handover (2026-11-18 ~19:30)', body: '## Summary\n\nWhere things stand.\n'},
+        5: {title: 'Bump actions/checkout from 4 to 5', body: 'Bumps actions/checkout.', user: 'dependabot[bot]'}
+      }
+    });
+    const r = f.trainEnv({TRAIN_BODY_FROM: '1'}, '--dry-run', '1', '2', '5');
     assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   } finally {
     f.done();
