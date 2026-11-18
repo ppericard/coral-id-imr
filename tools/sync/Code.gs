@@ -2776,7 +2776,8 @@ function devBlank_(name){
 // general board and every other group's) and beta ('' or the subject it opens: core.js SUBJECTS open: 'group',
 // subjGroup). Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and Groups,
 // one row a membership (Group: the group's id, Name: the player's, Added). Ids: 'g:' and 8 random characters; a group
-// the migration made keeps the Group cell its rows had (a subject's id, 'cohort:<name>', 'staff'). The app learns its
+// the migration made keeps the Group cell its rows had (a subject's id, 'cohort:<name>', 'staff'), so the migration only
+// adds rows (groups-migration below). The app learns its
 // player's groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the
 // admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group grants a right,
 // and no grant puts anyone in a group.
