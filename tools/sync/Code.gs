@@ -4,82 +4,57 @@
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
 
 // The app's old id, kept as the salt of the code hashes (hash_) and of the public anonymous ids (admin.js): changing it
-// would lock every player out (rename to IMR Reef ID, 2026-11-03).
+// would lock every player out.
 const SALT = 'imr-coral-id';  // rename-app: keep
-// v33 (rename of 2026-11-03): the app's keys were renamed with the app (renamed IMR Reef ID; core.js LEGACY_KEYS). A
-// player's saved data holds the new names, the old ones (an app from before the rename saved it last), or both (the
-// renamed app also sends the old names while old apps may read them): the new name first, else the old one.
+// The app's keys under their names before and after the app's rename (core.js LEGACY_KEYS). A player's saved data holds
+// the new names, the old ones (an old app saved it last), or both (the app also sends the old names while old apps may
+// read them): the new name first, else the old one.
 const DATA_KEYS_ = {  // rename-app: keep-begin
   progress: ['reefid-sync-coral-progress', 'imr-coral-progress'],
   reset: ['reefid-sync-coral-reset', 'imr-coral-reset'],
   ach: ['reefid-sync-ach', 'imr-coral-ach']
 };  // rename-app: keep-end
 function dataKey_(data, k){ const d = data || {}, n = DATA_KEYS_[k]; return d[n[0]] !== undefined ? d[n[0]] : d[n[1]]; }
-// Progress and Board (v14): the player's progress % (as the app shows it) and 0 when they chose to stay off the public
-// leaderboard (blank or 1 = shown); -1 (v20) = hidden by an admin (userBoard), kept whatever the player's app sends.
+// Progress and Board: the player's progress % (as the app shows it) and 0 when they chose to stay off the public
+// leaderboard (blank or 1 = shown); -1 = hidden by an admin (userBoard), kept whatever the player's app sends.
 const HEAD = ['Name', 'Updated', 'Learned', 'Seen', 'Total', 'Review first', 'Code hash', 'Data', 'Progress', 'Board'];
 const COLORS = {ok: '#dcefd9', mid: '#e3f1f3', weak: '#f7dcd6', new: '#f2f2f2'};
 const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
-// One row per quiz answer: the history behind each RA's progress. Activity sums it up per RA.
-// Seconds and Enlarged (v23, Pierre 2026-11-02: a right answer that needed a long look or an enlarged photo says the photo
-// was harder; logged to be analysed later, nothing uses them yet): seconds from the question's photos in view to the
-// answer (0-600, 0.1 s), and 1 when a photo of the question was enlarged before answering. Added at the end: every reader
-// takes the columns by position (answers_, stats_, users_, the Activity QUERY), so the first twelve never move.
-// Typed and Retyped right (v59, a player's idea approved by Pierre 2026-11-05; the name study's question g): a typed
-// answer's raw text as the player typed it first (up to 40 characters; blank for a picked answer or "I don't know"), and
-// its spelling step (quiz.js typeBind): 1 when a close typo of the right name was retyped exactly, 0 when the retype was
-// still wrong or skipped, blank when none was asked. Logged only: nothing the script computes reads them.
-// v60 (Pierre, 2026-11-06: fish answers logged from the first second, the sheet records an answer at any taxonomic level):
-// five columns at the end, after v59's Typed and Retyped right. Subject: the subject's id (core.js SUBJECTS: coral, fish), blank in the rows logged before
-// (all coral). Rank: the rank asked (coral genus; fish family, an IMR entry, genus, later species). For every subject,
-// Genus shown, Answered and Choices hold the units the app asks (a coral genus; a fish entry t01, a scientific genus
-// g:Chromis), the machine's ids; Taxon shown and Taxon answered their names at that rank when an id is not its name
-// (Damselfish, Chromis; blank for a coral genus, which is its own name, and for "I don't know"); Species shown the
-// species of the photos shown (a fish photo's PDF species name; a species with no name yet by its label, Goniobranchus
-// sp. 5, from v170; blank for the corals' genus photos). Only the subject
-// the sheet replays (core.js SUBJECTS replay: the corals) feeds what the script computes (answerRows_: the photo
-// ratings, confusions, opening hold, full replay; users_): the other subjects' rows are logged and served (readAnswers),
-// nothing more.
-// Scoring (v61, Pierre 2026-11-06, Q132): what the app scored the answer with (core.js scoreRec as JSON: photo difficulty,
-// memory, mix-ups, look-alike test, recalls, the hint revealed after it), so the full replay scores it the same; read
-// by its name (LOG.indexOf), not its place.
-// Rejected tries (v100, Pierre 2026-11-08, Q237: "c'est essentiel. Et c'est vrai pour tout le jeu, partout"): the texts a
-// typed answer refused before it was given (quiz.js typeBind: no unit of the game, two as close, a common name or another
-// rank's name on a genus question), in order, as a JSON list (at most 10, each cleaned and cut to 40 characters as
-// Typed); blank when none. Logged only: nothing the script computes reads it, and every reader takes the columns before
-// it as they were.
-// Device (v109, Pierre 2026-11-08, Q312): the anonymous id of the device that sent the answer (sync.js devId, the Device
-// of its Events and Pages rows; dev in the save or the anonymous send, from the apps that know v109), signed in or not;
-// blank when the app sent none (an app before it, a row logged before). Logged only, served to no reader yet; blanked
-// when a deleted account's answers are kept as "~deleted <id>" (deleteAccount_, rule D7), so they never lead back to a
-// device.
-// Photo answered (v141, Pierre 2026-11-15, Q371: "ok pour A"): the photo the player tapped in a Find the X (mode |f,
-// quiz.js FIND: one name, four photos), its file stem (pa), so the species taken for another family can be read from it
-// (fish-game.json: the photo's species); Answered keeps that photo's unit, as before. The same characters and length cap
-// as Photos (PH, 400); anything else is blank. Blank for every other answer, an app before it and the rows logged
-// before. Logged only: nothing the script computes reads it, served to no reader yet; it names no one, so it travels
-// with its row (merge, delete, archive) as the other answer fields do.
-// Content version (v178; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18: "A implémenter
-// rapidement parce que le contenu évolue vite"): a short id of the content the answer's subject was built from on the
-// device (core.js contentVersion: its data files' versions, its part of the curation, the structure stamp in force), the
-// entry's cv: 'c' and up to 15 lower-case letters and digits, else blank; blank in the rows logged before and from an app
-// before it. Logged only: nothing the script computes reads it, served to no reader yet (a reader takes it by name and
-// accepts a blank); it names no one, so it travels with its row (merge, delete, archive).
-// Id, the answer's attempt id (core.js answerId, made on the device once per answer and sent as it is at every try): an
-// id the tab already has, or one met earlier in the same send, is skipped (freshAnswers_, logAnswers_), so a retried
-// send never logs an answer twice.
+// One row per quiz answer: the history behind each RA's progress. Activity sums it up per RA. Every reader takes the
+// first columns by position (answers_, stats_, users_, the Activity QUERY), so new columns go at the end; the newer ones
+// are read by name (LOG.indexOf). A column blank in a row means the app that logged it did not send it. The columns
+// after the first twelve (docs/ARCHITECTURE.md "Progress sync (Google Sheet)"):
+// - Seconds: from the question's photos in view to the answer (0-600, 0.1 s); Enlarged: 1 when a photo was enlarged.
+// - Typed: a typed answer's raw text as first typed (up to 40 characters); Retyped right: its spelling step (quiz.js
+//   typeBind), 1 when a close typo was retyped exactly, 0 when the retype was still wrong or skipped. Logged only.
+// - Subject: the subject's id (core.js SUBJECTS), blank meaning coral. Rank: the rank asked. For every subject, Genus
+//   shown, Answered and Choices hold the units' ids (a coral genus, f:Damselfishes, g:Chromis); Taxon shown and Taxon
+//   answered their names when an id is not its name; Species shown the species of the photos shown (a species with no
+//   name yet by its label, Goniobranchus sp. 5). Only the subject the sheet replays (core.js SUBJECTS replay: the
+//   corals) feeds what the script computes (answerRows_); the others' rows are logged and served (readAnswers).
+// - Scoring: what the app scored the answer with (core.js scoreRec as JSON), so the full replay scores it the same.
+// - Rejected tries: the texts a typed answer refused before it was given (quiz.js typeBind), a JSON list (at most 10,
+//   each cut to 40 characters). Logged only.
+// - Device: the anonymous id of the device that sent the answer (sync.js devId), blanked when a deleted account's
+//   answers are kept as "~deleted <id>" (deleteAccount_, rule D7). Logged only.
+// - Photo answered: the photo tapped in a Find the X (mode |f), its file stem (pa), as Photos is capped (PH, 400);
+//   Answered keeps that photo's unit. Logged only.
+// - Content version: the content the answer's subject was built from (core.js contentVersion), 'c' and up to 15
+//   lower-case letters and digits (docs/ROADMAP.md "Content versions and duplicate-safe answers"). Logged only.
+// The answer-level fields name no one, so they travel with their row (merge, delete, archive).
+// Id, the answer's attempt id (core.js answerId): an id the tab already has, or one met earlier in the same send, is
+// skipped (freshAnswers_, logAnswers_), so a retried send never logs an answer twice.
 const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered', 'Content version'];
 const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
-// The Activity tab (one formula over the Answers tab): answers, right and last answer per player. v98: a surprise
-// card's answer (Mode wink, core.js WINK_MODE) counts in none of them; the formula of the tab made before (ACTIVITY_V1)
-// is replaced when the first one is logged (logAnswers_), a formula edited by hand is left alone.
+// The Activity tab (one formula over the Answers tab): answers, right and last answer per player. A surprise card's
+// answer (Mode wink, core.js WINK_MODE) counts in none of them; the older formula (ACTIVITY_V1) is replaced when the
+// first one is logged (logAnswers_), a formula edited by hand is left alone.
 const ACTIVITY = '=QUERY(Answers!A:F, "select A, count(E), sum(E), max(B) where A is not null and (F is null or F <> \'wink\') group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 const ACTIVITY_V1 = '=QUERY(Answers!A:E, "select A, count(E), sum(E), max(B) where A is not null group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 
-// v117: a tab that exists but is empty (made by hand, or by anything but this function) gets its header too, as a new one
-// does. The tab "Replayed Fish" stood empty on the sheet, without its header: find_ on it threw, so every fish replay
-// failed before it was stored or sent (replays_ leaves a failed subject out), and no fish player was ever replayed.
+// A tab that exists but is empty (made by hand) gets its header too, as a new one does: find_ on a tab without its
+// header would throw, and every replay stored there would fail.
 function sheet_(name, head){
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name);
@@ -93,7 +68,7 @@ function hash_(name, pin){
 const VERSION = 182;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
-  if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
+  if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
   const i = names.indexOf(name.toLowerCase());
   return i > 0 ? i + 1 : 0;
@@ -104,7 +79,7 @@ function clean_(p){ return {name: String(p.name || '').trim().slice(0, 40), pin:
 const safe_ = x => { const t = String(x == null ? '' : x); return /^[=+\-@]/.test(t) ? "'" + t : t; };
 // Answer fields keep only the characters they can have; anything else is dropped.
 const word_ = (x, re, n) => { const t = String(x == null ? '' : x).slice(0, n); return re.test(t) && !protoWord_(t) ? t : ''; };
-// v115 (review of #801): a value holding a name Object.prototype has (__proto__, constructor, toString…) as one of its
+// A value holding a name Object.prototype has (__proto__, constructor, toString…) as one of its
 // words is refused as any malformed value (word_): as a photo, unit or mode it would reach the script's lookup maps
 // (stats_, photoCheck_) and take the inherited member for its entry.
 const PROTO_RE = new RegExp('(^|[\\s|:,])(' + Object.getOwnPropertyNames(Object.prototype).concat('__proto__').join('|') + ')(?=$|[\\s|:,])');
@@ -137,30 +112,26 @@ function writeData_(name, json, rev){
 }
 
 // GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes: photos, conf, the
-// photo memory offsets (mem, memn, v26) and the genus offsets (gd, v31) only.
-// Per-player numbers are admin-only from v14 (the public leaderboard names players: a public per-id ability or answer log
-// could be matched to a name): POST {readStats: 1, token} → stats_ with ras; POST {readAnswers: 1, token, aname, apin}
-// → answers_ (aname/apin, never name/pin: an older script must not take it for a progress write). GET ?answers=1 → 'token'.
-// GET ?name=…&pin=… → the saved progress for that RA, if the code matches, and (v23) their opening hold (hold_).
-// v50 (Pierre, 2026-11-05: "save failed" too often): every reply is the script's own JSON. An exception thrown out of
-// doGet / doPost (the script lock not had in time, a Sheets service timeout or quota, a script error) made Apps Script
-// answer with its HTML error page, which carries no CORS header: the browser hid it from the app and reported a network
-// failure ("Failed to fetch", Safari "Load failed") although the script had answered. It is now caught and answered as
-// {ok: false, error: 'lock'} (lock_: the script lock not had within LOCK_MS, another request held it) or {ok: false,
-// error: 'server', msg} (a short message, long ids cut): a ContentService reply, which the browser lets the app read.
-// The app keeps what it sent and tries again (sync.js); an app before v50 reads them as any refused request (its
-// answers, events and reports stay queued and go again).
+// photo memory offsets (mem, memn), the genus offsets (gd) and the format offsets (fmt) only.
+// Per-player numbers are admin-only (the public leaderboard names players: a public per-id ability or answer log could
+// be matched to a name): POST {readStats: 1, token} → stats_ with ras; POST {readAnswers: 1, token, aname, apin} →
+// answers_ (aname/apin, never name/pin: an older script must not take it for a progress write). GET ?answers=1 → 'token'.
+// GET ?name=…&pin=… → the saved progress for that RA, if the code matches, and their opening hold (hold_).
+// Every reply is the script's own JSON. An exception thrown out of doGet / doPost (the script lock not had in time, a
+// Sheets timeout or quota, a script error) would make Apps Script answer with its HTML error page, which carries no
+// CORS header: the browser hides it and the app sees a network failure. It is caught and answered as {ok: false,
+// error: 'lock'} (lock_: the script lock not had within LOCK_MS) or {ok: false, error: 'server', msg} (a short message,
+// long ids cut). The app keeps what it sent and tries again (sync.js).
 function doGet(e){ timStart_(TIM.EVERY); try { return doGet_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
 function doPost(e){ timStart_(TIM.EVERY); try { return doPost_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
 const fail_ = err => json_(err && err.lockBusy ? {ok: false, error: 'lock'} : {ok: false, error: 'server', msg: errText_(err)});
 const errText_ = err => String((err && err.message) || err || '').replace(/[A-Za-z0-9_-]{25,}/g, '…').replace(/[\u0000-\u001f]+/g, ' ').slice(0, 100);
-// The script lock, waited for at most ms (LOCK_MS by default; it was waitLock(10000), whose timeout threw); thrown as
-// {lockBusy} when another request holds it longer, which doGet / doPost answer as error 'lock'.
+// The script lock, waited for at most ms (LOCK_MS by default); thrown as {lockBusy} when another request holds it
+// longer, which doGet / doPost answer as error 'lock'.
 const LOCK_MS = 20000;
 function lock_(ms){ const l = LockService.getScriptLock(); if (!l.tryLock(ms || LOCK_MS)) throw {lockBusy: true}; return l; }
 
-// v130: the Timings tab (the storage study of 2026-11-14, step 1: "log ms and rows for each full read and for each save,
-// sampled, in a small tab with no player data"; Pierre, 2026-11-14, Q352: the answer log moves to Cloudflare D1 only when
+// The Timings tab (docs/ARCHITECTURE.md "Progress sync (Google Sheet)": the answer log moves to another store only once
 // a measured threshold is crossed). One row per measured operation: Time, Op (a fixed name, never built from a request),
 // Ms (elapsed), Rows and Cols (what a whole-tab read read; for a request, the Answers tab's rows it saw), Version (the
 // script's), Weight (how many calls the row stands for). Never a name, code, device, answer id or answer content (rules
@@ -225,10 +196,10 @@ function timTrim_(){
 function doGet_(e){
   ROWS_ = null;
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
-  if (e.parameter.stats) behind_(e.parameter);  // v50: a device on a replaced app version
-  // v134: the snapshot (statsFold_), else the whole log; v137: &s=<subject> asks another subject's (statsSid_: the corals without it)
-  // v167: the reply names the subject it rates (s), so an app reads another subject's only when it is that one's (sync.js
-  // loadOwnStats: an older script, or a subject with no pool, answers with the corals')
+  if (e.parameter.stats) behind_(e.parameter);  // a device on a replaced app version
+  // The snapshot (statsFold_), else the whole log; &s=<subject> asks another subject's (statsSid_: the corals without
+  // it). The reply names the subject it rates (s), so an app reads another subject's only when it is that one's (sync.js
+  // loadOwnStats)
   if (e.parameter.stats) { TIM_.op = 'stats'; const sid = statsSid_(e.parameter.s), st = statsServed_(sid) || stats_(true, sid);
     return json_({ok: st.ok, s: sid, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
@@ -241,10 +212,10 @@ function doGet_(e){
   if (blocked_(name)) return json_({ok: false, error: 'wait'});
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
-  if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
-  // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
-  // v146: and their structure stamps (st_fish, the one applied; sn_fish, the units' when another: replays_ sx).
-  // v163: the subject replayed here says its stamps the same way (st_coral, sn_coral: stMain_), its rules version as rv.
+  if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code
+  // The other subjects' replays (replays_), each asked by its own rules version (rv_fish) and structure stamps (st_fish,
+  // the one applied; sn_fish, the units' when another: replays_ sx). The subject replayed here says its stamps the same
+  // way (st_coral, sn_coral: stMain_), its rules version as rv.
   const rvs = {}, sts = {}, stn = {};
   [CORE_.replaySubject()].concat(CORE_.replayedSubjects()).forEach(id => {
     if (id !== CORE_.replaySubject() && e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]);
@@ -252,37 +223,35 @@ function doGet_(e){
     if (e.parameter['sn_' + id] !== undefined) stn[id] = String(e.parameter['sn_' + id]);
   });
   const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
-  TIM_.op = 'load';  // v130: timed (timEnd_)
+  TIM_.op = 'load';  // timed (timEnd_)
   return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light}));
 }
-// The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and from v116
-// as a light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, and from v116 have (the
-// revision of the copy the device holds: the same revision answers same: 1 and leaves the copy out, the device reading
-// its own; sync.js syncGet) and light (the hold's ids from pt only: hold_; the copy under the new key names only, the
-// old ones, which the app reads as the new when it has no new one, under the new: core.js keysIn).
+// The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and as a
+// light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, have (the revision of the copy the
+// device holds: the same revision answers same: 1 and leaves the copy out; sync.js syncGet) and light (the hold's ids
+// from pt only: hold_; the copy under the new key names only: core.js keysIn).
 function load_(name, row, q){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
-  // v58: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
+  // The account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
-  // v48: the subjects in beta the player's groups open (groupsOf_), [] for none; v179: gids, the ids of their groups (the
-  // Leaderboard shows their boards first). A failure leaves both out (the app keeps what it had).
+  // The subjects the player's groups open (groupsOf_), [] for none; gids, the ids of their groups (the Leaderboard shows
+  // their boards first). A failure leaves both out (the app keeps what it had).
   try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}
-  try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
-  if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // v125: this is the admin's account (the app shows its 🌱)
-  // v57: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
+  try { out.notes = notes_(); } catch (err) {}  // the Notes tab's card lines (notes_)
+  if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // this is the admin's account (the app shows its 🌱)
+  // The ids of the player's own verified reports (repsOf_), for "Your feedback helped". A failure leaves it out.
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
-  // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
-  // (the app keeps its own).
+  // The player's opening hold from their answers (hold_). A failure leaves it out (the app keeps its own).
   try { const o = hold_(name, resetOf_(data), q.pt, q.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
-  // v28: the full replay of the player's log, when their app applied an older rules version (replay_). A failure leaves
+  // The full replay of the player's log, when their app applied an older rules version (replay_). A failure leaves
   // it out (the app keeps its own progress and asks again next time).
   if (q.rv !== undefined) {
     const lock = LockService.getScriptLock();
     if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data), undefined, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   const rps = replays_(name, data, q.rvs || {}, q.pt, undefined, undefined, {sts: q.sts, stn: q.stn}); if (rps) out.replays = rps;
-  if (q.have === d.rev) { delete out.data; out.same = 1; }  // v116: the device holds this very copy (sync.js sdOf)
-  else if (q.light) out.data = CORE_.keysIn(data);  // v116: under the new key names only, as the app reads it (sync.js syncGet)
+  if (q.have === d.rev) { delete out.data; out.same = 1; }  // the device holds this very copy (sync.js sdOf)
+  else if (q.light) out.data = CORE_.keysIn(data);  // under the new key names only, as the app reads it (sync.js syncGet)
   return out;
 }
 
@@ -290,38 +259,38 @@ function load_(name, row, q){
 //   answers: [{id, t, g, a, ok, m, ph, e, th, nw, ch, rt, zm, tz}], at: revision merged against (optional)} → {ok, log: true, rev}.
 // log tells the app its answers are saved; they are logged first, so they are kept even if the progress write fails.
 // at ≠ the saved revision → {ok: false, error: 'stale', log: true}: another device wrote meanwhile; the app pulls, merges, resends.
-// v119: no account yet and a reserved name (core.js reservedName) → {ok: false, error: 'reserved'}, nothing logged or written.
-// POST {reports: [...], rname, rpin} → {ok, rep: true}: players' reports (logReports_, v7). The reporter goes in rname/rpin,
+// No account yet and a reserved name (core.js reservedName) → {ok: false, error: 'reserved'}, nothing logged or written.
+// POST {reports: [...], rname, rpin} → {ok, rep: true}: players' reports (logReports_). The reporter goes in rname/rpin,
 // never name/pin, so an older script answers 'input' and never mistakes a report for an empty progress write.
 function doPost_(e){
   ROWS_ = null;
   let p = JSON.parse(e.postData.contents);
-  // v116 (lighter saves, sync.js syncOnce): a light save comes wrapped, its gzip in base64 (z) or as it is (lt), so a
-  // script before v116, which finds no name in it, answers 'input' and never takes a delta for an empty progress write.
+  // A light save (sync.js syncOnce) comes wrapped, its gzip in base64 (z) or as it is (lt), so an older script, which
+  // finds no name in it, answers 'input' and never takes a delta for an empty progress write.
   // A z this script cannot read answers 'zip': the app sends it again unpacked.
   if (p && typeof p.z === 'string') { try { p = JSON.parse(unzip_(p.z)); } catch (err) { return json_({ok: false, error: 'zip'}); } }
   else if (p && p.lt && typeof p.lt === 'object') p = p.lt;
   if (!p || typeof p !== 'object' || Array.isArray(p)) return json_({ok: false, error: 'input'});
-  if (typeof p.lv === 'string') return json_(lv_(p));  // v172: the live mode (lv_), never a progress save
+  if (typeof p.lv === 'string') return json_(lv_(p));  // the live mode (lv_), never a progress save
   if (Array.isArray(p.anonAnswers) && !p.av) oldApp_('anonymous answers', '~anon ' + String(p.anon || '').slice(0, 16));
-  if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
+  if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
-  if (p.selfDelete) return json_(selfDelete_(p));  // v58: a player deletes their own account (see selfDelete_)
+  if (p.selfDelete) return json_(selfDelete_(p));  // a player deletes their own account (see selfDelete_)
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
-  if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
-  if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
-  if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
-  if (p.readAlerts) return json_(readAlerts_(p.token));  // admin (v152): POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
-  if (p.readInfra) return json_(readInfra_(p.token));  // admin (v180): POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
-  if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
-    const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // v156: roles step 1
+  if (Array.isArray(p.events)) return json_(events_(p));  // error reports and one-tap answers (see events_)
+  if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin: the Analyses report, see analyses_
+  if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; pages: 1 for the Pages tab
+  if (p.readAlerts) return json_(readAlerts_(p.token));  // admin: POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
+  if (p.readInfra) return json_(readInfra_(p.token));  // admin: POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
+  if (p.readStats || p.readAnswers || p.readLive) {  // admin: per-player numbers, see doGet; readLive (live_)
+    const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // roles (gate_)
     if (!who) return json_({ok: false, error: 'token'});
-    if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // v130: timed (timEnd_)
-    // v145: readStats from the snapshot (statsAdmin_), else the whole log as before; s: the subject (statsSid_: the corals without it)
+    if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // timed (timEnd_)
+    // readStats from the snapshot (statsAdmin_), else the whole log; s: the subject (statsSid_: the corals without it)
     return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
   }
-  if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // v156: roles step 1 (roles_)
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude; v179 groupMake, groupEdit, groupDrop)
+  if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
