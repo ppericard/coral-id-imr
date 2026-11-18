@@ -33,11 +33,12 @@ Main: sheet script **v184** (#1112); the script updates from `release`, which on
 
 - Comment cleanup 1 (core.js, Code.gs): running, PR to come. Pierre, 19:20: "ok, lance le nettoyage cette nuit".
 - Comment cleanup 2 (model.js, app.js, quiz.js, sync.js): running, PR to come.
-- Comment cleanup 3 (admin.js, progress.js, autosort.js, learn.js, the rest by size): NOT STARTED, next free slot.
+- Comment cleanup 4 (admin.js, after #1113; then tests/ and tools/): NOT STARTED, next free slot.
 - Docs PR 3 rest (history out of ARCHITECTURE.md, sheet_version.py): running, PR to come.
 - Docs PRs 4-6 (ARCHITECTURE as a map, LEARNING as a spec, ROADMAP and handovers), with the rules audit's approved
   points 1-5 and 8 folded in: NOT STARTED, after #1115.
-- Typed answers, what is left: running, PR to come.
+- Typed answers, what is left: #1116, ready, waits for Pierre (Q411).
+- Comment cleanup 3 (progress.js, autosort.js, learn.js, analysis.js and the smaller front-end files): running.
 
 ## Next
 
@@ -61,11 +62,16 @@ dropped (the docs describe a coherent model in our words; no new manual step for
   version tags, dates, quotes or question numbers."
 - **Q410** The five new sea slug achievement names (Gill and frill, Muck magnet, Slug savant, Nudibranch nerd, Every
   last slug): rename freely (#1112).
+- **Q411** #1116 (typed answers, what is left; green, Codex-clean but one thread left for Pierre): a typed miss counts
+  as one offer and one mix-up in the pooled pairs. On the real log 12 coral and 5 fish pairs move; Acropora's
+  confusion group becomes Anacropora's (was Astreopora and Cyphastrea), which shifts the opening order there; in the
+  level-1 simulation the expert's right % on answers 200-300 falls 95.2 → 92.2 (bounds −5.1 to −0.9), verdict
+  "unclear: one step up". Merge as is, run the level-2 simulation first (recommended), or drop the pooled part?
 
 Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points (backup "three months" wording; audit
 rows after deletion; the Notes tab); #1098 (a)-(f) (with #1118); genera opening vs the two trees (#1041 §6).
 
-Last question number: Q410
+Last question number: Q411
 
 ## Pierre's hands
 
