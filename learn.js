@@ -1,8 +1,7 @@
-// IMR Reef ID: the Learn pages, split out of app.js (2026-11-02, code review L1: one file per part). Genera (the list,
-// its filters and groups: viewGenera), a genus sheet (viewGenus, myProg), Look-alikes (viewLookalikes, the montage
-// deck, classics, pairs) and Compare side by side (viewCompare). The shared helpers they use (photos, ID tips,
-// glossary) stay in app.js. A classic script like app.js, loaded right after quiz.js (index.html, in order); app.js
-// waits for every script (window.BOOT) before its first page. Required like app.js.
+// IMR Reef ID: the Learn pages. Genera (the list, its filters and groups: viewGenera), a genus sheet (viewGenus,
+// myProg), Look-alikes (viewLookalikes, the montage deck, classics, pairs) and Compare side by side (viewCompare). The
+// shared helpers they use (photos, ID tips, glossary) are in app.js. A classic script like app.js, loaded right after
+// quiz.js (index.html order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 /* ---------- genera ---------- */
 let azFam = null,
   azQ = '',
@@ -15,7 +14,7 @@ let azOrder = (() => {
     return 'lecture';
   }
 })();
-// Genera view: 'photos' (cards) or 'tips' (the ID tips list, formerly its own page).
+// Genera view: 'photos' (cards) or 'tips' (the ID tips list).
 let azView = (() => {
   try {
     return localStorage.getItem('reefid-sync-gview') || 'photos';
@@ -24,17 +23,14 @@ let azView = (() => {
   }
 })();
 let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
-// Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
-// page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
-// It always opens step 1 (Pierre, 2026-11-04: a card at the start of the path starts the path); the Basics tab, Home and
-// the quiz's offers open #learn/basics, which resumes at the last step seen. The same card opens a subject's own module
-// (UNITS basics: name, card, trail; Fish basics' is the first block of the families page, viewFishList).
-// The card's picture (Pierre, 2026-11-04, mockup A3 of four proposals): the seven steps as a trail of line drawings,
-// from the colony down to the septal teeth and back out to the growth forms, each stop a soft disc in its own colour
-// (--bt1…--bt7, reef blue to coral orange; app.css). Stops seen: tinted, with a ✓; the next one: a deeper tint, a ring and
-// "Next: <word>" ("Start: Colony" while none is seen, Pierre 2026-11-04); the others desaturated, joined by a dotted
-// path. Four along the top, three back along the bottom (Teeth under Septa). Its words (proto/basics.js steps):
-// BASICS_WORDS' terms, shortened to fit a stop.
+// Step 0 of the Learn path: Coral basics before the genus sheets, as the first card of the Genera page ("0 · Coral
+// basics" in the lecture order), with where the player is in it. It always opens step 1 (the start of the path starts
+// the path); the Basics tab, Home and the quiz's offers open #learn/basics, which resumes at the last step seen. The same
+// card opens a subject's own module (UNITS basics: name, card, trail).
+// The card's picture: the seven steps as a trail of line drawings, from the colony down to the septal teeth and back out
+// to the growth forms, each stop a disc in its own colour (--bt1…--bt7, app.css). Stops seen: tinted, with a ✓; the
+// next: a deeper tint, a ring and "Next: <word>" ("Start: Colony" while none is seen); the others desaturated, joined by
+// a dotted path. Four along the top, three back along the bottom (Teeth under Septa). Words: proto/basics.js terms.
 const BASICS_TRAIL = [
   [
     'colony',
@@ -47,7 +43,7 @@ const BASICS_TRAIL = [
     'Corallite',
     '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><circle cx="3.5" cy="5" r="1.6"/><circle cx="20.5" cy="19" r="1.6"/><circle cx="20.5" cy="5" r="1.6"/>'
   ],
-  // Step 4 teaches septa and costae together (Pierre, 2026-11-03): its stop names both, and its drawing shows the blades
+  // Step 4 teaches septa and costae together: its stop names both, and its drawing shows the blades
   // inside the rim (septa) carried on outside it (costae).
   [
     'septa',
@@ -72,7 +68,7 @@ const BASICS_AT = [
   [200, 212],
   [86, 212]
 ];
-// Fish basics' trail (proto/fishbasics.js steps, Pierre 2026-11-04: the same component): six stops, three along the top
+// Fish basics' trail (proto/fishbasics.js steps), the same component: six stops, three along the top
 // and three back along the bottom (Tails under Fins), in the colours --bt1…--bt6.
 const BASICS_TRAIL_F = [
   ['shape', 'Body shape', '<path d="M2.5 12c3-5 10-6 14-2.5l5-3v11l-5-3C12.5 18 5.5 17 2.5 12z"/><circle cx="7" cy="11" r=".9"/>'],
@@ -198,7 +194,7 @@ function viewGenera() {
         (!q && !azFam && names.length && SUBJ.pages.includes('basics') ? basicsCard(tips) : '') +
         names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
     const grid = document.getElementById('azgrid');
-    // The Coral Finder book's extra genera (not on the IMR list, seen at Dauin): one folded line under the 39 (Pierre).
+    // The Coral Finder book's extra genera (not on the IMR list, seen at Dauin): one folded line under the slate's.
     const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));
     const xs =
       !azFam && X.length
@@ -297,7 +293,7 @@ function packGroups(grid) {
 }
 addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 
-// The roots of a genus name, as a memory aid (Pierre, 2026-11-14, Q124 d): data.json `root` (tools/apply_name_roots.py),
+// The roots of a genus name, as a memory aid (docs/ARCHITECTURE.md): data.json `root` (tools/apply_name_roots.py),
 // each part's meaning with its Latin or Greek word and the dictionary it comes from, under the ID tips and apart from
 // them (an addition, never an IMR line: rule C1). An ending that 3 or more slate genera share (-pora) says it does not
 // tell them apart, counted here (rule U8). '' for a genus without a sourced root. Fish genera (fish.json `root`, from
@@ -336,9 +332,9 @@ function viewGenus(name) {
     );
   const imr = g.imr || [],
     // The IMR ID tips box: on a slate genus with lecture notes or tips of its own, each slot shown on its own content (a
-    // content editor hiding the lecture notes keeps the tips; Codex review #988).
+    // content editor hiding the lecture notes keeps the tips).
     tipsIn = !g.x && (imr.length > 0 || (g.qt || []).length > 0);
-  // Each view row shows the sheet set (applySlots): 3 featured, then the other IMR and Pierre's photos behind a fold.
+  // Each view row shows the sheet set (applySlots): 3 featured, then the other IMR and curated photos behind a fold.
   const inView = v => {
     const s = (g.sl || {})[v];
     return s ? [...s.feat, ...s.more] : [];
@@ -363,9 +359,10 @@ function viewGenus(name) {
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
     })
     .join('');
-  // The Coral ID Key criteria (the Coral Finder book's text, cited by page): visible for genera the lecture skips, otherwise folded under "More details" with sources and key.
-  // The sources the content editor gave with his edits show with their slot (esrcIn, esrcP; design note v2, step 8, Q359 e);
-  // the criteria's in place of the Coral Finder pages, which cite the book's own text only (app.js critRef; Codex review #988).
+  // The Coral ID Key criteria (the Coral Finder book's text, cited by page): visible for genera the lecture skips,
+  // otherwise folded under "More details" with sources and key. The sources the content editor gave with his edits show
+  // with their slot (esrcIn, esrcP); the criteria's in place of the Coral Finder pages, which cite the book's own text
+  // only (app.js critRef).
   const cfList = `<h3>Coral ID Key criteria <span class="pg">${critRef(g)}</span></h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   $v.innerHTML = `<p class="lede">One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>close-up</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}</p>
@@ -418,8 +415,8 @@ function viewGenus(name) {
 }
 
 // The player's own progress on this genus, at the top of its sheet (only once it has been seen): its level, how far it
-// has got and what it still needs. My progress only had this in a hover tooltip, invisible on touch screens (RA re-review
-// 2026-11-01); tapping a tile there opens this sheet.
+// has got and what it still needs. My progress's tiles hold this in a tooltip, invisible on touch screens; tapping a
+// tile there opens this sheet.
 function myProg(n) {
   const [k, t] = shownLevel(n);
   if (k === 'new') return '';
@@ -483,7 +480,7 @@ document.addEventListener('click', e => {
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name) {
   // The declared look-alikes, then those from the players' answers (model.js dataLooks: pairs no source names that
-  // players keep mixing up; 2026-11-04), said as such.
+  // players keep mixing up), said as such.
   const D = new Set(
       dataLooks()
         .filter(p => p.includes(name))
@@ -526,13 +523,13 @@ function pairs() {
   );
   return out;
 }
-// Classic look-alikes (Pierre, 2026-10-31): only the pairs a source compares in so many words, the IMR lecture
+// Classic look-alikes: only the pairs a source compares in so many words, the IMR lecture
 // (lsrc "IMR Lecture 6...") or the Coral Finder text ("Coral Finder p. ..."). Pairs that only share a Coral Finder box
 // or an IMR group stay on the genus sheets and in duels. IMR pairs first, then by slate order.
 const pairKey = (a, b) => [a, b].sort().join('|');
 const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
 // The source the content editor gave with his edit of that line ('; <its words>', esrcT), from the side lsrcOf reads it
-// from; '' when none (rule C2; Codex review #988).
+// from; '' when none (rule C2).
 const lsrcEsrc = (a, b) => ((GX(a).lsrc || {})[b] ? esrcT(GX(a), 'lsrc/' + b) : (GX(b).lsrc || {})[a] ? esrcT(GX(b), 'lsrc/' + a) : '');
 const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
 function classics() {
@@ -542,10 +539,10 @@ function classics() {
     .map(p => p.slice().sort())
     .sort((x, y) => tier(x) - tier(y) || Math.min(slateIdx(x[0]), slateIdx(x[1])) - Math.min(slateIdx(y[0]), slateIdx(y[1])));
 }
-// One montage per pair, like an IMR comparison slide: one photo of each genus in the same view. Pierre's pick
-// (curation.json "mont" {"A|B": {v, a, b}}, set in admin) wins; otherwise the view the comparison is about (most pairs
-// are told apart on the corallites; these on the closer view) and, in that view, the two photos that come first
-// (IMR, then Pierre's) with the same growth form.
+// One montage per pair, like an IMR comparison slide: one photo of each genus in the same view. The admin's pick
+// (curation.json "mont" {"A|B": {v, a, b}}) wins; otherwise the view the comparison is about (most pairs are told apart
+// on the corallites; these on the closer view) and, in that view, the two photos that come first (IMR, then curated)
+// with the same growth form.
 const MONT_V = {
   'Pocillopora|Stylophora': 'medium',
   'Acropora|Anacropora': 'medium',
@@ -557,10 +554,9 @@ const MONT_V = {
   'Danafungia|Lithophyllon': 'medium'
 };
 // The two photos of two genera that make the best side by side: same growth form first, then nearest the front and,
-// when the photos come from all zoom levels ("All", Pierre 2026-11-01), the nearest zoom levels. The same form is looked
-// for in every photo of the lists, not only the first 6 (a player's report, 2026-11-04: a plate Turbinaria answered
-// Echinopora was shown a branching Echinopora while plate ones came further down); "x" (form not visible) matches
-// nothing. Without a same-form pair, the best pair among the first 6 of each list, as before.
+// when the photos come from all zoom levels ("All"), the nearest zoom levels. The same form is looked for in every
+// photo of the lists, not only the first 6, so a plate genus is shown beside a plate look-alike when one exists; "x"
+// (form not visible) matches nothing. Without a same-form pair, the best pair among the first 6 of each list.
 const ZOOM = {wide: 0, medium: 1, macro: 2};
 function photoPair(LA, LB, fa, fb) {
   let best = null;
@@ -577,7 +573,7 @@ function photoPair(LA, LB, fa, fb) {
   );
   return best ? [best[1], best[2]] : [];
 }
-// Pierre can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
+// The admin can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
 // Montages), and pick "all" as the view to pair photos of nearby zoom levels.
 function montage(a, b) {
   const k = pairKey(a, b),
@@ -603,8 +599,8 @@ const srcTag = src =>
     : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
 // Learn > Look-alikes: a deck of the classic pairs, one montage per screen, the reader's mix-ups first.
 // #learn/look-alikes opens the first one, #learn/look-alikes/A/B a given pair; arrows, keys and swipes go through the deck.
-// "Drill this pair" only for two genera the player has unlocked (model.js unlocked: the Duel tab opens none, one
-// progression path for every game, Pierre 2026-11-04).
+// "Drill this pair" only for two genera the player has unlocked (model.js unlocked: the Duel tab opens none; one
+// progression path for every game).
 const drillOk = (a, b) => typeof unlocked !== 'function' || unlocked([a, b]).length === 2;
 function viewLookalikes(a, b) {
   const L = classics()
@@ -632,8 +628,8 @@ function viewLookalikes(a, b) {
       (d, k) =>
         `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="${esc(hr('cmp|' + d.A + '|' + d.B))}" title="${esc(d.A)} or ${esc(d.B)}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
     ).join('');
-    // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step pushed the deck down while the
-    // montage was being sized, and it came out squashed once the intro left (Pierre, phone).
+    // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step would push the deck down while
+    // the montage is being sized, and squash it once the intro left.
     $v.innerHTML = `${drawn ? '' : `<p class="lede">The look-alikes the IMR lecture or the Coral Finder book compare directly, one pair per screen: one photo of each genus in the same view, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a genus are at the bottom of its sheet.</p>`}
     <div class="lk">
       <div class="lkmain">
@@ -737,12 +733,10 @@ function viewCompare(a, b) {
     };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
-  // Opened from the Duel tab's relief card (quiz.js DUELBACK): Back to the duel, to the same duel and run (Pierre,
-  // 2026-11-04), in view however far the page scrolls (Pierre, the same day: an inline one at the top and the end was not
-  // seen); it replaces Drill this pair, which leads to the same duel. Phones and tablets: a floating button at the bottom
-  // centre (.cmpfab). Desktop (from 1024 px): a light sticky band under the page bar, "Duel paused: A or B" and the
-  // button (.duelband; Pierre picked it among four desktop placements: in the page bar it got lost, a side column was too
-  // big, a floating button covered the photos). CSS shows one or the other.
+  // Opened from the Duel tab's relief card (quiz.js DUELBACK): Back to the duel, to the same duel and run, in view
+  // however far the page scrolls (docs/DESIGN.md); it replaces Drill this pair. Phones and tablets: a floating button at
+  // the bottom centre (.cmpfab). Desktop (from 1024 px): a light sticky band under the page bar, "Duel paused: A or B"
+  // and the button (.duelband). CSS shows one or the other.
   const back = typeof duelBackFor === 'function' && !!duelBackFor(hashNow());
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
   $v.innerHTML = `<p class="lede">Two genera that are often confused, side by side: their ID tips, then the same view of each. <b>Drill this pair</b> at the bottom turns it into a quick duel.</p>
@@ -767,27 +761,26 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
-// Fish families (#learn/genera with the fish subject, app.js UNITS list): every family of the slate (all circles: Pierre,
-// 2026-11-06, Q175) by the groups of the identification key in force (fish.json key: for the Indo-Pacific, the index of a
-// reef fish ID book; rule S3), in the key's order, only the groups that hold a family, each under its number and title as
-// the key prints them; each family with a photo, its IMR cues and how IMR tells its look-alikes apart. The key is
-// credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
-// stay a surprise. Each entry opens its family's sheet (viewFishSheet, below; an IMR entry by the family it was renamed into).
+// Fish families (#learn/genera with the fish subject, app.js UNITS list): every family of the slate (all circles) by the
+// groups of the identification key in force (fish.json key; rule S3), in the key's order, each group under its number
+// and title as the key prints them; each family with a photo, its IMR cues and how IMR tells its look-alikes apart. The
+// key is credited in full under the list. A region with no key: the entries in one block. The winks stay a surprise.
+// Each entry opens its family's sheet (viewFishSheet; an IMR entry by the family it was renamed into).
 function viewFishList() {
   // Each photo enlarges in the shared viewer, as the coral photos do (a tap on a photo opens it).
   const flat = [];
   const tip = n => {
     const g = GX(n),
-      p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the card photo as before (core.js easyCover)
+      p = cover(g); // the admin's ★ Cover while in play (app.js fishCurate), else the card photo (core.js easyCover)
     if (p) flat.push({...p, genus: n});
-    // its first English name given as information (app.js vernFirst: the sea slugs'; Pierre, 2026-11-17), under its name
+    // its first English name given as information (app.js vernFirst: the sea slugs'), under its name
     const ven = vernFirst(n);
     return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b>${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk
             .map(
               ([o, t]) =>
-                // an edited line names the source given with it (app.js fishGenera lksrc; Q359 e, rule C2)
+                // an edited line names the source given with it (app.js fishGenera lksrc; rule C2)
                 `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))}${((g.lksrc || {})[o] || {}).t ? '; ' + esc(g.lksrc[o].t) : ''})`
             )
             .join('; ')}</p>`
@@ -814,9 +807,9 @@ function viewFishList() {
       : UNITS[SUBJ.id].listBy
         ? byRank(slateGenera(), UNITS[SUBJ.id].listBy)
         : [blk('', slateGenera())];
-  // No key and a rank to group by (UNITS listBy: the sea slugs' 'family'; Pierre, 2026-11-16: the genera shown directly,
-  // grouped by family): one block per unit of that rank above the units (their parent), titled by its name, in the
-  // subject's order (its tree's, FISH.gen), the units in the slate's order inside it; units without one in a last block.
+  // No key and a rank to group by (UNITS listBy: the sea slugs' 'family'): one block per unit of that rank above the units
+  // (their parent), titled by its name, in the subject's order (its tree's, FISH.gen), the units in the slate's order
+  // inside it; units without one in a last block.
   function byRank(L, rk) {
     const up = n => {
         const p = GX(n).parent;
@@ -826,7 +819,7 @@ function viewFishList() {
       by = new Map();
     L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
     const B = [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity)),
-      // the family's heading, its first English name beside it (app.js vernFirst; Pierre, 2026-11-17)
+      // the family's heading, its first English name beside it (app.js vernFirst)
       fam = ([p, U]) =>
         blk(
           p
@@ -837,7 +830,7 @@ function viewFishList() {
       tx = FISH.taxa;
     if (!tx) return B.map(fam);
     // Its families under their taxonomic groups (the tree's taxa, a published classification: tools/seaslug_groups.json;
-    // Pierre, 2026-11-16: the true nudibranchs apart from the other sea slugs), in the groups' order, a heading each.
+    // the true nudibranchs apart from the other sea slugs), in the groups' order, a heading each.
     const tg = p => (p && GX(p).tg) || 0;
     return [...tx.groups, {n: 0, title: ''}].flatMap(gr => {
       const In = B.filter(([p]) => tg(p) === gr.n);
@@ -854,7 +847,7 @@ function viewFishList() {
     UNITS[SUBJ.id].lede ||
     `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and IMR’s names. Photos: iNaturalist and FishBase.`;
   const tx = !key && UNITS[SUBJ.id].listBy && FISH.taxa;
-  // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups (Pierre, 2026-11-04).
+  // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups.
   const bas = SUBJ.pages.includes('basics')
     ? `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the groups"><span class="gn">0</span><span class="gt">${esc(basicsWords().name)}</span></h3>${basicsCard(true)}</section>`
     : '';
@@ -864,12 +857,11 @@ function viewFishList() {
 }
 
 /* ---------- Fish sheets ---------- */
-// The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, Pierre's answers of 2026-11-06, option B): one family
-// sheet per family of the identification key (fish.json families: Damselfishes, Coral Breams…), read from fish.json alone
-// (core.js fishTree), so they stand whatever the game asks. The photos: every photo of a species in the game's lists and
-// its sheet-only photos (FISH.sheet), the easiest, most reference-like first, whoever took them (core.js easyRank, rule
-// P1). No text of our own yet: the IMR lines verbatim, the sourced juvenile notes already in fish.json; the family marks,
-// behaviour and size lines come with the writing (study §8; ROADMAP "Fish sheets at three levels").
+// The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B): one family sheet per family of the
+// identification key (fish.json families), read from fish.json alone (core.js fishTree), so they stand whatever the game
+// asks. The photos: every photo of a species in the game's lists and its sheet-only photos (FISH.sheet), the easiest,
+// most reference-like first, whoever took them (core.js easyRank, rule P1). Text: the IMR lines verbatim and the sourced
+// notes in fish.json, nothing of our own (docs/ROADMAP.md "Fish sheets at three levels").
 let FTREE = null,
   FTREE_OF = null,
   FSPH = null,
@@ -892,35 +884,35 @@ const fishSpPhotos = () => {
   Object.values((FISH && FISH.gen) || {}).forEach(g => ((g.views || {}).wide || []).forEach(add));
   Object.values((FISH && FISH.sheet) || {}).forEach(L => (L || []).forEach(add));
   Object.keys(by).forEach(k => (by[k] = easyRank(by[k])));
-  // Pierre's featured photos of a species first, in his order (app.js fishCurate featP; the admin's page order,
-  // autosort.js fishOrder), then the others in the game's order.
+  // The admin's featured photos of a species first, in his order (app.js fishCurate featP; autosort.js fishOrder), then
+  // the others in the game's order.
   Object.values((FISH && FISH.gen) || {}).forEach(g =>
     Object.entries(g.featP || {}).forEach(([sid, F]) => {
       const fs = new Set(F.map(p => p.f));
       if (by[sid]) by[sid] = [...F.map(p => by[sid].find(x => x.f === p.f)).filter(Boolean), ...by[sid].filter(x => !fs.has(x.f))];
     })
   );
-  // And before them his ★ Cover of the species (app.js fishCurate covers; Pierre, 2026-11-13): its first photo wherever
-  // the species shows one (its tile, its sheet's first photo, its row on the family sheet).
+  // And before them his ★ Cover of the species (app.js fishCurate covers): its first photo wherever the species shows one
+  // (its tile, its sheet's first photo, its row on the family sheet).
   Object.entries((FISH && FISH.covers) || {}).forEach(([sid, p]) => {
     const c = by[sid] && by[sid].find(x => x.f === p.f);
     if (c) by[sid] = [c, ...by[sid].filter(x => x !== c)];
   });
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
-// A species' one photo (its tile, its row, its sheet's first photo): his species ★ cover (app.js fishCurate's covers,
-// first in fishSpPhotos: an adult, or a juvenile he confirmed, cj; Pierre's exception, 2026-11-15), watermarked or not
-// (his choice, rule A1); else the first of its photos, his featured then the game's order, that is neither a juvenile nor
-// watermarked (app.js coverFirst; Pierre, 2026-11-15, Q379), else its first adult, else its first.
+// A species' one photo (its tile, its row, its sheet's first photo): the admin's ★ cover (app.js fishCurate's covers,
+// first in fishSpPhotos: an adult, or a juvenile he confirmed), watermarked or not (rule A1); else the first of its
+// photos, featured then the game's order, that is neither a juvenile nor watermarked (app.js coverFirst), else its first
+// adult, else its first.
 const spCover = (s, P) => {
   const c = ((FISH && FISH.covers) || {})[s.id];
   return (c && P && P[0] && P[0].f === c.f && P[0]) || null;
 };
 const spPhoto = s => spCover(s, fishSpPhotos()[s.id]) || coverFirst(fishSpPhotos()[s.id]);
-// A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
-// genus with no unit (FISH.covers); null when he picked none in play.
+// A genus's ★ Cover: a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a genus with no unit
+// (FISH.covers); null when none is picked in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
-// A node's default cover from its species S when he picked none (Pierre, 2026-11-13, Q339 (b); app.js seenCover): the
+// A node's default cover from its species S when none is picked (docs/rules/photos.md; app.js seenCover): the
 // species with a reference photo most seen around the instance's centre, then his ★ cover of it, else its easiest
 // reference photo that is not a juvenile (no reference photo: the most seen species' easiest), among the photos in play
 // (the sheet-only reference photos, use 'ref', only when none is in play).
@@ -929,8 +921,8 @@ const nodeCover = S => {
     on = P.filter(p => p.use !== 'ref');
   return seenCover(on.length ? on : P, fishSeen, undefined, fishSpPick);
 };
-// The one "No photo yet" drawing for every species (Pierre, Q9): a plain child-like fish, never a body shape that could
-// read as ID information; the "Photo missing" tile's style (DESIGN.md).
+// The one "No photo yet" drawing for every species (docs/DESIGN.md): a plain child-like fish, never a body shape that
+// could read as ID information; the "Photo missing" tile's style.
 const NOFISH =
   '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M10 20c6-11 22-14 33-6l9-7c1 5 1 21 0 26l-9-7c-11 8-27 5-33-6z"/><circle class="eye" cx="20" cy="17" r="2"/><path d="M14 24c3 2 6 2 8 1"/></svg>';
 // A subject with its own drawing (UNITS words.nophoto: the sea slugs') shows it instead, in the same style.
@@ -943,15 +935,14 @@ const noFish = () => `<span class="nofish">${sheetWord('nophoto') || NOFISH}<spa
 const sheetWord = k => ((UNITS[SUBJ.id] || {}).words || {})[k];
 // The unit the player's progress keeps a family under: the family once the game asks the families, else the IMR entry
 // that was renamed into it (SUBJECTS renamed), '' when none.
-// An entry renamed into two families counts for both (SUBJECTS renamed split: t46 is the Pipefishes and the Seahorses;
-// Codex review #675).
+// An entry renamed into two families counts for both (SUBJECTS renamed split: t46 is the Pipefishes and the Seahorses).
 const famUnit = fid => {
   const R = SUBJ.renamed || {};
   return GX(fid)
     ? fid
     : Object.keys(R.ids || {}).find(t => (R.ids[t] === fid || Object.values((R.split || {})[t] || {}).includes(fid)) && GX(t)) || '';
 };
-// "Opened for me" (Pierre, Q5): a species counts as opened once its family is at Advanced, the level at which a family's
+// "Opened for me": a species counts as opened once its family is at Advanced, the level at which a family's
 // species open (docs/FISH_PATH.md "Unlock rules"), once its scientific genus is met, or once its own unit is met (the
 // species level, app.js fishGenera: s:s091).
 const spOpen = s => {
@@ -959,10 +950,10 @@ const spOpen = s => {
   const u = famUnit(s.family);
   return (!!GX('s:' + s.id) && introduced('s:' + s.id)) || (!!GX(s.genus) && introduced(s.genus)) || (!!u && genScore(u) >= LV_AT[1]);
 };
-// The species filter, on by default each time a sheet opens (Pierre, Q5; viewFishSheet): one tap shows every species.
+// The species filter, on by default each time a sheet opens (viewFishSheet): one tap shows every species.
 let fishMine = true;
 // The families a player meets on the families page: circle 1, and the opt-in circles once on (their units renamed into
-// families, an entry renamed into two giving both: Seahorses & pipefishes, SUBJECTS renamed split; Codex review #675);
+// families, an entry renamed into two giving both: SUBJECTS renamed split);
 // never a wink, which stays a surprise.
 const fishShown = () => {
   const T = ftree(),
@@ -974,7 +965,7 @@ const fishShown = () => {
         .flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})])
     ),
     wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n))),
-    // Every circle is on the path (Q175, Q177): the families of the slate, an entry split into two families included.
+    // Every circle is on the path: the families of the slate, an entry split into two families included.
     path = new Set(UNITS[SUBJ.id].slate().flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})]));
   return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || path.has(id) || on.has(id)));
 };
@@ -987,7 +978,7 @@ const genSpecies = g => (g.species || []).map(id => ftree().sp[id]).filter(Boole
 const slideLine = sl => (sl && sl.length ? `slide${sl.length > 1 ? 's' : ''} ${sl.join(', ')}` : '');
 // The sheet a family, genus or species id opens (core.js fishTree go), in its one spelling.
 const fishGo = id => ftree().go(sheetIdOf(SUBJ, id));
-// The page bar: the family's English name, its scientific name(s) and its group below (Pierre, Q1 on the mockup), and
+// The page bar: the family's English name, its scientific name(s) and its group below, and
 // previous / next family in the families page's order.
 function fishBar(id) {
   const T = ftree(),
@@ -1049,7 +1040,7 @@ const fishFamOf = to => {
 // A sheet's page (route): an unknown id or a wink opens the families page; a genus opens its short page, or the sheet
 // option B gives it (fishTree go): the species sheet of a genus with one species; a species opens its sheet.
 function viewFishSheet(id) {
-  fishMine = true; // each sheet opened starts on "Opened for me"; the filter's own redraw keeps the choice (Codex review #675)
+  fishMine = true; // each sheet opened starts on "Opened for me"; the filter's own redraw keeps the choice
   const T = ftree(),
     to = fishGo(id),
     f = fishFamOf(to);
@@ -1059,7 +1050,7 @@ function viewFishSheet(id) {
   if (at !== id) return void location.replace(hrFull('g-' + at));
   sp ? fishSpecies(sp) : T.gen[at] ? fishGenus(T.gen[at]) : fishFamily(f);
 }
-// A fish genus's name roots (Q124 d: fish.json root, learn.js rootLine) on the one sheet the genus opens (fishTree go,
+// A fish genus's name roots (fish.json root, rootLine) on the one sheet the genus opens (fishTree go,
 // `at`): its own page, its one species' sheet, or its family's when it is the only genus with several species; the
 // shared ending counted over every fish genus (rule U8). '' anywhere else.
 const fishRoot = (g, at) =>
@@ -1070,8 +1061,8 @@ const fishRoot = (g, at) =>
         'among the fish'
       )
     : '';
-// A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json; Pierre,
-// 2026-11-08), on the sheet the genus opens, as its name roots (fishRoot): its page, the species sheet of a one-species
+// A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json), on the
+// sheet the genus opens, as its name roots (fishRoot): its page, the species sheet of a one-species
 // genus, the family sheet of a family's only genus. Each line with its sources' numbers, the sources listed below, never
 // as IMR's (rule C1: the IMR cues show in their own box); the content editor's edit of them with its own source (SUBJECTS
 // content marks, the sea slugs'; core.js contentApply esrc, contentPut keeping the numbers of a line kept).
@@ -1110,20 +1101,19 @@ const fishPic = (p, flat, alt) => {
   flat.push(p);
   return `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(alt)}"><img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(alt)}" loading="lazy">${ZOOMI}</button>`;
 };
-// A species tile: its photo, then the scientific name first (Pierre, Q10), its common name, the WoRMS name when it
+// A species tile: its photo, then the scientific name first, its common name, the WoRMS name when it
 // changed (rule S2) and its rank among the 24 species IMR sights most.
 // The whole tile opens the species sheet (its photos enlarge there).
 const spPic = s => {
   const p = spPhoto(s);
   return p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="" loading="lazy">` : noFish();
 };
-// A species' common name as this player sees it first (app.js cnFirst; Pierre, 2026-11-15, Q376 (a)): the IMR name for a
-// player at IMR, the main name (iNaturalist's default) for the others; its own name (fish.json common) for a species out
-// of the game, which has no list; else its first English name given as information (app.js vernFirst: the sea slugs',
-// Pierre 2026-11-17); '' for none.
+// A species' common name as this player sees it first (app.js cnFirst; docs/FISH_PATH.md): the IMR name for a player at
+// IMR, the main name (iNaturalist's default) for the others; its own name (fish.json common) for a species out of the
+// game, which has no list; else its first English name given as information (app.js vernFirst); '' for none.
 const spCommon = s => cnFirst(s, imrNow()) || s.common || capFirst(vernFirst(s.id)) || '';
 // The English names a tree gives as information (app.js vernOf, UNITS vern: the sea slugs' common names and nicknames,
-// tools/seaslug_names.py; Pierre, 2026-11-17), on a family, genus or species sheet: the first under the scientific name,
+// tools/seaslug_names.py), on a family, genus or species sheet: the first under the scientific name,
 // the others on a line below ("Also …"), a nickname said so; and under More details, every name with its sources, linked
 // (rule C2). '' for a record without them (the fish, a sea slug no source names).
 const capFirst = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
@@ -1141,8 +1131,8 @@ const vernMore = id => {
     : '';
 };
 // Its listed common names on the species sheet (More details), when it has more than one: the player's first, then the
-// others in their order, the IMR name marked (fish.json cni). Any of them is right when typed (Q376 (b)); the regional
-// names (cnr) are not shown (Q376 (c)).
+// others in their order, the IMR name marked (fish.json cni). Any of them is right when typed; the regional names (cnr)
+// are not shown.
 const spNamesLine = s => {
   const L = cnList(s),
     first = spCommon(s);
@@ -1151,8 +1141,8 @@ const spNamesLine = s => {
   const order = [...L.map((n, i) => [n, i]).filter(([n]) => n === first), ...L.map((n, i) => [n, i]).filter(([n]) => n !== first)];
   return `<p class="note refs"><b>Common names:</b> ${order.map(([n, i]) => tag(n, i)).join(' · ')}</p>`;
 };
-// Under its name on the species sheet: the other species that carry one of its listed names (app.js cnAlso; Pierre,
-// 2026-11-15, Q381: two species may share a common name, the sheet says so): "Also used for X" for the name the player
+// Under its name on the species sheet: the other species that carry one of its listed names (app.js cnAlso: two species
+// may share a common name, and the sheet says so): "Also used for X" for the name the player
 // sees first, "“Name” is also used for X" for another listed name; X by its scientific name, linked to its sheet when
 // it has one.
 const spAlso = s => {
@@ -1163,8 +1153,8 @@ const spAlso = s => {
     .map(([n, L]) => `<p class="fn-g">${n === first ? 'Also used for' : `“${esc(n)}” is also used for`} ${L.map(sp).join(', ')}</p>`)
     .join('');
 };
-// A species' name as HTML: in italics; a species with no name yet (seaslug.json inf: Goniobranchus sp. 5; Pierre,
-// 2026-11-17, Q389 (2)) its genus in italics, the rest upright, and the source that defines it in small type (its src:
+// A species' name as HTML: in italics; a species with no name yet (seaslug.json inf: Goniobranchus sp. 5;
+// docs/rules/content.md) its genus in italics, the rest upright, and the source that defines it in small type (its src:
 // the paper, never a guide's number; rule C2).
 const spNameH = s => {
   if (!s.inf) return `<i>${esc(s.name)}</i>`;
@@ -1195,7 +1185,7 @@ const fishTile = s =>
   `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap">${spNameH(s)}${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
     s.now && s.now !== s.name ? `<small>now <i>${esc(s.now)}</i> in WoRMS</small>` : ''
   }${s.cs ? `<small><b class="star">★</b> IMR most sighted #${s.cs}</small>` : ''}</span></a>`;
-// Every species of a list, the "Opened for me" filter first (on by default; Pierre, Q5).
+// Every species of a list, the "Opened for me" filter first (on by default).
 function fishTiles(L, flat) {
   const op = L.filter(spOpen),
     S = fishMine ? op : L,
@@ -1225,16 +1215,16 @@ function fishGenusRow(g, flat) {
       : L.slice(0, 4).map(spPhoto);
   return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i>${g.common || vernFirst(g.id) ? `<span>${esc(g.common || capFirst(vernFirst(g.id)))}</span>` : ''}<span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
 }
-// The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
-// the sources the family lists (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once
-// (Pierre, 2026-11-06 16:54: he corrects them in place), with their sources and a report link right under them.
-// The size and depth of a species (fish.json species size, depth: Reef Life Survey, else FishBase; Pierre, Q6), each
-// with its source: "Up to 10 cm · 1-36 m deep". '' when neither was fetched (never a value of our own).
+// The family ID marks and the behaviour, habitat and size lines, written in our words from the sources the family lists
+// (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once (docs/ARCHITECTURE.md), with
+// their sources and a report link right under them.
+// The size and depth of a species (fish.json species size, depth: Reef Life Survey, else FishBase), each with its
+// source: "Up to 10 cm · 1-36 m deep". '' when neither was fetched (never a value of our own).
 // FishBase's length types other than total length (species LTypeMaxM), in words.
 const LTYPE = {SL: 'standard length', FL: 'fork length', WD: 'disc width', OT: '(another measure)'};
 const srcA = x => `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`;
-// The source the content editor gave with his edit of slot k of record r (core.js contentApply esrc; Pierre, 2026-11-15,
-// Q359 e: optional, shown with the slot when given): esrcOf its record, esrcIn a few words after a text, esrcP a line
+// The source the content editor gave with his edit of slot k of record r (core.js contentApply esrc: optional, shown
+// with the slot when given): esrcOf its record, esrcIn a few words after a text, esrcP a line
 // after a list; '' without one. esrcT its words alone, for a line inside a link (a look-alike card).
 const esrcOf = (r, k) => ((r && r.esrc) || {})[k] || null;
 const esrcIn = (r, k) => {
@@ -1259,7 +1249,7 @@ const spFacts = s => {
 };
 // The range of its species' largest sizes, on the family sheet (study F9): "Its species reach 8 to 35 cm".
 const famSizes = f => {
-  // Total lengths only: a standard length or a disc width is another measure, never in the same range (Codex review #696).
+  // Total lengths only: a standard length or a disc width is another measure, never in the same range.
   const L = famSpecies(f)
     .map(s => s.size && !s.size.lt && s.size.len)
     .filter(x => x > 0);
@@ -1303,7 +1293,7 @@ function fishFamily(f) {
     G = (f.genera || []).map(id => T.gen[id]).filter(g => g && genSpecies(g).length),
     flat = [],
     all = easyRank(A.flatMap(s => fishSpPhotos()[s.id] || [])),
-    // Pierre's ★ Cover while in play (app.js fishCurate), else the default (nodeCover, Q339 (b): its most seen species'
+    // The admin's ★ Cover while in play (app.js fishCurate), else the default (nodeCover: its most seen species'
     // easiest photo that is not a juvenile).
     hero = (GX(f.id) || {}).coverP || nodeCover(A),
     juv = all.filter(juvP).slice(0, 4),
@@ -1340,7 +1330,7 @@ function fishFamily(f) {
             .map(o => [o, '', 'Often mixed up by players'])
         : [],
     looks = [...said, ...mixed],
-    // its one genus's look-alikes, this sheet standing for that genus (fishGenusLooksOn; Q390 D)
+    // its one genus's look-alikes, this sheet standing for that genus (fishGenusLooksOn)
     one = (f.genera || []).length === 1 ? T.gen[f.genera[0]] : null,
     glooks = fishGenusLooksOn(one, T, f.id);
   const lookCard = ([o, t, src]) => {
@@ -1403,7 +1393,7 @@ function fishFamily(f) {
   </article>`;
   fishBind(flat, () => fishFamily(f));
 }
-// A genus's look-alikes for its sheet, [[genus id, its source line]] (Pierre, 2026-11-17, Q390 D): the genera a specialist
+// A genus's look-alikes for its sheet, [[genus id, its source line]] (docs/ARCHITECTURE.md): the genera a specialist
 // source names (the tree's genus look, lsrc: the sea slugs', tools/seaslug_game.py genus_looks), then its look-alikes from
 // the data (model.js dataLooks) while the players' answers keep them: those only iNaturalist's identifications show (the
 // tree's dlook, with their counts) and those the players mix it up with, said as such. T: the tree (ftree).
@@ -1430,11 +1420,11 @@ function fishGenusLookCard(g, T, [o, src]) {
 // The look-alikes of a genus with no page of its own (fishTree go: the sheet it opens is page, its family's or its one
 // species'), shown on that sheet: [[genus id, source line]], none for a genus with its own page.
 const fishGenusLooksOn = (g, T, page) => (g && T.go(g.id) === page ? fishGenusLooks(g, T) : []);
-// The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under it
-// (its source under More details; a name inferred from its species' names, no reference naming the genus, says so beside
-// it: fish.json genera cinf, Pierre, 2026-11-15, Q376 (d)), its family and its IMR entry name; my progress on it once met (the Scientific names set); the IMR sub-entry's cues; the species WoRMS now puts
-// in another genus; every species, one photo each, most common first, with the "Opened for me" filter; its sibling genera
-// IMR tells apart with its own cues (the data's contrast; the drafted genus marks come with the writing, study §8).
+// The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under
+// it (its source under More details; a name inferred from its species' names says so: fish.json genera cinf), its
+// family and IMR entry name; my progress on it once met; the IMR sub-entry's cues; the species WoRMS now puts in another
+// genus; every species, one photo each, most common first, with the "Opened for me" filter; its sibling genera IMR tells
+// apart with its own cues.
 function fishGenus(g) {
   const T = ftree(),
     f = T.fam[g.family],
@@ -1443,7 +1433,7 @@ function fishGenus(g) {
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
     sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
-    // A sibling genus's card: his genus cover, else the default (nodeCover, Q339 (b)).
+    // A sibling genus's card: its picked genus cover, else the default (nodeCover).
     cover = x => genCover(x) || nodeCover(genSpecies(x));
   const card = x => {
     const p = cover(x);
@@ -1468,17 +1458,14 @@ function fishGenus(g) {
   fishBind(flat, () => fishGenus(g));
 }
 
-// The species sheet (study §5.1, automatic part): the scientific name first, the PDF name as EventMeasure names it, the
-// WoRMS name when it changed (rule S2), its common name (Q10); its family and genus; the IMR flags and the presence badge
-// (rule C8's words: confirmed near Dauin or not, never "never seen"); its rank by commonness around Dauin in its family
-// (fish.json cmi); its photos, the easiest, most reference-like first whoever took them (Q3), the juvenile-tagged ones
-// apart; the other species of its genus; the links to iNaturalist, WoRMS and FishBase. No key marks, size or depth yet:
-// they come with the writing and the facts tool (Q6, Q7), never invented. No photo: the one drawing and the links (Q9).
-// Its photos on the sheet (P: fishSpPhotos' order, his species cover first, never a juvenile: app.js juvP): three adult
-// photos, the first its cover, then up to two juveniles apart (app.js juvP: the juvenile phase or flag); more: the other
-// adults, folded. A juvenile is never the sheet's first photo while the species has an adult one (Pierre, 2026-11-13).
-// lead: its one photo (spPhoto): first, not among the juveniles when it is his confirmed juvenile cover; the default's
-// photo without a watermark before a watermarked one ahead of it (Q379).
+// The species sheet (study §5.1): the scientific name first, the PDF name as EventMeasure names it, the WoRMS name when
+// it changed (rule S2), its common name; its family and genus; the IMR flags and the presence badge (rule C8's words);
+// its rank by commonness around Dauin in its family (fish.json cmi); its photos, the easiest, most reference-like first
+// whoever took them, the juveniles apart; the other species of its genus; its links. No value of our own: no photo
+// shows the one drawing and the links.
+// Its photos (P: fishSpPhotos' order): three adult photos, the first its cover, then up to two juveniles apart (app.js
+// juvP); more: the other adults, folded. A juvenile is never the first photo while the species has an adult one. lead:
+// its one photo (spPhoto), first, and not among the juveniles when it is a confirmed juvenile cover.
 function spSheetPhotos(P, lead = null) {
   const main = [...(lead ? [lead] : []), ...P.filter(p => p !== lead && !juvP(p))];
   return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
@@ -1497,7 +1484,7 @@ function fishSpecies(s) {
     rank = [...F].sort((a, b) => met.v(b) - met.v(a)).indexOf(s) + 1,
     sib = g ? genSpecies(g).filter(x => x !== s) : [],
     gto = g ? fishGo(g.id) : '',
-    // its genus's look-alikes when its genus opens this sheet (one species: fishGenusLooksOn; Q390 D)
+    // its genus's look-alikes when its genus opens this sheet (one species: fishGenusLooksOn)
     glooks = fishGenusLooksOn(g, T, 's:' + s.name);
   const fig = (p, i, big) =>
     `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
