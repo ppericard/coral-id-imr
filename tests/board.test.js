@@ -37,9 +37,9 @@ const withAll = (n = {data: 0, fish: 0, seaslug: 0}, hook = {}) => ({
           ? ((n.seaslug = (n.seaslug || 0) + 1), resp(200, SJSON))
           : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
             ? resp(200, CJSON)
-            : /\/main\/tools\/sync\/Code\.gs/.test(url)
+            : /\/release\/tools\/sync\/Code\.gs/.test(url) // the script installs from the release branch (rule D3)
               ? resp(200, CODE)
-              : /\/main\/tools\/sync\/appsscript\.json/.test(url)
+              : /\/release\/tools\/sync\/appsscript\.json/.test(url)
                 ? resp(200, '{}')
                 : null
 });
