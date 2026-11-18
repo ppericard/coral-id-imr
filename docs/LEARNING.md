@@ -4113,6 +4113,40 @@ minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arr
   check only. The real log (rule L12): no player has answered these units (they did not exist), so a replay cannot judge
   the change; nothing is measured there.
 
+**What the check found** (2026-11-18; `main` b6e0d263 against the branch; tables in the PR, #1067):
+- **A first rated run, not judged: the tool broke the pairing.** The rated world drew each genus's μ on the seed's one
+  stream before the photos, so the 107 new genera moved every photo's ε (24,376 of 24,376 on seed 1) and every species'
+  μ: the two arms played different worlds. It showed differences where nothing could act yet (the lecture RA's first
+  Open Water 126 → 95 answers; the expert's families at Advanced at 1,000 answers −2.6 with genera at 1% of its
+  answers). `tools/ratedworld.js` now draws each genus's and species' μ on a stream of its own, keyed by its id
+  (`tests/ratedworld.test.js`: units added move no other draw), and both arms were run again with that one tool (the
+  base worktree given the branch's file, uncommitted). This repairs the pairing; it does not aim at the outcome.
+- **Rated world, paired** (3 profiles × 5 seeds × 3,000 answers, `--beyond yes`):
+  - **Primary, families at Advanced at 3,000**: the strong RA 45.0 → 45.0 and the expert 55.6 → 55.6, held (bounds
+    −1.7); the lecture RA 38.8 → 37.8, unclear (bound −4.6 against −2): reported, not chased (declared).
+  - **Every guardrail held or unclear, none breached.** Unclear: the lecture RA's D\* at 1,000 (−0.009, bound −0.023),
+    the shown score (lecture RA at 1,000 and 3,000, strong RA at 3,000: −0.8 at most, bounds −1.1), units at Open
+    Water (expert at 300, lecture RA at 1,000), the strong RA's longest plateau (+11, bound +61), the lecture RA's units
+    met at 100.
+  - **Watched**: the expert's share of answers on genera at 3,000 rises 0.158 → 0.222 and on species falls 0.157 →
+    0.094 (bounds exclude 0). By design: the genera and the species share one rank share (Q382), so the expert, the
+    first with circle-3 families at Advanced, now spends part of it on their genera. The other two profiles move
+    little (±0.01).
+- **App world** (3 profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`): the strong RA and the expert
+  play the same 600 questions in both arms (no genus question before 600), every guardrail held. **The lecture RA
+  breaches true knowledge at 600** (knowSlate 0.708 → 0.658 on every seed, bound −0.054 against −0.02), with E unclear
+  at 600, units at Open Water at 300 and units met at 100 unclear. What it rests on: circle 3 is offered later (answers
+  351-378 → 403-438), so fewer families are met by 600 (65 → 60-61), and a family not met lowers knowSlate; two seeds
+  reach 2 families at Advanced by 600 (none before). The arms part at its 82nd answer, an IMR genus question
+  (Amphiprion) showing another photo: the lecture RA meets the IMR genera from Open Water, whose wrong choices are now
+  drawn among 237 genera, so the game's random draws differ from there on. Whether the later circle-3 offer is caused by
+  the change or by that divergence is not measured (a guess: the offer needs the circle-1 Entries at 55%, which no
+  genus moves). The rated world, paired, shows no such loss (D\* at 1,000 −0.009, at 3,000 +0.000). A breach goes to
+  Pierre (rule L11).
+- **Machine time**: about 2 hours of worker time against the 40 minutes declared (rated 12-18 minutes an arm on 2
+  workers, four arms with the rerun; app 4-6 minutes an arm), mostly the rerun the broken pairing forced; the machine
+  was shared with other agents (waits for a slot of up to 21 minutes not counted).
+
 ### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
 
 One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
