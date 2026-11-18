@@ -370,8 +370,8 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   });
   // Typed: the name shown exactly, the PDF spelling as a slip of it; both read as the species.
   const C = require('../core.js'),
-    X = C.fishGen(F, {}, {}),
-    N = C.fishTypeNames(X.gen, C.subjectOf('fish').typeDrop, C.fishNameIndex(F)),
+    X = C.treeGen(F, {}, {}),
+    N = C.treeTypeNames(X.gen, C.subjectOf('fish').typeDrop, C.treeNameIndex(F)),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   assert.deepStrictEqual([m('Neoniphon argenteus').exact, m('Neoniphon argenteus').sc], [true, ['s278']]);
   assert.deepStrictEqual([m('Neoniphon argentus').exact, m('Neoniphon argentus').sc], [false, ['s278']]);
@@ -548,7 +548,7 @@ print(json.dumps(out))
 
 // The starter core and the judged photos (judging/FISH.md, tools/fish_judge.py).
 const PH = read('fish-photos.json').photos,
-  GM = require('../core.js').fishGameRead(read('fish-game.json')).photos,
+  GM = require('../core.js').treeGameRead(read('fish-game.json')).photos,
   JUDGE = read('tools/fish_judge.json');
 test('start: the starter core, four easy circle-1 entries from Pierre’s fish-ID design, in fish.json and its source', () => {
   const byId = new Map(F.teach.map(t => [t.id, t]));
@@ -626,7 +626,7 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
 // The curated photos (tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
 // an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
 // livery, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
-// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json alone):
+// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js treePhotos: fish-game.json alone):
 // every circle-1 entry keeps at least 5 very easy photos.
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
   const {execFileSync} = require('child_process'),
@@ -657,7 +657,7 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
   assert.strictEqual(
     plan.filter(p => !p.auto && !wink.has(p.sp)).length,
     Object.keys(FC.add || {}).filter(
-      f => !wink.has(FC.add[f]) && C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)
+      f => !wink.has(FC.add[f]) && C.treePhotoOn(FC, f, FC.add[f]) && !C.treeOther((FC.tags || {})[f], (S[f] || {}).jt)
     ).length,
     'every photo Pierre has in play is listed, but other species one could take for the subject (Q323)'
   );
@@ -675,10 +675,10 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
       assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
   });
   // The game once the workflow has downloaded the plan (fish-game.json is filled after a Publish): by teaching entry, as
-  // tools/fish_game.py lays it out; fishGen gives each photo to its species' family.
+  // tools/fish_game.py lays it out; treeGen gives each photo to its species' family.
   const G = {};
   plan.forEach(p => (G[entry.get(p.sp)] = G[entry.get(p.sp)] || []).push(p));
-  const X = C.fishGen(F, C.fishPhotos(PH, G, CUR));
+  const X = C.treeGen(F, C.treePhotos(PH, G, CUR));
   X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
 });
 
@@ -844,7 +844,7 @@ test('declared look-alikes: Pierre’s family groups both ways, sourced; an unkn
 // The units' reference photos (tools/fish_refs.py, judging/FISH.md "Reference photos"; the covers and first photos are
 // reference photos, whoever took them): what iNaturalist shows to represent a species, genus or
 // family, taken only when it passes the game photo rules; once judged, in its entry's game photos with rep, and the
-// card's photo (core.js fishGen cover) is a reference photo wherever one is among the entry's easiest.
+// card's photo (core.js treeGen cover) is a reference photo wherever one is among the entry's easiest.
 test('reference photos: game photo rules, in play once judged, the cover where one is among the easiest', () => {
   const C = require('../core.js'),
     R = read('tools/fish_refs.json').photos,
@@ -878,7 +878,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
   // In play through fish-game.json (tools/fish_game.py ref_play, auto "ref"): each one is listed in tools/fish_refs.json
   // for a species of its entry, judged, and of one kind of fish (rule P3).
   const CUR = read('curation.json'),
-    played = C.fishPhotos(PH, GM, CUR);
+    played = C.treePhotos(PH, GM, CUR);
   Object.entries(GM).forEach(([tid, L]) =>
     L.filter(p => p.auto === 'ref').forEach(p => {
       assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
@@ -892,7 +892,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       .some(p => p.auto === 'ref'),
     'reference photos in play'
   );
-  [C.fishGen(F, PH), C.fishGen(F, played)].forEach(X =>
+  [C.treeGen(F, PH), C.treeGen(F, played)].forEach(X =>
     Object.values(X.gen).forEach(g => {
       const L = g.views.wide,
         top = Math.max(...L.map(p => p.e || 3));

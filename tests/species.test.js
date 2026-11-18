@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
 // The fish species level, step 1 (docs/reviews/2026-11-14-species-step1.md: one progress unit per species, behind the
 // chunked tree's version; the main name fills it, any listed name credits it): the
-// species units (core.js fishSpUnits, app.js fishGenera), the order they open in (app.js spPlay), the global score's tree
-// with them (core.js fishScoreTree) and its anchors, a species never answered starting from its family's ability (core.js
-// abilityOf from), the sheet's replay of them (core.js fishReplayGen, replayProgress), the typed names, the achievements.
+// species units (core.js treeSpUnits, app.js treeGenera), the order they open in (app.js spPlay), the global score's tree
+// with them (core.js treeScoreTree) and its anchors, a species never answered starting from its family's ability (core.js
+// abilityOf from), the sheet's replay of them (core.js treeReplayGen, replayProgress), the typed names, the achievements.
 // On the real fish.json; nothing leaves the process.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -19,13 +19,13 @@ const ROOT = path.join(__dirname, '..'),
   PH = read('fish-photos.json'),
   K = C.subjectOf('fish').score;
 
-// app.js fishGenera (the families' genera and the species units) and spPlay, as the app has them.
+// app.js treeGenera (the families' genera and the species units) and spPlay, as the app has them.
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
-  fishGenSets: C.fishGenSets,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights,
   LV_AT: [0.5, 0.8, 0.85],
   photoAny: n => !!(ctx.GXS[n] && ctx.GXS[n].views.wide.length),
@@ -34,23 +34,23 @@ const ctx = {
 vm.createContext(ctx);
 vm.runInContext(
   [
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(src('app.js'), 'function spPlay(L, score, met, on) {', '\n}\n', {through: 1, file: 'app.js'}),
     'const GX = n => GXS[n];',
-    'this.T = {fishGenera, spPlay};'
+    'this.T = {treeGenera, spPlay};'
   ].join('\n'),
   ctx
 );
 // the photos in play, as the app builds them (fish-game.json under the curation)
-const X = ctx.T.fishGenera(
-  C.fishGen(F, C.fishPhotos(PH.photos, C.fishGameRead(read('fish-game.json')).photos, read('curation.json')), PH.sheet),
+const X = ctx.T.treeGenera(
+  C.treeGen(F, C.treePhotos(PH.photos, C.treeGameRead(read('fish-game.json')).photos, read('curation.json')), PH.sheet),
   F
 );
 ctx.GXS = X.gen;
 const byName = n => F.species.find(s => s.name === n);
 
 test('the species units: one per species with a listed common name, in a family in play, its family the one it starts from', () => {
-  const U = C.fishSpUnits(F),
+  const U = C.treeSpUnits(F),
     sp = new Map(F.species.map(s => [s.id, s]));
   assert.strictEqual(U.length, F.species.filter(s => (s.cn || []).length && !(F.families.find(f => f.id === s.family) || {}).wink).length);
   assert.ok(U.length > 600, String(U.length));
@@ -119,9 +119,9 @@ test('spPlay: nothing while off; a family at Advanced brings its species one at 
 test('the score tree: off as before (no species unit); on, every species unit once in the common-name place, the anchors', () => {
   const off = X.tree,
     on = X.treeSp,
-    U = C.fishSpUnits(F).map(u => u.id);
+    U = C.treeSpUnits(F).map(u => u.id);
   assert.ok(!JSON.stringify(off).includes('"s:'));
-  assert.deepStrictEqual(off, C.fishScoreTree(X, F));
+  assert.deepStrictEqual(off, C.treeScoreTree(X, F));
   assert.deepStrictEqual(on.f, off.f);
   const names = on.s.flatMap(e => e[3] || []);
   assert.deepStrictEqual([...names].sort(), [...U].sort());
@@ -174,7 +174,7 @@ test('abilityOf from: a unit never answered starts from the unit it names once t
   assert.ok(b.th0 < a.th0);
 });
 
-// The sheet's replay (core.js replayProgress, its units fishReplayGen): a log with no species row replays exactly as with
+// The sheet's replay (core.js replayProgress, its units treeReplayGen): a log with no species row replays exactly as with
 // the units of before (no rules version needed); a species row as the game scored it (the species picked wrongly, rule L2;
 // the start from the family).
 const T = i => new Date(Date.UTC(2026, 10, 15, 0, i)).toISOString();
@@ -192,7 +192,7 @@ const ans = (i, g, a, ok, ch) => ({
   th: 0,
   sc: {d: 0}
 });
-const GEN = C.fishReplayGen(F),
+const GEN = C.treeReplayGen(F),
   OLD = Object.fromEntries(
     Object.entries(GEN)
       .filter(([n]) => !n.startsWith('s:'))

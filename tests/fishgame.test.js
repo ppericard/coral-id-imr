@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The curated fish game photos: tools/fish_game.py, run by the Candidate photos workflow, downloads the photos Pierre
-// put in play (curation.json fish, core.js fishOn) into the R2 upload folder and writes fish-game.json; core.js
-// fishPhotos plays them. Offline: a made-up fixture, the originals served by a stub (never iNaturalist, FishBase or
+// put in play (curation.json fish, core.js treePhotoOn) into the R2 upload folder and writes fish-game.json; core.js
+// treePhotos plays them. Offline: a made-up fixture, the originals served by a stub (never iNaturalist, FishBase or
 // R2). The download needs python3 with Pillow (tools/requirements.txt, installed by checks.yml).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -231,7 +231,7 @@ test(
   }
 );
 
-test('fish_game.py fish_on and pid agree with core.js fishOn and fishPid', () => {
+test('fish_game.py fish_on and pid agree with core.js treePhotoOn and treePid', () => {
   const F = CUR.fish,
     cases = [...Object.keys(F.add), 'fish-s003-cand-301'].flatMap(f => ['s001', 's002', 's003'].map(s => [f, s]));
   const got = JSON.parse(
@@ -240,12 +240,12 @@ F = json.loads(${JSON.stringify(JSON.stringify(F))})
 print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo']]))`)
   );
   assert.deepStrictEqual(got, [
-    ...cases.map(([f, s]) => C.fishOn(F, f, s)),
-    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo'].map(C.fishPid)
+    ...cases.map(([f, s]) => C.treePhotoOn(F, f, s)),
+    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo'].map(C.treePid)
   ]);
   // A FishBase reference or sheet photo (fb<stem>, tools/fish_refs.py) and its candidate are one photo.
   assert.deepStrictEqual(got.slice(-6), ['i123', 'i123', 'i123', 'bFiwra_u0', 'bFiwra_u0', 'some-photo']);
-  // So Pierre's rejection of the candidate keeps its reference copy out of the game (core.js fishPhotos).
+  // So Pierre's rejection of the candidate keeps its reference copy out of the game (core.js treePhotos).
   const ref = {
       f: 'fbFiwra_u0',
       sp: 's003',
@@ -257,11 +257,11 @@ print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.
     },
     cur = {...CUR, fish: {...CUR.fish, seen: {...CUR.fish.seen, 'fish-s003-cand-fb-Fiwra_u0': 1}}};
   assert.ok(
-    C.fishPhotos({}, {t01: [ref]}, CUR).t01.some(p => p.f === ref.f),
+    C.treePhotos({}, {t01: [ref]}, CUR).t01.some(p => p.f === ref.f),
     'in play while the candidate is not rejected'
   );
-  assert.ok(!C.fishPhotos({}, {t01: [ref]}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
-  assert.ok(!C.fishPhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'and out of the first photos alike');
+  assert.ok(!C.treePhotos({}, {t01: [ref]}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
+  assert.ok(!C.treePhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'and out of the first photos alike');
 });
 
 // The photos that enter play by themselves (a candidate judged sure; a reference photo judged sure on the same rubric,
@@ -398,9 +398,9 @@ test(
     assert.deepStrictEqual([by.fi309.auto, by.fi309.e, by.fi309.jt, C.refLevel(by.fi309)], ['ref', 4, 'p1g0sl1', false]);
     assert.deepStrictEqual([by.fi313.auto, by.fi313.e, by.fi313.jt], ['ref', 2, 'h1d0mm1']);
     assert.ok(!by['fish-s001-cand-101'].auto, "Pierre's own adds carry no auto");
-    // In the game (core.js fishPhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
+    // In the game (core.js treePhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
     const cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8')),
-      shown = c => (C.fishPhotos({}, G.photos, c, FISH).t02 || []).map(p => p.f);
+      shown = c => (C.treePhotos({}, G.photos, c, FISH).t02 || []).map(p => p.f);
     ['fish-s003-cand-301', 'fish-s003-cand-302', 'fi308'].forEach(f => assert.ok(shown(cur).includes(f), f));
     const no = (k, f) => ({...cur, fish: {...cur.fish, [k]: {...(cur.fish[k] || {}), [f]: k === 'out' ? 'x' : 1}}});
     assert.ok(!shown(no('seen', 'fish-s003-cand-301')).includes('fish-s003-cand-301'), 'rejected');
@@ -417,7 +417,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
       );
     assert.deepStrictEqual(
       got,
-      curs.map(c => recs.map(p => C.fishIn(c.fish, p, C.fishGone(c))))
+      curs.map(c => recs.map(p => C.treePhotoIn(c.fish, p, C.treeGone(c))))
     );
     // Pierre rejects one: the next run takes it out of the list.
     fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
@@ -445,15 +445,15 @@ print(json.dumps({r['f']: c for r, c, _ in todo}))`)
   assert.ok(!('fish-s003-cand-302' in got), 'an undone auto add stays out');
   assert.strictEqual(got['fish-s003-cand-301'], null, 'his full-photo crop, not the proposal');
   const rec = {f: 'fish-s003-cand-302', sp: 's003', auto: 'cand'};
-  assert.ok(!C.fishIn(cur.fish, rec, C.fishGone(cur)), 'core.js agrees');
-  assert.ok(C.fishIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.fishGone(cur)));
+  assert.ok(!C.treePhotoIn(cur.fish, rec, C.treeGone(cur)), 'core.js agrees');
+  assert.ok(C.treePhotoIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.treeGone(cur)));
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// core.js fishPhotos: the photos in play (fish-game.json) alone; fish-photos.json's first photos (the same records) only
+// core.js treePhotos: the photos in play (fish-game.json) alone; fish-photos.json's first photos (the same records) only
 // while the game list is not in. No remote iNaturalist photo joins an entry short of very easy curated photos.
 const ph = (f, k = {}) => ({f, o: 'https://www.inaturalist.org/observations/' + f, src: INAT(f.replace(/\D/g, '') || 1), ...k});
-test('fishPhotos: the photos in play alone, however few very easy; the first photos only until fish-game.json is in', () => {
+test('treePhotos: the photos in play alone, however few very easy; the first photos only until fish-game.json is in', () => {
   const easy = n => Array.from({length: n}, (_, i) => ph(`fish-s001-cand-${500 + i}`, {sp: 's001', e: 4}));
   const game = {
       t01: [...easy(5), ph('fish-s001-cand-599', {sp: 's001', e: 2})],
@@ -465,7 +465,7 @@ test('fishPhotos: the photos in play alone, however few very easy; the first pho
         add: Object.fromEntries([...Object.values(game), ...Object.values(first)].flat().map(p => [p.f, p.sp]))
       }
     },
-    out = C.fishPhotos(first, game, cur);
+    out = C.treePhotos(first, game, cur);
   assert.deepStrictEqual(
     out.t01.map(p => p.f),
     game.t01.map(p => p.f)
@@ -478,17 +478,17 @@ test('fishPhotos: the photos in play alone, however few very easy; the first pho
   assert.ok(!('t03' in out), 'the first photos are not read once the game list is in');
   assert.ok(!('FISHPH' in C), 'no minimum to fill from elsewhere');
   // fish-game.json not in yet (Home before it, or it cannot come): the first photos.
-  assert.deepStrictEqual(Object.fromEntries(Object.entries(C.fishPhotos(first, {}, cur)).map(([t, L]) => [t, L.map(p => p.f)])), {
+  assert.deepStrictEqual(Object.fromEntries(Object.entries(C.treePhotos(first, {}, cur)).map(([t, L]) => [t, L.map(p => p.f)])), {
     t01: ['fish-s001-cand-500'],
     t02: ['fish-s003-cand-500'],
     t03: ['fish-s009-cand-3']
   });
   // No curation loaded yet: the lists as they are.
-  assert.strictEqual(C.fishPhotos(first, game, null).t01.length, 6);
-  assert.strictEqual(C.fishPhotos(undefined, undefined, null).t01, undefined);
+  assert.strictEqual(C.treePhotos(first, game, null).t01.length, 6);
+  assert.strictEqual(C.treePhotos(undefined, undefined, null).t01, undefined);
 });
 
-test('fishPhotos: Pierre’s curation applies at once, to the photos in play and to the first photos', () => {
+test('treePhotos: Pierre’s curation applies at once, to the photos in play and to the first photos', () => {
   const game = {
       t01: [
         ph('fish-s001-cand-11', {sp: 's001', e: 4}),
@@ -509,16 +509,16 @@ test('fishPhotos: Pierre’s curation applies at once, to the photos in play and
     want = ['fish-s001-cand-11', 'fish-s001-cand-12', 'fish-s001-cand-16'];
   // 13 and 14 rejected after the last run, 15 excluded everywhere: out at once.
   assert.deepStrictEqual(
-    C.fishPhotos({}, game, cur).t01.map(p => p.f),
+    C.treePhotos({}, game, cur).t01.map(p => p.f),
     want
   );
   assert.deepStrictEqual(
-    C.fishPhotos(game, {}, cur).t01.map(p => p.f),
+    C.treePhotos(game, {}, cur).t01.map(p => p.f),
     want,
     'the first photos alike'
   );
   // A curated photo moved by Not this to another species leaves its old species at once.
-  const moved = C.fishPhotos({}, game, {fish: {...cur.fish, seen: {}, out: {'fish-s001-cand-12': 's005'}}});
+  const moved = C.treePhotos({}, game, {fish: {...cur.fish, seen: {}, out: {'fish-s001-cand-12': 's005'}}});
   assert.deepStrictEqual(
     moved.t01.map(p => p.f),
     ['fish-s001-cand-11', 'fish-s001-cand-13', 'fish-s001-cand-14', 'fish-s001-cand-15', 'fish-s001-cand-16']
@@ -526,7 +526,7 @@ test('fishPhotos: Pierre’s curation applies at once, to the photos in play and
 });
 
 test('fish-game.json: the layout tools/fish_game.py writes, only photos in play, downloaded (no r), in the R2 list', () => {
-  const G = C.fishGameRead(read('fish-game.json')), // its records whole (the file's short form)
+  const G = C.treeGameRead(read('fish-game.json')), // its records whole (the file's short form)
     text = fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8');
   assert.strictEqual(G.v, 1);
   // Written in the short form (tools/fish_short.py): no iNaturalist observation address in full.
@@ -917,7 +917,7 @@ print(json.dumps(G.first_photos({'t11': json.loads(sys.argv[1])}, json.loads(sys
   assert.strictEqual(got[got.length - 1], 'fish-s1-cand-3', 'the juvenile last');
   // 3. His ★ cover on a watermarked photo: first all the same (his choice, rule A1); his unit's photo without one still
   // among the first photos, for the default card.
-  const mine = first({fish: {genera: {'g:A1': {cover: 'fi1'}}}}); // under its other name (core.js fishPid)
+  const mine = first({fish: {genera: {'g:A1': {cover: 'fi1'}}}}); // under its other name (core.js treePid)
   assert.strictEqual(mine[0], 'fish-s1-cand-1', 'his watermarked cover first');
   assert.ok(mine.includes('fish-s1-cand-2'), 'with the photo of his unit without a watermark');
   assert.deepStrictEqual(new Set(mine), new Set(L.map(p => p.f)), 'every photo kept (fewer than FIRST)');
@@ -955,7 +955,7 @@ test(
       })
     );
     const r = run(dir, out),
-      G = C.fishGameRead(read2(dir, 'fish-game.json')),
+      G = C.treeGameRead(read2(dir, 'fish-game.json')),
       P = read2(dir, 'fish-photos.json');
     assert.strictEqual(r.done, 6, 'the five game photos and the sheet-only one');
     ['', '-m', '-s', '-t'].forEach(s => assert.ok(fs.existsSync(path.join(out, `fi999${s}.webp`)), s));

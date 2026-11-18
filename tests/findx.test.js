@@ -305,7 +305,7 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
 });
 
 test('the tiles: the fish data holds families with tiles enough for the format to come up', () => {
-  const gm = C.fishGameRead(JSON.parse(read('fish-game.json'))),
+  const gm = C.treeGameRead(JSON.parse(read('fish-game.json'))),
     byFam = {};
   const F = JSON.parse(read('fish.json')),
     famOf = new Map();

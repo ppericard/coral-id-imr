@@ -18,9 +18,9 @@ const quiz = read('quiz.js');
 const F = JSON.parse(read('fish.json'));
 const TOK = 'ghp_write000000000000000000';
 
-// The fish names as the game reads them: the families (core.js fishGen) and a genus unit per fish.json genus whose
-// species are in circle 1 (as app.js fishGenera: its PDF name and its species' accepted genera, never a common name).
-const X = C.fishGen(F, {}, {});
+// The fish names as the game reads them: the families (core.js treeGen) and a genus unit per fish.json genus whose
+// species are in circle 1 (as app.js treeGenera: its PDF name and its species' accepted genera, never a common name).
+const X = C.treeGen(F, {}, {});
 const sp = new Map(F.species.map(s => [s.id, s]));
 F.genera.forEach(G => {
   const L = (G.species || []).map(id => sp.get(id)).filter(s => s && s.circle === 1);
@@ -33,7 +33,7 @@ F.genera.forEach(G => {
     };
 });
 const FISH = C.subjectOf('fish');
-const NAMES = C.fishTypeNames(X.gen, FISH.typeDrop);
+const NAMES = C.treeTypeNames(X.gen, FISH.typeDrop);
 const rankOf = g => (X.gen[g] || {}).rank || '';
 const first = x => String(x || '').split(/\s+/)[0];
 // The fish UNITS' lists (app.js typeOther) on fish.json.

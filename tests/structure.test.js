@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the content editor's circles and
-// look-alike pairs in the apply (core.js structApply, fishStructure), the structure stamp (structStamp), the sheet's
+// look-alike pairs in the apply (core.js structApply, treeStructure), the structure stamp (structStamp), the sheet's
 // replay under the structure in force (Code.gs subjRpl_, replay_, replays_, boardRpl_), and the photo tools' circles in
 // force (tools/fish_inforce.py). The edits here are made-up fixtures: the real curation.json holds none.
 const test = require('node:test'),
@@ -18,7 +18,7 @@ const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(FJSON),
   CUR = JSON.parse(src('curation.json')),
   S = C.subjectOf('fish');
-// The variant table the sheet's fish replay reads (Code.gs subjRpl_, core.js fishVarTable) under curation c and
+// The variant table the sheet's fish replay reads (Code.gs subjRpl_, core.js treeVarTable) under curation c and
 // structure-applied fish.json A, from the photo files tests/gas.js serves.
 const PHJ = JSON.parse(src('fish-photos.json')),
   GMJ = JSON.parse(src('fish-game.json')),
@@ -52,7 +52,7 @@ test('no structure edit: the built file itself, the stamp empty, the replay unit
   assert.notStrictEqual(T, F);
   assert.strictEqual(C.structStamp(S, F, cur(TEXT)), '');
   assert.strictEqual(C.structFp(S, cur(TEXT)), '');
-  assert.deepStrictEqual(C.fishReplayGen(T), C.fishReplayGen(F));
+  assert.deepStrictEqual(C.treeReplayGen(T), C.treeReplayGen(F));
   // An entry the base already says (absorbed: a circle equal to the base, a pair the base declares in one direction
   // only, f:MoorishIdol → f:Butterflyfishes) changes nothing, nor the stamp.
   const same = cur({nodes: {'f:Damselfishes': circ(1)}, pairs: {'f:Butterflyfishes|f:MoorishIdol': {v: 1, was: 1, t: 1}}});
@@ -102,27 +102,27 @@ test('in no circle: the family and its genera left out, its species out, look-al
   // a teaching node with no family left in a circle has none; start loses it
   assert.ok(!('circle' in A.teach.find(t => t.id === 't03')));
   assert.ok(!A.start.includes('t03'));
-  // Every reader of the units takes it: the units, the replay's units, the typed names (core.js fishNameIndex), the
-  // app's scientific genera (app.js fishGenera).
-  const X = C.fishGen(A, {});
+  // Every reader of the units takes it: the units, the replay's units, the typed names (core.js treeNameIndex), the
+  // app's scientific genera (app.js treeGenera).
+  const X = C.treeGen(A, {});
   assert.ok(!X.gen['f:Angelfishes'] && ![...X.c1, ...X.c2, ...X.c3].includes('f:Angelfishes'));
-  const G = C.fishReplayGen(A);
+  const G = C.treeReplayGen(A);
   assert.ok(!G['f:Angelfishes'] && !G['f:Butterflyfishes'].look.includes('f:Angelfishes'));
-  assert.ok(!C.fishNameIndex(A, {}).some(e => e.g === 'f:Angelfishes'));
+  assert.ok(!C.treeNameIndex(A, {}).some(e => e.g === 'f:Angelfishes'));
   const ctx = {
     DOM: {EX: 0.9},
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const U = ctx.fishGenera(C.fishGen(A, {}), A);
+  const U = ctx.treeGenera(C.treeGen(A, {}), A);
   assert.ok(!Object.values(U.gen).some(u => u.parent === 'f:Angelfishes'));
   assert.ok(Object.values(U.gen).some(u => u.parent === 'f:Butterflyfishes'));
 });
@@ -130,12 +130,12 @@ test('in no circle: the family and its genera left out, its species out, look-al
 test("in no circle: the family's photos leave the game, never lent to the other family of its teaching node", () => {
   // t13 (Groupers) holds the Soapfishes' species too: a photo listed under it went to its species' family.
   const PH = JSON.parse(src('fish-photos.json')),
-    GM = C.fishGameRead(JSON.parse(src('fish-game.json'))),
-    photos = C.fishPhotos(PH.photos, GM.photos, CUR),
+    GM = C.treeGameRead(JSON.parse(src('fish-game.json'))),
+    photos = C.treePhotos(PH.photos, GM.photos, CUR),
     soap = new Set(fam(F, C3).species),
-    X0 = C.fishGen(F, photos, PH.sheet);
+    X0 = C.treeGen(F, photos, PH.sheet);
   assert.ok(X0.gen[C3].views.wide.length > 0, 'the base shows them');
-  const X = C.fishGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(null)}})), photos, PH.sheet);
+  const X = C.treeGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(null)}})), photos, PH.sheet);
   assert.ok(!X.gen[C3]);
   assert.ok(Object.values(X.gen).every(u => u.views.wide.every(p => !soap.has(p.sp))));
   assert.deepStrictEqual(
@@ -168,9 +168,9 @@ test('pairs: a withdrawn pair leaves both sides, an added one joins both with it
   assert.strictEqual(fam(A, 'f:Damselfishes').lsrc['f:Wrasses'], 'An instructor');
   assert.strictEqual(fam(A, 'f:Goatfishes').lsrc['f:Wrasses'], C.EDITOR_PAIR, 'never the IMR presentation');
   // the lines the base had keep their source (lsrc made from the base's own when it had none)
-  assert.strictEqual(fam(A, 'f:Wrasses').lsrc['f:Parrotfishes'], C.fishGen(F, {}).gen['f:Wrasses'].lsrc['f:Parrotfishes']);
+  assert.strictEqual(fam(A, 'f:Wrasses').lsrc['f:Parrotfishes'], C.treeGen(F, {}).gen['f:Wrasses'].lsrc['f:Parrotfishes']);
   // the units read them: a pair declared both ways, the old ones gone
-  const G = C.fishReplayGen(A);
+  const G = C.treeReplayGen(A);
   assert.ok(G['f:Damselfishes'].look.includes('f:Wrasses') && G['f:Wrasses'].look.includes('f:Damselfishes'));
   assert.ok(!G['f:Parrotfishes'].look.includes('f:Wrasses'));
   // a withdrawn pair's words (a text slot) are orphaned, kept and not applied; restored with the pair
@@ -270,7 +270,7 @@ test('the stamp: one per structure in force, the same from the players copy, emp
 // A made-up fish log over every unit the replay reads (families, scientific genera, species), mix-ups with their
 // look-alikes among them.
 function fixtureLog(R) {
-  const G = C.fishReplayGen(R),
+  const G = C.treeReplayGen(R),
     U = Object.keys(G).sort(),
     out = [];
   let x = 7;
@@ -308,20 +308,20 @@ const replayOf = (L, gen) =>
 
 test('L11: the fixture log replayed under the real structure with no edit gives the same progress, bit for bit', () => {
   const L = fixtureLog(F),
-    base = replayOf(L, C.fishReplayGen(F));
+    base = replayOf(L, C.treeReplayGen(F));
   assert.ok(Object.keys(base).length > 20);
   [CUR, cur(TEXT), cur({nodes: {'f:Damselfishes': circ(1)}, pairs: {'f:Butterflyfishes|f:MoorishIdol': {v: 1, was: 1}}})].forEach(c =>
-    assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, c))), base)
+    assert.deepStrictEqual(replayOf(L, C.treeReplayGen(C.contentApply(S, F, c))), base)
   );
   // Pairs alone move no record: every fish answer carries its scoring record (quiz.js), which the replay scores as the
   // game did (core.js replayProgress sc), look-alike flag included. Nor does a family moved between circles: it keeps its
   // genera, every circle has them. A family in no circle does: its units leave the units, and are no longer counted as
   // the unit wrongly given (rule L2's second unit). Its undo gives the same progress back.
   const P = cur({pairs: {'f:Parrotfishes|f:Wrasses': {v: null, was: 1}, 'f:Emperors|f:Snappers': {v: null, was: 1}}});
-  assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, P))), base);
-  assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(3), [IN]: circ(1, 3)}})))), base);
-  assert.notDeepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {'f:Wrasses': circ(null)}})))), base);
-  assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: {}, [OUT]: {}, [IN]: {}}})))), base);
+  assert.deepStrictEqual(replayOf(L, C.treeReplayGen(C.contentApply(S, F, P))), base);
+  assert.deepStrictEqual(replayOf(L, C.treeReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(3), [IN]: circ(1, 3)}})))), base);
+  assert.notDeepStrictEqual(replayOf(L, C.treeReplayGen(C.contentApply(S, F, cur({nodes: {'f:Wrasses': circ(null)}})))), base);
+  assert.deepStrictEqual(replayOf(L, C.treeReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: {}, [OUT]: {}, [IN]: {}}})))), base);
 });
 
 // ---- The photo tools (tools/fish_inforce.py): the circles in force, as core.js applies them ----
@@ -411,11 +411,11 @@ test('the sheet: a structure Publish replays a player whose rules are applied, i
     L = fishLog('a'),
     want0 = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(F), vars: varsOf(CUR, F)}
+      {gen: C.treeReplayGen(F), vars: varsOf(CUR, F)}
     ).ana.P,
     want1 = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
+      {gen: C.treeReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
     ).ana.P,
     st1 = C.structStamp(S, F, PAIRS),
     save = x => s.post({name: 'Ana', pin: '1234', data: savedUpToDate, summary: {}, answers: [], rv: C.RV, rvs: {fish: FRV}, ...x});
@@ -503,7 +503,7 @@ test('rule D8: the trigger replays under the new structure a player who never re
     JSON.parse(row.slice(5).join('')),
     C.replayProgress(
       L.map(a => C.logRow(a, 'ben')),
-      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
+      {gen: C.treeReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
     ).ben.P
   );
   assert.strictEqual(s.ctx.boardWarm_(), 0, 'made once');
@@ -521,30 +521,30 @@ test('rule D8: the trigger replays under the new structure a player who never re
 
 // ---- The leaderboard's score tree under the structure (design note v2, step 4) ----
 
-test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
+test("treeBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
   const ctx = {
     DOM: {EX: 0.9},
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
   [CUR, cur(MOVES), PAIRS].forEach(c => {
     const A = C.contentApply(S, F, c);
     // the species level's tree (app.js treeSp): the sheet that holds this code replays the species units
-    assert.deepStrictEqual(C.fishBoardTree(A), ctx.fishGenera(C.fishGen(A, {}), A).treeSp);
+    assert.deepStrictEqual(C.treeBoardTree(A), ctx.treeGenera(C.treeGen(A, {}), A).treeSp);
   });
   // the subject's own declaration, which the sheet reads (no subject named there: rule S1)
-  assert.deepStrictEqual(S.replayed.tree(F), C.fishBoardTree(F));
+  assert.deepStrictEqual(S.replayed.tree(F), C.treeBoardTree(F));
   // a circle Publish moves the tree: the family taken off the game leaves it, the one moved changes circle
-  const T0 = C.fishBoardTree(F),
-    T1 = C.fishBoardTree(C.contentApply(S, F, cur(MOVES)));
+  const T0 = C.treeBoardTree(F),
+    T1 = C.treeBoardTree(C.contentApply(S, F, cur(MOVES)));
   assert.ok(T0.f.some(x => x[0] === OUT) && !T1.f.some(x => x[0] === OUT));
   assert.deepStrictEqual([T0.f.find(x => x[0] === C3)[2], T1.f.find(x => x[0] === C3)[2]], [1, 3]);
 });
@@ -553,8 +553,8 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   const m = mainFiles(),
     s = loadCodeGs({fetch: m.fetch}),
     K = S.score,
-    T0 = C.fishBoardTree(F),
-    T1 = C.fishBoardTree(C.contentApply(S, F, cur(MOVES))),
+    T0 = C.treeBoardTree(F),
+    T1 = C.treeBoardTree(C.contentApply(S, F, cur(MOVES))),
     // the Spadefishes mastered (taken off the game by the Publish), a little on two other families
     P = {[OUT]: {ok: 9, ko: 0, mx: 1}, 'f:Damselfishes': {ok: 3, ko: 1}, [C3]: {ok: 4, ko: 0}, '~level': {ok: 220, ko: 30, th: 1}},
     data = {...savedUpToDate, 'reefid-sync-fish-progress': JSON.stringify(P)},
@@ -612,7 +612,7 @@ test('the sheet: the replay units over one cache value are kept in parts; the st
   const m = mainFiles(),
     s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
     st1 = C.structStamp(S, F, PAIRS),
-    gen1 = C.fishReplayGen(C.contentApply(S, F, PAIRS)),
+    gen1 = C.treeReplayGen(C.contentApply(S, F, PAIRS)),
     key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen4:fish:') && !k.includes('#'));
   assert.ok(JSON.stringify({gen: gen1, st: st1}).length > 100 * 1024, 'over one cache value');
   assert.strictEqual(s.ctx.subjStKept_('fish'), null, 'nothing cached yet: no stamp, nothing fetched');

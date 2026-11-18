@@ -22,7 +22,7 @@ over 20 observations). Their admin part (`cur: 'seaslug'`, their pages, `target`
 
 **Replayed**: the sheet replays their progress from their own answers as it does the fish's (`SUBJECTS` `seaslug`
 `replayed`: their units from `seaslug.json`, named by `replayed.file`, read by `Code.gs` `subjFile_`, `subjGen_`, cached
-under `sgen1:seaslug`; `core.js` `fishReplayGen(F, 'genus')`, the units `fishGen` plays at their `unitRank`, the app's,
+under `sgen1:seaslug`; `core.js` `treeReplayGen(F, 'genus')`, the units `treeGen` plays at their `unitRank`, the app's,
 `tests/fishreplay.test.js`; their own rules versions `SEASLUG_RVS`, no card; their records in the "Replayed Sea slugs"
 tab). The app adopts them through `UNITS.seaslug` `gen` (`sync.js` `rpUnits` reads each subject's units with its own tree
 in force, `treeWith`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). Their look-alike pairs as the
@@ -42,11 +42,11 @@ and `tax` (each taxonomic group, `tg`, its units met and at Advanced), with thei
 ## A second tree subject on the fish engine
 
 Their files (`UNITS` `get`: `seaslug.json` and `seaslug-game.json`, no first photos, unversioned and out of the `sw.js`
-shell) have `fish.json`'s and `fish-game.json`'s shapes (`tools/seaslug_game.py`), so `fishGen`, `fishGenera`,
-`fishCurate`, the sheets (`viewFishList`, `viewFishSheet`) and the draw read them unchanged.
+shell) have `fish.json`'s and `fish-game.json`'s shapes (`tools/seaslug_game.py`), so `treeGen`, `treeGenera`,
+`treeCurate`, the sheets (`viewFishList`, `viewFishSheet`) and the draw read them unchanged.
 
-**Each tree subject has its own state** (`TREE_OF`, `treeOf`: its units `FISH`, its raw files `FISHRAW`, the content
-laid over them, the loads on their way); the globals `FISH`, `FISHRAW`… are the copy of the tree in force (`TREE_AT`).
+**Each tree subject has its own state** (`TREE_OF`, `treeOf`: its units `TREEU`, its raw files `TREERAW`, the content
+laid over them, the loads on their way); the globals `TREEU`, `TREERAW`… are the copy of the tree in force (`TREE_AT`).
 `subjectLoad` and `inSubject` bring the subject's tree in force (`treeAt`; the corals have none and leave it as it is);
 a subject's files that come while another is on screen go into its own state only (`treeSet`, `treeHome`, `treeLoad`;
 `setSubject` loads before it switches), and its units are made when it comes in force; a new curation remakes the tree
@@ -59,23 +59,23 @@ Philippines), else near Dauin (the fish). `tests/fishhome.test.js` checks two tr
 
 The game is at the genus, the level the ID books and the experts work at, by the scientific names. `SUBJECTS`
 `unitRank: 'genus'` (read through `core.js` `unitRankOf`; unset, a subject's units are at its `rank`, the fish's
-families) makes `fishGen` (its `unit`, `fishGenUnits`) take every genus holding a species of the circles as a unit, in
-its best species' circle, with its family's photos of its species and its own genus-level photos (`gl`: `fishGlOf`).
+families) makes `treeGen` (its `unit`, `treeGenUnits`) take every genus holding a species of the circles as a unit, in
+its best species' circle, with its family's photos of its species and its own genus-level photos (`gl`: `treeGlOf`).
 Its look-alikes: its sibling genera (the traps), the genera a specialist source names (the duels: `UNITS.seaslug`
 `pairs` from each genus's `decl`, each pair with its sources' line, `lsrc`), and the data look-alikes only iNaturalist's
-identifications show (`dlook`), which the players' answers can drop (`model.js` `dataSeed`). `app.js` `fishGenera`
+identifications show (`dlook`), which the players' answers can drop (`model.js` `dataSeed`). `app.js` `treeGenera`
 completes those records as it does the fish's scientific genera; there is no opt-in genus set (`sets: []`,
 `optin: []`). Their ID marks are their own, in our words from numbered sources (`tools/seaslug_cues.json`), shown on the
 sheets and in the quiz feedback.
 
-**The families stay structure only**: in `FISH.gen` (no rank of their own, `app.js` `rankOf` reads them as `family`,
+**The families stay structure only**: in `TREEU.gen` (no rank of their own, `app.js` `rankOf` reads them as `family`,
 never asked), their sheets, a genus's family line and parent, and the Learn page: the genus tiles shown directly,
 grouped by family (`UNITS.seaslug` `listBy: 'family'`, `learn.js` `viewFishList`: a block per family), the families under
 their taxonomic groups: the true nudibranchs apart, Nudibranchia · Doridina then Nudibranchia · Cladobranchia, then the
 other sea slugs by order: Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida. The groups are WoRMS's classification
 of each family (rule C2), hand-kept in `tools/seaslug_groups.json` (AphiaIDs), written by `tools/seaslug_game.py` into
 `seaslug.json` `taxa` `{cite, short, groups [{n, title}]}` and each family's `tgroup` (a family of the game in no group
-fails the build), read by `fishGen` (a family's `tg`, `X.taxa`; display only), cited under the list as the fish's key is;
+fails the build), read by `treeGen` (a family's `tg`, `X.taxa`; display only), cited under the list as the fish's key is;
 the list takes as many columns as fit (`.tiplist.gtaxa`). iNaturalist splits Cladobranchia into five suborders: WoRMS is
 followed, the difference a point (`points.json` `seaslug-cladobranchia-inat`, rule C5).
 
@@ -91,7 +91,7 @@ written into shared pages are `UNITS` fields (`door`: Home's doors and the key p
 each sheet's ? text, a species' rank by its observers in the Philippines, the links, the "No photo yet" drawing).
 
 **Their circles**: 1 to 3 of `tools/seaslugs.json` (45, 60 and 100 species), all on the path and in the progress as the
-fish's, circles 2 and 3 opening at the fish's thresholds, counted on genera (`UNITS.seaslug` `gate`: `fishGate`: circle
+fish's, circles 2 and 3 opening at the fish's thresholds, counted on genera (`UNITS.seaslug` `gate`: `treeGate`: circle
 2 once every circle-1 genus has been asked, circle 3 once circle 1 reaches `FISH_C3`: with no global score, its plain
 mean at 50%; circle 3 by itself, with no offer card).
 
@@ -116,7 +116,7 @@ a subject without `vern`, the fish, gets none and keeps its own common names):
   name).
 
 The choices stay scientific names. Typed on a genus question, an English name is not a right answer (as a fish genus's
-common name never is, `fishGenera` `names`): `treeTypeOther` lists the tree's `en` names as common names, so the player
+common name never is, `treeGenera` `names`): `treeTypeOther` lists the tree's `en` names as common names, so the player
 is told "a common name: this question needs a genus's scientific name".
 
 ## Tests

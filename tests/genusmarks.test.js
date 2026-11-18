@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The fish genera's own presentation and ID marks (Pierre, 2026-11-08: each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card
-// (app.js fishGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
+// (app.js treeGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
 // apart (rule C1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -159,22 +159,22 @@ test('a tip is short and seen on a photo; a species named is one of its own game
   );
 });
 
-// fishGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
+// treeGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
-  fishGenSets: C.fishGenSets,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
 vm.runInContext(
-  [block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.fishGenera = fishGenera;'].join('\n'),
+  [block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.treeGenera = treeGenera;'].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(
-  C.fishGen(F, C.fishPhotos(json('fish-photos.json').photos, C.fishGameRead(json('fish-game.json')).photos, null)),
+const X = ctx.treeGenera(
+  C.treeGen(F, C.treePhotos(json('fish-photos.json').photos, C.treeGameRead(json('fish-game.json')).photos, null)),
   F
 );
 
@@ -200,9 +200,9 @@ test('the genus card: its marks under a label naming their sources, its presenta
 });
 
 test('the sheet: genMarks on the one sheet the genus opens, each line with its source numbers', () => {
-  const T = C.fishTree(F);
+  const T = C.treeSheets(F);
   const c2 = {
-    fishGo: id =>
+    treeGo: id =>
       T.go(
         C.sheetIdOf(
           C.SUBJECTS.find(s => s.sheets),
@@ -244,9 +244,9 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   assert.ok(c2.genMarks(FG.Gomphosus, 's:Gomphosus varius').includes(FG.Gomphosus.marks[0]));
   assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus: its IMR cues only');
   for (const [fn, at] of [
-    ['function fishGenus(g) {', '${genMarks(g, g.id)}'],
+    ['function treeGenus(g) {', '${genMarks(g, g.id)}'],
     ['function fishSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],
-    ['function fishFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
+    ['function treeFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
   ])
     assert.ok(block(LEARN, fn, '\n}\n').includes(at), fn);
 });

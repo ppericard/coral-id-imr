@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v187 (2026-11-19)
+
+The tree engine's names in the embedded `core.js` and in the script's own calls: the code every tree subject runs through is named `tree*` instead of `fish*` (`CORE_.treeGen`, `treePhotos`, `treeGameRead`, `treeReplayGen`, `treeBoardTree`, `treeVarTable`, `treeStructure`, `treePid`, `treeSheets`…), and the corals' `SUBJECTS` entry says it is the flat subject (`flat`), which the app asks instead of comparing a pool file's name (architecture review of 2026-11-18, step 3; the integrator's call, a name inside the code). Nothing the script reads, writes, replays or serves changes; no gate and no rules version
+
 ## v186 (2026-11-18)
 
 The Divemaster achievement texts of the learning milestones (the genus, family and sea slug guide entries, and the comment above them) now say 85%, the mastery exam's entry the code uses (`DOM.EX`), instead of 95%, the top of the progress bar. Texts only: no behaviour change

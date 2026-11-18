@@ -298,7 +298,7 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
     'Bb: its species under the start, its genus-level photos reach it (cap 2, the easiest first)'
   );
   // core.js: a gl photo goes to its genus unit, never to a species' photos, never to another genus of the family
-  const X = C.fishGen(T, G.photos, undefined, 'genus');
+  const X = C.treeGen(T, G.photos, undefined, 'genus');
   assert.deepStrictEqual(
     X.gen['g:Aa'].views.wide
       .filter(p => p.gl)
@@ -311,8 +311,8 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
     X.gen['g:Bb'].views.wide.map(p => p.sp),
     ['g:Bb', 'g:Bb']
   );
-  assert.strictEqual(C.fishGlOf(A.find(p => p.gl)), 'g:Aa');
-  assert.strictEqual(C.fishGlOf(A.find(p => !p.gl)), '');
+  assert.strictEqual(C.treeGlOf(A.find(p => p.gl)), 'g:Aa');
+  assert.strictEqual(C.treeGlOf(A.find(p => !p.gl)), '');
   // the label rule (tools/presence.py): 3 observers with the label in the Philippines
   const pr = spawnSync(
     'python3',
@@ -473,11 +473,11 @@ test('--plan prints what the R2 step would download, by circle, and writes nothi
 
 test('the committed files read through the fish engine: three circles, scientific names, photos from iNaturalist or R2', () => {
   const F = json('seaslug.json'),
-    GM = C.fishGameRead(json('seaslug-game.json')),
+    GM = C.treeGameRead(json('seaslug-game.json')),
     S = C.subjectOf('seaslug');
   assert.strictEqual(S.id, 'seaslug');
   // As the app reads them: its genera the units (core.js SUBJECTS unitRank; tests/seaslug-genera.test.js).
-  const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(S, json('curation.json'))), undefined, C.unitRankOf(S));
+  const X = C.treeGen(F, C.treePhotos({}, GM.photos, C.treeCur(S, json('curation.json'))), undefined, C.unitRankOf(S));
   // The circles of tools/seaslugs.json 1 to 3 (45, then 60 and 100 by commonness), circle 4 left out.
   const L = json('tools/seaslugs.json').species,
     n = c => L.filter(s => s.circle === c).length;
@@ -539,13 +539,13 @@ test('the committed files read through the fish engine: three circles, scientifi
   assert.strictEqual(X.gen[all.reduce((m, n) => (X.gen[n].cm > X.gen[m].cm ? n : m))].parent, 'f:Chromodorididae');
 });
 
-// The app plays the three circles at the fish's thresholds (app.js UNITS seaslug: slate, circles, gate fishGate).
+// The app plays the three circles at the fish's thresholds (app.js UNITS seaslug: slate, circles, gate treeGate).
 test('UNITS seaslug: the three circles on the path, opened by the fish gate', () => {
   const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     U = A.slice(A.indexOf('\n  seaslug: {'), A.indexOf('\ntreeAt(SUBJ.id);'));
-  assert.ok(U.includes('slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : [])'));
-  assert.ok(U.includes('circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : [])'));
-  assert.ok(U.includes('gate: fishGate,'));
+  assert.ok(U.includes('slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : [])'));
+  assert.ok(U.includes('circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : [])'));
+  assert.ok(U.includes('gate: treeGate,'));
 });
 
 // The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py

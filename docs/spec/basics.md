@@ -137,7 +137,7 @@ list, seen on opening); state `views` in the record, as the coral walls step.
 
 - `shape`: seven silhouettes, named as the IMR presentation names its groups by shape (Disc-shaped, Ovals, Tapered,
   Heavy bodies, Slender, Bottom dwellers, Odd-shaped);
-- `groups`: the key's groups that hold families in the game (from `FISH.groups` and `GX(n).group`, never numbered in the
+- `groups`: the key's groups that hold families in the game (from `TREEU.groups` and `GX(n).group`, never numbered in the
   code), each group's families as their covers (`cover`), enlarging with their credit; credited to the key's `cite`;
 - `fins`: the six parts named on a generic reef fish, the dorsal fin (one or two) as the second view;
 - `tails`: deeply forked, notched, square, rounded, pointed, heart-shaped;

@@ -17,7 +17,7 @@
 // tests/fishlight.test.js.
 (function (root) {
   const A = typeof module !== 'undefined' && module.exports ? require('./autosort.js') : root,
-    pid = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).fishPid;
+    pid = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).treePid;
   // The proposal sets, oldest first: the file the admin reads from the repository (GitHub contents API, as curation.json;
   // judging/ is not on the site), the name a Keep mine records, and the heading of its proposals (the light re-judge's
   // are grouped by light change instead).
@@ -73,7 +73,7 @@
     return (P || []).filter(x => {
       const f = x.photo,
         sid = (F.add || {})[f];
-      return sid != null && A.fishOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
+      return sid != null && A.treePhotoOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
     });
   }
   // Accept: the re-judged tags and ease as his (fishSet each, so an auto-sort log entry gives the fields up: fishOwn).
@@ -87,7 +87,7 @@
   // Whether a proposal makes its photo a juvenile (the j flag added: judging/FISH.md "Tags").
   const lightJ = x => !!x && x.rejudged[0].slice(7).includes('j') && !x.curated[0].slice(7).includes('j');
   // The nodes (curation.json fish genera ids) whose ★ cover is proposal x's photo, under either of its names (core.js
-  // fishPid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
+  // treePid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
   // is never a cover unless he confirms it, so Accept asks him first (the view) and the Tree page offers the confirmation.
   function lightCovers(F, x) {
     if (!lightJ(x)) return [];

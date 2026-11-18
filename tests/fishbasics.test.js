@@ -28,7 +28,7 @@ function load() {
     shuffle: a => [...a].reverse(),
     pick: a => a[0],
     basicsKey: () => 'reefid-fish-basics',
-    FISH: {
+    TREEU: {
       groups: [
         {n: 1, title: 'Disk-shaped/Colorful'},
         {n: 2, title: 'Empty group'},

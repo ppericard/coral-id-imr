@@ -363,7 +363,7 @@ back on `dauinU`, `dauin`: [fish.md › The default cover](fish.md#the-default-c
 **Not yet generic** (a full rename, its own PR):
 
 - the presence fields `fish.json` writes (`dauin`, `dauinNI`, `dauinU`, and `present.near` / `near_dauin`, which
-  already mean "near the centre"), which `core.js` `rankWeights` and `fishGen` (`cm`), `app.js` `fishGenera` (`cm`),
+  already mean "near the centre"), which `core.js` `rankWeights` and `treeGen` (`cm`), `app.js` `treeGenera` (`cm`),
   `tools/fish_photos.py`, `tools/fetch_fish.py` and the tests read by name. The way out: write `nearU`, `nearN`,
   `nearNI` beside them in `tools/build_fish.py` `presence()` and `--near` (a rebuild from the reply cache), switch every
   reader to the generic names (`core.js` is a sheet-script file: rule D3), then drop the old ones;

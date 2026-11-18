@@ -109,7 +109,7 @@ was kept.
   `fileVer`), its part of the curation the units were built under (`curPart`: a tree subject's own key and the shared
   `exclude`; the corals' the root without the other subjects' keys, so another subject's Publish leaves it as it is)
   and the structure stamp in force. Made once per build at the subject's first answer (`app.js` `contentVer`, from the
-  inputs `build` and `fishBuild` keep on the units they make, `DATA` and a tree subject's `FISH`, as a property no copy
+  inputs `build` and `treeBuild` keep on the units they make, `DATA` and a tree subject's `TREEU`, as a property no copy
   or key list meets: `cvIn`), on the device, because the copy in force is the device's (a kept curation, a draft
   preview). 'c' and up to 15 lower-case letters and digits, else blank. Sent only once the replies say `v` ≥ `core.js`
   `CV_SHEET` (`logOut`, rule D4). Logged only; a reader takes it by name and accepts a blank. `tests/contentver.test.js`.
@@ -449,9 +449,9 @@ Progress).
 A subject with `SUBJECTS` `replayed` (the fish and the sea slugs; `core.js` `replayedSubjects`) is replayed by the same
 `replay_` from its own rows (`subjRows_`, from the same read of the Answers tab as `answerRows_`), with its own units:
 `replayed.gen` over its `replayed.file`, else its first pool file, read from GitHub (`Code.gs` `subjFile_`). The fish's
-are `core.js` `fishReplayGen` over `fish.json`: the families' and the scientific genera's `look` and family line as the
-app's `fishGen` and `fishGenera` build them (`tests/fishreplay.test.js`), cached 6 hours as `sgen1:fish`; the sea slugs'
-`seaslug.json`, `fishReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
+are `core.js` `treeReplayGen` over `fish.json`: the families' and the scientific genera's `look` and family line as the
+app's `treeGen` and `treeGenera` build them (`tests/fishreplay.test.js`), cached 6 hours as `sgen1:fish`; the sea slugs'
+`seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
 corals' only); every fish answer is logged with its scoring record and replays as the game scored it.
 
 - **Asked per subject** by the rules version the app applied to it (each subject its own list: the corals' `RVS`, the
@@ -508,8 +508,8 @@ joining the units (a family in or out of every circle, the genera of a family le
 the circles' parts of the score and the path move in the app (`tests/structure.test.js`).
 
 **The leaderboard's tree.** With the units, `subjRpl_` makes the subject's score tree (`SUBJECTS` `replayed` `tree`:
-the fish's `core.js` `fishBoardTree`, `fishScoreTree` over `fishGen`'s families and `fishReplayGen`'s genera, the app's
-own `UNITS` tree; with the species level, the app's species tree `treeSp`, `fishScoreTree` on) from the same file and
+the fish's `core.js` `treeBoardTree`, `treeScoreTree` over `treeGen`'s families and `treeReplayGen`'s genera, the app's
+own `UNITS` tree; with the species level, the app's species tree `treeSp`, `treeScoreTree` on) from the same file and
 curation, checked as a tree an app sends (`boardTreeOk_`) and kept as `stree3:fish:<fingerprint>` (made again when it
 is missing beside cached units). `board_` ranks by it, from the cache only (`subjTreeKept_`), so the board's weights per
 family and circle follow a circle Publish within the trigger's 15 minutes, whether a device saves or not, and a device

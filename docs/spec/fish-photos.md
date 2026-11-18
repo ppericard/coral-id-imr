@@ -202,7 +202,7 @@ beginner, and suits the sheets.
 - `tools/fish_game.py` `ref_play` puts each judged one into its entry's game photos (`rep: "inaturalist"` /
   `"fishbase"` on a source's reference photos, `from` `cover` / `taxon` / `fishbase`, `via: "fishbase"`); a FishBase
   photo shows a "FishBase ↗" source pill after the answer (`app.js` `photoSrc`). They stay in play even on an entry that
-  plays on Pierre's curated photos alone (`core.js` `fishPhotos`).
+  plays on Pierre's curated photos alone (`core.js` `treePhotos`).
 - **Reference level** (`core.js` `refLevel`: a `rep` photo judged 4-5, or any photo judged 5 with the reference look)
   comes first in `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref`
   (3 for the fish, `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and
@@ -228,12 +228,12 @@ is committed; the photos in play are downloaded (R2, the four sizes) when they e
 - `out{f: species id | 'x'}`: Not this, the photo is that species' candidate, or out of every species ("A photo is in
   play" below);
 - `names{name: {family id: 'off' | 'on' | 'often'}}`: Pierre's exceptions to the name index (not that family's name,
-  that family's, that family's and gently corrected; read by `core.js` `fishNameIndex`; no admin editor yet, ROADMAP
+  that family's, that family's and gently corrected; read by `core.js` `treeNameIndex`; no admin editor yet, ROADMAP
   "Fish common names");
 - `tags{f: jt}`, `ease{f: 1-5}`, `phase{f}`, `crop{f: [l, t, r, b]}` (the `judging/FISH.md` rubric's fields);
 - `kept{f: set}` (a judging re-judge's proposal he answered Keep mine, by its set: `q308`, the light re-judge, or `one`,
   one judgement per photo; admin Photo review › Light proposals) and
-  `kept{node id: 'cover:<his photo id>><the rule's photo id>'}` (a cover proposal he answered Keep mine, the pair of photo ids, `core.js` `fishPid`; admin Photo review ›
+  `kept{node id: 'cover:<his photo id>><the rule's photo id>'}` (a cover proposal he answered Keep mine, the pair of photo ids, `core.js` `treePid`; admin Photo review ›
   Cover proposals), both left out of `curation-play.json`;
 - `auto{day: {f: code}}`: the fish auto-sort's log (`a` proposed in, `r` set aside, `?` a Check, `-` undone, `@t` the
   time of Pierre's answer);
@@ -332,7 +332,7 @@ screen.
 - **Auto**: the fish auto-sort's line above the card (in, set aside, Checks to answer, keep agreement and whether it is
   on), folded behind the **Auto** chip at the end of the chips' row as the corals', and its Details below it
   (disagreements, every decision still standing with Undo, `fishAutoUndo`), here and not on the coral Candidates.
-- **Rows** under the judgment (`autosort.js` `fishSet`, `fishTag`, `fishNotThis`, `fishState`, `fishOn`, `fishPhase`):
+- **Rows** under the judgment (`autosort.js` `fishSet`, `fishTag`, `fishNotThis`, `fishState`, `treePhotoOn`, `fishPhase`):
   Ease (5 easy … 1 hard) always; Phase (`judging/FISH.md` words: none, subadult, intermediate, terminal, female, male)
   only for an entry whose phases differ (`fish.json` `teach` `phase` lines or `dimorph`); and behind **Tags** (folded,
   remembered in this browser, `reefid-admin-ftags`; unfolded, the swiper keeps its one screen: the photo gives up room
@@ -349,7 +349,7 @@ screen.
   species' candidate (its add and rejection go with it; the card says "from" its first species, which it can go back
   to), `out {f: 'x'}` takes it out of every species.
 - **A photo is in play** for a species when `add` names it, it is neither rejected nor excluded, and its `out`, if any,
-  names that same species (`fishOn`: the convention the game reads; the fish auto-sort counts its target with it too);
+  names that same species (`treePhotoOn`: the convention the game reads; the fish auto-sort counts its target with it too);
   `fishMine` stays the keep on its first species, so a Not this on an auto add counts as a correction in the agreement,
   and the auto-sort never proposes the photo again.
 - **Missing phases first**: a candidate whose phase (`fishPhase`, as `tools/fetch_fish.py` `photo_phase`: Pierre's
@@ -368,7 +368,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 - **Pierre's adds**, and **in play by themselves** (`tools/fish_game.py` `in_play` adds them to his adds):
   1. every candidate judged sure (`cand_sure`: `autosort.js` `fishSure`'s add, i.e. no `unsure`, keep `best` or `alt`,
      on a sure judgement, `judged_sure`: valid tags, any ease 1-5, never count `x` nor flag `a`, and a count an
-     automatic route may put in play, `core.js` `FISH_COUNT.play`: one fish `1`, several of its kind `s`, or other
+     automatic route may put in play, `core.js` `TREE_COUNT.play`: one fish `1`, several of its kind `s`, or other
      species in view with no risk of confusion `o`; never `k`, other species one could take for the subject, nor the
      legacy `m` until sorted: rule P3) that he has not decided on (added, rejected, excluded, moved), with its judged
      tags, ease and phase, the pass's proposed crop applied as the auto-sort would write it into his draft;
@@ -387,17 +387,17 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
   `tools/fish_game.py`, so such a change is downloaded and uploaded at its merge.
 - **Other species in view**: a photo whose count in force is other species one could take for the subject (`k`), or the
   legacy `m` not sorted yet, is never in play, his adds included. The count in force is his tag, his legacy `m` refined
-  by the judging pass's `o` or `k` (`core.js` `fishCount`, `fishOther`; `tools/fish_game.py` `count_of`, `other_out`,
-  `refined`, which writes the sorted count into the game record's `jt`); `core.js` `fishIn` and `fishPhotos` (the first
+  by the judging pass's `o` or `k` (`core.js` `treeCount`, `treeOther`; `tools/fish_game.py` `count_of`, `other_out`,
+  `refined`, which writes the sorted count into the game record's `jt`); `core.js` `treePhotoIn` and `treePhotos` (the first
   photos too) read the same (his tag at once in the admin; the players' curation has no tags, `tools/curplay.py`, so
   the app reads the game record's `jt`), and the admin lists his adds so held out apart (Photos › Tree, "Other species,
   out of play", with Keep in play: count `o`).
-- **In play** (`core.js` `fishOn`; `fish_game.py` `fish_on` its copy, `tests/fishgame.test.js` checks they agree):
+- **In play** (`core.js` `treePhotoOn`; `fish_game.py` `fish_on` its copy, `tests/fishgame.test.js` checks they agree):
   `curation.json` `fish.add` names the species, the photo is neither rejected (`seen`) nor excluded, and its Not this
   (`out`), if set, names the same species; the top-level `exclude` (by name or photo id) too.
-- **In play at play time** (`core.js` `fishIn`, used by `fishPhotos`; `fish_game.py` `fish_in` its copy,
-  `tests/fishgame.test.js` checks they agree): his add (`fishOn`), or an `auto` photo whose photo id (`fishPid`) he did
-  not reject, exclude or move with Not this (`fishGone`).
+- **In play at play time** (`core.js` `treePhotoIn`, used by `treePhotos`; `fish_game.py` `fish_in` its copy,
+  `tests/fishgame.test.js` checks they agree): his add (`treePhotoOn`), or an `auto` photo whose photo id (`treePid`) he did
+  not reject, exclude or move with Not this (`treeGone`).
 - **The species met only on the surprise cards keep 5 photos** (`wink_trim`, `WINK_KEEP`, `autosort.js` `FISHT.wink`):
   of their photos in play, his covers (at any rank), featured photos and own adds (not the auto-sort's) and the surprise
   card's photos (`fish.json` `wink.photos`, which `quiz.js` `winkPhoto` draws from) always, then the best in `core.js`
@@ -436,7 +436,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
   original on iNaturalist's open-data bucket, as its extension alone when the photo is the record's own (the id in its
   name); FishBase and any other address stay whole (`tools/fish_short.py`, written by `tools/fish_game.py` `dumps`;
   `--rewrite` writes the file again in it, after a merge that took another copy). It saves about a third of the file
-  (503 → 426 KB gzipped). Every reader gives the records back whole first: `core.js` `fishGameRead` (the app's
+  (503 → 426 KB gzipped). Every reader gives the records back whole first: `core.js` `treeGameRead` (the app's
   `fishLoad`, the admin, the sheet's fish photo pools, `tools/ratedworld.js`, the tests and `tests/photostub.js`),
   `fish_short.full_doc` (`tools/fish_game.py` `load`, `tools/photos.py` `records`); a file in the whole form is read as
   it is (`tests/fishshort.test.js`). A page of an older version meeting the short file (a page left open across the
@@ -446,7 +446,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 
 ### In the game
 
-`core.js` `fishPhotos(first, game, cur)` is what `fishGen` takes (the app's `fishBuild` passes `CUR`): an entry plays on
+`core.js` `treePhotos(first, game, cur)` is what `treeGen` takes (the app's `treeBuild` passes `CUR`): an entry plays on
 its photos in play alone, however few of them are very easy; `first`, `fish-photos.json`'s first photos, only while
 `game` is empty (before `fish-game.json` is in, or when it cannot come), filtered the same way. Pierre's curation
 applies at once, before the workflow runs again: a curated photo shows only while in play (an Out of play, a Not this, a
@@ -455,7 +455,7 @@ indexes both lists (`admin.js` `fishAdmin`; the first photos are records of the 
 its source pill after the answer (`app.js` `photoSrc`: author · FishBase ↗).
 
 Tests: `tests/fishgame.test.js` (the pipeline on a fixture with a stub host: only photos in play, four files, the crop,
-FishBase retried, the same bytes on a rerun, a recrop, an Out of play; `fishPhotos`), `tests/photos.test.js` (rejected,
+FishBase retried, the same bytes on a rerun, a recrop, an Out of play; `treePhotos`), `tests/photos.test.js` (rejected,
 excluded and Not this photos never in the game), `tests/fishbase.test.js` (no FishBase game photo Pierre did not add),
 `tests/fish.test.js` (codes and the rubric's caps where the ease is the pass's; 5 very easy photos per circle-1 entry in
 the game).
@@ -469,7 +469,7 @@ watermarked photo (judged flag `w`) after the adults without one when one of its
 one (the default cover, `app.js` `seenCover`, reads these photos until `fish-game.json` is in; his watermarked covers
 stay first, rule A1), then `core.js` `easyRank`'s order: the reference-level photos (`refLevel`), the easiest. They are
 written by the same run as `fish-game.json`, so they are the same records, already on R2, and read by `core.js`
-`fishPhotos` only while `fish-game.json` is not in (Home before it, or when it cannot come; a small file against the
+`treePhotos` only while `fish-game.json` is not in (Home before it, or when it cannot come; a small file against the
 full list).
 
 - The 5-very-easy minimum is Pierre's for circle 1 (`tools/fish_judge.py` `WANT`): every circle-1 entry meets it on R2;
@@ -510,10 +510,10 @@ written by `python3 tools/fish_photos.py` (the first photos kept as they are).
   main picture) and `note` when iNaturalist files it under another species of `fish.json` (Pomacentrus armillatus:
   "Filed under Pomacentrus opisthostigma on iNaturalist, which lumps the two species (as WoRMS does)."; the name shown
   stays the PDF's, rule S2).
-- **Never in a game**: `core.js` `fishGen` keeps every `use: 'ref'` photo out of an entry's `views.wide` wherever it is
-  listed (so out of `model.js` `photoSet`, the cover, `app.js` `fishGenera`'s genus units and the winks: a unit with no
-  game photo is never asked) and returns them by species as `sheet` (`app.js` `FISH.sheet`), which the species sheets
-  show among the species' photos (`learn.js` `fishSpPhotos`; the family hero falls back on them only when the species
+- **Never in a game**: `core.js` `treeGen` keeps every `use: 'ref'` photo out of an entry's `views.wide` wherever it is
+  listed (so out of `model.js` `photoSet`, the cover, `app.js` `treeGenera`'s genus units and the winks: a unit with no
+  game photo is never asked) and returns them by species as `sheet` (`app.js` `TREEU.sheet`), which the species sheets
+  show among the species' photos (`learn.js` `treeSpPhotos`; the family hero falls back on them only when the species
   has no photo in play, `nodeCover`).
 - Tests: `tests/subjects.test.js` (never a game photo nor a cover, licences, credit, the lumping note),
   `tests/fishphotos.test.js` (the rules and the order), `tests/fish.smoke.js` (never drawn in the real app).
@@ -553,13 +553,13 @@ The fish observations kept out of practice for an honest mastery exam (ROADMAP "
 - The photo workflow rewrites it with `fish-game.json`; CI runs `--check`.
 - **In the game** ([LEARNING.md](../LEARNING.md) "The held-out photos in the game"): the app loads it with Home's fish
   files (`app.js` UNITS fish get `ho`; `{}` when it cannot come, and every photo then plays as practice); `core.js`
-  `fishHeld` reads it, less the observations of Pierre's ★ covers and featured photos (`curation.json` fish genera, by
-  `fishPid`); `fishPhotos` (its fourth argument) marks those photos `ho`; `fishGen`, `fishGenUnits` and `app.js`
-  `fishGenera` put them in each unit's `held` list (family, genus, species), never in `views`, so no draw, card, cover,
+  `treeHeld` reads it, less the observations of Pierre's ★ covers and featured photos (`curation.json` fish genera, by
+  `treePid`); `treePhotos` (its fourth argument) marks those photos `ho`; `treeGen`, `treeGenUnits` and `app.js`
+  `treeGenera` put them in each unit's `held` list (family, genus, species), never in `views`, so no draw, card, cover,
   sheet, Learn page, duel, Find the X, Memory or Home list shows them.
 - Only the mastery exam asks them (no practice probe): `model.js` `examSet` draws from the held-out photos the player
   was never shown (any unit) first, the hardest; `genusDiff` and the variant groups (`examPics`, `varUnitOf`) read
-  `views` and `held` together, as the sheet's variant table (`fishVarTable`, made without the set) does. `quiz.js` logs
+  `views` and `held` together, as the sheet's variant table (`treeVarTable`, made without the set) does. `quiz.js` logs
   `|h` on an answer that showed one, so an exam answer reads `…|h|x` (after `|c`, before `|kN`, `|t`, `|x`); counted
   like any answer.
 - The sheet, the admin and the tools that read `fish-game.json` without the set see every photo (the admin does not
