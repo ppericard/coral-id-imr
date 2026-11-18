@@ -123,7 +123,7 @@ learnsim run.
 
 The trainer's lobby shows a QR code beside the address and the big code: it opens `<site>/#live?code=123456`, the join
 form with the code filled in. The encoder is ours (`live.js` `qrMake`, in the pure section, so unit-tested): byte mode,
-error correction level M, versions 1 to 9 (up to 180 characters; the join address is about 60), the mask chosen by the
+error correction level M, versions 1 to 6 (up to 106 characters; the join address is about 60; versions 7 and up need version-information bits and are left out), the mask chosen by the
 standard's four penalties, drawn as one inline SVG, dark on a light field in both themes (a scanner needs it). No
 library, no host (rule U5). `tests/liveclass.test.js` checks it with a reader written for the test (format bits,
 zigzag, deinterleaving, every block's Reed-Solomon syndromes, the text read back, every version) and with the standard's

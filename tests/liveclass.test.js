@@ -418,10 +418,7 @@ test('live.js: the QR code encoder (Reed-Solomon, format bits, layout) reads bac
     text(42),
     text(62),
     text(84),
-    text(106),
-    text(122),
-    text(152),
-    text(180)
+    text(106)
   ];
   const sizes = new Set();
   for (const t of cases) {
@@ -433,8 +430,8 @@ test('live.js: the QR code encoder (Reed-Solomon, format bits, layout) reads bac
     // The three corner squares' corners and the dark module.
     assert.deepStrictEqual([m[0][0], m[0][m.length - 1], m[m.length - 1][0], m[m.length - 8][8]], [1, 1, 1, 1]);
   }
-  assert.strictEqual(sizes.size, 9, 'every version 1 to 9 is used');
-  assert.strictEqual(X.qrMake('x'.repeat(181)), null, 'too long: no code');
+  assert.strictEqual(sizes.size, 6, 'every version 1 to 6 is used');
+  assert.strictEqual(X.qrMake('x'.repeat(107)), null, 'too long (version 7 and up are not built): no code');
   assert.strictEqual(X.qrMake('€'), null, 'beyond Latin-1: no code');
   const svg = X.qrSvg(X.qrMake('abc'), 'QR');
   assert.ok(/^<svg class="qr" viewBox="0 0 29 29"/.test(svg) && svg.includes('fill="#fff"') && svg.includes('<path d="M'));

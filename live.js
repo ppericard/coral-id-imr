@@ -45,7 +45,7 @@ const liveAid = (pid, qi) =>
 // "1st", "2nd", "3rd", "4th"…
 const liveNth = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 // A QR code of our own (rule U5: no third-party script; docs/decisions/2026-11-18-live-after-v1.md): byte mode, error
-// correction level M, versions 1 to 9 (up to 180 characters), the mask chosen by the standard's four penalties
+// correction level M, versions 1 to 6 (up to 106 characters; 7 and up need version-information bits, left out), the mask chosen by the standard's four penalties
 // (ISO/IEC 18004). qrMake(text) is a square of 0/1 rows, or null when the text is too long or not Latin-1; qrSvg draws it.
 // Per version: the error-correction codewords per block, the blocks as [count, data codewords], the alignment centres.
 const QRV = [
@@ -55,24 +55,7 @@ const QRV = [
   [26, [[1, 44]], [6, 22]],
   [18, [[2, 32]], [6, 26]],
   [24, [[2, 43]], [6, 30]],
-  [16, [[4, 27]], [6, 34]],
-  [18, [[4, 31]], [6, 22, 38]],
-  [
-    22,
-    [
-      [2, 38],
-      [2, 39]
-    ],
-    [6, 24, 42]
-  ],
-  [
-    22,
-    [
-      [3, 36],
-      [2, 37]
-    ],
-    [6, 26, 46]
-  ]
+  [16, [[4, 27]], [6, 34]]
 ];
 const QRGF = (() => {
   const e = [],
@@ -186,8 +169,8 @@ function qrMake(text) {
   }
   let v = 1;
   const cap = k => QRV[k][1].reduce((s, [b, d]) => s + b * d, 0);
-  while (v <= 9 && bytes.length + 2 > cap(v)) v++;
-  if (v > 9) return null;
+  while (v <= 6 && bytes.length + 2 > cap(v)) v++;
+  if (v > 6) return null;
   // The bit stream: mode 0100, the count (8 bits), the bytes, the terminator, then the pad codewords 0xEC, 0x11.
   const bits = [],
     add = (x, k) => {

@@ -17,8 +17,8 @@ Integrator's call (easy to correct; Pierre, 2026-11-14: push what is easy to cor
 2026-11-17 list (Q393) of what comes after version 1:
 
 - Build the one item that needs no decision: the QR code, with our own encoder in `live.js`'s pure section (about 200
-  lines): byte mode, error correction M, versions 1 to 9, penalty-based mask choice, an inline SVG. Level M and a cap of
-  version 9 are enough for the join address (about 60 characters) and leave room for a longer custom domain.
+  lines): byte mode, error correction M, versions 1 to 6, penalty-based mask choice, an inline SVG. Level M and a cap of
+  version 6 (106 characters; 7 and up need version-information bits) are enough for the join address (about 60 characters) and leave room for a longer custom domain.
 - The code encodes the full join address with the game code, so a scan lands on the join form with the code filled in
   (`#live?code=123456`, already supported). The address and the code stay big beside it, for a phone that cannot scan.
 - The code is always dark on light, whatever the theme (scanners need it).
