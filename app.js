@@ -688,8 +688,25 @@ function build() {
     applyForms(x, CUR);
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
+  // What the corals' units were made from, for the content version of their answers (contentVer), kept out of sight on
+  // the data made (not enumerable: nothing that reads or copies DATA meets it).
+  Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
   DATA = d;
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
+}
+// The content version of subject S's answers (core.js contentVersion; ROADMAP "Content versions and duplicate-safe
+// answers", Pierre 2026-11-18): from the files, the curation and the structure stamp its units in force were made from
+// (cvIn, kept on them: DATA by build for the corals, a tree subject's FISH by fishBuild), made once per build, at its
+// first answer (a hash of the subject's part of the curation, a few milliseconds; never at start-up). '' before its
+// units are made, or if it fails: the answer is logged without one, as the rows before it.
+function contentVer(S) {
+  try {
+    const U = !S || !UNITS[S.id] ? null : !UNITS[S.id].get ? DATA : S.id === TREE_AT ? FISH : (TREE_OF[S.id] || {}).FISH,
+      I = U && U.cvIn;
+    return I ? I.v || (I.v = contentVersion(I.S, I.cur, I.files.map(fileVer), I.st)) : '';
+  } catch (e) {
+    return '';
+  }
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of fish.json genera holding
@@ -1165,6 +1182,12 @@ const fishBuild = () => {
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
+  // What its units were made from, for the content version of their answers (contentVer), kept out of sight on them (not
+  // enumerable). gm: a hash of {photos: {}} while the game photos have not come (dataPartial), another content.
+  Object.defineProperty(FISH, 'cvIn', {
+    value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''},
+    configurable: true
+  });
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -3860,8 +3883,29 @@ function hdrMetrics() {
 }
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr);
 else addEventListener('resize', hdrMetrics);
-// A missing side file (404) counts as a failure, not as an empty file: softFail says so.
-const okJson = r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)));
+// A missing side file (404) counts as a failure, not as an empty file: softFail says so. A file fetched with a ?v= (the
+// deploy's hash of it, tools/stamp_versions.py; a frozen number on a copy never deployed) keeps it on what it read,
+// under a symbol (FILEV: never in a JSON, a key list or a structured clone; a copy by spread keeps it, as fishGameRead's
+// of fish-game.json): the version the answers' content version is made of (fileVer, contentVer).
+const FILEV = Symbol('file version'),
+  FILEH = new WeakMap();
+const okJson = r =>
+  r.ok
+    ? r.json().then(j => {
+        const m = /\?v=([0-9a-z]+)$/.exec(String(r.url || ''));
+        if (m && j && typeof j === 'object') j[FILEV] = m[1];
+        return j;
+      })
+    : Promise.reject(new Error(`HTTP ${r.status}`));
+// The version of a data file as read (o: what okJson gave, or a copy of it by spread): its ?v=, else (a file fetched
+// without one, the sea slugs'; or what the app made from one, FORMS, AUTOQ) a hash of its content, made once per object;
+// '-' when there is none.
+const fileVer = o => {
+  if (!o || typeof o !== 'object') return '-';
+  if (o[FILEV]) return o[FILEV];
+  if (!FILEH.has(o)) FILEH.set(o, 'h' + hash53(JSON.stringify(o)));
+  return FILEH.get(o);
+};
 // Unstable connection (Pierre, 2026-11-01): a start-up file that fails is fetched again, up to 3 tries (1 s, then 2 s
 // apart); a 404 is final.
 const getR = (u, o, n = 3) =>
@@ -3882,26 +3926,35 @@ const curFetch = (o, get = getR) => get('curation-play.json', o).then(r => (r.st
 // before every first screen, up to the service worker's timeout): the kept copy is used, and curRefresh reads the
 // published one right after; a change applies at the next screen, as for a tab left open.
 let CUR_KEPT = false;
-const curation = () => {
-  const dr = /[?&]draft\b/.test(location.search) && store.get('reefid-curation-draft', null),
-    kept = !dr && store.get(CUR_LAST, null);
+const curPublished = () => {
+  const kept = store.get(CUR_LAST, null);
   if (kept && kept.genera) {
     CUR_KEPT = true;
     return Promise.resolve(kept);
   }
-  return dr
-    ? Promise.resolve(dr)
-    : curFetch({cache: 'no-cache'})
-        .then(okJson)
-        .then(c => {
-          store.set(CUR_LAST, c);
-          return c;
-        })
-        .catch(e => {
-          const last = store.get(CUR_LAST, null);
-          return last ? last : softFail("curation.json (Pierre's photo choices)", {})(e);
-        });
+  return curFetch({cache: 'no-cache'})
+    .then(okJson)
+    .then(c => {
+      store.set(CUR_LAST, c);
+      return c;
+    })
+    .catch(e => {
+      const last = store.get(CUR_LAST, null);
+      return last ? last : softFail("curation.json (Pierre's photo choices)", {})(e);
+    });
 };
+// The admin's draft for ?draft: read from the admin's store in this browser (IndexedDB, admin-draft.js ddbPeek), that
+// script loaded for this preview only; none when there is no draft or it was sealed at a sign out.
+const draftPeek = () =>
+  new Promise(ok => {
+    const sc = document.createElement('script');
+    sc.src = 'admin-draft.js?v=1';
+    sc.onload = () => ddbPeek(window.indexedDB, 'reefid-admin-draft').then(ok, () => ok(null));
+    sc.onerror = () => ok(null);
+    document.head.append(sc);
+  });
+const curation = () =>
+  /[?&]draft\b/.test(location.search) ? draftPeek().then(dr => (dr && dr.genera ? dr : curPublished())) : curPublished();
 const forms = () =>
   getR('forms.json?v=7')
     .then(okJson)

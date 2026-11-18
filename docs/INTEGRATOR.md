@@ -66,7 +66,7 @@ rules pass before it (`.claude/settings.json`: resolving review threads). What t
 
 - **Pierre wants work run in parallel** (11-12: "pourquoi tu me demandes mon avis pour un ordre alors que tu peux tout
   lancer en parallèle ?"): independent read-only studies and PRs on different files go out together, within W27's
-  four agents; ask him only what is his to decide (wording, game rules), never the order of work.
+  four agents that write code or run tests (studies run on top); ask him only what is his to decide (wording, game rules), never the order of work.
 - **Don't send him GitHub chores** (11-12: "c'est quoi ce micromanagement forcé ?"): resolving fixed threads, labels,
   branch updates are the integrator's. A refusal by the classifier: find the narrow allow rule, propose it once.
 - **A success rate is never a level** (LEARNING "What each number measures", rule L12): two studies read 75-83% right
@@ -81,7 +81,7 @@ rules pass before it (`.claude/settings.json`: resolving review threads). What t
 Pierre's quota ran out on 11-09 (more than half a week's quota spent in one day on a handful of PRs); the next
 integrator starts on another account from 11-11 morning. What the day taught, now rules or habits:
 
-- **Rule W27** (docs/rules/ship.md): at most four agents, balanced by weight (since 11-14); every branch from `origin/main` (no stacked PRs, never ask
+- **Rule W27** (docs/rules/ship.md): at most four agents that write code or run tests, read-only studies on top (11-18); every branch from `origin/main` (no stacked PRs, never ask
   Pierre to change a base); no two open PRs on one sensitive file (`Code.gs`, `core.js`, `sync.js`, `model.js`): one
   after the other, the next merges `main` and runs `sync_core --fix` after the first lands; two Codex rounds, then cut
   the scope to a branch of its own with a short design note (findings that keep coming are a structural problem: we find
@@ -111,6 +111,25 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 
 ## Working with Pierre
 
+**The right model and effort for each task** (the Agent tool's `model` and `effort`, set at every agent launch;
+Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents
+(et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau"):
+
+| Task | Model | Effort |
+| --- | --- | --- |
+| Design, architecture, the learning engine, security, rule wording with consequences | Opus 5.5 (Fable 5.2 only where Opus at high effort measurably falls short) | high |
+| Ordinary code (game formats, admin pages, fixes, docs) | Sonnet 5.5 | medium to high |
+| Mechanical, repetitive work (framing, sorting photos, conversions) | Haiku 5.5, after the sample test against a strong model (Model choice by measurement) | low |
+
+In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through.
+
+Anthropic's guidance (checked 2026-11-18): Opus 5.5 is the recommended starting point and the integrator's model; effort
+is often a better lever than the model; an Opus orchestrator with Sonnet subagents measured about a third cheaper at
+about the same score; subagents pay off for independent work that would flood the main context, not for one dependent
+chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
+<https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence>,
+<https://platform.claude.com/docs/en/models/overview>.
+
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
@@ -132,9 +151,10 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   deliverable; large JSON and the sheet are queried (jq, grep, the connector's ranges), never printed whole; a few
   commands are done by the integrator itself; an agent is stopped once its report is in; a wait is one monitor that
   wakes once on a terminal state; Prettier and the unit tests run before a push, every Codex finding fixed in one go;
-  two PRs on the same files are not run in parallel. A lighter model (the Agent tool's `model`) only for mechanical work
-  a test checks (bringing a PR up to date, docs, data fetches, a test fix); the strongest model for anything judged
-  (learning, content, design, reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
+  two PRs on the same files are not run in parallel. The model and effort follow the table above: the intermediate model for
+  ordinary code (a test fix, docs, bringing a PR up to date), the lightest one only for mechanical work that passed
+  the sample test (data fetches, conversions); the strongest model for anything judged (learning, content, design,
+  reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
   resolution, one species) before looking, and judge the species under target first.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
@@ -193,15 +213,15 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   is resolved. A security alert is never merged over in silence.
 - **Code.gs VERSION, assigned at merge** (rule D3; Pierre, 2026-11-08, Q305 a): a PR that changes `Code.gs` (or
   `core.js`, through `python3 tools/sync_core.py --fix`) carries one `tools/sync/changes/<branch>.md` and leaves
-  `VERSION` and the header line alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
+  `VERSION`, line 1 and `tools/sync/HISTORY.md` alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
   `origin/main` into the branch, run `python3 tools/sheet_version.py --assign --dry-run`, then `--assign` (VERSION + 1,
-  the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds and every bare
+  line 1 set to the short form, the entry written at the top of HISTORY.md and in ARCHITECTURE.md's version history, every gate the PR adds and every bare
   `vNEXT` set to the new number, main's gates left alone, the file removed; a merge stopped on a conflict may stay
   uncommitted until then, the tool reads its `MERGE_HEAD`, and it refuses a branch that does not hold `origin/main`
   yet, unresolved conflicts, or a PR that moves one of main's gates), run the fast tier, commit "Sheet script vN assigned at merge",
   push, `@codex review`, wait for green and Codex, then send it in a train, alone or as that train's one Code.gs PR. A PR built under
   the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
-  otherwise move its header entry into a changes file and restore main's VERSION and header line. Rules versions (RVS)
+  otherwise move its entry into a changes file and restore main's VERSION, line 1 and HISTORY.md. Rules versions (RVS)
   run with no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
 - **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b; every PR, 2026-11-16): when a PR is ready on its own head
   (green, Codex-clean, threads resolved, "Choices I made" empty, no `needs-pierre`), run `python3 tools/train.py

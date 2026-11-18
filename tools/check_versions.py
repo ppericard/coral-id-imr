@@ -15,7 +15,7 @@ checked, in the source and in the stamped copy alike:
 3. The Lab files in sw.js use LAB_V (proto/lab.js) and the same list as LAB.files.
 In the source (not with --dir), also the sheet script's VERSION, which is not stamped but assigned at merge (Pierre,
 2026-11-08, Q305 a; rule D3): a PR that changes tools/sync/Code.gs carries one tools/sync/changes/<branch>.md and
-leaves VERSION and the header line alone; main has no changes file left (tools/sheet_version.py says the rules). The
+leaves VERSION, line 1 and tools/sync/HISTORY.md (the version history) alone; main has no changes file left (tools/sheet_version.py says the rules). The
 base is the merge-base of HEAD and --sheet-base (default origin/main; skipped when git cannot find it).
 """
 import argparse, os, re, sys

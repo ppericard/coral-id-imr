@@ -750,6 +750,40 @@ test("v30 pages events: cleaned, in their own tab, under the admin's id of the p
   assert.deepStrictEqual(P[P.length - 1].slice(0, 5), ['p1', Date.parse('2026-11-03T10:00:00Z'), 'dev0000009', 'pages', anonAid]);
 });
 
+// The screen of a summary (sheet v177; Pierre, 2026-11-18): kept rounded in the Pages tab's Detail, no new column.
+test('pages events keep the screen, rounded and clamped again, in the Detail JSON; no column added', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000',
+    pg = (id, vp) => ({
+      id,
+      t: '2026-11-18T02:00:00Z',
+      k: 'pages',
+      av: '190',
+      ua: 'Chrome 140 mobile',
+      vi: 'visit' + id,
+      r: {quiz: [1, 9]},
+      g: {},
+      vp
+    });
+  s.post({
+    dev: 'dev0000013',
+    events: [
+      pg('v1', {w: 390, h: 660, d: 2.6, o: 'p', b: 2}),
+      pg('v2', {w: 393.4, h: 851, d: 2.625, o: 'p', b: 2, ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)', name: 'Ana'}),
+      pg('v3', {w: '=HYPERLINK("x")', h: 800, d: 3}),
+      pg('v4')
+    ]
+  });
+  const rows = s.sheets.Pages.rows;
+  assert.strictEqual(rows[0].length, 10, 'the Pages tab keeps its ten columns');
+  const det = rows.slice(1).map(r => JSON.parse(r[6]).vp);
+  assert.deepStrictEqual(det, [{w: 390, h: 660, d: 2.6, o: 'p', b: 2}, {w: 390, h: 850, d: 2.6, o: 'p', b: 2}, undefined, undefined]);
+  assert.ok(!rows.flat().some(v => /Mozilla|Pixel|Ana|HYPERLINK/.test(String(v))), 'nothing but the rounded screen is kept');
+  // The admin reads it back as it is.
+  const P = s.post({readEvents: 1, pages: 1, token: T}).rows;
+  assert.deepStrictEqual(JSON.parse(P.find(r => r[0] === 'v1')[7]).vp, {w: 390, h: 660, d: 2.6, o: 'p', b: 2});
+});
+
 test("v30 pages events follow the player's answers: sign-in claim, rename, merge, delete, anonDelete (Codex review #423)", () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000',
@@ -1868,8 +1902,8 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
     col = A.rows[0].indexOf('Scoring');
   assert.deepStrictEqual(
     [col, A.rows[0].length],
-    [22, 26],
-    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312) and Photo answered (Q371) after it'
+    [22, 27],
+    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312), Photo answered (Q371) and Content version after it'
   );
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(

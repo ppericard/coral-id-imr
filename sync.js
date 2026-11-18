@@ -1658,10 +1658,18 @@ function pagesRoute(h) {
     pre: SUBJ.pv // a fish page is named fish.<page> (core.js pageName)
   });
 }
+// The screen it was sent from, rounded (core.js VIEWPORT, viewportOf; Pierre, 2026-11-18): only once the sheet script
+// keeps it (rule D4); before, the summary is sent as it was.
+const VIEWPORT_SHEET = 177;
+const viewportOn = () => sheetV() >= VIEWPORT_SHEET;
+const pagesScreen = () => {
+  const vp = viewportOn() ? viewportOf(window.innerWidth, window.innerHeight, window.devicePixelRatio) : null;
+  return vp ? {vp} : {};
+};
 function pagesSend() {
   const S = pagesTake(PV, Date.now());
   if (!S) return;
-  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...S, o: pvOwner()});
+  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...pagesScreen(), ...S, o: pvOwner()});
 }
 // The player active now, as a summary's owner (core.js pagesOwner): no anonymous id is made for a signed-in player.
 const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesOwner(null, anonId()));

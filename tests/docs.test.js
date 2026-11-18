@@ -399,6 +399,7 @@ const ID_ALLOW = [
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
   {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
+  {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
   {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
@@ -485,4 +486,20 @@ test('the code identifiers the docs cite in backticks still exist', () => {
     [],
     'ID_ALLOW entries no doc needs any more: delete them'
   );
+});
+
+// Studies written from 2026-11-19 cite the measured PRs behind every effort figure (Pierre, 2026-11-18: the estimates
+// "sont toujours dans les choux"): tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
+// #NNN on its line or bullet. Older studies are history and keep their words.
+test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/effort.py --check)', () => {
+  const {spawnSync} = require('child_process');
+  const dir = path.join(ROOT, 'docs', 'reviews');
+  const studies = fs.readdirSync(dir).filter(f => /^(\d{4}-\d\d-\d\d)-.*\.md$/.test(f) && f.slice(0, 10) >= '2026-11-19');
+  for (const f of studies) {
+    const r = spawnSync('python3', ['-B', path.join(ROOT, 'tools', 'effort.py'), '--check', path.join(dir, f)], {
+      encoding: 'utf8',
+      timeout: 20000
+    });
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  }
 });
