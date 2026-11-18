@@ -1,7 +1,7 @@
 // Pure functions shared by the app (app.js), the admin (admin.js) and the tests (node --test tests/*.test.js).
 // No DOM, no globals of the app: in the browser they become globals (classic script), in Node module.exports.
 (function (root) {
-  // The organisation and the app's name, in one place (docs/ROADMAP.md "Open source"). Pages built by JS read ORG; the
+  // The organisation and the app's name, in one place, so a fork can rename the app. Pages built by JS read ORG; the
   // static files (index.html, admin.html, privacy.html, manifest.webmanifest, tools/og/og.html, README.md, the docs) are
   // rewritten from it by tools/rename_app.py. The storage keys never depend on it (KEYS), so a fork renames the app
   // without moving any player's data.
@@ -127,7 +127,7 @@
       });
     return out;
   }
-  // Lighter saves (docs/ROADMAP.md "Lighter saves on slow lines"; sync.js syncOnce, Code.gs doPost_): a
+  // Lighter saves (docs/ARCHITECTURE.md "Lighter saves on slow lines"; sync.js syncOnce, Code.gs doPost_): a
   // device that knows the saved copy at the revision it saves against sends only what changed since (dataDelta), and the
   // sheet rebuilds the whole copy from its own (dataPatch), keeping it only if it is exactly the copy the device holds
   // (dataSum, checked by both sides on the same spelling). A player's data is {key: the JSON text of its value}.
@@ -3299,7 +3299,7 @@
   // unrelated genera needs 6 mix-ups (30%), where the declared look-alikes are mixed up about 13% of the time.
   const dataLook = (c, score) => !!c && c[0] >= CONF.N && score >= CONF.TRAP;
   // How much harder a question is for a player who mixes up its genus with one of its choices more than everyone does
-  // (docs/LEARNING.md "Known mix-ups"): the player's own score of the pair (own, pairConf, shrunk toward the
+  // (docs/LEARNING.md, Known mix-ups): the player's own score of the pair (own, pairConf, shrunk toward the
   // pooled score as confOf does) against the pooled score, in logits, when higher; 0 for a pair the player mixes up no
   // more than everyone. The pooled score already shows in the photos' difficulty (every player's answers); this is the
   // player's own excess, so it is never counted twice. No constant: confScore's own prior weight sets how fast it grows.
