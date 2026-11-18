@@ -2679,6 +2679,9 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from seaslug.json, core.js fishReplayGen at the genus); null before its data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the look-alike pairs in force are seaslug.json's),
+    // sent with the requests so the sheet replays under the pairs in force (sync.js stsAsk; Pierre, 2026-11-18).
+    st: () => (FISH ? FISHST : ''),
     gate: fishGate,
     species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
