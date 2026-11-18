@@ -1907,6 +1907,66 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
   C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
   return C.sort((x, y) => y.w - x.w);
 }
+// ---------- Look-alike pairs, shared by the quiz and the Learn pages ----------
+// The quiz (its duels, mix-up montage and cards) and My progress read these, so they come with the quiz's tier; the Learn
+// pages (learn.js: Look-alikes, the genus sheets, the Genera page) read them too and come later (docs/spec/loading.md
+// "Load order in tiers").
+// Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
+// in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
+// genera reads the same references (weighted, above: a ★ genus opens after the genera its card names).
+function shownGroup(n) {
+  return lectureGroup(DATA, n);
+}
+const starNote = n => {
+  const L = starRefs(DATA, n);
+  return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
+};
+// The look-alike pairs of the slate (data.json gen look, either genus listing the other), each [A, B] in alphabetical
+// order, once: the duels (app.js UNITS pairs) and the Look-alikes deck (learn.js classics).
+function pairs() {
+  const seen = new Set(),
+    out = [];
+  Object.keys(DATA.gen).forEach(a =>
+    DATA.gen[a].look.forEach(b => {
+      const k = [a, b].sort().join('|');
+      if (DATA.gen[b] && !seen.has(k)) {
+        seen.add(k);
+        out.push(k.split('|'));
+      }
+    })
+  );
+  return out;
+}
+// The source that compares a and b (data.json lsrc), from whichever genus lists the other; '' when none.
+const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
+// Classic look-alikes: the pairs a source compares in so many words, the IMR lecture (lsrc "IMR Lecture 6...") or the
+// Coral Finder text ("Coral Finder p. ..."): the Look-alikes deck (learn.js classics) and a duel's weight (quiz.js
+// duelPick).
+const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+// How many times this player gave one of a and b for the other, both ways (P conf).
+const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
+// The two photos of two genera that make the best side by side (the quiz's mix-up montage, quiz.js; the Look-alikes
+// montages, learn.js montage): same growth form first, then nearest the front and, when the photos come from all zoom
+// levels ("All"), the nearest zoom levels. The same form is looked for in every photo of the lists, not only the first
+// 6, so a plate genus is shown beside a plate look-alike when one exists; "x" (form not visible) matches nothing.
+// Without a same-form pair, the best pair among the first 6 of each list.
+const ZOOM = {wide: 0, medium: 1, macro: 2};
+function photoPair(LA, LB, fa, fb) {
+  let best = null;
+  const A = fa ? [fa] : LA,
+    B = fb ? [fb] : LB;
+  const gap = (x, y) => (x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0);
+  A.forEach((x, i) =>
+    B.forEach((y, j) => {
+      const same = !!x.form && x.form !== 'x' && x.form === y.form;
+      if (!same && (i >= 6 || j >= 6)) return;
+      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
+      if (!best || sc < best[0]) best = [sc, x, y];
+    })
+  );
+  return best ? [best[1], best[2]] : [];
+}
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();
 domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
