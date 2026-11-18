@@ -258,7 +258,7 @@ reaches the site only with his Publish.
 `admin-draft.js` (the draft's IndexedDB store and the sign-out seal); `autosort.js` (the auto-sort and the fish photo
 logic, pure); `taxtree.js` (the generic tree); `admin-fish.js`, `admin-coraltree.js`, `admin-content.js`,
 `admin-covers.js`, `admin-light.js` (the Tree tab, the content editor's boxes, the proposals); `admin-journey.js`,
-`admin-visits.js`, `admin-heatmap.js`, `admin-analyses.js` (players and analyses); `points.js` and `points.json` (the
+`admin-visits.js`, `admin-heatmap.js`, `admin-analyses.js` (players and analyses); `admin-taxa.js` (Photo stats › Taxa); `points.js` and `points.json` (the
 points to handle); `admin-demo.js` (`?demo`).
 
 **How it connects.** It reads the site's data files and `curation.json` (Data files), the sync sheet with its admin token
@@ -285,7 +285,7 @@ below.
     [admin-photos.md › Photo review](spec/admin-photos.md#photo-review),
     [the crop editor](spec/admin-photos.md#the-crop-editor-and-photo-rotation).
   - **Look-alikes**: [admin-photos.md › Look-alikes](spec/admin-photos.md#look-alikes).
-  - **Photo stats**, **Photo stats › Overview**: [admin-photos.md › Photo stats](spec/admin-photos.md#photo-stats).
+  - **Photo stats**, **Photo stats › Overview**, **Photo stats › Taxa**: [admin-photos.md › Photo stats](spec/admin-photos.md#photo-stats).
   - **List**, **Out of the statistics**, **Groups**: [admin-players.md › Players](spec/admin-players.md#players).
   - **Activity**, **Recent sessions and who is playing now**, **A session unfolded**,
     **Activity over time and play hours**:

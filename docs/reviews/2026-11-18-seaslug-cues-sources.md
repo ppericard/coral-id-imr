@@ -65,7 +65,10 @@ the genus, and its type species is Mediterranean (rule C6).
   (`brbrun1`) **[read]**: species colours, not a feature of the genus, or what another source above says.
 - **SEASLUG.WORLD** blog, [*Phyllidiella pustulosa* vs *Phyllidiopsis fissurata*](https://en.seaslug.world/blog/phyllidiella-pustulosa-vs-phyllidiopsis-fissurata)
   (Kimoto, 2015) **[read]**: the rhinophores, black all along against black on the upper back only; a species pair,
-  for the species level and the look-alikes (#1042), not a genus mark.
+  for the species level and the look-alikes (#1042), not a genus mark. The genus pair's tell-apart line comes from
+  Brunckhorst 1993 instead (read 2026-11-19): Table 6 (p. 89) gives *Phyllidiella* black rhinophores and
+  *Phyllidiopsis* rhinophores of "various colours; bi- or multi-coloured", and the genus's "External morphology"
+  (p. 19) says they "may be bicoloured".
 - **Identification Key to the Phyllidiids of the Indo-Pacific**, nudibranch.com.au (couplets 1 and 39) **[read]**: the
   same first couplet as Brunckhorst's; not followed further, Brunckhorst's key being the original.
 - **2026-11-19, read, not used**: Johnson & Gosliner 2012, the whole article fetched (its *Ardeadoris* entry gives the clade's members, no
@@ -87,8 +90,6 @@ the genus, and its type species is Mediterranean (rule C6).
 - **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*) and the circles 2 and 3: the 2018 field guide would
   settle many; Rudman 1984 (the chromodorid genera, *Ardeadoris* among them), Pola et al. 2008 (*Nembrotha*, *Tambja*,
   *Roboastra*) and Gosliner & Willan 1991 (Flabellinidae) are the papers to read next, each where it opens.
-- **The *Phyllidiella* / *Phyllidiopsis* pair's line**: Brunckhorst's Table 6 gives each genus's rhinophore colours, so
-  the pair could leave `apartNone` (a change to *Phyllidiella*'s record, left for its own PR).
 - ***Caloria indica*'s genus**: the Sea Slug Forum says it cannot be settled (also placed in *Learchis*, *Hervia*,
   *Facelina* and *Phidiana*): a nomenclature point for `points.json` (rule C5).
 - **Marks that tell two species apart** (the look-alike pairs) wait for the species level and #1042's pairs.

@@ -397,13 +397,28 @@
     "rhinophores ringed with stacked thin plates (perfoliate)",
     [["kmb2017", "diagnoses of the family Samlidae and the genus Samla"]]
    ]
+  },
+  "Phyllidiella|Phyllidiopsis": {
+   "Phyllidiella": [
+    "black rhinophores",
+    [
+     ["brunck", "key to the genera, couplet 3, p. 26"],
+     ["brunck", "Table 6, the external features of the genera, p. 89"]
+    ]
+   ],
+   "Phyllidiopsis": [
+    "rhinophores of varied colours, often in two colours or more",
+    [
+     ["brunck", "External morphology of Phyllidiopsis, p. 19"],
+     ["brunck", "Table 6, the external features of the genera, p. 89"]
+    ]
+   ]
   }
  },
  "apartNone": {
   "Tambja|Tyrannodoris": "the one comparison read (Nudi Pixel, Willan: the Tambja affinis group) sets Tyrannodoris luteolineata (very large oral tentacles, two plain head stripes) apart from Tambja affinis and T. victoriae, not from the game's Tambja (T. morosa, T. olivaria)",
   "Chelidonura|Tubulophilinopsis": "the one comparison read (Nudi Pixel, Kodiat: Chelidonura varians against Tubulophilinopsis gardineri) sets the two species apart by their tail lobes; no source read says it of either genus",
-  "Hypselodoris|Thorunna": "the sources read compare Hypselodoris maculosa with Thorunna australis, which is not a game species; no feature of the genus Thorunna was found",
-  "Phyllidiella|Phyllidiopsis": "Brunckhorst's key sets Phyllidiopsis apart by its fused oral tentacles, under the animal; the rhinophore colours read are species marks (SEASLUG.WORLD's Phyllidiella pustulosa against Phyllidiopsis fissurata)"
+  "Hypselodoris|Thorunna": "the sources read compare Hypselodoris maculosa with Thorunna australis, which is not a game species; no feature of the genus Thorunna was found"
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",

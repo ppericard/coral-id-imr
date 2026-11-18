@@ -25,6 +25,6 @@ Integrator's call (a choice made while building, easy to correct):
 ## Consequences
 
 Five more genera show sourced ID marks on their sheets and in the quiz feedback (`seaslug.json` genera `marks`, `msrc`,
-`mby`); `seaslug-game.json` is unchanged. Left for later (the sources study's §5): *Ardeadoris* and *Caloria*; the
-*Phyllidiella* / *Phyllidiopsis* tell-apart line, which Brunckhorst's Table 6 now sources; *Caloria indica*'s genus as a
-`points.json` nomenclature point.
+`mby`); `seaslug-game.json` is unchanged. Left for later (the sources study's §5): *Ardeadoris* and *Caloria*;
+*Caloria indica*'s genus as a `points.json` nomenclature point. (The *Phyllidiella* / *Phyllidiopsis* tell-apart line,
+which Brunckhorst's Table 6 sources, landed meanwhile in #1179.)
