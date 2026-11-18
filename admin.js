@@ -5872,7 +5872,7 @@ function renderTriage() {
       gone = /^~deleted /.test(c.who),
       // a report of an archived record (Players › Archived), its open items kept as such
       arch = c.ok === 2 || !!(USERS && (USERS.archived || []).some(x => x.name === c.who)),
-      // Its tools, each shown when the report carries what it needs (Q309): the reporter's Journey, the unit's admin page,
+      // Its tools, each shown when the report carries what it needs: the reporter's Journey, the unit's admin page,
       // the page it was sent from, a photo to attach when it has none.
       u = !gone && !arch && c.who && USERS && (USERS.users || []).find(x => x.name.toLowerCase() === c.who.toLowerCase()),
       // its family's page when its subject has the family pages (Photos › Tree), its genus page for a coral
@@ -5915,10 +5915,10 @@ function renderTriage() {
         })
       )
     );
-  // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
+  // All (To do): by urgency, Health's red line first (only when something is wrong), then the
   // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last; on the fish
   // side (fish admin at parity) its photo work last, as counts that open its pages (fishTodoLines). Reports = the same
-  // without Health, the errors and the fish photo work (the old Triage page). Answers and errors load behind the page.
+  // without Health, the errors and the fish photo work. Answers and errors load behind the page.
   const all = cur === 'inbox/todo/all';
   if (all && !ANS) loadStats().then(() => cur === 'inbox/todo/all' && render());
   if (all && !EVS) loadEvents().then(() => cur === 'inbox/todo/all' && render());
@@ -5977,7 +5977,7 @@ function renderTriage() {
     bindF(x);
   });
   if (FL.length) bindQ();
-  // A report's status (Q309): one click, one Undo step; Done thanks the player (seen 'rep:<id>'), Stand-by and Dismiss never.
+  // A report's status: one click, one Undo step; Done thanks the player (seen 'rep:<id>'), Stand-by and Dismiss never.
   $v.querySelectorAll('[data-rst]').forEach(
     b =>
       (b.onclick = () => {
@@ -6045,12 +6045,12 @@ function renderTriage() {
   );
 }
 /* ---------- Points to handle: Inbox › To do › Points, and one page per point ---------- */
-// Pierre, 2026-11-05: he settles most open points himself and never reads a text list, so the questions for an IMR
-// trainer, nomenclature points, discrepancies between sources and content questions live here. The points are
-// points.json (written by agents: id, kind, title, question, context, photos, sources, date; points.js checks its
-// shape); his state per point is his curation, curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written
-// by a script): s 'wait' (stand-by: below the open ones, still shown), 'done' (resolved) or 'drop' (dismissed), both
-// folded at the bottom with their counts; no s = open; n his notes; a the trainer's answer per photo (points.js photoKey).
+// The admin settles the open points here, never from a text list (rule C5): the questions for an IMR trainer,
+// nomenclature points, discrepancies between sources and content questions. The points are points.json (written by
+// agents: id, kind, title, question, context, photos, sources, date; points.js checks its shape); the state per point is
+// the admin's curation, curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written by a script): s
+// 'wait' (stand-by: below the open ones, still shown), 'done' (resolved) or 'drop' (dismissed), both folded at the
+// bottom with their counts; no s = open; n the admin's notes; a the trainer's answer per photo (points.js photoKey).
 // Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
 // from a phone: the question big, the photos large and enlargeable, blind (numbered, credit only: no names until
 // "Names", so the answer is the trainer's own), an answer field under each photo, notes, and Resolved / Stand-by /
@@ -6239,9 +6239,9 @@ function classicPairs() {
   const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
   return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
 }
-// "all" = photos of every zoom level (Pierre, 2026-11-01), so a pair can show two nearby zooms; the automatic pick then
-// prefers the nearest levels. "hide" keeps the comparison off the site until good examples exist; "Auto" drops his
-// view and photo picks (the hide stays). Both are per pair and go through Undo like every other click.
+// "all" = photos of every zoom level, so a pair can show two nearby zooms; the automatic pick then prefers the nearest
+// levels. "hide" keeps the comparison off the site until good examples exist; "Auto" drops the admin's view and photo
+// picks (the hide stays). Both are per pair and go through Undo like every other click.
 const MONT_VIEWS = [...VIEWS, ['all', 'All']],
   ZOOM = {wide: 0, medium: 1, macro: 2};
 const montList = (n, v) => (v === 'all' ? VIEWS.flatMap(([w]) => montList(n, w)) : (r => [...r.feat, ...r.rest])(rowOf(n, v)));
@@ -6476,7 +6476,7 @@ function bindSug() {
       })
   );
 }
-// A click on the enlarged photo shows it at actual size, as in the games (app.js zoom; Pierre, 2026-11-02).
+// A click on the enlarged photo shows it at actual size, as in the games (app.js zoom).
 const lbFull = lb => {
   const im = lb.querySelector('.lb-in img');
   if (!im) return;
@@ -6511,7 +6511,7 @@ function zoomOne(p) {
 // Every new candidate of every genus, one at a time: set its quality and growth form, then add it to a view,
 // reject it, send it to another genus ("Not this") or skip it. Reject is only a "reviewed" mark (curation.json
 // "seen" {'cand:f': 1}): the photo stays a candidate on its genus page, nothing is deleted. Genera take turns,
-// in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines.
+// in a shuffled order kept in this browser; within a genus, Pierre's own photos first, then Dauin, Philippines.
 const CK = f => 'cand:' + f,
   rejected = f => !!(DRAFT.seen || {})[CK(f)];
 // Sources of the swiper: the subject's (core.js SUBJECTS admin csrc, FB.srcs), then All.
@@ -6535,17 +6535,17 @@ const cellFull = (n, w, o) => {
   return c.obs >= capOf(n) && !(o && c.L.some(q => q.o === o));
 };
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
-// Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
-// first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page)^3 (cubed since
-// 2026-11-01, Pierre: "weigh the genera that really lack photos more strongly"; first 50 of All: thin cells 0-2 colonies 12 -> 30,
-// cells with 8+ 11 -> 2): its guessed view (vg, Claude's
-// guess from the photo), else the genus's emptiest view; x3 when it completes a colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo
-// and per device), then no two of the same genus in a row when it can be avoided.
-// Game genera first (Pierre, 2026-11-03, isGame): the candidates of a Key-only genus come after every candidate of a
-// game genus of the source, in their own weighted draw, and only in its Colony and Close-up views (capViews): one
-// guessed to be a corallite photo (vg macro) is not proposed.
-// Judged candidates (suggest.json "cand", Pierre 2026-11-01: keep real diversity, sort by hand after a pre-sort): the
-// best photo of each view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
+// Order: random, but genus x view cells with few photos come up more often, so the gaps for the games fill first. Each
+// candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page)^3,
+// cubed so the genera that really lack photos weigh much more (of the first 50 of All, 30 from cells of 0-2 colonies, 2
+// from cells of 8+): its guessed view (vg, Claude's guess from the photo), else the genus's emptiest view; x3 when it completes a
+// colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo and per device), then
+// no two of the same genus in a row when it can be avoided.
+// Game genera first (isGame): the candidates of a Key-only genus come after every candidate of a game genus of the
+// source, in their own weighted draw, and only in its Colony and Close-up views (capViews): one guessed to be a
+// corallite photo (vg macro) is not proposed.
+// Judged candidates (suggest.json "cand": real diversity kept, sorted by hand after a pre-sort): the best photo of each
+// view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
 // other genera last. Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are
 // set aside (aside, below); every other candidate still comes up. Not judged yet = like a best Fair photo.
 const JK = {best: 1, alt: 0.3, dup: 0.04},
@@ -6561,10 +6561,10 @@ const JKT = {
   alt: 'another angle of its observation',
   dup: 'near-duplicate of another photo of its observation'
 };
-// Set aside by the pre-sort (Pierre, 2026-11-03: "il ne faut pas que je me retrouve à devoir faire des tris sur des choses
-// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing,
-// hand over the frame…), a comparison image, a near-duplicate of another photo of its observation (candidate or live),
-// a photo of several corals or a Poor one (rules learnt from 85 photos he rejected, judging/BRIEF.md), without any
+// Set aside by the pre-sort (no sorting by hand of the obvious): a candidate the judging agent found unusable (no coral,
+// aquarium, museum specimen or label, drawing, hand over the frame…), a comparison image, a near-duplicate of another
+// photo of its observation (candidate or live), a photo of several corals or a Poor one (rules learnt from 85 photos the
+// admin rejected, judging/BRIEF.md), without any
 // doubt (no `unsure`), no longer comes up; a count and a Show link keep them reachable. Same rule as
 // tools/excluded.py set_aside: keep both identical.
 const aside = p =>
@@ -6576,15 +6576,16 @@ const jLine = p => {
   return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}${p.mf ? ` · metrics: ${esc(p.mf)}` : ''}</p>`;
 };
 
-/* ---------- Auto-sort (autosort.js; Pierre, 2026-11-03: "take the obvious off my hands") ---------- */
-// What the candidate pass is sure of is decided without him: at each load of this page, autoRun() writes the sure
-// judgments into the draft exactly as his clicks would (add with the view, quality, growth form and suggested crop; ✕
+/* ---------- Auto-sort (autosort.js: the obvious decided without the admin) ---------- */
+// What the candidate pass is sure of is decided without the admin: at each load of this page, autoRun() writes the sure
+// judgments into the draft exactly as the admin's clicks would (add with the view, quality, growth form and suggested crop; ✕
 // Reject; × exclude), and logs each one in curation.json "auto" (autosort.js has the format). Publish sends them like any
 // draft, merged key by key (merge3); Undo takes the whole run back in one step; Auto › Undo on one decision sends that
-// photo back to Candidates for good. About 1 in 20 sure candidates is not applied but shown to him, blind, with a Check
-// tag (autoCheck); his answer against the judgment, and any later correction of an auto decision, give the agreement
-// per field (autoCompare, autoState); a field under its threshold stops being applied until it recovers. Once every
-// AUTO.retest candidates he decides, a photo he rated before comes back blind (Retest): his consistency, the ceiling.
+// photo back to Candidates for good. About 1 in 20 sure candidates is not applied but shown to the admin, blind, with a
+// Check tag (autoCheck); the answer against the judgment, and any later correction of an auto decision, give the
+// agreement per field (autoCompare, autoState); a field under its threshold stops being applied until it recovers. Once
+// every AUTO.retest candidates decided, a photo the admin rated before comes back blind (Retest): the admin's
+// consistency, the ceiling.
 let METRICS = {},
   MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
   ADET = false, // this tab: Auto details open
@@ -6618,7 +6619,7 @@ function autoRun() {
     const add = entry(n).add || {},
       vs = capViews(n).map(x => x[0]);
     cands(n).forEach(p => {
-      // Not a photo Pierre sent here from another genus, judged, not stopped by the metrics, not decided.
+      // Not a photo the admin sent here from another genus, judged, not stopped by the metrics, not decided.
       if (p.from || !p.j || p.mf || add[p.f] || rejected(p.f) || idx[p.f]) return;
       const s = autoSure(p.j);
       if (!s) return;
@@ -6630,9 +6631,9 @@ function autoRun() {
     });
   });
   if (!plan.length) return null;
-  // Each cell fills up to its cap (capOf, colonies): source priority first (rule P1, oIdx: IMR, Pierre's own,
-  // then other observers; Codex review #400: another observer's Good photo took the last slot ahead of Pierre's Fair
-  // one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
+  // Each cell fills up to its cap (capOf, colonies): source priority first (rule P1, oIdx: IMR, Pierre's own, then
+  // other observers, so another observer's Good photo never takes the last slot ahead of Pierre's Fair one), then Good
+  // before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
   // that do not fit wait in their full cell, as candidates.
   const sh = p => (METRICS[p.f] || [0])[0];
   plan.sort(
@@ -6668,7 +6669,7 @@ function autoRun() {
       if (!fits(n, s.view, p)) return R.full++;
       const k = (DRAFT.genera[n] = {...entry(n)});
       k.add = {...(k.add || {}), [f]: s.view};
-      // A rating, form or crop Pierre already gave this candidate stays his (logged "." : not an auto value).
+      // A rating, form or crop the admin already gave this candidate stays (logged "." : not an auto value).
       const set = {quality: on.quality && !qSet(f), form: on.form && !mineF(f)};
       if (set.quality) DRAFT.quality = {...(DRAFT.quality || {}), [f]: s.quality};
       if (set.form) DRAFT.gf = {...(DRAFT.gf || {}), [f]: s.form};
@@ -6691,15 +6692,15 @@ function autoRun() {
   saveDraft();
   return R;
 }
-// The fish auto-sort (admin plan PR 4; autosort.js fishRun): the same path for the fish candidates (fish-cand.json,
-// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs
-// only when the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out"
-// (Pierre's Not this) and never touches a photo he decided. Its keep agreement (fishCompare, autoState) turns it off.
+// The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (fish-cand.json, judged in
+// suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs only when
+// the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out" (the
+// admin's Not this) and never touches a photo the admin decided. Its keep agreement (fishCompare, autoState) turns it off.
 let FISHC = null; // the tree subject in force's family pages' data, once loaded (TLOAD's, by subject)
 // The candidates and units of tree subject S (SUBJECTS admin files: its tree f and its candidates cand), fetched once
 // (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, an Undo needs a candidate's species, or a page shows
 // them). withGame (the family pages): also the photos the game plays (its files gm: fish-game.json, 3 MB), so that counts
-// and lists show every photo in play whatever its route (Pierre's adds, the sure candidates and the reference photos that
+// and lists show every photo in play whatever its route (the admin's adds, the sure candidates and the reference photos that
 // enter by themselves), not curation.json's adds alone. Not fetched for the auto-sort's own use. Each subject's loads and
 // data are its own (TLOAD: {C its data, L its first load, G its game load}), so a load still on its way when the subject
 // on screen changes lands in its own subject; FISHC is the one in force's (treeIn).
@@ -6793,7 +6794,7 @@ async function fishAutoRun() {
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
 async function fishAutoUndo(f) {
   const p = ASORT && (await fishLoad(false, ASORT)).byF[f];
-  // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to Pierre.
+  // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to the admin.
   if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
   const F = fishUndo(DRAFT[AK], f, p.sid);
   if (F === DRAFT[AK]) return;
@@ -6806,7 +6807,7 @@ const fishToast = R =>
   `Fish auto-sort: ${R.add} proposed in, ${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
 const autoToast = R =>
   `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
-// One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value Pierre changed since stays his),
+// One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value the admin changed since stays),
 // the log keeps it marked undone so it is never applied again, and the photo is a candidate again. One Undo step.
 function autoUndo(f) {
   const x = aOf(f);
@@ -6820,8 +6821,8 @@ function autoUndo(f) {
     };
   if (d.kind === 'a') {
     // Only the add it wrote: in the candidate's own genus (autoRun decides a candidate in its genus only), still in the
-    // view it chose. An add Pierre made since stays his: in the genus he sent the photo to with Not this genus, or in
-    // the view he moved it to (Codex review #400: Undo deleted his approval in the other genus).
+    // view it chose. An add the admin made since stays: in the genus the photo was sent to with Not this genus, or in
+    // the view it was moved to.
     const n = (PHOTOS[f] || {}).genus,
       k = n && DRAFT.genera[n];
     if (k && (k.add || {})[f] === d.view) {
@@ -6841,7 +6842,7 @@ function autoUndo(f) {
   saveDraft();
   render();
   // An auto exclusion keeps its candidate entry (tools/excluded.py drop_excluded), so the photo comes back; one whose
-  // entry left the candidate files anyway cannot, and the toast says so (Codex review #400).
+  // entry left the candidate files anyway cannot, and the toast says so.
   toast(
     PHOTOS[f]
       ? 'Auto decision undone: the photo is back in Candidates.'
@@ -6880,7 +6881,7 @@ const evid = f => {
     .filter(Boolean)
     .join(' · ');
 };
-// After Pierre answers a Check: the agent's answer, and where they differ.
+// After the admin answers a Check: the agent's answer, and where they differ.
 function checkToast(f) {
   const x = aOf(f);
   if (!x || !x.d.check) return;
@@ -6891,7 +6892,7 @@ function checkToast(f) {
   toast(`Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`);
 }
 // The Auto chip at the end of the swiper's toggles: unfolds the agreement line (AOPEN). Folded by default, so the photo
-// and the decision buttons fit one phone screen (Pierre, 2026-11-06); off = a field (or the fish keep) turned off.
+// and the decision buttons fit one phone screen; off = a field (or the fish keep) turned off.
 const autoChip = off =>
   `<button type="button" class="adm-chip adm-cauto${off ? ' off' : ''}" data-aopen aria-expanded="${AOPEN}" title="The auto-sort's line: its decisions and its agreement with you${off ? ' (one turned off)' : ''}">Auto${off ? ' · off' : ''}</button>`;
 // The swiper's row of toggles (what the queue leaves out) with the Auto chip last.
@@ -7005,9 +7006,9 @@ function bindAuto(scope) {
     if (z) z.onclick = () => PHOTOS[f] && zoomOne(PHOTOS[f]);
   });
 }
-// Blind retest (test-retest of Pierre's own ratings): a photo he rated himself (not by the auto-sort), never retested,
-// in a fixed order per photo; quality, and growth form when he gave one. His second answer goes to curation.json
-// "retest" only: his first rating stays as it is.
+// Blind retest (test-retest of the admin's own ratings): a photo the admin rated (not the auto-sort), never retested,
+// in a fixed order per photo; quality, and growth form when one was given. The second answer goes to curation.json
+// "retest" only: the first rating stays as it is.
 function retestNext() {
   if (CDONE < AUTO.retest) return null;
   const R = DRAFT.retest || {},
@@ -7090,7 +7091,7 @@ function candQueue(src) {
     const vs = capViews(n).map(x => x[0]);
     let v = p.vg || p.view;
     if (v === 'medium' && lv(n) === 2) v = 'wide';
-    // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
+    // A candidate from a colony already in games at another zoom counts 3x: game questions only
     // show views of one colony, so completing a colony adds a several-zoom question.
     const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
     return ((chk ? 1 : jw(p)) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
@@ -7106,8 +7107,8 @@ function candQueue(src) {
       if (v && VIEWS.some(x => x[0] === v) && !vs.includes(v)) return;
       const full =
           gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= capOf(n) && !(p.o && O[n + '|' + v].has(p.o))),
-        // The auto-sort (autoRun): a Check waiting for Pierre always comes up (full cell or set aside, it is his to
-        // answer); an auto decision he undid, or a sure judgment the metrics contradict (p.mf), is never set aside.
+        // The auto-sort (autoRun): a Check waiting for the admin always comes up (full cell or set aside, it is the
+        // admin's to answer); an auto decision undone, or a sure judgment the metrics contradict (p.mf), is never set aside.
         ax = aOf(p.f),
         chk = !!(ax && ax.d.check),
         und = !!(ax && ax.d.undone);
@@ -7124,8 +7125,8 @@ function candQueue(src) {
   return out;
 }
 let candKey = null;
-// Which colony of a full cell to retire for a new one (Pierre, 2026-11-02: semi-automatic, for the most variety in the
-// games: easy and hard photos, every growth form, several observers). Kept, never suggested: a colony with a photo among
+// Which colony of a full cell to retire for a new one (semi-automatic, for the most variety in the games: easy and
+// hard photos, every growth form, several observers). Kept, never suggested: a colony with a photo among
 // the first SHEET of the view (the sheet's references), IMR lecture and Pierre's own photos, the only colony of a growth
 // form. Among the others, the most to retire first: Poor quality; then a difficulty the cell already has (rated
 // colonies, the nearest other colony's difficulty within 0.5) and many answers (well known, little left to learn
@@ -7265,9 +7266,9 @@ function renderCand() {
   status();
   if (CREPL) return renderRepl();
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full) && (CASIDE || !x.aside);
-  // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
-  // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
-  // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
+  // An empty source gives way to the first source, in priority order, that still has candidates to go through, rather
+  // than open on "No candidate left". Only a source with no candidate at all: one whose candidates are skipped or wait
+  // in full cells stays, so they can still be shown.
   if (!candQueue(CSRC).length) {
     const s = FB.srcs()
       .map(([k]) => k)
@@ -7284,8 +7285,8 @@ function renderCand() {
     nx = live[1];
   const seg =
     FB.sources(CSRC, s => (s === CSRC ? live.length : candQueue(s).filter(shown).length)) +
-    // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
-    // the photo on a phone); each chip's tooltip says what it is.
+    // What the queue leaves out, as one row of small toggles (lines of notes would take the photo's room on a phone);
+    // each chip's tooltip says what it is.
     candFlags(
       `${
         nFull
@@ -7296,7 +7297,7 @@ function renderCand() {
           ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
           : ''
       }${
-        // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
+        // Reminder: the judging agent runs on demand.
         nJ
           ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/BRIEF.md)">${nJ} not judged yet</span>`
           : ''
@@ -7311,7 +7312,7 @@ function renderCand() {
   } else {
     const {p, n, chk} = c,
       views = capViews(n),
-      // A Check is blind (Pierre's answer is compared with the judgment): no judgment line, no dashed guesses, no
+      // A Check is blind (the admin's answer is compared with the judgment): no judgment line, no dashed guesses, no
       // suggested view or crop; a Check tag instead.
       pb = chk ? {...p, j: null} : p,
       sug = w => !chk && (p.vg || p.view) === w;
@@ -7380,7 +7381,7 @@ function renderCand() {
         told();
       };
     S.querySelector('[data-zoom]').onclick = () => zoomOne({...pb, genus: n});
-    // Blind on a Check too: the editor starts from Pierre's own crop or the full photo, not the agent's (Codex review #400).
+    // Blind on a Check too: the editor starts from the admin's own crop or the full photo, not the agent's.
     S.querySelector('[data-crop]').onclick = () => cropEditor(pb);
     bindQ();
     bindF(S);
@@ -7409,7 +7410,7 @@ function renderCand() {
 }
 // The swipers' keys (the corals' and the fish's, admin-fish.js): ← Reject, → Skip, 1-3 the Add buttons.
 // Where the swiper starts on the page, under the header, the tab row and the demo banner (admin.css .adm-sw: its
-// height is the screen below it, so the decision bar stays on the first screen; Pierre, 2026-11-06). Read after each
+// height is the screen below it, so the decision bar stays on the first screen). Read after each
 // swiper render and when something above it changes size.
 function swFit() {
   const S = $v.querySelector('.adm-sw');
@@ -7448,8 +7449,8 @@ function candKeys() {
 }
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
 // The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
-// local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
-// ⟲ / ⟳ turn the photo a quarter left or right, 0° puts it back (Pierre, 2026-11-08: curation.json rot): the photo and
+// local file, which is already cropped once a crop has been applied (re-editing it would compound the two crops).
+// ⟲ / ⟳ turn the photo a quarter left or right, 0° puts it back (curation.json rot): the photo and
 // its frame turn together (a CSS rotate of the box), the frame staying in fractions of the original, as the workflow
 // cuts the crop first and then turns it (tools/photos.py turn). Save writes the crop and the rotation as one Undo step.
 // opt (the fish Candidates, admin-fish.js): {start, rot, save(v, full, rot)} in place of the coral crops and rotations.
@@ -7474,8 +7475,8 @@ function cropEditor(p, opt) {
       height: (c[3] - c[1]) * 100 + '%'
     });
   };
-  // On a touch screen the photo keeps EDGE px from each side (Pierre, 2026-11-02: a crop dragged to the screen's edge
-  // set off the phone's back / forward swipe, and the page changed).
+  // On a touch screen the photo keeps EDGE px from each side: a crop dragged to the screen's edge would set off the
+  // phone's back / forward swipe, and the page would change.
   const EDGE = matchMedia('(pointer: coarse)').matches ? 40 : 12;
   // Turned a quarter, the box (the photo's own frame) shows h x w: it is sized so that fits, and its margins give the
   // page the room it takes turned.
@@ -7565,7 +7566,7 @@ function cropEditor(p, opt) {
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
           // An empty map stays (output() leaves it out of the file): with the key gone, the next merge (merge3) would drop
-          // the rotations another device published meanwhile, as a reset crop leaves DRAFT.crop {} (review #793).
+          // the rotations another device published meanwhile, as a reset crop leaves DRAFT.crop {}.
           DRAFT.rot = rotSet(DRAFT.rot, p.f, ro);
           saveDraft();
         }
@@ -7672,7 +7673,7 @@ const output = () => {
   const trees = TREES.map(S => [S.admin.cur, fishOut(DRAFT[S.admin.cur])]).filter(([, v]) => Object.keys(v).length);
   // The content editor's edits of the subject whose part is the top level (core.js contentOut: sorted, no empty map).
   const content = contentOut(DRAFT.content);
-  // Pierre's state of the points to handle (To do › Points): by point id, each point's fields sorted.
+  // The admin's state of the points to handle (To do › Points): by point id, each point's fields sorted.
   const points = {};
   Object.keys(DRAFT.points || {})
     .sort()
@@ -7737,7 +7738,7 @@ function fishOut(F) {
     });
   return out;
 }
-// Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
+// Who publishes, shown in the commit message: the token's GitHub login, else the
 // name synced in this browser. Looked up once per page; a failure only leaves the name out.
 let AUTHOR;
 const author = async () =>
@@ -7748,7 +7749,7 @@ const author = async () =>
           .then(r => (r.ok ? r.json() : {}))
           .then(j => j.login || '')
           .catch(() => '')) || ((store.get('reefid-account', null) || {}).name || '').trim());
-// What Publish will send, asked before it goes (admin review, 2026-11-01): counts per kind of change, then the genera
+// What Publish will send, asked before it goes: counts per kind of change, then the genera
 // touched with what changed in each.
 const nDiff = (a, b) =>
   [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])].filter(k => !same((a || {})[k], (b || {})[k])).length;
@@ -7801,7 +7802,7 @@ function pubSummary() {
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
     [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
-    // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
+    // Decisions, not the times of the admin's answers (@t, autoWhen): the answer is counted under its own kind above.
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
     [nDiff(DRAFT.retest, SAVED.retest), 'retest'],
     // Each tree subject's part (curation.json "fish", "seaslug": SUBJECTS admin.cur), in its words (SUBJECTS card): the
@@ -7933,11 +7934,10 @@ async function start() {
     new ResizeObserver(() =>
       document.documentElement.style.setProperty('--sub-h', sb.offsetHeight ? sb.offsetHeight + 6 + 'px' : '0px')
     ).observe(sb);
-  // The same words as the page before the script ran: "Loading…" then "Loading photos…" looked like two steps on any
-  // page, Players included (Pierre, 2026-11-02).
+  // The same words as the page before the script ran: two different words would look like two steps on any page,
+  // Players included.
   $v.innerHTML = '<p class="note">Loading…</p>';
-  // Every file at once, each fetched once (Pierre, 2026-11-03: admin pages load slower and slower; dups.json and cand.json
-  // waited for data.json, and forms.json was fetched four times).
+  // Every file at once, each fetched once: none waits for data.json.
   const files = {},
     side = (u, k) =>
       (files[u] =
@@ -8016,7 +8016,7 @@ async function start() {
         (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
       }
     });
-  // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to Pierre, with the reason.
+  // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to the admin, with the reason.
   const SH = Object.values(DATA.cand)
     .flat()
     .filter(p => p.r && METRICS[p.f])
@@ -8060,7 +8060,7 @@ async function start() {
   // (draftMove); this token's draft sealed at its last Sign out is opened into it, under a newer plain draft left in
   // this browser (that one wins where both changed), in the transaction that writes them (admin-draft.js load).
   let L = {old: null, base: null};
-  // No store (IndexedDB unavailable, or its first read failed: Codex review #1078): nothing is kept, leaving the page warns.
+  // No store (IndexedDB unavailable, or its first read failed): nothing is kept, leaving the page warns.
   const noStore = () => {
     DW = null;
     if (TOKEN) {
@@ -8112,7 +8112,7 @@ async function start() {
     putDraft();
     keepHist();
   }
-  // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
+  // The admin's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags();
   if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see To do.`), 50);
@@ -8125,9 +8125,8 @@ async function start() {
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const ar = TOKEN && autoRun();
   if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-  // The fish auto-sort once the first page is drawn and the page is idle (performance pass, 2026-11-09): it reads
-  // fish-cand.json, 9 million characters, which shared the line and the main thread with the first page; its decisions
-  // are the same, one Undo step as before.
+  // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
+  // which would share the line and the main thread with the first page. One Undo step.
   const fishLater = () =>
     fishAutoRun().then(R => {
       if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
@@ -8169,11 +8168,10 @@ async function start() {
       redo();
     }
   });
-  // The page opens on Players › Activity, the recent sessions, phone and desktop (Pierre, 2026-11-05: what he looks at
-  // first; Players › List from 2026-11-04, the candidates or the first genus before).
+  // The page opens on Players › Activity, the recent sessions, phone and desktop: what the admin looks at first.
   readHash();
-  // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
-  // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
+  // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs. A link without
+  // a prefix clicked on a subject's page (a player's journey from Players) is given that
   // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject, and so
   // does a link that names its subject itself (data-own: a journey link on the list of players, a journey's own toggle),
   // and a shared page's link keeps no prefix (SHARED).
@@ -8201,7 +8199,7 @@ async function start() {
     render();
     window.scrollTo({top: 0});
   };
-  // New versions (Pierre, 2026-11-02, same as the app): sw.js is checked again when the page comes back into view (5 min
+  // New versions, as in the app: sw.js is checked again when the page comes back into view (5 min
   // apart) and every 30 min; once a new version has taken over in the background, the page reloads itself when it next
   // comes into view or at the next page change. Every click is already in the draft, so nothing is lost (the undo
   // history starts again).
@@ -8222,8 +8220,9 @@ async function start() {
     setInterval(() => document.visibilityState === 'visible' && swCheck(), 1800000);
   }
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed, or
-  // is still on its way (draftBusy: a reload in the few milliseconds after a click). A note or answer typed on a point's page in the last 0.8 s reaches the draft when the page is left or hidden (a reload,
-  // a closed tab, a phone sending the browser to the background: Codex review #571).
+  // is still on its way (draftBusy: a reload in the few milliseconds after a click). A note or answer typed on a point's
+  // page in the last 0.8 s reaches the draft when the page is left or hidden (a reload, a closed tab, a phone sending
+  // the browser to the background).
   addEventListener('pagehide', () => ptFlush());
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && ptFlush());
   window.onbeforeunload = e => {
@@ -8233,7 +8232,7 @@ async function start() {
       e.returnValue = '';
     }
   };
-  // Every photo shows its file name in small, plain and selectable, so Pierre can quote it (hidden on phones, CSS).
+  // Every photo shows its file name in small, plain and selectable, so the admin can quote it (hidden on phones, CSS).
   const fid = () =>
     $v.querySelectorAll('figure[data-f] figcaption, .adm-sw[data-f] .adm-swcard figcaption').forEach(c => {
       if (c.querySelector('.adm-fid')) return;
@@ -8248,7 +8247,7 @@ async function start() {
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
-// The unlocked token lives in sessionStorage only (Pierre, 2026-11-01, code review H1): it survives reloads in this tab and
+// The unlocked token lives in sessionStorage only: it survives reloads in this tab and
 // is gone when the browser closes, so the plain token never stays on disk. localStorage only holds the encrypted vault.
 const SESSION = SK('reefid-admin-session'),
   SESSION_GEN = SK('reefid-admin-session-gen');
@@ -8267,8 +8266,8 @@ const sess = {
     } catch (e) {}
   },
   // The draft store's generation this session was opened in (admin-draft.js load), kept beside it: a session restored at
-  // a reload whose token signed out since, in another tab, opens no seal and locks (Codex review #1078: a discarded tab
-  // missed the sign out). None kept counts as 0: refused once the token has signed out.
+  // a reload whose token signed out since, in another tab (a discarded tab misses the sign out), opens no seal and
+  // locks. None kept counts as 0: refused once the token has signed out.
   gen() {
     try {
       return +sessionStorage.getItem(SESSION_GEN) || 0;
@@ -8351,11 +8350,11 @@ async function draftOpen() {
   // A tab coming back into view checks the store at once (a phone's frozen tab may have missed a sign-out's message).
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && TOKEN && !signingOut && putDraft());
 }
-// The draft kept in localStorage by the admin before IndexedDB (reefid-curation-draft and -base, until 2026-11-18): moved
-// into the store once, merged under a draft already there, then its keys removed, under their names from before the
-// rename too (core.js keyBefore); a move that fails keeps them for the next start (rule W3: migrated once, in the data).
-// Remove draftMove (and admin-draft.js migrate) once each browser Pierre opens the admin in has loaded this version,
-// which the admin does by itself at its next page change: from 2026-12-18 at the latest (docs/ROADMAP.md).
+// A draft an older admin kept in localStorage (reefid-curation-draft and -base): moved into the store once, merged under
+// a draft already there, then its keys removed, under their old names too (core.js keyBefore); a move that fails keeps
+// them for the next start (rule W3: migrated once, in the data). draftMove (and admin-draft.js migrate) goes once every
+// browser the admin is opened in has loaded this version, as the admin does by itself at its next page change: from
+// 2026-12-18 at the latest (docs/ROADMAP.md).
 async function draftMove() {
   const d = store.get('reefid-curation-draft', null),
     b = store.get('reefid-curation-base', null);
@@ -8375,8 +8374,8 @@ async function draftMove() {
     } catch (e) {}
   });
 }
-// Sign out leaves no draft to the next person on this browser (second admin review, 2026-11-01: on a shared device the
-// next admin inherited it and could publish it). The unpublished draft is sealed with this admin's token (AES-GCM, the
+// Sign out leaves no draft to the next person on this browser (on a shared device the next admin would inherit it and
+// could publish it). The unpublished draft is sealed with this admin's token (AES-GCM, the
 // key a SHA-256 of the token) and the plain draft and its base are taken off, in one transaction (admin-draft.js seal),
 // so another admin's token, a read-only visit and the site's ?draft preview see none of it; unlocking again with the
 // same token opens it (start). A draft with nothing unpublished is only taken off; nothing unpublished is ever cleared
@@ -8387,7 +8386,7 @@ async function draftMove() {
 let soWarned = 0,
   signingOut = false;
 // A "Sealing…" layer over the page, every editor out of reach (inert), the field being typed in left first so what it
-// holds reaches the draft (Codex review #798: a note typed while it sealed was lost).
+// holds reaches the draft (a note typed while it seals is not lost).
 function sealing(on) {
   let o = document.querySelector('.adm-sealing');
   if (on) {
