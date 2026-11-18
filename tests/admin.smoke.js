@@ -5837,8 +5837,8 @@ const darkCards = (p, sel) =>
     }
     // Photo stats › Overview on the fish side (fish admin at parity): the corals' cards in the fish words (families,
     // observations, circles, the fish sources), every photo of the fish data in one row of All photos, the circles adding
-    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's script here
-    // logs no fish answer: every photo in play in None; with answers, the fresh fish session below), Fewest and most
+    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's made-up fish
+    // answers: some photos answered, the others in None; a fresh fish session's, below), Fewest and most
     // opening the families' Tree pages, no coral genus, no photo difficulty, no sideways scroll, dark in the dark theme;
     // the corals' Difficulty is not a fish page. At 390 and 1280.
     {
@@ -5893,7 +5893,7 @@ const darkCards = (p, sel) =>
         fo.fams !== fo.want.fams ||
         fo.src.join() !== fo.want.src.join() ||
         fo.ans.reduce((t, r) => t + r[1], 0) !== fo.pool['In play'] ||
-        fo.ans[0][1] !== fo.pool['In play'] ||
+        !(fo.ans[0][1] < fo.pool['In play']) ||
         fo.ends !== 10 ||
         fo.coral.length ||
         fo.words ||
