@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// Sea-slug candidate photos (tools/fetch_seaslugs.py, seaslug-cand.json; Pierre, 2026-11-15, Q369, Q377 and #970's egg
-// rule): the egg filter, the licence filter, one photo per observation, the juvenile room of a documented juvenile form,
-// the Philippines before abroad, the record shape of fish-cand.json. The network is stubbed: the whole script runs on a
+// Sea-slug candidate photos (tools/fetch_seaslugs.py, seaslug-cand.json): the egg filter, the licence filter, one photo
+// per observation, the juvenile room of a documented juvenile form, the Philippines before abroad, the record shape of
+// fish-cand.json. The network is stubbed: the whole script runs on a
 // fixture cache with --offline (a request not in it stops the run), nothing here asks iNaturalist. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -77,7 +77,7 @@ print(json.dumps([[it(ob(1, lic=x)) for x in ('cc0', 'cc-by', 'cc-by-nc', 'cc-by
     null, // genus level
     [70, 'cc-by', 0, false], // abroad in the Indo-West Pacific (Bali)
     null, // abroad outside it (Red Sea)
-    [90, 'cc-by-nc', 0, true], // his Needs ID observation identified to the species: usable (Q386); his own ranks as open
+    [90, 'cc-by-nc', 0, true], // his Needs ID observation identified to the species: usable; his own ranks as open
     null, // his Needs ID at the genus: not a species photo
     [120, 'cc-by', 0, true], // below the species (a subspecies) counts as the species
     null, // his, annotated Egg: the egg rule holds for him too
@@ -265,7 +265,7 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// The sea slugs without a species name (Pierre, 2026-11-17, Q389): the genus-level observations agreed by 2 current
+// The sea slugs without a species name: the genus-level observations agreed by 2 current
 // identifications become candidates of their genus unit (gl), and a species with no name yet (tools/seaslug_informal.json)
 // gets its presence (3 observers with its label) and its candidates from the observations carrying its label.
 test('agreement: identifications at the genus or below agree, off its line disagree, a coarser one on its line neither', () => {
@@ -398,7 +398,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// Q377's "30 at most" for the very variable genera (photoTarget.maxGenera: Chromodoris, Phyllidia), a photo target per
+// The ceiling of 30 for the very variable genera (photoTarget.maxGenera: Chromodoris, Phyllidia), a photo target per
 // species (docs/reviews/2026-11-15-seaslug-list.md 5.3): their species have the ceiling as their target, never above it.
 test('the photo target: 30 for a species of a very variable genus (maxGenera), 20 for the others, never above max', () => {
   const out = J(`
@@ -561,8 +561,8 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// A species with no name (tools/seaslug_informal.json) is its label (Q389 (2)): an egg-only observation of its list
-// brings its next photo only while it still carries that label as label_query asks it (Codex review #1046).
+// A species with no name (tools/seaslug_informal.json) is its label: an egg-only observation of its list
+// brings its next photo only while it still carries that label as label_query asks it.
 test('egg masses of a species with no name: the next photo only while its observation still carries the label', () => {
   const out = J(`${OBS}
 from fetch_fish import Net

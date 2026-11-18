@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// The sea slugs' sourced ID marks (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7; Pierre, 2026-11-17:
-// complete what is missing for the nudibranchs): tools/seaslug_cues.json, checked and built into seaslug.json genera and
+// The sea slugs' sourced ID marks (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7): tools/seaslug_cues.json, checked and built into seaslug.json genera and
 // families (marks, msrc, mby) by tools/seaslug_cues.py through tools/seaslug_game.py, shown on the sheets (learn.js
-// genMarks, fishMarks) and, a genus's, in the quiz feedback (app.js fishGenera). Every line has a source (rule C2), is
+// genMarks, fishMarks) and, a genus's, in the quiz feedback (app.js treeGenera). Every line has a source (rule C2), is
 // short (rule C3) and names only the genus's own game species (rule C6); the sheets speak the sea slugs' words (app.js
 // UNITS seaslug words).
 const test = require('node:test'),
@@ -36,7 +35,9 @@ test('every line has a source: each ref a key of src and where in it, each sourc
     assert.match(s.u, HOSTS, `${k}: ${s.u}`);
   }
   const used = new Set();
-  for (const [n, x] of [...Object.entries(M.genera), ...Object.entries(M.families)])
+  // the marks, and the genus pairs' tell-apart lines (apart: tests/tellapart.test.js)
+  const pairLines = Object.entries(M.apart || {}).map(([k, P]) => [k, {marks: Object.values(P)}]);
+  for (const [n, x] of [...Object.entries(M.genera), ...Object.entries(M.families), ...pairLines])
     for (const [words, rr] of x.marks) {
       assert.ok(rr.length, `${n}: '${words}' has no source`);
       for (const [key, where] of rr) {

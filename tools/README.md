@@ -2,8 +2,8 @@
 
 Scripts that build, check and analyse the data, the site and the work around them. Run them from the repository root
 (`python3 tools/<name>.py`, `node tools/<name>.js`). The header of each file says its usage, what it reads and what it
-writes. [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) "Tools" holds
-the long descriptions, [docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
+writes. [docs/spec/tools.md](../docs/spec/tools.md) holds the long descriptions (inputs, outputs, options, tests),
+[docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
 
 Conventions that hold across them:
 
@@ -73,6 +73,7 @@ Conventions that hold across them:
 | `apply_plain_terms.py` | The glossary's plain first sentences |
 | `apply_name_roots.py` | The sourced roots of genus names |
 | `apply_id_tips.py`, `id_tips.txt` | Writes the short ID tips into `data.json` |
+| `apply_coral_apart.py`, `coral_apart.json` | The slate pairs' tell-apart lines with their sources, into `data.json` `ap` / `apsrc`; `--check` for a test |
 | `apply_imr_corrections.py`, `apply_review_slides.py`, `apply_favites.py`, `apply_some_species.py` | One-time content passes on the lecture notes and the traits of some genera |
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
 | `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |
@@ -114,6 +115,7 @@ Conventions that hold across them:
 | `fish_names.py` | The kind words of common names, written into `fish.json` |
 | `fish_facts.py` | Size and depth facts for species sheets, with their sources |
 | `fish_genus_roots.json`, `fish_genus_marks.json` | Name roots and ID marks of fish genera, read by `build_fish.py` |
+| `fish_lookalikes.json` | Species look-alike pairs and regional species, quoted from their sources; `build_fish.py` `lookalikes` writes `fish.json` `lookalikes` and `region` |
 | `fetch_fish.py`, `fish_refill.json` | Fish candidate photos into `fish-cand.json`; `--refill` for short species |
 | `fetch_fishbase.py`, `fishbase_src.json` | Fish candidates from FishBase |
 | `fish_refs.py`, `fish_refs.json` | Reference photos of the fish units |
@@ -131,7 +133,7 @@ Conventions that hold across them:
 | `seaslug_game.py` | Builds `seaslug.json`, `seaslug-game.json` from the list and the judged candidates |
 | `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `seaslug-cand.json`; species with no published name |
 | `seaslug_names.py`, `seaslug_names_src.json`, `seaslug_names.json` | English common names with their sources |
-| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family |
+| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family, and the declared genus pairs' tell-apart lines |
 | `seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`, `seaslug_lookalikes_pull.json`, `seaslug_lookalikes_cand.json` | Look-alike candidates from iNaturalist and the literature |
 | `seaslug_worms.py`, `seaslug_worms.json`, `seaslug_groups.json` | The reference taxonomy from WoRMS and the hand-kept taxonomic groups |
 | `seaslug_lit.py`, `seaslug_lit_source.json`, `seaslug_lit.json` | The literature watch: new names and revisions, read by people only |

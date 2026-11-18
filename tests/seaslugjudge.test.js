@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Sea slug photo judging (judging/SEASLUG.md; Pierre, 2026-11-15, Q369, Q373, Q377 and #970's egg rule): the fish's
+// Sea slug photo judging (judging/SEASLUG.md, its egg rule included): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
 // left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, the juvenile cap, f and w
 // capping nothing), the judging files' check (keep optional, the egg rule, no phase or box), the import into suggest.json
@@ -40,7 +40,7 @@ print(json.dumps({
     [3, 'd0g0sl1'], // partial
     [2, 'd1g0sl1j'], // a juvenile: no juvenile class for sea slugs
     [5, 'd1g0sl1f'], // rhinophores or gills hidden: the ease scale's, not a cap
-    [5, 'd1g0sl1w'], // watermark (Q373)
+    [5, 'd1g0sl1w'], // watermark
     [3, 'd1g0sl1c'],
     [3, 'd1g2sl1'],
     [2, 'd1g3sl1'],
@@ -215,7 +215,7 @@ inf = json.load(open('tools/seaslug_informal.json'))
 print(json.dumps([len(JF.SP), sum(1 for s in src['species'] if s.get('inat')) + len(inf['species']) + len({s['genus'] for s in src['species']}),
                   JF.ids(['Chromodoris annae']), JF.SUBJECT, JF.JDIR, [k for k in JF.CAND if k not in JF.SP], len(JF.CAND),
                   JF.ids(['Goniobranchus', 'Goniobranchus sp. 5']), JF.SP['Goniobranchus']['name']]))`);
-  // the species by taxon id, the species with no name yet by key, the genus-level lists by genus name (Q389)
+  // the species by taxon id, the species with no name yet by key, the genus-level lists by genus name
   assert.ok(out[0] > 0 && out[0] === out[1]);
   assert.deepStrictEqual(out[2], ['119434']);
   assert.deepStrictEqual(out.slice(3, 5), ['seaslug', path.join('judging', 'seaslug')]);

@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The fish curation (curation.json "fish", admin plan PR 4; autosort.js "Fish curation", admin.js fishAutoRun,
-// fishOut): the fish auto-sort proposes the pass's sure judgments up to each species' target, never touches what Pierre
-// decided (his "Not this" above all: only his click writes it, and a photo he marked so is never proposed again), and
+// The fish curation (curation.json "fish"; autosort.js "Fish curation", admin.js fishAutoRun,
+// fishOut): the fish auto-sort proposes the pass's sure judgments up to each species' target, never touches what the admin
+// decided (the "Not this" above all: only the admin's click writes it, and a photo marked so is never proposed again), and
 // fish edits never touch a coral key, in the draft, in the Publish merge or in the published file.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -64,7 +64,7 @@ test('fishRun: sure adds up to the target, the easiest first whoever took them; 
   };
   const sug = {};
   cands.s2.forEach((p, i) => (sug[p.f] = sure(1 + (i % 5))));
-  sug[ids[11]] = sure(1); // Pierre's own, very hard
+  sug[ids[11]] = sure(1); // the admin's own, very hard
   sug[ids[20]] = {...sure(5), ph: 'female', c: [0.1, 0, 0.9, 1]};
   sug[ids[21]] = sure(3, 'alt'); // the same observation: joins it for free
   sug[ids[22]] = sure(4, 'dup');
@@ -73,7 +73,7 @@ test('fishRun: sure adds up to the target, the easiest first whoever took them; 
   assert.deepStrictEqual(R, {add: 10, reject: 1, check: 1, full: 4, off: 0});
   const in2 = Object.keys(F.add).filter(f => F.add[f] === 's2');
   assert.strictEqual(in2.length, 8, 'species s2 filled to its target of 8 observations');
-  // Pierre's own photo (ease 2) has no priority (Pierre, 2026-11-06): it waits behind easier ones.
+  // The admin's own photo (ease 2) has no priority: it waits behind easier ones.
   assert.ok(!in2.includes(ids[11]), "Pierre's own photo is not forced in");
   const eases = in2.map(f => sug[f].e);
   assert.ok(Math.min(...eases) >= Math.max(...cands.s2.filter(p => !in2.includes(p.f)).map(p => sug[p.f].e)), 'the easiest first');
@@ -100,7 +100,7 @@ test('fishRun never touches what Pierre decided: his Not this above all, his rej
   assert.deepStrictEqual([F.out, F.seen, F.exclude], [mine.out, mine.seen, mine.exclude]);
   assert.deepStrictEqual([F.tags[e], F.ease[e]], ['o1g0sm1', 2], 'his tags and ease stay his');
   assert.ok(!(a in F.add), 'a photo he marked Not this is never proposed again');
-  // Not this wins over an add (his or the auto-sort's): the photo counts as not kept.
+  // Not this wins over an add (the admin's or the auto-sort's): the photo counts as not kept.
   assert.strictEqual(fishMine({add: {[a]: 's1'}, out: {[a]: 's2'}}, a), 'reject');
 });
 
@@ -168,7 +168,7 @@ test('fishUndo: one fish auto decision taken back, never applied again; a value 
     day = '2026-11-04';
   const {F} = fishRun(cands, sug, {}, {}, day);
   assert.deepStrictEqual([F.add[a], F.seen[b]], ['s1', 1]);
-  // Pierre set the ease since (his edit goes through fishOwn: the field becomes his).
+  // The admin sets the ease afterwards (the edit goes through fishOwn: the field becomes the admin's).
   const mine = {...fishOwn(F, a, 'ease'), ease: {...F.ease, [a]: 2}},
     U = fishUndo(fishUndo(mine, a, 's1'), b, 's1');
   assert.deepStrictEqual([U.add, U.seen], [{}, {}], 'the add and the reject leave (the maps stay, empty)');
@@ -184,7 +184,7 @@ test("fishUndo leaves alone a value Pierre had given before the run, even one eq
   const [a] = ids,
     sug = {[a]: {...sure(5), ph: 'male', c: [0.1, 0, 0.9, 1]}},
     day = '2026-11-04',
-    before = {tags: {[a]: 'p1g0sm1'}, ease: {[a]: 5}}; // his, the same values the pass gives
+    before = {tags: {[a]: 'p1g0sm1'}, ease: {[a]: 5}}; // the admin's, the same values the pass gives
   const {F} = fishRun({s1: [{f: a, o: 'oa'}]}, sug, {}, before, day);
   assert.strictEqual(F.auto[day][a], 'apc', 'the run wrote the phase and the crop only');
   const U = fishUndo(F, a, 's1');
@@ -205,12 +205,12 @@ test('fishUndo after a new judging pass, a Not this, a partial edit, a publish (
   // the values it applied (ease 5, the phase, the crop), not the new judgment's.
   const U1 = fishUndo(F, a, 's1');
   assert.deepStrictEqual([a in U1.add, a in U1.tags, a in U1.ease, a in U1.phase, a in U1.crop], [false, false, false, false, false]);
-  // Pierre sent the photo to another species since (the add names it): his choice stays; the run's fields leave.
+  // The admin sent the photo to another species afterwards (the add names it): that choice stays; the run's fields leave.
   const moved = {...F, add: {...F.add, [b]: 's2'}},
     U2 = fishUndo(moved, b, 's1');
   assert.strictEqual(U2.add[b], 's2');
   assert.ok(!(b in U2.ease));
-  // He removed the crop by hand first (partial): the Undo removes the rest, nothing fails.
+  // The admin removed the crop by hand first (partial): the Undo removes the rest, nothing fails.
   const part = {...F, crop: {}},
     U3 = fishUndo(part, c, 's1');
   assert.ok(!(c in U3.add) && !(c in U3.tags) && U3.auto[day][c].startsWith('-a'));

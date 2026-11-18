@@ -41,8 +41,8 @@ def dumps(d):
     return _render(d) + '\n'
 
 
-# Candidates waiting for Pierre live in cand.json (same layout, top key "cand"), out of data.json, which every player
-# downloads (Pierre, 2026-11-01: a big backlog of candidates must not weigh on the app). data.json keeps the candidates
+# Candidates waiting for the admin live in cand.json (same layout, top key "cand"), out of data.json, which every player
+# downloads (a big backlog of candidates must not weigh on the app). data.json keeps the candidates
 # curation.json names (added, moved, sent to another genus...): the app needs those to apply the curation.
 CAND_PATH = os.path.join(ROOT, 'cand.json')
 CUR_PATH = os.path.join(ROOT, 'curation.json')

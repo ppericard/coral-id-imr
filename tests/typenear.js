@@ -1,5 +1,4 @@
-// The names a typed text can match, for the tests that sweep every name of fish.json against every other (test-suite
-// audit, 2026-11-09): core.js typeMatchIn reads a text against each name with an edit distance (typeDist), so a sweep of
+// The names a typed text can match, for the tests that sweep every name of fish.json against every other: core.js typeMatchIn reads a text against each name with an edit distance (typeDist), so a sweep of
 // N texts over N names costs N² distances (80 s in tests/fishcommon.test.js, 35 s in tests/typedrej.test.js).
 // near(names)(t) keeps the names that may be within the spelling tolerance of key t, and typeMatchIn on them returns
 // exactly what it returns on all of them:
@@ -11,7 +10,7 @@
 // - the names it keeps stay in their order, so typeMatchIn's stable sort, its ties and its {near} come out the same.
 // Keys are typeNorm's or typeNormAll's (letters a-z); a key with another sign is always kept, never wrongly dropped.
 // The files that use it compare it with typeMatchIn on a sample; on every name of the sweep and four slips of each
-// (28,352 texts), the two agreed on all of them (2026-11-09).
+// (28,352 texts), the two agree on all of them.
 const C = require('../core.js');
 // The largest tolerance TYPE.tol gives any name (2 today), whatever its shape.
 const D = Math.max(...Array.from({length: 200}, (_, n) => C.TYPE.tol(n)), C.TYPE.tol(Infinity));

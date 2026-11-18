@@ -1,4 +1,4 @@
-// Live mode test (Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
+// Live mode test (docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
 // trainer page (1280 px) and three students (390 px), against the sync script on an in-memory sheet in this process
 // (tests/gas.js; each page's app.js sheetFetch answered through SHEET_STUB: rule D1, and any request that leaves the local
 // server is refused and counted). Checks:

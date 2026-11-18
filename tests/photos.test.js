@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Pierre's photo rules, checked on the real data.json + curation.json (core.js applyCuration / applySlots, the same
-// code the app runs). These are Pierre's standing rules (docs/rules/photos.md): if one fails, a data or code change broke a rule.
+// The photo rules, checked on the real data.json + curation.json (core.js applyCuration / applySlots, the same code the
+// app runs). These are standing rules (docs/rules/photos.md): if one fails, a data or code change broke a rule.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -14,7 +14,7 @@ const RAW = read('data.json'),
   PICKS = read('picks.json'),
   AUTOQ = read('quality.json').q || {};
 const VIEWS = ['wide', 'medium', 'macro'],
-  GAME = ['game']; // one game list per view since 2026-11-03 (the Easy / Medium / Hard sets went)
+  GAME = ['game']; // one game list per view
 function build(cur = CUR) {
   const d = structuredClone(RAW);
   applyCuration(d, cur);
@@ -57,24 +57,25 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
   });
 });
 
-// The fish game photos (admin plan PR 7; core.js fishPhotos, the same code the app runs, on the real fish-game.json,
-// fish-photos.json and curation.json): a photo Pierre rejected, excluded or sent to another species (Not this) never
-// plays for the species he took it from; a curated photo only while it is in play (core.js fishOn).
+// The fish game photos (core.js treePhotos, the same code the app runs, on the real fish-game.json, fish-photos.json and
+// curation.json): a photo the admin rejected, excluded or sent to another species (Not this) never plays for the
+// species it was taken from; a curated photo only while it is in play (core.js treePhotoOn).
 test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
-  const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
+  const {treeGen, treePhotos, treePid, treePhotoIn, treeGone} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
-    X = fishGen(read('fish.json'), fishPhotos(PH.photos, require('../core.js').fishGameRead(read('fish-game.json')).photos, CUR), PH.sheet),
-    gone = fishGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
+    X = treeGen(read('fish.json'), treePhotos(PH.photos, require('../core.js').treeGameRead(read('fish-game.json')).photos, CUR), PH.sheet),
+    gone = treeGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
     no = new Map();
-  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
-  Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
+  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(treePid(f), f)));
+  Object.keys(CUR.exclude || {}).forEach(f => no.set(treePid(f), f));
   Object.values(X.gen).forEach(g =>
     g.views.wide.forEach(p => {
-      // A curated photo (fish-game.json): Pierre's add, or one in play by itself (auto, Q180 and Q199), while he has not
-      // decided against it (core.js fishIn).
-      if (/-cand-/.test(p.f) && !p.from) return assert.ok(fishIn(F, p, gone) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
-      assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
+      // A curated photo (fish-game.json): one the admin added, or one in play by itself (auto), while the admin has not
+      // decided against it (core.js treePhotoIn).
+      if (/-cand-/.test(p.f) && !p.from)
+        return assert.ok(treePhotoIn(F, p, gone) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      assert.ok(!no.has(treePid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(treePid(p.f))}`);
     })
   );
 });
@@ -126,8 +127,8 @@ test("sheet order: IMR and Pierre's own photos come before other observers (rule
   });
 });
 
-// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
-// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+// The Coral ID Key cards need variety (the book's crops are gone; field photos fill the variety): after the featured
+// photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
 test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
   const {CAP} = require('../core.js');
   assert.strictEqual(CAP.inat, 5);
@@ -142,8 +143,8 @@ test("Coral ID Key: the featured photos, then up to 5 other observers' photos", 
   );
 });
 
-// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
-// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+// The Coral ID Key cards need variety (the book's crops are gone; field photos fill the variety): after the featured
+// photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
 test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
   const {CAP} = require('../core.js');
   assert.strictEqual(CAP.inat, 5);
@@ -202,8 +203,8 @@ test('one game list per view: each photo once, the featured game photos first, P
   each(D, (n, g, v, s) => {
     const F = s.game.map(p => p.f);
     assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
-    // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0, Codex review #742);
-    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one (Q270).
+    // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0);
+    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one.
     const lead = s.feat.filter(p => s.game.includes(p)),
       sig = p => [q(p.f), !!p.imr, !!p.own].join(),
       byF = new Map(s.game.map(p => [p.f, p]));
@@ -279,8 +280,8 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
 });
 
 // A page or tool that names a photo file by a local path (img/<f>.webp, not built by the app's loc()/photoUrl()) names
-// one that is in img/: the photos with an online original live on R2 only (Codex review #576: tools/og/og.html still
-// pointed at six of them, so the link preview would have been made with holes).
+// one that is in img/: the photos with an online original live on R2 only (a page naming one by its local path,
+// tools/og/og.html's link preview included, would show holes).
 test('every img/ photo file named in the pages and tools is in img/ (the others live on R2 only)', () => {
   const ROOT = path.join(__dirname, '..'),
     files = execFileSync('git', ['ls-files', '*.html', '*.css', '*.js', '*.py', '*.sh'], {cwd: ROOT, encoding: 'utf8'})
@@ -297,7 +298,7 @@ test('every img/ photo file named in the pages and tools is in img/ (the others 
 
 // tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
 // online original (IMR lecture photo, page art) never missing from img/, git being its only backup; a
-// downloaded photo with an online original may be on R2 only (Photos out of the repo, Pierre's rule of 2026-11-05).
+// downloaded photo with an online original may be on R2 only (HANDOVER.md "Photos out of the repo").
 test('tools/photos.py check: the four sizes in img/, the photos with no online original kept there, the others on R2', () => {
   const py = code =>
     JSON.parse(
@@ -328,10 +329,10 @@ print(json.dumps({'ok': run(four('imr-p1_i1')), 'size': run(four('imr-p1_i1')[:3
 });
 
 // Growth forms (rule C4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
-// montage, the Look-alikes montages); a game photo with no form matches nothing (a player's report, 2026-11-04: 222 game
-// photos added after the first form pass had none). Pierre's form (curation.json gf) or a guess (forms.json gf) is enough.
-// A report, never a failure (the integrator, 2026-11-05): a candidate Pierre approves without a form comes in with his
-// Publish, straight to main, and must not turn unrelated PRs red. The list shows in the test output (a warning line per
+// montage, the Look-alikes montages); a game photo with no form matches nothing. The admin's form (curation.json gf) or a
+// guess (forms.json gf) is enough.
+// A report, never a failure: a candidate approved without a form comes in with the admin's Publish, straight to main,
+// and must not turn unrelated PRs red. The list shows in the test output (a warning line per
 // photo) and with node tools/game_forms.js; the integrator fills it with a growth-form pass (judging/BRIEF.md).
 test('game photos with no growth form are reported (a warning, never a failure)', t => {
   const {gamePhotos, formless} = require('../tools/game_forms.js');

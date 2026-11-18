@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// The photo memory offsets of the subject in play (model.js pmem; the re-check of #664, F8, 2026-11-08): the sheet's
-// PMEM is fitted on the corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is
+// The photo memory offsets of the subject in play (model.js pmem): the sheet's PMEM is fitted on the corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is
 // drawn, scored and recalculated with the prior (core.js MEM.PRIOR), never with a coral offset; the corals keep PMEM,
-// the very array, so their outcomes are the ones before. model.js runs in a vm; the draw through tests/rareease.js.
+// the very array, so their outcomes are unchanged. model.js runs in a vm; the draw through tests/rareease.js.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -13,7 +12,7 @@ const C = require('../core.js');
 const {engine} = require('./rareease.js');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const src = read('model.js');
-// The live sheet's coral offsets of 2026-11-08 (?stats=1 mem): shown never right is harder than new for the corals.
+// A snapshot of the live sheet's coral offsets (?stats=1 mem): shown never right is harder than new for the corals.
 const CORAL = [0, 0.43, -0.68, -1.42];
 // An array whose every read throws: a code path that reads it fails the test.
 const untouchable = () =>
@@ -117,13 +116,13 @@ test('the game reads the photo memory offsets only through pmem (model.js, quiz.
   ]);
 });
 
-// No rules version for this change (Codex review #790): it picks the offsets future fish answers are drawn and scored
-// with, and moves no saved progress. Every fish answer is logged with its scoring record (sc, its memory term f), and
+// No rules version for the subject's own offsets: they pick the offsets future fish answers are drawn and scored with,
+// and move no saved progress. Every fish answer is logged with its scoring record (sc, its memory term f), and
 // the replay reads f as logged, so a fish replay under any memory offsets, the corals' or the prior, rebuilds the same
 // records; and a record already under the photo memory rule (s.pm, every fish record) is never recalculated again.
 test('saved fish progress does not move: the replay reads the logged memory term, a marked record is left alone', () => {
   // A fish log with its photos coming back (every memory bucket), each row with the f the app logged with the corals'
-  // offsets of 2026-11-08 (as the 45 such rows of the real log).
+  // offsets (as the real log's rows of that kind).
   const hist = {},
     rows = Array.from({length: 40}, (_, i) => {
       const g = i % 2 ? 'f:Damselfishes' : 'f:Wrasses',

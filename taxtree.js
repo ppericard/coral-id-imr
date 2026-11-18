@@ -1,5 +1,5 @@
-// A classification as a tree of any depth and any ranks (docs/ROADMAP.md "The Tree tab"; Pierre, 2026-11-13: "un système
-// plus générique qui peut fonctionner quel que soit le nombre de niveaux"): pure functions, no DOM, no subject named
+// A classification as a tree of any depth and any ranks (docs/ARCHITECTURE.md; docs/ROADMAP.md "The Tree tab"): pure
+// functions, no DOM, no subject named
 // (rule S1), for the admin's Photos › Tree (admin.js renderFishUnits) and the tests (tests/taxtree.test.js). Loaded by
 // admin.html; a subject's own adapter turns its references into nodes. A node: {id, name, rank (any word, or none), up
 // (its parent's id in this classification, absent for a root), ...anything else the adapter keeps}. One classification =

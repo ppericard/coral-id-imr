@@ -8,11 +8,21 @@ merge, from the PR's `tools/sync/changes/<branch>.md` (rule D3, docs/rules/sheet
 The self-update reads only `const VERSION = N;`, so nothing here changes what the script does.
 
 Entries up to v176 were moved here from the old line 1 word for word (code marks were dropped there, so they are
-missing from those; `docs/ARCHITECTURE.md`'s version history keeps them for most). Their dates: the day
-ARCHITECTURE.md's version history gives, else the day the old line 1 gave for its group of entries, never later than
-the next newer entry; for v7 to v34, which no record dates, that is 2026-11-04, "at the latest" (v35 was that day). Some
+missing from those; `docs/archive/sheet-history-detail.md` keeps the whole version history `docs/ARCHITECTURE.md` held until
+then, its code marks and its own dates and wording, v2 to v5 included). Their dates: the day ARCHITECTURE.md's version
+history gave, else the day the old line 1 gave for its group of entries, never later than
+the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was that day), though
+`docs/archive/sheet-history-detail.md` dates v11 to v31 more exactly (2026-11-01 to 2026-11-03). Some
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
+
+## v187 (2026-11-19)
+
+The tree engine's names in the embedded `core.js` and in the script's own calls: the code every tree subject runs through is named `tree*` instead of `fish*` (`CORE_.treeGen`, `treePhotos`, `treeGameRead`, `treeReplayGen`, `treeBoardTree`, `treeVarTable`, `treeStructure`, `treePid`, `treeSheets`…), and the corals' `SUBJECTS` entry says it is the flat subject (`flat`), which the app asks instead of comparing a pool file's name (architecture review of 2026-11-18, step 3; the integrator's call, a name inside the code). Nothing the script reads, writes, replays or serves changes; no gate and no rules version
+
+## v186 (2026-11-18)
+
+The Divemaster achievement texts of the learning milestones (the genus, family and sea slug guide entries, and the comment above them) now say 85%, the mastery exam's entry the code uses (`DOM.EX`), instead of 95%, the top of the progress bar. Texts only: no behaviour change
 
 ## v185 (2026-11-18)
 

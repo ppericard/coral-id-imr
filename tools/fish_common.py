@@ -82,8 +82,8 @@ OUT = ROOT / "tools" / "fish_common.json"
 API = "https://api.inaturalist.org/v1/taxa/"
 MAX = 3
 OWN = ("pdf", "slides", "dauin", "wink")  # fish.json `common` by its species' src: kept as written, always listed
-IMR = ("pdf", "slides")  # the IMR names among them (the reference PDF, the IMR fish presentation): `imr`, Q376 (a)
-REGIONS = {"Australia": 6744}  # iNaturalist places whose preferred English name is a regional standard (Q376 (c))
+IMR = ("pdf", "slides")  # the IMR names among them (the reference PDF, the IMR fish presentation): `imr`
+REGIONS = {"Australia": 6744}  # iNaturalist places whose preferred English name is a regional standard
 
 
 def norm(name):
@@ -265,7 +265,7 @@ def select():
                      "reg": False}
                 groups.append(g)
             else:
-                # A spelling of two groups links them: one name (Codex review #522, Striate anglerfish / Striped angler).
+                # A spelling of two groups links them: one name (Striate anglerfish / Striped angler).
                 g = hit[0]
                 for o in hit[1:]:
                     g["alt"] += [x for x in [o["name"]] + o["alt"] if norm(x) not in [norm(y) for y in [g["name"]] + g["alt"]]]
@@ -294,7 +294,7 @@ def select():
             # The form shown: the species' own (PDF) name as written, else FishBase's main name, else its most recorded
             # spelling; the other spellings stay as alt (accepted when typed).
             # A PDF name flagged as a likely slip (fish.json `check`) shows FishBase's spelling instead, the PDF form kept
-            # in alt so it is still accepted when typed (Pierre, 2026-11-05).
+            # in alt so it is still accepted when typed.
             if g["own"] and not (s.get("check") and g["alt"]):
                 continue
             forms = [g["name"]] + g["alt"]
@@ -305,11 +305,11 @@ def select():
         def keep(g):
             # A name besides the species' own: one that recurs in both references (FishBase and iNaturalist), the main
             # name of one of them.
-            # FishBase's main name is FishBase evidence even with no comnames record (Codex review #522, Chromis agilis).
-            # No third rule for other recorded names (Pierre, 2026-11-05: only the main names of the two references).
+            # FishBase's main name is FishBase evidence even with no comnames record (Chromis agilis). No third rule for
+            # other recorded names: only the main names of the two references.
             return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"])
 
-        # The main name, shown first to every player but an IMR one (Pierre, 2026-11-15, Q376 (a) B): iNaturalist's
+        # The main name, shown first to every player but an IMR one: iNaturalist's
         # default English name, else FishBase's main name, else the species' own name. The order, deterministic: the
         # main name first, then the species' own (its IMR name, rule C1, or its Dauin or wink source's), then the most
         # shared: in the most references (FishBase, iNaturalist), then the main name of the most, then the most FishBase
@@ -333,7 +333,7 @@ def select():
             return e
 
         o = {"sp": s["name"], "names": [entry(g) for g in pick]}
-        # The regional standard names (Q376 (c)): a region's iNaturalist name not listed, accepted when typed only, in
+        # The regional standard names: a region's iNaturalist name not listed, accepted when typed only, in
         # the region's own form first (not a FishBase spelling of it: "Swallow-tail puffer").
         regional = []
         for g in rank:
@@ -359,8 +359,7 @@ def select():
             o["noFishBase"] = True
         out[s["id"]] = o
     # Shared names: one name, two game species or more. Two species may carry the same common name: nothing is dropped
-    # for it (Pierre, 2026-11-15, Q381, replacing Q319's "dropped from the one that does not own it"): each keeps every
-    # name its selection gives, a main name too (iNaturalist's default "Longnose butterflyfish" of Forcipiger longirostris
+    # for it, each keeps every name its selection gives, a main name too (iNaturalist's default "Longnose butterflyfish" of Forcipiger longirostris
     # is also the IMR name of F. flavissimus). Every spelling counts, the accepted ones (alt) too. Each name shared is
     # flagged `shared` with the other species, and listed in `shared()` (name -> species ids): the app keeps two choices
     # of one label apart, accepts it typed for the species asked, and the sheet says "Also used for …".
@@ -396,8 +395,8 @@ def select():
                 o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": other, "regional": True})
         if "regional" in o and not o["regional"]:
             del o["regional"]
-    # The main name first, among the names kept: iNaturalist's default, else FishBase's main name, else the species' own
-    # (Q376 (a)); the others in their order. The IMR name, marked (shown first to a player at IMR): its place in the list.
+    # The main name first, among the names kept: iNaturalist's default, else FishBase's main name, else the species' own;
+    # the others in their order. The IMR name, marked (shown first to a player at IMR): its place in the list.
     for o in out.values():
         L = o["names"]
         m = next((n for t in ("inatMain", "fbMain") for n in L if t in n["from"]), None) or next(

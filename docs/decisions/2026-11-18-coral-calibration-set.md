@@ -1,7 +1,7 @@
 # The coral calibration set: 50 photos drawn a little more often until each has 20 answers
 
-Date: 2026-11-18 (Manila). PR: the one that adds this file. Rules or docs touched: P1 (`docs/rules/photos.md`, applied),
-L11 (the check), `docs/LEARNING.md` "The calibration set", `docs/ARCHITECTURE.md` "The calibration set", ROADMAP
+Date: 2026-11-18. PR: #1130. Rules or docs touched: P1 (`docs/rules/photos.md`, applied),
+L11 (the check), `docs/LEARNING.md` "The calibration set", `docs/spec/data.md` "The calibration set", ROADMAP
 ("Placement test", step 2), `calibration-set.json`, `tools/calibset.js`, `model.js` `CSET`, `setBonus`, `photoSet`.
 
 ## Context
@@ -36,6 +36,6 @@ The integrator's calls inside it (easy to correct: a constant, a list, a rule in
   the slowest in several months (guesses; `node tools/calibset.js --progress`).
 - One cost left, unclear: the simulated beginner's true knowledge at question 300, −0.013 on the confirmation seeds
   (bound −0.023, past the margin's −0.02 though the mean is inside it), none at 600. Put to Pierre in the PR with the
-  alternative (no factor for beginners).
+  alternative (no factor for beginners); accepted by Pierre, 2026-11-19 05:13 Manila (Q412): merge as is.
 - The explicit placement test (ROADMAP step 3) reads this set once its members are rated. Not decided here: whether a
-  member may be drawn more for a player who has seen it, or shown alone more often (both listed for Pierre in the PR).
+  member may be drawn more for a player who has seen it, or shown alone more often (both left as built, Q412).

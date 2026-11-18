@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The device on every answer (Pierre, 2026-11-08, Q312: "Oui, cette nuit"): the Answers tab's last column, Device, holds
+// The device on every answer: the Answers tab's last column, Device, holds
 // the anonymous id of the device that sent the answer (sync.js devId, the Device of its Events and Pages rows), for a
-// signed-in player's save and an anonymous send alike; an app before it sends none and its rows are logged as before; no
+// signed-in player's save and an anonymous send alike; an older app sends none and its rows are logged without; no
 // reader serves it or counts differently with it; a deleted account's kept answers lose it (rule D7).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -103,7 +103,7 @@ test("Code.gs: an old app's rows (no dev) are accepted as before, Device blank; 
     Array(9).fill(''),
     'blank, never a formula'
   );
-  // A tab made before the column (24 columns): the next answer adds its header, the older rows read blank.
+  // A tab made without the column (24 columns): the next answer adds its header, the older rows read blank.
   const t = loadCodeGs();
   save(t, 'Ana', [ans('c1')]);
   t.sheets.Answers.rows[0].length = 24;

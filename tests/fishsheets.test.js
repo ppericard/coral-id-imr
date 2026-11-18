@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06): their addresses in the
+// The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B): their addresses in the
 // words on screen (core.js SUBJECTS sheets, routeOut, routeIn), a sheet id in its one spelling (sheetIdOf: an old unit id
-// renamed since), and the sheet each family, genus or species opens (fishTree go) on the real fish.json.
+// renamed since), and the sheet each family, genus or species opens (treeSheets go) on the real fish.json.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -41,8 +41,8 @@ test('sheetIdOf: a sheet id in its one spelling; an id with no sheet prefix is n
   assert.strictEqual(C.sheetIdOf(CORAL, 'Acropora'), 'Acropora', 'the corals: any name is a genus sheet');
 });
 
-test('fishTree: option B, every family, genus and species reaches a sheet', () => {
-  const T = C.fishTree(F);
+test('treeSheets: option B, every family, genus and species reaches a sheet', () => {
+  const T = C.treeSheets(F);
   assert.strictEqual(Object.keys(T.fam).length, F.families.length);
   assert.strictEqual(T.order.length, F.families.length);
   // The key's order: the group numbers rise, a family with no group last.
@@ -55,8 +55,7 @@ test('fishTree: option B, every family, genus and species reaches a sheet', () =
   assert.strictEqual(T.go('f:Damselfishes'), 'f:Damselfishes');
   // A genus with several species in a family of several genera opens its page.
   assert.strictEqual(T.go('g:Chromis'), 'g:Chromis');
-  // A genus with one species opens that species' sheet (Pierre, Q2): Zanclus, Pygoplites (Abudefduf until it got a second
-  // species, 2026-11-08).
+  // A genus with one species opens that species' sheet: Zanclus, Pygoplites.
   assert.strictEqual(T.go('g:Zanclus'), 's:Zanclus cornutus');
   assert.strictEqual(T.go('g:Pygoplites'), 's:Pygoplites diacanthus');
   // The only genus of a family with several species has no page: the family sheet (the study's recommendation).
@@ -95,9 +94,9 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
   }
 });
 
-// The families IMR gives no cue for (circles 2-3, the Soapfishes; Pierre, 2026-11-08: "court terme, assez urgent"): each
+// The families IMR gives no cue for (circles 2-3, the Soapfishes): each
 // has its own ID marks, checked against two sources at least, and the app shows them where it shows IMR's cues (app.js
-// fishGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
+// treeGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
 test('every family of the game has ID cues to show: IMR’s, or its own ID marks with two sources at least', () => {
   const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families;
   const bare = F.families.filter(f => !(f.cues || []).length);
@@ -115,17 +114,17 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
     ctx = {
       DOM: {EX: 0.9},
       easyCover: C.easyCover,
-      fishScoreTree: C.fishScoreTree,
-      fishSpUnits: C.fishSpUnits,
-      fishGenSets: C.fishGenSets,
+      treeScoreTree: C.treeScoreTree,
+      treeSpUnits: C.treeSpUnits,
+      treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights
     };
   vm.createContext(ctx);
   vm.runInContext(
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const X = ctx.fishGenera(C.fishGen(F, PH.photos), F);
+  const X = ctx.treeGenera(C.treeGen(F, PH.photos), F);
   for (const f of bare) {
     const g = X.gen[f.id];
     assert.deepStrictEqual([...g.qt], f.marks, `${f.id}: its marks are its tips`);
@@ -152,10 +151,10 @@ test('genus common names (tools/fish_genus_names.json): genera of fish.json, eac
       inat: /^iNaturalist's English name of the genus \(“.+”, taxon \d+, read \d{4}-\d\d-\d\d\)$/
     };
     assert.ok(by[id].csrc && src[x.from].test(by[id].csrc), `${id} csrc`);
-    // An inferred name is flagged (cinf: the genus sheet says so; Pierre, 2026-11-15, Q376 (d)); a reference's is not.
+    // An inferred name is flagged (cinf: the genus sheet says so); a reference's is not.
     assert.strictEqual(by[id].cinf, x.from === 'species' ? 1 : undefined, `${id} cinf`);
   }
-  // Q376 (d): Cephalopholis inferred from its species' listed names (FishBase's "hind"), flagged; Centropyge, Dendrochirus
+  // Cephalopholis inferred from its species' listed names (FishBase's "hind"), flagged; Centropyge, Dendrochirus
   // and Dascyllus take iNaturalist's names.
   assert.deepStrictEqual([by['g:Cephalopholis'].common, by['g:Cephalopholis'].cinf], ['Hinds', 1]);
   assert.match(by['g:Cephalopholis'].csrc, /listed common names .*all 10 here have one ending in “hind”/);

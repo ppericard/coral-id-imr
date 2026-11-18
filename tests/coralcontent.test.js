@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A,
-// Q366): the corals' text slots and look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure,
-// genStructure), the ★ rule kept under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay
-// under it (Code.gs gen_, replay_, stMain_). The edits here are made up (fixtures): the real curation.json holds none.
+// The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md): the corals' text slots and
+// look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure, genStructure), the ★ rule kept
+// under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay under it (Code.gs gen_,
+// replay_, stMain_). The edits here are made-up fixtures: the real curation.json holds none.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -44,7 +44,7 @@ test('the slots: one rank, the genus, on data.json gen and x.gen; keep slots on 
         if (sp.keep && n.at === 'gen') assert.ok(sp.k in n.rec, `${id} ${sp.k}`);
       })
   );
-  // the IMR's own words are marked (their label stays: Q359 a)
+  // the IMR's own words are marked (their label stays)
   assert.deepStrictEqual(
     S.content.genus.slots.filter(sp => sp.imr).map(sp => sp.k),
     ['mn', 'imr']
@@ -269,7 +269,7 @@ test('the stamp: one per pairs in force, the same from the players copy, empty a
   assert.ok(C.PAIRS_SHEET > C.STRUCT_SHEET);
 });
 
-// ---- The sheet (Code.gs): the coral replay under the pairs in force, keyed by the stamp (Q363 h A) ----
+// ---- The sheet (Code.gs): the coral replay under the pairs in force, keyed by the stamp ----
 
 // GitHub main as the sheet reads it: data.json, and a curation.json the test changes (ok false: unreadable).
 function mainFiles() {
@@ -399,7 +399,7 @@ test('the sheet: the replay is the app’s own under the pairs in force (genLook
   assert.deepStrictEqual(Object.keys(r.rec).sort(), Object.keys(want).sort());
 });
 
-// Rule C2 under the editor's coral edits (Codex review #988): an edited slot's source travels with it wherever the slot
+// Rule C2 under the editor's coral edits: an edited slot's source travels with it wherever the slot
 // is shown with an attribution of its own. The criteria are cited by the source he gave, the Coral Finder pages only for
 // the book's own text (app.js critRef: the genus sheet, the quiz's answer, the Coral ID Key); his summary's, mnemonic's
 // and look-alike line's sources with them; a bonus genus's reworded tips lose the Coral Finder label (tipsLabel).
@@ -431,7 +431,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   [A.gen, A.x.gen].forEach(M => Object.values(M).forEach(g => g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
   const ctx = {
     DATA: A,
-    FISH: null,
+    TREEU: null,
     namesLine: () => '',
     uname: n => `<i>${n}</i>`,
     unameT: n => n,
@@ -456,7 +456,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       block(APP, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'app.js'}),
       block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
-      block(LEARN, 'const esrcOf = (r, k) =>', 'const fishNote', {file: 'learn.js'}),
+      block(LEARN, 'const esrcOf = (r, k) =>', 'const treeNote', {file: 'learn.js'}),
       block(LEARN, 'const lsrcOf = (a, b) =>', 'const isClassic', {file: 'learn.js'}),
       block(QUIZ, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}),
       'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, lsrcEsrc});'
@@ -470,7 +470,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.ok(!/Coral Finder p\./.test(fb), 'no Coral Finder page for the editor’s criteria');
   assert.match(fb, /Made-up summary <small class="esrc">\(A made-up summary source\)<\/small>/);
   assert.match(fb, /Made-up mnemonic <small class="esrc">\(A made-up course\)<\/small>/);
-  // an unedited genus: the book's pages, as before
+  // an unedited genus: the book's pages
   const P = D.gen.Porites;
   assert.strictEqual(
     tref(ctx.fbBody('Porites', 'Porites', true, false, false, [], '', null, null)),
@@ -499,7 +499,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.match(block(LEARN, 'const cfList =', '\n', {file: 'learn.js'}), /<span class="pg">\$\{critRef\(g\)\}<\/span>/);
   assert.match(LEARN, /\$\{srcTag\(m\.src\)\}\$\{esc\(m\.es\)\}/);
   assert.match(src('proto/idkey.js'), /Criteria <small>· \$\{critRef\(g, false\)\}<\/small>/);
-  // the side-by-side comparison too (learn.js viewCompare; Codex review #988)
+  // the side-by-side comparison too (learn.js viewCompare)
   assert.match(
     block(LEARN, 'function viewCompare(a, b) {', '\n}\n', {file: 'learn.js'}),
     /<p class="note">\$\{critRef\(g\)\}<\/p><\/details>/

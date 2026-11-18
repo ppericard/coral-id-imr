@@ -1,8 +1,7 @@
 // Link preview image (Open Graph, og:image in index.html): what WhatsApp, Messenger, Slack... show when the link is
-// shared (Pierre, 2026-11-01). Renders tools/og/og.html (six of Pierre's own photos, corals and reef fish, + the app
+// shared. Renders tools/og/og.html (six of the admin's own photos, corals and reef fish, + the app
 // name, in the site's fonts) to og.jpg at the repo root, 1200 x 630. Re-run after changing og.html: node tools/og/make_og.js
-// (needs Playwright and network access to Google Fonts, to R2, where the coral photos live since step 2 of Photos out of
-// the repo, and to iNaturalist's open data, where the fish photos are). Another layout of og.html and another file:
+// (needs Playwright and network access to Google Fonts, to R2, where the coral photos live, and to iNaturalist's open data, where the fish photos are). Another layout of og.html and another file:
 // node tools/og/make_og.js b /tmp/og-b.jpg. Keep it under ~300 KB: WhatsApp drops larger preview images. A photo that
 // does not load stops it (never a preview with holes).
 const path = require('path');

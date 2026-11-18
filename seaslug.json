@@ -1086,6 +1086,24 @@
       2
      ]
     ]
+   },
+   "apart": {
+    "g:Goniobranchus": "Goniobranchus: a broad mantle that overhangs the body widely, as G. kuniei",
+    "g:Hexabranchus": "Hexabranchus: gills set one by one into the back, with no pocket to pull them into"
+   },
+   "apsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet, the mantle overlap, now Goniobranchus kuniei and G. leopardus",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its gills",
+      "u": "https://www.seaslugforum.net/find/hexasang"
+     }
+    ]
    }
   },
   {
@@ -1303,6 +1321,28 @@
      [
       1
      ]
+    ]
+   },
+   "apart": {
+    "g:Hypselodoris": "Hypselodoris: a tall body, the mantle barely overhanging it, as H. tryoni",
+    "g:Phyllidiella": "Phyllidiella: no gill tuft on the back (the gills hide under the mantle); black rhinophores"
+   },
+   "apsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, the body shape of the genus Risbecia, now Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/risbtryo"
+     }
+    ],
+    "g:Phyllidiella": [
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, General features, p. 9",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     },
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     }
     ]
    }
   },
@@ -1702,7 +1742,18 @@
    "dlook": [
     "g:Caloria",
     "g:Phestilla"
-   ]
+   ],
+   "apart": {
+    "g:Samla": "Samla: rhinophores ringed with stacked thin plates (perfoliate)"
+   },
+   "apsrc": {
+    "g:Samla": [
+     {
+      "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717), diagnoses of the family Samlidae and the genus Samla",
+      "u": "https://doi.org/10.3897/zookeys.717.21885"
+     }
+    ]
+   }
   },
   {
    "id": "g:Thuridilla",
@@ -2047,7 +2098,22 @@
    },
    "dlook": [
     "g:Chromodoris"
-   ]
+   ],
+   "apart": {
+    "g:Phyllidiella": "Phyllidiella: black rhinophores"
+   },
+   "apsrc": {
+    "g:Phyllidiella": [
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     },
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, Table 6, the external features of the genera, p. 89",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     }
+    ]
+   }
   },
   {
    "id": "g:Aegires",
@@ -2125,6 +2191,21 @@
       0
      ]
     ]
+   },
+   "apart": {
+    "g:Phyllidiopsis": "Phyllidiopsis: rhinophores of varied colours, often in two colours or more"
+   },
+   "apsrc": {
+    "g:Phyllidiopsis": [
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, External morphology of Phyllidiopsis, p. 19",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     },
+     {
+      "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, Table 6, the external features of the genera, p. 89",
+      "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+     }
+    ]
    }
   },
   {
@@ -2194,6 +2275,17 @@
      {
       "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
       "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ]
+   },
+   "apart": {
+    "g:Hexabranchus": "Hexabranchus: gills set one by one into the back, with no pocket to pull them into"
+   },
+   "apsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its gills",
+      "u": "https://www.seaslugforum.net/find/hexasang"
      }
     ]
    }
@@ -2281,7 +2373,18 @@
    },
    "dlook": [
     "g:Favorinus"
-   ]
+   ],
+   "apart": {
+    "g:Coryphellina": "Coryphellina: rhinophores covered in small bumps (papillae)"
+   },
+   "apsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717), diagnosis of the genus Coryphellina",
+      "u": "https://doi.org/10.3897/zookeys.717.21885"
+     }
+    ]
+   }
   },
   {
    "id": "g:Miamira",

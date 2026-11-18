@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // Photo stats › Overview on the fish side (fish admin at parity): one page for every subject (admin.js renderPstats,
 // pstatsHtml), each subject's numbers in one shape (pstatsCoral, pstatsFish); the fish answers per photo from the answer
 // log alone, as By difficulty and Health count them, a photo under its candidate id and its game id counted once
-// (answersBy over photoAnswers, by core.js fishPid); the page among the fish admin's pages, its Difficulty not.
+// (answersBy over photoAnswers, by core.js treePid); the page among the fish admin's pages, its Difficulty not.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..'),
 
 const run = code => {
   const src = read('admin.js'),
-    ctx = {fishPid: C.fishPid};
+    ctx = {treePid: C.treePid};
   vm.runInNewContext(
     [
       block(src, 'function photoAnswers(R, known) {', '\n}\n', {file: 'admin.js', through: true}),
@@ -36,12 +36,12 @@ test('answersBy: a fish photo answered under its candidate id and its game id is
     ['a', 3, 'g:Chromis', 'g:Chromis', 0, 'quiz', 'fish-s084-cand-123 fi9'],
     ['c', 4, 'f:Wrasses', 'f:Wrasses', 1, 'quiz', 'fbNevio_u0']
   ];
-  const r = run(`this.r = answersBy(photoAnswers(${JSON.stringify(R)}), fishPid);`);
+  const r = run(`this.r = answersBy(photoAnswers(${JSON.stringify(R)}), treePid);`);
   assert.deepStrictEqual(Object.keys(r).sort(), ['bNevio_u0', 'i123', 'i9']);
   assert.deepStrictEqual(r.i123, {n: 3, ok: 1, by: {a: [2, 1], b: [1, 0]}});
   assert.deepStrictEqual(r.i9, {n: 1, ok: 0, by: {a: [1, 0]}});
   assert.deepStrictEqual(r.bNevio_u0, {n: 1, ok: 1, by: {c: [1, 1]}});
-  assert.deepStrictEqual(run('this.r = answersBy(null, fishPid);'), {});
+  assert.deepStrictEqual(run('this.r = answersBy(null, treePid);'), {});
 });
 
 test('pstatsBands: every photo in one band of answers, none included', () => {

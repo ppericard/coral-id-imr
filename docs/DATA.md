@@ -1,7 +1,11 @@
 # Data files
 
 What each data file holds, who writes it and who reads it. The root of the repository serves the app as it is, so its
-JSON files are the data the site loads. The long description of each is in [ARCHITECTURE.md](ARCHITECTURE.md) "Data files".
+JSON files are the data the site loads. This is the short table; the details behind each row, field by field, are in
+[spec/data.md](spec/data.md) (the corals, `curation.json`, the suggestion files, presence, rights and licences, the
+instance), [spec/fish.md](spec/fish.md) (`fish.json`), [spec/fish-photos.md](spec/fish-photos.md) (the fish photo
+files) and [spec/content.md](spec/content.md) (the content editor's edits), mapped in [ARCHITECTURE.md](ARCHITECTURE.md)
+"Data files".
 
 Three writers exist besides a pull request:
 
@@ -54,8 +58,8 @@ read (`pool`, `files`).
   - a genus record in `data.json` (`gen`): `n` the slate number (0 for a starred look-alike), `fam` family, `ig` IMR
     lecture group, `imr` lecture notes, `qt` ID tips, `sum` short description, `plain` plain sentence, `mn`
     mnemonic, `crit` Coral Finder criteria, `tr` and `trs` trait ids (`trs`: only some species), `look` look-alikes,
-    `lsrc` source of each pair, `sl` slide numbers, `info` other sources, `views` and `more` photo lists, `cover`, `cm`
-    how common near Dauin, `root` the name's roots;
+    `lsrc` source of each pair, `ap` and `apsrc` the pairs' tell-apart lines and their sources, `sl` slide numbers,
+    `info` other sources, `views` and `more` photo lists, `cover`, `cm` how common near Dauin, `root` the name's roots;
   - a photo: `f` file stem in `img/`, `ar` width over height, `a` author credit, `lic` licence, `o` page of the
     original, `src` online original, `r: 1` not downloaded yet, `t` species, `own` Pierre's own photo, `loc`
     (`dauin`, `ph`, `world`), `gid: 1` not Research Grade, `skel: 1` a skeleton photo (never shown, rule P6).

@@ -1,7 +1,6 @@
 require('./slot.js').testGuard();
-// The sea slugs' English common names and nicknames (Pierre, 2026-11-17: "apporter cette information de nom commun quand
-// elle existe", at the family, genus and species level, nicknames too; information only, never an answer choice, Q369 (d)
-// stands): tools/seaslug_names.py reads the sources (made-up replies here, nothing leaves the machine) and merges them,
+// The sea slugs' English common names and nicknames (at the family, genus and species level, nicknames too;
+// information only, never an answer choice): tools/seaslug_names.py reads the sources (made-up replies here, nothing leaves the machine) and merges them,
 // each name with its sources (rule C2), a name on two taxa listed (rule C5); tools/seaslug_game.py copies them into
 // seaslug.json; app.js gives them through UNITS vern, the photo's taxon line after the answer and the typed-name nudge.
 const test = require('node:test'),
@@ -141,7 +140,7 @@ test('tools/seaslug_names.json derives as written and holds every family, genus 
       (x.web || []).forEach(w => assert.match(w.u, /^https:\/\//, `${t.name}: ${x.n}'s page`));
     })
   );
-  // A name on two taxa is a point for Pierre (rule C5): each in points.json.
+  // A name on two taxa is a point for the admin (rule C5): each in points.json.
   const P = read('points.json').points.filter(p => p.subj === 'seaslug'),
     said = P.map(p => p.title + ' ' + p.q + ' ' + (p.ctx || []).join(' '))
       .join(' ')
@@ -187,10 +186,10 @@ vm.runInContext(
   block(APP, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +
     block(APP, "// The photo's own taxon, said in one short line", '// Every unit of a rank in', {file: 'app.js'}) +
     block(APP, 'function treeTypeOther(rk) {', '\n}\n', {file: 'app.js', through: 1}) +
-    '\nvar FISHRAW = null, FISH = null, SUBJ = {id: "s"};\n' +
-    'var UNITS = {s: {vern: id => treeVern(id), taxon: p => { const t = fishTaxon(FISH && FISH.sps, p, false); return t ? {...t, common: vernFirst(t.id)} : t; }}, f: {}};\n' +
+    '\nvar TREERAW = null, TREEU = null, SUBJ = {id: "s"};\n' +
+    'var UNITS = {s: {vern: id => treeVern(id), taxon: p => { const t = treeTaxon(TREEU && TREEU.sps, p, false); return t ? {...t, common: vernFirst(t.id)} : t; }}, f: {}};\n' +
     'this.M = {vernOf, vernFirst, vernSrcs, photoTaxon, taxonLine, treeTypeOther};\n' +
-    'this.set = (F, k) => { FISHRAW = {f: F}; FISH = {sps: Object.fromEntries(F.species.map(s => [s.id, s]))}; SUBJ = {id: k}; };',
+    'this.set = (F, k) => { TREERAW = {f: F}; TREEU = {sps: Object.fromEntries(F.species.map(s => [s.id, s]))}; SUBJ = {id: k}; };',
   ctx
 );
 

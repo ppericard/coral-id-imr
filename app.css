@@ -6253,6 +6253,24 @@ html.touring .unlock {
 .phasecard .phlines {
   margin: 0 0 8px;
 }
+/* The mimicry card (quiz.js mimShow): the two species side by side, then the marks that tell them apart and the
+   sources that state the resemblance. */
+.mimmarks {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  text-align: left;
+}
+.mimmarks li {
+  margin: 0 0 4px;
+}
+.mimmarks small,
+.mimsrc {
+  color: var(--muted);
+}
+.mimsrc {
+  margin: 0 0 8px;
+  font-size: var(--fs-xs);
+}
 .tipcard h3:focus,
 .reliefcard h3:focus,
 .allmet h3:focus,

@@ -148,7 +148,7 @@ test("a frame's own ?v= is checked against its file", async () => {
   assert.strictEqual((await run(`at a (https://h/app.js?v=0123456789:${at})`, {force: true})).code, 0);
 });
 
-// Codex review #1106: every Lab module is loaded with the one LAB_V, a hash of the names and hashes of all the Lab files
+// Every Lab module is loaded with the one LAB_V, a hash of the names and hashes of all the Lab files
 // (tools/stamp_versions.py), not the hash of its own bytes.
 test("a Lab module's ?v= is the Lab's version, not its own file's hash", async () => {
   const at = `1:${col('new Error')}`,

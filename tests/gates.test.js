@@ -1,16 +1,9 @@
 require('./slot.js').testGuard();
 // rule D4: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
-// when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,
-// 2026-11-04: a gate had no test at all). The versions come from the source, so a recalibrated gate needs no edit here.
-// The gate floor (core.js SHEET_FLOOR; architecture review 2026-11-18, R3): a version already confirmed live, below which
-// no gate is left (the ratchet below). Deleted with it, each with its old branch: RV_SHEET 28 (the full replay adopted),
-// PGD_SHEET 31 (the genus offsets), RT_SHEET 32 (the answer time), START_SHEET 36 (the first-launch prior), RP_SHEET 42
-// (the replay in the player list), GROUP_SHEET 48 (the beta groups), DEL_SHEET 55, HELP_SHEET 57, ARCH_SHEET 58,
-// SELFDEL_SHEET 58, LOG_SHEET 60 (each answer filed by subject), FMT_SHEET 77, EXPO_SHEET 81, DOM_SHEET 87 (the
-// domain-score bar), BOARD_SHEET 95, WINK_SHEET 98, START_ADMIN_SHEET 99, SCORE_SHEET 101, DEV_SHEET 109, LIVE_SHEET
-// 110, REPLAYS_SHEET 112, AN_SUBJ_SHEET 113, EXCL_SHEET 115, LIGHT_SHEET 116, FROMHOME_SHEET 124, MARK_SHEET 125, and
-// the unnamed ones (core.js PAGES.SHEET 30, admin-analyses.js AN_V 35, the admin's v10 note).
+// when a reply carries no version. A new gate fails this test until it is added to the table, so no gate goes untested.
+// The versions come from the source, so a recalibrated gate needs no edit here. The gate floor (core.js SHEET_FLOOR): a
+// version already confirmed live, below which no gate is left (the ratchet below).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -47,7 +40,7 @@ const fn = (file, from, to, name, ctx) => {
 
 // gate name -> v => whether the feature it guards is on for a reply of script version v.
 const GATES = {
-  // The live mode (live.js liveFrom, LIVE_CH: Q393; Code.gs lv_): a reply of the version that serves it is taken; an older
+  // The live mode (live.js liveFrom, LIVE_CH; Code.gs lv_): a reply of the version that serves it is taken; an older
   // script's reply turns the page into one line ('old'), nothing more sent.
   LIVEGAME_SHEET: (v, N) => fn('live.js', 'const liveFrom = ', '\n', 'liveFrom', {LIVEGAME_SHEET: N})(v === undefined ? {} : {v}),
   // The screen in each pages-opened summary (sync.js viewportOn, pagesScreen; core.js viewportOf, pagesClean): from the
@@ -67,7 +60,7 @@ const GATES = {
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
   TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
   // The fish species level (sync.js speciesOn: its units open and count in the score's tree once the sheet replays them,
-  // core.js fishReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
+  // core.js treeReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
   SPECIES_SHEET: (v, N) =>
     fn('sync.js', 'const speciesOn = ', '\n', 'speciesOn', {
       treeOn: () => (v === undefined ? 0 : v) >= 143,
@@ -75,7 +68,7 @@ const GATES = {
       SPECIES_SHEET: N
     })(),
   // The scientific genera of circles 2 and 3 (sync.js generaOn: they open and count among the genera a question offers
-  // once the sheet replays them, core.js fishGenSets; app.js sciNow reads it): from the version that holds them.
+  // once the sheet replays them, core.js treeGenSets; app.js sciNow reads it): from the version that holds them.
   GENERA_SHEET: (v, N) => fn('sync.js', 'const generaOn = ', '\n', 'generaOn', {sheetV: () => v, GENERA_SHEET: N})(),
   // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
   // serves it; before, an older script answers 'input' and the page names the version it waits for.
@@ -101,10 +94,10 @@ const GATES = {
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },
-  // The corals' look-alike pairs (design note v2, step 8; sync.js stOn, app.js structOn through core.js structSheet, the
-  // corals' SUBJECTS structure sheet; Code.gs stMain_, gen_ under the pairs): their stamp said and a replay under a new one
-  // adopted, the pairs laid over data.json, from the script that replays the corals under them (tests/coralcontent.test.js);
-  // before, the text slots alone, nothing sent.
+  // The corals' look-alike pairs (sync.js stOn, app.js structOn through core.js structSheet, the corals' SUBJECTS
+  // structure sheet; Code.gs stMain_, gen_ under the pairs): their stamp said and a replay under a new one adopted, the
+  // pairs laid over data.json, from the script that replays the corals under them (tests/coralcontent.test.js); before,
+  // the text slots alone, nothing sent.
   PAIRS_SHEET: (v, N) => {
     const structSheet = S => (S && S.structure && S.structure.sheet ? S.structure.sheet() : 146),
       S = {id: 'coral', replay: true, structure: {sheet: () => N}},
@@ -114,7 +107,7 @@ const GATES = {
     return on;
   },
   // The sea slugs' look-alike pairs under the content editor (core.js SUBJECTS seaslug structure sheet; Code.gs subjRpl_
-  // over seaslug.json; Pierre, 2026-11-18): the app lays the pairs over its units (app.js structOn) and says their stamp
+  // over seaslug.json): the app lays the pairs over its units (app.js structOn) and says their stamp
   // and adopts a replay under a new one (sync.js stOn) from the script that replays the sea slugs under them; before, the
   // text slots alone, nothing sent. The fish and the corals keep their own versions.
   SEASLUGPAIRS_SHEET: (v, N) => {
@@ -138,8 +131,8 @@ const GATES = {
       ASUBJ: null,
       groupsOn: () => false
     })({open: 'group', sheet: N}),
-  // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from v171; before, the one
-  // general board as before, whatever the reply carries.
+  // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from the version that serves
+  // them; before, the one general board, whatever the reply carries.
   SCOPES_SHEET: (v, N) =>
     fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
       SCOPES_SHEET: N,
@@ -148,7 +141,7 @@ const GATES = {
       boardMe: () => -1
     })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
   // The player groups' boards (progress.js boardScopes; Code.gs board_ groups): from the version that serves them, the
-  // player's own groups' boards first, then All players; before, whatever the reply carries, as before.
+  // player's own groups' boards first, then All players; before, whatever the reply carries.
   GROUPS_SHEET: (v, N) =>
     fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
       SCOPES_SHEET: Infinity,
@@ -158,12 +151,12 @@ const GATES = {
       boardMe: () => -1
     })({ok: true, rows: [['A', 1, null]], groups: [{id: 'g:1', n: 'G', rows: [['B', 2, null]]}], ...(v === undefined ? {} : {v})}).top
       .length > 1,
-  // The admin's Cohort select on a player's bar (admin.js cohortOn; Code.gs userGroup cohort): from v171, until the
-  // player groups (GROUPADM_SHEET) take its place.
+  // The admin's Cohort select on a player's bar (admin.js cohortOn; Code.gs userGroup cohort): from the version that
+  // keeps it, until the player groups (GROUPADM_SHEET) take its place.
   COHORT_SHEET: (v, N) =>
     fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N, groupsOn: () => false})(),
   // The player groups in the admin (admin.js groupsOn: a player's groups as chips, Players › Groups; Code.gs userGroup,
-  // groupMake, groupEdit, groupDrop): from the version that has them; before, the beta group and the cohort as before.
+  // groupMake, groupEdit, groupDrop): from the version that has them; before, the beta group and the cohort.
   GROUPADM_SHEET: (v, N) => fn('admin.js', 'const groupsOn = ', '\n', 'groupsOn', {USERS: v === undefined ? {} : {v}, GROUPADM_SHEET: N})(),
   // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
   // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
@@ -205,7 +198,7 @@ const GATES = {
     if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
     return !!asked;
   },
-  // A Find the X's photo tapped (quiz.js answer pa; Q371): sent from the version that stores it (Code.gs Photo answered),
+  // A Find the X's photo tapped (quiz.js answer pa): sent from the version that stores it (Code.gs Photo answered),
   // through core.js logOut at both of sync.js's sends; before, the copy sent leaves it out and keeps the rest, the queue
   // untouched (an older script gets exactly what it got before).
   PA_SHEET: v => {
@@ -254,7 +247,7 @@ for (const name of Object.keys(GATES))
     assert.strictEqual(GATES[name](undefined, N), false, `${name} on with no version`);
   });
 
-// The ratchet (architecture review 2026-11-18, R3, step 2): no gate at or below the floor (delete it with its old branch
+// The ratchet: no gate at or below the floor (delete it with its old branch
 // when the floor rises), and the floor never above main's VERSION (a PR never edits VERSION, rule D3, so this checkout's
 // is main's): it is a version already live, never the one the app is built against.
 test('the gate floor: no gate at or below SHEET_FLOOR, SHEET_FLOOR at or below VERSION', () => {

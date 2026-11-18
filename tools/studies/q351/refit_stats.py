@@ -234,7 +234,7 @@ for f in FMTS:
         continue
     gt, gr = P['TODAY'][mk].mean() - y[mk].mean(), P['REFIT'][mk].mean() - y[mk].mean()
 
-    # The guardrail read with its interval (rule L11; Codex review #904): d = |REFIT's gap| - |TODAY's gap|, its
+    # The guardrail read with its interval (rule L11): d = |REFIT's gap| - |TODAY's gap|, its
     # delete-one-player jackknife (each replicate's arms as replayed without that player), held when the one-sided 90%
     # upper bound is at most 0.02, breached when the lower bound is above it, unclear otherwise.
     def gapd(k, q, mk=mk):

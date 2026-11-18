@@ -43,7 +43,7 @@ function storage(init = {}) {
 // sheet: a loadCodeGs() sheet the requests go to (sheetFetch for a signed-in player, fetch for anonymous answers).
 function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
-    // The beta groups as app.js keeps them (GROUPS_KEY, subjGroups, subjOpen; sheet v48), run as the page runs them.
+    // The beta groups as app.js keeps them (GROUPS_KEY, subjGroups, subjOpen), run as the page runs them.
     appjs = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     groups = /const GROUPS_KEY = [\s\S]*?\nconst subjOpen = .*\n/.exec(appjs)[0],
     loadData = /const loadData = [\s\S]*?;\n/.exec(prog)[0],
@@ -91,7 +91,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     P,
     PMEM: undefined,
     PCONF: {},
-    PFMT: {}, // the per-format offsets (model.js; Q138): none from this test's sheet
+    PFMT: {}, // the per-format offsets (model.js): none from this test's sheet
     ACHK: 'reefid-sync-ach',
     sheetFetch: answer,
     fetch: answer,
@@ -282,8 +282,8 @@ test('answers saved by a device still on the previous app version, after this on
   assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [2, C.RV]);
   // A device on the app before the replay: it loads A's copy, answers once, saves its merge (no rules version in its
   // data: it does not know the key; no rv in its request).
-  // Since the rename to IMR Reef ID, an app from before it saves only the old key names (its own storage), and the
-  // renamed app's saves carry a copy under them (core.js withLegacy) that such an app reads.
+  // An app from before the rename to IMR Reef ID saves only the old key names (its own storage), and the renamed app's
+  // saves carry a copy under them (core.js withLegacy) that such an app reads.
   // rename-app: keep-begin
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
     Q = JSON.parse(saved['imr-coral-progress']);
@@ -312,8 +312,8 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
   await A.syncPull();
   await A.syncPush();
   // A device on the app before the replay saves one more answer, with no rules version in its data.
-  // Since the rename to IMR Reef ID, an app from before it saves only the old key names (its own storage), and the
-  // renamed app's saves carry a copy under them (core.js withLegacy) that such an app reads.
+  // An app from before the rename to IMR Reef ID saves only the old key names (its own storage), and the renamed app's
+  // saves carry a copy under them (core.js withLegacy) that such an app reads.
   // rename-app: keep-begin
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
     Q = JSON.parse(saved['imr-coral-progress']);
@@ -454,8 +454,8 @@ test('the merge baseline after an adoption is the shared history: an unsent answ
 });
 
 test('an unsent answer is left out of the replay baseline: another device saving the replay of the two keeps it (Codex review #399)', async () => {
-  // Codex's scenario: two answers logged (the saved copy, of the older rules, has them), a third on the same genus played
-  // here and not sent yet. This device adopts the replay at a load: 3 here, the baseline the 2 of the log (was 3 and 3).
+  // Two answers logged (the saved copy, of the older rules, has them), a third on the same genus played here and not
+  // sent yet. This device adopts the replay at a load: 3 here, the baseline the 2 of the log (not 3 and 3).
   const s = loadCodeGs(withData()),
     old = {Acropora: {ok: 2, ko: 0, h: '11', pg: 0.3}};
   s.post({
@@ -777,9 +777,8 @@ test('property: devices, unsent answers, lost replies, an older client and a res
         await d.syncPush();
       }
     }
-    // Every device saves until nothing changes (saves no longer refused), then loads. Saves only: a load between them
-    // set the version back to 0, so the next save's load brought the replay and saved the version, which hid the loop
-    // (Codex review #399).
+    // Every device saves until nothing changes (saves not refused any more), then loads. Saves only: a load between them
+    // would set the version back to 0, so the next save's load would bring the replay and save the version, hiding a loop.
     calm = true;
     for (let round = 0; round < 4; round++)
       for (const d of devs) {
@@ -792,8 +791,8 @@ test('property: devices, unsent answers, lost replies, an older client and a res
       assert.strictEqual(total(d.ctx.P), want, `run ${run}: device ${i} counts ${total(d.ctx.P)} answers, the log ${want}`)
     );
     assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy`);
-    // Converged: the saved copy and every device at the rules version, and no more replay in any reply (Codex review #399:
-    // the saved version stayed 0 and every save's reply carried the full replay again).
+    // Converged: the saved copy and every device at the rules version, and no more replay in any reply (a saved version
+    // stuck at 0 would make every save's reply carry the full replay again).
     const savedRv = Number(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv'] || '0'));
     assert.deepStrictEqual([savedRv, ...devs.map(d => d.rvApplied())], [C.RV, C.RV, C.RV], `run ${run}: the rules versions`);
     // Then saves and loads in any order.
@@ -845,7 +844,7 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     [false, false, false, true, true, true],
     'a card for 5 points or more only'
   );
-  // Rules version 9's apology (core.js RV_SORRY, Pierre 2026-11-06): from 1 point, either way; the standard card is not
+  // Rules version 9's apology (core.js RV_SORRY): from 1 point, either way; the standard card is not
   // due beside it in the same jump.
   assert.deepStrictEqual(
     [
@@ -873,8 +872,8 @@ test('the recalculation card is due only when the progress % moved by 5 points o
   assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SV], undefined]);
 });
 
-// No card for a recalculation from rules version 10 (Pierre, 2026-11-09 ~14:45 Manila, Q330): a card queued before the
-// upgrade (here rules version 9's apology, not seen yet) goes too, for the subject that jumps (Codex review of #840).
+// No card for a recalculation from rules version 10: a card queued before the upgrade (here rules version 9's apology,
+// not seen yet) goes too, for the subject that jumps.
 test('a jump to a rules version without a card drops the cards of that subject still due', () => {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     block = cut(src, 'const RVN = ', 'let rvT = 0;'),
@@ -904,7 +903,7 @@ function ach(A, quiet = false) {
       ...C,
       SYNC: {name: 'Ana'},
       synced: 0,
-      MXL: {KEY: 'reefid-mx-lost', QUIET: quiet}, // model.js MXL (QUIET true there since Q332)
+      MXL: {KEY: 'reefid-mx-lost', QUIET: quiet}, // model.js MXL (QUIET true there)
       ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
@@ -935,14 +934,14 @@ test('achievements taken back: the removals are kept and synced even when this r
   a.achMerge(JSON.stringify(sheetCopy));
   assert.strictEqual(a.rec().learn1, undefined, "the sheet's stale copy does not bring it back");
   assert.strictEqual(a.rec().met10, 10);
-  // Held here: taken back as before.
+  // Held here: taken back.
   const b = ach({_v: 2, met10: 10, learn1: 20});
   assert.deepStrictEqual(b.achRecheck(), ['learn1']);
   assert.strictEqual(b.rec().learn1, undefined);
 });
 
-// Silent for now (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332): a recheck still pending from before the
-// upgrade takes nothing back, and its flag goes (Codex review of #840).
+// The learned mark silent (model.js MXL.QUIET): a recheck still pending from before the upgrade takes nothing back, and
+// its flag goes.
 test('the learned mark silent: a recheck pending from before takes no achievement back', () => {
   const a = ach({_v: 2, met10: 10, learn1: 20}, true);
   assert.strictEqual(a.achRecheck().length, 0);
@@ -970,7 +969,7 @@ test('the learned mark silent: a card due from before goes to told unseen', () =
   assert.deepStrictEqual([M.due, M.told], [{}, {Porites: 7, Acropora: 123}]);
 });
 
-// progress.js achMigrate and achPending (ACH_V 3, Pierre 2026-11-08: "recalculer ... leur succès actuel"), on the real
+// progress.js achMigrate and achPending (ACH_V 3: recounted on the player's current success), on the real
 // achSnap over a made-up world of two subjects: every subject's achievements recounted on its own progress, the fish
 // ones on the global score; a subject whose data is not in yet waits on the device; a stale device brings nothing back.
 function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
@@ -990,7 +989,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       SYNC: {name: 'Ana'},
       synced: 0,
       cur: 'coral',
-      fishIn: fish,
+      treePhotoIn: fish,
       MXL: {KEY: 'reefid-mx-lost'},
       ACHNEW: 'reefid-ach-new',
       LEVEL: '~level',
@@ -1001,7 +1000,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       achDot: () => {},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
-  const ids = s => (s === 'fish' && !ctx.fishIn ? [] : Object.keys(lv[s]));
+  const ids = s => (s === 'fish' && !ctx.treePhotoIn ? [] : Object.keys(lv[s]));
   Object.assign(ctx, {
     slateGenera: () => ids(ctx.cur),
     lvStep: n => lv[ctx.cur][n] || 0,
@@ -1015,8 +1014,8 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       coral: {},
       fish: {
         core: () => ids('fish').slice(0, 28),
-        circles: () => (ctx.fishIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
-        tree: () => (ctx.fishIn ? {f: [], s: []} : null),
+        circles: () => (ctx.treePhotoIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
+        tree: () => (ctx.treePhotoIn ? {f: [], s: []} : null),
         sets: [{k: 'sci', all: () => []}]
       },
       seaslug: {circles: () => [ids('seaslug').slice(0, 24), ids('seaslug').slice(24, 46), ids('seaslug').slice(46)]}
@@ -1087,19 +1086,19 @@ test('achievement recount: a subject whose data is not in waits on this device, 
     'the fish ones are out of the synced record until tested'
   );
   assert.deepStrictEqual(m.old(), {fish: {fmet5: 20, fpct50: 23}}, 'retired ids do not even wait');
-  // Nothing held: the fish still wait, so what their progress meets comes in silently once their data is in (Codex review #734).
+  // Nothing held: the fish still wait, so what their progress meets comes in silently once their data is in.
   const e = migr({_v: 2, met10: 10}, {fish: false});
   e.achMigrate();
   assert.deepStrictEqual(e.old(), {fish: {}});
-  e.ctx.fishIn = true;
+  e.ctx.treePhotoIn = true;
   e.ctx.domRecalcAll = () => (e.ctx.rebuilt = e.ctx.cur);
   e.achPending();
   assert.ok(e.rec().fmet5 && e.rec().fpct40 && e.old() === null);
   assert.strictEqual(e.ctx.rebuilt, 'fish', 'the bars rebuilt in the fish subject before the test (Codex review #734)');
-  // The fish data in before the shared data (a direct Fish link, Codex review #734): it waits, then is recounted.
+  // The fish data in before the shared data (a direct Fish link): it waits, then is recounted.
   const d = migr({_v: 2, fmet5: 20}, {fish: false});
   d.achMigrate();
-  d.ctx.fishIn = true;
+  d.ctx.treePhotoIn = true;
   d.ctx.DATA = undefined;
   d.achPending();
   assert.deepStrictEqual(d.old(), {fish: {fmet5: 20}}, 'waits for data.json');
@@ -1110,7 +1109,7 @@ test('achievement recount: a subject whose data is not in waits on this device, 
   assert.ok(m.old());
   m.achPending(); // the fish data in, still missing: it waits again
   assert.ok(m.old());
-  m.ctx.fishIn = true;
+  m.ctx.treePhotoIn = true;
   m.achPending();
   assert.strictEqual(m.old(), null);
   assert.deepStrictEqual([m.rec().fmet5, m.rec().fpct50, m.rec().fpct25, m.rec().met10], [20, undefined, undefined, 10]);
@@ -1135,8 +1134,8 @@ test('achievement recount: a stale device (record version 2) never brings back w
   assert.deepStrictEqual([m.rec().fmet5, m.rec().fq50a], [5, 40]);
 });
 
-// Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
-// it: the answer time weighs them (sheet v32, below the gate floor core.js SHEET_FLOOR), as the sheet's own replay does.
+// This device's answers replayed on top of an adopted replay follow the rules of the script that sent it: the answer
+// time weighs them (every script at or above the gate floor core.js SHEET_FLOOR does), as the sheet's own replay does.
 test('a replay adopted replays the pending answers with the answer time, as the sheet (Codex review #444)', () => {
   // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
   const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
@@ -1150,8 +1149,8 @@ test('a replay adopted replays the pending answers with the answer time, as the 
   assert.strictEqual(a.ctx.P.Acropora.th, th(true), `ability ${a.ctx.P.Acropora.th}`);
 });
 
-// Codex review #428 (P1): the first-launch prior follows the script that replays it (sheet v36, below the gate floor
-// core.js SHEET_FLOOR): this device's answers replayed on top of its replay apply it, as the sheet's own replay does.
+// The first-launch prior follows the script that replays it (every script at or above the gate floor core.js
+// SHEET_FLOOR applies it): this device's answers replayed on top of its replay apply it, as the sheet's own replay does.
 test('a replay adopted replays the pending answers with the first-launch prior, as the sheet (Codex review #428)', () => {
   // The first answers on a genus never answered: their ability starts from the prior.
   const pending = Array.from({length: 6}, (_, i) => ({...qa('s' + i, i), g: 'Pocillopora', a: 'Pocillopora', ok: 1}));
@@ -1166,12 +1165,12 @@ test('a replay adopted replays the pending answers with the first-launch prior, 
   // The replay says which history it applied (the same as this device's here).
   assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], fp: C.startFp(start)}, pending, C.SHEET_FLOOR), true);
   assert.strictEqual(a.ctx.P.Pocillopora.th, th(true), `ability ${a.ctx.P.Pocillopora.th}`);
-  // Another history than this device's: not adopted, a save to follow (Code.gs v36 sends the fingerprint it used).
+  // Another history than this device's: not adopted, a save to follow (Code.gs sends the fingerprint it used).
   const b = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
   assert.strictEqual(b.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.SHEET_FLOOR), false);
 });
 
-// Codex review #428 (P2): signing in merges the first-launch record made here before (a newer answer and its history)
+// Signing in merges the first-launch record made here before (a newer answer and its history)
 // with the account's (core.js startUnion) instead of taking the account's alone.
 test("signing in keeps the first-launch answer given here before, and the account's history (Codex review #428)", () => {
   const here = {c: 'know', t: 200, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 200, 'tour']]},
@@ -1191,7 +1190,7 @@ test("signing in keeps the first-launch answer given here before, and the accoun
   assert.strictEqual(C.startPriorAt(o, 250), C.startVars('know').p);
 });
 
-// Codex review #428 (P2): a replay made with another first-launch history than the device now holds (the sheet's,
+// A replay made with another first-launch history than the device now holds (the sheet's,
 // before this device's newer answer is saved) is not adopted: the save that follows carries the merged history, and
 // its reply brings the replay made with it.
 test('a replay made with another first-launch history is not adopted; the next save brings the right one (Codex review #428)', async () => {
@@ -1232,15 +1231,15 @@ test('a replay made with another first-launch history is not adopted; the next s
   assert.strictEqual(a.ctx.P.Acropora.th, want.Acropora.th, 'the abilities from the merged history');
 });
 
-// Sheet v48 (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch): the sheet's replies
-// to a load and a save say which groups the signed-in player is in; the app opens the beta subject to them, for that
-// account only, and closes it again when taken out (a reload on the corals when it was on screen).
+// A beta subject opens to a group Pierre picks in the admin, not by one site-wide switch: the sheet's replies to a load
+// and a save say which groups the signed-in player is in; the app opens the beta subject to them, for that account
+// only, and closes it again when taken out (a reload on the corals when it was on screen).
 test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async t => {
   const s = loadCodeGs(withData()),
     TOK = 'ghp_write000000000000000000',
     fish = C.subjectOf('fish');
-  // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
-  // back to 'group' here, in the app (it shares core.js's objects) and in the sheet.
+  // Fish opens to all: the group mechanics, kept for a subject that opens to a group, on fish set to 'group' here, in
+  // the app (it shares core.js's objects) and in the sheet.
   fish.open = 'group';
   require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   t.after(() => (fish.open = 'all'));
@@ -1248,7 +1247,7 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), false, 'in no group: closed');
-  const g = s.post({groupMake: {n: 'Fish beta', beta: fish.id}, token: TOK}).group.id; // v179: a group whose beta is fish
+  const g = s.post({groupMake: {n: 'Fish beta', beta: fish.id}, token: TOK}).group.id; // a group whose beta is fish
   assert.ok(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).ok);
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), true, 'the load reply opens it');
@@ -1289,7 +1288,7 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   assert.strictEqual(c.subjOpen(fish), true);
 });
 
-// Fish answers logged (Pierre, 2026-11-06; sheet v60): queued with the corals', sent with them, filed under their subject
+// Fish answers logged: queued with the corals', sent with them, filed under their subject
 // by the sheet, and never replayed into the corals' progress.
 test('fish answers: sent with the corals, filed under their subject, out of the coral replay', async () => {
   const s = loadCodeGs(withData()),
@@ -1346,7 +1345,7 @@ test('a recheck that waits for the first sync runs as the subject it was asked f
   assert.strictEqual(a.rec().learn1, undefined, "taken back on the corals' own snapshot");
 });
 
-// The device on every answer (Pierre, 2026-11-08, Q312; sheet v109, Code.gs Device): a save and an anonymous send carry
+// The device on every answer (Code.gs Device): a save and an anonymous send carry
 // this device's id, the one its events carry (reefid-dev-id). The sheet here answers as the gate floor's version.
 const asV = (s, v) => ({get: q => ({...s.get(q), v}), post: b => ({...s.post(b), v})});
 const devCol = s => s.sheets.Answers.rows.slice(1).map(r => [r[7], r[s.sheets.Answers.rows[0].indexOf('Device')] ?? '']);
