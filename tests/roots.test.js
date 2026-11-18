@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Name roots on the genus sheets (Pierre, 2026-11-14, Q124 d): data.json `root` (tools/apply_name_roots.py), shown by
+// Name roots on the genus sheets: data.json `root` (tools/apply_name_roots.py), shown by
 // learn.js rootLine. Every root line has a source for each meaning, never an invented split.
 const block = require('./block.js');
 const test = require('node:test'),
@@ -111,7 +111,7 @@ test('the genus sheet shows the root line under the ID tips, outside the IMR tip
   assert.ok(i > sheet.indexOf('<b>Mnemonic:</b>') && i < sheet.indexOf('<div class="lnotes">'), 'rootLine sits after the tips box');
 });
 
-// Fish genera (Q124 d, the follow-up of #891): tools/fish_genus_roots.json, read from The ETYFish Project, built into
+// Fish genera: tools/fish_genus_roots.json, read from The ETYFish Project, built into
 // fish.json genera `root` by tools/build_fish.py add_families (genus_root) and shown by the same rootLine, on the one
 // sheet the genus opens (learn.js treeRoot).
 const FISH = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'));
