@@ -47,7 +47,7 @@ function app({fail = () => undefined} = {}) {
     const url = new URL(String(u)),
       body = o && o.body ? JSON.parse(o.body) : null,
       n = sent.length;
-    sent.push(body ? {post: 1, ...body} : {get: 1, ...Object.fromEntries(url.searchParams)});
+    sent.push(body ? {post: 1, ...(body.lt || body)} : {get: 1, ...Object.fromEntries(url.searchParams)}); // a light save unwrapped
     const f = fail(u, o, n);
     if (f instanceof Error) return Promise.reject(f);
     if (f && typeof f.then === 'function') return f;

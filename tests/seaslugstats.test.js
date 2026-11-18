@@ -184,7 +184,6 @@ function app(sheetVersion, reply) {
   vm.runInContext(
     [
       'let PSTAT = {}, PCONF = {}, PGD = {}, GDIFF = {};',
-      block(M, 'const PGD_SHEET = ', '\n', {through: 1, file: 'model.js'}),
       block(M, 'const gdOf = ', '\n', {through: 1, file: 'model.js'}),
       block(M, 'const OWN_STATS = ', '\n// The domain-score bar', {file: 'model.js'}),
       block(M, 'const isLook = (t, n) =>', '\nfunction confOf', {file: 'model.js'}),

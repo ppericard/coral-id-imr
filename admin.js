@@ -4986,16 +4986,9 @@ function loadPages(force) {
         if (!fresh()) return PGS;
         pgsAt = Date.now();
         return (PGS =
-          j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
+          j && j.ok && j.rows
             ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // v58: an archive's apart (its Journey only)
-            : {
-                err:
-                  !j || !(Number(j.v) >= PAGES.SHEET)
-                    ? `Sheet script v${PAGES.SHEET} not running yet (it updates itself within 15 minutes)`
-                    : j.error === 'token'
-                      ? 'Token refused'
-                      : 'Not available'
-              });
+            : {err: j && j.error === 'token' ? 'Token refused' : 'Not available'});
       })
       .catch(() => {
         if (!fresh()) return PGS;
@@ -9400,7 +9393,7 @@ function bindStats() {
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
   bindSess();
   // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. Between
-  // them, from sheet LIVE_SHEET, the light read every minute (liveArm below).
+  // them, the light read every minute (liveArm below).
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
@@ -9413,16 +9406,15 @@ function bindStats() {
   liveArm(); // Activity drawn: the next light read (none on any other page)
 }
 // A live Players › Activity (Pierre, 2026-11-08: "Les deux"): while the page is open and in view, every LIVE_READ.MS the
-// sheet's light read (Code.gs live_, POST readLive, from LIVE_SHEET: the last rows of the answer log and each player's
+// sheet's light read (Code.gs live_, POST readLive, sheet v110: the last rows of the answer log and each player's
 // last answer time, where readAnswers sends the whole log) brings the answers given since, merged into the log held
 // (liveMerge), and the page is drawn again (Recent sessions, who is playing now, "as of"). Hidden (another tab, the phone
 // asleep) or another page: no read, the timer stopped; back in view, a read at once when the last is over LIVE_READ.MS old.
 // When the light read cannot complete the log held (liveMerge full), the whole log is read again in the background, as
-// ↻ does but with the page kept on screen; a player new to the player list reads it again too. Before LIVE_SHEET (an
-// older script answers readLive 'input'), and without the token, nothing: ↻ by hand as before (rule D4).
-const LIVE_SHEET = 110;
+// ↻ does but with the page kept on screen; a player new to the player list reads it again too. Without the token,
+// nothing: ↻ by hand as before.
 const LIVE_READ = {MS: 60000};
-const liveOn = () => !!ANS && !ANS.old && Number(ANS.v) >= LIVE_SHEET;
+const liveOn = () => !!ANS && !ANS.old;
 let liveT = 0,
   liveAt = 0; // the last light read asked (a failed one too: the next waits LIVE_READ.MS)
 const liveWanted = () => cur === 'players/activity' && document.visibilityState === 'visible' && !!TOKEN && liveOn();
@@ -9653,21 +9645,12 @@ function savedClear() {
 // has not opened the app since a recalculation, or whose last answers are not saved yet). Signed-in players by name,
 // devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
 // Computed once per data load (the answer log, the stats, the saved copy), memoized.
-// Only from sheet script v28 (core.js RV_SHEET; rule D4: the admin never gets ahead of the script): before it the
-// players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
-// column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
-const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
-// The domain-score bar (core.js DOM) in the admin's replays only from the script that replays it (core.js DOM_SHEET; rule
-// D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
-const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
-// From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
-// time, about 15 s on a phone for 40 players) the player list carries that same replay, computed by the sheet (Code.gs
-// replayedAll_: rp = [progress %, learned, the saved copy's %]), and Players reads no saved copy. The Journey (full) still
-// replays here: it shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or
-// their copy) is replayed here as before.
-const RP_SHEET = 42;
-const rpOn = () => ((USERS && USERS.v) || 0) >= RP_SHEET;
+// The player list carries that same replay, computed by the sheet (sheet v42, Code.gs replayedAll_: rp = [progress %,
+// learned, the saved copy's %]; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
+// time, about 15 s on a phone for 40 players), and Players reads no saved copy. The Journey (full) still replays here: it
+// shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or their copy) is
+// replayed here.
 // The subject the sheet replays (SUBJECTS replay): the corals.
 const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
 // A player's saved copy for one subject (savedOf): null while read, {err} when it could not be.
@@ -9731,13 +9714,13 @@ const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).
 const unitWait = S => (S && S.sheets ? S : FISHS);
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
 // replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's (PR #808).
-const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, ...domReplay()} : {dom: domReplay().dom});
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD} : {});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
 function progOf(u, full, S = replayS()) {
   const M = unitsOf(S);
   if (!ANS || !M || !u || !u.id) return null;
-  if (S.replay && !full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
+  if (S.replay && !full && !u.anon && Array.isArray(u.rp)) {
     const [pct, learned, spct] = u.rp;
     return {
       pct,
@@ -9749,7 +9732,6 @@ function progOf(u, full, S = replayS()) {
   }
   const X = u.anon ? {P: {}} : savedFor(u.name, S);
   if (!X) return null;
-  if (!replayOn()) return {off: 1, G: X.err ? {} : X.P || {}, err: X.err};
   const key = S.id + '|' + u.id,
     m = PROGM.get(key);
   if (m && m.ans === ANS && m.S === X && m.M === M && m.mem === SMEM && m.learned === u.learned) return m.v;
@@ -9789,7 +9771,7 @@ const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="a
 // shows them, unitPct) from their saved copy, read when the row opens (one sheet call: never for the whole list).
 const UPWAIT = new Set(); // the subjects whose units a bar is waiting for (read once, the list drawn again then)
 function uprogHtml(u, S) {
-  if (S.replay ? !u.pg : !sxOf(u, S).n || !replayOn()) return '';
+  if (S.replay ? !u.pg : !sxOf(u, S).n) return '';
   if (!S.replay && !unitsOf(S) && !UPWAIT.has(S.id)) {
     UPWAIT.add(S.id);
     unitAdmin(unitWait(S)).then(() => cur === 'players/list' && render());
@@ -9857,7 +9839,7 @@ const SCOLS = [
     (u, S) => (x => (x.s ? `${x.s} <small>· ${x.len < 1 ? '<1' : x.len} min</small>` : '–'))(sxOf(u, S)),
     () => true
   ],
-  // The replayed subject's progress (SUBJECTS replay; the Progress column from sheet script v28, replayOn).
+  // The replayed subject's progress (SUBJECTS replay; the Progress column, sheet script v28).
   [
     'prog',
     'Progress',
@@ -9865,7 +9847,7 @@ const SCOLS = [
     0,
     () => 'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)',
     u => (!u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')),
-    S => !!S.replay && replayOn()
+    S => !!S.replay
   ],
   // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
   // (Code.gs exposure_: ex {subject id: [seen, of, hit, asked, units]}). Photos = Seen %; Spread = Spread %, the one to
@@ -9877,7 +9859,7 @@ const SCOLS = [
     0,
     () => 'Seen %: the game photos they have been shown, out of the game photos of the units they have met',
     (u, S) => EXPO_CELL.photos(u, S),
-    () => expoOn()
+    () => true
   ],
   [
     'spread',
@@ -9887,7 +9869,7 @@ const SCOLS = [
     () =>
       'Spread %, in time order: of their questions on a unit that still had colonies they had never been shown, the share that showed one (100% = no colony repeated while an unseen one was left)',
     (u, S) => EXPO_CELL.spread(u, S),
-    () => expoOn()
+    () => true
   ]
 ];
 // Each player's answers and sessions per subject, from the whole log (rowsOf): {player id: {subject id: {n, ok, at, s,
@@ -9934,9 +9916,7 @@ const devsOf = u => {
 // The subject a player answered last in (their Journey opens there; Pierre's list, 2026-11-06), else the first.
 const lastSubj = u => SUBJECTS.reduce((b, S) => (sxOf(u, S).at > sxOf(u, b).at ? S : b), SUBJECTS[0]);
 const journeyHref = u => '#' + lastSubj(u).hash + 'players/list/journey/' + encodeURIComponent(u.name);
-// Sheet v81: each player's photo exposure per subject (ex); an older script sends none, and the two columns stay away.
-const EXPO_SHEET = 81;
-const expoOn = () => ((USERS && USERS.v) || 0) >= EXPO_SHEET;
+// Sheet v81: each player's photo exposure per subject (ex).
 const exOf = (u, S = ASUBJ) => (u && u.ex && u.ex[S.id]) || null;
 // A cell: the share, its counts in the title; – when the player has no answer on a unit with game photos.
 const exCell = (k, n, tip) => (n ? `<span title="${esc(tip)}">${pct(k, n)}</span>` : '–');
@@ -9952,25 +9932,15 @@ const EXPO_CELL = {
 // by one site-wide switch): for each subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once
 // it opens to all, even with its "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens
 // the subject to them, app.js subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all
-// above the table.
-const GROUP_SHEET = 48;
-// Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
-const DEL_SHEET = 55;
-const delOn = () => (USERS.v || 0) >= DEL_SHEET;
-// Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
-const ARCH_SHEET = 58;
-const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
+// above the table. Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_). Sheet v58: Archive
+// (userArchive, Board -2) and the Archived fold (users_ archived).
 // Out of the statistics (sheet v115, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
 // the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
-const EXCL_SHEET = 115;
-const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
-  `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
+  `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}">${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
 // Sheet v99: Change the starting answer (users_ userStart; core.js startAdminSet).
-const START_ADMIN_SHEET = 99;
-const startAdmOn = () => (USERS.v || 0) >= START_ADMIN_SHEET;
 // A player's starting answer per subject, in their bar (Pierre, 2026-11-08, Q228: a fallback card moved a player to the
 // wrong answer; "Change the starting answer" fixes it through the normal sync, never by hand in the sheet): the answer in
 // force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
@@ -9991,7 +9961,7 @@ function startBlock(u) {
         msg = uStartMsg && uStartMsg.name === u.name && uStartMsg.sid === S.id ? uStartMsg : null,
         d = `data-sname="${esc(u.name)}" data-sid="${esc(S.id)}"`,
         ctl = !on
-          ? `<button type="button" class="adm-fchip plain" data-ustart ${d}${startAdmOn() ? '' : ` disabled title="Needs the sheet script v${START_ADMIN_SHEET}"`}>Change…</button>`
+          ? `<button type="button" class="adm-fchip plain" data-ustart ${d}>Change…</button>`
           : on.busy
             ? '<span class="note">Changing…</span>'
             : on.c
@@ -10014,7 +9984,7 @@ const COHORT_SHEET = 171;
 const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET;
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
-const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= Math.max(GROUP_SHEET, S.sheet || 0);
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0);
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
@@ -10037,7 +10007,7 @@ function renderUsers() {
     return;
   }
   // The columns: the player's, then each subject's group (its key prefixed by the subject's id), each shown when it applies
-  // (the Progress column only from sheet script v28, replayOn; a Beta column only for a subject that opens to a group).
+  // (a Beta column only for a subject that opens to a group).
   const GRP = SUBJECTS.map(S => [
       S,
       SCOLS.filter(c => c[6](S)).map(([k, t, f, asc, tip, cl]) => ({
@@ -10067,7 +10037,7 @@ function renderUsers() {
     .map(u => ({
       ...u,
       at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
-      pg: replayOn() ? progOf(u) : null
+      pg: progOf(u)
     }))
     .sort((a, b) => {
       const x = col.f(a),
@@ -10108,10 +10078,10 @@ function renderUsers() {
           : ''
       }
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
-      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
+      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}">Archive…</button>
       ${
         uDel === u.name
-          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
+          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}">Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}">Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button></span>`
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
       }${startBlock(u)}</div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
@@ -10144,7 +10114,7 @@ function renderUsers() {
   const gLine = SUBJECTS.filter(S => subjGroup(S))
     .map(S => {
       if (!groupOn(S))
-        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${Math.max(GROUP_SHEET, S.sheet || 0)} (live: v${USERS.v || '?'}).</p>`;
+        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${S.sheet || 0} (live: v${USERS.v || '?'}).</p>`;
       const out = U.filter(u => !inGroup(u, S)).length;
       return `<p class="adm-ugroup"><span>${esc(S.name)} beta: <b>${U.length - out}</b> of ${U.length} players</span>${out ? ` <button type="button" class="adm-fchip" data-ugall="${esc(S.id)}">Add all ${out}</button>` : ''}${U.length - out ? ` <button type="button" class="adm-fchip" data-ugnone="${esc(S.id)}">Remove all ${U.length - out}</button>` : ''}</p>`;
     })
@@ -10407,9 +10377,7 @@ function bindUsers() {
               ? toast(`"${into}" is already a player.`)
               : j && j.error === 'reserved'
                 ? toast(`"${into}" is a reserved name: please choose another.`)
-                : j && j.error === 'input'
-                  ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
-                  : done(`"${name}" archived as "${into}".`, j)
+                : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
@@ -11662,7 +11630,7 @@ function statsConf() {
             `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}${p.dl ? ' · <b title="Offered together ' + CONF.N + ' times or more, score ' + CONF.TRAP + ' or more: duels, Again and the sheets treat it as a look-alike">look-alike from the data</b>' : ''}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
         )
         .join('')}</tbody></table></div>`
-        : `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
+        : `<p class="note">No answer with its choices yet.</p>`
     }</section>
     <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', phCell)}</section>
     <section class="adm-scard"><h3>${esc(S.admin.obs || 'Colonies')}</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener">${gnm(o.g)} ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
