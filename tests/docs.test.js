@@ -503,3 +503,31 @@ test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/
     assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   }
 });
+
+// Decision records (rule W19; docs/decisions/README.md): each is named YYYY-MM-DD-topic.md, says its date (the name's) and
+// the PR that carried it out, holds a decision, links to files that exist and has a row in the index.
+test('every decision record has its date, its PR, a decision, working links and a row in the index', () => {
+  const dir = path.join(ROOT, 'docs', 'decisions');
+  const index = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+  const records = fs.readdirSync(dir).filter(f => f !== 'README.md');
+  assert.ok(records.length > 0, 'docs/decisions/ holds no record');
+  for (const f of records) {
+    assert.match(f, /^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$/, f + ': named YYYY-MM-DD-topic.md (lowercase, hyphens)');
+    const text = fs.readFileSync(path.join(dir, f), 'utf8');
+    assert.match(text, /^# \S/, f + ': no title on the first line');
+    const head = /^Date: (\d{4}-\d\d-\d\d)\b.*?\bPR: #(\d+)/ms.exec(text);
+    assert.ok(head, f + ': no "Date: YYYY-MM-DD. PR: #N." line');
+    assert.strictEqual(head[1], f.slice(0, 10), f + ': its Date is not the date in its name');
+    assert.match(text, /^(## Decisions?\b|.*\bDecisions?\b:)/m, f + ': no Decision section');
+    for (const m of text.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
+      if (/^[a-z]+:/i.test(m[1])) continue;
+      assert.ok(fs.existsSync(path.resolve(dir, m[1])), f + ': the link ' + m[1] + ' does not resolve');
+    }
+    const row = index.split('\n').find(l => l.startsWith('|') && l.includes('](' + f + ')'));
+    assert.ok(row, f + ': no row in docs/decisions/README.md "Index"');
+    assert.ok(row.startsWith('| ' + f.slice(0, 10) + ' |'), f + ': its index row does not start with its date');
+    assert.ok(row.includes('| #' + head[2] + ' |'), f + ': its index row does not name PR #' + head[2]);
+  }
+  for (const m of index.matchAll(/^\|[^|]*\|[^|]*\]\(([^)]+)\)/gm))
+    assert.ok(fs.existsSync(path.join(dir, m[1])), 'docs/decisions/README.md: the index names ' + m[1] + ', which does not exist');
+});
