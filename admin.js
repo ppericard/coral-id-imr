@@ -9898,6 +9898,7 @@ function savedPump() {
             intro: P(subjKey(S.id, 'intro')) || {},
             offer: P(subjKey(S.id, 'intro-offer')),
             start: P(startKey(S.id)),
+            quiz: P(subjKey(S.id, 'quiz')),
             reset: P(subjKey(S.id, 'reset')),
             ach
           }),

@@ -20,7 +20,7 @@ let JSORT = 'met';
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
 function journeyCards(name, T = ASUBJ) {
   const S = savedFor(name, T);
-  return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
+  return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start, quiz: S.quiz};
 }
 // How Open all was given (intro-offer via); 'offer' and a declined offer (open 0) come from older records, when a card
 // offered Open all.
@@ -118,6 +118,28 @@ function jSteps(R, rec, S) {
 const jStepWords = ([, kind, w]) =>
   kind === 'rank' ? [`${w[0].toUpperCase() + w.slice(1)} questions`, w[0].toUpperCase() + w.slice(1)] : [`Circle ${w}`, `Circle ${w}`];
 // jsteps: end
+// joptin: begin
+// The opt-in choices a player made (SUBJECTS optin: the corals' bonus genera, the fish's scientific names and circle 3),
+// from the subject's quiz settings in their saved copy (reefid-sync-<subject>-quiz: app.js bonusSet, openNo): q[k] on or
+// off, q[k + 'T'] when the latest choice was made (every toggle, a "Not now" included), q[k + 'N'] the offer's "Not now"
+// count and q[k + 'A'] the answers so far at the last one (kept through later choices: no time of their own), q[k + 'H']
+// on by hand before it was due. [[time or null, the set's name, what happened]]: the current state with the time of the
+// latest choice, and the offer's declines apart with no time; a set never offered or chosen left out.
+const JOPT = {bon: 'Bonus genera', sci: 'Scientific names', beyond: 'Families beyond the IMR course'};
+function jOptin(q, S) {
+  if (!q || typeof q !== 'object') return [];
+  return ((S && S.optin) || []).flatMap(k => {
+    const n = Number(q[k + 'N']) || 0,
+      t = Number(q[k + 'T']) || null,
+      no = n ? `offer declined ${n === 1 ? 'once' : n + ' times'}, the last after answer ${Number(q[k + 'A']) || 0}` : '';
+    const w = JOPT[k] || k;
+    return [
+      ...(typeof q[k] === 'boolean' ? [[t, w, q[k] ? (q[k + 'H'] ? 'on, by hand before it was due' : 'on') : 'off']] : []),
+      ...(no ? [[null, w, no]] : [])
+    ];
+  });
+}
+// joptin: end
 // jgames: begin
 // The Journey's Games card, Players' numbers for one player: their answers in the subject by format, [title, answers,
 // right], the formats with no answer left out. The photo quiz split: its own questions, the "Again: A or B?" rematch
@@ -443,6 +465,11 @@ function renderJourney(name, anonId = '') {
       s[4],
       `<li><b>${esc(jStepWords(s)[0])}</b> from answer ${s[0] + 1} · ${jUnit(s[3])} · ${jLocal(s[4])}</li>`
     ]),
+    // The opt-in choices (jOptin), from the saved copy: timed by the choice, listed with the steps.
+    optItems = (C && C.quiz ? jOptin(C.quiz, ASUBJ) : []).map(([t, w, what]) => [
+      t,
+      `<li><b>${esc(w)}</b> ${esc(what)}${t ? ' · ' + jLocal(t) : ''}</li>`
+    ]),
     stepsList = stepItems.length ? `<ul class="adm-jcards">${jOrder(stepItems)}</ul>` : '';
   const cardsLine = !C
     ? '<p class="note">Cards: loading…</p>' + stepsList
@@ -466,6 +493,7 @@ function renderJourney(name, anonId = '') {
               [null, `<li><b>Cards one at a time</b> ${singles.length}</li>`],
               ...offCards,
               ...stepItems,
+              ...optItems,
               ...(openAt != null
                 ? [
                     [
@@ -565,7 +593,7 @@ function renderJourney(name, anonId = '') {
       label: `${jMany()} met over time`
     })}
     <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p>
-    ${cardsLine ? `<h4>Cards${steps.length ? ' and steps' : ''}</h4>${cardsLine}` : ''}</section>`;
+    ${cardsLine ? `<h4>Cards${steps.length || optItems.length ? ' and steps' : ''}</h4>${cardsLine}` : ''}</section>`;
 
   // 2. Easy and hard for them: right answers against the chance the game expected (photo difficulty, their level).
   const scored = Object.entries(J.G).filter(([, s]) => s.n >= JOURNEY.MIN && s.score != null),
