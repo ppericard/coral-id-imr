@@ -27,6 +27,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       slateGenera: () => slate,
       syncSoon: () => {},
       basicsDue: () => !basics && ctx.SUBJ.pages.includes('basics'), // app.js: the subject's basics module not done yet
+      UNITS: {coral: {}, fish: {startFb: false}}, // app.js: the fish make no level-change proposal (Pierre, 2026-11-08)
       document: {querySelectorAll: () => []},
       ...C,
       ...require('./subj.stub.js')(),
@@ -638,7 +639,13 @@ test('sign-out clears the first-launch answer and Coral basics with the progress
   assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
-  assert.match(list, /\bBASICS_KEY\b/);
+  // Every subject's basics module record (subjDev 'basics': Coral basics', Fish basics') goes too: one device, several players.
+  assert.match(list, /\[[^\]]*'basics'[^\]]*\]\.map\(k => subjDev\(S\.id, k\)\)/);
+  assert.deepStrictEqual(
+    C.SUBJECTS.filter(S => S.pages.includes('basics')).map(S => C.subjDev(S.id, 'basics')),
+    ['reefid-basics', 'reefid-fish-basics'],
+    'each subject with a basics module has its own record, the corals keeping theirs'
+  );
 });
 
 // Codex review of #428, P2 4457104032: a glossary popup gives the same link before and after the Tools tier is in
@@ -731,7 +738,7 @@ test('rules version: the first-launch prior has its RVS entry, with RV_CARD', ()
 // The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md): each subject asks its own question, in its own
 // words (SUBJECTS start: the same answers, in the same order), kept in its own record (startKey): the coral answer stays
 // the corals', the fish one sets the fish starting values, its window counts fish answers, and a subject without a basics
-// module (no Fish basics yet) has no "lower" card and no basics offer.
+// module (the sea slugs) has no "lower" card and no basics offer.
 test('per subject: the fish welcome question, its own record, window and cards', () => {
   ['coral', 'fish'].forEach(id => {
     const S = C.subjectOf(id);
@@ -762,12 +769,13 @@ test('per subject: the fish welcome question, its own record, window and cards',
   assert.deepStrictEqual(M.startV(), startVars('imr'), "fish: its own answer's prior");
   assert.strictEqual(M.saved[C.startKey('fish')] && JSON.parse(M.saved[C.startKey('fish')]).c, 'imr');
   assert.strictEqual(JSON.parse(M.saved[C.startKey('coral')]).c, 'know', 'the coral answer untouched');
-  // The window counts the fish answers in the fish record only; a "lower" verdict has no card (no Fish basics).
+  // The window counts the fish answers in the fish record only; a "lower" verdict has no card on the fish (they make no
+  // level-change proposal, Pierre, 2026-11-08: UNITS fish startFb false), the offer of Fish basics included.
   M.setHold(2);
   M.play(CHOICE.AT[0], 0, false, true, -1);
   assert.strictEqual(M.startOf().w.length, CHOICE.AT[0], 'fish: its own window');
   assert.strictEqual(M.startOf().v, 'lo');
-  assert.strictEqual(M.startDue(), null, 'no Fish basics: no "lower" card');
+  assert.strictEqual(M.startDue(), null, 'the fish: no "lower" card, Fish basics or not');
   M.ctx.SUBJ = C.subjectOf('coral');
   assert.deepStrictEqual(M.startV(), startVars('know'), 'back on the corals: their answer');
   assert.strictEqual((M.startOf().w || []).length, 0, 'the coral window untouched by fish answers');
@@ -780,5 +788,10 @@ test('per subject: the fish welcome question, its own record, window and cards',
   assert.strictEqual(M.startOf().c, 'know', 'still the coral record on screen');
   assert.strictEqual(JSON.parse(M.saved[C.startKey('fish')]).c, 'know', 'the fish record merged: the latest answer');
   assert.strictEqual(M.ctx.drops, drops, "another subject's record: the plans on screen stay");
-  assert.ok(C.subjectOf('coral').pages.includes('basics') && !C.subjectOf('fish').pages.includes('basics'), 'Coral basics: corals only');
+  assert.ok(
+    C.subjectOf('coral').pages.includes('basics') &&
+      C.subjectOf('fish').pages.includes('basics') &&
+      !C.subjectOf('seaslug').pages.includes('basics'),
+    'a basics module: the corals and the fish, not the sea slugs'
+  );
 });

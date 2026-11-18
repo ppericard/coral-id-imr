@@ -61,6 +61,7 @@ const SHELL = [
   ...[
     'idkey',
     'basics',
+    'fishbasics',
     'map',
     'anatomy',
     'zoom',

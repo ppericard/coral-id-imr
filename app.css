@@ -8063,6 +8063,23 @@ a.ftile:hover {
 .lvsub {
   color: var(--muted);
 }
+/* The lobby's QR code: always dark on light (a scanner needs it), beside the address and the code on a wide screen. */
+.lvjoin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.lvjoinx {
+  min-width: 0;
+}
+.qr {
+  width: min(44vh, 280px, 100%);
+  height: auto;
+  border-radius: var(--r-sm);
+  flex: none;
+}
 .lvbigcode {
   text-align: center;
   font-family: var(--display);
