@@ -367,7 +367,7 @@ test(
           .map(p => [p.f, p])
       );
     assert.deepStrictEqual([r.done, r.wait, r.n], [11, 0, 12]);
-    // Pierre's 5 of the first run, the sure best and alt of the candidates, the reference photos judged sure (below the
+    // Pierre's 5 adds of the fixture, the sure best and alt of the candidates, the reference photos judged sure (below the
     // reference level too); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a
     // reference photo on an observation in play unless judged no duplicate of its photos.
     assert.deepStrictEqual(Object.keys(by).sort(), [

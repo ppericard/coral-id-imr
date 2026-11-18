@@ -546,8 +546,7 @@ print(json.dumps(out))
   for (const k of ['ab', 'ba']) assert.deepStrictEqual(o[k], {a: [7, 3, 3, 3], b: [7, 3, 3, 3]}, k);
 });
 
-// The starter core (the right first families) and the judged photos (none too hard for a beginner; judging/FISH.md,
-// tools/fish_judge.py).
+// The starter core and the judged photos (judging/FISH.md, tools/fish_judge.py).
 const PH = read('fish-photos.json').photos,
   GM = require('../core.js').fishGameRead(read('fish-game.json')).photos,
   JUDGE = read('tools/fish_judge.json');

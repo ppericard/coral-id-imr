@@ -283,8 +283,8 @@ const server = http.createServer((req, res) => {
     'calibration',
     JSON.stringify(R.cal)
   );
-  // A focused beginner: on the mean of 8 seeds, at most 17 genera met by question 100 (the seeds give 12-19, mean about
-  // 14.5). One seed alone moves with any data change (a candidate refill changes every draw); the mean of 8 moves with
+  // A focused beginner: on the mean of 8 seeds, at most 17 genera met by question 100. One seed alone moves with any
+  // data change (a candidate refill changes every draw); the mean of 8 moves with
   // the opening rule. tools/learnsim.js measures it over more seeds (docs/LEARNING.md "Photo memory", "The genus wrongly
   // given in the Elo", "Global level and genus", "Beginners and experts").
   const fMean = R.focus.reduce((a, x) => a + x, 0) / R.focus.length;

@@ -140,7 +140,7 @@ test('a progress reset: only the answers after it', () => {
 test('replayedOf: the replayed bars with the saved exams, not one passed under the former model', () => {
   const rep = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'C', 'C', 'c0', 'C D E A')], {gen: GEN}).p;
   const saved = {
-    A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned under the current model (pg): kept
+    A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned under the current model: kept
     C: {L: 0.97, mx: 1, ok: 1, ko: 0, h: '1'}, // learned under BKT: dropped
     D: {pg: 0.82, ex: {k: 2, v: ['wide'], at: 40}, ok: 9, ko: 0, h: '111111111'}, // no answer in the log: dropped (rule D9)
     '~level': {ok: 5, ko: 1, th: 0.3}

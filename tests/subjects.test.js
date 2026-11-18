@@ -210,7 +210,7 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
   // No default card watermarked before fish-game.json is in (app.js seenCover reads these photos until then): a unit (a
   // genus or a family: fish.json) among an entry's first photos whose adults there all carry a watermark (judged flag w)
   // has no adult without one in play, unless one of them is Pierre's ★ cover (rule A1: his watermarked covers stay
-  // first). A unit with only watermarked first photos and none without in play waits for fish-game.json for its card.
+  // first).
   const gen = new Map(F.species.filter(s => s.genus).map(s => [s.id, s.genus])),
     fam = new Map(F.families.flatMap(f => (f.species || []).map(s => [s, f.id]))),
     covers = new Set(

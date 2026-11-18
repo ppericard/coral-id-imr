@@ -438,7 +438,7 @@ test('Home band: rotates only among R2 photos; a tile prefers one on R2', () => 
   }
 });
 
-// A wink's surprise card (quiz.js winkPhoto; the Thresher sharks' first): his ★ Cover while in play (coverP), else one
+// A wink's surprise card (quiz.js winkPhoto; the Thresher sharks', for one): his ★ Cover while in play (coverP), else one
 // of the wink's chosen photos in play, else the unit's best.
 test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q290)", () => {
   const qs = fs.readFileSync(path.join(ROOT, 'quiz.js'), 'utf8'),

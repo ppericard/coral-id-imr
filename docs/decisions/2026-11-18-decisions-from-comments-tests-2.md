@@ -19,6 +19,10 @@ are found nowhere in `docs/` is kept here, one line each: the date, Pierre's wor
 - 2026-11-08 (Q291): "the covers can go before the mosaic, but in landscape, it must fit well". Decided that Home's
   landscape tiles (`home.js` `tilePhoto`) show his cover only when its shape suits the tile and it shows the whole fish.
   Checked by `tests/fishcovers.test.js`.
+- 2026-11-08: "the limit of 4 photos per observation must be lifted for every observation [...] weight the choice so
+  as not to bring too many photos of one observation, but never blocking". Decided that every photo of an observation
+  is a fish candidate, its first counting 1 against the cap and each further one half (`tools/fetch_fish.py`
+  `obs_cost`, `EXTRA_W`; the former cap kept as `OLD_LIMIT` for `--topup`). Checked by `tests/fishphotos.test.js`.
 - 2026-11-13: "il faut que tes propositions marchent aussi pour les coraux, ou les nudibranches ou les plantes". Decided
   that the ranks the admin's ★ Cover can set are read from the subject (`admin.js` `fuRanks`, `fuRankOf`), never fixed
   to the fish's. Checked by `tests/fishcovers.test.js`.
