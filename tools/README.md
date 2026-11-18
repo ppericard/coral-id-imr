@@ -73,6 +73,7 @@ Conventions that hold across them:
 | `apply_plain_terms.py` | The glossary's plain first sentences |
 | `apply_name_roots.py` | The sourced roots of genus names |
 | `apply_id_tips.py`, `id_tips.txt` | Writes the short ID tips into `data.json` |
+| `apply_coral_apart.py`, `coral_apart.json` | The slate pairs' tell-apart lines with their sources, into `data.json` `ap` / `apsrc`; `--check` for a test |
 | `apply_imr_corrections.py`, `apply_review_slides.py`, `apply_favites.py`, `apply_some_species.py` | One-time content passes on the lecture notes and the traits of some genera |
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
 | `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |
@@ -131,7 +132,7 @@ Conventions that hold across them:
 | `seaslug_game.py` | Builds `seaslug.json`, `seaslug-game.json` from the list and the judged candidates |
 | `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `seaslug-cand.json`; species with no published name |
 | `seaslug_names.py`, `seaslug_names_src.json`, `seaslug_names.json` | English common names with their sources |
-| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family |
+| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family, and the declared genus pairs' tell-apart lines |
 | `seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`, `seaslug_lookalikes_pull.json`, `seaslug_lookalikes_cand.json` | Look-alike candidates from iNaturalist and the literature |
 | `seaslug_worms.py`, `seaslug_worms.json`, `seaslug_groups.json` | The reference taxonomy from WoRMS and the hand-kept taxonomic groups |
 | `seaslug_lit.py`, `seaslug_lit_source.json`, `seaslug_lit.json` | The literature watch: new names and revisions, read by people only |
