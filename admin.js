@@ -4415,7 +4415,7 @@ const HELP = {
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // A getter: EV_DAYS is declared further down this file.
   get alerts() {
-    return `<p>The sync sheet's <b>Alerts</b> tab, written by the sheet script itself (docs/SECURITY.md), newest first, the last ${EV_DAYS} days. <b>Limits reached</b>: the first request of a 6-hour window refused by a flood cap, by its key: <code>a:</code> a device not signed in (600 answers), <code>anon</code> all of them (6000), <code>n:</code> a player's account (3000 answers; shown as the player's admin id, as Players shows it beside the name), <code>newacct</code> new accounts (40), <code>reports</code> (300 report requests), <code>ev:</code> a device's events (200), <code>events</code> all events (3000), <code>old</code> old-app notes (300), <code>selfdel</code> / <code>sd:</code> self-deletes. The refused requests are not logged; the app keeps its answers and sends them later. <b>Photos of another unit</b>: answers whose photos are another unit's (logged, never rating a photo), by the sender's admin id. <b>Left out, signed in</b>: a device left out of the statistics signed in, so its account is left out too. A line that names a deleted, merged or archived account, or a device that has since signed in or was deleted, is not shown (rule D7; the tab keeps it). A burst of <code>a:</code> or <code>newacct</code> lines is the sign of a bot: docs/SECURITY.md "If it happens". Read-only: nothing here changes the sheet.</p>`;
+    return `<p>The sync sheet's <b>Alerts</b> tab, written by the sheet script itself (docs/SECURITY.md), newest first, the last ${EV_DAYS} days. <b>Limits reached</b>: the first request of a 6-hour window refused by a flood cap, by its key: <code>a:</code> a device not signed in (600 answers), <code>anon</code> all of them (6000), <code>n:</code> a player's account (3000 answers; shown as the player's admin id, as Players shows it beside the name), <code>newacct</code> new accounts (40), <code>reports</code> (300 report requests), <code>ev:</code> a device's events (200), <code>events</code> all events (3000), <code>old</code> old-app notes (300), <code>selfdel</code> / <code>sd:</code> self-deletes. The refused requests are not logged; the app keeps its answers and sends them later. <b>Photos of another unit</b>: answers whose photos are another unit's (logged, never rating a photo), by the sender's admin id. <b>Left out, signed in</b>: a device left out of the statistics signed in, so its account is left out too. A line that names a deleted, merged or archived account, or a device that has since signed in or was deleted, is not shown (rule D7; the tab keeps it). A burst of <code>a:</code> or <code>newacct</code> lines is the sign of a bot: docs/SECURITY.md "If it happens". Read-only: nothing here changes the sheet.</p><p><b>Infrastructure</b> (above the list; sheet script vNEXT): the numbers to watch before the platform outgrows its free tiers, flagged with ! past 70% of a limit. <b>Sheet cells</b>: every tab's allocated grid against Google's 10 million cells for a spreadsheet; <b>Answers tab</b>: its rows, columns and grid; <b>p90</b>: the 90th percentile of the slowest operations of the Timings tab over 7 days, against 5 s; <b>pCloud backup</b>: when the weekly backup last saved (flagged past 8 days). The published site's size (GitHub Pages, 1 GB) and R2's storage (10 GB, measured by hand: <code>tools/infra.json</code>) are not in the sheet: they are in <code>python3 tools/brief.py</code>, from the hourly Health run (docs/PAGES.md "Infrastructure health").</p>`;
   },
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups, Time), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Difficulty › Heatmap (every genus against every genus), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
@@ -5416,6 +5416,7 @@ function renderAlerts() {
     return;
   }
   const head = `<div class="adm-shead"><button type="button" class="adm-link" data-alr>Refresh</button></div>`;
+  if (!INF) loadInfra().then(() => cur === 'inbox/todo/alerts' && renderAlerts());
   if (ALS.err) {
     $v.innerHTML = head + `<p class="note">${esc(ALS.err)}</p>`;
     return bindAlerts();
@@ -5426,6 +5427,7 @@ function renderAlerts() {
     other = R.filter(r => kind(r) < 0).length;
   $v.innerHTML =
     head +
+    infraCard() +
     kpis([...ALERT_KINDS.map(([t], i) => [t, R.filter(r => kind(r) === i).length]), ...(other ? [['Other', other]] : [])]) +
     (R.length
       ? `<div class="adm-tscroll"><table class="adm-tbl adm-alerts"><thead><tr><th>When</th><th>Alert · ${EV_DAYS} days</th></tr></thead><tbody>${R.map(
@@ -5436,8 +5438,73 @@ function renderAlerts() {
 }
 function bindAlerts() {
   const r = $v.querySelector('[data-alr]');
-  if (r) r.onclick = () => loadAlerts(true).then(() => cur === 'inbox/todo/alerts' && renderAlerts());
+  if (r)
+    r.onclick = () => {
+      sheetDrop('infra');
+      INF = null;
+      Promise.all([loadAlerts(true), loadInfra()]).then(() => cur === 'inbox/todo/alerts' && renderAlerts());
+    };
 }
+// The infrastructure numbers to watch before the platform outgrows its free tiers (Pierre, 2026-11-18 11:21, "lance 1, 2, 3
+// et 4"; docs/PAGES.md "Infrastructure health"), the card above the Alerts list: the sheet's cells against Google's 10
+// million, the Answers tab, the slowest operations of the Timings tab (their 90th percentile against 5 s, Code.gs TIM.SLOW),
+// and the weekly pCloud backup's age. Code.gs readInfra_: counts, fixed tab names and times only. Admin token only; from
+// sheet INFRA_SHEET (rule D4): an older script answers 'input'. A row past 70 % of its limit is flagged (the same as
+// tools/health.py and tools/brief.py: tests/infra.test.js). The Pages site and R2 storage are not in the sheet: the brief.
+const INFRA_SHEET = 178;
+const infraOn = j => !!j && Number(j.v) >= INFRA_SHEET;
+const INFRA = {WARN: 0.7, SLOW: 5000, BACKUP_DAYS: 8};
+const infraFmt = (u, n) => (u === 'ms' ? (n / 1000).toFixed(1) + ' s' : n >= 1e5 ? (n / 1e6).toFixed(2) + ' M' : String(n));
+// Rows of the card from a readInfra reply: {label, text, share (of the limit, null when there is none), warn}.
+function infraRows(j, now) {
+  const C = j.cells || {},
+    A = j.answers || {},
+    lim = C.limit || 1e7,
+    row = (label, text, share, warn) => ({label, text, share, warn: warn === undefined ? share > INFRA.WARN : warn}),
+    out = [
+      row('Sheet cells', `${infraFmt('cells', C.total || 0)} of ${infraFmt('cells', lim)} · ${C.tabs || 0} tabs`, (C.total || 0) / lim),
+      row('Answers tab', `${A.rows || 0} rows × ${A.cols || 0} columns · ${infraFmt('cells', A.cells || 0)} cells`, (A.cells || 0) / lim)
+    ];
+  ((j.tim || {}).ops || [])
+    .slice(0, 3)
+    .forEach(o => out.push(row('p90 ' + o.op, `${infraFmt('ms', o.p90)} · ${o.n} calls, ${(j.tim || {}).days} days`, o.p90 / INFRA.SLOW)));
+  const B = j.backup || {},
+    days = B.saved ? (now - B.saved) / 864e5 : null;
+  out.push(
+    days === null
+      ? row('pCloud backup', B.last ? String(B.last.text).slice(0, 80) : 'none logged', null, !!B.last)
+      : row('pCloud backup', `saved ${days < 1 ? 'today' : Math.floor(days) + ' days ago'}`, null, days > INFRA.BACKUP_DAYS)
+  );
+  return out;
+}
+let INF = null;
+function loadInfra() {
+  if (INF) return Promise.resolve(INF);
+  if (!TOKEN) return Promise.resolve((INF = {err: 'Needs the GitHub token'}));
+  return sheetRead('infra', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readInfra: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return INF;
+        return (INF =
+          infraOn(j) && j.ok
+            ? {rows: infraRows(j, Date.now())}
+            : {err: !infraOn(j) ? `Sheet script v${INFRA_SHEET} not running yet (it updates itself within 15 minutes)` : 'Not available'});
+      })
+      .catch(() => (fresh() ? (INF = {err: 'Offline'}) : INF))
+  );
+}
+const infraCard = () =>
+  !INF
+    ? ''
+    : INF.err
+      ? `<p class="note">Infrastructure: ${esc(INF.err)}</p>`
+      : `<div class="adm-tscroll"><table class="adm-tbl adm-infra"><thead><tr><th>Infrastructure</th><th>Now</th><th>Limit</th></tr></thead><tbody>${INF.rows
+          .map(
+            r =>
+              `<tr${r.warn ? ' class="adm-warn"' : ''}><td>${esc(r.label)}</td><td>${esc(r.text)}</td><td>${r.share === null ? '' : Math.round(r.share * 100) + '%'}${r.warn ? ' !' : ''}</td></tr>`
+          )
+          .join('')}</tbody></table></div>`;
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 // The fish beta's reports (Codex review #442): a report from a fish question names a teaching id (t01) and remote
@@ -9201,6 +9268,7 @@ function sheetAgain(...kinds) {
     else if (k === 'pages') PGS = null;
     else if (k === 'events') EVS = null;
     else if (k === 'alerts') ALS = null;
+    else if (k === 'infra') INF = null;
     else if (k === 'reports') REPS = null;
   });
 }

@@ -10,7 +10,7 @@ or a protection changes.
 |---|---|---|---|
 | The site (GitHub Pages: HTML, JS, CSS, photos, `data.json`, `curation.json`) | Anyone | Nothing: static files, read-only; GitHub absorbs the traffic. | — |
 | Admin (`admin.html`) | Anyone can open the page, only a GitHub token with write access to the repo can change anything | Someone with Pierre's token rewrites `curation.json`. | Fine-grained token, this repo only, 90-day expiry, stored encrypted in Pierre's browser (password). Every Publish is a commit: reversible. |
-| Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (20 million cells per spreadsheet, script run quotas) and sync slows or stops for real players. | See below. |
+| Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (10 million cells per spreadsheet, Pierre 2026-11-18, watched in the admin: "Infrastructure" below; script run quotas) and sync slows or stops for real players. | See below. |
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. **Staff and cohort boards** (v171): the same rows split by who is where, every scope public like the general board (Pierre, 2026-11-17: "ça serait rigolo que les étudiants voient le leaderboard du staff et inversement"): `staff` lists the trainers (so the board says who holds the trainer role), `cohorts` each cohort's display name and its members' rows; an opted-out, hidden or archived player is on none, and a cohort's membership is never listed apart from its board (a member with no answer yet or opted out does not show). The player's own cohort comes in their load and save replies only (code checked). Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
 | Names, reports, user management, roles | Only with the admin GitHub token (checked by the script with GitHub) | — | `gate_` → `can_()` (roles step 1, below); the token reached through `caller_` → `isAdmin_` only. |
 | Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre, his agents and the Candidate photos workflow's bot push to `main` (its credentials: below). |
@@ -232,6 +232,21 @@ nor of a device once it signed in (its answers are the account's) or was deleted
 that name nobody stay (`a:` and `ev:` device ids, the global caps). **Not covered** (ROADMAP "Alerts lines of a name
 taken again"): an admin id is the name's, so a new account under a deleted or archived account's name shows that old
 account's id lines again; closing it means rewriting those ids in the tab, a write-path change for its own PR.
+
+## Infrastructure (sheet vNEXT, the hourly Health check)
+
+Pierre, 2026-11-18 11:21 ([PAGES.md](PAGES.md) "Infrastructure health"): the numbers to watch before the platform outgrows
+its free tiers.
+- **`readInfra`** (`POST {readInfra: 1, token}`): the `players` right through `gate_`, so the admin token only, never public;
+  read-only, no lock, nothing written (reads are not audited). It serves counts, fixed tab names and times: the spreadsheet's
+  cells against Google's 10 million, the Answers tab's size, the Timings tab's last 7 days per operation, the Deploy log's
+  last `pCloud backup:` line (which never holds the token or the code: `backup_` scrubs them). No name, id or answer.
+- **The hourly check holds no secret** (`health.yml`: the repository's token, read-only but for issues). Its log and its issue
+  are public: statuses, versions and sizes only. The public request it makes to the script is the app's own `?stats=1`, with an
+  `av` that is no build number, so the script writes nothing for it. Nothing public tells when the backup last ran: the
+  check says so. Giving it the admin token (as `INFRA_TOKEN`) is Pierre's decision, not made.
+- **R2** has no read-only token in CI (the keys the workflows hold can write, scope unchecked: STATUS "Pierre's hands"); its size
+  is measured by hand (`tools/infra.json`).
 
 ## If it happens
 

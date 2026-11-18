@@ -81,6 +81,11 @@ const GATES = {
   // serves it; before, an older script answers 'input' and the page names the version it waits for.
   ALERTS_SHEET: (v, N) =>
     fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
+  // To do › Alerts, the infrastructure card above the list (admin.js infraOn, loadInfra; Code.gs readInfra_; docs/PAGES.md
+  // "Infrastructure health"): from the version that serves it; before, an older script answers 'input' and the card says
+  // which version it waits for (tests/infra.test.js runs the card's numbers).
+  INFRA_SHEET: (v, N) =>
+    fn('admin.js', 'const infraOn = ', '\n', 'infraOn', {INFRA_SHEET: N})({ok: true, cells: {}, ...(v === undefined ? {} : {v})}),
   // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the
   // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
   // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
