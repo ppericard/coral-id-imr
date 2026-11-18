@@ -4594,6 +4594,17 @@ fish game in a browser, the answer at which each achievement first enters the re
 - **Dropped: a fish Elo achievement.** The simulated fish level is already about 1.5-2.2 (Elo 1,300-1,440) when it first shows at 200
   answers (`ELO_MIN`), so "Fish Elo 1200" came at exactly the 200th answer for every run: an answer count, not a milestone (rule L8).
 
+### Sea slug achievements (2026-11-17 first version, 2026-11-18 the % beyond 50%)
+
+`core.js` `SEASLUG_ACH`, 20 (Pierre, 2026-11-17: "une première version des succès pour les limaces de mer"), ids starting
+with `ss`, modelled on the fish's over the sea slugs' own structure (genera met and at each level, families with every genus at Advanced, the
+nudibranchs and the other taxonomic groups, the first circle). Learning milestones only (rule L8). The % ones, every 10
+points from 10% to 100% (`sspct10` to `sspct100`), read the headline % (the mean of the genera's bars: the sea slugs
+have no score tree and no species unit), so 100% needs every genus learned, its exam passed (a bar is 100% only with the learned mark, and the mean is rounded, so `sspct100` asks `learned >= total` as well, Codex #1112; it is in `ACH_LEARN`, taken back with a learned mark); sspct60 to sspct100 ("Gill and frill", "Muck
+magnet", "Slug savant", "Nudibranch nerd", "Every last slug", all gold) came after the first version; the choices are in
+`docs/decisions/2026-11-18-seaslug-achievements-high.md`. Timing not simulated (`tools/learnsim.js` plays corals and fish
+only). Waiting: the species achievements, once the sea slugs have species units.
+
 ### Fish achievements, around the global score (2026-11-08, Q259-Q264; record version 3)
 
 **Decided** (Pierre, 2026-11-08), on the proposal of the same day (33 learning achievements), once the global score was built
