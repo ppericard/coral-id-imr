@@ -1464,7 +1464,7 @@ const under = (p, x) => p === x || p.startsWith(x + '/');
 // each under its subject's prefix; the list of players and Visits are one page for both (SHARED): no prefix, the same page
 // on either side (the list: a group of columns per subject; Visits: every subject's visits, each marked with its subjects,
 // a Subject filter; Pierre, 2026-11-09), the switch inert there, the subject on screen kept for the other pages.
-const SHARED = ['players/list', 'players/visits'];
+const SHARED = ['players/list', 'players/visits', 'players/groups'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights); To do › Alerts (renderAlerts: the sheet's Alerts tab, about no subject).
@@ -1635,7 +1635,10 @@ const GROUPS = [
       // Visits (Pierre, 2026-11-08, Q301 layout A): who opens the app and what for, games or not, signed in or not
       // (admin-visits.js renderVisits).
       ['visits', 'Visits', [['', 'Visits']]],
-      ['list', 'List', [['', 'List']]]
+      ['list', 'List', [['', 'List']]],
+      // The player groups (Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
+      // groupes"): every group with its settings and members (renderGroups); one page for every subject, as the list.
+      ['groups', 'Groups', [['', 'Groups']]]
     ],
     // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
     // always opens Activity").
@@ -1884,6 +1887,7 @@ const modeKey = () =>
             ? 'stats'
             : {
                 'players/list': 'users',
+                'players/groups': 'groups',
                 'players/visits': 'visits',
                 'photos/review/quality': 'quality',
                 'photos/review/growth-form': 'form',
@@ -3704,6 +3708,7 @@ function render() {
   if (cur === 'players/visits')
     return typeof renderVisits === 'function' ? renderVisits() : addEventListener('load', () => render(), {once: true});
   if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  if (cur === 'players/groups') return renderGroups(); // the player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18)
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
   if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
@@ -4405,7 +4410,14 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it, <b>Remove all</b> takes everyone out of it (both ask first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p><p><b>Cohort</b> and <b>Staff</b> (sheet v171; each has its own leaderboard in the app): <b>Cohort</b> in a player's bar puts them in one cohort (one at most; <b>None</b> takes them out); <b>New cohort…</b> asks its name, free text players read above its leaderboard ("RA November 2026"); a cohort exists while it has a member. <b>Staff</b> = the trainer role of the instance: <b>Add</b> / <b>Remove</b>. The staff have their own leaderboard and leave the general one and the cohorts'. Everyone sees every board: their cohort's first, then the staff's, then all players'; the other cohorts behind "Other cohorts". The Groups column shows both; the line above the table counts each cohort and the staff. A merge keeps the kept name's cohort; an archive or a delete takes the player out.</p>`,
+  // A getter: GROUPADM_SHEET is declared further down this file.
+  get groups() {
+    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app; <b>Apart</b> On = its members leave the general leaderboard and every other group's (as the staff do), staying members of their other groups; <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
+  },
+  // A getter: GROUPADM_SHEET is declared further down this file.
+  get users() {
+    return `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Groups</b> (sheet v${GROUPADM_SHEET}; a player is in any number of them): their groups as chips in their bar, <b>×</b> takes them out of one, <b>+ Add to a group</b> puts them in one (one click each, no confirmation); <b>Groups</b> lists them. Every group, its settings and its members are on <b>Players › Groups</b>. No group gives a right: roles are apart. A merge joins the merged name's groups to the kept one's; an archive or a delete takes the player out of every group. Before that sheet version: the subject's <b>Beta group</b> (Add / Remove, Add all, Remove all) and the <b>Cohort</b> select, as before.</p>`;
+  },
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -4483,6 +4495,7 @@ function toggleHelp() {
         ? 'statsneeds'
         : {
             'players/list': 'users',
+            'players/groups': 'groups',
             'photos/stats/difficulty': 'statsph',
             'photos/stats/overview': ASUBJ.sheets ? 'fishpstats' : 'pstats',
             'analyses/difficulty/pairs': 'statsconf',
@@ -9974,13 +9987,7 @@ const UCOLS = [
   ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
   // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
   ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
-  [
-    'groups',
-    'Groups',
-    u => (u.groups || []).length + (u.cohort ? 1 : 0) + (u.staff ? 1 : 0),
-    0,
-    'The beta groups, cohort and staff they are in'
-  ]
+  ['groups', 'Groups', u => groupNames(u).length, 0, 'The groups they are in']
 ];
 // A subject's group: [key, title, sort value (u, S), ascending first, tip (S), cell (u, S), shown for S]. sxOf(u, S): the
 // player's answers in S ({n, ok, at, s: sessions, len: their median length in minutes}), from the answer log.
@@ -10155,11 +10162,227 @@ function startBlock(u) {
 // one, its display name free text; Code.gs userGroup with cohort) and Staff, the trainer role of the instance (roleGrant,
 // roleRevoke). Each has its own leaderboard in the app; the staff leave the others.
 const COHORT_SHEET = 171;
-const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET;
+const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
+// Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
+// arbitraire de groupes"; "Staff" is not a role): one model for the beta groups, the cohorts and the staff (Code.gs
+// groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
+// Groups lists every group with its settings (Board, Apart, Beta) and members, makes, renames and deletes an empty one.
+// Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
+// (the Staff toggle, which granted the trainer role, is gone at every version).
+const GROUPADM_SHEET = 179;
+const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
+const gdefs = () => (USERS && USERS.groupDefs) || [];
+const gdefOf = id => gdefs().find(d => d.id === id);
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
-const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0);
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0) && !groupsOn();
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
+// A player's groups by name (the Groups column): their groups from GROUPADM_SHEET; before, the subjects' beta groups and
+// the cohort.
+const groupNames = u =>
+  groupsOn()
+    ? (u.gids || [])
+        .map(gdefOf)
+        .filter(Boolean)
+        .map(d => d.n)
+    : [...(u.groups || []).map(g => subjectOf(g).name), u.cohort].filter(Boolean);
+// A player's groups in their bar: a chip each (× takes them out) and the groups they are not in yet.
+function ugChips(u) {
+  const mine = (u.gids || []).map(gdefOf).filter(Boolean),
+    rest = gdefs().filter(d => !(u.gids || []).includes(d.id));
+  return `<span class="adm-ugchips">${mine
+    .map(
+      d =>
+        `<span class="adm-gchip">${esc(d.n)}<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}">×</button></span>`
+    )
+    .join(
+      ''
+    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}">${esc(d.n)}</option>`).join('')}</select>` : ''}</span>`;
+}
+// Players in (on) or out of a group (Code.gs userGroup), one name or a list; the page follows at once.
+function memberSet(names, gid, on) {
+  const L = Array.isArray(names) ? names : [names],
+    d = gdefOf(gid) || {n: gid};
+  return userPost({userGroup: names, group: gid, on})
+    .then(j => {
+      if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+      const k = new Set(L.map(x => x.toLowerCase()));
+      USERS.users.forEach(u => {
+        if (!k.has(u.name.toLowerCase())) return;
+        const g = (u.gids || []).filter(x => x !== gid);
+        u.gids = on ? [...g, gid] : g;
+      });
+      toast(
+        Array.isArray(names)
+          ? `${j.n} player${j.n === 1 ? '' : 's'} ${on ? 'added to' : 'removed from'} ${d.n}.`
+          : `"${L[0]}" ${on ? 'added to' : 'removed from'} ${d.n}.`
+      );
+      render();
+    })
+    .catch(() => (toast('Not done (offline).'), render()));
+}
+// Players › Groups (sheet GROUPADM_SHEET): every group, the newest first, with its settings and members. New group asks
+// a name; Rename too; Board and Apart one click each way; Beta a list of the subjects that open to a group; Add all and
+// Remove all ask first (bulk, rule A2); Delete only an empty group, one click (nothing to lose).
+function renderGroups() {
+  status();
+  const head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button>${
+    USERS && !USERS.err && groupsOn() ? ' <button type="button" class="adm-fchip" data-gnew>New group</button>' : ''
+  }</div>`;
+  if (!USERS) {
+    $v.innerHTML = head + '<p class="note">Loading…</p>';
+    loadUsers().then(() => cur === 'players/groups' && render());
+    return bindGroups();
+  }
+  if (USERS.err || !groupsOn()) {
+    $v.innerHTML =
+      head +
+      `<p class="${USERS.err ? 'warn' : 'note'}">${USERS.err || `Groups need the sheet script v${GROUPADM_SHEET} (live: v${USERS.v || '?'}).`}</p>`;
+    return bindGroups();
+  }
+  const U = USERS.users,
+    betas = SUBJECTS.filter(S => subjGroup(S)),
+    seg = (id, k, on, t) =>
+      `<span class="adm-qseg adm-lvseg" role="group" aria-label="${t}">${[
+        [0, 'Off'],
+        [1, 'On']
+      ]
+        .map(
+          ([v, w]) =>
+            `<button type="button" data-gset="${esc(id)}" data-k="${k}" data-val="${v}" aria-pressed="${!!on === !!v}">${w}</button>`
+        )
+        .join('')}</span>`;
+  const card = d => {
+    const M = U.filter(u => (u.gids || []).includes(d.id)).sort((a, b) => a.name.localeCompare(b.name)),
+      out = U.length - M.length,
+      B = [...betas.filter(S => S.id !== d.beta), ...(d.beta ? [subjectOf(d.beta) || {id: d.beta, name: d.beta}] : [])];
+    return `<section class="adm-scard adm-gcard" data-g="${esc(d.id)}"><div class="adm-ghead"><b class="adm-gname">${esc(d.n)}</b><button type="button" class="adm-fchip plain" data-gren="${esc(d.id)}">Rename</button><span class="adm-gcount" title="Players in it"><b>${M.length}</b> of ${U.length}</span>${
+      M.length ? '' : `<button type="button" class="adm-danger" data-gdrop="${esc(d.id)}">Delete</button>`
+    }</div>
+      <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span><span title="Its members leave the other leaderboards">Apart ${seg(d.id, 'apart', d.apart, 'Apart')}</span>${
+        B.length || d.beta
+          ? `<label title="The subject in beta it opens">Beta <select data-gbeta="${esc(d.id)}"><option value="">None</option>${B.map(S => `<option value="${esc(S.id)}"${S.id === d.beta ? ' selected' : ''}>${esc(S.name)}</option>`).join('')}</select></label>`
+          : ''
+      }</div>
+      <div class="adm-gmem">${M.map(
+        u =>
+          `<span class="adm-gchip">${pname(u.name, u.board === -1)}<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove ${esc(u.name)} from ${esc(d.n)}">×</button></span>`
+      ).join('')}${
+        out
+          ? `<select class="adm-gadd" data-gjoin="${esc(d.id)}" aria-label="Add a player"><option value="">+ Add a player</option>${U.filter(
+              u => !(u.gids || []).includes(d.id)
+            )
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(u => `<option>${esc(u.name)}</option>`)
+              .join('')}</select>`
+          : ''
+      }</div>
+      <div class="adm-ugroup">${out ? `<button type="button" class="adm-fchip" data-gall="${esc(d.id)}">Add all ${out}</button>` : ''}${
+        M.length ? `<button type="button" class="adm-fchip" data-gnone="${esc(d.id)}">Remove all ${M.length}</button>` : ''
+      }</div></section>`;
+  };
+  const D = gdefs()
+    .map((d, i) => [d, i])
+    .sort((a, b) => (b[0].at || 0) - (a[0].at || 0) || b[1] - a[1])
+    .map(x => x[0]);
+  $v.innerHTML = head + (D.length ? `<div class="adm-groups">${D.map(card).join('')}</div>` : '<p class="note">No group yet.</p>');
+  bindGroups();
+}
+function bindGroups() {
+  const rl = $v.querySelector('[data-uload]');
+  if (rl)
+    rl.onclick = () => {
+      sheetAgain('users');
+      render();
+    };
+  // A change to a group itself (Code.gs groupMake, groupEdit, groupDrop): the list read again, as the sheet now has it.
+  const gpost = (body, msg) =>
+    userPost(body)
+      .then(j => {
+        if (!j || !j.ok)
+          return (
+            toast(
+              j && j.error === 'exists'
+                ? 'Another group has that name.'
+                : j && j.error === 'name'
+                  ? 'A name of 1 to 40 characters.'
+                  : `Not done (${(j && j.error) || 'offline'}).`
+            ),
+            render()
+          );
+        toast(msg(j));
+        return loadUsers(true).then(() => render());
+      })
+      .catch(() => (toast('Not done (offline).'), render()));
+  const ask = (q, was = '') => (prompt(q, was) || '').replace(/\s+/g, ' ').trim();
+  const nw = $v.querySelector('[data-gnew]');
+  if (nw)
+    nw.onclick = () => {
+      const n = ask('New group: its name, as players will see it above its leaderboard');
+      if (n) gpost({groupMake: {n, board: 1}}, j => `${j.group.n} made.`);
+    };
+  $v.querySelectorAll('[data-gren]').forEach(
+    b =>
+      (b.onclick = () => {
+        const d = gdefOf(b.dataset.gren),
+          n = d && ask('Rename the group', d.n);
+        if (n && n !== d.n) gpost({groupEdit: d.id, n}, () => `${d.n} renamed ${n}.`);
+      })
+  );
+  $v.querySelectorAll('[data-gset]').forEach(
+    b =>
+      (b.onclick = () => {
+        if (b.getAttribute('aria-pressed') === 'true') return;
+        const d = gdefOf(b.dataset.gset),
+          k = b.dataset.k,
+          on = b.dataset.val === '1';
+        gpost({groupEdit: d.id, [k]: on}, () => `${d.n}: ${k === 'board' ? 'leaderboard' : 'apart'} ${on ? 'on' : 'off'}.`);
+      })
+  );
+  $v.querySelectorAll('[data-gbeta]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        const d = gdefOf(sel.dataset.gbeta);
+        gpost(
+          {groupEdit: d.id, beta: sel.value},
+          () => `${d.n}: ${sel.value ? `opens ${subjectOf(sel.value).name}` : 'opens no subject'}.`
+        );
+      })
+  );
+  $v.querySelectorAll('[data-gdrop]').forEach(
+    b =>
+      (b.onclick = () => {
+        const d = gdefOf(b.dataset.gdrop);
+        b.disabled = true;
+        gpost({groupDrop: d.id}, () => `${d.n} deleted.`);
+      })
+  );
+  $v.querySelectorAll('[data-ugout]').forEach(
+    b =>
+      (b.onclick = () => {
+        b.disabled = true;
+        memberSet(b.dataset.ugout, b.dataset.gid, false);
+      })
+  );
+  $v.querySelectorAll('[data-gjoin]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        if (sel.value) memberSet(sel.value, sel.dataset.gjoin, true);
+      })
+  );
+  // Add all and Remove all: bulk, so they ask first (rule A2).
+  const bulk = (attr, on) =>
+    $v.querySelectorAll(`[${attr}]`).forEach(
+      b =>
+        (b.onclick = () => {
+          const d = gdefOf(b.getAttribute(attr)),
+            L = USERS.users.filter(u => (u.gids || []).includes(d.id) !== on).map(u => u.name);
+          if (L.length && confirm(`${on ? 'Add' : 'Remove'} all ${L.length} players ${on ? 'to' : 'from'} ${d.n}?`)) memberSet(L, d.id, on);
+        })
+    );
+  bulk('data-gall', true);
+  bulk('data-gnone', false);
+}
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
@@ -10247,10 +10470,9 @@ function renderUsers() {
               ...new Set([...cohortsOf(), u.cohort].filter(Boolean))
             ]
               .map(c => `<option value="${esc(c)}"${c === u.cohort ? ' selected' : ''}>${esc(c)}</option>`)
-              .join('')}<option value="+">New cohort…</option></select></label>
-      <span>${u.staff ? 'Staff' : 'Not staff'} <button type="button" class="adm-fchip" data-ustaff="${esc(u.name)}" data-on="${u.staff ? 0 : 1}">${u.staff ? 'Remove' : 'Add'}</button></span>`
+              .join('')}<option value="+">New cohort…</option></select></label>`
           : ''
-      }
+      }${groupsOn() ? ugChips(u) : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}">Archive…</button>
       ${
@@ -10280,12 +10502,12 @@ function renderUsers() {
       : k === 'dev'
         ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
         : k === 'groups'
-          ? esc([...(u.groups || []).map(g => subjectOf(g).name), u.cohort, u.staff ? 'Staff' : ''].filter(Boolean).join(', ')) || '–'
+          ? esc(groupNames(u).join(', ')) || '–'
           : ago(u.at);
   }
   // Each beta group's line above the table (groupOn): how many players are in it, Add all for the others and Remove all
   // for those in it (Pierre, 2026-11-17: "un bouton pour supprimer aussi ou enlever tous les gens de la bêta").
-  const gLine = SUBJECTS.filter(S => subjGroup(S))
+  const gLine = SUBJECTS.filter(S => subjGroup(S) && !groupsOn())
     .map(S => {
       if (!groupOn(S))
         return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${S.sheet || 0} (live: v${USERS.v || '?'}).</p>`;
@@ -10304,11 +10526,10 @@ function renderUsers() {
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
     gLine +
-    (cohortOn() && U.some(u => u.cohort || u.staff)
-      ? `<p class="adm-ugroup adm-ucoh"><span>${[
-          ...cohortsOf().map(c => `${esc(c)}: <b>${U.filter(u => u.cohort === c).length}</b>`),
-          `Staff: <b>${U.filter(u => u.staff).length}</b>`
-        ].join(' · ')}</span></p>`
+    (cohortOn() && U.some(u => u.cohort)
+      ? `<p class="adm-ugroup adm-ucoh"><span>${cohortsOf()
+          .map(c => `${esc(c)}: <b>${U.filter(u => u.cohort === c).length}</b>`)
+          .join(' · ')}</span></p>`
       : '') +
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
@@ -10476,23 +10697,20 @@ function bindUsers() {
           .catch(() => (toast('Not done (offline).'), render()));
       })
   );
-  // Staff (sheet v171): the trainer role of the instance (Code.gs roles_), one click each way.
-  $v.querySelectorAll('[data-ustaff]').forEach(
+  // A player's groups (sheet GROUPADM_SHEET): × takes them out of one, "+ Add to a group" puts them in one; one change
+  // each, no confirmation (rule A2: the chip and the list undo each other).
+  $v.querySelectorAll('[data-ugout]').forEach(
     b =>
-      (b.onclick = () => {
-        const name = b.dataset.ustaff,
-          on = b.dataset.on === '1',
-          g = {account: name, role: 'trainer', scope: 'instance:imr'};
+      (b.onclick = e => {
+        e.stopPropagation();
         b.disabled = true;
-        userPost(on ? {roleGrant: g} : {roleRevoke: g})
-          .then(j => {
-            if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
-            const u = USERS.users.find(x => x.name === name);
-            if (u) u.staff = on ? 1 : 0;
-            toast(on ? `"${name}" is staff.` : `"${name}" is no longer staff.`);
-            render();
-          })
-          .catch(() => (toast('Not done (offline).'), render()));
+        memberSet(b.dataset.ugout, b.dataset.gid, false);
+      })
+  );
+  $v.querySelectorAll('[data-ugadd]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        if (sel.value) memberSet(sel.dataset.ugadd, sel.value, true);
       })
   );
   $v.querySelectorAll('[data-ugall]').forEach(
