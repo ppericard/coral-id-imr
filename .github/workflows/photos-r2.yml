@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# Shared with the r2 job of approved-photos.yml: one writer of the bucket at a time (Codex review #380).
+# Shared with the r2 job of approved-photos.yml: one writer of the bucket at a time.
 concurrency:
   group: photos-r2
   cancel-in-progress: false
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       # Always today's main, not the commit that started the run: a rerun of an older run would copy an older crop of a
-      # photo back over a newer one, and check the bucket against an older list (Codex review #380). As pages.yml does.
+      # photo back over a newer one, and check the bucket against an older list. As pages.yml does.
       - uses: actions/checkout@v7
         with:
           ref: main

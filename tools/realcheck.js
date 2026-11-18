@@ -1,4 +1,4 @@
-// Real-data check of the learning model's estimates (owner's rule, 2026-11-03: every algorithm change is checked in
+// Real-data check of the learning model's estimates (every algorithm change is checked in
 // tools/learnsim.js AND against the real answer log). Reads the sync sheet's Answers tab saved as JSON (a Sheets
 // values reply {values: [[header], ...rows]}, or the rows alone; read-only: this tool never talks to the sheet) and
 // prints aggregates only, never a player's name:
@@ -24,7 +24,7 @@ const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   V = Array.isArray(J) ? J : J.values || J.rows || [];
 const H = Array.isArray(V[0]) && V[0][0] === 'Name' ? V[0] : null,
   col = k => (H ? H.indexOf(k) : ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability'].indexOf(k));
-const rows = C.subjRows(H ? V.slice(1) : V) // the corals' rows (sheet v60 Subject, index 17 in both layouts)
+const rows = C.subjRows(H ? V.slice(1) : V) // the corals' rows (the Subject column, index 17 in both layouts)
   .map(r => ({
     who: r[col('Name')],
     t: r[col('Time')],

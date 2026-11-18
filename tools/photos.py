@@ -10,7 +10,7 @@
 # Where they live (docs/ARCHITECTURE.md "Photos"):
 # the app reads every photo from the Cloudflare R2 bucket (core.js PHOTO_BASE, same img/ paths). git keeps only the
 # photos with no other backup (IMR lecture photos, page art): a photo whose record has an online
-# original (src: iNaturalist, Pierre's own iNaturalist photos, FishBase) and is downloaded (no r) lives on R2 only
+# original (src: iNaturalist, the admin's own iNaturalist photos, FishBase) and is downloaded (no r) lives on R2 only
 # (online()); tools/fetch_approved.py uploads it there, never to img/, and tools/r2_sync.sh never deletes from the bucket.
 # A tool that reads a photo's pixels opens path(f, size): the file in img/, or a copy from R2 kept in tools/.cache/r2/.
 #
@@ -47,7 +47,7 @@ def save(im, f, folder=IMG):
         t.save(os.path.join(folder, f'{f}{suf}.webp'), 'WEBP', quality=q, method=5)
 
 
-# Pierre's rotation (curation.json rot {f: 90 | 180 | 270}, fish.rot for the fish: degrees clockwise)
+# The admin's rotation (curation.json rot {f: 90 | 180 | 270}, fish.rot for the fish: degrees clockwise)
 # and his crop (crop {f: [l, t, r, b]}, fractions of the ORIGINAL photo) compose one way: the crop is cut from the
 # original first, then the cut is turned. So a crop never changes when the photo is turned (the crop box turns with the
 # photo), the judging pass's proposed crops stay valid, and the admin draws the same thing: object-view-box (the crop,
