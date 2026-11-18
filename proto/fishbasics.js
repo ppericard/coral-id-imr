@@ -709,5 +709,10 @@
     blurb: 'New to reef fish? Six short steps: the body shape first, then the identification groups, the fins, the tail, the markings.',
     lede: 'For anyone who never had the fish lecture: what to look at first, one thing at a time, on simple drawings and the app’s own photos (credited in the enlarged view: tap a photo). Every step is optional; the little check under each one is too. Words lists every term and where it is shown.'
   };
-  BASICS.add(C);
+  // Registered once the engine is there: proto/lab.js retries a failed download later, so the engine can arrive after
+  // this file (Codex review #1108). Checked every 250 ms for up to 5 minutes.
+  (function reg(n) {
+    if (typeof BASICS !== 'undefined' && BASICS && BASICS.add) BASICS.add(C);
+    else if (n < 1200) setTimeout(() => reg(n + 1), 250);
+  })(0);
 })();
