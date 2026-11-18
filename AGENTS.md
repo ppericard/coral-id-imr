@@ -223,7 +223,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 | Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context"; [spec/fish-photos.md](docs/spec/fish-photos.md) |
 | The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md) |
 | Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
+| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
