@@ -38,7 +38,7 @@ never in the custom quiz or the Duel tab: an answer there neither extends nor br
 `achRunIn`).
 
 Descriptions say what the player can now do ("You told two look-alikes apart"); counts stay counts. Achievements are
-only added: nothing takes one back but the recount below and a learned mark taken away.
+only added: nothing takes one back but the recount below (a learned mark taken away keeps them: below).
 
 **Two families.** The learning achievements (`kind: 'learn'`) and, apart, the **Contributions** (`kind: 'contrib'`,
 💬, three more in `ACH`): *First feedback*, *Helping hand*, *Co-author* for the 1st, 5th and 10th report counted. They
