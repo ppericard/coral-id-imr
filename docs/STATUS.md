@@ -20,10 +20,10 @@ Main: sheet script **v187** (#1146); the script updates from `release`, which on
   (ARCHITECTURE's Admin, Front end and Subjects into docs/spec/: ARCHITECTURE 760 KB at 18:00 → 156 KB), #1133 variant
   classes and mimicry (its choices 1-4 the integrator's call, 5 in Pierre's hands), #1149, #1150 (LEARNING 740 KB at
   18:00 → 220 KB), #1146 architecture step 3: 58 shared engine names `fish*` → `tree*` (v187; `tests/treenames.test.js`
-  keeps the old names out).
-- **Merging**: #1152 (LEARNING's Simulation section into a spec; LEARNING → 203 KB).
-- **Agents running (4)**: ARCHITECTURE's remaining sections (the last of docs PR 4); LEARNING's next section (PR 5);
-  the remaining small test files' comments; the mimicry pairs drilled in the look-alike formats (traps, duels).
+  keeps the old names out), #1152 (LEARNING's Simulation section into a spec; LEARNING → 203 KB).
+- **Opened, in review**: #1153 (tests' comments, fifth pass), #1154 (the rest of ARCHITECTURE as a map).
+- **Agents running (4)**: ARCHITECTURE's remaining sections (#1154); LEARNING's next section (PR 5); the remaining
+  small test files' comments (#1153); the mimicry pairs drilled in the look-alike formats (traps, duels).
 - **Waiting**: #1121 core.js + Code.gs comments: two CodeQL false positives (Pierre's hands), then re-assign v188.
   #1117 (hooks, analysis session): its 6 Codex threads. #1116, #1130, #1148: Pierre's answers (Q411-Q413).
 - Every new decision record: "Date: … PR: #N." and an index row; two PRs adding a row (or lowering the same budget line
