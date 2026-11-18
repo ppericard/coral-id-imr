@@ -173,16 +173,17 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   absent key), and the sheet keeps the saved copy's keys of a subject the saving app does not know (`core.js`
   `keepSubjectKeys`). `syncSummary` (the leaderboard %, "By genus") is the first board subject's, the corals', whatever
   the subject on screen; each other board's units travel beside it (`boards`, `boardUnits`; the fish send their score
-  tree). Signing in to a known
-  account: the corals add only the delta since the device's first anonymous answer (`ANONB`); another subject adds
-  everything on the device (`mergeProgress({}, here, sheet)`). Sign-out clears every subject's keys. `core.js`
-  `mergeUsers` (the admin's account merge) merges each subject's progress and opt-ins on its own. Every subject's answers
-  are logged to the sheet's Answers tab with their subject ([sync.md › Every subject's answers](sync.md#every-subjects-answers)).
-  Reports (`repBtn`) from a fish or sea-slug question carry the unit's id and the remote photo id (`Code.gs`
+  tree). Signing in to a known account: the corals add only the delta since the device's first anonymous answer
+  (`ANONB`); another subject adds everything on the device (`mergeProgress({}, here, sheet)`). Sign-out clears every
+  subject's keys. `core.js` `mergeUsers` (the admin's account merge) merges each subject's progress and opt-ins on its
+  own. Every subject's answers are logged to the sheet's Answers tab with their subject
+  ([sync.md › Every subject's answers](sync.md#every-subjects-answers)). Reports (`repBtn`) from a fish or sea-slug
+  question carry the unit's id and the remote photo id (`Code.gs`
   `logReports_` accepts digits in a unit); the admin's To do › Reports names the unit and shows its photo (`admin.js`
   `fishAdmin`, `repUnit`).
-- **Full replay**: the corals are the subject of the first replay (`SUBJECTS` `replay`; `core.js` `RVS`); `sync.js` `replayAdopt` always runs as that subject (`inSubject`), whatever the subject on
-  screen, and `mergeSubject` compares rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
+- **Full replay**: the corals are the subject of the first replay (`SUBJECTS` `replay`; `core.js` `RVS`); `sync.js`
+  `replayAdopt` always runs as that subject (`inSubject`), whatever the subject on screen, and `mergeSubject` compares
+  rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
   are replayed from their own answers with their own rules versions and keys (`SUBJECTS` `replayed`, `FISH_RVS`,
   `SEASLUG_RVS`; `reefid-sync-fish-rv`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). The
   sheet's opening hold is the corals' (`sync.js` `holdAdopt`, as that subject), and so are the one-tap question and the

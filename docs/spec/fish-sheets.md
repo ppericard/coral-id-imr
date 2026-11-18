@@ -19,7 +19,8 @@ from the families page (each family's name opens its sheet; its photo enlarges) 
 - the hero photo: Pierre's ★ Cover of the family while in play (`coverP`), else its default cover (`nodeCover`: the
   easiest reference photo, not a juvenile, of its species most seen around the instance's centre, whoever took it;
   [fish.md › The default cover of a node with leaves](fish.md#the-default-cover-of-a-node-with-leaves));
-- the IMR cues verbatim with their slides, then its ID marks and lines ([below](#family-id-marks-and-behaviour-habitat-size-lines));
+- the IMR cues verbatim with their slides, then its ID marks and lines
+  ([below](#family-id-marks-and-behaviour-habitat-size-lines));
 - "Don't confuse with" (`.lrow`, the corals' look-alike cards): IMR's look-alike lines with their source, our lines for
   the pairs IMR gives no words for, then the families players mix it up with (`dataLooks`), with the mix-up count;
 - **the genera as rows** (up to 4 photos, one per species most common first, the genus's ★ Cover first when one is
@@ -100,11 +101,12 @@ and on the species sheet's genus chip; the game's typed answers do not read it.
 
 Every scientific genus in play has a short presentation and its ID cues, sourced. `tools/fish_genus_marks.json` (`src`
 {key: {t, u}}, `families` done, `genera` {name: {plain [words, refs], marks [[words, refs]] 1 to 3}}, a ref
-`[src key, where in it]`, `none` {name: why no marks}), in our own words, for every genus in play IMR gives no cues for, in every
-circle (the surprise cards' families aside), written from the FAO species identification guide for the Western Central
-Pacific (vols 3 to 6, 1999 and 2001: each family's key to the genera, or its key to the species where it has none, and the species
-accounts) and FishBase species pages (where the guide splits genera by counts only, a visible feature FishBase gives for
-the genus's only game species, or for each of them); only features seen on a photo, never a count.
+`[src key, where in it]`, `none` {name: why no marks}), in our own words, for every genus in play IMR gives no cues
+for, in every circle (the surprise cards' families aside), written from the FAO species identification guide for the
+Western Central Pacific (vols 3 to 6, 1999 and 2001: each family's key to the genera, or its key to the species where it
+has none, and the species accounts) and FishBase species pages (where the guide splits genera by counts only, a visible
+feature FishBase gives for the genus's only game species, or for each of them); only features seen on a photo, never a
+count.
 
 `add_families` (`genus_marks`) builds them into `fish.json` genera (`plain`, `marks`, `msrc` each source once, `mby`
 {plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues (rule C1:

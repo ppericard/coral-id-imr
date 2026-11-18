@@ -3,9 +3,10 @@
 What a fish player gets, on the engine every subject shares ([subjects.md](subjects.md)): the units (the families of
 the reef fish ID book, then the scientific genera and the species), the circles and their gate, the surprise cards, the
 Learn page and My progress, and the global score. The fish content these read is in [fish.md](fish.md), the photos
-(`fish-game.json`, the photos in play, included) in [fish-photos.md](fish-photos.md), the sheets in [fish-sheets.md](fish-sheets.md); the plan behind the levels is
-[FISH_PATH.md](../FISH_PATH.md). This is the specification of what the code does now; why each part was decided is in
-[docs/decisions/](../decisions/README.md) and the PRs.
+(`fish-game.json`, the photos in play, included) in [fish-photos.md](fish-photos.md), the sheets in
+[fish-sheets.md](fish-sheets.md); the plan behind the levels is [FISH_PATH.md](../FISH_PATH.md). This is the
+specification of what the code does now; why each part was decided is in [docs/decisions/](../decisions/README.md) and
+the PRs.
 
 ## Fish players get
 
@@ -56,8 +57,9 @@ Pierre's ★ Cover of the unit while in play (`coverP`), else one of the wink's 
 
 `app.js` `fishGenera` adds one unit per genus of `fish.json` holding species of a family in play (key `g:<genus>`,
 `rank: 'genus'`, `one: 'genus'`, `parent` its family, its family's group as `forms`, its sibling genera as `look`, the
-IMR sub-entry's cues when one names it (else its own ID marks, [fish-sheets.md](fish-sheets.md#genus-presentation-and-id-marks)),
-its species and the family's photos of them) to `FISH.gen`, and `FISH.sci` lists them; the admin's `fishGen` is
+IMR sub-entry's cues when one names it (else its own ID marks,
+[fish-sheets.md](fish-sheets.md#genus-presentation-and-id-marks)), its species and the family's photos of them) to
+`FISH.gen`, and `FISH.sci` lists them; the admin's `fishGen` is
 unchanged. The genera of circles 2 and 3 are in the game once the sheet replays them (`sciNow`, `sync.js` `generaOn`,
 rule D4). Tests: `tests/fishunits.test.js`.
 
