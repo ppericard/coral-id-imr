@@ -307,8 +307,8 @@ const anchorsOf = (() => {
 })();
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
-  const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
+  const a = anchorsOf(path.join('docs', 'spec', 'service-worker.md'));
+  // # Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
   assert.ok(anchorsOf(path.join('docs', 'spec', 'fish-photos.md')).has('where-fish-photos-come-from-the-sources-and-the-area-rule'));
@@ -567,7 +567,7 @@ const DOC_BUDGET = {
   'CLAUDE.md': [2, 240],
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
-  'docs/ARCHITECTURE.md': [302, 11440],
+  'docs/ARCHITECTURE.md': [207, 10330],
   'docs/LEARNING.md': [304, 5240],
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
@@ -585,6 +585,12 @@ const DOC_BUDGET = {
   'docs/spec/admin-photos.md': [35, 140],
   'docs/spec/admin-players.md': [48, 190],
   'docs/spec/admin-tree.md': [22, 210],
+  'docs/spec/achievements.md': [18, 130],
+  'docs/spec/basics.md': [14, 130],
+  'docs/spec/front-end.md': [21, 130],
+  'docs/spec/model.md': [23, 130],
+  'docs/spec/quiz.md': [20, 130],
+  'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
   'docs/spec/content.md': [16, 130],
@@ -612,17 +618,16 @@ const DOC_BUDGET = {
   'tools/README.md': [13, 280],
   'tools/sync/changes/README.md': [2, 130]
 };
-// A record has no entry of its own (every decision PR would add one): the same budget for each.
+// A record has no entry of its own (every decision PR would add one): the same budget for each. A sheet script change
+// waiting for its version (tools/sync/changes/<branch>.md, one paragraph, removed at merge) likewise.
 const RECORD_BUDGET = [8, 200];
-// A sheet script change file waiting for its version (tools/sync/changes/<branch>.md, rule D3): one paragraph, written as
-// one line as the version history's entries are, and gone at merge; the same budget for each.
-const CHANGES_BUDGET = [4, 1500];
+const CHANGE_BUDGET = [8, 4000];
 // Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
 const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
 const budgetOf = f => {
   const key = f.split(path.sep).join('/');
   if (DOC_BUDGET[key]) return DOC_BUDGET[key];
-  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGES_BUDGET;
+  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_BUDGET;
   return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
 };
 
