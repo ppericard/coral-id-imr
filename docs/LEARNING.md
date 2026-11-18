@@ -4143,6 +4143,12 @@ minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arr
   the change or by that divergence is not measured (a guess: the offer needs the circle-1 Entries at 55%, which no
   genus moves). The rated world, paired, shows no such loss (D\* at 1,000 −0.009, at 3,000 +0.000). A breach goes to
   Pierre (rule L11).
+- **Rechecked after the content** (Pierre, 2026-11-18 ~08:56 Manila, option C: the circle 2-3 genera's presentations and
+  ID marks first, #1074, then the lecture RA's app-world check again, capped at 40 minutes): the same 3 seeds × 600
+  questions, `main` 191dfa27 against the branch, 158 s of runs on 2 workers. The same numbers to the digit (knowSlate at
+  600 0.708 → 0.658, bound −0.054: breached; circle 3 offered at 351-378 → 403-438; the arms part at answer 82): the
+  simulated learner learns by its answers and never reads a card's text, so the content cannot move it. The breach
+  stands, for Pierre.
 - **Machine time**: about 2 hours of worker time against the 40 minutes declared (rated 12-18 minutes an arm on 2
   workers, four arms with the rerun; app 4-6 minutes an arm), mostly the rerun the broken pairing forced; the machine
   was shared with other agents (waits for a slot of up to 21 minutes not counted).
