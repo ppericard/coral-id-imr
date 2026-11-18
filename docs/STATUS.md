@@ -87,14 +87,13 @@ Last question number: Q412
 - **Roles**: grant himself the trainer role to host a live game (the lobby now shows a QR code: scan it once).
 - **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages, #1085); the 8
   unsure fish candidates; a look at the 16 non-Philippine *A. pyroferus* juvenile photos.
-- Check the "Coral ID analyses" token's type and the R2 token's scope; renew the admin GitHub token before late January
-  2027.
+- Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
 
 - None (the Night queue holds the night's work).
 ## Last stop
 
-2026-11-18 ~20:10 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (Pierre's messages, real names: delete tomorrow)
+2026-11-18 ~21:40 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (Pierre's messages, real names: delete tomorrow)
 and the player-data extracts (`placement/data/`): delete, never commit. Queue waiters: never `pgrep -f` a pattern your
 own command line contains.
