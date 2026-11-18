@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A,
-// Q366): the content editor's circles and look-alike pairs in the apply (core.js structApply, fishStructure), the
-// structure stamp (structStamp), the sheet's replay under the structure in force (Code.gs subjRpl_, replay_, replays_,
-// boardRpl_), and the photo tools' circles in force (tools/fish_inforce.py). The edits here are made up (fixtures): the
-// real curation.json holds none, and no admin page writes one yet (step 4).
+// The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the content editor's circles and
+// look-alike pairs in the apply (core.js structApply, fishStructure), the structure stamp (structStamp), the sheet's
+// replay under the structure in force (Code.gs subjRpl_, replay_, replays_, boardRpl_), and the photo tools' circles in
+// force (tools/fish_inforce.py). The edits here are made-up fixtures.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -19,7 +18,7 @@ const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(FJSON),
   CUR = JSON.parse(src('curation.json')),
   S = C.subjectOf('fish');
-// The variant table the sheet's fish replay reads (Code.gs subjRpl_, core.js fishVarTable; Q391 b) under curation c and
+// The variant table the sheet's fish replay reads (Code.gs subjRpl_, core.js fishVarTable) under curation c and
 // structure-applied fish.json A, from the photo files tests/gas.js serves.
 const PHJ = JSON.parse(src('fish-photos.json')),
   GMJ = JSON.parse(src('fish-game.json')),
@@ -225,7 +224,7 @@ test('orphans: a node the base lacks, a circle not declared, a bad pair key or v
   assert.strictEqual(C.structStamp(S, F, cur(c)), '');
   // The circle slot is never a text slot: the admin's text editor lists no orphan for it (core.js contentEntries).
   assert.deepStrictEqual(C.contentEntries(S, F, {nodes: {'f:Damselfishes': circ(2)}}), []);
-  // A stale entry (the base moved since) still applies (Q359 c: the editor's value until he answers it).
+  // A stale entry (the base moved since) still applies (the editor's value holds until the editor answers it).
   const st = C.structEntries(S, F, {nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}}).circles[0];
   assert.strictEqual(st.state, 'stale');
   assert.strictEqual(fam(C.contentApply(S, F, cur({nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}})), 'f:Damselfishes').circle, 2);
@@ -314,11 +313,10 @@ test('L11: the fixture log replayed under the real structure with no edit gives 
   [CUR, cur(TEXT), cur({nodes: {'f:Damselfishes': circ(1)}, pairs: {'f:Butterflyfishes|f:MoorishIdol': {v: 1, was: 1}}})].forEach(c =>
     assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, c))), base)
   );
-  // Pairs alone move no record today: every fish answer carries its scoring record (quiz.js, Q132), which the replay
-  // scores as the game did (core.js replayProgress sc), look-alike flag included. Nor does a family moved between circles:
-  // it keeps its genera, every circle has them (Pierre, 2026-11-18). A family in no circle does: its units leave the
-  // units, and are no longer counted as the unit wrongly given (rule L2's second unit). Its undo gives the same progress
-  // back.
+  // Pairs alone move no record: every fish answer carries its scoring record (quiz.js), which the replay scores as the
+  // game did (core.js replayProgress sc), look-alike flag included. Nor does a family moved between circles: it keeps its
+  // genera, every circle has them. A family in no circle does: its units leave the units, and are no longer counted as
+  // the unit wrongly given (rule L2's second unit). Its undo gives the same progress back.
   const P = cur({pairs: {'f:Parrotfishes|f:Wrasses': {v: null, was: 1}, 'f:Emperors|f:Snappers': {v: null, was: 1}}});
   assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, P))), base);
   assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(3), [IN]: circ(1, 3)}})))), base);
@@ -359,7 +357,7 @@ test("tools/fish_inforce.py: the circles in force, the apply's own (family, gene
   assert.deepStrictEqual(ids(py(CUR).families), ids(F.families));
 });
 
-// ---- The sheet (Code.gs): the replay under the structure in force, keyed by the stamp (Q363 h A) ----
+// ---- The sheet (Code.gs): the replay under the structure in force, keyed by the stamp ----
 
 const FRV = C.rvOf('fish');
 // GitHub main as the sheet reads it: fish.json, and a curation.json the test changes (ok false: unreadable).
@@ -521,7 +519,7 @@ test('rule D8: the trigger replays under the new structure a player who never re
   assert.strictEqual(s.ctx.boardWarm_(), 0);
 });
 
-// ---- The leaderboard's score tree under the structure (design note v2, step 4; Codex review #977) ----
+// ---- The leaderboard's score tree under the structure (design note v2, step 4) ----
 
 test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
   const ctx = {
@@ -570,7 +568,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
     p0 = C.treeScore(P, T0, K).pct,
     p1 = C.treeScore(P, T1, K).pct;
   assert.notStrictEqual(p0, p1, 'the Publish moves her %');
-  // The tree an app sent, as before, until the sheet holds its own (nothing read yet: the board never fetches).
+  // The tree an app sent, until the sheet holds its own (nothing read yet: the board never fetches).
   assert.strictEqual(save(T0).ok, true);
   assert.strictEqual(board(), p0);
   s.ctx.subjStRefresh_();
@@ -586,7 +584,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   m.cur = CUR;
   s.ctx.subjStRefresh_();
   assert.strictEqual(board(), p0);
-  // The sheet's tree not cached (evicted): the apps' tree, as before; made again at the next read.
+  // The sheet's tree not cached (evicted): the apps' tree; made again at the next read.
   Object.keys(s.cache)
     .filter(k => k.startsWith('stree3:'))
     .forEach(k => delete s.cache[k]);
@@ -607,9 +605,9 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   assert.strictEqual(board(), p1, 'the tree the app sent last');
 });
 
-// Codex review #975 (P1): with the species units the replay's units are over the script cache's 100 KB a value, so they
-// are kept in parts (Code.gs cacheBigPut_), read back whole, and the public board reads the stamp from them (subjStKept_,
-// never a fetch): before, the put threw unseen, every call made them again and the board never saw a Publish's stamp.
+// With the species units the replay's units are over the script cache's 100 KB a value, so they are kept in parts
+// (Code.gs cacheBigPut_), read back whole, and the public board reads the stamp from them (subjStKept_, never a fetch):
+// a put over the limit would throw unseen and the board would never see a Publish's stamp.
 test('the sheet: the replay units over one cache value are kept in parts; the stamp is read from the cache alone', () => {
   const m = mainFiles(),
     s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
