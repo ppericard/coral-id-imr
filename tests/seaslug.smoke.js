@@ -1,15 +1,15 @@
 // Sea slug subject test (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 5; core.js SUBJECTS seaslug,
-// app.js UNITS seaslug): runs the real app in Chromium on seaslug.json and seaslug-game.json and checks both sides of its
-// beta gate (rule S1, open: 'group', as the fish's beta: tests/fish.smoke.js 6, 6b):
-// 1. a player who is not the admin and in no group, its subject saved as the sea slugs, opens on the corals: the switch
-//    offers no sea slugs, the sea-slug files are never fetched, the saved choice stays;
+// app.js UNITS seaslug): runs the real app in Chromium on seaslug.json and seaslug-game.json, open to every player in
+// beta (rule S1):
+// 1. a player who is not the admin, signed out, its subject saved as the sea slugs, opens on them: the switch offers
+//    them, their files are fetched, the saved choice stays;
 // 2. the admin opens the sea-slug quiz: 4 genera by their scientific names (its units from the start, core.js SUBJECTS
-//    unitRank; Pierre, 2026-11-16), a photo from the game file (iNaturalist, stubbed here: nothing leaves the machine),
+//    unitRank), a photo from the game file (iNaturalist, stubbed here: nothing leaves the machine),
 //    answers right and wrong, the photo's species named under the verdict; 30 questions, every one on a circle-1 genus
 //    (circle 2 opens once every circle-1 genus has been asked: app.js fishGate), each logged at the genus, no family
 //    asked and no opt-in genus offer; the genera page in blocks of their families, a family sheet, a genus sheet, Home's
 //    doors and the key page in the sea slugs' words; the switch to the fish and back swaps the tree in force (app.js
-//    treeAt), each subject's progress kept apart; their English names (seaslug.json en; Pierre, 2026-11-17) never in a
+//    treeAt), each subject's progress kept apart; their English names (seaslug.json en) never in a
 //    question before its answer, after it in the verdict and the species line, on the Learn page's headings and tiles
 //    and on the sheets with their sources; a genus sheet's sourced ID marks (tools/seaslug_cues.json), and no fish word on a
 //    genus or a species sheet, their ? text included (app.js UNITS words);
@@ -43,7 +43,7 @@ const server = http.createServer((req, res) => {
     res.end(b);
   });
 });
-// A tiny image for every photo from iNaturalist (the sea slugs' are read from there until the R2 step).
+// A tiny image for every photo from iNaturalist (the sea slugs' photos not on R2 yet are read from there).
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 
 async function page(b, base, init) {
@@ -69,8 +69,8 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
   const fails = [];
   const check = (ok, what) => ok || fails.push(what);
 
-  // 1. Not the admin, signed out: the sea slugs open to every player, in beta (Pierre, 2026-11-17: "ouverts à tous mais
-  // en gardant le mot bêta dedans"): the saved choice opens them and their files are fetched.
+  // 1. Not the admin, signed out: the sea slugs open to every player, in beta: the saved choice opens them and their
+  // files are fetched.
   {
     const {ctx, p, errs} = await page(b, base, () => {
       try {
@@ -128,7 +128,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       const L = [...document.querySelectorAll('#view .q [data-c]')].map(x => x.dataset.c), // answer.js: a read of the choices
         t = [...document.querySelectorAll('#view .q [data-c]')].map(x => x.textContent.trim()), // answer.js: a read of the choices
         ph = document.querySelector('#view .qph');
-      // pre: the question as shown before the answer (no English name in it: Pierre, 2026-11-17, information after the answer)
+      // pre: the question as shown before the answer (no English name in it: information comes after the answer)
       const pre = (document.querySelector('#view .q') || {}).innerText || '';
       return {L, t, pre, at: TREE_AT, photo: ph ? getComputedStyle(ph).getPropertyValue('--qbg') : '', a: smokeAnswer()};
     });
@@ -148,7 +148,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       q.t.every(x => /^[A-Z][a-z]+$/.test(x.replace(/^\d\s*/, '')) && !/idae$/.test(x)),
       `2: a choice not named by its scientific genus name: ${q.t}`
     );
-    // The game file's photo: on R2 since the R2 step is on (Q387; `img/seaslug-…`), or iNaturalist's while not uploaded yet.
+    // The game file's photo: on R2 (`img/seaslug-…`), or iNaturalist's while not uploaded yet.
     check(
       /\.r2\.dev\/img\/seaslug-|inaturalist-open-data/.test(q.photo),
       `2: the photo is neither the game file's R2 nor its iNaturalist one: ${q.photo}`
@@ -159,10 +159,10 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       verdict: (document.querySelector('#view .fb h3') || {}).textContent || ''
     }));
     check(v.right, '2: the right answer did not close the question');
-    // After the answer: the photo's species, its first English name before it when a source gives one (Pierre, 2026-11-17).
+    // After the answer: the photo's species, its first English name before it when a source gives one.
     // The photo shown is found in the game file by its file name (R2: img/<f>-<size>.webp) or its iNaturalist address; a photo identified to
-    // the genus only (gl, Q389 (1): about 1 in 6 of the game's photos) has no species, so no line. A species with no name
-    // yet (Q389 (2), "Goniobranchus sp. 5") has its source after the name: the line starts with the name.
+    // the genus only (gl: about 1 in 6 of the game's photos) has no species, so no line. A species with no name
+    // yet ("Goniobranchus sp. 5") has its source after the name: the line starts with the name.
     const GP = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'seaslug-game.json'), 'utf8')).photos).flat(),
       shown = GP.find(r => new RegExp(`/${r.f}[-.]`).test(q.photo) || (r.src && q.photo.includes(r.src))),
       spRec = shown && shown.sp ? F.species.find(s => s.id === shown.sp) : null;
@@ -275,7 +275,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     );
     check(/^Sources: \[1\]/.test(gm.srcs), `2: ${F.genera[0].name}'s mark sources: "${gm.srcs}"`);
     check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(gm.words), `2: a fish word on a sea-slug genus sheet`);
-    // The genus look-alikes (seaslug.json genus look, dlook, lsrc; Pierre, 2026-11-17, Q390 D): a declared pair across two
+    // The genus look-alikes (seaslug.json genus look, dlook, lsrc): a declared pair across two
     // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
     // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
     // its genus.
@@ -328,7 +328,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       // in the sea slugs' words: its rank by its observers in the Philippines, no FishBase link, no IMR reference list
       check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(sv.words), `2: a fish word on ${spn.name}'s sheet`);
     }
-    // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
+    // A species with no name yet (seaslug.json inf): its sheet names it with its source in
     // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase);
     // it has no English name.
     const inf = F.species.find(s => s.inf);
@@ -368,7 +368,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await p.waitForFunction(() => TREE_AT === SUBJ.id && FISH && FISH.gen['f:Chromodorididae'] && !FISH.gen['f:Damselfishes'], null, {
       timeout: 30000
     });
-    // Its leaderboard (Pierre, 2026-11-17; core.js SUBJECTS seaslug board, boardSheet): asked as &s=seaslug and shown only
+    // Its leaderboard (core.js SUBJECTS seaslug board, boardSheet): asked as &s=seaslug and shown only
     // from the script that serves it (SEASLUGRP_SHEET, rule D4), the corals' board before; its replay's units, the app's
     // (UNITS gen, read with its own tree in force: sync.js rpUnits). The sheet's replies are fixtures inside the page's
     // fetch (rule D1).

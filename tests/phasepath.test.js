@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// Juveniles and colour phases on their unit's mastery (Pierre, 2026-11-07: never at the very start of a unit, then in
-// stages, with the card that explains them; no wall, 2026-11-06; 2026-11-17, Q391 a: one rule for every level, the
-// variants on a ramp of their own unit's mastery; Q391 b: "Learned" asks each variant group): core.js phaseOf,
-// varKindOf, varRamp, VAR_AT, phaseKind, phaseCardOf, phasePair, and model.js photoSet, varLeft, examSet, examPassed run
-// in Node on fish-like pools (tests/rareease.js). docs/LEARNING.md "Juveniles and colour phases on their unit's mastery".
+// Juveniles and colour phases on their unit's mastery: never at the very start of a unit, then in stages, with the card
+// that explains them and no wall; one rule for every level, the variants on a ramp of their own unit's mastery;
+// "Learned" asks each variant group. core.js phaseOf, varKindOf, varRamp, VAR_AT, phaseKind, phaseCardOf, phasePair,
+// and model.js photoSet, varLeft, examSet, examPassed run in Node on fish-like pools (tests/rareease.js).
+// docs/LEARNING.md "Juveniles and colour phases on their unit's mastery".
 const test = require('node:test'),
   assert = require('node:assert');
 const C = require('../core.js');
@@ -242,9 +242,9 @@ test('one rule for every subject (rule S1): a coral pool, with no photo judged a
   assert.deepStrictEqual(A.varLeft('u'), []);
 });
 
-// "Learned" asks each variant group (Q391 b): while a group released by the unit's mastery has no right answer, the
+// "Learned" asks each variant group: while a group released by the unit's mastery has no right answer, the
 // exam's next question draws its photo (the hardest never seen within it), and the exam is not passed; quiz.js answer's
-// exam step (cut out here and run as the game runs it) restarts it at a miss, as before.
+// exam step (cut out here and run as the game runs it) restarts it at a miss.
 const quiz = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8');
 const examStep = new Function(
   's, good, exq, tq, ph, EXAM, TYPED, answersSoFar, examPassed, target, unameT, achPop',
@@ -285,7 +285,7 @@ test('the exam asks an unseen variant group: its hardest photo never seen, the n
   assert.notStrictEqual(E.examSet('u').shown[0].f, hardest('j'));
   E.P.u.ps = {j0: [1, 1]};
   for (let i = 0; i < 30; i++) assert.ok(E.examSet('u').shown[0].f.startsWith('m'), 'then the sexes');
-  // Both groups right: the hardest photo never seen of the whole unit, as before (here an adult once m0 is seen).
+  // Both groups right: the hardest photo never seen of the whole unit (here an adult once m0 is seen).
   E.P.u.ps = {j0: [1, 1], m3: [1, 1], m0: [1, 0]};
   for (let i = 0; i < 30; i++) assert.strictEqual(E.examSet('u').shown[0].f, 'a0', 'then any photo, as before');
 });
@@ -439,7 +439,7 @@ test('the replay takes a learned mark away when a variant group has no right ans
   assert.ok(!adopt([...adults, row(4, 'j1'), row(5, 'm2', 0)], {vars}).mx);
   // Each group right in the log: the mark stays.
   assert.strictEqual(adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars}).mx, mx);
-  // No table (the corals; this device's answers on top of the sheet's replay): the mark as before.
+  // No table (the corals; this device's answers on top of the sheet's replay): the mark kept.
   assert.strictEqual(adopt(adults, {}).mx, mx);
   // The sheet's replay carried on this device: its vl kept from the record it starts from.
   const rec = C.replayProgress(adults, {gen, vars}).p.P;
@@ -451,7 +451,7 @@ test('the replay takes a learned mark away when a variant group has no right ans
   assert.ok(!('vl' in adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars})));
 });
 
-// Codex review #953: a right answer on a variant photo in the saved copy but not in the log (played before the fish
+// A right answer on a variant photo in the saved copy but not in the log (played before the fish
 // answers were logged) comes back into the adopted record's photos seen (replayedOf merges ps); the exam reads the log's
 // groups (vl) over it, so the mark comes back only once that group is answered right here, as the sheet decides.
 test('a right variant answer the log lacks does not bring the mark back: the exam asks the group the log left', () => {
@@ -529,7 +529,7 @@ test('a right variant answer the log lacks does not bring the mark back: the exa
 });
 
 // The phase card (quiz.js phaseShow) names the source of its lines: the one the content editor gave with an edit of
-// them (app.js fishGenera psrc), else IMR's (Codex review #953).
+// them (app.js fishGenera psrc), else IMR's.
 test('the phase card shows its lines under their recorded source, else IMR', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
     fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
@@ -563,7 +563,7 @@ test('the phase card shows its lines under their recorded source, else IMR', () 
 });
 
 // This device's answers replayed on top of the sheet's (sync.js replayAdoptS) recompute the variant groups left with the
-// table when the replay's rules version reads it (core.js rvVars; Codex review #953): a queued right answer on the last
+// table when the replay's rules version reads it (core.js rvVars): a queued right answer on the last
 // group keeps the learned mark; without the table the sheet's vl stays as it came.
 test('a queued right answer on the last variant group keeps the mark when this device adopts the replay', () => {
   assert.strictEqual(C.rvVars('fish', 2), false);
@@ -611,7 +611,7 @@ test('a queued right answer on the last variant group keeps the mark when this d
   assert.match(sync, /if \(rows\.length && rvVars\(S\.id, rp\.rv\) && !vt\) return false;/);
 });
 
-// Codex review #953: without fish-game.json the units play on their first photos (app.js treeLoad), and a variant table
+// Without fish-game.json the units play on their first photos (app.js treeLoad), and a variant table
 // made from them lacks variant photos (the morays: their sexes only, not their juveniles), so a queued right answer on a
 // male would clear the juveniles the sheet left. app.js UNITS fish vars gives no table until the whole game pool is in.
 test('the variant table waits for the whole game pool: a partial one would clear a group the sheet left', () => {
@@ -662,7 +662,7 @@ test('the variant table waits for the whole game pool: a partial one would clear
   );
 });
 
-// Two devices on one account, each clearing a variant group the log left (core.js mergeProgress; Codex review #953): the
+// Two devices on one account, each clearing a variant group the log left (core.js mergeProgress): the
 // groups left after the merge are those neither device has answered right since the shared replay.
 test('two devices each clearing a variant group: the merge leaves neither', () => {
   const b = {ok: 4, ko: 0, h: '1111', rv: 3, vl: ['juv', 'ph'], ps: {a0: [4, 4]}},
