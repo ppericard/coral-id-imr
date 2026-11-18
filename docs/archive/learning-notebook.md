@@ -3925,6 +3925,22 @@ unknown; the three versions of the file of 2026-11-06 to 2026-11-09 recover 54 s
   beyond it. Descriptive only: four players allow no test (the smallest two-sided sign-flip p is 0.125). It cannot
   show whether holding them back helps (what the card and the stage teach), only that the change moves few real answers.
 
+### The mimicry class: the level-1 check (2026-11-18, #1133)
+
+Rule L11, level 1: the change moves the photos of seven species, in the draw only. Unit tests (`tests/mimicry.test.js`:
+the gate on made-up pools through the draw, the groups unchanged, the card's photos). The app world, fish, the five
+profiles × 5 seeds × 300 questions, the branch (c4c6e6a5) against `main` (bbd64849), `tools/learncmp.js`, declared
+before running: primary `phLate@300:up` (the late-class juveniles that resemble another species come from Open Water),
+one look, no cost.
+
+- **Primary**: the measure cannot tell. Only 7 (profile, seed) pairs reach a unit with 20 answers and a phase photo in
+  300 questions, all at 0 both ways.
+- **Guardrails**: every one held at every profile, the paired differences 0 to within 0.001 (true knowledge, units met
+  at 100 and 300, units at Open Water, the first unit at Open Water, the longest plateau, the share under ease 4,
+  families at Advanced).
+- **The real log** (rule L12) cannot judge a draw change: a replay asks the questions already asked. The app world is
+  what was measured.
+
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
 
 ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check
