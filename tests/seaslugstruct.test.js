@@ -68,20 +68,19 @@ test('a look-alike line edited: laid over the built file, its pair kept; hidden,
   const d = C.contentApply(S, F, cur({nodes: {'g:Chromodoris': {'lsrc/g:Nembrotha': {v: [{t: 'Mine'}], was: null, t: 1}}}}));
   assert.deepStrictEqual(gen(d, 'g:Chromodoris').lsrc['g:Nembrotha'], [{t: 'Mine'}]);
   // hidden: the pair keeps an empty list (its readers map it: app.js fishGenera, learn.js fishGenusLooks)
-  const h = gen(C.contentApply(S, F, cur({nodes: {'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: null, was: base, t: 1}}}})), 'g:Hypselodoris');
+  const h = gen(
+    C.contentApply(S, F, cur({nodes: {'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: null, was: base, t: 1}}}})),
+    'g:Hypselodoris'
+  );
   assert.deepStrictEqual(h.lsrc['g:Goniobranchus'], []);
   assert.ok(h.look.includes('g:Goniobranchus'));
   // never applied: words where sources go, a source with no words, a pair the base does not hold
-  const E = C.contentEntries(
-    S,
-    F,
-    {
-      nodes: {
-        'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: ['words'], was: base, t: 1}, 'lsrc/g:Phyllidia': {v: [{t: 'x'}], was: null, t: 1}},
-        'g:Goniobranchus': {'lsrc/g:Hypselodoris': {v: [{t: ' ', u: 'https://example.org'}], was: null, t: 1}}
-      }
+  const E = C.contentEntries(S, F, {
+    nodes: {
+      'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: ['words'], was: base, t: 1}, 'lsrc/g:Phyllidia': {v: [{t: 'x'}], was: null, t: 1}},
+      'g:Goniobranchus': {'lsrc/g:Hypselodoris': {v: [{t: ' ', u: 'https://example.org'}], was: null, t: 1}}
     }
-  );
+  });
   assert.deepStrictEqual(
     E.map(x => [x.node, x.slot, x.state, x.why]),
     [
@@ -106,8 +105,19 @@ test('a rebuild keeps his line: stale while the base changed (his in force), abs
   gen(rebuilt, 'g:Hypselodoris').lsrc['g:Goniobranchus'] = v;
   assert.deepStrictEqual(state(rebuilt), ['absorbed']);
   // Keep mine, as the admin writes it: his against the base now, fresh again; the base's value removes the entry
-  const k = C.contentSet(c.seaslug.content, 'g:Hypselodoris', 'lsrc/g:Goniobranchus', v, C.contentBase(sp, gen(F, 'g:Hypselodoris'), 'g:Goniobranchus'), null, 2);
-  assert.deepStrictEqual(C.contentEntries(S, F, k).map(x => x.state), ['fresh']);
+  const k = C.contentSet(
+    c.seaslug.content,
+    'g:Hypselodoris',
+    'lsrc/g:Goniobranchus',
+    v,
+    C.contentBase(sp, gen(F, 'g:Hypselodoris'), 'g:Goniobranchus'),
+    null,
+    2
+  );
+  assert.deepStrictEqual(
+    C.contentEntries(S, F, k).map(x => x.state),
+    ['fresh']
+  );
   assert.deepStrictEqual(C.contentSet(k, 'g:Hypselodoris', 'lsrc/g:Goniobranchus', base, base, null, 3).nodes['g:Hypselodoris'], {});
 });
 
@@ -116,12 +126,18 @@ test("the admin's box: one source a line, its words | its link; the base's own l
   F.genera.forEach(g =>
     Object.entries(g.lsrc || {}).forEach(([o, L]) => assert.deepStrictEqual(AC.sheetVal(sp, AC.srcsText(L)), L, `${g.id} ${o}`))
   );
-  assert.deepStrictEqual(AC.sheetVal(sp, ' Made-up guide | https://example.org/a \n\n Made-up forum   message\nhttps://example.org/c\nA page https://example.org/d'), [
-    {t: 'Made-up guide', u: 'https://example.org/a'},
-    {t: 'Made-up forum message'},
-    {t: 'https://example.org/c', u: 'https://example.org/c'},
-    {t: 'A page', u: 'https://example.org/d'}
-  ]);
+  assert.deepStrictEqual(
+    AC.sheetVal(
+      sp,
+      ' Made-up guide | https://example.org/a \n\n Made-up forum   message\nhttps://example.org/c\nA page https://example.org/d'
+    ),
+    [
+      {t: 'Made-up guide', u: 'https://example.org/a'},
+      {t: 'Made-up forum message'},
+      {t: 'https://example.org/c', u: 'https://example.org/c'},
+      {t: 'A page', u: 'https://example.org/d'}
+    ]
+  );
   assert.strictEqual(AC.sheetVal(sp, ' \n '), null, 'emptied: hidden');
   // a Save of the box unchanged writes nothing (the base's value removes the entry)
   const g = gen(F, 'g:Hypselodoris'),
@@ -162,9 +178,15 @@ test('pairs: a withdrawn pair leaves both genera; an added one joins both, its l
   // the line of the withdrawn pair: never applied; the added pair's: a slot to fill, read with the pairs in force
   const base = gen(F, 'g:Goniobranchus').lsrc['g:Phyllidiella'],
     E = C.contentEntries(S, A, {nodes: {'g:Goniobranchus': {'lsrc/g:Phyllidiella': {v: [{t: 'x'}], was: base, t: 1}}}});
-  assert.deepStrictEqual(E.map(x => [x.state, x.why]), [['orphan', 'slot']]);
+  assert.deepStrictEqual(
+    E.map(x => [x.state, x.why]),
+    [['orphan', 'slot']]
+  );
   const rows = AC.sheetSlots(S, F, c.seaslug.content, 'g:Phyllidia').filter(r => r.key === 'g:Doriprismatica');
-  assert.deepStrictEqual(rows.map(r => r.base), [[{t: 'Added by the content editor'}]]);
+  assert.deepStrictEqual(
+    rows.map(r => r.base),
+    [[{t: 'Added by the content editor'}]]
+  );
   // the admin's pair rows: the base's nine pairs, his three over them
   const P = AC.pairRows(S, F, c.seaslug.content);
   assert.strictEqual(AC.pairRows(S, F, {}).length, 9);
@@ -214,7 +236,7 @@ test('the stamp: one per structure in force, empty again at the undo, the same f
   assert.strictEqual(C.structApply(S, F, cur({pairs: {'g:Goniobranchus|g:Nope': {v: 1}}})), F);
 });
 
-test("the app: before the script that replays under the pairs, the text slots alone (rule D4); app.js fishGenera reads a hidden line", () => {
+test('the app: before the script that replays under the pairs, the text slots alone (rule D4); app.js fishGenera reads a hidden line', () => {
   const c = cur({
       nodes: {'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: null, was: gen(F, 'g:Hypselodoris').lsrc['g:Goniobranchus'], t: 1}}},
       pairs: {[GP]: {v: null, was: 1, t: 1}}
@@ -227,7 +249,10 @@ test("the app: before the script that replays under the pairs, the text slots al
   // app.js fishGenera on the units made from it, as the app makes them (fishBuild)
   const ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
   vm.createContext(ctx);
-  vm.runInContext(block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;', ctx);
+  vm.runInContext(
+    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    ctx
+  );
   const GM = C.fishGameRead(JSON.parse(src('seaslug-game.json'))),
     X = C.fishGen(on, C.fishPhotos({}, GM.photos, C.treeCur(S, CUR)), undefined, C.unitRankOf(S));
   ctx.fishGenera(X, on);
@@ -235,7 +260,7 @@ test("the app: before the script that replays under the pairs, the text slots al
   assert.ok(!X.gen['g:Goniobranchus'].decl.includes('g:Phyllidiella'), 'no longer a declared look-alike (duels, groups)');
 });
 
-test("the admin: every genus of a subject played at the genus has the boxes, one the app opens as its family included", () => {
+test('the admin: every genus of a subject played at the genus has the boxes, one the app opens as its family included', () => {
   const T = C.fishTree(F);
   assert.notStrictEqual(T.go('g:Hexabranchus'), 'g:Hexabranchus');
   assert.ok(AC.sheetOwn(F, 'g:Hexabranchus', S));
@@ -261,8 +286,7 @@ function mainFiles() {
         : null;
   return m;
 }
-// Sea-slug answers with mix-ups across the pairs, logged with no scoring record (a row the replay weighs from its units:
-// with one, it scores the answer as the game did, whatever the pairs now).
+// Sea-slug answers with mix-ups across the pairs, logged with no scoring record.
 const slugLog = (p, n = 24) =>
   Array.from({length: n}, (_, i) => {
     const [g, o] = i % 2 ? ['g:Goniobranchus', 'g:Phyllidiella'] : ['g:Chromodoris', 'g:Nembrotha'],
@@ -300,7 +324,9 @@ test('the sheet: a pair Publish replays a sea-slug player under the pairs in for
     save = x => s.post({name: 'Ana', pin: '1234', data: saved, summary: {}, answers: [], rv: C.RV, rvs: {seaslug: SRV}, ...x});
   s.post({name: 'Ana', pin: '1234', data: saved, summary: {}, answers: L, rv: C.RV});
   assert.ok(st1);
-  assert.notDeepStrictEqual(plain(want1), plain(want0), 'the pairs move the bars of answers with no scoring record');
+  // the replay's units differ (a pair across families withdrawn, one added); how much the bars move is the replay's
+  // (with a scoring record an answer is scored as logged), so the records are compared with core.js's own replay
+  assert.notDeepStrictEqual(S.replayed.gen(A), S.replayed.gen(F));
   // no edit: an app that says the empty stamp gets nothing (no replay at the deploy); an older app (no sts) neither
   assert.ok(!save({sts: {seaslug: ''}}).replays);
   assert.ok(!save({}).replays);

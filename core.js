@@ -1675,7 +1675,9 @@
       done = new Set();
     (Array.isArray(at) ? at : [at]).forEach(a => {
       const G = atPath(R, a),
-        L = Array.isArray(G) ? G.map((g, i) => [isObj(g) && g.id != null ? String(g.id) : null, i]) : Object.keys(isObj(G) ? G : {}).map(n => [n, n]);
+        L = Array.isArray(G)
+          ? G.map((g, i) => [isObj(g) && g.id != null ? String(g.id) : null, i])
+          : Object.keys(isObj(G) ? G : {}).map(n => [n, n]);
       L.forEach(([n, i]) => {
         if (n == null || !isObj(G[i]) || (!add.has(n) && !drop.has(n))) return;
         const r = one(n, G[i]);

@@ -306,6 +306,14 @@ back-office, Photos › Tree, "Structure").
   slot on the genus sheet (`learn.js` `viewGenus`, `esrcIn`, `esrcP`), in the quiz's answer (`quiz.js` `fbBody`,
   `app.js` `esrcTag`) and on the Look-alikes deck's line (`learn.js` `lsrcEsrc`); the criteria are cited by his source in
   place of the Coral Finder pages wherever they are shown (`app.js` `critRef`: the sheet, the answer, the Coral ID Key).
+  **The sea slugs** (Pierre, 2026-11-17 and, for the look-alike lines and their pairs, 2026-11-18 on #1061: "Option 2 :
+  on le construit maintenant"): a family's and a genus's `marks`, the `note` on every rank, and a genus's
+  `lsrc/<other genus>`, its look-alike line, of type `srcs`: a list of sources `{t, u}` replaced whole, as
+  `tools/seaslug_game.py` `genus_looks` writes them (a specialist source's for a declared pair, iNaturalist's counts for a
+  data one), shown under the other genus on the sheet's Don't confuse with (`learn.js` `fishGenusLooks`); hidden, the
+  pair keeps an empty list. In the admin's Sheet box one source a line, its words then `|` and its link (`admin-content.js`
+  `sheetVal`, `srcsText`), with no Source and Link of the edit's own (the value is its sources). Every genus has the boxes,
+  one the app opens as its family or its one species included (`sheetOwn`: a subject whose units are its genera).
 - **An entry** `{v, was, src, t, by}`: `v` the value in force (a list is replaced whole; `null` hides the slot, a keyed
   line keeping its pair with blank words); `was` the base when edited (`null` for an add); `src` an optional source `{t, u}`
   (Q359 e), carried on the record as `esrc{slot: src}` and shown with the slot on the sheet; `t` when (ms); `by` who,
@@ -389,6 +397,22 @@ back-office, Photos › Tree, "Structure").
   units `Code.gs` built from `data.json` before) and its stamp, from `core.js` `PAIRS_SHEET` (`structSheet`; the fish keep
   `STRUCT_SHEET`): Progress sync, "Other subjects' replays". The pairs count where an answer carries no scoring record
   (the rows from before sheet v61: the known mix-ups' look-alike prior and the look-alike test rebuilt from the units).
+  **The sea slugs** (Pierre, 2026-11-18, on #1061: "Option 2 : on le construit maintenant"): pairs only, between genera,
+  their units (`SUBJECTS` seaslug `structure`: the genus `look` of `seaslug.json`, the pairs a specialist source names,
+  Q390 D). The apply is the corals' (`core.js` `lookStructure`, by id in the `genera` list: `srcsStructure`): a withdrawn
+  pair leaves both `look` lists and both `lsrc` lines; an added one joins both `look` lists, leaves `dlook` (a data
+  look-alike it was: never both, as the build), and its line is the record's own for that genus (a data pair's
+  iNaturalist counts) with the editor's source after it, else his source, else `EDITOR_PAIR` as its one source. **What a
+  pair edit does to players**: the duels, the confusion groups' declared pairs and the sheet's Don't confuse with follow
+  (`app.js` `fishGenera` `look`, `decl`; `UNITS` seaslug `pairs`), and every sea-slug player's progress is replayed under
+  the pairs in force at their next sync (the structure stamp, Q363 h A; their board follows, rule D8). A family's genera
+  stay each other's look-alikes (traps, the replay's look) whatever is withdrawn (`fishGenUnits`); the data look-alikes
+  stay the players' answers' to drop. No circles: a genus's circle is its best species', from the build. The app lays the
+  pairs over its units and says their stamp (`UNITS` seaslug `st`, read with its own tree in force: `sync.js` `stNow`,
+  `app.js` `treeWith`) from `core.js` `SEASLUGPAIRS_SHEET` (rule D4); the sheet's replay is the fish's (`Code.gs`
+  `subjRpl_` over `seaslug.json`, its `SUBJECTS` `replayed` `file`). The admin's Structure box is on every genus page
+  (no Circle), and Tag… › Any look-alike lists the genus pairs (`admin.js` `fuFilters`, the pair rows of the declared
+  rank).
 
 ### Suggestion files (machine-written, Pierre confirms in admin)
 - `forms.json`: `forms` (the 7 IMR growth form definitions, single source), `cf` (CF box → IMR forms), `gf` guesses, `gunsure`, legacy `form`. Written by `tools/judging_import.py` and `tools/game_forms.js` in one layout (one key per line, the big `{photo: value}` maps one entry per line; `tests/gameforms.test.js`). **Every game photo should have a growth form**, Pierre's (curation `gf`) or a guess (`tests/photos.test.js` lists the ones without as a warning, never a failure: a candidate Pierre approves without a form arrives with his Publish and must not turn unrelated PRs red): `node tools/game_forms.js` lists the game photos with none, and `--apply FILE` writes the guesses of a growth-form pass (judging/BRIEF.md format, each photo looked at) into `gf` and `gunsure`; the pass of 2026-11-05 is `judging/game-forms.json` (222 photos, mostly candidates approved after the first form pass).
