@@ -588,8 +588,8 @@ function logRows_(sh, k){
   return w < k ? v.map(r => r.concat(new Array(k - w).fill(''))) : v;
 }
 
-// Full replay of a player's progress (v28, Pierre 2026-11-03: progress is recalculated from the whole answer log,
-// automatically, never by a human click, now and whenever the progress engine changes). The engine is core.js, embedded
+// Full replay of a player's progress (docs/LEARNING.md "Full replay": progress is recalculated from the whole answer
+// log, automatically, whenever the progress engine changes). The engine is core.js, embedded
 // at the end of this file (CORE_, kept identical by tools/sync_core.py): replayProgress over the player's rows of the
 // Answers tab since their last progress reset, with the photo memory offsets and the pooled confusions of stats_ (cached)
 // and the genera's look-alikes and families from data.json (gen_). RV (core.js RVS) is the rules version: every change to
@@ -603,15 +603,15 @@ function logRows_(sh, k){
 // replay: {rv, n, rec, ids}: rec the replayed record per genus and '~level' (core.js replayProgress's P), ids the ids of
 // the rows replayed that the app may still hold in its queue, so it does not replay again an answer the sheet already
 // counted: every row from pt on (the time of the oldest answer queued on the device, sent with the request; a second of
-// margin for the sheet's dates), at least the last HOLD.IDS rows (an app that sends no pt). Until Codex review #399 only
-// the last HOLD.IDS, while a lost reply can leave up to 2,000 answers already logged in the device's queue.
+// margin for the sheet's dates; a lost reply can leave up to 2,000 answers already logged in the device's queue), at
+// least the last HOLD.IDS rows (an app that sends no pt).
 // Cost per player: the Answers tab is read once per request anyway (hold_), the replay of a few hundred rows takes
-// milliseconds, data.json is fetched once every 6 hours (cached), the pooled stats are the ?stats=1 snapshot (v145:
-// statsServed_; stats_, cached, while there is none).
+// milliseconds, data.json is fetched once every 6 hours (cached), the pooled stats are the ?stats=1 snapshot
+// (statsServed_; stats_, cached, while there is none).
 const RPL = {TAB: 'Replayed', HEAD: ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']};
 // The genera's look-alikes and families (data.json gen and x.gen, as the app's GX), what the replay's look-alike test
 // needs: from GitHub main, cached 6 hours. null when it cannot be read (no replay then; the app keeps its own).
-// v163: under the content editor's look-alike pairs (core.js SUBJECTS coral structure; design note v2, step 8): the
+// Under the content editor's look-alike pairs (core.js SUBJECTS coral structure): the
 // subject replayed here has a structure, so its units are made as another subject's are, from data.json with
 // curation.json's pairs laid over it (subjRpl_, the same cache and the same 15-minute refresh), and null when the
 // curation cannot be read (never the base's pairs in place of the editor's).
@@ -621,15 +621,14 @@ function gen_(){
   const hit = CacheService.getScriptCache().get('gen1');
   return hit ? JSON.parse(hit) : dataJson_().gen;
 }
-// The slate (v42, core.js slateOf over data.json: what the app's progress % and Learned count), cached with gen_.
+// The slate (core.js slateOf over data.json: what the app's progress % and Learned count), cached with gen_.
 function slate_(){
   const hit = CacheService.getScriptCache().get('slate1');
   return hit ? JSON.parse(hit) : dataJson_().slate;
 }
-// Lines for the app's cards (v87; Pierre, 2026-11-05, Q109: a card may name a player, a name never written in the repo):
-// the Notes tab (Key, Text), rows whose key starts with card., served as notes: {key: text} with every load and save
-// reply (sync.js NOTES_KEY; core.js RV_SORRY ps: card.rv8.ps, the PS of rules version 9's apology). The tab is
-// Pierre's: made by hand, read only here; none, an empty object.
+// Lines for the app's cards, which may name a player, a name never written in the repo (rule D2): the Notes tab (Key,
+// Text), rows whose key starts with card., served as notes: {key: text} with every load and save reply (sync.js
+// NOTES_KEY; core.js RV_SORRY ps). The tab is Pierre's: made by hand, read only here; none, an empty object.
 function notes_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notes'), out = {};
   if (!sh || sh.getLastRow() < 2) return out;
@@ -653,26 +652,21 @@ function dataJson_(){
   return {gen: out, slate: slate.length ? slate : null};
 }
 // An Answers row as a replay row (core.js replayProgress): [player, time ms, shown, answered, right, mode, photos, e, th,
-// new photos, choices, null, seconds, null ... null, scoring at 22]; blank numbers are null (answers before v5; seconds before
-// v23). v32: the seconds (at 12, as in readAnswers rows) weigh a right answer's ability steps in the replay as in the app
-// (core.js rtWeight). v61: the scoring record (at 22, core.js LOG_SC, as in readAnswers rows; null before it): the replay scores the
-// answer with what the app scored it with (core.js scoreAnswer).
+// new photos, choices, null, seconds, null ... null, scoring at 22]; blank numbers are null. The seconds (at 12, as in
+// readAnswers rows) weigh a right answer's ability steps (core.js rtWeight); the scoring record (at core.js LOG_SC, null
+// without) has the replay score the answer with what the app scored it with (core.js scoreAnswer).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
-// start: the player's first-launch answer (the app's reefid-sync-coral-start record; v36): the replay steps the ability
+// start: the player's first-launch answer (the app's reefid-sync-coral-start record): the replay steps the ability
 // with the prior it says, as the app does (core.js startPriorAt).
 // sid: the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
 // photo memory offsets, pooled confusions, format or genus offsets, which stats_ computes for the corals only: an answer
-// logged with its scoring record, as every fish answer is, replays as the game scored it).
-// v127: no floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down); until then the
-// fish replay was floored here against the account's saved bars at its first replay (kept as {P: record, F: reference},
-// which rplRec_ still reads).
-// v146: appSt, the structure stamp the app applied (replays_ sts; undefined: an app that says none). A subject with a
-// structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and stamp st), also when
-// the rules version is applied but the stamp is another; the stamp joins the cache's identity (rplSince_) and the reply
-// (st, when not ''). Its units cannot be made (the curation or fish.json unreadable): no replay.
-// v163: the subject replayed here too (the corals' look-alike pairs, design note v2 step 8): its stamp is the one the app
-// says for it (load_, the save, the anonymous send: stMain_).
+// logged with its scoring record, as every fish answer is, replays as the game scored it). No floor: the log is the
+// only reference, a bar may go down (rule D9).
+// appSt: the structure stamp the app applied (undefined: an app that says none; the subject replayed here: stMain_). A
+// subject with a structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and
+// stamp st), also when the rules version is applied but the stamp is another; the stamp joins the cache's identity
+// (rplSince_) and the reply (st, when not ''). Its units cannot be made (the curation or its file unreadable): no replay.
 function replay_(key, since, appRv, pt, start, sid, appSt){
   const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
   if (typeof appRv !== 'number' || !isFinite(appRv)) return null;
@@ -686,14 +680,13 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
   const from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity;
   const ids = byTime.filter((r, i) => i >= byTime.length - HOLD.IDS || r[0] >= from).map(r => r[1]);
   // The cache's identity: the reset time, and the fingerprint of the first-launch history the replay applies (a replay
-  // made with another history is not reused; Codex review #428). Without a history: the reset time alone, as before.
+  // made with another history is not reused). Without a history: the reset time alone.
   const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stNow), st = stNow ? {st: stNow} : {};
   const sh = sheet_(main ? RPL.TAB : rplTab_(sid), RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0], prev = rplRead_(row);
-    // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__": lc_ keeps
-    // no other): core.js replayProgress before v117 read that member as their record and replayed none of their answers
-    // (Codex review #812), so a record kept for them may be wrong; made again instead, the same for every other player.
+    // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__"): an old
+    // replay read that member as their record, so a record kept for them may be wrong; made again instead.
     if (prev && !(who in Object.prototype) && rplFresh_(row, top, n, sinceKey)) return Object.assign({rv: top, n: n, rec: rplRec_(prev.o), ids: ids, fp: fp}, st);
   }
   const made = rplMake_(who, mine, since, start, sid, SX ? SX.gen : null);
@@ -701,13 +694,12 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
   rplPut_(sh, at, key, top, n, fp || stNow ? sinceKey : since, made.rec);
   return Object.assign({rv: top, n: n, rec: made.rec, ids: ids, fp: fp}, st);  // fp: the first-launch history it applied (the app checks it)
 }
-// The pieces of replay_, shared with the leaderboard (board_, boardWarm_; v118). A subject's last rules version (core.js
+// The pieces of replay_, shared with the leaderboard (board_, boardWarm_). A subject's last rules version (core.js
 // rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
 const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
-// v163: the structure stamp an app says for the subject replayed here (q: a load's or a save's fields, sts {coral:
-// stamp}, sync.js stsAsk), undefined when it says none (an older app, or one before core.js PAIRS_SHEET: replayed
-// by its rules version alone, as before); with the stamp of the units it holds when another (stn), the curation is read
-// again at once (subjStSeen_), as for another subject (replays_).
+// The structure stamp an app says for the subject replayed here (q: a load's or a save's fields, sts {coral: stamp},
+// sync.js stsAsk), undefined when it says none (an older app: replayed by its rules version alone); with the stamp of
+// the units it holds when another (stn), the curation is read again at once (subjStSeen_), as for another subject.
 function stMain_(q){
   const id = CORE_.replaySubject(), sts = q && q.sts && typeof q.sts === 'object' ? q.sts : {}, stn = q && q.stn && typeof q.stn === 'object' ? q.stn : {};
   if (typeof sts[id] !== 'string') return undefined;
@@ -715,20 +707,20 @@ function stMain_(q){
   return sts[id];
 }
 // The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one, and
-// (v146) the structure stamp it was made under after a ~ when it is not '' (so a row kept from before reads the same).
+// the structure stamp it was made under after a ~ when it is not '' (so a row without one reads the same).
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
 // The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
 function rplMine_(key, since, sid){
   const main = !sid || sid === CORE_.replaySubject(), who = lc_(key);
   return (main ? answerRows_() : subjRows_(sid)).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
 }
-// A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for one floored before v127); null when broken.
+// A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for an old floored one); null when broken.
 function rplRead_(row){
   try { return {rv: Number(row[1]), since: String(row[3]).split(/[#~]/)[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) { return null; }
 }
 // Reused while the rules, the row count and the reset are the same.
 const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey;
-// The replayed record of a record kept (one floored before v127 kept {P: record, F: reference}).
+// The replayed record of a record kept (an old floored one kept {P: record, F: reference}).
 const rplRec_ = o => (o && o.P && o.F ? o.P : o);
 // The replay itself (core.js replayProgress) over the player's rows (mine). {rec}, null without the units (gen_,
 // subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
@@ -737,13 +729,12 @@ function rplMake_(who, mine, since, start, sid, g){
   const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
   const gen = g || (main ? gen_() : subjGen_(sid));
   if (!gen) return null;
-  // v162: a subject with a variant table (core.js SUBJECTS replayed vars, subjVar_): the replay marks each unit's variant
+  // A subject with a variant table (core.js SUBJECTS replayed vars, subjVar_): the replay marks each unit's variant
   // groups with no right answer in the log (core.js replayProgress vars, vl), which take a learned mark away (replayedOf;
-  // Q391 b, rules D8, D9); none made without the table (the app keeps its own and asks again), so a replay kept for
-  // today's rules always carries it.
+  // rules D8, D9); none made without the table (the app keeps its own and asks again).
   const vars = main ? null : subjVar_(sid);
   if (!main && !vars) return null;
-  // v145: the corals' pooled stats from the snapshot (statsServed_), else stats_ as before; other subjects replay without.
+  // The corals' pooled stats from the snapshot (statsServed_), else stats_; other subjects replay without.
   const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
   return {rec: rep ? rep.P : {}};
 }
@@ -756,16 +747,16 @@ function rplPut_(sh, at, key, top, n, sinceCell, rec){
   sh.getRange(r, 1, 1, out.length).setValues([out]);
 }
 
-// The replays of the other subjects the sheet replays (core.js replayedSubjects: fish; Pierre, 2026-11-08), each
-// asked by the app with the rules version it applied to that subject (rvs: {subject: rv}; an app that sends none gets
-// none, as before), each since that subject's own progress reset with its own first-launch answer: from the player's
+// The replays of the other subjects the sheet replays (core.js replayedSubjects), each asked by the app with the rules
+// version it applied to that subject (rvs: {subject: rv}; an app that sends none gets none), each since that subject's
+// own progress reset with its own first-launch answer: from the player's
 // data (signed in), or the device's (alt: {reset: {subject: ISO time}, start: {subject: record}}, an anonymous send).
 // Under a script lock of its own (held: the caller holds it already, anon_). Returns {subject: {rv, n, rec, ids, fp}}
 // or null when none was replayed; a subject that fails is left out (the app keeps its own and asks again).
-// v146: sx {sts, stn}, the structure stamps the app says for a subject with a structure (sync.js stsAsk, core.js
+// sx {sts, stn}: the structure stamps the app says for a subject with a structure (sync.js stsAsk, core.js
 // STRUCT_SHEET): the one its progress was replayed with (sts), the one of the units it holds when another (stn: the
 // curation read again at once, subjStSeen_). A subject whose stamp here is not the one applied there is replayed too, at
-// its rules version (Q363 h A), and its replay says the stamp (st, when not ''). An app that sends no sts: as before.
+// its rules version, and its replay says the stamp (st, when not ''). An app that sends no sts: by rules version alone.
 function replays_(key, data, rvs, pt, alt, held, sx){
   const sts = sx && sx.sts && typeof sx.sts === 'object' ? sx.sts : {}, stn = sx && sx.stn && typeof sx.stn === 'object' ? sx.stn : {},
     stOf = id => (typeof sts[id] === 'string' ? sts[id] : undefined);
@@ -802,8 +793,8 @@ function rplDrop_(name){ return rplTabs_().reduce((n, t) => n + dropRows_(t, nam
 // The units another subject's replay reads (core.js replayProgress gen: look-alikes and family lines): for fish, core.js
 // fishReplayGen over fish.json from GitHub main (the pool's first file, SUBJECTS pool), cached 6 hours as data.json is.
 // null when it cannot be read (no replay then; the app keeps its own).
-// v164: the file is the subject's replayed file when it names one (subjFile_: the sea slugs' seaslug.json, a subject with
-// no photo pool yet), else its pool's first; each subject's units under a key of its own (sgen1:<subject>).
+// The file is the subject's replayed file when it names one (subjFile_: the sea slugs' seaslug.json), else its pool's
+// first; each subject's units under a key of its own (sgen1:<subject>).
 const subjFile_ = S => (S.replayed && S.replayed.file) || ((S.pool || {}).files || [])[0];
 function subjGen_(sid){
   const S = CORE_.subjectOf(sid);
@@ -826,17 +817,15 @@ function mainJson_(file){
     return JSON.parse(r.getContentText());
   } catch (e) { return null; }
 }
-// v146: the structure in force of a subject whose content editor may change its circles and look-alike pairs (core.js
-// SUBJECTS structure; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A,
-// Q366): its replay's units are made from its first pool file (fish.json) with curation.json's circles and pairs laid over
+// The structure in force of a subject whose content editor may change its circles and look-alike pairs (core.js
+// SUBJECTS structure; docs/ARCHITECTURE.md "The content editor's edits"): its replay's units are made from its first
+// pool file (fish.json) with curation.json's circles and pairs laid over
 // it (core.js contentApply, the app's own function), and {gen, st} carries its structure stamp (core.js structStamp: ''
 // while nothing changes the base). curation.json is read from main, the full file (the players' copy is written only at
 // deploy); its structure entries alone are kept (scur1: {fp, c}, fp their fingerprint, core.js structFp), and the units
 // under that fingerprint (sgen4:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
-// v161: sgen3 and stree2, so the units and the tree a script before the species level cached (no species units, no
-// species entries) are never read by this one (the species level, step 1).
-// v176: sgen4, stree3 and svar2, so the units, the tree and the variant table a script before the scientific genera of
-// circles 2 and 3 cached (core.js fishGenSets: circle 1's alone) are never read by this one (Pierre, 2026-11-18).
+// The cache keys carry a number (SGEN_, STREE_, SVAR_), raised whenever what is cached changes shape, so a value an
+// older script cached is never read by this one.
 // The curation is read again by the 15-minute trigger (subjStRefresh_) and at once when a device says a stamp the sheet
 // does not hold (replays_ stn, at most once a minute), so a Publish reaches the replays within 15 minutes. null when the
 // curation or the file cannot be read: no replay then (never the base's structure in place of the editor's), the app
@@ -856,24 +845,23 @@ function subjCur_(sid, force){
   if (Cm.pairs && typeof Cm.pairs === 'object' && Object.keys(Cm.pairs).length) own.pairs = Cm.pairs;
   const x = {fp: CORE_.structFp(S, cur), c: own};
   try { c.put(k, JSON.stringify(x), SCUR_.TTL); } catch (e) {}
-  CURF_ = {id: S.id, fp: x.fp, cur: cur};  // v162: the whole file, for the variant table made in this run (subjRpl_)
+  CURF_ = {id: S.id, fp: x.fp, cur: cur};  // the whole file, for the variant table made in this run (subjRpl_)
   return x;
 }
-// v162: the curation.json read last in this run (subjCur_), {id, fp, cur}, so the variant table made with the units
+// The curation.json read last in this run (subjCur_), {id, fp, cur}, so the variant table made with the units
 // (subjRpl_) does not read it again; null before any.
 let CURF_ = null;
 // {gen, st}: the replay's units under the structure in force and its stamp (subjCur_), null when they cannot be made.
-// v147 (design note v2, step 4; Codex review #977): a subject whose leaderboard ranks by a global score and whose sheet
-// makes its tree (core.js SUBJECTS replayed tree: fish, fishBoardTree, the app's own UNITS tree) gets that tree made from
-// the same file and structure, kept beside the units under the same fingerprint (STREE_, its own key: the tree grows with
-// the species level), so the board's weights per family and circle follow a circle Publish with the replays, whether a
-// device saves or not (subjTreeKept_, board_).
-// v161 (Codex review #975): with the species units the replay's units are about 270 KB, over the script cache's 100 KB a
-// value, so both are put and read in parts (cacheBigPut_, cacheBigGet_), the stamp's reader too (subjStKept_).
-// v162 (Pierre, 2026-11-17, Q391 b, rules D8, D9): and its variant table (core.js SUBJECTS replayed vars: fish,
-// fishVarTable: each unit's variant photos, their kinds and observations, from the pool files on GitHub main, fish.json
-// with the structure laid over it), kept under the same fingerprint (SVAR_, about 330 KB in parts), so the replay takes a
-// learned mark away from the log (subjVar_, rplMake_); not made (a file unreadable): the units made again at the next call.
+// A subject whose leaderboard ranks by a global score and whose sheet makes its tree (core.js SUBJECTS replayed tree:
+// fishBoardTree, the app's own UNITS tree) gets that tree made from the same file and structure, kept beside the units
+// under the same fingerprint (STREE_), so the board's weights per family and circle follow a circle Publish with the
+// replays, whether a device saves or not (subjTreeKept_, board_).
+// The replay's units are about 270 KB, over the script cache's 100 KB a value, so both are put and read in parts
+// (cacheBigPut_, cacheBigGet_), the stamp's reader too (subjStKept_).
+// And its variant table (core.js SUBJECTS replayed vars, fishVarTable: each unit's variant photos, their kinds and
+// observations, from the pool files with the structure laid over), kept under the same fingerprint (SVAR_, about 330 KB
+// in parts), so the replay takes a learned mark away from the log (subjVar_, rplMake_; rules D8, D9); not made (a file
+// unreadable): the units made again at the next call.
 const SGEN_ = 'sgen4:', STREE_ = 'stree3:', SVAR_ = 'svar2:';
 const subjTreeOn_ = S => !!(S.score && S.replayed && typeof S.replayed.tree === 'function');
 const subjVarOn_ = S => !!(S.replayed && typeof S.replayed.vars === 'function');
