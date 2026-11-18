@@ -4403,10 +4403,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
   const SEASLUGPAIRS_SHEET = 174;
-  // The sync script version from which the app reads the fish's own pooled statistics (rule D4; SUBJECTS fish stats): their
-  // ?stats=1&s=fish reply (photo ratings, unit offsets and pairs, rated at the rank each question asked) names its
-  // subject and is the one this version serves; the app asks for it and keeps it only from here, so an older script,
-  // which answers &s=fish with the corals' numbers, changes nothing.
+  // The sync script version from which the app reads the fish's own pooled statistics (rule D4; SUBJECTS fish stats): the
+  // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
+  // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
+  // version or later, so one it has not seen answer, or an older one, changes nothing.
   const FISHST_SHEET = 187;
   const SUBJECTS = [
     {

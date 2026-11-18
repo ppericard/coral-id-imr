@@ -1313,8 +1313,9 @@ dropped by the players' answers.
   non-inferiority. `tools/learnsim.js --subject fish --questions 300`, the five fish profiles, before = no statistics
   (the judged-ease priors alone), after = that reply as the photo statistics (`--stats`; the fish's memory and format
   offsets in it are not read, `pmem`, `pfmt`), the learner's true difficulties the same reply in both arms (`--truth`:
-  a photo not rated takes its unit's offset), so the learner's world does not move with the app's estimate (it is the
-  estimate's own source, so a reading in its favour). Look 1, seeds 1-5 (25 pairs): knowledge held on every profile; the
+  a photo not rated takes its unit's offset), so the learner's photo difficulties do not move with the app's estimate
+  (they are its own source, so a reading in its favour; the learner's wrong choices still follow the app's pooled
+  pairs, which the after arm changes). Look 1, seeds 1-5 (25 pairs): knowledge held on every profile; the
   bar's error E = bar − D* breached for the strong RA (+0.050 [+0.090], margin +0.030) and was unclear for the others,
   so one step up: look 2, declared before it ran, seeds 1-15 (75 pairs, `--looks 2`). True knowledge at 300 answers,
   after − before: +0.001 / +0.003 / −0.001 / −0.001 / −0.000 (beginner, casual diver, lecture RA, strong RA, expert),
@@ -1329,8 +1330,12 @@ dropped by the players' answers.
 - **The real log (rule L12) was not run**: the draw cannot be replayed (the log holds the questions asked), the fish
   ratings and offsets were fitted on the very answers a recomputed expectation would be scored on (an in-sample
   reading), and the Answers tab is too large to bring through the connector into a session. What was measured instead is
-  above (the reply, the simulation). To do once fish answers have been drawn under the new numbers: a next-answer
-  log-loss by time (ratings fitted on the first part, scored on the rest) on a saved extract.
+  above (the reply, the simulation), plus one real-log number the reply holds (in-sample): the fish answered 4-choice
+  questions better than the expectation the app logged with them (`fmt` k4 +0.71 logits on 1,929 answers), and the
+  answer-weighted mean unit offset is −0.18 (photo difficulty −0.19): the same direction, the unit offsets taking back
+  about a quarter of that gap, the rest staying in the format offset the fish do not use yet. To do once fish answers
+  have been drawn under the new numbers: a next-answer log-loss by time (ratings fitted on the first part, scored on the
+  rest) on a saved extract.
 
 ### Photo exposure (2026-11-06, Q187-Q190; fish too)
 

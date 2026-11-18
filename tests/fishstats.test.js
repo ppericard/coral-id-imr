@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish read their own pooled statistics in the app (admin plan PR 11): core.js SUBJECTS fish stats makes the app ask
+// The fish read their own pooled statistics in the app: core.js SUBJECTS fish stats makes the app ask
 // for ?stats=1&s=fish (sync.js loadOwnStats) and join the reply to the corals' (model.js statsJoin), from the script
 // version that ships this (FISHST_SHEET, rule D4). The fish's photo memory and format offsets stay the prior and none, and
 // their replay reads no pooled number. Against the in-memory sheet (tests/gas.js): nothing reaches the real one (rule D1).
@@ -133,14 +133,14 @@ test('the app reads the fish’s own statistics from the script that serves this
 // statistics it is given, so the statistics the app now scores with never part the device's record from the sheet's.
 test('a fish answer with its scoring record replays the same under any pooled statistics', () => {
   const gen = Object.fromEntries(CH.map(f => [f, {fam: 'x'}])),
-    row = (i, sc) => {
+    row = (i, sc, miss) => {
       const r = new Array(C.LOG_SC + 1).fill(null);
       Object.assign(r, {
         0: 'p1',
         1: Date.UTC(2026, 10, 10) + i * 60000,
         2: CH[0],
-        3: CH[0],
-        4: 1,
+        3: miss ? CH[1] : CH[0],
+        4: miss ? 0 : 1,
         5: 'quiz',
         6: 'fi1',
         7: 0.7,
@@ -150,7 +150,8 @@ test('a fish answer with its scoring record replays the same under any pooled st
       r[C.LOG_SC] = sc;
       return r;
     },
-    rows = [0, 1, 2, 3].map(i => row(i, {d: 0.4 + i / 10, m: 0.1, n: 0.2})),
+    // three right answers, then two misses on the family given instead (a look-alike test logged with each)
+    rows = [0, 1, 2, 3, 4].map(i => row(i, {d: 0.4 + i / 10, m: 0.1, n: 0.2, ...(i > 2 ? {l: 1, c: 0.1} : {})}, i > 2)),
     pair = CH[0] + '|' + CH[1],
     a = C.replayProgress(rows, {gen}),
     b = C.replayProgress(rows, {
@@ -158,6 +159,7 @@ test('a fish answer with its scoring record replays the same under any pooled st
       conf: {[pair]: [60, 30], [CH[0] + '|' + CH[2]]: [40, 20]},
       gd: {[CH[0]]: [-0.9, 100], [CH[1]]: [0.8, 90]}
     });
-  assert.strictEqual(a.p1.used, 4, 'every row replayed');
+  assert.strictEqual(a.p1.used, 5, 'every row replayed');
+  assert.ok(a.p1.P[CH[0]].ko === 2 && a.p1.P[CH[1]], 'the misses counted against both families (rule L2)');
   assert.deepStrictEqual(plain(b), plain(a));
 });
