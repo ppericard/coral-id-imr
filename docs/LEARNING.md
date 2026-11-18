@@ -857,10 +857,10 @@ photo is in every player's game and which choices are traps, so they count only 
 A photo's difficulty is its unit's offset G, shared by every photo of the unit, plus its own residual P (the player rule
 "global level + genus" of Pelánek et al. 2017, applied to the photos). Each trusted answer, of weight w, moves both:
 
-- P by 0.8 / (1 + n_photo / 10) / (photos shown) × d × w;
-- G by `GENUS_K` / (1 + n_unit / 10) × d × w, `GENUS_K` 0.4 (`Code.gs` and `core.js` in step);
+- P down by 0.8 / (1 + n_photo / 10) / (photos shown) × d × w;
+- G down by `GENUS_K` / (1 + n_unit / 10) × d × w, `GENUS_K` 0.4 (`Code.gs` and `core.js` in step);
 
-n being the weighed answers so far. Both start at 0, so a photo nobody has answered sits at its unit's offset. A photo's
+n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start at 0, so a photo nobody has answered sits at its unit's offset. A photo's
 unit is the unit shown (every photo of a question is of one colony, rule P4), so no data file or per-unit code is
 needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
 answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
@@ -869,8 +869,9 @@ time.
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
 judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. A unit's
-difficulty is read from the same offsets ("One genus difficulty"). The planned next step, one difficulty split into
-rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
+difficulty is read from the same offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
+Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one
+difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
 
 ### Photo memory
 
@@ -889,8 +890,11 @@ sheet, the admin and the app (`core.js` `MEM`, `memBucket`, `memFam`, `eloReplay
 - **Per subject** (`model.js` `pmem`): the app reads the sheet's offsets (`PMEM`) for the subject the sheet replays
   with them (`SUBJECTS` `replay`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
   older sheet or offline (`core.js` `memOf`).
-- **The offsets do not depend on time.** Rule L1 allows the time since a photo was last shown to set its memory; no lag
-  term is in until the lag table shows enough answers per lag band (ROADMAP "Photo memory that fades with time").
+- **The offsets do not depend on time.** Rule L1's second exception (photo memory) would allow a lag term; none is in
+  until the lag table shows enough answers per lag band (ROADMAP "Photo memory that fades with time").
+
+The measurements behind the buckets, the offsets fitted on the real log, and the simulations that chose the weights
+below (the corals and the fish) are in the notebook.
 
 **In the app** (`quiz.js` `answer`, `model.js` `famOf`):
 
@@ -974,15 +978,16 @@ replay".
   move and volatility, run, variant groups left; the photos seen per photo the larger of the two sides), `pm` 1 and the
   rules version; for the global level, the replay's ability and the larger answer count. From the device, what the log
   cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged after it
-  takes it away as the game would (`core.js` `mxKeeps`), a passed exam turned back into one in course while a variant
+  takes it away as the game would (`core.js` `keepsMark`), a passed exam turned back into one in course while a variant
   group has no right answer in the log; and the days answered right, the last colonies shown and the corallites seen
   (`dd`, `dl`, `ro`, `cor`). A unit the log has no answer on keeps the device's record only if it counts no answer
   either.
 - **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
-  rule appends `{v, at, why, msg}`. A version is not a frozen engine: the sheet always replays with the code's current
-  rules, and a new version only makes every device take the replay once. No version has a card any more (`msg` null;
-  `core.js` `rvMsgs` shows none for a jump that ends on one), and a learned mark the replay takes away is not told
-  (rule D6).
+  rule appends `{v, at, why, msg}`; a change to how `Code.gs` `stats_` computes what the corals' replay reads from it
+  (`mem`, `conf`, `fmt`, `gd`) is one. A version is not a frozen engine: the sheet always replays with the code's current rules, and a new version
+  only makes every device take the replay once. The latest version of each list has no card (`msg` null; the cards of
+  the earlier versions stay for the record, and `core.js` `rvMsgs` shows none for a jump that ends on a version without
+  one), and a learned mark the replay takes away is not told (rule D6).
 - **The device's own recalculations** (`memRecalc`, above; `model.js` `domRecalcAll`, a unit record of a subject other
   than the corals still on the former moving average) only approximate the replay from what a device keeps, for a
   device that never reached the sheet; a record adopted from the replay is never corrected by them.
