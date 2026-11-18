@@ -5892,7 +5892,7 @@
   // The sync script version that stores an answer's content version (Code.gs vNEXT: Answers Content version, the entry's
   // cv; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18). Sent with cv only once the script's
   // replies say v >= CV_SHEET; before, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
-  const CV_SHEET = 176;
+  const CV_SHEET = 177;
   const logOut = (a, v) => {
     // (a reply with no version, NaN, is below both)
     const pa = !!a && a.pa !== undefined && !(Number(v) >= PA_SHEET),
