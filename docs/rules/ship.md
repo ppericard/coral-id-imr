@@ -359,8 +359,10 @@ automatic lock of the unit tests"; the load budget of twice the cores and the di
 ### W25
 
 **Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
-small task, stop agents when done, one wake-up per wait, local checks before each push. A lighter model only for
-mechanical work a test verifies; never for a judgment (photo judging included).
+small task, stop agents when done, one wake-up per wait, local checks before each push. The model and
+effort of each agent follow the table in docs/INTEGRATOR.md (AGENTS.md "Working mode"): ordinary code runs on the
+intermediate model; the lightest model only for mechanical work, after the sample test against a strong model ("Model
+choice by measurement"); never for a judgment (photo judging included).
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.

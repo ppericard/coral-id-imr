@@ -151,9 +151,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   deliverable; large JSON and the sheet are queried (jq, grep, the connector's ranges), never printed whole; a few
   commands are done by the integrator itself; an agent is stopped once its report is in; a wait is one monitor that
   wakes once on a terminal state; Prettier and the unit tests run before a push, every Codex finding fixed in one go;
-  two PRs on the same files are not run in parallel. A lighter model (the Agent tool's `model`) only for mechanical work
-  a test checks (bringing a PR up to date, docs, data fetches, a test fix); the strongest model for anything judged
-  (learning, content, design, reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
+  two PRs on the same files are not run in parallel. The model and effort follow the table above: the intermediate model for
+  ordinary code (a test fix, docs, bringing a PR up to date), the lightest one only for mechanical work that passed
+  the sample test (data fetches, conversions); the strongest model for anything judged (learning, content, design,
+  reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
   resolution, one species) before looking, and judge the species under target first.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.

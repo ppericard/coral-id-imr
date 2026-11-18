@@ -7,7 +7,7 @@ and the PRs, never in the docs.
 ## Naming
 
 `docs/decisions/YYYY-MM-DD-topic.md`: the date the decision was taken (Manila), then a short lowercase topic with
-hyphens (`2026-11-18-model-table.md`). One decision per file. A later decision that changes an earlier one gets its own
+hyphens (`2026-11-18-model-table.md`). One decision per file; decisions taken together in one PR (a batch of rule wordings) may share a file, each under its own heading. A later decision that changes an earlier one gets its own
 record and links to the first; the first is never rewritten.
 
 ## What a record holds
