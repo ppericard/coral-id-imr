@@ -729,7 +729,7 @@
           o[1] += sec;
         };
       let vk = 0;
-      // The screen each device sends (core.js viewportOf, sheet vNEXT): its window width, a usable height and a pixel
+      // The screen each device sends (core.js viewportOf, sheet v177): its window width, a usable height and a pixel
       // ratio set by that width, no random numbers (the rest of the demo stays the same). The players' visits above have
       // none (sent before the sheet kept it).
       const VH = {360: 660, 384: 740, 390: 660, 393: 660, 412: 780, 430: 750, 800: 1180, 820: 1100, 1440: 780, 1680: 920, 1920: 950},

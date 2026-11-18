@@ -6882,7 +6882,7 @@
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
-    // The screen (VIEWPORT, sheet vNEXT): rounded and clamped again, whatever the device sent; its band kept when it is
+    // The screen (VIEWPORT, sheet v177): rounded and clamped again, whatever the device sent; its band kept when it is
     // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
     const V = obj(o.vp),
       vp = V.w !== undefined ? viewportOf(V.w, V.h, V.d) : null;

@@ -750,7 +750,7 @@ test("v30 pages events: cleaned, in their own tab, under the admin's id of the p
   assert.deepStrictEqual(P[P.length - 1].slice(0, 5), ['p1', Date.parse('2026-11-03T10:00:00Z'), 'dev0000009', 'pages', anonAid]);
 });
 
-// The screen of a summary (sheet vNEXT; Pierre, 2026-11-18): kept rounded in the Pages tab's Detail, no new column.
+// The screen of a summary (sheet v177; Pierre, 2026-11-18): kept rounded in the Pages tab's Detail, no new column.
 test('pages events keep the screen, rounded and clamped again, in the Detail JSON; no column added', () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000',

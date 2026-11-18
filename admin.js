@@ -5008,7 +5008,7 @@ const pagesRows = rows =>
         d = pagesClean({});
       }
       // ua: the Browser column (sync.js uaShort, "… mobile" on a phone; Players › Visits); vp: the screen, rounded (core.js
-      // VIEWPORT, sheet vNEXT; null before, or from an app that had not seen that script yet).
+      // VIEWPORT, sheet v177; null before, or from an app that had not seen that script yet).
       return {
         t: r[1],
         dev: r[2],
