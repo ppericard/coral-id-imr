@@ -205,8 +205,7 @@ const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js date
 // text, for a title or a chart's tooltip. The units of the subject on screen (admin.js unitWait: the sea slugs' own).
 const jReg = () => unitRegOf(unitWait(ASUBJ)),
   jImr = g => (jReg() && jReg().imr[g]) || '',
-  jName = g =>
-    (jReg() && jReg().gen[g] ? jReg().gen[g].name : String(g).replace(/^[a-z]:/, '')) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
+  jName = g => heatLab(jReg(), g) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
   jUnit = g =>
     repUnit(g, true, ASUBJ) +
     (jImr(g) ? ` <small title="Its name in the ${esc(ORG.short)} course">${esc(ORG.short)} ${esc(jImr(g))}</small>` : ''),

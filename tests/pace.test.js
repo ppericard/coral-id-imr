@@ -234,6 +234,7 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
       introduced: () => true,
       cover: () => null,
       uname: n => n,
+      mimKeep: () => null, // model.js: no pair of the mimicry class here
       ease: 0,
       holdEase: () => ctx.ease
     };

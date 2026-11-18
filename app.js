@@ -1087,7 +1087,7 @@ const treeBuild = () => {
 // The mimicry class (docs/LEARNING.md "The mimicry class"): each pair of the tree's file where a source says species a
 // resembles species b (fish.json lookalikes, kind resembles; tools/fish_lookalikes.json) puts an entry on the family of
 // a, its units' home (model.js varHome): sp, the species; st, the stage that resembles (juvenile: its juvenile photos
-// only; all: every photo); m, the units of b (its species unit s:<id>, core.js treeSpUnits; its genus; its family), any
+// only; all: every photo); u, the units of a (the side its drills ask on the class's photos, model.js mimSide); m, the units of b (its species unit s:<id>, core.js treeSpUnits; its genus; its family), any
 // of which met opens the gate (model.js mimOf,
 // mimAt); fb, the family of b, whose photos the card draws on; pair, the record its card reads (quiz.js mimShow); na and
 // nb, the two species' names (sci, and cn, cni as cnFirst reads them); ra and rb, whether a
@@ -1106,6 +1106,7 @@ function mimLay(X, f) {
       (by[a.family] = by[a.family] || []).push({
         sp: a.id,
         st: (r.st || {}).a || 'all',
+        u: ['s:' + a.id, a.genus, a.family].filter(Boolean),
         m: ['s:' + b.id, b.genus, b.family].filter(Boolean),
         fb: b.family,
         pair: r,
