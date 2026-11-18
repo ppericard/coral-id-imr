@@ -129,7 +129,7 @@ candidates after a new tag. Where the source is FishBase, the photo page (`o`) g
 **The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
 species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
 FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
-iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every genus the game has (every circle's, as `core.js` `fishGenSets`; circle 1's alone until
+iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every genus the game has (every circle's, as `app.js` `fishGenera` has them; circle 1's alone until
 2026-11-18; `--genera`: only the genera with no reference photo yet, the rest kept) and every
 entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: all
 of them for a species, Pierre, 2026-11-08, Q229; the first for a genus or a family) that pass the game photo rules on
