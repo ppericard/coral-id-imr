@@ -6782,6 +6782,81 @@ async function sealPart(b, base, fails) {
           });
           if (solo.sw || !solo.rows || solo.it !== solo.rows || !solo.fams.includes('Damselfishes'))
             fe.push(`Heatmap, genus questions only ${JSON.stringify(solo)}`);
+          // species questions (the species level's units, s:s091: core.js treeSpUnits): the Species rank on the map, each
+          // unit named by its scientific name, in its genus's block, never by its id (F15)
+          const spWant = await fq.evaluate(() => {
+            const R = rowsOf(),
+              ids = [...new Set(R.map(r => r[0]))].slice(0, 2),
+              ph = Object.keys(FISHA.ph),
+              by = {};
+            Object.entries(FISHA.spu).forEach(([id, u]) => u.genus && (by[u.genus] = by[u.genus] || []).push(id));
+            const G = Object.keys(by)
+              .filter(g => by[g].length >= 2)
+              .slice(0, 2);
+            if (!R.length || ids.length < 2 || G.length < 2) return null;
+            let t = Date.now() - 200 * 60e3;
+            const add = [];
+            ids.forEach(id =>
+              G.forEach(g => {
+                // four choices (as the game asks), five of six right: the player's answers count (core.js trustOf)
+                const [a, c] = by[g],
+                  [d, e] = by[G.find(x => x !== g)];
+                for (let i = 0; i < 6; i++)
+                  add.push(
+                    Object.assign([...R[0]], {
+                      0: id,
+                      1: (t += 1000),
+                      2: a,
+                      3: i ? a : c,
+                      4: i ? 1 : 0,
+                      5: 'quiz',
+                      6: ph[0],
+                      10: `${a} ${c} ${d} ${e}`
+                    })
+                  );
+              })
+            );
+            ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+            render();
+            const gn = g => (FISHA.gen[g] || {}).name || g.replace(/^[a-z]:/, '');
+            return {names: G.flatMap(g => by[g].slice(0, 2).map(id => FISHA.spu[id].name)), fams: G.map(gn)};
+          });
+          if (!spWant) fe.push('no species units to ask in the demo');
+          else {
+            await fq.click('#view [data-sf="hr"][data-v="species"]');
+            await fq.waitForFunction(() => document.querySelector('#view [data-sf="hr"][data-v="species"][aria-pressed="true"]'), null, {
+              timeout: 30000
+            });
+            const hs = await fq.evaluate(() => {
+              const T = document.querySelector('#view .adm-hmt');
+              return T
+                ? {
+                    names: [...T.querySelectorAll('tbody .hm-row')].map(th => th.textContent),
+                    fams: [...T.querySelectorAll('.hm-fam')].map(th => th.title),
+                    ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+                  }
+                : null;
+            });
+            if (!hs || spWant.names.some(n => !hs.names.includes(n)) || spWant.fams.some(g => !hs.fams.includes(g)) || hs.ids.length)
+              fe.push(`Heatmap, species ${JSON.stringify({want: spWant, got: hs})}`);
+            // Pairs names them too (repUnit)
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/pairs'));
+            await fq
+              .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {
+                timeout: 60000
+              })
+              .catch(() => fe.push('Pairs not drawn (species)'));
+            const ps = await fq.evaluate(() => ({
+              txt: document.getElementById('view').textContent,
+              ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+            }));
+            if (ps.ids.length || spWant.names.slice(0, 2).some(n => !ps.txt.includes(n)))
+              fe.push(`Pairs, species ${JSON.stringify({want: spWant.names.slice(0, 2), ids: ps.ids})}`);
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/heatmap'));
+            await fq.waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {
+              timeout: 60000
+            });
+          }
           await fq.click('#view [data-sf="hr"][data-v="family"]');
         }
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);

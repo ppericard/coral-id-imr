@@ -379,7 +379,7 @@ each rank, `logConds`, which a Journey's Games reuse), the units (genera, or a s
 both, `healthBad()` and `healthGenera()` shared with the red line of To do › All, thresholds in `HEALTH`): most players
 never send feedback, so the admin reads what the logged answers already say. No new data, anonymous ids only, counts.
 One role per admin page: Health (To do: is something wrong?) keeps what needs action, Stops (Analyses › Learning: what we
-learn) the rest. On a subject other than the corals: its answers (`rowsOf`), its units by name (`repUnit`), its sheets
+learn) the rest. On a subject other than the corals: its answers (`rowsOf`), its units by name (`repUnit`; a fish species unit by its scientific name), its sheets
 opened from its sheet page (`fish.learn.genus` for a family, genus or species sheet alike, since `core.js` `pageName`
 logs every sheet in the corals' words; `sheetVisit`), the corals' from the summary's genera.
 
@@ -457,8 +457,9 @@ met).
   `fishAdmin` for the fish), with Pairs' starts (`fishUnitRec`: a family's declared look-alikes, two genera of one
   family). Its top rank in blocks of its group in the identification key in force (the record's `ig` and the key's
   titles, `repReg` `groups`; rule S3; one block where it has no key), every unit of its slate on the map; a lower rank in
-  blocks of the rank above (`heatMatrix` `blockOf`: a genus in its family's, a species in its genus's), its units as
-  met, in italics. A subject whose units are a lower rank (`unitRankOf`: the sea slugs' genera) has every unit of its
+  blocks of the rank above (`heatMatrix` `blockOf` over `heatUp`: a genus in its family's, a species unit, `s:s091`, in
+  its genus's, from `repReg` `spu`), its units as met, named by `heatLab` (a fish species unit by its scientific name,
+  as `repUnit` names it on every page: in italics, linked to its family's page). A subject whose units are a lower rank (`unitRankOf`: the sea slugs' genera) has every unit of its
   slate on the map at that rank. Where its tree sorts its families into taxonomic groups (`seaslug.json` `taxa` and each
   family's `tg`, from `tools/seaslug_groups.json`; `repReg` `taxa`), the families' blocks sit in their group, in a sticky
   column of the groups left of the families' (`heatMatrix` `supOf`, `sups`: each group in one run, the biggest first, as
