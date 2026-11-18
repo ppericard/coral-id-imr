@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The content editor's edits laid over the built file (docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 1; Pierre,
-// 2026-11-15, Q359 and Q366): curation.json content in each subject's part, {nodes: {node id: {slot: {v, was, src, t,
+// The content editor's edits laid over the built file (docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 1):
+// curation.json content in each subject's part, {nodes: {node id: {slot: {v, was, src, t,
 // by}}}}, applied by one core.js function (contentApply) for the app and the admin. Checked here: the slots each subject
 // declares against fish.json; nothing changes while nothing is edited; replace, hide and add; a keyed line edits its words
 // only (the pair stays: structure is a later step); what is never applied (orphaned, never dropped); the three states;
@@ -48,7 +48,7 @@ test('the slots: declared per rank of the fish sheets, on records fish.json hold
         assert.ok(v === null || (sp.t === 'list' ? Array.isArray(v) : typeof v === 'string'), `${f.id} ${sp.k}`);
       })
   );
-  // The corals declare theirs since step 8 (tests/coralcontent.test.js).
+  // The corals declare theirs (step 8: tests/coralcontent.test.js).
 });
 
 test('nothing edited: the built file itself, for the app and for every subject (players see no change)', () => {
@@ -105,7 +105,7 @@ test('replace, hide and add: the edits in force, the raw file untouched, the uni
     X0 = C.fishGen(F, {});
   assert.deepStrictEqual(X.gen[BF.id].qt, ['Tip one', 'Tip two']);
   assert.strictEqual(X.gen[BF.id].lk.find(([o]) => o === lk)[1], 'Words of my own');
-  // Their sources go with them into the units (Codex review #952; rule C2): the tips' (app.js tipsList shows it wherever
+  // Their sources go with them into the units (rule C2): the tips' (app.js tipsList shows it wherever
   // the tips are shown), the look-alike line's after its own; none where nothing was edited.
   assert.deepStrictEqual(X.gen[BF.id].qsrc, {t: 'A field guide', u: 'https://example.org/guide'});
   assert.strictEqual(X.gen[BF.id].lsrc[lk], X0.gen[BF.id].lsrc[lk] + '; A look source');
@@ -216,7 +216,7 @@ test('the three states: fresh, stale when the base changed since, absorbed when 
   assert.strictEqual(st('added', null, null), 'fresh', 'an add over an empty slot');
   assert.strictEqual(st('added', null, 'the base filled it'), 'stale');
   assert.strictEqual(st(null, 'hidden', null), 'absorbed', 'a hide over a slot the base emptied since');
-  // A base that moved after the edit (the build changed the tips): stale, and his text still in force (Q359 c, option A).
+  // A base that moved after the edit (the build changed the tips): stale, and the editor's text still in force.
   const F2 = {...F, families: F.families.map(f => (f.id === BF.id ? {...f, cues: ['A rebuilt tip']} : f))},
     c = {nodes: {[BF.id]: {cues: e(['Mine'], BF.cues)}}};
   const [x] = C.contentEntries(FISH, F2, c);
@@ -293,7 +293,7 @@ test('two devices: Publish merges slot by slot (merge3), the same slot on both i
     M2 = C.merge3(base, m2, t2, conf2);
   assert.deepStrictEqual(M2.fish.content.nodes[BF.id].cues, m2.fish.content.nodes[BF.id].cues, 'mine, whole');
   assert.deepStrictEqual(conf2, [['fish', 'content', 'nodes', BF.id, 'cues']]);
-  // A slot never edited, hidden here and reworded there (Codex review #952): one conflict, my hide whole, never mixed
+  // A slot never edited, hidden here and reworded there: one conflict, my hide whole, never mixed
   // with their words; the other way round, my words whole.
   const m4 = put(base, c => C.contentSet(c, BF.id, 'life', null, BF.life || null, null, 7)),
     t4 = put(base, c => C.contentSet(c, BF.id, 'life', ['Their words'], BF.life || null, null, 8)),

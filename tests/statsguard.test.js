@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Sheet v115 (ROADMAP "Security follow-ups", Pierre 2026-11-08): the admin leaves a player or a device not signed in out
+// The admin leaves a player or a device not signed in out
 // of the statistics (Code.gs sxSet_, statsExclude), and an answer whose photos are of another unit rates no photo
 // (photoCheck_, photoAlert_), the answer itself always kept. Against the in-memory sheet (tests/gas.js).
 const test = require('node:test'),
@@ -119,8 +119,7 @@ test('no pool read: nothing is checked, nothing is flagged', () => {
   assert.strictEqual(st.skip.photos, 0);
 });
 
-// Review of #801 (P2-1; the integrator, 2026-11-09: a left-out device stays left out after sign-in, the admin can count
-// the account again): the row follows the device's answers to the name's admin id, with an Alerts line by ids only.
+// A left-out device stays left out after sign-in, and the admin can count the account again: the row follows the device's answers to the name's admin id, with an Alerts line by ids only.
 test('a device left out of the statistics stays out once it signs in, under a new or an existing name', () => {
   for (const name of ['NewName', 'Old']) {
     const s = loadCodeGs(),
@@ -246,7 +245,7 @@ test('the real pools fit the script cache in parts: fish photos are checked, a f
   assert.strictEqual(n['fish-photos.json'], 2);
 });
 
-// Codex review #975 (P2): the species units of the species level (s: and the species id, s:s084: core.js fishSpUnits)
+// The species units of the species level (s: and the species id, s:s084: core.js fishSpUnits)
 // are their family's for the photo check (unitUp_), so a species question with its family's photos is never flagged, and
 // the pools cached by a script before them (pool2, with no such parent) are never read: pool3.
 test('a species unit (s:<id>) is its family for the photo check; the parents cached before it are never read', () => {
@@ -291,7 +290,7 @@ test('a value over the cache limit is put in parts and read back whole; a lost p
   assert.strictEqual(s.ctx.cacheBigGet_(c, 'big'), null);
 });
 
-// Review 2 of #801 (P1): a photo or unit named like a member of Object.prototype (constructor, __proto__, toString) is
+// A photo or unit named like a member of Object.prototype (constructor, __proto__, toString) is
 // refused when logged (word_), and one already in the log is an entry like any other in stats_ (maps with no
 // prototype): the stats are served, nothing is NaN, nothing is added to Object.prototype.
 const vm = require('vm');
@@ -362,7 +361,7 @@ test('photo and unit ids like constructor or __proto__: refused when logged, har
   });
 });
 
-// Review 2 of #801 (P3-1): a sign-in send refused (stale) or not saved moves neither the device's answers nor its
+// A sign-in send refused (stale) or not saved moves neither the device's answers nor its
 // exclusion: no name that gets no account is left out; the retry, saved, moves both.
 test('a refused sign-in moves no exclusion; the saved retry does', () => {
   const s = loadCodeGs(),
@@ -384,7 +383,7 @@ test('a refused sign-in moves no exclusion; the saved retry does', () => {
   assert.ok(s.sheets.Answers.rows.slice(1).every(x => x[0] === 'Maria'));
 });
 
-// Review 2 of #801 (P3-2): nothing is fetched under the script lock: a replay (doGet rv, a save's, an anonymous send's)
+// Nothing is fetched under the script lock: a replay (doGet rv, a save's, an anonymous send's)
 // computes stats_ against the cached pools only; the public stats, which hold no lock, read and cache them. The replay's
 // units are read there, data.json and, from step 8 of the sheet overlay's design note, the look-alike pairs of
 // curation.json laid over it (Code.gs gen_, subjCur_: once, then cached), never a photo pool.
@@ -405,7 +404,7 @@ test('a replay under the script lock fetches no photo pool when cold; the public
   assert.ok(n['fish-photos.json'] === 1 && n['curation.json'] >= 1);
 });
 
-// Codex review #801 (ae9f74a): stats made under the lock with no pool cached are unchecked; the public stats, which may
+// Stats made under the lock with no pool cached are unchecked; the public stats, which may
 // read the pools, never take them from the cache as they are: they read the pools and check the ratings.
 test('unchecked stats made under the lock are never served as checked by the public stats', () => {
   const fish = C.SUBJECTS.find(S => S.id === 'fish'),
