@@ -118,7 +118,8 @@ Each photo exists in 1600, 960 (`-m`), 480 (`-s`) and 240 px (`-t`) ([photos.md 
   a 760 px version for phones. Leaving a page drops `srcset` with `src`, or the download goes on. The enlarged view loads
   the 1600 px file over the 480 px one.
 - **A photo not downloaded yet** (`r: 1`: a candidate just added, and the photos of the extra genera only the Coral ID
-  Key shows, `DATA.x.gen`; the game genera's are all downloaded) loads from iNaturalist with two files only (`img()`): `medium` (500 px) for the 480 px size,
+  Key shows, `DATA.x.gen`; the game genera's are all downloaded) loads from iNaturalist with two files only (`img()`):
+  `medium` (500 px) for the 480 px size,
   `large` (1024 px) for 960 and 1600 px; `resized()`, `upsizeImg` and the preload (`pfUrls`) leave it alone.
 - A quiz photo carries its name in `data-f` (`quiz.js` `question`), so the failed-photo report (`ev('photo')`, the
   admin's "Photos not loaded") and the tests (`net.smoke.js`, `profiles.smoke.js`, `tools/perf.js`) name an iNaturalist

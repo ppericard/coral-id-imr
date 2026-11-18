@@ -238,7 +238,8 @@ unless said, so outside the multiple-testing correction.
 
 ### Recompute here
 
-A quiet link on every Analyses screen, phones included (a 44 px tall touch area on touch screens): the same module in a Web Worker (`new Worker('analysis.js?v=N')`) on the answer log the page reads (`ANS`) and the photo
+A quiet link on every Analyses screen, phones included (a 44 px tall touch area on touch screens): the same module in
+a Web Worker (`new Worker('analysis.js?v=N')`) on the answer log the page reads (`ANS`) and the photo
 features of the draft (`photoMeta(DATA, DRAFT, …)`), so the page stays responsive, with 199 bootstrap draws read as
 normal intervals (`B: 199, Bh: 0, bse: 1`: about 2 minutes at 5,000 answers on a desktop, where the Action's 999
 percentile draws take about 9; the stored report's milestones are reused when their answers and photo features match,

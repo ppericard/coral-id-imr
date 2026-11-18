@@ -127,6 +127,8 @@ records, Identify, the switch, the sync per subject, who sees a subject, the sub
 [spec/seaslugs.md](spec/seaslugs.md), the sea slugs.
 
 - **Registry**: [subjects.md › The registry](spec/subjects.md#the-registry-corejs-subjects).
+- **Tree engine names and the flat subject**:
+  [subjects.md](spec/subjects.md#tree-engine-names-and-the-flat-subject).
 - **What reads the subject's data**: [subjects.md](spec/subjects.md#what-reads-the-subjects-data-appjs-units).
 - **Records**: [subjects.md › Records](spec/subjects.md#records).
 - **Identify per subject**: [subjects.md](spec/subjects.md#identify-per-subject).

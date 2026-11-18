@@ -68,6 +68,16 @@ the engine). Each record:
 `comeback`, `basics`, the cards' seen marks: they stay on the device; the corals' `dev` is empty, so their keys are
 `reefid-<name>`). The choice of subject: `SUBJECT_KEY` = `reefid-sync-subject`, synced.
 
+### Tree engine names and the flat subject
+
+The code every tree subject runs through (the fish, the sea slugs) is named `tree*`: `core.js` `treeGen`, `treePhotos`,
+`treeReplayGen`, `treeSheets`…; `app.js` `TREEU` (the units of the tree in force, as `DATA` is the corals'), `TREERAW`,
+`treeBuild`, `treeGenera`; `learn.js` `treeGenus`, `treeTiles`…. `fish*` names stay for what only the fish have (the
+IMR fish presentation, FishBase, the winks, `core.js` `FISH_RVS` and `FISH_ACH`, the circle-3 offer `app.js` `FISH_C3`)
+and, for now, for the admin's own names. `tests/treenames.test.js` holds the old and new names and fails when a retired
+one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their units a flat list in `data.json`, read by
+`app.js` `build` and `structSeen`); the engine asks that field, never a pool file's name.
+
 ## What reads the subject's data (`app.js` `UNITS`)
 
 `UNITS[id]` holds what the engine and the pages read for each subject:
