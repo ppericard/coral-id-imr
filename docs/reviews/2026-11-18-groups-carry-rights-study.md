@@ -23,7 +23,8 @@ a player may do is the union of their groups' rights, and every setting only add
    `players` right alone is not enough.
 2. A membership in a group that carries rights is bound to the account's code hash, as a grant is today.
 3. A merge never moves a rights membership. A delete or an archive drops it, and the Audit tab records each one.
-4. No setting and no right ever subtracts: no deny entry, no mask, no "apart".
+4. No setting and no right ever subtracts: no deny entry, no mask on a group, no "apart". The only cap is a fixed rule
+   of the code by sign-in strength (section 3, "the mask").
 
 This is RBAC (roles as sets of permissions) whose roles Pierre makes and names himself. It is not the Linux model:
 in Linux, groups carry no rights at all (section 1).
@@ -160,6 +161,7 @@ script checks each against a list (`ROLES.DEF`'s rights today):
 | `live` | hosting a live game | `trainer` (v172) |
 | `follow` | reading a target group's members' progress and answers, as Q344 (a) allows | new; it narrows `trainer`'s `cohorts` |
 | `invite` | the join code of a target group, which a player uses by their own act (Q345) | new; the other half of `cohorts` |
+| `cohorts` | transitional: the trainer role's right, carried over by the migration. No `gate_` or `can_` call asks for it today (only `live` is checked), so it gives nothing until roles step 2 replaces it with `follow` and `invite` on targets and removes it | `trainer` |
 
 **Scopes.** A right's scope is `platform`, `instance:imr`, or `group:<id>`:
 - `group:<id>` is the **target** of a right. "Trainer of RA November 2026" is `follow@group:<its id>` and
@@ -167,8 +169,11 @@ script checks each against a list (`ROLES.DEF`'s rights today):
   members never get the right. Holders and target are always two different groups.
 - Use `group:`, never `cohort:`, for the target. The v179 migration kept ids such as `cohort:<name>` as group ids, and
   ROADMAP's planned `cohort:<id>` scope would collide with them.
-- `scopeOk_` becomes "this right may be given at this scope kind". `platform` goes only at `platform`. `follow` and
-  `invite` go only at `group:`. The rest go at an instance.
+- `scopeOk_` becomes "this right may be given at this scope kind". The kinds per right:
+  - `platform` goes only at `platform`;
+  - `grant` goes at `platform` (the Platform admins) or at an instance (the Managers);
+  - `follow` and `invite` go only at `group:`;
+  - the rest go at an instance.
 
 **The union.** `can_(who, right, scope)` becomes:
 - **The token**: true, as today.
@@ -177,9 +182,13 @@ script checks each against a list (`ROLES.DEF`'s rights today):
   2. its groups are read from the Groups tab;
   3. each membership counts only when the code hash stored with it equals the account's (guard 2);
   4. the answer is true when any of those groups carries `right` at `scope`.
-- Two special cases stay as today. `grant@platform` reaches every scope (Q364: the platform admin may grant himself a
-  role). A right at `instance:imr` does **not** reach the instance's `group:` scopes unless the code says so for that
-  right: an instance-wide `follow` is a separate choice, not implied.
+- Two special cases:
+  - `grant@platform` reaches every scope, as today (Q364: the platform admin may grant himself a role);
+  - `grant@instance:imr` also reaches the instance's `group:` scopes, so a Manager can make a cohort's trainers'
+    group. It is the one instance right that does.
+
+  Every other right at `instance:imr` does **not** reach the `group:` scopes: an instance-wide `follow` would be a
+  separate choice, not implied.
 
 ### Only additive settings and rights
 
@@ -222,7 +231,7 @@ member is a grant. So there are three gates:
 | --- | --- | --- |
 | Add or remove a member of a group **without** rights | `players` (`userGroup`) | `players`, as today |
 | Add or remove a member of a group **with** rights | n/a | `grant` at **every** scope its rights carry. `grant@platform` (the platform admin) reaches every scope; `grant@instance:imr` reaches the instance's rights and its `group:` targets, never `platform` |
-| Add or change a right of a group (`groupEdit` `rights`) | n/a | `grant` at the right's scope, **and** one Audit row per current member (below) |
+| Add or change a right of a group (`groupEdit` `rights`) | n/a | `grant` at the right's scope, **and** one Audit row per current member (below). A group's **first** right is refused while it has members (`members`, as `groupDrop`): their memberships carry no code hash. To give rights to existing players, make a new group with the right, then add them one by one. Removing a group's last right keeps its members' hashes (harmless: they give nothing without a right) |
 | Set `board` or `beta`, rename | `players` | `players` |
 | Delete a group | `players`, empty only | the same, and refused while another group's right targets it (`group:<id>`): answer `used` |
 
@@ -236,9 +245,13 @@ Each escalation path, and what closes it:
    - the script refuses a list for a rights group (`input`): one name a call;
    - the page shows no Add all or Remove all on such a group. Remove all stays possible one by one; it only removes
      rights.
-3. **A right added to a group that has members (`groupEdit`).** This is a mass grant in one call. Closed by the
-   `grant` gate at that scope. The page also confirms, naming the right and the number of members, and the Audit tab
-   gets one row per member.
+3. **A right added to a group that has members (`groupEdit`).**
+   - **A first right** would turn a settings group, such as Staff, into a rights group in one call. It is refused
+     while the group has members (gate table above).
+   - **Another right on a group that already carries rights** (e.g. a `photos` right for the Curators, #1098's (b)) is
+     a mass grant to members who were each added under the `grant` gate. Closed by the same gate at the new right's
+     scope. The page also confirms, naming the right and the number of members, and the Audit tab gets one row per
+     member.
 4. **The player's own join (Q345, roles step 2's join code).** It must never reach a group that carries rights: the
    script refuses a join to such a group, whatever the code. A join reaches only a group with no rights. It may be the
    **target** of someone else's `follow`, and the join card then says who follows the group and what they see (Q344
@@ -262,7 +275,7 @@ Each escalation path, and what closes it:
 Two ways to store it. Either one changes a tab's column layout, which "always asks first" (AGENTS.md):
 
 - **(A) A fourth column in the Groups tab**, "Code hash" (Group, Name, Added, Code hash). It is written for a
-  membership of a group with rights and left blank for the others. `groupRows_` reads three columns where it reads two
+  membership of a group with rights and left blank for the others. `groupRows_` reads four columns where it reads two
   today, and `groupSet_` writes four. The Roles tab is retired after the migration (kept, read by nothing).
   *Recommended*: one table of memberships, one reader.
 - **(B) Keep the Roles tab as the rights memberships' store**, its Role column holding a group id. That makes two
@@ -323,7 +336,12 @@ script's install or by the first change to a group before then:
    | `editor` at `instance:imr` | "Curators" | `content@instance:imr` |
    | `trainer` at `instance:imr` | "Trainers" | `live@instance:imr`, `cohorts@instance:imr` (kept as the role gave it until roles step 2 splits it into `follow` and `invite` on targets) |
 
-   A role nobody holds makes no group.
+   - A role nobody holds makes no group.
+   - Each group made gets a fixed id, `r:` and the role (`r:admin`, `r:owner`, `r:editor`, `r:trainer`), so a second
+     try of the step finds it instead of making another.
+   - Names are unique, case aside (`groupDo_`'s `exists`). If a group of that name already exists (made by hand since
+     v179), the migrated group takes the name followed by " (rights)", and the Deploy log line says so. An existing
+     group is never given rights by the migration.
 2. **Each grant row becomes a membership** of its role's group:
    - its Code hash is copied (guard 2), and Since becomes Added;
    - a grant whose hash is no longer the account's (`can_` ignores it today) migrates as a membership with that old
@@ -414,9 +432,8 @@ Agent time from `python3 tools/effort.py --estimate` (first commit to green chec
 | 3 | Rights in the load reply | `load_` and the save reply send `rights` to the account itself; the app keeps it under the account's name as `groups`; no UI. Replaces #1098's row 1 | sheet M | median 29 min, range 29-58 min (#812, #835, #838, #958, #971) |
 | 4 | The rule and the ROADMAP | the additive-settings rule's wording (after Pierre's OK), ROADMAP "Roles, instances and cohorts" (the roles' page row closed by PR 2), #1098's (f) closed | docs S | median 4 min, range 3-4 min (#805, #843, #853, #862, #949) |
 
-Total, the sum of the medians: about 10.1 agent hours, almost all of it PR 1 (#882, #946, #1050, #1060, #1083). PR 1
-could split into the reader and migration (sheet M) and the gates (sheet M), at 29 min each (#812, #835, #838, #958,
-#971). Measured sheet L PRs ran long because of review rounds on data paths, so the split is the integrator's call.
+Total, the sum of the medians: about 10.1 agent hours, almost all of it PR 1 (#882, #946, #1050, #1060, #1083). The
+measured sheet L PRs ran long because of review rounds on data paths.
 
 **Order.**
 - PR 1 waits for #1113 (the same groups code) and for answers 1-4.
