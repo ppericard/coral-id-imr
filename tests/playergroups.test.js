@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // Player groups (sheet v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
 // groupes"; "Staff" is not a role): one group model replaces the beta groups, the one cohort per player and the staff
-// (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and two settings, board and beta (no apart since
-// vNEXT: Pierre, 2026-11-18); a player is in any number of groups. Every subject's board reply gives the general board,
+// (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and two settings, board and beta
+// (docs/decisions/2026-11-18-no-apart-groups.md); a player is in any number of groups. Every subject's board reply gives the general board,
 // everyone (rows), and each board group's, its members (groups); the migration (ONCE_ groups) makes the
 // groups of the data before, nothing lost. Against the in-memory sheet only (rule D1); made-up names.
 const test = require('node:test'),
@@ -135,7 +135,7 @@ test('a player in any number of groups: every reply says which; the boards follo
   assert.strictEqual(join(s, 'Ana', 'g:00000000').error, 'group');
 });
 
-test('no apart (vNEXT): the general board shows everyone, each group board all its members; an old apart is ignored', () => {
+test('no apart: the general board shows everyone, each group board all its members; an old apart is ignored', () => {
   const s = five();
   betaOn(s);
   const staff = id(s, 'Staff', {board: 1, apart: 1}),
@@ -172,7 +172,7 @@ test('settings: rename, board on and off, beta; every change reaches the boards 
   const g = id(s, 'Staff', {board: 1});
   join(s, ['Ben', 'Dee'], g);
   assert.deepStrictEqual(scopes(board(s)), [['Staff', ['Ben', 'Dee']]]);
-  assert.strictEqual(edit(s, g, {apart: true}).group.apart, undefined, 'apart ignored (vNEXT)');
+  assert.strictEqual(edit(s, g, {apart: true}).group.apart, undefined, 'apart ignored');
   assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve']);
   assert.strictEqual(edit(s, g, {n: 'Crew'}).group.n, 'Crew');
   assert.deepStrictEqual(scopes(board(s)), [['Crew', ['Ben', 'Dee']]], 'renamed: same id, same members');
@@ -300,7 +300,7 @@ test('the migration: beta groups, cohorts and the staff become groups, nothing l
   const s = before();
   betaOn(s);
   const want = {
-    rows: ['Ana', 'Ben', 'Cy', 'Dee', 'Eve', 'Fay'], // everyone (vNEXT: the staff no longer apart)
+    rows: ['Ana', 'Ben', 'Cy', 'Dee', 'Eve', 'Fay'], // everyone, the staff included
     // the newest first: the staff's by their first grant (today, in this test), a cohort's by its first row
     boards: [
       ['Staff', ['Ben', 'Dee']],

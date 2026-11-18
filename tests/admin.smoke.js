@@ -4179,7 +4179,7 @@ async function sealPart(b, base, fails) {
         // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
         // arbitraire de groupes"): a player's bar shows their groups as chips (× takes them out) and "+ Add to a group"; the
         // Groups column follows; no Cohort select, no Staff toggle, no beta line. Players › Groups: every group, the newest
-        // first, with Board (no Apart since vNEXT), Rename, Add all / Remove all (asked first), Delete once empty, New group,
+        // first, with Board, Rename, Add all / Remove all (asked first), Delete once empty, New group,
         // a change shown at once ("Saving…", the card busy until the sheet answers). Before the
         // version, the page says what it needs. No sideways scroll.
         {

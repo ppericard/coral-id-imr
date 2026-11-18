@@ -2640,7 +2640,7 @@ function board_(sid){
     // v171 (Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle cohorte aurait un
     // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"); v179, the groups (Pierre,
     // 2026-11-18): the one ranking above, split by who is where (groupBoards_), each scope keeping its order and its first
-    // 200: rows, the general board, everyone (vNEXT: no apart group); groups, [{id, n, rows}] every group with a
+    // 200: rows, the general board, everyone; groups, [{id, n, rows}] every group with a
     // board. An app from before reads rows as before. The groups unreadable: rows unsplit, as before.
     const top = L => L.slice(0, 200);
     out.rows = top(all);
@@ -2859,16 +2859,11 @@ function devBlank_(name){
   if (c) rg.setValues(v);
   return c;
 }
-// Player groups (v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
-// groupes"; the staff are a group, not a role, and the group model replaces the beta groups (v48), the one cohort per
-// player and the staff of v171; ARCHITECTURE.md "Player groups"). A group has an id, a name and two settings: board
-// (it has its own leaderboard) and beta ('' or the subject it opens, as a beta group did: core.js SUBJECTS open: 'group',
-// subjGroup). vNEXT: no "apart" setting any more (Pierre, 2026-11-18: "Il peut très bien y avoir un classement général où
-// tout le monde apparait. Il fallait surtout que le staff ne rentre pas en compétition avec les cohortes mensuelles…
-// Ce que permet déjà les groupes"): the general board shows everyone, a group's board its members. A player is in
-// any number of groups. Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart: unused since vNEXT,
-// always 0, Beta, Added), and
-// Groups, one row a membership (Group: the group's id, Name: the player's, Added), as the beta groups were kept. Ids:
+// Player groups (ARCHITECTURE.md "Player groups"; docs/decisions/2026-11-18-no-apart-groups.md). A player is in any
+// number of groups. A group has an id, a name and two settings: board (it has its own leaderboard) and beta ('' or the
+// subject it opens: core.js SUBJECTS open: 'group', subjGroup). The general board shows everyone, a group's board its
+// members. Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart: unused, written 0, Beta,
+// Added), and Groups, one row a membership (Group: the group's id, Name: the player's, Added), as the beta groups were kept. Ids:
 // 'g:' and 8 random characters for a group made from v179; a group the migration made keeps the Group cell its rows had
 // (a subject's id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns
 // its player's groups from the load and save replies (groups: the subjects in beta they open, as before; gids: their
@@ -2885,12 +2880,12 @@ function gdefRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GDEF.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GDEF.HEAD.length).getValues() : [];
 }
-const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});  // r[3]: Apart, unused since vNEXT
+const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});  // r[3]: Apart, unused
 // Writes a group's settings at row r of the Group settings tab, its Name cell plain text first, so a name such as
 // "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
 function gdefPut_(sh, r, d){
   sh.getRange(r, 2).setNumberFormat('@');
-  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, 0, d.beta, new Date(d.at || Date.now())]]);  // Apart: 0 (vNEXT)
+  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, 0, d.beta, new Date(d.at || Date.now())]]);  // Apart: unused, 0
 }
 // A group's name as typed, its spaces folded ('' for one that cannot be: empty, too long, a control character).
 const gname_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= GNAME_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? s : ''; };
@@ -2923,7 +2918,7 @@ function groupMap_(gs){
   return m;
 }
 const groupsOf_ = name => groupMap_()[lc_(name)] || {gids: [], groups: []};
-// The leaderboards (board_) of one ranking: rows, the general board, everyone (vNEXT: no apart group any more); groups,
+// The leaderboards (board_) of one ranking: rows, the general board, everyone; groups,
 // [{id, n, rows}] for every group with a board, the newest first, its members. Each keeps the ranking's order.
 function groupBoards_(all, top){
   const gs = groupState_(), mem = groupMembers_(gs);
@@ -2950,7 +2945,7 @@ function groupSet_(ra, names, g, on){
 }
 // The admin's changes to the groups themselves, under the script lock (users_, the players right, audited):
 // {groupMake: {n, board, beta}} makes a group (its name unique, case aside); {groupEdit: id, n, board, beta} renames it
-// or changes a setting (a field left out stays; apart, gone in vNEXT, is ignored); {groupDrop: id} deletes it, only when nobody is in it.
+// or changes a setting (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in it.
 // beta: '' or a subject that opens to a group (or the value it holds). Answers {ok, group: its settings} ({ok, group: id}
 // for a delete); errors 'name' (empty, over 40 characters, a control character), 'exists' (another group's name),
 // 'beta', 'group' (no such group), 'members' (a delete while it has members).

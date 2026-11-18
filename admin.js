@@ -10292,7 +10292,7 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
 // arbitraire de groupes"; "Staff" is not a role): one model for the beta groups, the cohorts and the staff (Code.gs
 // groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
-// Groups lists every group with its settings (Board, Beta; no Apart since vNEXT, Pierre 2026-11-18) and members, makes, renames and deletes an empty one.
+// Groups lists every group with its settings (Board, Beta) and members, makes, renames and deletes an empty one.
 // Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
 // (the Staff toggle, which granted the trainer role, is gone at every version).
 const GROUPADM_SHEET = 179;
@@ -10423,8 +10423,8 @@ function bindGroups() {
       render();
     };
   // A change to a group itself (Code.gs groupMake, groupEdit, groupDrop): the list read again, as the sheet now has it.
-  // The sheet can take a minute or two (its script lock, then the players read again: Pierre, 2026-11-18, "ça vient de
-  // basculer… après 2 min"): "Saving…" at once, and the group's card (id) greyed and its controls off until the answer.
+  // The sheet can take a minute or two (its script lock, then the players read again): "Saving…" at once, and the
+  // group's card (id) greyed and its controls off until the answer.
   const gpost = (body, msg, id) => {
     toast('Saving…');
     const c = id && [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
