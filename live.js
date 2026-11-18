@@ -487,10 +487,9 @@ function liveLog(S, o) {
         Rc: 1,
         p: startP(),
         sec: o.rt,
-        timed: rtOn(),
+        timed: true, // the answer time weighs the steps, as the sheet's replay (quiz.js answer)
         df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
         dt: fmtOff(pfmt(), 'typed'),
-        dom: domRules(),
         mu: genusDiff(t),
         ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
         ...(GX(t).from ? {from: GX(t).from} : {}),
