@@ -18,7 +18,7 @@ const {logConds, pairPrior, fishUnitRec, noChoiceMixups} = new Function(
     '\nreturn {logConds, pairPrior, fishUnitRec, noChoiceMixups};'
 )(C.fmtOf, C.trustOf, C.CONF);
 const CORAL = C.SUBJECTS.find(S => !S.sheets),
-  FISH = C.SUBJECTS.find(S => S.sheets);
+  TREEU = C.SUBJECTS.find(S => S.sheets);
 let t = 0;
 const row = (id, shown, answered, ok, mode = 'quiz', photos = 'p1', choices = '') => [
   id,
@@ -58,7 +58,7 @@ test('logConds: fish answers by rank and, once one is typed, typed against picke
     row('a', 'g:Chromis', 'g:Chromis', 1, 'quiz|t'),
     row('b', 'g:Amphiprion', '', 0, 'quiz|k3|t')
   ];
-  const c = conds(R, FISH);
+  const c = conds(R, TREEU);
   assert.deepStrictEqual(c, {
     Quiz: [4, 2],
     'Family questions': [2, 1],
@@ -67,12 +67,12 @@ test('logConds: fish answers by rank and, once one is typed, typed against picke
     'From choices': [2, 1]
   });
   assert.ok(!('Single view' in c) && !('Duel' in c), 'one view: no view rows; no duel answered: no Duel row');
-  assert.ok(!('Typed' in conds(R.slice(0, 2), FISH)), 'nothing typed: no typed rows');
+  assert.ok(!('Typed' in conds(R.slice(0, 2), TREEU)), 'nothing typed: no typed rows');
 });
 
-// The fish data as fishAdmin reads them: gen holds the families (core.js fishGen records: look, fam their line, forms their
+// The fish data as fishAdmin reads them: gen holds the families (core.js treeGen records: look, fam their line, forms their
 // group of the identification key), fam maps every family, genus and species sheet id to its family, spu each species
-// unit to its family and the other species units of it (core.js fishSpUnits).
+// unit to its family and the other species units of it (core.js treeSpUnits).
 const FA = {
   gen: {
     'f:Damselfishes': {look: ['f:Cardinalfishes'], fam: 'Pomacentridae', forms: ['g17']},
@@ -122,7 +122,7 @@ test('pairPrior with fishUnitRec: two families of one key group start as the gam
   assert.strictEqual(prior('f:Cardinalfishes', 'f:Damselfishes'), 'Look-alike');
 });
 
-test('fishUnitRec: a species unit, the other species units of its family as the game declares them (core.js fishSpUnits)', () => {
+test('fishUnitRec: a species unit, the other species units of its family as the game declares them (core.js treeSpUnits)', () => {
   assert.strictEqual(prior('s:s091', 's:s084'), 'Look-alike', 'two species of one family');
   assert.strictEqual(prior('s:s084', 's:s301'), 'Other', 'species of two families in two key groups');
   assert.deepStrictEqual(fishUnitRec(FA, 's:s091', 'g:'), {look: ['s:s084'], fam: 'Pomacentridae', forms: ['g17']});

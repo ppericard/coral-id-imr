@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The photo's own species under the verdict, after every answer, right or wrong: "This photo: Zigzag wrasse ·
 // Halichoeres scapularis". app.js photoTaxon (the one taxon of the photos shown,
-// finer than the unit asked), taxonLine (the line), fishTaxon and coralTaxon (UNITS taxon), run in a vm on the real
+// finer than the unit asked), taxonLine (the line), treeTaxon and coralTaxon (UNITS taxon), run in a vm on the real
 // fish.json, fish-game.json, data.json and cand.json. The line in the real quiz, after the answer and not before:
 // tests/fish.smoke.js.
 const test = require('node:test'),
@@ -25,15 +25,15 @@ vm.createContext(ctx);
 vm.runInContext(
   block(app, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +
     block(app, "// The photo's own taxon, said in one short line", '// Every unit of a rank in', {file: 'app.js'}) +
-    '\nthis.M = {photoTaxon, taxonLine, fishTaxon, coralTaxon};\n' +
+    '\nthis.M = {photoTaxon, taxonLine, treeTaxon, coralTaxon};\n' +
     // The two subjects' UNITS taxon, as app.js has them (this.imr: the player at IMR, imrNow); SUBJ switched by the tests.
-    'var SUBJ = {id: "f"}; var UNITS = {f: {taxon: p => fishTaxon(this.R, p, this.imr)}, c: {taxon: (p, n) => coralTaxon(p, n)}};\n' +
+    'var SUBJ = {id: "f"}; var UNITS = {f: {taxon: p => treeTaxon(this.R, p, this.imr)}, c: {taxon: (p, n) => coralTaxon(p, n)}};\n' +
     'this.use = k => (SUBJ = {id: k});',
   ctx
 );
 ctx.R = R;
 ctx.imr = false;
-const {photoTaxon, taxonLine, fishTaxon, coralTaxon} = ctx.M,
+const {photoTaxon, taxonLine, treeTaxon, coralTaxon} = ctx.M,
   line = (L, n) => taxonLine(photoTaxon(L, n)),
   fish = (L, n) => (ctx.use('f'), line(L, n)),
   coral = (L, n) => (ctx.use('c'), line(L, n));
@@ -93,7 +93,7 @@ test('a photo known only to the genus: the most precise rank known, never the un
     assert.strictEqual(fish([{f: 'x'}], 'f:Damselfishes'), '<p class="fbsp">This photo: <i>Chromis</i></p>');
     assert.strictEqual(fish([{f: 'x'}], 'g:Chromis'), '');
   } finally {
-    ctx.UNITS.f.taxon = p => fishTaxon(R, p);
+    ctx.UNITS.f.taxon = p => treeTaxon(R, p);
   }
   // A coral photo named to the genus only: the genus is the answer, nothing extra.
   assert.strictEqual(coral([{f: 'a', t: 'Acropora'}], 'Acropora'), '');
@@ -104,7 +104,7 @@ test('nothing when the photo is not known for sure', () => {
   assert.strictEqual(fish([{f: 'x'}], 'f:Wrasses'), '');
   assert.strictEqual(fish([{f: 'x', sp: 's999999'}], 'f:Wrasses'), '');
   assert.strictEqual(fish([], 'f:Wrasses'), '');
-  assert.strictEqual(fishTaxon(null, {sp: 's240'}), null);
+  assert.strictEqual(treeTaxon(null, {sp: 's240'}), null);
   assert.strictEqual(taxonLine(null), '');
   // Several photos (one observation, rule P4) that do not all name the same species: nothing.
   assert.strictEqual(fish([{f: 'x', sp: 's240'}, {f: 'y'}], 'f:Wrasses'), '');
@@ -146,7 +146,7 @@ test('the real data: every fish game photo says its species; a coral photo its s
   Object.values(GAME).forEach(L =>
     L.forEach(p => {
       const s = R[p.sp],
-        t = fishTaxon(R, p);
+        t = treeTaxon(R, p);
       assert.ok(t && t.sci === s.name && t.common === ((s.cn || [])[0] || [''])[0], `${p.f}: ${JSON.stringify(t)}`);
       // The name the line gives is the one the species sheet shows (rule S2), never iNaturalist's own (t).
       assert.ok(!s.now || s.now === s.name || t.now === s.now, `${p.f}: its WoRMS name`);

@@ -189,19 +189,19 @@ test('tools/judging_fish.py watermark: the flag into the single judgement, in pl
 test('the repository: every photo of the watermark pass carries w where the game reads it; the pass is complete', () => {
   const W = read('judging/fish-watermark.json'),
     marks = Object.keys(W.photos),
-    game = Object.values(C.fishGameRead(read('fish-game.json')).photos).flat(),
-    byPid = new Map(game.map(p => [C.fishPid(p.f), p]));
+    game = Object.values(C.treeGameRead(read('fish-game.json')).photos).flat(),
+    byPid = new Map(game.map(p => [C.treePid(p.f), p]));
   assert.ok(marks.length > 0 && W.looked >= marks.length);
   marks.forEach(f => {
     assert.ok(String(W.photos[f]).length > 0, `${f}: what the judge saw`);
-    const p = byPid.get(C.fishPid(f));
+    const p = byPid.get(C.treePid(f));
     if (p) assert.ok(String(p.jt).slice(7).includes('w'), `${f}: ${p.jt} in fish-game.json`);
   });
   // The first photos (fish-photos.json, Home before fish-game.json) are fish-game.json's records: they carry it too.
   Object.values(read('fish-photos.json').photos)
     .flat()
     .forEach(p => {
-      const g = byPid.get(C.fishPid(p.f));
+      const g = byPid.get(C.treePid(p.f));
       if (g) assert.strictEqual(p.jt, g.jt, p.f);
     });
   execFileSync('python3', ['tools/judging_fish.py', 'watermark', '--check'], {cwd: ROOT, encoding: 'utf8'});

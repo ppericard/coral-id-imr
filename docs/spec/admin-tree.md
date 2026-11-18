@@ -210,7 +210,7 @@ photo tools on their own part of `curation.json`:
   their genus's species (`glId`, "*Genus* sp.", rank "genus level"; `leafSid` gives the unit a leaf's photos are in play
   for), their own row in the family's page (`fuFam`), counted in the genus's photos but never as a species, their
   ★ Cover the genus's (their path stops at the genus), Not this to a species of the family, and in a report's Attach
-  list of the genus (`repUnitPhotos`, `core.js` `fishGlOf`).
+  list of the genus (`repUnitPhotos`, `core.js` `treeGlOf`).
 
 ## The generic tree (`taxtree.js`)
 

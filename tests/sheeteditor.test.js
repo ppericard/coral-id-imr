@@ -12,7 +12,7 @@ const C = require('../core.js'),
 const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
   S = C.SUBJECTS.find(x => x.content && x.pool.files[0] === 'fish.json'),
-  T = C.fishTree(F),
+  T = C.treeSheets(F),
   BF = F.families.find(f => (f.cues || []).length && (f.look || []).length && !f.wink),
   e = (v, was, x = {}) => ({v, was, t: 1, ...x});
 

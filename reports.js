@@ -137,25 +137,25 @@
     ctx.why === 'wrong' && !ctx.game ? 'Wrong ' + S.one : own(REP_WHY, ctx.why) ? REP_WHY[ctx.why].replace('{things}', S.several) : ctx.why;
   // A subject's units and photos as the admin reads them for its reports (admin.js unitRead), from the
   // files its SUBJECTS admin files name: f, its tree (fish.json's form); first, its first photos' file (none for a subject
-  // without); gm, its game photos' file (core.js fishGameRead: the short form read whole). Every photo either list holds (a
+  // without); gm, its game photos' file (core.js treeGameRead: the short form read whole). Every photo either list holds (a
   // report may name a photo shown before a Publish), with the unit showing it (entry) and its source as the file has it (a
-  // remote original stays remote: src, r). {gen: unit id -> record (core.js fishGen), ph: photo id -> its record, slate (the
+  // remote original stays remote: src, r). {gen: unit id -> record (core.js treeGen), ph: photo id -> its record, slate (the
   // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
   // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach),
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
-  // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
-  // where its tree has them, the taxonomic groups its families sit in (core.js fishGen taxa, each family's tg; the
-  // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js fishSpUnits, s:s091) to
+  // its identification key in force, {n, title} (core.js treeGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
+  // where its tree has them, the taxonomic groups its families sit in (core.js treeGen taxa, each family's tg; the
+  // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js treeSpUnits, s:s091) to
   // {family, look: the other species units of its family}, as the game starts its pairs (admin.js fishUnitRec)}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
   // slugs), each photo then shown by its genus.
   function repReg(f, first, gm, unit) {
     if (!f || typeof f !== 'object') return null;
-    const G = (C.fishGameRead(gm) || {}).photos || {},
+    const G = (C.treeGameRead(gm) || {}).photos || {},
       F0 = (first && first.photos) || {},
       all = {};
     new Set([...Object.keys(F0), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(F0[t] || [])]));
-    const F = C.fishGen(f, all, undefined, unit),
+    const F = C.treeGen(f, all, undefined, unit),
       ph = {},
       fam = Object.create(null),
       spid = Object.create(null),
@@ -183,7 +183,7 @@
       spg,
       imr,
       groups: F.groups || [],
-      spu: Object.fromEntries(C.fishSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look}])),
+      spu: Object.fromEntries(C.treeSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look}])),
       ...(F.taxa ? {taxa: F.taxa} : {})
     };
   }

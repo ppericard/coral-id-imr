@@ -86,11 +86,11 @@ const F = read('fish.json'),
   D = read('data.json');
 // The fish species' common names as entries (several per species, some shared), and the coral genera with their old
 // names (core.js typeNamesOf), each with texts: every name, slips of them, random letters, short and empty ones.
-const fishNames = [];
+const treeNames = [];
 F.species.forEach(s =>
   [s.common, ...(s.cn || []).flat()]
     .filter(Boolean)
-    .forEach((n, i) => fishNames.push({k: C.typeNormAll(n), g: s.id, old: i ? n : '', alt: i ? 1 : 0}))
+    .forEach((n, i) => treeNames.push({k: C.typeNormAll(n), g: s.id, old: i ? n : '', alt: i ? 1 : 0}))
 );
 const coralNames = C.typeNamesOf(
   [...Object.keys(D.gen), ...Object.keys((D.x || {}).gen || {})],
@@ -107,7 +107,7 @@ const textsOf = (raw, n = 120) => [
 ];
 
 test('typeDist: the distances of the whole matrix, on names and slips of every length', () => {
-  const raw = [...fishNames.map(x => x.k), ...coralNames.map(x => x.k)];
+  const raw = [...treeNames.map(x => x.k), ...coralNames.map(x => x.k)];
   for (let i = 0; i < 3000; i++) {
     const a = rnd() < 0.5 ? pick(raw) : slip(pick(raw)),
       b = rnd() < 0.3 ? slip(a) : pick(raw);
@@ -122,7 +122,7 @@ test('typeMatchIn: the same reading as before, fish common names and coral gener
   const fishRaw = F.species.flatMap(s => [s.common, ...(s.cn || []).flat()]).filter(Boolean);
   // a sample of the fish names (the reference reads every name of the list at every text: slow on all of them)
   // (two made-up entries as close to one text: a "which one?")
-  const fishSome = [...fishNames.filter((_, i) => i % 4 === 0), {k: 'reefgobyx', g: 'z1', old: ''}, {k: 'reefgobyy', g: 'z2', old: ''}];
+  const fishSome = [...treeNames.filter((_, i) => i % 4 === 0), {k: 'reefgobyx', g: 'z1', old: ''}, {k: 'reefgobyy', g: 'z2', old: ''}];
   let near = 0,
     exact = 0,
     close = 0,
@@ -155,7 +155,7 @@ test('typeElse: the same nudge as before, read twice (the names kept from the fi
       rank: () => 'family',
       own: g => (g.length % 2 ? 'Damselfish' : '')
     };
-  const other = fishNames.filter((_, i) => i % 6 === 0),
+  const other = treeNames.filter((_, i) => i % 6 === 0),
     raw = [...x.sci.slice(0, 40), ...x.common.slice(0, 80), ...other.map(o => o.old).filter(Boolean)];
   const kinds = new Set();
   for (let r = 0; r < 2; r++)

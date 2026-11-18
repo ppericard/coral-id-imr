@@ -636,7 +636,7 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 - **Unit**: a family of the reef fish identification book (`f:Damselfishes`), IMR's name shown beside its own; later the
   scientific genera and the species. The wrong choices start in other groups of the identification key (as coral growth
   forms) and the look-alikes come in as a family is learned. One photo per question.
-- **Circles** (fish.json, a family's best species' circle; `app.js` `fishGate`): 1, the families the IMR course teaches;
+- **Circles** (fish.json, a family's best species' circle; `app.js` `treeGate`): 1, the families the IMR course teaches;
   2, open once every circle-1 family has been asked; 3, the families beyond the course, offered by a card once circle 1
   reaches `FISH_C3` (its Entries component at 55%, or, without the global score, the plain mean at 50%:
   `app.js` `FISH_C3 = {entries: 0.55, mean: 0.5}`), open on the player's yes (or in My progress any time), offered again
@@ -700,7 +700,7 @@ progress of its own: it comes as the unit asked is mastered.
 - **"Learned" asks each variant group** (`core.js` `VAR_GROUPS`: juveniles, sexes and colour phases): the exam is passed
   only once each group the unit has, released by its mastery, has a right answer; while one is left the exam draws that
   group's photo (`model.js` `varLeft`, `examSet`). The sheet's replay applies the same rule from the log (`core.js`
-  `varLeftOf`, `fishVarTable`), so a learned mark whose unit has a group with no right answer is taken away for every
+  `varLeftOf`, `treeVarTable`), so a learned mark whose unit has a group with no right answer is taken away for every
   player at once (rules D8, D9), silently.
 
 **Juveniles and colour phases in stages** was the first build of this path, replaced by the ramp above; its measured
@@ -747,7 +747,7 @@ Its level-1 check is in the [notebook](archive/learning-notebook.md) ("The mimic
 
 Some fish observations are kept out of practice for an honest mastery exam (rule L9): never shown in a game, a card, a
 sheet or a list, asked only by the mastery exam, first, unannounced and counted like any answer, logged `|h`
-(`core.js` `fishHeld`, `model.js` `examSet`). The set is `fish-holdout.json`, written by `tools/holdout.py`: per exam
+(`core.js` `treeHeld`, `model.js` `examSet`). The set is `fish-holdout.json`, written by `tools/holdout.py`: per exam
 unit (every family in play, and the scientific genera of the circle-1 families), 15 observations (three exams), never leaving a species with fewer
 than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in practice, else holds back
 nothing (learning first). Never Pierre's own photos, a reference source's or a reference-level one. Deterministic and
@@ -755,7 +755,7 @@ sticky. A unit's difficulty counts its held-out photos, so withholding them move
 
 ### Fish: scientific genera, the first step of branch B
 
-The scientific genera of every circle's families are units too (`core.js` `fishGenSets`, `app.js` `fishGenera`): a
+The scientific genera of every circle's families are units too (`core.js` `treeGenSets`, `app.js` `treeGenera`): a
 photo, then genus names, the sibling genera as look-alikes. Offered to every player as an opt-in set; once on, each
 genus opens once its family is at Advanced (`app.js` `sciOpen`). A player who ever answered "I'm at IMR" gets the IMR
 genera without the offer, each once its family is at Open Water. **Families met first**: while a slate family may
@@ -763,7 +763,7 @@ still open, the genera wait (`model.js` `laterWaits`). Their share of the questi
 
 ### Fish: the species level, step 1, by common name
 
-One unit per species (`core.js` `fishSpUnits`), named by its common names: the main name shown (the IMR name for a
+One unit per species (`core.js` `treeSpUnits`), named by its common names: the main name shown (the IMR name for a
 player at IMR), any listed or regional name right when typed. For each family at Advanced, its species met and the next
 one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`), at the opening's usual pace and within
 the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
@@ -787,7 +787,7 @@ cheatsheet's most sighted and iNaturalist's distinct observers around Dauin, shr
 
 ### Fish: the global score, built
 
-The fish headline % is one score over the whole path (`core.js` `treeScore`, `fishScoreTree`; `SUBJECTS` fish `score`):
+The fish headline % is one score over the whole path (`core.js` `treeScore`, `treeScoreTree`; `SUBJECTS` fish `score`):
 the families on the trunk, every species of those families on the branches, each species weighted by how common it is
 near Dauin (`core.js` `rankWeights`: 1/√ of its rank by distinct observers within 40 km), a family by the sum of its
 species'. Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, `half` × its genus's
@@ -802,7 +802,7 @@ leaderboard ranks by it, and the circle-3 gate reads its circle-1 Entries compon
 ### Fish: the progress replayed from the answer log
 
 The sheet replays each fish player's progress from their fish answers with the same engine (`SUBJECTS` fish
-`replayed`: `core.js` `fishReplayGen`, the units and look-alikes from fish.json, and `fishVarTable`), under the fish's
+`replayed`: `core.js` `treeReplayGen`, the units and look-alikes from fish.json, and `treeVarTable`), under the fish's
 own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the corals; the sea slugs the same way
 (`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress").
 
@@ -1162,7 +1162,7 @@ be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared ma
 expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
-are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
+are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`
 cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
 A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π
 (each genus's and species' μ on a stream of its own, keyed by its id, since 2026-11-18: a version with more or fewer

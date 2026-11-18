@@ -989,7 +989,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       SYNC: {name: 'Ana'},
       synced: 0,
       cur: 'coral',
-      fishIn: fish,
+      treePhotoIn: fish,
       MXL: {KEY: 'reefid-mx-lost'},
       ACHNEW: 'reefid-ach-new',
       LEVEL: '~level',
@@ -1000,7 +1000,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       achDot: () => {},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
-  const ids = s => (s === 'fish' && !ctx.fishIn ? [] : Object.keys(lv[s]));
+  const ids = s => (s === 'fish' && !ctx.treePhotoIn ? [] : Object.keys(lv[s]));
   Object.assign(ctx, {
     slateGenera: () => ids(ctx.cur),
     lvStep: n => lv[ctx.cur][n] || 0,
@@ -1014,8 +1014,8 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       coral: {},
       fish: {
         core: () => ids('fish').slice(0, 28),
-        circles: () => (ctx.fishIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
-        tree: () => (ctx.fishIn ? {f: [], s: []} : null),
+        circles: () => (ctx.treePhotoIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
+        tree: () => (ctx.treePhotoIn ? {f: [], s: []} : null),
         sets: [{k: 'sci', all: () => []}]
       },
       seaslug: {circles: () => [ids('seaslug').slice(0, 24), ids('seaslug').slice(24, 46), ids('seaslug').slice(46)]}
@@ -1090,7 +1090,7 @@ test('achievement recount: a subject whose data is not in waits on this device, 
   const e = migr({_v: 2, met10: 10}, {fish: false});
   e.achMigrate();
   assert.deepStrictEqual(e.old(), {fish: {}});
-  e.ctx.fishIn = true;
+  e.ctx.treePhotoIn = true;
   e.ctx.domRecalcAll = () => (e.ctx.rebuilt = e.ctx.cur);
   e.achPending();
   assert.ok(e.rec().fmet5 && e.rec().fpct40 && e.old() === null);
@@ -1098,7 +1098,7 @@ test('achievement recount: a subject whose data is not in waits on this device, 
   // The fish data in before the shared data (a direct Fish link): it waits, then is recounted.
   const d = migr({_v: 2, fmet5: 20}, {fish: false});
   d.achMigrate();
-  d.ctx.fishIn = true;
+  d.ctx.treePhotoIn = true;
   d.ctx.DATA = undefined;
   d.achPending();
   assert.deepStrictEqual(d.old(), {fish: {fmet5: 20}}, 'waits for data.json');
@@ -1109,7 +1109,7 @@ test('achievement recount: a subject whose data is not in waits on this device, 
   assert.ok(m.old());
   m.achPending(); // the fish data in, still missing: it waits again
   assert.ok(m.old());
-  m.ctx.fishIn = true;
+  m.ctx.treePhotoIn = true;
   m.achPending();
   assert.strictEqual(m.old(), null);
   assert.deepStrictEqual([m.rec().fmet5, m.rec().fpct50, m.rec().fpct25, m.rec().met10], [20, undefined, undefined, 10]);

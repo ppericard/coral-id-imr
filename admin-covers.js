@@ -18,12 +18,12 @@
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     A = node ? require('./autosort.js') : root,
-    {fishPid} = node ? require('./core.js') : root;
+    {treePid} = node ? require('./core.js') : root;
   // What a Keep mine records in fish.kept under the node's id (the light re-judge's answers sit there under a photo's).
   const COVER_KEPT = 'cover:';
-  const coverKey = x => `${COVER_KEPT}${fishPid(x.his.f)}>${fishPid(x.rule.f)}`;
+  const coverKey = x => `${COVER_KEPT}${treePid(x.his.f)}>${treePid(x.rule.f)}`;
   // The proposal for node id, its photos in play L (the Tree page's: autosort.js fishCoverOf's), in the fish draft F: his
-  // cover while in force (in L, not a juvenile) beside the rule's pick, when they are not the same photo (fishPid); else
+  // cover while in force (in L, not a juvenile) beside the rule's pick, when they are not the same photo (treePid); else
   // null. {id, his: photo, hisLeaf, rule: photo, leaf: the rule's leaf, seen: [observers, observations] of that leaf
   // around the centre, ref, mine: as fishCoverRule; wm: his cover is watermarked and he has not kept it (autosort.js
   // fishWm, fishCoverW), the rule's photo then one without a watermark (the rule's own: it takes
@@ -33,9 +33,9 @@
     const k = ((F.genera || {})[id] || {}).cover;
     if (!k || !(L || []).length) return null;
     const his = A.fishCoverOf(L, F, id, j, seen);
-    if (!his || fishPid(his.f) !== fishPid(k)) return null; // his pick, under either of its names (autosort.js fishAt)
+    if (!his || treePid(his.f) !== treePid(k)) return null; // his pick, under either of its names (autosort.js fishAt)
     const r = A.fishCoverRule(L, F, id, j, seen);
-    if (!r || fishPid(r.p.f) === fishPid(his.f)) return null;
+    if (!r || treePid(r.p.f) === treePid(his.f)) return null;
     const leaf = p => (F.add || {})[p.f] || p.sp || p.sid,
       wm = A.fishWm(his, j(his.f), F) && !A.fishCoverW(F, id, his) && !A.fishWm(r.p, j(r.p.f), F);
     return {id, his, hisLeaf: leaf(his), rule: r.p, leaf: r.leaf, seen: r.seen, ref: r.ref, mine: r.mine, wm};

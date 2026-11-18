@@ -18,7 +18,7 @@ const ROOT = path.join(__dirname, '..'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
-  FGEN = C.fishReplayGen(JSON.parse(FJSON)),
+  FGEN = C.treeReplayGen(JSON.parse(FJSON)),
   FS = C.subjectOf('fish'),
   SV = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'))[1]);
 const withFiles = () => ({
@@ -673,7 +673,7 @@ test('a structure Publish: the replay made under the new stamp adopted at the sa
             ? {getResponseCode: () => 200, getContentText: () => JSON.stringify(cur)}
             : withFiles().fetch(url)
     },
-    gen = C.fishReplayGen(C.contentApply(FS, JSON.parse(FJSON), cur)),
+    gen = C.treeReplayGen(C.contentApply(FS, JSON.parse(FJSON), cur)),
     want = C.replayProgress(
       F.map(x => C.logRow(x, 'ana')),
       {gen}

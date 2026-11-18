@@ -179,7 +179,7 @@ family's `fish.json` `juv`, or a sex or colour phase) and weighs its kind's ramp
 such an observation by its best photo's factor); nothing is held back on a unit with fewer than `PICKD.VARIETY`
 observations at full weight. "Learned" asks a right answer on each variant group a unit has (`model.js` `varLeft`,
 `examSet`, `examPassed`); the sheet's replay from the answer log applies the same rule to every player, the leaderboards
-included (`core.js` `fishVarTable`, `replayProgress` `vars`, `replayedOf`, `Code.gs` `subjVar_`). The first juvenile and
+included (`core.js` `treeVarTable`, `replayProgress` `vars`, `replayedOf`, `Code.gs` `subjVar_`). The first juvenile and
 the first sex or colour phase a player meets bring a card at Next (`quiz.js` `phaseArm`, `phaseShow`: the photo beside
 one of its species in another phase, `core.js` `phasePair`; once per kind and subject, `TOLD` `phase:<subject>-<kind>`).
 LEARNING.md "Juveniles and colour phases on their unit's mastery".

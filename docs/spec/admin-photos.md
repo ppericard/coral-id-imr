@@ -169,7 +169,7 @@ reverse).
 `#fish/inbox/coverage/games` (`renderFishCov`): per family, genus or species (a switch), the species at their target,
 the photos in play, easy (ease 4-5) and reference photos, the phases shown (an IMR phase still missing marked ?), the
 candidates waiting (the "+" column: `autosort.js` `fishWaiting`, the candidates nobody decided and not in play under any
-of their names, `fishPid`, so a sure candidate the game plays by itself is in play, not waiting) and what is missing
+of their names, `treePid`, so a sure candidate the game plays by itself is in play, not waiting) and what is missing
 (`autosort.js` `fishCov`); All \| IMR and Thinnest \| Book. **To do**: species under target with candidates waiting,
 species with no photo in play, families validated but incomplete, families not ready. **Where to look** (`fishLook`):
 species under target whose waiting candidates cannot fill the gap, the IMR course's first; `?look=all` lists every one.
@@ -249,7 +249,7 @@ the site; the demo answers it from the local copy).
 photos part). Pierre's ★ Cover of a family or a genus (`fish.genera[node].cover`) is never replaced by the default cover
 rule ([fish.md › Covers](fish.md#covers)); where it is in force (in play, not a juvenile: `fishCoverOf`) and the rule now
 picks another photo (`autosort.js` `fishCoverRule`, the default part of `fishCoverOf`, on the photos the node's Tree page
-chooses from: `fuNodePhotos` over `fuFamM`; compared by `fishPid`), the rule proposes it.
+chooses from: `fuNodePhotos` over `fuFamM`; compared by `treePid`), the rule proposes it.
 
 - One card per node, families then genera: the node's name, his photo and the rule's, each with the species it shows,
   the rule's why in a line ("Most seen near <centre>: N observers", the centre's name from `fish.json` `centre`; "no
@@ -354,13 +354,13 @@ over `fuData`: per family, genus and species), in the fish data's words (`SUBJEC
 `admin.origins`, the circles of `structure`):
 
 - headline photos and observations in play, families in play, candidates waiting;
-- **All photos**, every photo the fish data hold, once by `core.js` `fishPid` (in play first, then excluded, Not this,
+- **All photos**, every photo the fish data hold, once by `core.js` `treePid` (in play first, then excluded, Not this,
   removed by `fishState`, another species one could take for it out of play, a candidate waiting, else not in games);
 - **Per family** photos and observations, then the photos in play per genus and per species; **Fewest and most**
   families (their Tree pages); **Circles** in the Views card's place (photos per circle, the spread over its families,
   families without); **Sources** (the fish origins);
 - **Answers per photo** from the answer log alone, as By difficulty and Health count them (`photoAnswers` over `rowsOf`,
-  a photo under its candidate id and its game id one photo: `answersBy` by `fishPid`; the bands `pstatsBands`);
+  a photo under its candidate id and its game id one photo: `answersBy` by `treePid`; the bands `pstatsBands`);
   **3+ answers per family**, its last column **Missed**, the photos everyone misses as Health counts them
   (`everyoneMisses`), opening Health;
 - no photo difficulty and no Difficulty view: the sheet rates the corals' photos only.

@@ -3,13 +3,13 @@ require('./slot.js').testGuard();
 // as the admin reads them from fish.json (autosort.js fishUnits), a family's choices in curation.json fish genera keyed by
 // family id (fishPick, fishFeat, fishCover, fishOk, fishDrop), the photo order (fishOrder: never by who took them), what a
 // family still needs before ✓ Validated (fishNeeds, fishUnitPhases), and the photo actions it shares with the fish
-// Candidates (fishOn, fishReject, fishExclude, fishNotThis).
+// Candidates (treePhotoOn, fishReject, fishExclude, fishNotThis).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path');
 const A = require('../autosort.js');
-const {fishOn} = require('../core.js');
+const {treePhotoOn} = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 
 test('fishOrder: featured first in his order, then the game’s order (easiest, then most reference-like); never Pierre’s own first', () => {
@@ -82,13 +82,13 @@ test('fishCover on a genus or a species; fishDrop takes the photo out of every c
 
 test('Remove, ×, Not this on a photo in play (the fish Candidates’ convention)', () => {
   const F = {add: {a: 's1', b: 's1', c: 's1'}, seen: {}};
-  assert.ok(fishOn(F, 'a', 's1'));
+  assert.ok(treePhotoOn(F, 'a', 's1'));
   const R = A.fishReject(F, 'a');
-  assert.ok(!fishOn(R, 'a', 's1') && R.seen.a === 1 && !('a' in R.add));
+  assert.ok(!treePhotoOn(R, 'a', 's1') && R.seen.a === 1 && !('a' in R.add));
   const X = A.fishExclude(F, 'b');
-  assert.ok(!fishOn(X, 'b', 's1') && X.exclude.b === 'excluded');
+  assert.ok(!treePhotoOn(X, 'b', 's1') && X.exclude.b === 'excluded');
   const N = A.fishNotThis(F, 'c', 's2', 's1');
-  assert.ok(!fishOn(N, 'c', 's1') && N.out.c === 's2' && !('c' in N.add), 'its candidate in s2 now, not in play');
+  assert.ok(!treePhotoOn(N, 'c', 's1') && N.out.c === 's2' && !('c' in N.add), 'its candidate in s2 now, not in play');
   assert.deepStrictEqual(A.fishState(N, 'c', 's1'), {sid: 's2', st: null});
   assert.deepStrictEqual(A.fishState(A.fishNotThis(F, 'c', 'x', 's1'), 'c', 's1').st, 'gone');
   assert.ok(!('c' in A.fishNotThis(N, 'c', 's1', 's1').out), 'put back: the mark goes');
@@ -391,7 +391,7 @@ test('fishCov counts a candidate sent with Not this as waiting in its new specie
   assert.deepStrictEqual([by.s1.wait, by.s2.wait, by.s2.waitObs], [1, 1, 1]);
 });
 
-// A photo in play is never a candidate waiting, whatever name it is in play under (core.js fishPid): the game's own record
+// A photo in play is never a candidate waiting, whatever name it is in play under (core.js treePid): the game's own record
 // (a sure candidate, its candidate id), a reference record under its game id (fi<id>, fb<stem>), in any species: so a
 // candidate the game plays by itself never counts as waiting.
 test('fishCov and fishWaiting: a candidate in play by itself, under any of its names, does not wait', () => {
@@ -466,7 +466,7 @@ test('fishCov: a genus-level photo counts for its genus and family, never as a s
 });
 
 // The real files (read-only; curation.json is never written, rule A1): the photos in play as the admin builds them
-// (admin.js fuData: his adds in play, then the game's records in play, fishGameIn, a photo once by fishPid), and no
+// (admin.js fuData: his adds in play, then the game's records in play, fishGameIn, a photo once by treePid), and no
 // candidate counted as waiting is among them. Invariants only: Publish changes curation.json on main without a PR.
 test('real data: no candidate waiting is in play, and Coverage’s + total is fishWaiting’s', () => {
   const fs = require('fs'),
@@ -477,18 +477,18 @@ test('real data: no candidate waiting is in play, and Coverage’s + total is fi
     cand = rd('fish-cand.json').cand || {},
     cu = rd('curation.json'),
     F = cu.fish || {},
-    plays = Object.values(C.fishGameRead(rd('fish-game.json')).photos || {}).flat(),
+    plays = Object.values(C.treeGameRead(rd('fish-game.json')).photos || {}).flat(),
     byF = Object.fromEntries(Object.values(cand).flatMap(L => L.map(p => [p.f, p]))),
     play = {};
   Object.entries(F.add || {}).forEach(
-    ([f, sid]) => C.fishOn(F, f, sid) && !C.fishOther((F.tags || {})[f]) && (play[sid] = play[sid] || []).push(byF[f] || {f})
+    ([f, sid]) => C.treePhotoOn(F, f, sid) && !C.treeOther((F.tags || {})[f]) && (play[sid] = play[sid] || []).push(byF[f] || {f})
   );
   const seen = new Set(
     Object.values(play)
       .flat()
-      .map(p => C.fishPid(p.f))
+      .map(p => C.treePid(p.f))
   );
-  A.fishGameIn(plays, cu).forEach(p => !seen.has(C.fishPid(p.f)) && seen.add(C.fishPid(p.f)) && (play[p.sp] = play[p.sp] || []).push(p));
+  A.fishGameIn(plays, cu).forEach(p => !seen.has(C.treePid(p.f)) && seen.add(C.treePid(p.f)) && (play[p.sp] = play[p.sp] || []).push(p));
   const W = Object.values(A.fishWaiting(cand, F, play)).flat(),
     U = A.fishUnits(FJ),
     sp = A.fishSpecies(FJ),
@@ -496,7 +496,7 @@ test('real data: no candidate waiting is in play, and Coverage’s + total is fi
     Cv = A.fishCov(U, play, sp, cand, F);
   assert.ok(seen.size > 0 && Object.values(cand).flat().length > 0, 'the files hold photos in play and candidates');
   assert.deepStrictEqual(
-    W.filter(p => seen.has(C.fishPid(p.f))).map(p => p.f),
+    W.filter(p => seen.has(C.treePid(p.f))).map(p => p.f),
     [],
     'a candidate in play is not waiting'
   );

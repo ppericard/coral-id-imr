@@ -69,7 +69,7 @@ is the design's shorthand, and internal identifiers may keep it.
   circle 1 was on the path, the genera of the families of circles 2 and 3 (107 more, 237 in all; a surprise card's genus
   none) are units as circle 1's: the same opening (the family's Advanced, the offer or the switch), sibling genera as
   look-alikes, the family's line and circle, the genus credit in the score, the replay, the board and the achievements that
-  count genera (`core.js` `fishGenSets`, read by `app.js` `fishGenera`, `fishReplayGen`, `fishVarTable`; fish rules
+  count genera (`core.js` `treeGenSets`, read by `app.js` `treeGenera`, `treeReplayGen`, `treeVarTable`; fish rules
   version 4; opened from the sheet that replays them, `sync.js` `GENERA_SHEET`). No IMR genus outside circle 1 (the IMR
   sub-entries are circle 1's); each has its sourced presentation and most their ID marks since #1074 (Pierre's option C:
   the content before the merge; ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
@@ -146,7 +146,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`): the species level's questions, their choices
   and its cards (the species unit's label), the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
   other listed names under More details, the IMR one marked), the "This photo: …" line under every fish verdict
-  (`fishTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
+  (`treeTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
   name (`common`).
 - **In the game** (`app.js`): `cnShow`, the name a multiple-choice question shows, the player's first; `cnTypeNames`, the typed
   names: the listed names, the regional names and their recorded spellings (the usual spelling tolerance applies, `core.js`
@@ -162,11 +162,11 @@ is the design's shorthand, and internal identifiers may keep it.
   species sheet names the other species of a shared name under the name shown ("Also used for *Oxycheilinus
   bimaculatus*", linked to its sheet; "“Clown anemonefish” is also used for …" for another listed name: `app.js` `cnAlso`,
   `learn.js` `spAlso`); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
-  `fishNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
+  `treeNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
   regional name typed gets the "common name" nudge (Q237, `typeOther`). On a species question (the species level, step 1)
   every listed and regional name, with its spellings, is the species unit's (`UNITS` fish `names`, from `cnTypeNames`),
   so any of them typed credits the one unit (Q376 (b)). The species' one common-name unit is in the score tree once the
-  species level is on (`core.js` `fishScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
+  species level is on (`core.js` `treeScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
   `[]` for a species with a PDF name, `null` without one).
 - **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
 - **Later languages**: names as a per-language layer over the taxon-keyed progress (Q362; the study §7.2); not built.
@@ -178,7 +178,7 @@ is the design's shorthand, and internal identifiers may keep it.
 
 ## Typed family names (fish beta QA, 2026-11-06)
 
-- A family (IMR entry) typed is matched against its names (`core.js` `fishNames`) and, as a general rule (Pierre,
+- A family (IMR entry) typed is matched against its names (`core.js` `treeNames`) and, as a general rule (Pierre,
   2026-11-06: "trigger", "clown", "damsel"), each of them without "fish": as a suffix, a separate word or a plural
   ("Trigger", "Trigger fish", "Triggerfishes", "Triggers"), unless that short form is within the spelling tolerance of
   another entry's name or short form (then typing it is no answer, as before). Filefishes and Pipefishes are that close,
@@ -207,7 +207,7 @@ is the design's shorthand, and internal identifiers may keep it.
   `often`), and a name of part of it only on a photo of that part: its genus or species, scientific or common (Iniistius,
   Iniistius pavo, Peacock razorfish on a peacock razorfish), a word its own species carries (`fish.json` `vn`:
   razorfish on an *Iniistius* or a shrimpfish, toby on a *Canthigaster*), an IMR genus or sub-entry (Chromis on a
-  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `fishGen` `scopes`). A name of part of the
+  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `treeGen` `scopes`). A name of part of the
   family that does not designate the photo is a mistake, counted against the photo's family only, no mix-up (no unit
   given, Q319): razorfish on a cleaner wrasse, Chromis on a *Dascyllus*, Unicornfish on an *Acanthurus* (`core.js`
   `typeFits`). A name of another family stays that family's: a wrong answer against both (rule L2). After the answer,
@@ -271,7 +271,7 @@ The first fish questions must be easy and readable. Two decisions, each built in
   Wrasse species questions sooner.
 - Species of circles 2 and 3 follow the same rule once their family is open (every circle is on the path since Pierre, 2026-11-06, Q175).
 - **Built, step 1 by common name** (2026-11-15; docs/LEARNING.md "Fish: the species level, step 1"):
-  - **Units**: one per species with a listed name (`core.js` `fishSpUnits`, `s:s091`; `app.js` `fishGenera` builds the
+  - **Units**: one per species with a listed name (`core.js` `treeSpUnits`, `s:s091`; `app.js` `treeGenera` builds the
     records, rank `species`). The label is the player's first name (`cnFirst`), with the scientific name in small type
     under each choice (schedule step 1).
   - **Opening**: the set `sp` (`UNITS` fish `sets`, no offer, no switch). `app.js` `spPlay` gives a family at Advanced its
@@ -681,7 +681,7 @@ on families only to an IMR RA with every species open:
       every genus" anchor, 74%); credit = S for a species with no common name (Q258).
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
     circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
-    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked. **Every family met, for now** (Pierre, 2026-11-12: "On lui dit qu'il a tout vu et ce qui vient ensuite", after a study found a player 121 answers with every family in play met before circle 3, then 143 with all 48 met, and the app silent): once every unit in play (`pool`, the scientific genera included when on) is met and asked and none may open now (`model.js` `mayOpen`), a calm card at the break at Next ("You’ve seen them all, for now") says so and what comes next, once per reason: circle 3 not reached (its N families come at about Open Water on average on the course's families: the Entries component's 55%, which no screen shows), circle 3 declined, once its offer will not come back (My progress opens it any time; Pierre, 2026-11-12, #851: no card right after a first "Not now", whose offer comes again 200 answers later), or nothing held back (the families still without a game photo, then Scientific names: turn them on, or their genera come at Advanced, else the mastery exams). Never while another card says what is next (the circle-3 and Scientific names offers, the back cards), in a visit's first answers, or near another prompt; the photo quiz only; seen on the device and on the account (`quiz.js` `allMetDue`, `app.js` `fishNextOf`, `UNITS.fish` `done`; ARCHITECTURE "Subjects"). The corals have none.
+    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `treeGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked. **Every family met, for now** (Pierre, 2026-11-12: "On lui dit qu'il a tout vu et ce qui vient ensuite", after a study found a player 121 answers with every family in play met before circle 3, then 143 with all 48 met, and the app silent): once every unit in play (`pool`, the scientific genera included when on) is met and asked and none may open now (`model.js` `mayOpen`), a calm card at the break at Next ("You’ve seen them all, for now") says so and what comes next, once per reason: circle 3 not reached (its N families come at about Open Water on average on the course's families: the Entries component's 55%, which no screen shows), circle 3 declined, once its offer will not come back (My progress opens it any time; Pierre, 2026-11-12, #851: no card right after a first "Not now", whose offer comes again 200 answers later), or nothing held back (the families still without a game photo, then Scientific names: turn them on, or their genera come at Advanced, else the mastery exams). Never while another card says what is next (the circle-3 and Scientific names offers, the back cards), in a visit's first answers, or near another prompt; the photo quiz only; seen on the device and on the account (`quiz.js` `allMetDue`, `app.js` `fishNextOf`, `UNITS.fish` `done`; ARCHITECTURE "Subjects"). The corals have none.
   - **A species is "named in Latin" once its scientific name's bar reaches Advanced** (Pierre, 2026-11-08, Q262), the same
     definition for the counter below and for the achievements.
   - **The Elo level stays alongside** as the player's overall level.

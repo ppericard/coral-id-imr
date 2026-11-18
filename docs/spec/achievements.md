@@ -170,7 +170,7 @@ Every save reply carries `bt`,
 the checksum of the tree the sheet holds, and from a reply with `v` ≥ `sync.js` `TREE_SHEET` the app sends the tree only
 when it changed or the sheet holds another (`treesSeen`, `reefid-board-trees` on the device; with every save before).
 The species units open only from `TREE_SHEET` and `SPECIES_SHEET` (`sync.js` `speciesOn`, rule D4); the tree then holds
-one entry per species with a listed name, its unit `s:s091` as its common names (`core.js` `fishScoreTree` on). The
+one entry per species with a listed name, its unit `s:s091` as its common names (`core.js` `treeScoreTree` on). The
 sheet's own copy of each subject's tree: [sync.md › The leaderboard's tree](sync.md#full-replay).
 
 **On the board by default.** Signed-in players appear by default; ⚙ Leaderboard On/Off (`reefid-sync-board` = `{v, t}`,

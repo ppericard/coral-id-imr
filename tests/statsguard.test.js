@@ -246,14 +246,14 @@ test('the real pools fit the script cache in parts: fish photos are checked, a f
   assert.strictEqual(n['fish-photos.json'], 2);
 });
 
-// The species units of the species level (s: and the species id, s:s084: core.js fishSpUnits)
+// The species units of the species level (s: and the species id, s:s084: core.js treeSpUnits)
 // are their family's for the photo check (unitUp_), so a species question with its family's photos is never flagged, and
 // the pools cached by a script before them (pool2, with no such parent) are never read: pool3.
 test('a species unit (s:<id>) is its family for the photo check; the parents cached before it are never read', () => {
   const fish = C.SUBJECTS.find(S => S.id === 'fish'),
     files = fish.pool.files.map(f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))),
     FP = C.unitPool(fish, files),
-    SP = C.fishSpUnits(files[0]),
+    SP = C.treeSpUnits(files[0]),
     n = {},
     s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024});
   // Every species unit to the family it hangs from in the game.
