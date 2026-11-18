@@ -1,1 +1,0 @@
-The Divemaster achievement texts of the learning milestones (the genus, family and sea slug guide entries, and the comment above them) now say 85%, the mastery exam's entry the code uses (`DOM.EX`), instead of 95%, the top of the progress bar. Texts only: no behaviour change.
