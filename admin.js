@@ -1,8 +1,8 @@
 // IMR Reef ID: photo curation back-office (admin.html, not linked from the app).
-// First, the storage keys from before the rename (2026-11-03) move to their new names (core.js migrateKeys): the admin's
-// token, draft and Undo history included. Before anything reads them.
+// First, the storage keys under their old names move to their new ones (core.js migrateKeys), the admin's token, draft
+// and Undo history included, before anything reads them.
 migrateStorage();
-migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
+migrateRoutes(); // page names and addresses in this device's data under their old form move once (core.js)
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
 // Saving commits curation.json to the repo through the GitHub API with a fine-grained token. The token is
@@ -20,27 +20,24 @@ const VIEWS = [
   FEAT = 3,
   SHEET = 6;
 // Cap per genus x view: a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see
-// cellFull). 10 at first (Pierre, 2026-11-01), then 20 the same day (Pierre: "the goal is to learn the genus, not the
-// photos: the fewer photos, the more risk of learning the photos"; a player at 75% sees ~7 colonies of a genus before
-// its 95%, and its mastery exam wants 5 photos never seen), then 40 (Pierre, 2026-11-06, Q187: players went round a
-// genus's photos fast, and the cap of 20 bound the Colony view of 17 genera; docs/reviews/2026-11-06-photo-exposure-study.md).
-// Corals only: fish has no cap. A let only so the admin test can lower it.
+// cellFull). Players learn the genus, not the photos: a player at 75% sees ~7 colonies of a genus before its 95%, its
+// mastery exam wants 5 photos never seen, and a cap of 20 bound the Colony view of 17 genera (docs/LEARNING.md "Photo
+// exposure"). Corals only: fish has no cap. A let only so the admin test can lower it.
 let CELL_MAX = 40;
-// Game genera first (Pierre, 2026-11-03: "quiz first"): the genera a game can ask (core.js gameOf: the IMR slate,
-// Millepora, the bonus genera) are the rows of Game coverage and Where to look, and their candidates come before any
-// other in Candidates. The other genera of data.json "x" are Key-only (Identify > Coral ID Key and their sheet): their
-// cap is what the sheet and the Coral ID Key can show of a view, CAP.sheet (6) colonies, and they get no Corallites
-// candidates ("nobody uses the [Coral ID Key] on a corallite close-up"; the macro photos already there stay). Set once
-// the data is loaded (load()).
+// Game genera first: the genera a game can ask (core.js gameOf: the IMR slate, Millepora, the bonus genera) are the rows
+// of Game coverage and Where to look, and their candidates come before any other in Candidates. The other genera of
+// data.json "x" are Key-only (Identify > Coral ID Key and their sheet): their cap is what the sheet and the Key show of a
+// view, CAP.sheet (6) colonies, and they get no Corallites candidates (nobody uses the Key on a corallite close-up; the
+// macro photos already there stay). Set once the data is loaded (load()).
 let GAME = new Set();
 const isGame = n => GAME.has(n),
   capOf = n => (isGame(n) ? CELL_MAX : CAP.sheet);
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
-// Dates as toLocaleString([], …) writes them, with one formatter per format (Pierre, 2026-11-03: admin pages load slower
-// and slower; toLocaleString builds a new one at every call, thousands of times on a Journey or in Triage). Times are
-// always 24 h ("17:45", never "05:45 PM", whatever the browser's language; Pierre, 2026-11-03: narrower columns).
+// Dates as toLocaleString([], …) writes them, with one formatter per format: toLocaleString builds a new one at every
+// call, thousands of times on a Journey or in Triage. Times are always 24 h ("17:45", never "05:45 PM", whatever the
+// browser's language), for narrower columns.
 const DTF_O = {
     dm: {day: 'numeric', month: 'short'},
     dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'},
@@ -74,7 +71,7 @@ const store = {
   }
 };
 // Colour-blind mode as set in the app's ⚙ (app.js, reefid-sync-cvd; the theme comes the same way, admin.html): the admin
-// follows it, for right / wrong and the difficulty bands (recBadge: dark blue … dark orange; Pierre, 2026-11-05).
+// follows it, for right / wrong and the difficulty bands (recBadge: dark blue … dark orange).
 try {
   if (localStorage.getItem('reefid-sync-cvd') === '1') document.documentElement.dataset.cvd = '1';
 } catch (e) {}
@@ -83,7 +80,7 @@ try {
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
 // The site's photos from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers; once an R2 photo failed in this tab, it and
 // the next ones come from their online original at a light size, or from the site's img/ for a photo with none (as
-// app.js photoFail, core.js photoAway; Pierre, 2026-11-05: the photos with an online original leave img/).
+// app.js photoFail, core.js photoAway: the photos with an online original are not in img/).
 // With PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an online original live on R2 only.
 let R2 = !!PHOTO_BASE,
   AWAY = !PHOTO_BASE,
@@ -107,8 +104,8 @@ document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    // The published crop and rotation, baked into the site's files, drawn on the original (core.js photoCropOf, Codex
-    // review #569; photoRoOf, turned by rotFit once it loads, review #793); crSrc draws them on the next renders (AWAY).
+    // The published crop and rotation, baked into the site's files, drawn on the original (core.js photoCropOf;
+    // photoRoOf, turned by rotFit once it loads); crSrc draws them on the next renders (AWAY).
     // Under a service worker, as app.js away: only this photo moves, and the tab keeps asking R2, where the worker keeps
     // its offline copies (and has retried R2 already).
     const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
@@ -144,15 +141,15 @@ function rotFit(i) {
   if (getComputedStyle(i).objectFit === 'cover') {
     // The image's slot, measured once before its box is swapped: a tile's photo fills its box and then follows the
     // tile's width; a fixed-size thumbnail that shares its parent (a family's in the sidebar grid, 44 x 33, beside its
-    // text) keeps its own width (sw; Codex review #793: the parent's width blew it up over the text).
+    // text) keeps its own width (sw), or the parent's width would blow it up over the text.
     if (!+i.dataset.ra && i.clientWidth && i.clientHeight) {
       i.dataset.ra = i.clientWidth / i.clientHeight;
       if (Math.abs(i.clientWidth - P.clientWidth) > 1) i.dataset.sw = i.clientWidth;
     }
     const bw = +i.dataset.sw || P.clientWidth,
       v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
-    // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut
-    // (Codex review #793: a 180° draft showed upright on the tiles).
+    // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut (a
+    // 180° draft shows turned on the tiles too).
     if (!(r % 180)) {
       Object.assign(i.style, {width: '', height: '', maxWidth: '', margin: '', transform: r ? `rotate(${r}deg)` : ''});
       return;
@@ -274,7 +271,7 @@ let SHOWN_COVER = null,
 // S1), and the one in force (FISHS, TK its part's key: SUBJECTS admin.cur): the one on screen when it is one, else the last
 // one on screen, as the app's tree in force (app.js treeAt; treeIn below). Photos › Tree, the photo tools (fishTile,
 // bindFishTiles), the family pages' data (FISHC, fishLoad) and the registry of its reports (FISHA, fishAdmin) are the one
-// in force's, and every read or write of "its part" is DRAFT[TK] (the sea slugs' admin photo pages, 2026-11-17).
+// in force's, and every read or write of "its part" is DRAFT[TK].
 // The auto-sort's subject (SUBJECTS admin autosort; AK its part's key): its part is stamped and sorted at each load,
 // whatever the subject on screen (autoWhen, fishAutoRun).
 const TREES = SUBJECTS.filter(S => S.admin.cur && S.sheets),
@@ -304,12 +301,11 @@ let draftAt = null;
 let HIST = [],
   FUT = [],
   snap = null;
-// The Undo steps survive a reload of this tab (admin re-review, 2026-11-01): kept in sessionStorage (this tab only,
-// gone when it closes; the last 60 steps), with the draft they lead to, so another tab's draft never picks them up.
-// As many of the latest steps as the storage holds (HIST_ROOM characters, under the ~5 million a tab's sessionStorage
-// takes; performance pass, 2026-11-09): with a curation of 1.3 million characters, 60 steps came to 80 million, written
-// at every click (a quarter of a second on a desktop) and always refused, so no step survived a reload. Each step is
-// encoded once (stepJson) and the record is joined from them: the same JSON as JSON.stringify({snap, hist, fut}).
+// The Undo steps survive a reload of this tab: kept in sessionStorage (this tab only, gone when it closes; the last 60
+// steps), with the draft they lead to, so another tab's draft never picks them up. As many of the latest steps as fit in
+// HIST_ROOM characters, under the ~5 million a tab's sessionStorage takes (60 steps of a 1.3-million-character curation
+// would be 80 million, always refused). Each step is encoded once (stepJson) and the record is joined from them: the
+// same JSON as JSON.stringify({snap, hist, fut}).
 const HKEY = SK('reefid-admin-undo'),
   HIST_ROOM = 4.5e6;
 const histJson = (now, hist, fut, room = HIST_ROOM) => {
@@ -349,7 +345,7 @@ const keepHist = () => {
 };
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
-// Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
+// Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
 function saveDraft() {
   memoReset();
   if (snap !== null) {
@@ -368,9 +364,8 @@ function saveDraft() {
 let draftLost = false,
   UPDATED = false; // a new version took over in the background (see the init: reloads at the next calm moment)
 // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
-// version was installed, then left open, still gets the next ones: Codex review #336). Listened to from the first line,
-// as in app.js: added at the end of start(), after data.json, a version taking over while the admin loaded went unseen
-// and the tab kept the old code (net smoke test, 2026-11-03).
+// version was installed, then left open, still gets the next ones). Listened to from the first line, as in app.js, so a
+// version taking over while the admin loads is not missed and the tab does not keep the old code.
 if ('serviceWorker' in navigator) {
   let had = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -378,9 +373,9 @@ if ('serviceWorker' in navigator) {
     had = true;
   });
 }
-// The draft lives in IndexedDB (admin-draft.js; model B of the sign-out seal, Pierre, 2026-11-18): DW is this tab's side
-// of the store, opened at the start (draftOpen). Two admin tabs in one browser share the draft (code re-review 2026-11-01,
-// M4): each write takes in the draft another tab stored since, merged onto this one against the draft both started from
+// The draft lives in IndexedDB (admin-draft.js; model B of the sign-out seal, docs/ARCHITECTURE.md): DW is this tab's
+// side of the store, opened at the start (draftOpen). Two admin tabs in one browser share the draft: each write takes in
+// the draft another tab stored since, merged onto this one against the draft both started from
 // (core.js mergeTabs), in the same transaction as the write, so neither tab erases the other's clicks, even when both
 // click before hearing of each other. A BroadcastChannel tells the other tabs a write happened, so they take it in at once
 // (a hint only: the next write takes it in anyway). One Undo step brings back this tab's draft as it was before.
@@ -417,18 +412,17 @@ function step(from, to, msg) {
   toast(msg[1]);
 }
 // When Pierre answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp), so
-// the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
-// with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
-// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG).
+// the agreement window follows the order he answered in. Found by comparing his answers per photo with those of the
+// draft before this click (snap; recomputed only when undo, redo or another tab changed it).
 let ASIG = null,
   FSIG = null,
   FSIG_F = null, // the fish part FSIG was read from (performance pass, 2026-11-09: below)
   ASIG_OF = null;
 // The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
-// Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Tree) is timed (Codex review #655).
-// A click that left the fish part as it was (the same object: the admin never writes into it, every change makes a new
-// one, tests/adminclick.test.js) has the same keeps, so fishStamp finds nothing to time and FSIG stays: both skipped
-// (performance pass, 2026-11-09: some 80 ms of every click on a desktop, the fish part being most of the curation).
+// Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Tree) is timed. A click that left the fish
+// part as it was (the same object: the admin never writes into it, every change makes a new one,
+// tests/adminclick.test.js) has the same keeps, so fishStamp finds nothing to time and FSIG stays: both skipped (some
+// 80 ms of every click on a desktop, the fish part being most of the curation).
 function autoWhen() {
   if (ASIG_OF !== snap) {
     const S = JSON.parse(snap);
@@ -465,7 +459,7 @@ const seenOf = (o, kind) => Object.fromEntries(Object.entries(o.seen || {}).filt
 const sgChanged = () => !same(seenOf(DRAFT, ''), seenOf(SAVED, '')) || !same(DRAFT.use || {}, SAVED.use || {});
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
 const cdChanged = () => !same(seenOf(DRAFT, 'cand'), seenOf(SAVED, 'cand'));
-// The players' reports' statuses (To do › Reports, Q309; reports.js): Done is seen 'rep:<id>' (the player is thanked),
+// The players' reports' statuses (To do › Reports; reports.js): Done is seen 'rep:<id>' (the player is thanked),
 // Stand-by and Dismissed curation.json "reps" {id: 'wait'|'drop'} (never thanked).
 const rpChanged = () => !same(seenOf(DRAFT, 'rep'), seenOf(SAVED, 'rep')) || !same(DRAFT.reps || {}, SAVED.reps || {});
 // The reports whose status the draft changed (Publish's summary).
@@ -566,7 +560,7 @@ function togglePin(f, c) {
 // tools/fetch_approved.py applies them when it downloads the photo (and redoes it if the crop changes).
 const crOf = f => (DRAFT.crop || {})[f],
   crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
-// Rotations (curation.json "rot" {f: 90 | 180 | 270} degrees clockwise; Pierre, 2026-11-08): set in the crop editor,
+// Rotations (curation.json "rot" {f: 90 | 180 | 270} degrees clockwise): set in the crop editor,
 // applied to the files at Publish after the crop (tools/photos.py turn; autosort.js rotNorm, rotSet).
 const roOf = f => rotNorm((DRAFT.rot || {})[f]),
   roChanged = () => !same(DRAFT.rot || {}, SAVED.rot || {});
@@ -575,11 +569,9 @@ const crOn = f => !!(crOf(f) || roOf(f));
 const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // A photo's src and its draft crop as a preview (object-view-box). A downloaded photo's local file already has the
 // published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
-// original (iNat) with the draft crop as soon as the draft differs (Pierre, 2026-11-03: the crop just made showed "one
-// time in two", when it was laid over a file cropped already).
-// A candidate's suggested crop (suggest.json cand c, the judging pass; Pierre 2026-11-03: "le crop, tu aurais pu presque
-// le faire de manière automatique"): shown on it until he adds it, then written to his crops when he adds it (ACT.addc),
-// where he can change it as any crop. His own crop, or Full photo ([0, 0, 1, 1]), always wins.
+// original (iNat) with the draft crop as soon as the draft differs (a crop laid over a file cropped already is wrong).
+// A candidate's suggested crop (suggest.json cand c, the judging pass): shown on it until it is added, then written to
+// the admin's crops (ACT.addc), where it changes as any crop. The admin's own crop, or Full photo ([0, 0, 1, 1]), wins.
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
 // A crop [l, t, r, b] as object-view-box's inset(top right bottom left).
 const vbox = c =>
@@ -700,8 +692,8 @@ const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
 // ghfile: begin
 // A repository file's text and sha. The contents API sends a file's text only up to 1 MB: above that `content` is empty
-// (encoding "none"), so the text comes from its blob (up to 100 MB). curation.json passed 1 MB on 2026-11-04 and the
-// admin stopped loading ("Unexpected end of JSON input"). null when the file does not exist.
+// (encoding "none"), so the text comes from its blob (up to 100 MB): curation.json is past 1 MB. null when the file does
+// not exist.
 async function ghFile(path) {
   const f = await gh(`/contents/${path}?ref=${BRANCH}`).catch(e => {
     if (/Not Found/.test(e.message)) return null;
@@ -798,10 +790,10 @@ function lockScreen(msg) {
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
 // own/photos/cands of one genus each walk every genus, and the Candidates queue and Coverage need them for every genus:
-// computed once per draft state (cleared by every edit, undo/redo and merge), callers get a copy of the list.
-// Kept from one page to the next while the draft stays the same (Pierre, 2026-11-03: admin pages load slower and slower;
-// every page change recomputed every genus's photos for the header's over-the-cap count): render() clears it only when
-// the draft differs from the one it was computed for (memoFresh). The data files do not change once loaded.
+// computed once per draft state (cleared by every edit, undo/redo and merge), callers get a copy of the list. Kept from
+// one page to the next while the draft stays the same (the header's over-the-cap count needs every genus's photos):
+// render() clears it only when the draft differs from the one it was computed for (memoFresh). The data files do not
+// change once loaded.
 let MEMO = {},
   MEMO_OF = null;
 const memoReset = () => {
@@ -847,8 +839,7 @@ const own = memo('own', n => {
 // it joins that genus in the same view (tagged with where it came from); 'cmp' keeps it for the Look-alikes section.
 const outs = n => entry(n).out || {};
 // Photos (or candidates) sent from every genus to another one, by the genus they go to: one pass over every genus per
-// draft state, instead of one for each genus asked (Pierre, 2026-11-03: admin pages load slower and slower). Same order
-// as walking the genera for one genus.
+// draft state, instead of one for each genus asked. Same order as walking the genera for one genus.
 const sentTo = (k, list) => {
   const key = 'to|' + k;
   if (!(key in MEMO)) {
@@ -878,7 +869,7 @@ const pending = n => {
     .filter(p => !add[p.f])
     .sort((a, b) => oIdx(a) - oIdx(b));
 };
-// Candidates section (Pierre: one "Remove" everywhere sends a photo back there): new candidates plus removed (hidden) photos.
+// Candidates section (one "Remove" everywhere sends a photo back there): new candidates plus removed (hidden) photos.
 const unused = n =>
   [
     ...pending(n),
@@ -925,7 +916,7 @@ function rowOf(n, v) {
   const pin = (entry(n).feat || {})[v];
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
-  // Featured = always the first FEAT photos (Pierre): his pinned ones in his order, the rest filled automatically,
+  // Featured = always the first FEAT photos: the admin's pinned ones in his order, the rest filled automatically,
   // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
   const pinned = (pin || [])
     .map(f => live.find(p => p.f === f))
@@ -970,9 +961,9 @@ function coverOf(n) {
     all.find(x => !x.imr && !offSlot(x));
   return p && {...p, view: viewOf(n, p), picked: !!k.cover};
 }
-// Status (Pierre): ✓ only when the genus has everything the site needs AND he validated it (curation ok: true).
+// Status: ✓ only when the genus has everything the site needs AND the admin validated it (curation ok: true).
 // Needs: 3 featured photos per view, a cover that is not a close-up (3 levels), no broken choice.
-// A non-IMR Poor photo among the featured is only a warning (Pierre: he may have no better example).
+// A non-IMR Poor photo among the featured is only a warning (there may be no better example).
 const poorIn = n =>
   rows(n)
     .filter(([v]) => rowOf(n, v).feat.some(p => !p.imr && qOf(p.f) === 1))
@@ -1004,11 +995,11 @@ let SHOW = new Set(
   )
 );
 const shown = p => SHOW.has(origin(p));
-// View filter of the genus page (Pierre, 2026-11-04): All, or one view's section alone, so the close-ups and corallites
+// View filter of the genus page: All, or one view's section alone, so the close-ups and corallites
 // are reached without scrolling past every colony photo. Kept across genera and visits; on a genus without the saved
 // view (a 2-zoom genus has no Close-up row) the page shows All, and the choice stays for the next genus.
 let GVIEW = store.get('reefid-admin-gview', 'all');
-// ---- One filter bar (admin plan PR 3, docs/ROADMAP.md "Admin for every subject") ----
+// ---- One filter bar (docs/ROADMAP.md "Admin for every subject") ----
 // Every photo page draws its filters with these parts, filled from the subject on screen (core.js SUBJECTS: views, the
 // unit words one / many, admin origins and csrc), and wires them with bindBar: the genus page (origin chips with counts,
 // the view filter), Photo review (origins, view, unit, its check boxes) and Candidates (the sources). Each filter keeps
@@ -1100,11 +1091,11 @@ function bindBar(scope, {redraw, f, k, view, unit, checks = {}, src}) {
       })
   );
 }
-// A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule;
-// Pierre, 2026-11-04): an "out of rule" tag next to its source, and a part of To do. Never removed automatically.
-// Kept (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself): an exception he accepted with Keep in
-// To do, curation.json seen {'rule:f': 1} like his other "decided" marks; the photo stays on the site and moves to To do's
-// Kept subsection, where he can still exclude it or un-keep it. Its tag stays, in a neutral "kept" style.
+// A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule): an
+// "out of rule" tag next to its source, and a part of To do. Never removed automatically. Kept: the rule stays strict and
+// the admin sorts these photos; an exception accepted with Keep in To do is curation.json seen {'rule:f': 1}, like the
+// other "decided" marks: the photo stays on the site and moves to To do's Kept subsection, where it can still be
+// excluded or un-kept. Its tag stays, in a neutral "kept" style.
 const ruleKept = f => !!(DRAFT.seen || {})['rule:' + f];
 const ruleTag = p =>
   !outOfRule(p, PRES)
@@ -1116,10 +1107,10 @@ const ruleTag = p =>
 // the ones he kept (To do's Kept subsection).
 const outOfRuleList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES, ruleKept);
 const ruleKeptList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES).filter(p => ruleKept(p.f));
-// A share-alike photo (CC BY-SA, CC BY-NC-SA; presence.js shareAlike: its lic, else its attribution text). Pierre,
-// 2026-11-05: no share-alike for corals any more (the candidate search no longer takes them), but the ones already on the
-// site are never removed automatically: a "share-alike" tag next to its source on every page, and a part of To do with
-// the same actions as Out of the presence rule; Keep = curation.json seen {'sa:f': 1}, its tag then neutral.
+// A share-alike photo (CC BY-SA, CC BY-NC-SA; presence.js shareAlike: its lic, else its attribution text). The candidate
+// search takes no share-alike for corals (docs/ARCHITECTURE.md), but the ones already on the site are never removed
+// automatically: a "share-alike" tag next to its source on every page, and a part of To do with the same actions as Out
+// of the presence rule; Keep = curation.json seen {'sa:f': 1}, its tag then neutral.
 const saKept = f => !!(DRAFT.seen || {})['sa:' + f];
 const saTag = p =>
   !shareAlike(p)
@@ -1130,7 +1121,7 @@ const saTag = p =>
 const saList = () => saQueue(Object.keys(DATA.gen), photos, hidden, saKept);
 const saKeptList = () => saQueue(Object.keys(DATA.gen), photos, hidden).filter(p => saKept(p.f));
 // A photo or candidate whose name is a former combination, a moved genus or iNaturalist's spelling of a name WoRMS writes
-// otherwise (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; presence.js nameFlag, names.json): a neutral tag with
+// otherwise (ROADMAP "Taxonomy reference"; presence.js nameFlag, names.json): a neutral tag with
 // the name WoRMS accepts now. Information only, no action: nothing is renamed (rule C1). S: the photo's subject (the
 // fish pages pass theirs; names.json holds one section per subject).
 const NAME_KIND = {spelling: 'iNaturalist spelling', former: 'Former name', genus: 'Former genus'};
@@ -1162,8 +1153,8 @@ const rightsTag = p => {
     l = licOf(p);
   return `<span class="adm-src adm-rt rt-${c}" title="Rights: ${esc(c === 'imr' ? 'IMR lecture' : c === 'book' ? 'Coral Finder book' : p.imr && p.pg ? 'IMR lecture photo by ' + (p.a || '?') + ' · ' + lectTerms(p) : (c === 'own' ? 'your own · ' : '') + (l ? l.toUpperCase().replace(/^CC-/, 'CC ') : 'no licence read'))}">${RIGHTS_L[c]}</span>`;
 };
-// An IMR lecture photo whose original source was not found (the study of 2026-11-15, #925: no pg): marked in the admin
-// only (Pierre, 2026-11-15: kept as they are).
+// An IMR lecture photo whose original source was not found (no pg): kept as it is, marked in the admin only
+// (docs/reviews/2026-11-15-imr-lecture-photo-sources-study.md).
 const unkTag = p => (p.imr && !p.pg ? '<span class="adm-src adm-unk" title="Original source not found">source unknown</span>' : '');
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
@@ -1268,8 +1259,8 @@ const ACT = {
     edit(n, k => {
       if (k.add && k.add[f]) {
         // Removing a photo the auto-sort added also marks it rejected (as ✕ Reject: it stays with the candidates below,
-        // off the Candidates queue), so the removal counts against the auto's Keep (autosort.js pierreOf; Codex review
-        // #400: without it a wrong auto add removed this way was no decision at all). One Undo step for both.
+        // off the Candidates queue), so the removal counts against the auto's Keep (autosort.js pierreOf), never as no
+        // decision at all. One Undo step for both.
         const a = aApplied(f);
         if (a && a.kind === 'a') DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
         delete k.add[f];
@@ -1378,8 +1369,8 @@ function tile(n, p, v, st) {
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 // What status() reads from the draft and the published file alone (what changed, the suggestions, the cells over the cap)
-// is computed once per draft (MEMO, emptied by memoFresh when the draft changes) and published file (Pierre, 2026-11-04:
-// every page drew it again, 0.1-0.3 s a time on a phone).
+// is computed once per draft (MEMO, emptied by memoFresh when the draft changes) and published file, not on every page
+// (0.1-0.3 s a time on a phone).
 function status() {
   memoFresh();
   const m = MEMO['status|'] && MEMO['status|'].saved === SAVED ? MEMO['status|'] : (MEMO['status|'] = {saved: SAVED, ...status0()});
@@ -1434,23 +1425,22 @@ function fitModes() {
   if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow');
 }
 addEventListener('resize', () => fitModes());
-// Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
-// of 2026-11-01): Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
-// (Activity, List), plus Analyses (below). No tab holds a view of its own name, and no group a tab of its own name
-// (Pierre, 2026-11-04). The views of a tab are chosen with the segmented switch at the right of the tab row (#subnav,
+// The header groups and their tabs: Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes,
+// Photo stats), Players (Activity, List), plus Analyses (below). No tab holds a view of its own name, and no group a tab
+// of its own name. The views of a tab are chosen with the segmented switch at the right of the tab row (#subnav,
 // navs()). Each header group reopens the tab and view used last in it (reefid-admin-nav-group), each tab its view used
 // last (reefid-admin-nav-tab). Phones: one menu with every tab.
-// Addresses (URL refonte, Pierre, 2026-11-05, Q53-Q56): #<group>/<tab>/<view>, each segment the word on screen, computed
-// from GROUPS; a tab with one view has no view segment (#players/activity); a thing the page is about follows as a
-// further segment (#photos/genera/live/<Genus>, #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after
-// '?' (#inbox/coverage/games?look=all). A shorter address (a group, a tab) opens its first view; an old or unknown one
-// opens its group's first view, else the landing page (rule W3: no table of old addresses).
+// Addresses: #<group>/<tab>/<view>, each segment the word on screen, computed from GROUPS; a tab with one view has no
+// view segment (#players/activity); a thing the page is about follows as a further segment (#photos/genera/live/<Genus>,
+// #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after '?' (#inbox/coverage/games?look=all). A shorter
+// address (a group, a tab) opens its first view; an old or unknown one opens its group's first view, else the landing
+// page (rule W3: no table of old addresses).
 // [group slug, group name, [[tab slug, tab name, [[view slug, view name], ...]], ...], options]; '' = the tab's one view.
-// The subject on screen (admin plan PR 2; Pierre, 2026-11-04: one Corals | Fish switch for the whole admin, To do
-// included, each side showing its own to-do count). Each subject's addresses carry its core.js SUBJECTS hash ('' for
-// the corals: #fish/inbox/todo/reports is the fish side's Reports); its admin part (SUBJECTS admin) says cur, its
-// part of curation.json ('' = the top level); pages, the admin pages it has (null = all; a page covers the addresses
-// under it). A page a subject does not have yet says so; its tabs are left out of the header.
+// The subject on screen: one Corals | Fish switch for the whole admin, To do included, each side showing its own to-do
+// count. Each subject's addresses carry its core.js SUBJECTS hash ('' for the corals: #fish/inbox/todo/reports is the
+// fish side's Reports); its admin part (SUBJECTS admin) says cur, its part of curation.json ('' = the top level); pages,
+// the admin pages it has (null = all; a page covers the addresses under it). A page a subject does not have yet says
+// so; its tabs are left out of the header.
 const ADM0 = SUBJECTS.find(s => !s.hash);
 let ASUBJ = ADM0;
 const subjOfHash = h => {
@@ -1459,11 +1449,10 @@ const subjOfHash = h => {
 };
 // p is the page x or an address under it (a player's journey is under players/list).
 const under = (p, x) => p === x || p.startsWith(x + '/');
-// The Players pages are every subject's (Pierre, 2026-11-06: "the Players section needs rethinking now that we have two
-// game modes"; docs/reviews/2026-11-06-admin-players-two-subjects.md): Activity and a player's Journey follow the switch,
-// each under its subject's prefix; the list of players and Visits are one page for both (SHARED): no prefix, the same page
-// on either side (the list: a group of columns per subject; Visits: every subject's visits, each marked with its subjects,
-// a Subject filter; Pierre, 2026-11-09), the switch inert there, the subject on screen kept for the other pages.
+// The Players pages are every subject's: Activity and a player's Journey follow the switch, each under its subject's
+// prefix; the list of players and Visits are one page for both (SHARED): no prefix, the same page on either side (the
+// list: a group of columns per subject; Visits: every subject's visits, each marked with its subjects, a Subject
+// filter), the switch inert there, the subject on screen kept for the other pages.
 const SHARED = ['players/list', 'players/visits', 'players/groups'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
@@ -1500,9 +1489,9 @@ const sameOn = (S, p) => {
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: what its To do lists. The corals' To do items (reports, flags, suggestions); for
-// a subject with its own part of curation.json, its photos flagged on the site (its flag) and its open reports (Q309: the
-// reports follow the switch). The auto-sort's Checks are not to-dos: they have their own count in Candidates › Checks
-// (Pierre, 2026-11-09: the fish switch showed ~1,100, mostly Checks, that To do never lists).
+// a subject with its own part of curation.json, its photos flagged on the site (its flag) and its open reports (the
+// reports follow the switch). The auto-sort's Checks are not to-dos: they have their own count in Candidates › Checks,
+// and To do never lists them.
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
@@ -1512,7 +1501,7 @@ const subjTodo = (S, tn) => {
 // of curation.json, its flags and its open reports (what its To do › Reports lists).
 const todoHere = tn => (ASUBJ.admin.cur ? Object.keys(flagsOf(DRAFT)).length + repsOpen().length : tn);
 // A subject's icon on the switch (core.js SUBJECTS icon, the app's set: app.js subjIcon), its name beside it on wider
-// screens only (admin.css .adm-sjn; Pierre, 2026-11-06: a mini switch in the top bar, as the app's header).
+// screens only (admin.css .adm-sjn): a mini switch in the top bar, as the app's header.
 const subjSvg = S =>
   `<svg class="sji" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
 // A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
@@ -1531,11 +1520,11 @@ const GROUPS = [
           ['all', 'All'],
           ['reports', 'Reports'],
           ['errors', 'Errors'],
-          // The sheet's Alerts tab (ROADMAP "Security follow-ups", Pierre 2026-11-01): caps reached, photos of another unit,
+          // The sheet's Alerts tab (ROADMAP "Security follow-ups"): caps reached, photos of another unit,
           // a left-out device signed in (renderAlerts); every subject's (EVERY), as the lines are about no subject.
           ['alerts', 'Alerts'],
           ['health', 'Health'],
-          // The points to handle (Pierre, 2026-11-05): trainer questions, names, sources, content (renderPoints).
+          // The points to handle: trainer questions, names, sources, content (renderPoints).
           ['points', 'Points']
         ]
       ],
@@ -1564,11 +1553,10 @@ const GROUPS = [
           ['excluded', 'Excluded']
         ]
       ],
-      // The subject's classification as a tree (Pierre, 2026-11-13, Q340: Families renamed Tree; docs/ROADMAP.md "The Tree
-      // tab"), any depth, its nodes' pages at the right, every subject's through its own adapter (the fish's:
-      // renderFishUnits, fuTreeOf, fuWormsOf; the corals': admin-coraltree.js renderCoralTree, since the tab's last step,
-      // Pierre, 2026-11-13: "coraux, nudibranches ou plantes"). Its views (Q340, "ok"): Key (the identification key's
-      // tree) and WoRMS (the reference taxonomy's), one parent per classification.
+      // The subject's classification as a tree (docs/ROADMAP.md "The Tree tab"), any depth, its nodes' pages at the
+      // right, every subject's through its own adapter (the fish's: renderFishUnits, fuTreeOf, fuWormsOf; the corals':
+      // admin-coraltree.js renderCoralTree). Its views: Key (the identification key's tree) and WoRMS (the reference
+      // taxonomy's), one parent per classification.
       [
         'tree',
         'Tree',
@@ -1584,13 +1572,13 @@ const GROUPS = [
         [
           ['quality', 'Quality'],
           ['growth-form', 'Growth form'],
-          // The fish views (admin plan PR 9, renderFishReview): a subject whose unit rank is the family (hasPage).
+          // The fish views (renderFishReview): a subject whose unit rank is the family (hasPage).
           ['ease', 'Ease', {rank: 'family'}],
           ['phase-framing', 'Phase & framing', {rank: 'family'}],
           // Every subject's (fish admin at parity: the fish side's from its answers alone, renderFishDiff), after the fish
           // views so that the fish Photo review still opens on Ease.
           ['by-difficulty', 'By difficulty'],
-          // Proposals of the light re-judge (admin-light.js, Pierre 2026-11-14): in the switch only while one is open.
+          // Proposals of the light re-judge (admin-light.js): in the switch only while one is open.
           [
             'light-proposals',
             'Light proposals',
@@ -1600,8 +1588,8 @@ const GROUPS = [
               draw: () => typeof renderLight === 'function' && (renderLight(), true)
             }
           ],
-          // Proposals of the default cover rule beside his own node covers (admin-covers.js; Pierre, 2026-11-14 after Q339
-          // (b), #864): in the switch only while one is open.
+          // Proposals of the default cover rule beside the admin's own node covers (admin-covers.js): in the switch only
+          // while one is open.
           [
             'cover-proposals',
             'Cover proposals',
@@ -1628,27 +1616,24 @@ const GROUPS = [
     'players',
     'Players',
     [
-      // Activity first, so Players opens on it when no tab of the group was used yet (Pierre, 2026-11-05).
-      // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
-      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs).
+      // Activity first, so Players opens on it when no tab of the group was used yet.
+      // Activity = who plays and how much (one role per admin page); the analyses are in Analyses (Learning › Answer
+      // log, Difficulty › Pairs).
       ['activity', 'Activity', [['', 'Recent sessions']]],
-      // Visits (Pierre, 2026-11-08, Q301 layout A): who opens the app and what for, games or not, signed in or not
+      // Visits: who opens the app and what for, games or not, signed in or not
       // (admin-visits.js renderVisits).
       ['visits', 'Visits', [['', 'Visits']]],
       ['list', 'List', [['', 'List']]],
-      // The player groups (Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
-      // groupes"): every group with its settings and members (renderGroups); one page for every subject, as the list.
+      // The player groups, a player in any number of them: every group with its settings and members (renderGroups); one
+      // page for every subject, as the list.
       ['groups', 'Groups', [['', 'Groups']]]
     ],
-    // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
-    // always opens Activity").
+    // fixed: a click on the group always opens its first tab (Activity), never the tab used last.
     {fixed: true}
   ],
-  // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
-  // every 1000 answers): the one group added after the nine tabs (docs/rules/admin.md A3); drawn by admin-analyses.js.
-  // Analyses = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log
-  // (admin.js renderStats, LIVE_STATS) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log
-  // (Activity's analysis cards) and Stops (Health's "where players stop" and genus sheets opened).
+  // Analyses = what we learn (one role per admin page): the multifactor analyses of the answer log, every 1000 answers
+  // (docs/rules/admin.md A3; drawn by admin-analyses.js), and the views read live from the answer log (renderStats,
+  // LIVE_STATS): Pairs, Answer log and Stops (where players stop, genus sheets opened).
   [
     'analyses',
     'Analyses',
@@ -1671,7 +1656,7 @@ const GROUPS = [
           ['mix-ups', 'Mix-ups'],
           ['time', 'Time'],
           ['pairs', 'Pairs'],
-          // Every unit against every unit (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): a subject whose admin pages name it.
+          // Every unit against every unit (admin-heatmap.js): a subject whose admin pages name it.
           ['heatmap', 'Heatmap']
         ]
       ],
@@ -1715,7 +1700,7 @@ const TREE = 'photos/tree/key',
   treeOf = p => [TREE, TREE_W].find(x => under(p, x));
 const ADM_PARAM = [LIVE + '/', TREE + '/', TREE_W + '/', 'players/list/journey/', 'players/list/anon/', 'inbox/todo/points/'];
 // An address for the page cur names (cur is decoded): the thing after its page encoded again, so a '/' or '?' in a
-// player's name stays in it (Codex review #610).
+// player's name stays in it.
 const admAddr = p => {
   const x = ADM_PARAM.find(x => p.startsWith(x) && p.length > x.length);
   return x ? x + encodeURIComponent(p.slice(x.length)) : p;
@@ -1743,8 +1728,8 @@ const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.lengt
 // The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
 // that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
 // A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
-// prefix (#fish/players/list becomes #players/list, #fish/players/visits #players/visits, the fish side kept); opened first (a reload, a bookmark), the subject
-// on screen last (reefid-admin-nav-subj).
+// prefix (#fish/players/list becomes #players/list, #fish/players/visits #players/visits, the fish side kept); opened
+// first (a reload, a bookmark), the subject on screen last (reefid-admin-nav-subj).
 let subjRead = false;
 function readHash() {
   let [S, p] = subjOfHash(hashNow());
@@ -1761,8 +1746,8 @@ function readHash() {
 const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
 const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Key-only one; after
-// "Add anyway"): a warning on the To do tab and on the page that shows the cell (Pierre, 2026-11-02: "at least a
-// warning"): Game coverage for a game genus, Sheet & ID Key coverage for a Key-only one. n = both.
+// "Add anyway"): a warning on the To do tab and on the page that shows the cell: Game coverage for a game genus, Sheet &
+// ID Key coverage for a Key-only one. n = both.
 let OVER = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0, n: 0};
 const overCap = () => {
   const o = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0};
@@ -1822,9 +1807,9 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      // The same page on the other side (Pierre, 2026-11-09: the switch stays on the page on screen, never the side's
-      // page used last): sameOn. A player's page stays that player's (their journey in the other subject). The same page
-      // keeps its filter after '?' (a player's heatmap stays that player's, Q123 m; Where to look in full).
+      // The same page on the other side, never the side's page used last: sameOn. A player's page stays that player's
+      // (their journey in the other subject). The same page keeps its filter after '?' (a player's heatmap stays that
+      // player's; Where to look in full).
       const to = playerPage(cur) ? cur : sameOn(S, cur),
         q = to === cur && location.hash.includes('?') ? '?' + location.hash.split('?')[1] : '';
       return `<a href="#${esc(S.hash + admAddr(to) + q)}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
