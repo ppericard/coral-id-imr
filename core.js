@@ -4556,14 +4556,14 @@
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
   }
-  // The false-alarm table (2026-11-15; speed only, every value the same to the last bit). The scan reads every record of
+  // The false-alarm table (speed only, every value the same to the last bit). The scan reads every record of
   // P for one unit, and a caller that reads every unit's bar after each answer pays it once per unit: the rated world
   // (tools/ratedworld.js) spent most of a 10,000-answer fish run there. faArm(P) lets the next faOf build one table of
   // every unit's false alarms and chances in a single pass over P, in the scan's own order (the records in P's order, the
   // typed questions first: each unit's sums take the same numbers in the same order, so the same floats), and answer the
   // later calls from it until scoreAnswer writes P (it disarms the table while it runs and arms it again, empty, after) or
   // faDisarm(P). Opt-in: the caller arms P only while nothing but scoreAnswer writes the records' conf, off, ty or the
-  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they scan as before. A P
+  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they always scan. A P
   // whose conf or off is not a plain object of numbers, or a unit id that is not a string or that Object.prototype holds,
   // is scanned. FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
   const FA_CHECK = {on: false},
@@ -4611,19 +4611,18 @@
   const barOf = (s, P, n) => (!s ? 0 : domOn(s) ? Math.min(0.95, domVal(s, P, n)) : 0.95 * Math.min(1, pgOf(s) / PROG.M));
   const examOpen = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.EX - 1e-9 : pgOf(s) >= PROG.M);
   const keepsMark = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.KEEP - 1e-9 : mxKeeps(pgOf(s)));
-  // Pair coverage, the mastery exam's other entry condition (Pierre, 2026-11-06, Q129; the research note's option (a),
-  // the PALM / Larkwire practice): a genus takes its exam only once it has been compared with each of its look-alikes,
-  // asked with it among the choices (either way: s.off, as the game counts the offers) or mixed up with it (s.conf).
-  // Pierre, 2026-11-02: "a genus can't be confirmed as learned before it has been compared with the genera it gets
-  // confused with". looks: the look-alikes in play (model.js examLooks: the declared ones the player can be asked).
-  // Returns the look-alikes not compared yet ([] when the condition holds).
+  // Pair coverage, the mastery exam's other entry condition (docs/LEARNING.md "The domain-score bar"; the PALM /
+  // Larkwire practice): a genus takes its exam only once it has been compared with each of its look-alikes, asked with
+  // it among the choices (either way: s.off, as the game counts the offers) or mixed up with it (s.conf). looks: the
+  // look-alikes in play (model.js examLooks: the declared ones the player can be asked). Returns the look-alikes not
+  // compared yet ([] when the condition holds).
   const looksLeft = (P, n, looks) => {
     const s = (P || {})[n] || {},
       seen = (x, y) => ((P[x] || {}).off || {})[y] > 0 || ((P[x] || {}).conf || {})[y] > 0;
     return (looks || []).filter(x => x !== n && !((s.off || {})[x] > 0 || (s.conf || {})[x] > 0 || seen(x, n)));
   };
   // The learned-mark protection (docs/reviews/2026-11-06-engine-coherence-review.md F8, F9): a mark passed under the
-  // former model, Bayesian Knowledge Tracing (before 2026-11-02), is dropped (memRecalc, replayedOf); such a record has
+  // former model, Bayesian Knowledge Tracing, is dropped (memRecalc, replayedOf); such a record has
   // neither the moving average s.pg nor the domain-score bar s.ds. Explicit, so a record of the domain-score rules,
   // which carries no s.pg, keeps its mark: "learned after BKT" is a record with either.
   const afterBkt = s => !!s && (typeof s.pg === 'number' || typeof s.ds === 'number');
@@ -4631,10 +4630,10 @@
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
   // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral ID Key, except:
-  // - BENTHIC (Pierre, 2026-11-02): Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR
-  //   benthic slate and everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
-  // - BONUS (Pierre, 2026-11-01, opt-in since 2026-11-02): genera off the slate common at Dauin and easily taken for a
-  //   slate genus (app.js bonusList, isBonus). Played once the player turns them on; never counted in the progress.
+  // - BENTHIC: Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR benthic slate and
+  //   everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
+  // - BONUS: genera off the slate common at Dauin and easily taken for a slate genus (app.js bonusList, isBonus). Played
+  //   once the player turns them on; never counted in the progress.
   // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
   // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
   // data.json "x" are the Key-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
@@ -4650,14 +4649,13 @@
     const X = xGen(d);
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
-  // The game photos of a subject's units, for the sheet's photo exposure per player (Pierre, 2026-11-06, Q191; the photo
-  // exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5), as its games can draw them: SUBJECTS pool names
-  // the site's files a subject reads and its builder here, which gets them parsed, in that order. slots: data.json with
-  // Pierre's curation and the photos per context applied (as app.js build), the game list of every game genus (gameOf:
-  // the slate, Millepora, the bonus genera) in each view; entries: the photos of each entry played (fishPhotos, fishGen
-  // views.wide). Only which photos are in play matters here, not their order (no picks, no automatic quality). Not
-  // applied: the Colony slot's "form not visible" rule (model.js photoSet: 9 colony photos in 4 genera on 2026-11-06,
-  // most kept by the one-form exception, which needs the Coral Finder key: app.js imrFormsOf).
+  // The game photos of a subject's units, for the sheet's photo exposure per player (docs/LEARNING.md "Photo exposure";
+  // docs/reviews/2026-11-06-photo-exposure-study.md), as its games can draw them: SUBJECTS pool names the site's files a
+  // subject reads and its builder here, which gets them parsed, in that order. slots: data.json with Pierre's curation
+  // and the photos per context applied (as app.js build), the game list of every game genus (gameOf) in each view;
+  // entries: the photos of each entry played (fishPhotos, fishGen views.wide). Only which photos are in play matters
+  // here, not their order (no picks, no automatic quality). Not applied: the Colony slot's "form not visible" rule
+  // (model.js photoSet: a handful of photos, most kept by the one-form exception, which needs app.js imrFormsOf).
   const POOLS = {
     slots: ([raw, cur]) => {
       const d = JSON.parse(JSON.stringify(raw)),
@@ -4672,7 +4670,7 @@
       gameOf(raw).forEach(n => {
         const g = d.gen[n] || xGen(d)[n];
         // The games' Research Grade rule for the genera off data.json gen (app.js gamePhotoOk: Millepora, the bonus
-        // genera; Codex review #680).
+        // genera).
         if (g) out[n] = VIEWS.flatMap(([v]) => ((g.sl || {})[v] || {}).game || []).filter(p => !g.x || p.own || !p.gid);
       });
       return out;
@@ -4715,8 +4713,8 @@
     );
     return Object.fromEntries(Object.entries(by).map(([u, O]) => [u, Object.values(O)]));
   }
-  // exposureOf(rows, pool): each player's photo exposure in one subject (Pierre, 2026-11-06, Q191; the exposure study
-  // §5), from that subject's answer-log rows ([player, time ms, unit shown, answered, right, mode, photos], any order)
+  // exposureOf(rows, pool): each player's photo exposure in one subject, from that subject's answer-log rows ([player,
+  // time ms, unit shown, answered, right, mode, photos], any order)
   // and its unitPool: {player: [seen, of, hit, asked, units]}.
   // - Seen % = seen / of: the distinct game photos the player has been shown, out of the game photos of the units they
   //   have met (a question on it; units: how many, those with no game photo left out).
@@ -4770,8 +4768,8 @@
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
   // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
   // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
-  // starWaits(d, n, list, met) (Pierre, 2026-11-03: a ★ genus opens only once the genus its card compares it to has
-  // been met; a beginner met Duncanopsammia, "Like Turbinaria, but corallites about 6 mm", before Turbinaria): true while
+  // starWaits(d, n, list, met): a ★ genus opens only once the genus its card compares it to has been met (its card,
+  // "Like Turbinaria, but corallites about 6 mm", means nothing before Turbinaria): true while
   // one of n's references is in list (the genera the draw can open) and not met. A reference is always a surveyed genus,
   // which never waits itself, and one not in the list never holds n back: no genus can wait for ever.
   function lectureGroup(d, n) {
@@ -4794,7 +4792,7 @@
   }
   const starWaits = (d, n, list, met) => starRefs(d, n).some(r => list.includes(r) && !met(r));
 
-  // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
+  // Photos on R2 (docs/ARCHITECTURE.md "Photos"): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
   // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
   // app, the admin and the Coral ID Key back to img/ (sw.js only caches what it is asked for).
@@ -4802,11 +4800,10 @@
   // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
 
-  // Photos out of the repo, step 1 of Pierre's rule (2026-11-05; docs/ROADMAP.md): git will keep only the photos with no
-  // other backup (IMR lecture photos, our own drawings); the photos with an online original
-  // (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/
-  // later. So once R2 fails, a photo with an online original is read from that original, at a light size, and only the
-  // others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
+  // Photos out of the repo (docs/ROADMAP.md): git keeps only the photos with no other backup (IMR lecture photos, our own
+  // drawings); the photos with an online original (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's
+  // own iNaturalist photos, FishBase) are to leave img/. So once R2 fails, a photo with an online original is read from
+  // that original, at a light size, and only the others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
   // Our files are 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (''); iNaturalist serves small (240 px), medium (500 px),
   // large (1024 px) and the original (up to 2048 px, often several MB, never asked for here).
   const ONLINE_SIZE = {t: 'small', s: 'medium', m: 'large', '': 'large'};
@@ -4876,8 +4873,8 @@
     return Array.isArray(c) && c.length === 4 ? `inset(${pc(c[1])}% ${pc(1 - c[2])}% ${pc(1 - c[3])}% ${pc(c[0])}%)` : '';
   }
 
-  // A photo that fails on R2 is asked from R2 once more after PHOTO_RETRY ms before any other source (Pierre,
-  // 2026-11-03: in a 50-player load test 2 requests in 2000 failed, passing network errors a second try gets). An
+  // A photo that fails on R2 is asked from R2 once more after PHOTO_RETRY ms before any other source (a load test saw
+  // about 1 request in 1000 fail on passing network errors, which a second try gets). An
   // element whose R2 photo fails for the first time: true, and a probe asks R2 again; if it loads, the element's src
   // and srcset are set again (the file now comes from the browser's cache), else fallback(el) runs (photoFallback).
   // The element keeps its attributes meanwhile. False otherwise: the caller falls back at once.
@@ -4901,9 +4898,9 @@
     return true;
   }
 
-  // Typed answers (Pierre, 2026-11-03; first the Lab prototype proto/type.js, then the quiz, quiz.js): the player types
-  // the genus instead of picking 1 of 4 (recall, not recognition). What Pierre agreed: light spelling tolerance (1 letter
-  // on a short name, 2 on a long one), old names accepted ("formerly X" in the genus's own lines), no suggestions while
+  // Typed answers (docs/LEARNING.md "Typed questions"; quiz.js): the player types the genus instead of picking 1 of 4
+  // (recall, not recognition). Light spelling tolerance (1 letter on a short name, 2 on a long one), old names accepted
+  // ("formerly X" in the genus's own lines), no suggestions while
   // typing, the phone's autocorrect and capitals off, an "I don't know" button (a miss), the right spelling shown after
   // the answer. A word that is no game genus, even with the tolerance, is no answer: the player is asked to check it.
   const TYPE = {
@@ -4912,7 +4909,7 @@
   };
   // Optimal string alignment distance (Levenshtein + a swap of two neighbouring letters, the commonest typo).
   // Three rows of the matrix only (the row being filled, the one above and, for the swap, the one above that): the same
-  // values as the whole matrix, without allocating it (performance pass, 2026-11-09; tests/typefast.test.js).
+  // values as the whole matrix, without allocating it (tests/typefast.test.js).
   function typeDist(a, b) {
     const m = b.length;
     let p2 = new Array(m + 1).fill(0),
@@ -5017,17 +5014,16 @@
       ...(best[0].sc ? {sc: best[0].sc} : {})
     };
   }
-  // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
-  // common name or a family name was told "not a genus in the game: check the spelling", which misleads), for a nudge
-  // that gives nothing away (the same whether it is the photo's or another one, never a scientific name: quiz.js
-  // typeBind). other: the names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the
-  // scientific names at the rank asked, in the game or not (one of them, or another name of a unit that is one, is no
-  // common name: the spelling message as before); x.common: the common names at the rank asked (Anemonefishes); x.rank(g):
-  // the rank word of unit g; x.own(g): IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own
-  // name as much as its first. Returns x.rank(g)
-  // for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish, Pomacentridae; Scarinae
-  // for the book's Parrotfishes), 'common' for any
-  // other name it goes by (Anemonefish, Clownfish) or a common name at the rank asked, '' otherwise.
+  // What a typed text that is no unit of the rank asked names instead, for a nudge that gives nothing away (on a genus
+  // question, "not a genus in the game: check the spelling" would mislead a player who typed a common or a family name;
+  // the same nudge whether it is the photo's or another one, never a scientific name: quiz.js typeBind). other: the
+  // names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the scientific names at the rank
+  // asked, in the game or not (one of them, or another name of a unit that is one, is no common name: the spelling
+  // message); x.common: the common names at the rank asked (Anemonefishes); x.rank(g): the rank word of unit g; x.own(g):
+  // IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own name as much as its first.
+  // Returns x.rank(g) for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish,
+  // Pomacentridae; Scarinae for the book's Parrotfishes), 'common' for any other name it goes by (Anemonefish,
+  // Clownfish) or a common name at the rank asked, '' otherwise.
   // The names of the lists, read once per norm and name (the same lists come at every refused text): typeElse's own.
   const TYPE_NORMED = new Map();
   const typeNormed = norm => {
@@ -5052,7 +5048,7 @@
     );
     if (m && m.known) return 'common';
     // A name the index lifts from below (fishNameIndex): a scientific name (a species', a genus's) is no common name (the
-    // spelling message as before); a shared one is a common name unless it is a family's own (Holocentridae, Goby).
+    // spelling message); a shared one is a common name unless it is a family's own (Holocentridae, Goby).
     if (m && (m.vr === 'ss' || m.vr === 'gs')) return '';
     if (m && m.shared)
       return /i[dn]ae$/i.test(m.old || '') || Object.values(m.by || {}).some(r => !r.vr)
@@ -5070,15 +5066,15 @@
     );
     return c && !c.near ? 'common' : '';
   }
-  // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
-  // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
-  // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
-  // unchanged), but the player retypes it once (quiz.js typeBind); 'other': another unit's name, close or exact (a wrong
-  // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
+  // The spelling step: how a typed answer reads against the unit asked t, m being typeMatchIn's reading of it. 'exact':
+  // one of its names, spelled right (capitals, accents and spaces aside); 'close': one of its names within the spelling
+  // tolerance: still a right answer (the genus was recognised), but the player retypes it once (quiz.js typeBind);
+  // 'other': another unit's name, close or exact (a wrong answer); 'none': nothing close, or two names as close (no
+  // answer: the player is asked to check the spelling).
   // A name several units share ({shared}): as one of t's names when t is one of them, else 'other'; a known name that is
   // no unit's ({known}): 'none'.
   // sp: the species of the photo (its own taxon, quiz.js): a name of part of t only reads as t when it designates them
-  // (typeFits; Q333), else 'other'.
+  // (typeFits), else 'other'.
   function typeVerdict(m, t, sp) {
     if (!m || m.near || m.known) return 'none';
     if (!typeFits(m, t, sp)) return 'other';
@@ -5086,11 +5082,9 @@
     if (m.g !== t) return 'other';
     return m.exact ? 'exact' : 'close';
   }
-  // Does the reading m name unit t as the photo shows it (Pierre, 2026-11-09 ~15:45 Manila, Q333: "if someone types
-  // Razorfish on a photo of a wrasse that really is a razorfish, then yes, it counts for the family; but you cannot type
-  // Razorfish for a wrasse that is not a razorfish"; and "we won't penalise someone who knows the genus's name, or even
-  // the species'; but the mistakes must be penalised")? A name of t as a whole, or of part of t (sc: its species) when the
-  // photo's species sp are among them; sp unknown ([]): read as before, nothing proves a mistake.
+  // Does the reading m name unit t as the photo shows it? A name of t as a whole, or of part of t (sc: its species) when
+  // the photo's species sp are among them: "Razorfish" counts for the wrasses on a razorfish's photo, never on another
+  // wrasse's (docs/FISH_PATH.md). sp unknown ([]): read as t, nothing proves a mistake.
   function typeFits(m, t, sp) {
     if (!m || m.near || m.known) return false;
     const r = m.shared ? (m.shared.includes(t) ? (m.by || {})[t] || {} : null) : m.g === t ? m : null;
@@ -5153,10 +5147,10 @@
   // What one answer proves, the weights of pgStep (docs/LEARNING.md "Progress (moving average) and mastery"), shared by
   // the app (model.js pgWeight, quiz.js answer) and the full replay below, so both run the same rules.
   // TARGET_P: the chance every question aims for, whatever its format (model.js PICKD.P, the difficulty controller:
-  // about 80% right; 2026-11-03, before it a photo TARGET_OFF 1.0 below the ability, 80% with 4 choices only).
+  // about 80% right).
   const TARGET_P = 0.8;
-  // The success aimed for follows the player's global level (Pierre, 2026-11-03: strong players must find the app
-  // challenging quickly, and beginners must not be overwhelmed): AIM, points [global level, success], 85% up to a level
+  // The success aimed for follows the player's global level (strong players find the app challenging quickly, beginners
+  // are not overwhelmed): AIM, points [global level, success], 85% up to a level
   // of 0.5, 75% from 1.5, a straight line between, flat outside (no cliff); TARGET_P (0.8, the middle) stays the game's
   // reference. model.js aimP (the photos aimed at, the opening's shaky bar) and the miss weight (pgMissW, in the game
   // and in the full replay) take it from here. docs/LEARNING.md "Beginners and experts".
@@ -5174,26 +5168,26 @@
   // A typed answer (k infinite, model.js TYPED.k) counts in full: every genus, its look-alikes included, was a possible
   // answer.
   const pgRightW = (k, look) => Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look || !isFinite(k) ? 1 : PROG.LOOK);
-  // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
-  // known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (aim: aimOf the player's global
-  // level, 85% to 75%, whatever the format: model.js's difficulty controller, aimP; TARGET_P, 0.8, when not given). A photo at the player's level or easier: the miss counts in full; a harder one:
-  // less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it. The right answers
-  // keep their weight (pgRightW): simulated, a photo factor on them only slowed everyone.
+  // What a miss proves (a miss on a very hard photo does not mean the genus is badly known, and a miss must not cost more
+  // than it proves; decision in docs/decisions/2026-11-18-decisions-from-code-comments.md): the Elo chance the player had
+  // to get it right (ability th against the photo's difficulty d, k choices, as abilityStep), over the chance the game
+  // aims for (aim: aimOf the player's global level, 85% to 75%, whatever the format: model.js aimP; TARGET_P, 0.8, when
+  // not given). A photo at the player's level or easier: the miss counts in full; a harder one: less (1 unit harder:
+  // 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it. The right answers keep their weight
+  // (pgRightW): simulated, a photo factor on them only slowed everyone.
   // R: the recall expected after a break, for a comeback question (model.js comebackOf; 1 otherwise): the chance the
-  // player had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
+  // player had is then the recall-adjusted one, so a miss the rust explains costs less progress.
   function pgMissW(th, d, k, R = 1, aim = TARGET_P) {
     const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sigm(x);
     return Math.min(1, e(th - d, R) / aim);
   }
-  // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
+  // What a right answer on a photo the player knows proves: only what memory does not explain. The
   // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
   // they had with their memory of them (fam, model.js famOf), at most 1: the share of such right answers that would have
   // come without the memory. A new photo (fam 0) keeps its full weight: simulated, a photo-difficulty factor on every
   // right answer only slowed everyone, so only the part memory explains is taken off. 4 choices, a photo at the game's
-  // target (ability 1 above it): x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more with the
-  // offsets of 2026-11-03. Tried first, the room for surprise left ((1 - chance with memory) / (1 - chance new): x 0.71
-  // / 0.41 / 0.23): simulated, it took a third to a half of the genera learned by question 600 and put the progress
+  // target (ability 1 above it): about x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more. The
+  // room for surprise left ((1 - chance with memory) / (1 - chance new)) was tried and rejected: it put the progress
   // further below the truth than memory had put it above (docs/LEARNING.md "Photo memory").
   function pgMemW(th, d, fam, k, R = 1) {
     const e = x => 1 / k + (1 - 1 / k) * R * sigm(x);
@@ -5216,21 +5210,21 @@
   // Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo): an Elo step after each
   // answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
   // ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below kmin, so a
-  // genus that starts going wrong eases off quickly. Learners change (Pierre, 2026-11-02): as Glicko-2's volatility
-  // (Glickman 2012), s.vr follows the recent surprise (result - expected, moving average, rate vr); while answers keep
-  // beating (or missing) the expectation, the step grows by up to vg x |s.vr|, within kmax. docs/LEARNING.md. Moved here
-  // from model.js (2026-11-03) so the full replay (replayProgress) rebuilds the ability with the app's own step;
-  // model.js ability / abilityStep call these on the app's P.
-  // abilityOf(P, n): progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a genus
+  // genus that starts going wrong eases off quickly. Learners change: as Glicko-2's volatility (Glickman 2012), s.vr
+  // follows the recent surprise (result - expected, moving average, rate vr); while answers keep beating (or missing) the
+  // expectation, the step grows by up to vg x |s.vr|, within kmax (docs/LEARNING.md "Ability per genus (Elo) and the
+  // global level"). Here, not in model.js, so the full replay (replayProgress) rebuilds the ability with the app's own
+  // step; model.js ability / abilityStep call these on the app's P.
+  // abilityOf(P, n): a record with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a genus
   // never answered starts from the player's global level (playerStart); a genus already answered: its own estimate (s.th,
   // from its last own step) plus the global level's move since then (levelMove), so what the player shows on the other
   // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
-  // lazy update (2026-11-03, docs/LEARNING.md "Global level and genus").
+  // lazy update (docs/LEARNING.md "Global level and genus").
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
   // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
   // from (playerStart); 0, the default player's, when they have not answered.
-  // from: the unit a unit never answered starts from instead (a fish species: its family, Pierre, 2026-11-03,
-  // docs/FISH_PATH.md "Unlock rules"; core.js fishSpUnits from), once that unit has an ability of its own; none, or one
+  // from: the unit a unit never answered starts from instead (a fish species: its family, docs/FISH_PATH.md "Unlock
+  // rules"; fishSpUnits from), once that unit has an ability of its own; none, or one
   // never answered: the global level, as any unit.
   const abilityOf = (P, n, p = 0, from) => {
     const s = (P || {})[n] || {};
@@ -5241,17 +5235,17 @@
   // The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
   // uncertainty 1 / (1 + answers / ELO.n), the share its own Elo step gives a new answer: a genus with few answers leans
   // on the level, one with many on itself. Both ways (a one-way rise was tried: biased upward, it over-rated a simulated
-  // beginner by 0.5-0.7). No new constant. Taken in at the genus's next own step (eloStep). Progress saved before (no
-  // s.lt): nothing until that step.
+  // beginner by 0.5-0.7). No new constant. Taken in at the genus's next own step (eloStep). A record with no s.lt:
+  // nothing until that step.
   function levelMove(P, n, s) {
     const G = (P || {})[LEVEL];
     if (n === LEVEL || !s || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
     return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
   }
-  // w (response time, 2026-11-04, rtWeight): the step's size times w; 1 by default. The volatility follows the plain
-  // surprise either way.
+  // w (response time, rtWeight): the step's size times w; 1 by default. The volatility follows the plain surprise
+  // either way.
   // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered. S: the shared slope of the
-  // answer model (scoreAnswer slopeOf, Q147: 1 until the sheet estimates it).
+  // answer model (scoreAnswer slopeOf: 1 unless the sheet estimates it).
   function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1, from) {
     const th = abilityOf(P, n, p, from),
       g = 1 / k,
@@ -5264,25 +5258,24 @@
     // run of early misses sank it (one real player to -0.41 against a fit of 0.56) and dragged the genera with it.
     const K = Math.min(ELO.kmax, Math.max(n === LEVEL ? 0 : ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
     // Kept to 4 decimals for the global level (2 for a genus): without the floor its steps fall under 0.005 after a few
-    // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
+    // hundred answers, and rounding them to 2 decimals would lose every one.
     const r = n === LEVEL ? 1e4 : 100;
     s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + w * K * ((good ? 1 : 0) - e))) * r) / r;
     // The level this step was taken against (the level before this answer's own step on it); scoreAnswer moves it on to
-    // the level after that step (Q137 part 1), so the genus never takes its own answer twice.
+    // the level after that step, so the genus never takes its own answer twice.
     if (n !== LEVEL && P && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
     delete s.lv;
     delete s.run;
   }
 
-  // Response time (Pierre, 2026-11-04: "the signal is already very clear on few players; the question is how to
-  // integrate it"; rule L1: the seconds taken to answer are evidence about that answer, never a decay; docs/
-  // LEARNING.md "Response time"). A right answer given faster than the player's usual is stronger evidence that they know
+  // Response time (rule L1: the seconds taken to answer are evidence about that answer, never a decay; docs/LEARNING.md
+  // "Response time"). A right answer given faster than the player's usual is stronger evidence that they know
   // the genus, a slow one weaker: its two ability steps (the genus shown and the global level) are taken times
   // w = clamp(1 - K z, LO, HI), z = log(seconds) minus the median log(seconds) of the player's own earlier timed answers.
-  // A miss, an answer without seconds (an app before sheet v23, a clock that never started), a typed answer (slower by
-  // design) and the player's first MIN timed answers: w 1. The answer's own time never changes its prediction, only the
-  // step after it. K 1.5: the value chosen by leave one player out on the real answers for 8 of 9 players (2 for one;
-  // tools/abilityeval.js +T*+G, PR #431); LO, HI and MIN are #431's rule as measured. The seconds are those logged (to the
+  // A miss, an answer without seconds (an old row, a clock that never started), a typed answer (slower by design) and
+  // the player's first MIN timed answers: w 1. The answer's own time never changes its prediction, only the step after
+  // it. K 1.5: the value chosen by leave one player out on the real answers for 8 of 9 players (tools/abilityeval.js
+  // +T*+G); LO, HI and MIN as measured. The seconds are those logged (to the
   // tenth, at most 600: quiz.js qclockRead, Code.gs secs_), so the sheet's replay of the log meets exactly the same ones.
   // The earlier times live in the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths
   // of a second, {"45": 3, ...}; a few hundred keys at most), so the median is exact, the record compact, two devices'
@@ -5292,7 +5285,7 @@
   const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
   // The median log(seconds) of the times in rt, null with fewer than RTIME.MIN (the mean of the two middle ones when even).
   // The record's keys, sorted, are kept beside it (RT_KEYS) and kept in step by rtAdd, so a replay of a long log does not
-  // sort them again at every right answer (Pierre, 2026-11-04: the admin's replay of every player, 0.2 s of it on a phone).
+  // sort them again at every right answer (the admin's replay of every player spent 0.2 s there on a phone).
   // Kept only for a record whose keys are still those it saw (another change to it: sorted again); same result.
   const RT_KEYS = new WeakMap();
   const rtKeys = rt => {
@@ -5329,22 +5322,21 @@
     G.rt[x] = (G.rt[x] || 0) + 1;
   }
 
-  // One scorer for an answer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6;
-  // docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay of the answer log
+  // One scorer for an answer (docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay of the answer log
   // (replayProgress: the sheet's, the admin's, this device's own) score an answer through this one function, so a rule
   // is written once and both give the same state. P: the player's progress (genus records and LEVEL), changed in place.
   // q, what the question was:
   // - t the genus shown, c the genus given ('' for none or "I don't know"), ok, k (the plausible choices, Infinity for a
-  //   typed answer), chs the choices offered, cv (c is a genus of the game: it then takes a miss too, Pierre's rule L2);
+  //   typed answer), chs the choices offered, cv (c is a genus of the game: it then takes a miss too, rule L2);
   // - ph the photo files seen while answering, hint a corallites hint revealed after the answer without being opened
   //   (shown, never recognised: the log keeps it in the scoring record, scoreRec h);
-  // - the inputs the game had then (null d0: an answer that moves only the counts, as the replay's rows logged before
-  //   sheet v5): d0 the photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
+  // - the inputs the game had then (null d0: an answer that moves only the counts, as the replay's oldest rows): d0 the
+  //   photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
   //   memory (memFam), cf the known mix-ups term (model.js confTerm), look (a genus it is confused with among the
   //   choices: a boolean, or a function called after the offers are counted, as the game always checked it), R the recall
   //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise), df the offset of the question's
-  //   format (fmtOff, Q138: 0 without the sheet's fmt), which the ability steps' expectation takes (the question that
-  //   much easier) and nothing else does yet: the logged e and the progress weights stay without it;
+  //   format (fmtOff: 0 without the sheet's fmt), which the ability steps' expectation takes (the question that much
+  //   easier) and nothing else does: the logged e and the progress weights stay without it;
   // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
   //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false);
   // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
@@ -5358,13 +5350,13 @@
   // without a former moving average (a genus first answered under them, every genus of a full replay), takes the domain
   // score; a record with s.pg keeps it until a full replay under these rules rebuilds it from the log.
   const domIn = (q, s) => q.dom !== false && (domOn(s) || typeof s.pg !== 'number');
-  // The shared slope of the answer model (Q147, pending Pierre): one input, used in the expectation (the ability step,
-  // the logged e) and in the bar's posterior; 1 (the Elo's own) until the sheet estimates it and the game passes q.S.
+  // The shared slope of the answer model: one input, used in the expectation (the ability step, the logged e) and in
+  // the bar's posterior; 1 (the Elo's own) unless the game passes q.S.
   const slopeOf = q => (q && typeof q.S === 'number' && q.S > 0 ? q.S : 1);
-  // mu: the genus offset gd of the genus the bar is for; df: this question's format offset, dt the typed format's (Q138,
-  // Q146: in logits, a format easier than the app thought has a positive offset, as PR #638's fmtOff and its q.df, so
-  // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
-  // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
+  // mu: the genus offset gd of the genus the bar is for; df: this question's format offset, dt the typed format's (in
+  // logits, a format easier than the app thought has a positive offset, as fmtOff, so the question counts as that much
+  // easier: a 2-choice right answer, more often right than a 1 in 2 guess explains, proves less, and a 2-choice miss
+  // weighs less; 0 unless the game passes the sheet's offsets).
   const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
   // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
   // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty

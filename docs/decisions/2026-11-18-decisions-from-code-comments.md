@@ -17,6 +17,9 @@ code. Quotes in French are his; the others were already in English in the commen
 - 2026-11-01: "good beta testers must not wait 100 questions for it to get harder": a genus never answered starts from
   the player's global level (an Elo over all their answers), shrunk while answers are few. `core.js` `playerStart`,
   `START`, `LEVEL`.
+- 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly known": a miss weighs the
+  chance the player had over the chance aimed for, in full on a photo at their level, less on a harder one; a miss
+  never costs more than it proves. `core.js` `pgMissW`.
 - 2026-11-03: "I find it hard to believe that the two genera marked as learned really are": a learned mark passed under
   the former BKT model (a record without `s.pg`) is dropped and the genus takes the exam again; silent since
   2026-11-09 (Q332). `core.js` `memRecalc`, `afterBkt`.
