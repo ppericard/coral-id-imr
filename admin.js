@@ -280,13 +280,13 @@ const TREES = SUBJECTS.filter(S => S.admin.cur && S.sheets),
 let FISHS = TREES[0] || null,
   TK = FISHS ? FISHS.admin.cur : '';
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
-// (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
+// (tools/photo_quality.py, rough on purpose); the admin's corrections live in curation.json "quality" {f: level}.
 const QUAL = [
   [3, 'Good'],
   [2, 'Fair'],
   [1, 'Poor']
 ];
-// Automatic rating: never Poor for an IMR lecture photo (as autoQ in app.js); only Pierre's own rating can say Poor.
+// Automatic rating: never Poor for an IMR lecture photo (as autoQ in app.js); only the admin's own rating can say Poor.
 const autoQ = f => {
   const a = AUTOQ[f] || 2;
   return a === 1 && /^imrl?-/.test(f) ? 2 : a;
@@ -411,14 +411,14 @@ function step(from, to, msg) {
   render();
   toast(msg[1]);
 }
-// When Pierre answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp), so
-// the agreement window follows the order he answered in. Found by comparing his answers per photo with those of the
+// When the admin answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp),
+// so the agreement window follows the order of the answers. Found by comparing the answers per photo with those of the
 // draft before this click (snap; recomputed only when undo, redo or another tab changed it).
 let ASIG = null,
   FSIG = null,
   FSIG_F = null, // the fish part FSIG was read from (below)
   ASIG_OF = null;
-// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
+// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG the admin's keep per fish photo, as ASIG): a
 // Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Tree) is timed. A click that left the fish
 // part as it was (the same object: the admin never writes into it, every change makes a new one,
 // tests/adminclick.test.js) has the same keeps, so fishStamp finds nothing to time and FSIG stays: both skipped (some
@@ -447,7 +447,7 @@ const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, St
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
   redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
-// "Bad photo" flags Pierre raised on the site (flag.js, localStorage 'reefid-photo-flags'): curation.json "flag"
+// "Bad photo" flags the admin raised on the site (flag.js, localStorage 'reefid-photo-flags'): curation.json "flag"
 // {f: {genus, view, where, at}}. Triage lists them; "Done" removes one (one at a time, never in bulk).
 const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
 // Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
@@ -591,7 +591,7 @@ const qTag = p => {
   const q = qOf(p.f);
   return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`;
 };
-// blind (a Check in Candidates): only Pierre's own rating shows, never the automatic guess.
+// blind (a Check in Candidates): only the admin's own rating shows, never the automatic guess.
 const qSeg = (p, blind) =>
   `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${(blind ? (DRAFT.quality || {})[p.f] : qOf(p.f)) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q) {
@@ -601,9 +601,9 @@ function setQ(f, q) {
   saveDraft();
 }
 // Growth form of each photo: ONE of the 7 IMR Lecture 6 growth forms (forms.json "forms": B Branching, E Encrusting,
-// T Tabulate, U Mushroom, M Massive, S Submassive, F Foliose/Plating), the main one visible (Pierre), or x = form not
+// T Tabulate, U Mushroom, M Massive, S Submassive, F Foliose/Plating), the main one visible, or x = form not
 // visible (too close); plus a polyps flag ("p" yes, "n" no) for polyps or vesicles extended by day, which is not a form
-// (Coral Finder "Large daytime polyps"). First guesses come from forms.json "gf"; Pierre's choices live in curation.json
+// (Coral Finder "Large daytime polyps"). First guesses come from forms.json "gf"; the admin's choices live in curation.json
 // "gf" {f: 'M' | 'Mp' | 'xn' | 'p'} and always win, form and flag each on their own. The old Coral Finder letters
 // (forms.json "form") are only a hint for the photos still to classify.
 // Guesses to double-check (forms.json gunsure): a "?" until you click.
@@ -812,7 +812,7 @@ const memo = (k, fn) => n => {
   if (!(key in MEMO)) MEMO[key] = fn(n);
   return MEMO[key].slice();
 };
-// "Several corals" photos (data.json more / course multi) Pierre marked as one coral (curation.json single {f: 1}) become normal photos.
+// "Several corals" photos (data.json more / course multi) the admin marked as one coral (curation.json single {f: 1}) become normal photos.
 const one = f => !!(DRAFT.single || {})[f];
 // Photos data.json gives the genus (plus approved candidates), before any "Not this genus".
 const own = memo('own', n => {
@@ -828,7 +828,7 @@ const own = memo('own', n => {
   );
   // Excluded photos, and the coral skeleton photos (data.json skel, rule P6: never shown, as core.js applyCuration).
   for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f) || L[i].skel) L.splice(i, 1);
-  // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
+  // Candidates the admin approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
   cands(n)
     .filter(p => add[p.f])
@@ -2000,7 +2000,7 @@ function fuData() {
     (play[sid] = play[sid] || []).push(FISHC.byF[f] || {f});
   });
   // Everything else the game plays (the sure candidates and the reference photos that enter by themselves): a photo once,
-  // under its photo id, Pierre's add (the draft's) first.
+  // under its photo id, the admin's add (the draft's) first.
   const seen = new Set(
     Object.values(play)
       .flat()
@@ -2697,9 +2697,9 @@ function fuTreeMount(T, sel, row, vis, hadF, top) {
 //   default: admin-covers.js nodeCover, nodeCoverWhy; the Cover proposals view linked when the rule proposes another),
 //   and ★ Cover on its photos sets this node's cover (curation.json fish genera under its id: autosort.js fishCover, one
 //   Undo step, Publish sends it); each block's and section's heading shows its own cover in force (ringed when the
-//   admin's) and opens its page. The unit's own page adds its wink card, ✓ Validated and what it needs; every page the photos of its leaves sent
-//   elsewhere (Not this) or held out for other species, and each leaf's candidates waiting. The tiles' tools stay their
-//   unit's (Feature, Remove, Not this: fishTile with the unit's id).
+//   admin's) and opens its page. The unit's own page adds its wink card, ✓ Validated and what it needs; every page the
+//   photos of its leaves sent elsewhere (Not this) or held out for other species, and each leaf's candidates waiting.
+//   The tiles' tools stay their unit's (Feature, Remove, Not this: fishTile with the unit's id).
 // - In the WoRMS view, a species (one node in both views) has its Key page's body, every choice through the Key's tree
 //   (T: its unit, its photos' paths); only the way around it is WoRMS's (TV: the side tree, the path, the selects). A
 //   WoRMS taxon (w:<AphiaID>, in no Key) has a read-only page: its cover in force, the default by the rule (never a ★:
@@ -6045,13 +6045,11 @@ function renderTriage() {
   );
 }
 /* ---------- Points to handle: Inbox › To do › Points, and one page per point ---------- */
-// The admin settles the open points here, never from a text list (rule C5): the questions for an IMR trainer,
-// nomenclature points, discrepancies between sources and content questions. The points are points.json (written by
-// agents: id, kind, title, question, context, photos, sources, date; points.js checks its shape); the state per point is
-// the admin's curation, curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written by a script): s
-// 'wait' (stand-by: below the open ones, still shown), 'done' (resolved) or 'drop' (dismissed), both folded at the
-// bottom with their counts; no s = open; n the admin's notes; a the trainer's answer per photo (points.js photoKey).
-// Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
+// The admin settles the open points here, never from a text list (rule C5): questions for an IMR trainer, nomenclature,
+// discrepancies between sources, content. points.json holds them (written by agents; points.js checks its shape); the
+// state per point is curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written by a script): s 'wait'
+// (stand-by: below the open ones), 'done' or 'drop' (both folded at the bottom with their counts), none = open; n the
+// notes; a the trainer's answer per photo (points.js photoKey). Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
 // from a phone: the question big, the photos large and enlargeable, blind (numbered, credit only: no names until
 // "Names", so the answer is the trainer's own), an answer field under each photo, notes, and Resolved / Stand-by /
 // Dismiss (/ Reopen once handled), one click each, Undo the safety net (rule A2).
@@ -6538,16 +6536,16 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order: random, but genus x view cells with few photos come up more often, so the gaps for the games fill first. Each
 // candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page)^3,
 // cubed so the genera that really lack photos weigh much more (of the first 50 of All, 30 from cells of 0-2 colonies, 2
-// from cells of 8+): its guessed view (vg, Claude's guess from the photo), else the genus's emptiest view; x3 when it completes a
-// colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo and per device), then
-// no two of the same genus in a row when it can be avoided.
+// from cells of 8+): its guessed view (vg, Claude's guess from the photo), else the genus's emptiest view; x3 when it
+// completes a colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo and per
+// device), then no two of the same genus in a row when it can be avoided.
 // Game genera first (isGame): the candidates of a Key-only genus come after every candidate of a game genus of the
 // source, in their own weighted draw, and only in its Colony and Close-up views (capViews): one guessed to be a
 // corallite photo (vg macro) is not proposed.
 // Judged candidates (suggest.json "cand": real diversity kept, sorted by hand after a pre-sort): the best photo of each
-// view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
-// other genera last. Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are
-// set aside (aside, below); every other candidate still comes up. Not judged yet = like a best Fair photo.
+// view of an observation first, other angles later, near-duplicates, Poor photos, several corals and other genera last.
+// Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are set aside (aside,
+// below); every other candidate still comes up. Not judged yet = like a best Fair photo.
 const JK = {best: 1, alt: 0.3, dup: 0.04},
   JQ = {3: 1.3, 2: 1, 1: 0.15};
 const jw = p => {
@@ -6564,9 +6562,8 @@ const JKT = {
 // Set aside by the pre-sort (no sorting by hand of the obvious): a candidate the judging agent found unusable (no coral,
 // aquarium, museum specimen or label, drawing, hand over the frame…), a comparison image, a near-duplicate of another
 // photo of its observation (candidate or live), a photo of several corals or a Poor one (rules learnt from 85 photos the
-// admin rejected, judging/BRIEF.md), without any
-// doubt (no `unsure`), no longer comes up; a count and a Show link keep them reachable. Same rule as
-// tools/excluded.py set_aside: keep both identical.
+// admin rejected, judging/BRIEF.md), without any doubt (no `unsure`), no longer comes up; a count and a Show link keep
+// them reachable. Same rule as tools/excluded.py set_aside: keep both identical.
 const aside = p =>
   !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup' || p.j.m || p.j.q === 1) && !(p.j.u && p.j.u.length));
 const jLine = p => {
@@ -6577,15 +6574,14 @@ const jLine = p => {
 };
 
 /* ---------- Auto-sort (autosort.js: the obvious decided without the admin) ---------- */
-// What the candidate pass is sure of is decided without the admin: at each load of this page, autoRun() writes the sure
-// judgments into the draft exactly as the admin's clicks would (add with the view, quality, growth form and suggested crop; ✕
-// Reject; × exclude), and logs each one in curation.json "auto" (autosort.js has the format). Publish sends them like any
-// draft, merged key by key (merge3); Undo takes the whole run back in one step; Auto › Undo on one decision sends that
-// photo back to Candidates for good. About 1 in 20 sure candidates is not applied but shown to the admin, blind, with a
-// Check tag (autoCheck); the answer against the judgment, and any later correction of an auto decision, give the
-// agreement per field (autoCompare, autoState); a field under its threshold stops being applied until it recovers. Once
-// every AUTO.retest candidates decided, a photo the admin rated before comes back blind (Retest): the admin's
-// consistency, the ceiling.
+// At each load of this page, autoRun() writes the candidate pass's sure judgments into the draft exactly as the admin's
+// clicks would (add with the view, quality, growth form and suggested crop; ✕ Reject; × exclude) and logs each one in
+// curation.json "auto" (autosort.js has the format). Publish sends them like any draft, merged key by key (merge3); Undo
+// takes the whole run back in one step; Auto › Undo on one decision sends that photo back to Candidates for good.
+// About 1 in 20 sure candidates is shown to the admin blind instead, with a Check tag (autoCheck); those answers, and any
+// later correction of an auto decision, give the agreement per field (autoCompare, autoState); a field under its
+// threshold stops being applied until it recovers. Every AUTO.retest decisions, a photo the admin rated comes back blind
+// (Retest): the admin's own consistency, the ceiling.
 let METRICS = {},
   MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
   ADET = false, // this tab: Auto details open
