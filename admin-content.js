@@ -1,25 +1,25 @@
 // Photos › Tree, a node's page: its sheet's text and the content editor's edits (docs/reviews/2026-11-14-sheet-overlay-
-// design.md v2, step 2; Pierre, 2026-11-15, Q359 and Q366). Every slot the subject declares for the node's rank (core.js
+// design.md v2, step 2; docs/ARCHITECTURE.md "The content editor's edits"). Every slot the subject declares for the node's rank (core.js
 // SUBJECTS content: its name, IMR's or ours) with its text in force: the built file's (fish.json, the base: the sources and
 // the instance's layer), else his edit (core.js contentApply).
 // - ✎ Edit opens a box (a list one line per item; an emptied box hides the slot), with Source and Link (optional and
-//   encouraged, never required: Q359 e); when he fills a slot the base leaves empty, Save asks for a source once
+//   encouraged, never required); when he fills a slot the base leaves empty, Save asks for a source once
 //   (Save without source then saves). ⊘ Hide. ↺ Restore: the original again (kept in was; More shows it beside his).
 // - An edit whose base changed since (stale: core.js contentState) shows the three texts, when he edited, now and his,
 //   with Keep mine (his text against the base now), Take the new (his entry goes) and Edit; players keep his text until
-//   he answers (Q359 c). One the base now says (absorbed): Remove. An entry never applied (orphaned: core.js
+//   he answers. One the base now says (absorbed): Remove. An entry never applied (orphaned: core.js
 //   contentEntries) shows its text with Remove; one whose node is gone is counted in the bar.
 // - Each click one draft step, undone and redone as any (rule A2); his Publish sends them (rule A1), counted per rank.
 // - Only a node the app gives a sheet (core.js fishTree go): never a genus the app sends to its species or its family, a
 //   wink family (its surprise card) or a WoRMS taxon (design note, call (f)).
 // - Who may edit: mayContent, the one place the content right is asked (today the token that can publish, phase 0 of the
-//   design; roles step 1 puts can_(account, 'content', instance) there, Q364), for the controls and for every write.
+//   design; roles step 1 puts can_(account, 'content', instance) there), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
 // The same code serves every subject's Tree (S: its SUBJECTS entry): the fish's (admin.js renderFishUnits, over fish.json)
 // and the corals' (admin-coraltree.js renderCoralTree, over data.json as the admin holds it; design note v2, step 8: a
 // genus's sheet, its look-alike pairs and no circle, a withdrawal the ★ rule would hold turned off). admin.html loads it
-// before admin.js, as admin-coraltree.js: a Tree page opened cold renders before the later scripts are in (the demo's
-// data comes at once), and found no editor.
+// before admin.js, as admin-coraltree.js: a Tree page opened cold can render before the later scripts are in (the
+// demo's data comes at once), and must find the editor.
 //
 // The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells) runs in Node too: tests/sheeteditor.test.js.
 (function (root) {
@@ -89,7 +89,7 @@
   }
   // Whether node id of fish file R has a sheet of its own in the app (core.js fishTree go, learn.js viewFishSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
-  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species). A subject with
+  // viewFishSheet sends to the families list (the whale and thresher sharks' species). A subject with
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
   // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
   // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a
@@ -151,10 +151,10 @@
       ...E.pairs.filter(todo).map(x => ({id: x.key, node: x.a || x.key, slot: 'pair:' + x.key, state: x.state, ...why(x)}))
     ];
   }
-  // ---- The structure (design note v2, step 4; Pierre, 2026-11-15, Q359, Q363 h A, Q366) ----
+  // ---- The structure (design note v2, step 4; docs/ARCHITECTURE.md "The content editor's edits") ----
   // Node id's circle under content map Cm, built file R (SUBJECTS structure circle: a node of its rank; null for any
   // other): {of (the declared circles), base (the record's; null none), e (his entry or null), state ('' none, fresh,
-  // stale, absorbed, orphan), why, v (in force: his while it applies, a stale one included, Q359 c; else the base)}.
+  // stale, absorbed, orphan), why, v (in force: his while it applies, a stale one included; else the base)}.
   function circleRow(S, R, Cm, id) {
     const D = S && S.structure && S.structure.circle,
       n = D ? C.contentNodes(S, R).get(id) : null;
@@ -196,12 +196,12 @@
   };
   const structChanged = (a, b) => structOf(a) !== structOf(b);
   // A row's key on the page: its slot, or for an entry never applied its stored id and slot too (an old id's entry shadowed
-  // by its node's own has the same slot as the live row: Codex review #957).
+  // by its node's own has the same slot as the live row).
   const rowKey = r => (r.state === 'orphan' ? `o\n${r.eid}\n${r.slot}` : r.slot);
   // merged (a merge of the draft mine onto a newer published curation: admin.js mergeCur) with the draft's emptied node
   // maps put back. A Restore leaves its node's map {} so the next merge keeps a slot another device published on it, but
   // merge3 leaves an emptied map out of its result: without this, a second merge before Publish (another rebase, Publish's
-  // own retry after a SHA conflict) reads the node as deleted and drops that slot (Codex review #957). Published files
+  // own retry after a SHA conflict) reads the node as deleted and drops that slot. Published files
   // never hold them (core.js contentOut). Each subject's content, through SUBJECTS admin.cur. The pairs map the same way: a
   // pair's ↺ Restore that empties it leaves {} (core.js contentPairDrop), put back too, so a pair another device added
   // meanwhile is kept by the next merge.
@@ -262,10 +262,10 @@
   }
 
   // ---- The page (admin.js renderFishUnits) ----
-  // The content right (Q342, Q364): today the token that can publish (phase 0); roles step 1 asks the sheet here.
+  // The content right: today the token that can publish (phase 0); roles step 1 asks the sheet here.
   const mayContent = () => !!TOKEN;
   // SH_ED, this tab: the row open in the editor, {id, ck} (its node and row key), with what was typed in it so far (text,
-  // t, u), so a redraw meanwhile (another tab's draft, a request coming back) keeps it (Codex review #957).
+  // t, u), so a redraw meanwhile (another tab's draft, a request coming back) keeps it.
   let SH_ED = null,
     SH_ASK = null, // this tab: the row whose Save already asked for a source
     // this tab: the pair being added, {at (the page's node, or '' from the Look-alikes filter: both sides chosen there),
@@ -384,7 +384,7 @@
           }
           if (a === 'drop') return shPut(S, c => C.contentDrop(c, r.eid, r.slot));
           // An entry stored under an old id (SUBJECTS renamed) moves to the node's id in the same step, whatever the click
-          // writes (Codex review #957: a Hide left the old id's entry in force).
+          // writes (a Hide must not leave the old id's entry in force).
           const mv = c => (r.eid !== id ? C.contentDrop(c, r.eid, r.slot) : c);
           if (a === 'hide') return shPut(S, c => C.contentSet(mv(c), id, r.slot, null, r.base, null, now));
           // Keep mine: his text against the base now (no longer stale).
@@ -396,7 +396,7 @@
               t = si ? si.value.trim() : '',
               u = ui ? ui.value.trim() : '',
               src = t || u ? {t: t || u, u} : null;
-            // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required). A list
+            // A slot the base leaves empty, filled with no source: asked once (encouraged, never required). A list
             // of sources is its own (no box to ask in).
             if (r.base == null && v != null && !src && si && SH_ASK !== rowKey(r)) {
               SH_ASK = rowKey(r);
@@ -422,16 +422,16 @@
     const at = L.find(x => x.why !== 'node') || null;
     return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? whyOf(S, x.why) : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
   }
-  // ---- The structure editor (design note v2, step 4; Pierre, 2026-11-15, Q359: circles and look-alike pairs are the
-  // instance's, set by its content editor; Q363 h A: a change replays every player's progress) ----
+  // ---- The structure editor (design note v2, step 4): circles and look-alike pairs are the instance's, set by its
+  // content editor; a change replays every player's progress ----
   // On a family page the app gives a sheet (sheetOwn: never a wink family, whose surprise card has no circle of its own):
   // - Circle: one segment per circle the subject declares, and None (in no circle: off the game); the one in force pressed.
   //   A click is one draft step (the circle slot of the node, core.js contentSet: the base value removes the entry). ↺
-  //   Restore; a stale one (the base changed since: his stays in force, Q359 c) shows when edited, now and his, with Keep
+  //   Restore; a stale one (the base changed since: his stays in force) shows when edited, now and his, with Keep
   //   mine and Take the new; one the base now says (absorbed), or never applied, Remove.
   // - Look-alikes: each pair of the family, the base's and his (pairRows), its other family's name opening its page;
   //   Withdraw a pair in force, ↺ Restore his (a withdrawal or an addition), Remove one absorbed or never applied. Add a
-  //   look-alike…: the other family, then Source and Link (Q359 e: asked once when left empty, never required; Save
+  //   look-alike…: the other family, then Source and Link (asked once when left empty, never required; Save
   //   without source then saves): one draft step (core.js contentPairSet). Its words are the look/<id> line of each sheet,
   //   which shows at once (sheetFile).
   // The same pair tools in the Look-alikes filter of every Tree page (structBar): + Pair (both families chosen) under Any
@@ -649,7 +649,7 @@
           const k = C.contentPairKey(A.a, A.b),
             r = pairRows(S, R, Cm()).find(x => x.key === k),
             base = r ? r.base : null;
-          // A pair added with no source: asked once (Q359 e: encouraged, never required).
+          // A pair added with no source: asked once (encouraged, never required).
           if (base == null && !src && !A.ask) {
             ST_ADD = {...A, t, u, ask: true};
             render();

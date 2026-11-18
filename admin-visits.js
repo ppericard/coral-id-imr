@@ -1,10 +1,10 @@
-// Players › Visits (Pierre, 2026-11-08, Q301-Q304, on the mockup "layout A" of the study of activity outside the quiz):
-// who opens the app and what for, games or not, signed in or not, from data already logged (no app change, no sheet
-// bump): the pages-opened summaries of the sheet's Pages tab (sheet v30, admin.js loadPages, one or more rows a visit)
-// and the once-a-visit `load` rows of its Events tab (admin.js loadEvents: the first page, the window width, installed
-// or not), joined to the answer log (who ever answered) and the player list (names). One scrolling page under the
-// filters Subject (all by default), Period, Visits (Q303: "Without a game" by default), Who and Device. One page for every
-// subject (Pierre, 2026-11-09: as the list of players, admin.js SHARED, the switch inert there): one list of visits, each
+// Players › Visits (docs/ARCHITECTURE.md; the "layout A" mockup of the study of activity outside the quiz): who opens
+// the app and what for, games or not, signed in or not, from data already logged: the pages-opened summaries of the
+// sheet's Pages tab (admin.js loadPages, one or more rows a visit) and the once-a-visit `load` rows of its Events tab
+// (admin.js loadEvents: the first page, the window width, installed or not), joined to the answer log (who ever
+// answered) and the player list (names). One scrolling page under the filters Subject (all by default), Period, Visits
+// ("Without a game" by default), Who and Device. One page for every subject (as the list of players, admin.js SHARED,
+// the switch inert there): one list of visits, each
 // marked with the subjects whose pages it opened, a page of each subject its own row (a fish page is logged as
 // fish.<page>: core.js pageName, pageSubj). Loaded after admin.js, whose helpers it uses (esc, pct, sbar, kpis, dateText,
 // clock, pname, store, sheetAgain, the loads, subjSvg); its words are in the page help (HELP.visits, rule A2).
@@ -22,13 +22,13 @@ const VISITS = {
   SCREEN_DAYS: 90, // Screens: the devices seen in the last this many days, whatever the filters
   SIZES: 8 // Screens: the most common sizes listed
 };
-// A game = a Practice page (Q302: quiz, custom quiz, duels, Memory); the Lab (Tools) is not one.
+// A game = a Practice page (quiz, custom quiz, duels, Memory); the Lab (Tools) is not one.
 const visitGame = p => /^practice\./.test(p);
 const visitMed = L => {
   const S = L.filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
   return S.length ? S[Math.floor(S.length / 2)] : 0;
 };
-// A device's class (Q304): a phone from its browser (sync.js uaShort: "… mobile"), a tablet estimated from the window
+// A device's class: a phone from its browser (sync.js uaShort: "… mobile"), a tablet estimated from the window
 // widths of its load rows (their median): a phone's browser at least PHONE wide, or a computer's browser between PHONE
 // and DESK (an iPad's Safari presents itself as a Mac). No width known (a device not in the Events read): its browser.
 function devClass(ua, W) {
@@ -43,7 +43,7 @@ function devClass(ua, W) {
 // in their order; answered: the ids with answers (any subject); named: Map id → name (signed in); loads: the load rows
 // {t, dev, w, st, p0}; sheets: the subject whose genus sheets (g) these are (data.json's genera), none if falsy. A visit is
 // {k, who, id, dev, t (its first summary), last, P {page name: [times, seconds]}, G {genus: [times, seconds, {from:
-// times}]} (how each summary reached it, Codex review #777), s (seconds), game, subj (the subjects whose pages it opened,
+// times}]} (how each summary reached it), s (seconds), game, subj (the subjects whose pages it opened,
 // in order), on {subject: {P, G, s, game}} (the visit as one subject sees it: its pages, its genus sheets, its time, a game
 // of its), kind (in: signed in, anon: not signed in, both with answers; never: no answer), signed, name, cls (phone,
 // tablet, computer), inst (1 installed, 0 a browser tab, null not known), p0 (the first page's name, null not known)}.
@@ -108,8 +108,7 @@ function visitsOf(rows, o) {
   L.forEach(v => {
     // Its load row: the device's, sent within the visit's first part (at the first quiz photo, when the app was first
     // left, or 3 min after the first page), so never after its first summary (sync.js: loadSend before pagesSend), the
-    // latest before it, each load row joined once: the next visit's load row, sent after, is never this one's (Codex
-    // review #777).
+    // latest before it, each load row joined once: the next visit's load row, sent after, is never this one's.
     const near = (LD[v.dev] || [])
       .filter(x => !used.has(x) && x.t >= v.t - (v.s1 + VISITS.NEAR) * 1000 && x.t <= v.t + VISITS.SLACK * 1000)
       .sort((a, b) => b.t - a.t)[0];
@@ -186,7 +185,7 @@ function visitKpis(P) {
     phone: P.rows.filter(v => v.cls === 'phone').length
   };
 }
-// The subject a visitor's Journey opens on (Codex review #836): the one filtered; on All, the subject they spent the most
+// The subject a visitor's Journey opens on: the one filtered; on All, the subject they spent the most
 // time on in their visits (L, each counted whole: v.on), the first in order on a tie. Their link names it (data-own), so
 // the switch's side never picks the Journey of a subject they did not visit.
 function visitorSubj(L, sel, order) {
@@ -196,8 +195,8 @@ function visitorSubj(L, sel, order) {
   const ids = Object.keys(T).sort((a, b) => T[b] - T[a] || (order.indexOf(a) + 1 || 1e9) - (order.indexOf(b) + 1 || 1e9));
   return ids[0] || order[0];
 }
-// Screens (Pierre, 2026-11-18: the screen sizes the players really use, to design multi-photo game formats): from the
-// summaries that carry the screen (core.js VIEWPORT, sheet v177: the CSS viewport rounded to 10 px, the pixel ratio,
+// Screens (docs/ARCHITECTURE.md: the screen sizes the players really use, for the multi-photo game formats): from the
+// summaries that carry the screen (core.js VIEWPORT: the CSS viewport rounded to 10 px, the pixel ratio,
 // the orientation and the band of the short side), the devices that sent one in the last SCREEN_DAYS days, whatever
 // the page's filters. A device counts once, with its most common size (the latest on a tie) and its newest browser.
 // Its band: a phone (devClass on its short side) by the band it sent (b: 0 ≤360, 1 361-390, 2 391-414, 3 415-600,
@@ -448,7 +447,7 @@ function renderVisits() {
     ]
       .filter(Boolean)
       .join('')}</div>`,
-    // A read that failed says so: without the Events read, no first page, installed app or tablet is known (Codex review #777).
+    // A read that failed says so: without the Events read, no first page, installed app or tablet is known.
     warn = [
       USERS.err && 'Players: ' + USERS.err,
       ANS.old && 'Answers: ' + (ANS.err || 'not available'),
