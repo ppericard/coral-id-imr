@@ -165,11 +165,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
-  const pics = v =>
+  // all: every photo the unit may show, before keep (the variants' count of observations at full weight, below).
+  const pics = (v, all = false) =>
     [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(ok(v))
       .filter(gameOk)
-      .filter(p => p.f !== skip && (!keep || keep(p)));
+      .filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
@@ -186,6 +187,16 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
     tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
     pm = pmem();
+  // The photo variants on the unit's own mastery (Pierre, 2026-11-17, Q391 a; 2026-11-07: never at the very start of a
+  // unit, then in stages; no wall, 2026-11-06): each juvenile, sex or colour phase photo weighs its kind's ramp on this
+  // unit's bar (varOf: core.js varKindOf, VAR_AT, varRamp), 1 for every other photo. Weights only: its prior (photoDiff)
+  // and the answer's scoring are untouched. Nothing held back on a unit with fewer than PICKD.VARIETY observations at full
+  // weight among all its photos (keep aside: a Find the X draws among its tiles only): it would show the same few photos
+  // again and again.
+  const V = varOf(
+    n,
+    need.flatMap(v => pics(v, true))
+  );
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
@@ -206,6 +217,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
+    if (V.on) r *= V.f(p);
     return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
@@ -217,6 +229,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   );
   const keys = Object.keys(obs);
   if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
+  // The variety and the floor below lift an observation only by its best photo's variant factor (V above), so neither
+  // brings a held-back photo back.
+  const vObs = V.on ? Object.fromEntries(keys.map(k => [k, Math.min(1, Math.max(...Object.values(obs[k]).flat().map(V.f)))])) : null;
+  const phMul = k => (V.on ? vObs[k] : 1);
   // A colony counts as seen whatever view of it was shown (Pierre, 2026-11-06, Q190): every photo of an observation
   // takes the memory of its most remembered photo (memBucket, then the most shown), so a close-up never shown of a
   // colony already met is no new photo, and it loses the never-seen bonus. For fish, an observation's other photos of
@@ -276,11 +292,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     .sort((a, b) => sc[b] - sc[a])
     .slice(0, PICKD.VARIETY)
     .forEach(k => {
-      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top);
+      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top * phMul(k));
     });
   const floor = drawFloor(keys.length);
   keys.forEach(k => {
-    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
+    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top * phMul(k));
   });
   // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
   if (rare) {
@@ -327,22 +343,102 @@ function photoAny(n) {
     )
   );
 }
-// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
-// right before (else the least seen), the hardest of them. Null when the genus has no game photo.
-function examSet(n) {
+// The photo variants of unit n (Q391 a; core.js varKindOf, VAR_AT): a unit's home, the record at its subject's unit rank
+// it hangs from (itself for a family; a fish genus's or species' family), holds its juvenile classes (juv) and its
+// thresholds' overrides (varAt); a unit's own varAt wins over its home's for a kind, the default table VAR_AT last.
+const varHome = n => {
+  const g = GX(n) || {};
+  return (typeof rankOf === 'function' ? rankOf(n) : '') === '' ? n : g.parent || g.family || n;
+};
+const varAtOf = (n, v) => ((GX(n) || {}).varAt || {})[v] || ((GX(varHome(n)) || {}).varAt || {})[v] || VAR_AT[v] || [0, 0];
+const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
+// The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
+// kind's ramp on the unit's bar (genScore), 1 for a photo with no variant; on, whether anything is held back: false when
+// nothing is, or when fewer than PICKD.VARIETY observations of L are at full weight (the fallback: nothing held back, f
+// then 1 everywhere).
+function varOf(n, L) {
+  const juv = (GX(varHome(n)) || {}).juv,
+    F = {},
+    kind = p => varKindOf(p, juv),
+    f0 = p => {
+      const v = kind(p);
+      if (!v) return 1;
+      if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));
+      return F[v];
+    };
+  const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
+  return {on, kind, f: on ? f0 : () => 1};
+}
+// The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several, its held-out
+// photos (g.held) among them: the exam draws from those first, and the variant groups (varUnitOf) read the unit's
+// photos whole, as the sheet's replay does (core.js fishVarTable, made without the set).
+function examPics(n) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
-    s = P[n] || {},
-    ps = s.ps || {},
-    done = (s.ex || {}).v || [];
-  const oneForm = imrFormsOf(n).length === 1,
+    oneForm = imrFormsOf(n).length === 1,
     gameOk = p => gamePhotoOk(n, p) && !p.multi;
-  const lab = v => (two && v === 'macro' ? 'close' : v);
   const pics = v =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : []), ...(v === 'wide' ? g.held || [] : [])]
       .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
       .filter(gameOk);
+  return {two, need, pics};
+}
+// "Learned" asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): the groups of unit n (core.js
+// VAR_GROUPS: its juveniles, its sexes and colour phases) that have a photo released by its mastery (varOf: weight above
+// 0, or every photo under the fallback) and no photo of the group answered right yet (s.ps). While one is left, the
+// exam's next question draws its photo (examSet) and the exam is not passed (examPassed). [] for a unit with no variant
+// (the corals). Through core.js varUnit and varLeftOf, the functions the sheet's replay takes a learned mark away with
+// (rules D8, D9: core.js fishVarTable, replayProgress vars, replayedOf), so the app and the sheet decide alike.
+function varUnitOf(n) {
+  if (!GX(n)) return null;
+  const {need, pics} = examPics(n);
+  return varUnit(need.flatMap(pics), (GX(varHome(n)) || {}).juv, v => varAtOf(n, v));
+}
+// A group the answer log left (s.vl: core.js replayProgress vars, kept by replayedOf) stays left, though s.ps, merged
+// with this device's saved copy, holds a right answer the log lacks (rule D9; Codex review #953), until a right answer
+// on it here (varRight): the same groups as the sheet's replay.
+function varLeft(n) {
+  if (!GX(n)) return [];
+  const U = varUnitOf(n),
+    x = genScore(n),
+    s = P[n] || {},
+    left = varLeftOf(U, x, s.ps),
+    log = Array.isArray(s.vl) ? s.vl : [];
+  return log.length ? varLeftOf(U, x, {}).filter(g => left.includes(g) || log.includes(g)) : left;
+}
+// A right answer on unit n's photos L (quiz.js answer) clears their variant groups from those the log left (s.vl).
+function varRight(n, L) {
+  const s = P[n];
+  if (!s || !Array.isArray(s.vl)) return;
+  const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
+  s.vl = s.vl.filter(g => !got.has(g));
+  if (!s.vl.length) delete s.vl;
+}
+// The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
+const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
+// The held-out photos (the fish: fish-holdout.json, core.js fishHeld; ROADMAP "A held-out photo set", Pierre,
+// 2026-11-04 and 2026-11-16, Q385; 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"): a unit's held list
+// (g.held, core.js fishGen), never in its views, so no game, card, sheet or list shows them. Only the mastery exam asks
+// them (examSet), unannounced and counted like any answer, logged |h (quiz.js answer). shownAll: the photos this player
+// was ever shown, on any unit of the subject (each unit's s.ps: {file: [shown, right]}).
+const shownAll = () =>
+  new Set(
+    Object.values(P).flatMap(s => (s && s.ps && typeof s.ps === 'object' ? Object.keys(s.ps).filter(f => (s.ps[f] || [0])[0] > 0) : []))
+  );
+// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
+// right before (else the least seen), the hardest of them, a held-out photo never shown to this player first; while a
+// variant group of the unit is left (varLeft, Q391 b), among that group's released photos (the first group left). Null when the genus has no game photo.
+function examSet(n) {
+  const s = P[n] || {},
+    ps = s.ps || {},
+    done = (s.ex || {}).v || [],
+    {two, need, pics: all} = examPics(n);
+  const lab = v => (two && v === 'macro' ? 'close' : v);
+  const left = varLeft(n),
+    V = left.length ? varOf(n, need.flatMap(all)) : null,
+    inG = p => varGroup(V.kind(p)) === left[0] && V.f(p) > 0,
+    pics = V && need.some(v => all(v).some(inG)) ? v => all(v).filter(inG) : all;
   const vs = need.filter(v => pics(v).length),
     todo = vs.filter(v => !done.includes(lab(v)));
   if (!vs.length) return null;
@@ -350,13 +446,21 @@ function examSet(n) {
     L = pics(v),
     // Never shown at all first (a photo answered wrong has been seen, and its answer shown); else the least seen of those
     // never answered right; else the least seen.
+    // The held-out photos never shown to this player on any unit first (the honest exam, ROADMAP "A held-out photo
+    // set"; Q385): the hardest of them, as below.
+    // An observation counts as seen whatever photo of it was shown (rule P4; Codex review #1057): a sibling photo of a
+    // fish already met waits behind every observation never shown, then today's rule below.
+    hl = (GX(n) || {}).held || [],
+    seen = hl.length ? shownAll() : null,
+    seenObs = seen ? new Set(hl.filter(p => seen.has(p.f)).map(p => p.o || p.f)) : null,
+    held = seen ? L.filter(p => p.ho && !seen.has(p.f) && !seenObs.has(p.o || p.f)) : [],
     fresh = L.filter(p => !(ps[p.f] || [0])[0]),
     unright = L.filter(p => !(ps[p.f] || [0, 0])[1]),
     least = M =>
       M.slice()
         .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
         .slice(0, 3),
-    pool = fresh.length ? fresh : least(unright.length ? unright : L);
+    pool = held.length ? held : fresh.length ? fresh : least(unright.length ? unright : L);
   const p = pool.reduce((a, b) => (photoDiff(n, b) > photoDiff(n, a) ? b : a));
   return {shown: [{...p, view: lab(v)}], hint: null, reveal: [], exam: true};
 }
@@ -438,7 +542,8 @@ const easyTrust = () =>
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
-  const je = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))].filter(p => p.e),
+  // its held-out photos too (g.held), so withholding them does not move it
+  const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...((GX(n) || {}).held || [])])].filter(p => p.e),
     ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
   return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
@@ -1318,8 +1423,8 @@ function nextTarget(list, draw = weighted) {
 // the answer log steps the ability exactly as the app does; docs/LEARNING.md). Starts at 0 (target = the featured
 // photos), or from the player's global level on a genus never answered (core.js playerStart: their abilities on the
 // genera already answered), so a strong player gets traps, single views and harder photos on a new genus from its first
-// question. No time between sessions; the seconds taken to answer weigh a right answer's step (core.js rtWeight, rtOn
-// below; rule L1).
+// question. No time between sessions; the seconds taken to answer weigh a right answer's step (core.js rtWeight; rule
+// L1).
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
@@ -1333,22 +1438,11 @@ const misses = h => [...h].filter(x => x === '0').length;
 // both through core.js scoreAnswer, the replay's own scorer. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; each subject's own answer).
-// The prior only once the sync script replays it (core.js START_SHEET; rule D4, Codex review #428): before, 0, the
-// default player's, so an adopted replay never takes back what the game did live. A subject the sheet does not replay
-// (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
-const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
+// The sheet replays the prior too (Code.gs v36), so an adopted replay never takes back what the game did live.
+const startP = () => startV().p;
 // A unit whose record names the unit it starts from (from: a fish species, its family; core.js fishSpUnits) starts from
 // that unit's ability when never answered (core.js abilityOf).
 const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
-// The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
-// (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
-// step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
-const rtOn = () => typeof sheetV === 'function' && sheetV() >= RT_SHEET;
-// The domain-score bar (core.js DOM, domStep; Pierre, 2026-11-06, Q135): a genus first answered now takes it only once the
-// sync script replays it (its replies say v >= DOM_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule
-// D4); before, every genus keeps the moving average s.pg, as before. A subject the sheet does not replay (SUBJECTS
-// replay: fish) has no replay to wait for: a unit first answered takes it at once (one answered before keeps s.pg).
-const domRules = () => !SUBJ.replay || (typeof sheetV === 'function' && sheetV() >= DOM_SHEET);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
   const t = ability(n) - aimOff(4);
@@ -1364,10 +1458,9 @@ const seenOf = n => {
 let PSTAT = (store.get('reefid-photo-stats', {}) || {}).photos || {};
 // Genus offsets of the hierarchical photo Elo (Pierre, 2026-11-03; sheet v31 ?stats=1 gd, core.js GENUS_K): {genus:
 // [offset, weighed answers]}, the part of a photo's difficulty its genus shares, learned from every answer on the genus.
-// Read only from a sheet that reports v >= PGD_SHEET (rule D4): with an older sheet, or offline before a v31
-// reply, every prior is 0 (a constant prior predicts the answers better than the Easy / Medium / Hard sets did).
-const PGD_SHEET = 31;
-const gdOf = j => (j && j.v >= PGD_SHEET && j.gd && typeof j.gd === 'object' ? j.gd : {});
+// Offline before any reply, every prior is 0 (a constant prior predicts the answers better than the Easy / Medium / Hard
+// sets did).
+const gdOf = j => (j && j.gd && typeof j.gd === 'object' ? j.gd : {});
 let PGD = gdOf(store.get('reefid-photo-stats', {}));
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
 let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
@@ -1384,8 +1477,8 @@ const PMEM0 = memOf();
 const pmem = () => (SUBJ.replay ? PMEM : PMEM0);
 // Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOffsetsOf, sheet v77 ?stats=1 fmt): {format: [offset, answers]},
 // how much easier (in logits) the players found each question format than its guess rate 1/k allows, added to the
-// expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); read only from a sheet that
-// reports v >= FMT_SHEET (rule D4, core.js fmtsOf): {} before, every offset 0.
+// expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); core.js fmtsOf: {} before
+// any reply, every offset 0.
 let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));
 // The format offsets of the subject in play (pfmt), as pmem for the photo memory: PFMT is fitted on the answers of the one
 // subject the sheet rates (Code.gs stats_ reads its replayed rows, SUBJECTS replay: the corals), so a subject it does not
@@ -1409,6 +1502,26 @@ function memRecalcAll() {
   if (ch) save();
   return ch;
 }
+// Each other subject's own pooled statistics (core.js SUBJECTS stats: the sea slugs; sync.js loadOwnStats), kept on this
+// device under its own key (OWN_STATS + its id) and joined to the corals' (PBASE, the reply loadStats keeps) in PSTAT, PGD
+// and PCONF: their photos and units carry ids of their own (seaslug-…, g:Chromodoris), never a coral one, so each subject
+// reads its own numbers in the same maps and the corals' stay as they are. A subject with no stats (the fish) finds none
+// of its own there, as before. The photo memory and the format offsets stay the corals' alone (pmem, pfmt): another
+// subject draws and scores with the prior and no offset there, as the sheet's replay of it reads (Code.gs rplMake_).
+const OWN_STATS = 'reefid-photo-stats-';
+let PBASE = store.get('reefid-photo-stats', {}) || {};
+function statsJoin(base = PBASE) {
+  PBASE = base || {};
+  const own = SUBJECTS.filter(S => !S.replay && S.stats)
+      .map(S => store.get(OWN_STATS + S.id, null))
+      .filter(o => o && typeof o === 'object'),
+    join = (b, k) => Object.assign({}, b, ...own.map(o => (o[k] && typeof o[k] === 'object' ? o[k] : {})));
+  PSTAT = join(PBASE.photos || {}, 'photos');
+  PCONF = join(PBASE.conf || {}, 'conf');
+  PGD = join(gdOf(PBASE), 'gd');
+  GDIFF = {}; // genus difficulties follow the new photo stats and confusions
+}
+statsJoin();
 // The domain-score bar for a subject the sheet does not replay (SUBJECTS replay false: fish; Pierre, 2026-11-06, Q200): a
 // unit record still under the former moving average (s.pg) is rebuilt on the device from its own counts (core.js
 // domFromCounts: ok, ko and its last 10 results, each on a photo of the unit's average difficulty, genusDiff with one
@@ -1422,10 +1535,14 @@ function memRecalcAll() {
 // Nothing before data.json is in (DATA, which GX reads first): a link straight to a quiz page brings this file before it
 // (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
 // it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
+// "Learned" asks each variant group (Q391 b; fish rules version 3, core.js FISH_RVS): a learned mark whose unit has a
+// variant group with no right answer in the answer log is taken away by the sheet's replay (core.js replayProgress vars,
+// replayedOf; rules D8, D9), which every device adopts once (sync.js replayAdoptS, silently through mxRecalc: rule D6) and
+// the leaderboard ranks a player by until then; never by a device on its own.
 function domRecalcAll() {
   // Nor while the subject's data is still partial (app.js dataPartial: the fish units on their first photos only, before
   // fish-game.json): the rebuild reads the units' photo difficulties, and runs once the whole data is in (fishLoad).
-  if (SUBJ.replay || !domRules() || !DATA || (typeof dataPartial === 'function' && dataPartial())) return false;
+  if (SUBJ.replay || !DATA || (typeof dataPartial === 'function' && dataPartial())) return false;
   const L = Object.keys(P).filter(
     n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
   );
@@ -1545,7 +1662,8 @@ function pgWeight(t, chs, k) {
 // away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
 // Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
 // of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
-// right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
+// right, and a right answer on each variant group the unit has (its juveniles; its sexes and colour phases: varLeft,
+// examPassed; Pierre, 2026-11-17, Q391 b): the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
 // is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when the genus is back at the entry.
 const EXAM = {n: 5, gap: 8};
 // Typed questions (Pierre, 2026-11-03; docs/ROADMAP.md "Free-text answers"): the player types the genus instead of picking
@@ -1618,6 +1736,10 @@ function missing(n) {
     m.push(
       `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
+  // Its variant groups not answered right yet (varLeft, Q391 b): the exam asks them.
+  const VW = {juv: 'its juveniles', ph: 'its sexes or colour phases'},
+    vl = varLeft(n);
+  if (vl.length) m.push(`a right answer on ${vl.map(g => VW[g]).join(' and on ')}`);
   return m;
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): the domain score up to 95% (barOf), each exam question passed fills a
@@ -1657,12 +1779,10 @@ const lvIcon = (k, cls = 'lvi') =>
 const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
 // The subject's global score and its components when it has one (core.js SUBJECTS score: the fish), from one computation
 // (core.js treeScore over its tree, app.js UNITS tree); null otherwise.
-// From the sheet script that ranks the leaderboard by it (core.js SCORE_SHEET, sync.js sheetV; rule D4), so the
-// leaderboard and My progress never show two scales; before, null (the families' mean, and the rules on it, as before).
-const scoreOn = () => !!SUBJ.score && typeof sheetV === 'function' && sheetV() >= SCORE_SHEET;
+// The sheet ranks the leaderboard by it (Code.gs v101 board_), so the leaderboard and My progress show one scale.
 const headScore = () => {
   const U = typeof UNITS === 'object' ? UNITS[SUBJ.id] : null,
-    T = scoreOn() && U && U.tree ? U.tree() : null;
+    T = SUBJ.score && U && U.tree ? U.tree() : null;
   return T ? treeScore(P, T, SUBJ.score) : null;
 };
 // The headline % (the header pill, My progress's ring, the achievements, the update card): the subject's global score,
@@ -1714,8 +1834,15 @@ const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
 // Performance only, never time.
 // The pair's score over every player (pooled answers on top of the declared prior), before this player's own record.
 // confPrior: the prior of a pair, look the declared test (isLook here; the confusion groups' own, declared, above).
+// A data look-alike seeded by the subject's data (dataSeed, below) starts from the declared look-alikes' prior.
 const confPrior = (t, n, look) =>
-  look ? CONF.LOOK : GX(n).fam === GX(t).fam ? CONF.FAM : imrFormsOf(n).some(f => imrFormsOf(t).includes(f)) ? CONF.FORM : CONF.BASE;
+  look || dataSeed(t, n)
+    ? CONF.LOOK
+    : GX(n).fam === GX(t).fam
+      ? CONF.FAM
+      : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
+        ? CONF.FORM
+        : CONF.BASE;
 function pooledConf(t, n) {
   return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, isLook(t, n)));
 }
@@ -1740,17 +1867,30 @@ const confTerm = (t, chs, k) =>
 // together CONF.N times or more and mixed up so often that its pooled score (pooledConf) reaches CONF.TRAP. Such pairs
 // join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus sheet's "Don't confuse with"
 // (learn.js lookHub); the traps and the progress's look-alike weight already follow the same pooled score.
+// A seeded pair (dataSeed: one no specialist source names that iNaturalist's identifications show) is one from the start,
+// on the declared look-alikes' prior (confPrior), and stays one while its pooled score does: the players' answers drop it
+// as they would any data look-alike (Pierre, 2026-11-17, Q390 D: "data" look-alikes, unlike the declared ones).
 const isDataLook = (a, b) => {
+  if (a === b || !GX(a) || !GX(b) || isLook(a, b)) return false;
+  if (dataSeed(a, b)) return pooledConf(a, b) >= CONF.TRAP;
   const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
-  return !!c && c[0] >= CONF.N && a !== b && !!GX(a) && !!GX(b) && !isLook(a, b) && dataLook(c, pooledConf(a, b));
+  return !!c && c[0] >= CONF.N && dataLook(c, pooledConf(a, b));
 };
-// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order (the pooled pairs only:
-// a pair never offered together cannot qualify).
-const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
-  Object.keys(PCONF)
+// The data look-alikes a subject's data seeds (app.js fishGenera dl: the sea slug genera only iNaturalist's
+// identifications show as look-alikes, tools/seaslug_game.py genus_looks; Q390 D), either way round.
+function dataSeed(a, b) {
+  return ((GX(a) || {}).dl || []).includes(b) || ((GX(b) || {}).dl || []).includes(a);
+}
+// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order: the pooled pairs (a pair
+// never offered together cannot qualify) and the seeded ones (dataSeed).
+const dataLooks = (L = [...slateGenera(), ...bonusList()]) => {
+  const K = new Set(Object.keys(PCONF));
+  L.forEach(a => ((GX(a) || {}).dl || []).forEach(b => K.add(a < b ? a + '|' + b : b + '|' + a)));
+  return [...K]
     .map(k => k.split('|'))
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
+};
 // A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
 // typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
 // two fish species may share a common name), but a question never shows two choices of one label (distractors).

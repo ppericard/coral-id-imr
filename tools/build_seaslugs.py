@@ -49,7 +49,10 @@ to `circles.one`; then the rest by commonness in blocks of `circles.next`, the r
 the output for the subject's build; the tool does not use them.
 
 Usage: python3 tools/build_seaslugs.py [--offline | --refresh] [--seed DIR] [--dry]
-       python3 tools/build_seaslugs.py --check     (derive again from tools/seaslugs.json, offline; exit 1 on a difference)
+       python3 tools/build_seaslugs.py --check     (derive again from tools/seaslugs.json, offline; exit 1 on a difference,
+                                                    or when its copied look-alikes or photo target are not the source's)
+       python3 tools/build_seaslugs.py --target    (offline: copy the source's look-alikes and photo target in again,
+                                                    nothing else changed; the cache is not needed)
   --seed DIR: a cache of earlier replies, one DIR/<sha1 of the URL>.json each (the study's pulls of 2026-11-15), read
   before asking the network. Tests: node --test tests/seaslugs.test.js.
 """
@@ -616,7 +619,7 @@ def build(net, src, log=print):
                    "wikiArticles": sum(1 for s in species if s["wiki"]),
                    "pagesReadable": sum(p["readable"] for p in pages if p["scope"] != "out")},
         "ambiguousNames": ambiguous, "nicknames": nick_out,
-        "lookalikes": src.get("lookalikes") or [], "photoTarget": src.get("photos"),
+        **copied(src),
         "unconfirmedMentioned": dict(sorted(unconf.items())),
     }
     return species, pages, meta, proposal
@@ -644,14 +647,32 @@ def dump(species, pages, meta, proposal):
     return "\n".join(lines) + "\n"
 
 
+def copied(src):
+    """The source's parts copied into the output unchanged, for the subject's build: {output key: value}."""
+    return {"lookalikes": src.get("lookalikes") or [], "photoTarget": src.get("photos")}
+
+
+def recopy(src, text):
+    """The committed output (text) with the source's copied parts written in again, nothing else changed (--target)."""
+    d = json.loads(text)
+    meta = {k: v for k, v in d.items() if k not in ("_doc", "v", "proposal", "pages", "species")}
+    meta.update(copied(src))
+    return dump(d["species"], d["pages"], meta, d["proposal"])
+
+
 def check(src):
-    d = json.loads(OUT.read_text(encoding="utf-8"))
+    text = OUT.read_text(encoding="utf-8")
+    d = json.loads(text)
     species = [dict(s) for s in d["species"]]
     proposal = derive(species, d["pages"], src)
     bad = [s["name"] for s, o in zip(species, d["species"]) if any(s.get(k) != o.get(k) for k in ("rank", "stars", "star", "circle"))]
     if proposal != d["proposal"] or bad:
         print(f"tools/seaslugs.json is not what the derive stage gives: {bad[:10] or 'the proposal differs'}; "
               "run python3 tools/build_seaslugs.py --offline")
+        return 1
+    if recopy(src, text) != text:
+        print("tools/seaslugs.json's look-alikes or photo target differ from tools/seaslug_source.json's; "
+              "run python3 tools/build_seaslugs.py --target")
         return 1
     print(f"tools/seaslugs.json derives as written: {len(species)} species, {len(proposal['stars'])} stars, "
           f"circle 1 {len(proposal['circle1'])}")
@@ -665,10 +686,15 @@ def main():
     a.add_argument("--seed")
     a.add_argument("--dry", action="store_true")
     a.add_argument("--check", action="store_true")
+    a.add_argument("--target", action="store_true", help="copy the source's photo target and look-alikes in, offline")
     o = a.parse_args()
     src = json.loads(SRC.read_text(encoding="utf-8"))
     if o.check:
         sys.exit(check(src))
+    if o.target:
+        OUT.write_text(recopy(src, OUT.read_text(encoding="utf-8")), encoding="utf-8")
+        print(f"wrote {OUT.relative_to(ROOT)}: the source's photo target and look-alikes")
+        return
     net = Net(offline=o.offline, refresh=o.refresh, seed=o.seed)
     try:
         species, pages, meta, proposal = build(net, src)

@@ -138,10 +138,13 @@ learned (100%) takes
 5 exam questions slipped unannounced into the photo quiz, several answers apart, each as hard as the game gets (one
 photo alone, never seen, look-alike traps), all right, at least 2 of them typed from memory (typed questions come in
 progressively as the level on a unit rises, never as an on/off mode; `model.js` `TYPED`). Any miss on the unit, or
-giving it as the answer for another one, restarts it. No milestone that a player can pass by luck or in a few
+giving it as the answer for another one, restarts it. The exam passes only once each variant group of the unit (its
+juveniles; its sexes and colour phases), once released, has had a right answer (`model.js` `varLeft`; LEARNING.md
+"Juveniles and colour phases on their unit's mastery"). No milestone that a player can pass by luck or in a few
 questions.
 *Source:* Pierre, 2026-11-01; progress weights, 2026-11-02; typed, 2026-11-03; subject-neutral wording, 2026-11-06;
-the domain-score bar, 2026-11-06 (Q127, Q128, Q135; the exam's entry at 85% and the keep rule are open choices).
+the domain-score bar, 2026-11-06 (Q127, Q128, Q135; the exam's entry at 85% and the keep rule are open choices); each
+variant group right, 2026-11-17 (Q391 b; this wording approved 17:40 Manila).
 
 ### L10
 

@@ -601,9 +601,18 @@ Sizes are rough, for one agent **[guess]**.
      Shown under the scientific name on the sheets, on the Learn tiles, and in the quiz after the answer only; the choices
      stay scientific names, and a typed English name is not a right answer (as a fish genus's common name). A name the
      sources give two taxa is a point (`points.json`, rule C5). ARCHITECTURE.md "Subjects".
+   - **Built, the rest** (2026-11-18, Pierre 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"):
+     sourced ID marks for 18 of the 24 circle-1 genera, *Phyllidiella* and three families (`tools/seaslug_cues.json`,
+     `tools/seaslug_cues.py`), on the sheets and in the quiz feedback, and the sheets in the sea slugs' words (`app.js`
+     `UNITS` `words`); sources in [2026-11-18-seaslug-cues-sources](2026-11-18-seaslug-cues-sources.md). ARCHITECTURE.md
+     "Tools".
 8. **Look-alikes**: half a day, then as data comes.
    - The sourced sets of §6.3 as declared pairs.
    - Then the players' confusions once answers exist.
+   - Built for the genera (Pierre, 2026-11-17, Q390 D, after the
+     [look-alike survey](2026-11-17-seaslug-lookalikes-survey.md)): `tools/seaslug_game.py` `genus_looks` writes the
+     genus pairs of the survey's literature sets as declared look-alikes and its iNaturalist-only genus pairs across
+     families as data look-alikes (`seaslug.json` genus `look`, `dlook`, `lsrc`). ARCHITECTURE.md "Tools".
 
 Steps 1, 3 and 4 can start without the app work. Steps 2 and 5 wait for Pierre's answers.
 

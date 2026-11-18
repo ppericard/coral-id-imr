@@ -5,89 +5,83 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-17, about 10:05 Manila, by the integrator (a morning checkpoint; the container restarted twice).
-**A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
+Written 2026-11-18, about 10:00 Manila, by the integrator. **A new integrator starts here, then reads
+[INTEGRATOR.md](INTEGRATOR.md).**
 
-Last checked: reports and events: 2026-11-17 ~06:15 Manila (none needing action; the roles seeded at v156, the
-admin grant's Audit row missing: fixed for the future in #1026)
+Last checked: reports and events: 2026-11-17 ~06:15 Manila (none needing action).
 
 ## Now
 
-Main: sheet script **v160** (#1032). Every PR merges through a train, even alone (#1001).
+Main: sheet script **v172** (#1049). Every PR merges through a train, even alone (#1001). `npx --yes prettier@3.10.1`
+(the machine's default is 3.8.1). Agents (W27): at most 4 that write code or run tests (conflicts, machine load); read-only studies on top (Pierre,
+2026-11-18: "C'est des agents en lecture seule", "ça évite aussi de trop charger la machine lors des tests"; the
+rule's wording follows in the rules PR).
 
-- **Merged on 11-17 morning**: the roles seed's audit gap (#1026, v159); **research uses every useful source**, the
-  project's data never leaves (#1027, AGENTS.md, Pierre 06:33-06:37); the undescribed sea slugs study (#1028, Q389);
-  the sea slugs' look-alike survey, candidates only (#1029, Q390 open); their English names and nicknames as
-  information (#1030); the literature scan and `tools/seaslug_lit.py` (#1031); genus-level candidates and
-  *Goniobranchus* sp. 5 (#1032, v160, Q389); all 794 new sea slug candidates judged (#1034, #1035: ~775 in play).
-- **Agent running**: the levels-and-shares study (#1033): the 10,000-answer check (its rule / #975 / main), rerun after the
-  restarts, and Codex's P1/P2 on the note (P2: should "Learned" need a right answer on each variant?).
-- **Held for Pierre** (`needs-pierre`, green): #975 and #953 (Q391, waits for #1033's long check); #988 (plain OK).
-- **Kept on branches, no PR (W27)**: admin-signout-seal, level-count-from-log, fish-todo-wip (moot: delete when Pierre
-  says), photo-genus-ability; `scratch/levels-proto` (local only, the study's prototype). Suggested task: check
-  admin.js's GitHub API header in a real browser (CORS).
+- **Merged 11-18**: #1051 fish out of beta, sea slugs open to all; #1060, #1061, #1062 sea slug stats, admin, WoRMS
+  (v167-v169); #1053 (v170); #1050 staff and cohort boards (v171); #1049 live mode v1 (v172); #1069 minify at deploy
+  (live: app.js 256 → 103 KB); #1072 `--assign` fold fix; #1074 presentations for all 107 circle 2-3 fish genera (77
+  with ID marks); the three reviews #1064 gaps, #1065 [inventory](reviews/2026-11-18-backlog-inventory.md), #1066
+  [architecture](reviews/2026-11-18-architecture-code-review.md).
+- **In flight**: #1057 held-out set (v173 assigned; Codex threads being fixed) → #1067 genera c2-3 (its 40-min app-world
+  recheck waits for a slot) ; #1076 gate floor (architecture step 2); #1075 sea slug Structure and look-alike line
+  editor (needs a sheet version); admin sign-out seal model B (agent); #1073 smoke deflake; #1070 fish reference photos
+  for every circle (review). Studies: live prep page, several photos on a phone (agents); #1071 What I learn (answered).
+- **Queue for free slots** (in order): #1067's recheck; an anonymous viewport size in the pages-opened summary; Fish
+  basics from the IMR decks (Pierre's Drive folder, `Fish Identification_2026`); lecture photos never upscaled and the
+  86 Corals of the World captures replaced by their originals with exact credit (C12 A+D); sea slug achievements 60-100%;
+  small fixes (tour, look-alike account names, About version line, Try again on a failed tier); a rules PR (below);
+  #1045 `refLevel` from the photo's traits; the What I learn card; game modes as quiz formats in order (Same or
+  different?, Odd one out, Down the tree, Life stages matched, then Sort them, Virtual dive); architecture steps 3-4,
+  then the corals on the tree engine (plan to Pierre first).
+- **Infrastructure watch** (Pierre: the domain becomes urgent "quand l'infrastructure qu'on utilise ne suivra plus";
+  no December deadline): R2 size (6.3 of 10 GB on 11-15), the sheet's rows, quotas and timings, Pages size; alert early.
+- Estimates are in agent time (Pierre, 2026-11-18: never human days or weeks).
 
 ## Next
 
-1. #1033's long check in: send Pierre Q391 with the numbers and the variant sub-question; on his yes, #975 (merge
-   `main`, `--assign` its `SPECIES_SHEET` gate, Codex, train), then #953 rebuilt on that rule, then the held-out set wired
-   (#1023's paragraph), each with L11 checks.
-2. Sea slugs: Q390 answered → the look-alikes into play by its rule; "Pikachu" → the names file; the literature
-   watch's proposed points (#1031) into `points.json`. Watch: Gosliner et al. 3rd edition (ISBN 978-1-878348-73-9,
-   preorder 11-2026) renumbers the "sp. N".
-3. On Pierre's go: the licence review of the three subjects for a commercial app (sea slugs: 87% CC BY-NC; top 20
-   photographers hold 55% of those) and a draft permission request.
-4. Judging passes as candidates arrive; the other ROADMAP "Next" rows; the rename before December 2026 (#886).
+1. The in-flight PRs and the queue above, four code agents at a time.
+2. Rules PR, all approved 2026-11-18: Q405 (L11: a hard 40-min cap per check at every level; level 2 only the worlds
+   the change touches; level 3 never on this machine, only with Pierre's go on GitHub runners; an unclear result is
+   reported, never escalated); AGENTS.md "Estimates are in agent time…"; P1 (reference = intrinsic, objective
+   qualities; a source is a hint and a guarantee of evaluation, never a placement criterion, every subject; reference
+   sources enter the base first); C2 and D5 lines; the Coral Finder out of the rules (Q294).
+3. Species step 2 (#1041) for fish and sea slugs: two independent teaching trees (common: families → species;
+   scientific: genera → species), the `sci:` key, the family checklist exam, the ultimate exam.
 
 ## Questions for Pierre
 
-Answered on 11-17: Q389 (1) genus-level photos yes, (2) *G.* sp. 5 yes, the other "sp. N" wait for a published name
-(the 2018 guide is a DRM ebook and dated); web research without asking (#1027). Q388 was withdrawn: Pierre wants one
-mechanism for every level (06:26), now Q391.
+Answered 2026-11-18 morning: #1057 A; #1067 C (content first); #1045 down, and P1's wording; Q400 D (card on My
+progress, a Home line opens it); Q401 A; Q402 A; Q403 no switch (variants are required, only delayed); Q404 A (every
+names row can be off, families only allowed; two independent trees); Q405; #1061 both built now; seal model B now;
+Fish basics from his Drive; C1 (no source priority at all); D6 three wordings; D7 closed (no morning report); C12 A+D;
+P2 B for now; sea slug achievements ok + 60-100%; seven modes built, most useful first; multi-photo study and viewport
+measure; Q406 corals on the tree engine, ids unchanged (principle; detailed plan first).
 
 Still open:
 
-- **Q391** (after #1033's long check): one rule (the study's recommended one) for ranks and variants (#975's cap for genera/species; each unit's
-  juveniles, sexes and phases on a ramp of its own mastery, thresholds per taxon), a slower player's first family at
-  Open Water later; plus: "Learned" needs a right answer on each variant?
-- **Q390** sea slug look-alikes: D (specialist-sourced pairs declared; iNaturalist-only pairs as data, droppable by
-  answers; species pairs at the species level) (rec.), B one by one, C literature only.
-- Plain: **rule C8** wording for undescribed species (3 observers with the label, #1032); **"Pikachu"** to *T.
-  pikachu* (rec.); **licence review** go?; the Learn page of the sea slugs (sent 06:13); **Cladobranchia** WoRMS (rec.);
-  **#988**; **reference bonus (#942)** A (rec.); **rule D3** "adds"; **rule P1** covers the sea slugs; the IMR fish
-  presentation's location (Fish basics).
-- **To read, easy to undo** (integrator's calls in the PR bodies): #976 #980 genus marks; #983 (5), #984 (7), #986,
-  #989, #991, #992 (5), #993 (5), #994 (3); #995; #997, #999, #1002, #1008, #1009, #1015, #1019, #1034, #1035 reading
-  calls; #987 (11); #1012, #1013, #1030 layouts.
-- Possible misidentifications in #982 (5), #989 (11), #991 (24), #1002 (10), #1008 (1), #1034 (5), #1035 (18).
-- Not now (Pierre): the domain, the accounts, the IMR agreement, a second person.
+- **Professionalise** (no deadline now): (a)-(e) of the study, and B6 the sheet on an IMR Workspace account.
+- **Architecture review's other questions** (b)-(i): curation split, one id scheme, sync by answers, D1; later.
+- **Studies to come**: live prep page, several photos on a phone, the formats' frequency criteria.
+- **To read, easy to undo**: #1043 achievements; #1048 gl 30; #1049 live answer on a locked unit counts in nothing,
+  points 100+100; #1050 one cohort per player; #1052 cue wording; #1061 target 12; #1074 marks ≤ 3, looser bar.
 
-Last question number: Q391
+Last question number: Q406
 
 ## Pierre's hands
 
-Actions only Pierre can do.
-
-- **pCloud backup**: Apps Script › Project settings › Script properties › add `PCLOUD_UPLOAD_CODE` (the part after
-  `code=` of his upload link); reload the sheet; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
-- **In the admin**: Light proposals (incl. 38 "One judgement per photo"), Cover proposals, then Publish; "Juvenile:
-  confirm as cover?" on Damselfishes and Boxfishes; "Watermark: keep as cover?" for the 4 ★ covers and the
-  Scorpionfishes one (`fish-s372-cand-57834053`, "(c) Dan Schofield", found by #993); Points: Diploprion, Ferdauia
-  (#959), the sea slugs' name and taxonomy points (#1020, #1030). Roles (#981): seeded; test in use.
-- **For an IMR trainer**: the three Q354 points in `points.json` (admin Points).
-- Check the "Coral ID analyses" token's type and the R2 token's scope; restrict the Coral Finder PDF's sharing.
-- Name the unnamed devices in admin Players › Visits if he wants.
-- From before: "CF book: off" + Publish; one player's start back to "I'm at IMR" (Q228); the 8 unsure fish candidates;
-  covers for the 11 fish entries with no reference-level photo; Astrea and Anacropora photos; **protect `main`**; renew
-  the admin GitHub token before late January 2027; the IMR benthic deck.
+- **Roles**: grant himself the trainer role (Players › Staff) to host a live game and be on the staff board.
+- **pCloud backup**: Script properties › `PCLOUD_UPLOAD_CODE`; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
+- **In the admin**: Light and Cover proposals, then Publish; Points (key labels, circles, the 7 literature points);
+  the 8 unsure fish candidates; the Q354 points for an IMR trainer.
+- Check the "Coral ID analyses" token's type and the R2 token's scope; protect `main`; renew the admin GitHub token
+  before late January 2027.
 
 ## Parked after hours
-
-Ideas Pierre dictated after 17:30, kept for the morning.
 
 - None.
 
 ## Last stop
 
-2026-11-17 ~10:05 Manila: morning checkpoint (10 merges since 06:00, the study agent running, 3 PRs held).
-Old player-data extracts may remain in the session scratchpad (`data/`): delete them, never commit them.
+2026-11-18 ~10:00 Manila: after the morning's question round. A design study's first run (~06:43) may have sent a few
+page loads to the real sheet (Events tab); later runs block it. Old player-data extracts may remain in the session
+scratchpad (`data/`): delete them, never commit them.

@@ -272,7 +272,31 @@
     "worms": 23093,
     "wiki": "Phyllidiidae"
    },
-   "tgroup": 1
+   "tgroup": 1,
+   "marks": [
+    "Tough, flat oval body, its back covered in hard tubercles or ridges",
+    "No gill tuft on the back: the gills lie in a groove under the mantle edge",
+    "Usually bold, contrasting colours and patterns"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, General features, p. 9",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Discodorididae",
@@ -393,7 +417,28 @@
     "g:Plakobranchus"
    ],
    "look": [],
-   "tgroup": 3
+   "tgroup": 3,
+   "marks": [
+    "Wing-like flaps (parapodia) along the sides, often edged in bright colours"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Thuridilla lineolata fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/thurline"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Elysia marginata species page, the parapodia",
+     "u": "https://en.seaslug.world/species/elysia_marginata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "f:Pleurobranchidae",
@@ -424,7 +469,23 @@
     "worms": 1755,
     "wiki": "Pleurobranchidae"
    },
-   "tgroup": 6
+   "tgroup": 6,
+   "marks": [
+    "A large gill on the right side, in the gap between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill, as in all notaspids",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Flabellinidae",
@@ -827,7 +888,54 @@
     "s199473",
     "s504373",
     "s1115871"
-   ]
+   ],
+   "ref": 137782,
+   "dlook": [
+    "g:Nembrotha",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Dark, often black lines running lengthwise along the back",
+    "The lines on a bluish or white ground, often with an orange or yellow rim"
+   ],
+   "msrc": [
+    {
+     "t": "Johnson and Gosliner 2012, A new classification of the chromodorid nudibranchs (PLoS ONE), Chromodoris, the black-lined species",
+     "u": "https://doi.org/10.1371/journal.pone.0033479"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris annae fact sheet, the quadricolor colour group",
+     "u": "https://www.seaslugforum.net/find/chroanna"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris willani fact sheet, the colour group",
+     "u": "https://www.seaslugforum.net/find/chrowill"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Nembrotha",
@@ -842,7 +950,45 @@
     "s142953",
     "s468034",
     "s418431"
-   ]
+   ],
+   "ref": 456473,
+   "dlook": [
+    "g:Chromodoris",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Often seen feeding on sea squirts (ascidians)"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Nembrotha kubaryana fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembkuba"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Nembrotha chamberlaini fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembcham"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Hypselodoris",
@@ -869,7 +1015,78 @@
     "s469461",
     "s878721",
     "s781482"
-   ]
+   ],
+   "ref": 137784,
+   "look": [
+    "g:Goniobranchus",
+    "g:Hexabranchus",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ],
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Nembrotha"
+   ],
+   "marks": [
+    "A tall body whose mantle barely overhangs the foot, as in H. tryoni",
+    "Some, as H. tryoni, crawl in pairs, one close behind the other"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, the body shape, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, trailing in Risbecia, now Hypselodoris",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidia",
@@ -884,7 +1101,47 @@
     "s207581",
     "s467978",
     "s120983"
-   ]
+   ],
+   "ref": 138347,
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Cream to yellow rhinophores",
+    "Hard tubercles, often capped in yellow, many joined into ridges"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 5, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Phyllidia against Reticulidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Halgerda",
@@ -895,7 +1152,8 @@
     "s125934",
     "s51172",
     "s390159"
-   ]
+   ],
+   "ref": 205320
   },
   {
    "id": "g:Pteraeolidia",
@@ -905,6 +1163,7 @@
    "species": [
     "s469568"
    ],
+   "ref": 206296,
    "en": [
     {
      "n": "Blue Dragons",
@@ -917,6 +1176,40 @@
     "inat": 48754,
     "worms": 206296,
     "wiki": "Pteraeolidia"
+   },
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A long aeolid that farms algae in its cerata and body, so adults look brown",
+    "Young ones are white until they take up their algae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, the white juvenile",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -938,7 +1231,80 @@
     "s1354147",
     "s505174",
     "x:goniobranchus-sp5"
-   ]
+   ],
+   "ref": 558453,
+   "look": [
+    "g:Hypselodoris",
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dermatobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Dermatobranchus",
+    "g:Hexabranchus",
+    "g:Phyllidia"
+   ],
+   "marks": [
+    "A broad mantle that overhangs the foot widely",
+    "Some wave the mantle edge as they crawl, as G. kuniei and G. geometricus"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet, the mantle overlap, now Goniobranchus kuniei",
+     "u": "https://www.seaslugforum.net/find/chrokuni"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, now Goniobranchus kuniei and G. geometricus",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllodesmium",
@@ -957,7 +1323,54 @@
     "s346900",
     "s496578",
     "s548307"
-   ]
+   ],
+   "ref": 204424,
+   "dlook": [
+    "g:Favorinus",
+    "g:Marioniopsis",
+    "g:Pteraeolidia"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Marioniopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pteraeolidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "Feeds on soft corals and hides among their polyps",
+    "Many keep algae in their cerata, seen as rows of brown specks"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, like other species of Phyllodesmium",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Jorunna",
@@ -968,7 +1381,34 @@
     "s50300",
     "s548348",
     "s467976"
-   ]
+   ],
+   "ref": 138098,
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A velvety back, covered all over in tiny spiky papillae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Jorunna funebris fact sheet, the papillate surface of the back",
+     "u": "https://www.seaslugforum.net/find/jorufune"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Ardeadoris",
@@ -979,7 +1419,8 @@
     "s121406",
     "s354398",
     "s495795"
-   ]
+   ],
+   "ref": 549843
   },
   {
    "id": "g:Chelidonura",
@@ -990,7 +1431,51 @@
     "s199475",
     "s56646",
     "s63087"
-   ]
+   ],
+   "ref": 137638,
+   "look": [
+    "g:Tubulophilinopsis"
+   ],
+   "lsrc": {
+    "g:Tubulophilinopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Tambja": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Tambja"
+   ],
+   "marks": [
+    "A smooth body in two shields, a head shield and a back shield",
+    "Side flaps (parapodia) fold up over the body"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the head and posterior shields",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Elysia",
@@ -1000,7 +1485,18 @@
    "species": [
     "s546397",
     "s50550"
-   ]
+   ],
+   "ref": 137928,
+   "dlook": [
+    "g:Aplysia"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Doriprismatica",
@@ -1009,7 +1505,28 @@
    "circle": 1,
    "species": [
     "s468042"
-   ]
+   ],
+   "ref": 558470,
+   "marks": [
+    "A very wavy mantle edge, rimmed with a thin black line",
+    "Black rhinophore tips and black-edged gills, which wave as it crawls"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Glossodoris atromarginata fact sheet, now Doriprismatica atromarginata",
+     "u": "https://www.seaslugforum.net/find/glosatro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Caloria",
@@ -1018,7 +1535,18 @@
    "circle": 1,
    "species": [
     "s119425"
-   ]
+   ],
+   "ref": 137996,
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Thecacera",
@@ -1029,7 +1557,24 @@
     "s468030",
     "s142790",
     "s1679552"
-   ]
+   ],
+   "ref": 138371,
+   "marks": [
+    "Large finger-like appendages flank the gills, as in T. pacifica"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Thecacera pacifica species page, Description",
+     "u": "https://en.seaslug.world/species/thecacera_pacifica"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tambja",
@@ -1039,7 +1584,43 @@
    "species": [
     "s120948",
     "s504449"
-   ]
+   ],
+   "ref": 138046,
+   "look": [
+    "g:Tyrannodoris"
+   ],
+   "lsrc": {
+    "g:Tyrannodoris": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chelidonura": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chelidonura"
+   ],
+   "marks": [
+    "Feeds on branching, plant-like bryozoans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Tambja morosa fact sheet, the food of every Tambja",
+     "u": "https://www.seaslugforum.net/find/tambmoro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Pleurobranchus",
@@ -1051,7 +1632,40 @@
     "s123404",
     "s548297",
     "s418506"
-   ]
+   ],
+   "ref": 138364,
+   "dlook": [
+    "g:Asteronotus",
+    "g:Dendrodoris"
+   ],
+   "lsrc": {
+    "g:Asteronotus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A large gill on the right side, between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Coryphellina",
@@ -1062,6 +1676,32 @@
     "s871903",
     "s1375852",
     "s873747"
+   ],
+   "ref": 534028,
+   "look": [
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Samla": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Caloria": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phestilla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Caloria",
+    "g:Phestilla"
    ]
   },
   {
@@ -1074,7 +1714,8 @@
     "s199470",
     "s194607",
     "s418333"
-   ]
+   ],
+   "ref": 137929
   },
   {
    "id": "g:Reticulidia",
@@ -1084,7 +1725,33 @@
    "species": [
     "s120989",
     "s120988"
-   ]
+   ],
+   "ref": 196389,
+   "marks": [
+    "Orange rhinophores",
+    "A smooth network of ridges on the back, with no tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Reticulidia against Phyllidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Hexabranchus",
@@ -1095,6 +1762,7 @@
     "s1475021",
     "s244849"
    ],
+   "ref": 206859,
    "en": [
     {
      "n": "Spanish Dancers",
@@ -1114,6 +1782,68 @@
     "inat": 49745,
     "worms": 206859,
     "wiki": "Hexabranchus"
+   },
+   "look": [
+    "g:Hypselodoris",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Jorunna": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Platydoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Goniobranchus",
+    "g:Jorunna",
+    "g:Platydoris"
+   ],
+   "marks": [
+    "Gills set one by one into the back, never pulled into a pocket",
+    "Grows very large, and can swim"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its gills",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its size and swimming",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -1124,7 +1854,24 @@
    "species": [
     "s469221",
     "s470152"
-   ]
+   ],
+   "ref": 137845,
+   "marks": [
+    "Smooth, simple rhinophores with blunt tips"
+   ],
+   "msrc": [
+    {
+     "t": "Wikipedia, Costasiella (after Swennen 2007's diagnosis of the genus), the genus's features",
+     "u": "https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1384690062"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phestilla",
@@ -1134,7 +1881,34 @@
    "species": [
     "s50528",
     "s50534"
-   ]
+   ],
+   "ref": 390813,
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A coral eater; P. melanobrachia lives on sun corals (Tubastraea)"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Phestilla melanobrachia species page, food and host corals; the genus",
+     "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Melibe",
@@ -1146,7 +1920,34 @@
     "s50551",
     "s779446",
     "s467983"
-   ]
+   ],
+   "ref": 138547,
+   "dlook": [
+    "g:Cyerce"
+   ],
+   "lsrc": {
+    "g:Cyerce": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "marks": [
+    "A wide oral hood, spread like a net to trap small crustaceans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Melibe viridis fact sheet, the oral veil",
+     "u": "https://www.seaslugforum.net/find/meliviri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Favorinus",
@@ -1157,7 +1958,30 @@
     "s389587",
     "s147944",
     "s120967"
-   ]
+   ],
+   "ref": 138006,
+   "dlook": [
+    "g:Aegires",
+    "g:Phyllodesmium",
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Aegires": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Samla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dolabella",
@@ -1166,7 +1990,8 @@
    "circle": 2,
    "species": [
     "s49860"
-   ]
+   ],
+   "ref": 204623
   },
   {
    "id": "g:Diversidoris",
@@ -1175,7 +2000,8 @@
    "circle": 2,
    "species": [
     "s467980"
-   ]
+   ],
+   "ref": 204234
   },
   {
    "id": "g:Phyllidiopsis",
@@ -1189,6 +2015,7 @@
     "s126094",
     "s519522"
    ],
+   "ref": 138348,
    "en": [
     {
      "n": "Phyllidiopsis Nudibranchs",
@@ -1201,7 +2028,26 @@
     "inat": 49734,
     "worms": 138348,
     "wiki": "Phyllidiopsis"
-   }
+   },
+   "look": [
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chromodoris"
+   ]
   },
   {
    "id": "g:Aegires",
@@ -1210,7 +2056,18 @@
    "circle": 2,
    "species": [
     "s467975"
-   ]
+   ],
+   "ref": 137628,
+   "dlook": [
+    "g:Favorinus"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Ceratosoma",
@@ -1221,7 +2078,8 @@
     "s358109",
     "s120937",
     "s199474"
-   ]
+   ],
+   "ref": 204185
   },
   {
    "id": "g:Phyllidiella",
@@ -1232,7 +2090,42 @@
     "s49728",
     "s50552",
     "s319334"
-   ]
+   ],
+   "ref": 206596,
+   "look": [
+    "g:Goniobranchus",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   },
+   "marks": [
+    "Black rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Glossodoris",
@@ -1245,6 +2138,7 @@
     "s778448",
     "s469419"
    ],
+   "ref": 137783,
    "en": [
     {
      "n": "Glossodorises",
@@ -1267,7 +2161,8 @@
    "species": [
     "s332450",
     "s607312"
-   ]
+   ],
+   "ref": 531565
   },
   {
    "id": "g:Thorunna",
@@ -1278,7 +2173,30 @@
     "s349039",
     "s355499",
     "s121317"
-   ]
+   ],
+   "ref": 456530,
+   "look": [
+    "g:Hexabranchus",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ]
+   }
   },
   {
    "id": "g:Discodoris",
@@ -1287,7 +2205,8 @@
    "circle": 2,
    "species": [
     "s50442"
-   ]
+   ],
+   "ref": 137897
   },
   {
    "id": "g:Mexichromis",
@@ -1298,7 +2217,8 @@
     "s54668",
     "s319772",
     "s469554"
-   ]
+   ],
+   "ref": 224364
   },
   {
    "id": "g:Cadlinella",
@@ -1307,7 +2227,8 @@
    "circle": 2,
    "species": [
     "s60594"
-   ]
+   ],
+   "ref": 536916
   },
   {
    "id": "g:Tubulophilinopsis",
@@ -1317,7 +2238,19 @@
    "species": [
     "s823909",
     "s823908"
-   ]
+   ],
+   "ref": 1055130,
+   "look": [
+    "g:Chelidonura"
+   ],
+   "lsrc": {
+    "g:Chelidonura": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Samla",
@@ -1328,6 +2261,26 @@
     "s696622",
     "s778294",
     "s778296"
+   ],
+   "ref": 766652,
+   "look": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Favorinus"
    ]
   },
   {
@@ -1339,7 +2292,8 @@
     "s552180",
     "s418465",
     "s471382"
-   ]
+   ],
+   "ref": 567581
   },
   {
    "id": "g:Armina",
@@ -1349,7 +2303,8 @@
    "species": [
     "s841162",
     "s841163"
-   ]
+   ],
+   "ref": 137677
   },
   {
    "id": "g:Roboastra",
@@ -1358,7 +2313,8 @@
    "circle": 2,
    "species": [
     "s120982"
-   ]
+   ],
+   "ref": 138045
   },
   {
    "id": "g:Plakobranchus",
@@ -1368,7 +2324,8 @@
    "species": [
     "s723224",
     "s49121"
-   ]
+   ],
+   "ref": 225419
   },
   {
    "id": "g:Longibranchus",
@@ -1377,7 +2334,8 @@
    "circle": 2,
    "species": [
     "s1668619"
-   ]
+   ],
+   "ref": 1832555
   },
   {
    "id": "g:Bermudella",
@@ -1386,7 +2344,8 @@
    "circle": 2,
    "species": [
     "s1521020"
-   ]
+   ],
+   "ref": 138039
   },
   {
    "id": "g:Aplysia",
@@ -1398,6 +2357,7 @@
     "s508245",
     "s891014"
    ],
+   "ref": 137654,
    "en": [
     {
      "n": "sea hares",
@@ -1410,6 +2370,22 @@
     "inat": 48657,
     "worms": 137654,
     "wiki": "Aplysia"
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Elysia"
+   ],
+   "lsrc": {
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Elysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
    }
   },
   {
@@ -1419,7 +2395,8 @@
    "circle": 3,
    "species": [
     "s64717"
-   ]
+   ],
+   "ref": 404963
   },
   {
    "id": "g:Gymnodoris",
@@ -1428,7 +2405,8 @@
    "circle": 3,
    "species": [
     "s1143046"
-   ]
+   ],
+   "ref": 206395
   },
   {
    "id": "g:Cyerce",
@@ -1440,7 +2418,18 @@
     "s1623585",
     "s1623583",
     "s549234"
-   ]
+   ],
+   "ref": 494335,
+   "dlook": [
+    "g:Melibe"
+   ],
+   "lsrc": {
+    "g:Melibe": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Taringa",
@@ -1449,7 +2438,8 @@
    "circle": 3,
    "species": [
     "s469508"
-   ]
+   ],
+   "ref": 138359
   },
   {
    "id": "g:Doto",
@@ -1458,7 +2448,8 @@
    "circle": 3,
    "species": [
     "s471272"
-   ]
+   ],
+   "ref": 137916
   },
   {
    "id": "g:Tenellia",
@@ -1469,7 +2460,8 @@
     "s1595814",
     "s1595806",
     "s1595807"
-   ]
+   ],
+   "ref": 138545
   },
   {
    "id": "g:Tomoberthella",
@@ -1478,7 +2470,8 @@
    "circle": 3,
    "species": [
     "s1532043"
-   ]
+   ],
+   "ref": 1720606
   },
   {
    "id": "g:Colpodaspis",
@@ -1487,7 +2480,8 @@
    "circle": 3,
    "species": [
     "s487302"
-   ]
+   ],
+   "ref": 137893
   },
   {
    "id": "g:Cabangus",
@@ -1496,7 +2490,8 @@
    "circle": 3,
    "species": [
     "s1153968"
-   ]
+   ],
+   "ref": 1457498
   },
   {
    "id": "g:Asteronotus",
@@ -1505,7 +2500,18 @@
    "circle": 3,
    "species": [
     "s52961"
-   ]
+   ],
+   "ref": 206528,
+   "dlook": [
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Trapania",
@@ -1517,7 +2523,8 @@
     "s476173",
     "s476171",
     "s332512"
-   ]
+   ],
+   "ref": 138043
   },
   {
    "id": "g:Janolus",
@@ -1527,7 +2534,8 @@
    "species": [
     "s497250",
     "s891079"
-   ]
+   ],
+   "ref": 138379
   },
   {
    "id": "g:Notodoris",
@@ -1537,7 +2545,8 @@
    "species": [
     "s504909",
     "s504910"
-   ]
+   ],
+   "ref": 531074
   },
   {
    "id": "g:Verconia",
@@ -1547,7 +2556,8 @@
    "species": [
     "s715146",
     "s504813"
-   ]
+   ],
+   "ref": 533937
   },
   {
    "id": "g:Baeolidia",
@@ -1556,7 +2566,8 @@
    "circle": 3,
    "species": [
     "s349048"
-   ]
+   ],
+   "ref": 137632
   },
   {
    "id": "g:Philinopsis",
@@ -1565,7 +2576,8 @@
    "circle": 3,
    "species": [
     "s199467"
-   ]
+   ],
+   "ref": 137640
   },
   {
    "id": "g:Sclerodoris",
@@ -1574,7 +2586,8 @@
    "circle": 3,
    "species": [
     "s199590"
-   ]
+   ],
+   "ref": 137660
   },
   {
    "id": "g:Murphydoris",
@@ -1583,7 +2596,8 @@
    "circle": 3,
    "species": [
     "s1365704"
-   ]
+   ],
+   "ref": 723629
   },
   {
    "id": "g:Stylocheilus",
@@ -1592,7 +2606,8 @@
    "circle": 3,
    "species": [
     "s48654"
-   ]
+   ],
+   "ref": 203969
   },
   {
    "id": "g:Cratena",
@@ -1601,7 +2616,8 @@
    "circle": 3,
    "species": [
     "s467982"
-   ]
+   ],
+   "ref": 146861
   },
   {
    "id": "g:Euselenops",
@@ -1610,7 +2626,8 @@
    "circle": 3,
    "species": [
     "s50556"
-   ]
+   ],
+   "ref": 534372
   },
   {
    "id": "g:Dendrodoris",
@@ -1619,7 +2636,30 @@
    "circle": 3,
    "species": [
     "s50430"
-   ]
+   ],
+   "ref": 137883,
+   "dlook": [
+    "g:Aplysia",
+    "g:Goniobranchus",
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dermatobranchus",
@@ -1629,7 +2669,18 @@
    "species": [
     "s495412",
     "s626349"
-   ]
+   ],
+   "ref": 531811,
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Mariaglaja",
@@ -1638,7 +2689,8 @@
    "circle": 3,
    "species": [
     "s823951"
-   ]
+   ],
+   "ref": 1055127
   },
   {
    "id": "g:Marioniopsis",
@@ -1647,7 +2699,18 @@
    "circle": 3,
    "species": [
     "s1491723"
-   ]
+   ],
+   "ref": 456341,
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Tyrannodoris",
@@ -1656,7 +2719,19 @@
    "circle": 3,
    "species": [
     "s699008"
-   ]
+   ],
+   "ref": 1036119,
+   "look": [
+    "g:Tambja"
+   ],
+   "lsrc": {
+    "g:Tambja": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Odontoglaja",
@@ -1665,7 +2740,8 @@
    "circle": 3,
    "species": [
     "s506090"
-   ]
+   ],
+   "ref": 559046
   },
   {
    "id": "g:Notobryon",
@@ -1674,7 +2750,8 @@
    "circle": 3,
    "species": [
     "s50398"
-   ]
+   ],
+   "ref": 225544
   },
   {
    "id": "g:Atagema",
@@ -1683,7 +2760,8 @@
    "circle": 3,
    "species": [
     "s50445"
-   ]
+   ],
+   "ref": 137659
   },
   {
    "id": "g:Bulbaeolidia",
@@ -1692,7 +2770,8 @@
    "circle": 3,
    "species": [
     "s325414"
-   ]
+   ],
+   "ref": 730445
   },
   {
    "id": "g:Platydoris",
@@ -1701,7 +2780,18 @@
    "circle": 3,
    "species": [
     "s559946"
-   ]
+   ],
+   "ref": 138358,
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Pelagella",
@@ -1710,7 +2800,8 @@
    "circle": 3,
    "species": [
     "s1471723"
-   ]
+   ],
+   "ref": 1663336
   }
  ],
  "species": [
@@ -9637,5 +10728,1786 @@
   }
  ],
  "vn": [],
- "ref": {}
+ "ref": {
+  "101": {
+   "name": "Gastropoda",
+   "rank": "Class",
+   "parent": null
+  },
+  "154": {
+   "name": "Cephalaspidea",
+   "rank": "Order",
+   "parent": 1057250
+  },
+  "167": {
+   "name": "Sacoglossa",
+   "rank": "Superorder",
+   "parent": 1057250
+  },
+  "172": {
+   "name": "Aplysiidae",
+   "rank": "Family",
+   "parent": 225490
+  },
+  "173": {
+   "name": "Doridoidea",
+   "rank": "Superfamily",
+   "parent": 246038
+  },
+  "174": {
+   "name": "Goniodorididae",
+   "rank": "Family",
+   "parent": 246152
+  },
+  "177": {
+   "name": "Polyceridae",
+   "rank": "Family",
+   "parent": 412569
+  },
+  "182": {
+   "name": "Dendronotoidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "183": {
+   "name": "Tritoniidae",
+   "rank": "Family",
+   "parent": 412595
+  },
+  "186": {
+   "name": "Dendronotidae",
+   "rank": "Family",
+   "parent": 182
+  },
+  "187": {
+   "name": "Dotidae",
+   "rank": "Family",
+   "parent": 182
+  },
+  "189": {
+   "name": "Aeolidioidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "190": {
+   "name": "Flabellinidae",
+   "rank": "Family",
+   "parent": 412646
+  },
+  "191": {
+   "name": "Facelinidae",
+   "rank": "Family",
+   "parent": 189
+  },
+  "192": {
+   "name": "Aeolidiidae",
+   "rank": "Family",
+   "parent": 189
+  },
+  "193": {
+   "name": "Eubranchidae",
+   "rank": "Family",
+   "parent": 412646
+  },
+  "1755": {
+   "name": "Pleurobranchidae",
+   "rank": "Family",
+   "parent": 412548
+  },
+  "1761": {
+   "name": "Discodorididae",
+   "rank": "Family",
+   "parent": 173
+  },
+  "1762": {
+   "name": "Nudibranchia",
+   "rank": "Order",
+   "parent": 411966
+  },
+  "1763": {
+   "name": "Arminoidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "2087": {
+   "name": "Arminidae",
+   "rank": "Family",
+   "parent": 1763
+  },
+  "14712": {
+   "name": "Heterobranchia",
+   "rank": "Subclass",
+   "parent": 101
+  },
+  "22981": {
+   "name": "Aglajidae",
+   "rank": "Family",
+   "parent": 196322
+  },
+  "23003": {
+   "name": "Chromodorididae",
+   "rank": "Family",
+   "parent": 1370609
+  },
+  "23012": {
+   "name": "Costasiellidae",
+   "rank": "Family",
+   "parent": 411959
+  },
+  "23026": {
+   "name": "Dendrodorididae",
+   "rank": "Family",
+   "parent": 412563
+  },
+  "23030": {
+   "name": "Dolabriferinae",
+   "rank": "Subfamily",
+   "parent": 172
+  },
+  "23045": {
+   "name": "Gastropteridae",
+   "rank": "Family",
+   "parent": 196322
+  },
+  "23093": {
+   "name": "Phyllidiidae",
+   "rank": "Family",
+   "parent": 412563
+  },
+  "23115": {
+   "name": "Scyllaeidae",
+   "rank": "Family",
+   "parent": 182
+  },
+  "23125": {
+   "name": "Tethydidae",
+   "rank": "Family",
+   "parent": 182
+  },
+  "137628": {
+   "name": "Aegires",
+   "rank": "Genus",
+   "parent": 531070
+  },
+  "137632": {
+   "name": "Baeolidia",
+   "rank": "Genus",
+   "parent": 192
+  },
+  "137638": {
+   "name": "Chelidonura",
+   "rank": "Genus",
+   "parent": 22981
+  },
+  "137640": {
+   "name": "Philinopsis",
+   "rank": "Genus",
+   "parent": 22981
+  },
+  "137654": {
+   "name": "Aplysia",
+   "rank": "Genus",
+   "parent": 411924
+  },
+  "137659": {
+   "name": "Atagema",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "137660": {
+   "name": "Sclerodoris",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "137677": {
+   "name": "Armina",
+   "rank": "Genus",
+   "parent": 2087
+  },
+  "137782": {
+   "name": "Chromodoris",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "137783": {
+   "name": "Glossodoris",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "137784": {
+   "name": "Hypselodoris",
+   "rank": "Genus",
+   "parent": 549835
+  },
+  "137845": {
+   "name": "Costasiella",
+   "rank": "Genus",
+   "parent": 23012
+  },
+  "137883": {
+   "name": "Dendrodoris",
+   "rank": "Genus",
+   "parent": 23026
+  },
+  "137893": {
+   "name": "Colpodaspis",
+   "rank": "Genus",
+   "parent": 848161
+  },
+  "137897": {
+   "name": "Discodoris",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "137916": {
+   "name": "Doto",
+   "rank": "Genus",
+   "parent": 187
+  },
+  "137928": {
+   "name": "Elysia",
+   "rank": "Genus",
+   "parent": 411960
+  },
+  "137929": {
+   "name": "Thuridilla",
+   "rank": "Genus",
+   "parent": 411960
+  },
+  "137996": {
+   "name": "Caloria",
+   "rank": "Genus",
+   "parent": 191
+  },
+  "138006": {
+   "name": "Favorinus",
+   "rank": "Genus",
+   "parent": 191
+  },
+  "138039": {
+   "name": "Bermudella",
+   "rank": "Genus",
+   "parent": 1723339
+  },
+  "138043": {
+   "name": "Trapania",
+   "rank": "Genus",
+   "parent": 570867
+  },
+  "138045": {
+   "name": "Roboastra",
+   "rank": "Genus",
+   "parent": 412576
+  },
+  "138046": {
+   "name": "Tambja",
+   "rank": "Genus",
+   "parent": 412576
+  },
+  "138098": {
+   "name": "Jorunna",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "138347": {
+   "name": "Phyllidia",
+   "rank": "Genus",
+   "parent": 23093
+  },
+  "138348": {
+   "name": "Phyllidiopsis",
+   "rank": "Genus",
+   "parent": 23093
+  },
+  "138358": {
+   "name": "Platydoris",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "138359": {
+   "name": "Taringa",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "138364": {
+   "name": "Pleurobranchus",
+   "rank": "Genus",
+   "parent": 1755
+  },
+  "138371": {
+   "name": "Thecacera",
+   "rank": "Genus",
+   "parent": 412574
+  },
+  "138379": {
+   "name": "Janolus",
+   "rank": "Genus",
+   "parent": 153450
+  },
+  "138545": {
+   "name": "Tenellia",
+   "rank": "Genus",
+   "parent": 151283
+  },
+  "138547": {
+   "name": "Melibe",
+   "rank": "Genus",
+   "parent": 23125
+  },
+  "139151": {
+   "name": "Hypselodoris infucata",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "140819": {
+   "name": "Pleurobranchus forskalii",
+   "rank": "Species",
+   "parent": 138364
+  },
+  "146861": {
+   "name": "Cratena",
+   "rank": "Genus",
+   "parent": 191
+  },
+  "151283": {
+   "name": "Trinchesiidae",
+   "rank": "Family",
+   "parent": 412646
+  },
+  "153450": {
+   "name": "Janolidae",
+   "rank": "Family",
+   "parent": 1052378
+  },
+  "181237": {
+   "name": "Melibe viridis",
+   "rank": "Species",
+   "parent": 138547
+  },
+  "181240": {
+   "name": "Caloria indica",
+   "rank": "Species",
+   "parent": 137996
+  },
+  "196322": {
+   "name": "Philinoidea",
+   "rank": "Superfamily",
+   "parent": 154
+  },
+  "196329": {
+   "name": "Caliphyllidae",
+   "rank": "Family",
+   "parent": 411959
+  },
+  "196389": {
+   "name": "Reticulidia",
+   "rank": "Genus",
+   "parent": 23093
+  },
+  "203969": {
+   "name": "Stylocheilus",
+   "rank": "Genus",
+   "parent": 23030
+  },
+  "204185": {
+   "name": "Ceratosoma",
+   "rank": "Genus",
+   "parent": 549835
+  },
+  "204234": {
+   "name": "Diversidoris",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "204424": {
+   "name": "Phyllodesmium",
+   "rank": "Genus",
+   "parent": 570862
+  },
+  "204623": {
+   "name": "Dolabella",
+   "rank": "Genus",
+   "parent": 411927
+  },
+  "205320": {
+   "name": "Halgerda",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "206296": {
+   "name": "Pteraeolidia",
+   "rank": "Genus",
+   "parent": 412653
+  },
+  "206395": {
+   "name": "Gymnodoris",
+   "rank": "Genus",
+   "parent": 412574
+  },
+  "206528": {
+   "name": "Asteronotus",
+   "rank": "Genus",
+   "parent": 1761
+  },
+  "206596": {
+   "name": "Phyllidiella",
+   "rank": "Genus",
+   "parent": 23093
+  },
+  "206859": {
+   "name": "Hexabranchus",
+   "rank": "Genus",
+   "parent": 412582
+  },
+  "208629": {
+   "name": "Dolabella auricularia",
+   "rank": "Species",
+   "parent": 204623
+  },
+  "209596": {
+   "name": "Hypselodoris emma",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "209597": {
+   "name": "Hypselodoris maculosa",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "209606": {
+   "name": "Sclerodoris tuberculata",
+   "rank": "Species",
+   "parent": 137660
+  },
+  "212835": {
+   "name": "Phyllidia varicosa",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "212836": {
+   "name": "Phyllidia coelestis",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "212891": {
+   "name": "Ceratosoma trilobatum",
+   "rank": "Species",
+   "parent": 204185
+  },
+  "212893": {
+   "name": "Ceratosoma tenue",
+   "rank": "Species",
+   "parent": 204185
+  },
+  "213149": {
+   "name": "Chelidonura amoena",
+   "rank": "Species",
+   "parent": 137638
+  },
+  "215302": {
+   "name": "Asteronotus cespitosus",
+   "rank": "Species",
+   "parent": 206528
+  },
+  "220381": {
+   "name": "Hexabranchus sanguineus",
+   "rank": "Species",
+   "parent": 206859
+  },
+  "221077": {
+   "name": "Halgerda willeyi",
+   "rank": "Species",
+   "parent": 205320
+  },
+  "221080": {
+   "name": "Halgerda tessellata",
+   "rank": "Species",
+   "parent": 205320
+  },
+  "224364": {
+   "name": "Mexichromis",
+   "rank": "Genus",
+   "parent": 549835
+  },
+  "224662": {
+   "name": "Stylocheilus striatus",
+   "rank": "Species",
+   "parent": 203969
+  },
+  "225419": {
+   "name": "Plakobranchus",
+   "rank": "Genus",
+   "parent": 411960
+  },
+  "225490": {
+   "name": "Aplysioidea",
+   "rank": "Superfamily",
+   "parent": 1058953
+  },
+  "225544": {
+   "name": "Notobryon",
+   "rank": "Genus",
+   "parent": 23115
+  },
+  "225545": {
+   "name": "Notobryon wardi",
+   "rank": "Species",
+   "parent": 225544
+  },
+  "246038": {
+   "name": "Doridoidei",
+   "rank": "Infraorder",
+   "parent": 1052385
+  },
+  "246152": {
+   "name": "Onchidoridoidea",
+   "rank": "Superfamily",
+   "parent": 246038
+  },
+  "388315": {
+   "name": "Melibe digitata",
+   "rank": "Species",
+   "parent": 138547
+  },
+  "388630": {
+   "name": "Phyllodesmium jakobsenae",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "390071": {
+   "name": "Phyllodesmium rudmani",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "390813": {
+   "name": "Phestilla",
+   "rank": "Genus",
+   "parent": 151283
+  },
+  "404963": {
+   "name": "Bornella",
+   "rank": "Genus",
+   "parent": 412598
+  },
+  "411924": {
+   "name": "Aplysiinae",
+   "rank": "Subfamily",
+   "parent": 172
+  },
+  "411927": {
+   "name": "Notarchinae",
+   "rank": "Subfamily",
+   "parent": 172
+  },
+  "411959": {
+   "name": "Plakobranchoidea",
+   "rank": "Superfamily",
+   "parent": 167
+  },
+  "411960": {
+   "name": "Plakobranchidae",
+   "rank": "Family",
+   "parent": 411959
+  },
+  "411966": {
+   "name": "Nudipleura",
+   "rank": "Superorder",
+   "parent": 1057249
+  },
+  "412548": {
+   "name": "Pleurobranchoidea",
+   "rank": "Superfamily",
+   "parent": 1059020
+  },
+  "412554": {
+   "name": "Pleurobranchaeidae",
+   "rank": "Family",
+   "parent": 412548
+  },
+  "412563": {
+   "name": "Phyllidioidea",
+   "rank": "Superfamily",
+   "parent": 246038
+  },
+  "412569": {
+   "name": "Polyceroidea",
+   "rank": "Superfamily",
+   "parent": 246038
+  },
+  "412574": {
+   "name": "Polycerinae",
+   "rank": "Subfamily",
+   "parent": 177
+  },
+  "412576": {
+   "name": "Nembrothinae",
+   "rank": "Subfamily",
+   "parent": 177
+  },
+  "412582": {
+   "name": "Hexabranchidae",
+   "rank": "Family",
+   "parent": 1370609
+  },
+  "412595": {
+   "name": "Tritonioidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "412598": {
+   "name": "Bornellidae",
+   "rank": "Family",
+   "parent": 182
+  },
+  "412646": {
+   "name": "Fionoidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "412653": {
+   "name": "Pteraeolidiinae",
+   "rank": "Subfamily",
+   "parent": 191
+  },
+  "420528": {
+   "name": "Chelidonura hirundinina",
+   "rank": "Species",
+   "parent": 137638
+  },
+  "420618": {
+   "name": "Thecacera pacifica",
+   "rank": "Species",
+   "parent": 138371
+  },
+  "451657": {
+   "name": "Plakobranchus ocellatus",
+   "rank": "Species",
+   "parent": 225419
+  },
+  "456341": {
+   "name": "Marioniopsis",
+   "rank": "Genus",
+   "parent": 1669236
+  },
+  "456473": {
+   "name": "Nembrotha",
+   "rank": "Genus",
+   "parent": 412576
+  },
+  "456530": {
+   "name": "Thorunna",
+   "rank": "Genus",
+   "parent": 549835
+  },
+  "456998": {
+   "name": "Phyllodesmium koehleri",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "457014": {
+   "name": "Halgerda batangas",
+   "rank": "Species",
+   "parent": 205320
+  },
+  "457494": {
+   "name": "Chromodoris dianae",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "457496": {
+   "name": "Chromodoris joshi",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "457497": {
+   "name": "Chromodoris michaeli",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "457500": {
+   "name": "Taringa halgerda",
+   "rank": "Species",
+   "parent": 138359
+  },
+  "457512": {
+   "name": "Trapania miltabrancha",
+   "rank": "Species",
+   "parent": 138043
+  },
+  "457515": {
+   "name": "Trapania palmula",
+   "rank": "Species",
+   "parent": 138043
+  },
+  "457516": {
+   "name": "Trapania scurra",
+   "rank": "Species",
+   "parent": 138043
+  },
+  "457519": {
+   "name": "Trapania vitta",
+   "rank": "Species",
+   "parent": 138043
+  },
+  "457522": {
+   "name": "Hypselodoris bollandi",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "457526": {
+   "name": "Hypselodoris krakatoa",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "457528": {
+   "name": "Hypselodoris reidi",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "457531": {
+   "name": "Hypselodoris zephyra",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "457655": {
+   "name": "Thorunna halourga",
+   "rank": "Species",
+   "parent": 456530
+  },
+  "457930": {
+   "name": "Phyllodesmium pinnatum",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "457931": {
+   "name": "Phyllodesmium tuberculatum",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "494335": {
+   "name": "Cyerce",
+   "rank": "Genus",
+   "parent": 196329
+  },
+  "494488": {
+   "name": "Thuridilla albopustulosa",
+   "rank": "Species",
+   "parent": 137929
+  },
+  "494490": {
+   "name": "Thuridilla carlsoni",
+   "rank": "Species",
+   "parent": 137929
+  },
+  "494494": {
+   "name": "Thuridilla gracilis",
+   "rank": "Species",
+   "parent": 137929
+  },
+  "494498": {
+   "name": "Thuridilla lineolata",
+   "rank": "Species",
+   "parent": 137929
+  },
+  "494512": {
+   "name": "Cyerce elegans",
+   "rank": "Species",
+   "parent": 494335
+  },
+  "494655": {
+   "name": "Costasiella kuroshimae",
+   "rank": "Species",
+   "parent": 137845
+  },
+  "494660": {
+   "name": "Costasiella usagi",
+   "rank": "Species",
+   "parent": 137845
+  },
+  "509679": {
+   "name": "Colpodaspis thompsoni",
+   "rank": "Species",
+   "parent": 137893
+  },
+  "527317": {
+   "name": "Nembrotha chamberlaini",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527320": {
+   "name": "Nembrotha cristata",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527322": {
+   "name": "Nembrotha kubaryana",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527325": {
+   "name": "Nembrotha lineolata",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527326": {
+   "name": "Nembrotha livingstonei",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527328": {
+   "name": "Nembrotha milleri",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527329": {
+   "name": "Nembrotha mullineri",
+   "rank": "Species",
+   "parent": 456473
+  },
+  "527538": {
+   "name": "Thecacera picta",
+   "rank": "Species",
+   "parent": 138371
+  },
+  "531059": {
+   "name": "Roboastra gracilis",
+   "rank": "Species",
+   "parent": 138045
+  },
+  "531070": {
+   "name": "Aegiridae",
+   "rank": "Family",
+   "parent": 246152
+  },
+  "531074": {
+   "name": "Notodoris",
+   "rank": "Genus",
+   "parent": 531070
+  },
+  "531083": {
+   "name": "Aegires villosus",
+   "rank": "Species",
+   "parent": 137628
+  },
+  "531090": {
+   "name": "Notodoris minor",
+   "rank": "Species",
+   "parent": 531074
+  },
+  "531091": {
+   "name": "Notodoris serenae",
+   "rank": "Species",
+   "parent": 531074
+  },
+  "531173": {
+   "name": "Tambja morosa",
+   "rank": "Species",
+   "parent": 138046
+  },
+  "531196": {
+   "name": "Tambja olivaria",
+   "rank": "Species",
+   "parent": 138046
+  },
+  "531565": {
+   "name": "Sagaminopteron",
+   "rank": "Genus",
+   "parent": 23045
+  },
+  "531811": {
+   "name": "Dermatobranchus",
+   "rank": "Genus",
+   "parent": 2087
+  },
+  "533937": {
+   "name": "Verconia",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "534028": {
+   "name": "Coryphellina",
+   "rank": "Genus",
+   "parent": 190
+  },
+  "534073": {
+   "name": "Phyllodesmium poindimiei",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "534372": {
+   "name": "Euselenops",
+   "rank": "Genus",
+   "parent": 412554
+  },
+  "534383": {
+   "name": "Jorunna funebris",
+   "rank": "Species",
+   "parent": 138098
+  },
+  "534389": {
+   "name": "Jorunna rubescens",
+   "rank": "Species",
+   "parent": 138098
+  },
+  "534396": {
+   "name": "Jorunna parva",
+   "rank": "Species",
+   "parent": 138098
+  },
+  "535693": {
+   "name": "Euselenops luniceps",
+   "rank": "Species",
+   "parent": 534372
+  },
+  "536474": {
+   "name": "Elysia pusilla",
+   "rank": "Species",
+   "parent": 137928
+  },
+  "536543": {
+   "name": "Phestilla melanobrachia",
+   "rank": "Species",
+   "parent": 390813
+  },
+  "536544": {
+   "name": "Phestilla sibogae",
+   "rank": "Species",
+   "parent": 390813
+  },
+  "536574": {
+   "name": "Phyllidiella pustulosa",
+   "rank": "Species",
+   "parent": 206596
+  },
+  "536615": {
+   "name": "Phyllidia picta",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "536617": {
+   "name": "Phyllidia elegans",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "536623": {
+   "name": "Phyllidia ocellata",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "536631": {
+   "name": "Phyllidia exquisita",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "536637": {
+   "name": "Phyllidia polkadotsa",
+   "rank": "Species",
+   "parent": 138347
+  },
+  "536691": {
+   "name": "Phyllidiella nigra",
+   "rank": "Species",
+   "parent": 206596
+  },
+  "536709": {
+   "name": "Phyllidiella rudmani",
+   "rank": "Species",
+   "parent": 206596
+  },
+  "536716": {
+   "name": "Phyllidiopsis krempfi",
+   "rank": "Species",
+   "parent": 138348
+  },
+  "536717": {
+   "name": "Phyllidiopsis shireenae",
+   "rank": "Species",
+   "parent": 138348
+  },
+  "536725": {
+   "name": "Phyllidiopsis annae",
+   "rank": "Species",
+   "parent": 138348
+  },
+  "536729": {
+   "name": "Phyllidiopsis fissurata",
+   "rank": "Species",
+   "parent": 138348
+  },
+  "536733": {
+   "name": "Reticulidia halgerda",
+   "rank": "Species",
+   "parent": 196389
+  },
+  "536734": {
+   "name": "Reticulidia fungia",
+   "rank": "Species",
+   "parent": 196389
+  },
+  "536916": {
+   "name": "Cadlinella",
+   "rank": "Genus",
+   "parent": 1423460
+  },
+  "537016": {
+   "name": "Dendrodoris tuberculosa",
+   "rank": "Species",
+   "parent": 137883
+  },
+  "548878": {
+   "name": "Phyllodesmium crypticum",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "548882": {
+   "name": "Phyllodesmium briareum",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "548883": {
+   "name": "Phyllodesmium colemani",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "549611": {
+   "name": "Bornella anguilla",
+   "rank": "Species",
+   "parent": 404963
+  },
+  "549835": {
+   "name": "Miamirinae",
+   "rank": "Subfamily",
+   "parent": 23003
+  },
+  "549843": {
+   "name": "Ardeadoris",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "558198": {
+   "name": "Chromodoris lochi",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558217": {
+   "name": "Chromodoris willani",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558229": {
+   "name": "Chromodoris annae",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558230": {
+   "name": "Chromodoris magnifica",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558300": {
+   "name": "Chromodoris strigata",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558301": {
+   "name": "Chromodoris colemani",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "558430": {
+   "name": "Ardeadoris egretta",
+   "rank": "Species",
+   "parent": 549843
+  },
+  "558431": {
+   "name": "Cadlinella ornatissima",
+   "rank": "Species",
+   "parent": 536916
+  },
+  "558453": {
+   "name": "Goniobranchus",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "558470": {
+   "name": "Doriprismatica",
+   "rank": "Genus",
+   "parent": 1370610
+  },
+  "558499": {
+   "name": "Doriprismatica atromarginata",
+   "rank": "Species",
+   "parent": 558470
+  },
+  "558609": {
+   "name": "Thorunna furtiva",
+   "rank": "Species",
+   "parent": 456530
+  },
+  "558618": {
+   "name": "Ceratosoma gracillimum",
+   "rank": "Species",
+   "parent": 204185
+  },
+  "558646": {
+   "name": "Hypselodoris tryoni",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "558673": {
+   "name": "Mexichromis multituberculata",
+   "rank": "Species",
+   "parent": 224364
+  },
+  "558680": {
+   "name": "Thorunna daniellae",
+   "rank": "Species",
+   "parent": 456530
+  },
+  "558975": {
+   "name": "Dermatobranchus caeruleomaculatus",
+   "rank": "Species",
+   "parent": 531811
+  },
+  "558985": {
+   "name": "Dermatobranchus funiculus",
+   "rank": "Species",
+   "parent": 531811
+  },
+  "559039": {
+   "name": "Philinopsis speciosa",
+   "rank": "Species",
+   "parent": 137640
+  },
+  "559046": {
+   "name": "Odontoglaja",
+   "rank": "Genus",
+   "parent": 22981
+  },
+  "559047": {
+   "name": "Odontoglaja guamensis",
+   "rank": "Species",
+   "parent": 559046
+  },
+  "559949": {
+   "name": "Glossodoris hikuerensis",
+   "rank": "Species",
+   "parent": 137783
+  },
+  "559960": {
+   "name": "Glossodoris rufomarginata",
+   "rank": "Species",
+   "parent": 137783
+  },
+  "559984": {
+   "name": "Hypselodoris purpureomaculosa",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "560037": {
+   "name": "Hypselodoris whitei",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "560043": {
+   "name": "Hypselodoris bullockii",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "560044": {
+   "name": "Hypselodoris apolegma",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "560057": {
+   "name": "Platydoris sanguinea",
+   "rank": "Species",
+   "parent": 138358
+  },
+  "565422": {
+   "name": "Hypselodoris decorata",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "565620": {
+   "name": "Goniobranchus albopunctatus",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "567581": {
+   "name": "Miamira",
+   "rank": "Genus",
+   "parent": 549835
+  },
+  "567583": {
+   "name": "Miamira sinuata",
+   "rank": "Species",
+   "parent": 567581
+  },
+  "568191": {
+   "name": "Aplysia reticulata",
+   "rank": "Species",
+   "parent": 137654
+  },
+  "570862": {
+   "name": "Myrrhinidae",
+   "rank": "Family",
+   "parent": 189
+  },
+  "570867": {
+   "name": "Anculinae",
+   "rank": "Subfamily",
+   "parent": 174
+  },
+  "578705": {
+   "name": "Discodoris boholiensis",
+   "rank": "Species",
+   "parent": 137897
+  },
+  "593362": {
+   "name": "Melibe engeli",
+   "rank": "Species",
+   "parent": 138547
+  },
+  "597311": {
+   "name": "Diversidoris crocea",
+   "rank": "Species",
+   "parent": 204234
+  },
+  "597314": {
+   "name": "Ardeadoris angustolutea",
+   "rank": "Species",
+   "parent": 549843
+  },
+  "597315": {
+   "name": "Ardeadoris averni",
+   "rank": "Species",
+   "parent": 549843
+  },
+  "597329": {
+   "name": "Goniobranchus coi",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597334": {
+   "name": "Goniobranchus fidelis",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597336": {
+   "name": "Goniobranchus geometricus",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597338": {
+   "name": "Goniobranchus hintuanensis",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597339": {
+   "name": "Goniobranchus kuniei",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597340": {
+   "name": "Goniobranchus preciosus",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597344": {
+   "name": "Goniobranchus verrieri",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597346": {
+   "name": "Goniobranchus albonares",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597372": {
+   "name": "Goniobranchus setoensis",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "597461": {
+   "name": "Miamira alleni",
+   "rank": "Species",
+   "parent": 567581
+  },
+  "597463": {
+   "name": "Miamira miamirana",
+   "rank": "Species",
+   "parent": 567581
+  },
+  "597884": {
+   "name": "Mexichromis pusilla",
+   "rank": "Species",
+   "parent": 224364
+  },
+  "597888": {
+   "name": "Mexichromis trilineata",
+   "rank": "Species",
+   "parent": 224364
+  },
+  "599253": {
+   "name": "Favorinus tsuruganus",
+   "rank": "Species",
+   "parent": 138006
+  },
+  "599286": {
+   "name": "Cratena simba",
+   "rank": "Species",
+   "parent": 146861
+  },
+  "599288": {
+   "name": "Favorinus japonicus",
+   "rank": "Species",
+   "parent": 138006
+  },
+  "599289": {
+   "name": "Favorinus mirabilis",
+   "rank": "Species",
+   "parent": 138006
+  },
+  "599304": {
+   "name": "Phyllodesmium kabiranum",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "599305": {
+   "name": "Phyllodesmium opalescens",
+   "rank": "Species",
+   "parent": 204424
+  },
+  "599344": {
+   "name": "Chelidonura varians",
+   "rank": "Species",
+   "parent": 137638
+  },
+  "599449": {
+   "name": "Sagaminopteron nigropunctatum",
+   "rank": "Species",
+   "parent": 531565
+  },
+  "599450": {
+   "name": "Sagaminopteron psychedelicum",
+   "rank": "Species",
+   "parent": 531565
+  },
+  "599475": {
+   "name": "Pleurobranchus grandis",
+   "rank": "Species",
+   "parent": 138364
+  },
+  "599477": {
+   "name": "Pleurobranchus peronii",
+   "rank": "Species",
+   "parent": 138364
+  },
+  "599478": {
+   "name": "Pleurobranchus weberi",
+   "rank": "Species",
+   "parent": 138364
+  },
+  "599494": {
+   "name": "Atagema intecta",
+   "rank": "Species",
+   "parent": 137659
+  },
+  "599560": {
+   "name": "Doto ussi",
+   "rank": "Species",
+   "parent": 137916
+  },
+  "599830": {
+   "name": "Phyllidiopsis xishaensis",
+   "rank": "Species",
+   "parent": 138348
+  },
+  "708806": {
+   "name": "Melibe colemani",
+   "rank": "Species",
+   "parent": 138547
+  },
+  "723627": {
+   "name": "Janolus savinkini",
+   "rank": "Species",
+   "parent": 138379
+  },
+  "723629": {
+   "name": "Murphydoris",
+   "rank": "Genus",
+   "parent": 1723339
+  },
+  "730416": {
+   "name": "Baeolidia moebii",
+   "rank": "Species",
+   "parent": 137632
+  },
+  "730434": {
+   "name": "Aplysia argus",
+   "rank": "Species",
+   "parent": 137654
+  },
+  "730445": {
+   "name": "Bulbaeolidia",
+   "rank": "Genus",
+   "parent": 192
+  },
+  "730446": {
+   "name": "Bulbaeolidia alba",
+   "rank": "Species",
+   "parent": 730445
+  },
+  "764917": {
+   "name": "Pteraeolidia semperi",
+   "rank": "Species",
+   "parent": 206296
+  },
+  "765107": {
+   "name": "Elysia marginata",
+   "rank": "Species",
+   "parent": 137928
+  },
+  "766652": {
+   "name": "Samla",
+   "rank": "Genus",
+   "parent": 1047246
+  },
+  "766653": {
+   "name": "Samla bicolor",
+   "rank": "Species",
+   "parent": 766652
+  },
+  "766696": {
+   "name": "Gymnodoris crocea",
+   "rank": "Species",
+   "parent": 206395
+  },
+  "827889": {
+   "name": "Cladobranchia",
+   "rank": "Suborder",
+   "parent": 1762
+  },
+  "833143": {
+   "name": "Goniobranchus leopardus",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "848161": {
+   "name": "Colpodaspididae",
+   "rank": "Family",
+   "parent": 196322
+  },
+  "866649": {
+   "name": "Verconia alboannulata",
+   "rank": "Species",
+   "parent": 533937
+  },
+  "866658": {
+   "name": "Verconia norba",
+   "rank": "Species",
+   "parent": 533937
+  },
+  "879682": {
+   "name": "Plakobranchus papua",
+   "rank": "Species",
+   "parent": 225419
+  },
+  "990403": {
+   "name": "Armina scotti",
+   "rank": "Species",
+   "parent": 137677
+  },
+  "990404": {
+   "name": "Armina occulta",
+   "rank": "Species",
+   "parent": 137677
+  },
+  "1036119": {
+   "name": "Tyrannodoris",
+   "rank": "Genus",
+   "parent": 412576
+  },
+  "1036120": {
+   "name": "Tyrannodoris luteolineata",
+   "rank": "Species",
+   "parent": 1036119
+  },
+  "1047246": {
+   "name": "Samlidae",
+   "rank": "Family",
+   "parent": 412646
+  },
+  "1047248": {
+   "name": "Samla bilas",
+   "rank": "Species",
+   "parent": 766652
+  },
+  "1047250": {
+   "name": "Samla riwo",
+   "rank": "Species",
+   "parent": 766652
+  },
+  "1047492": {
+   "name": "Coryphellina exoptata",
+   "rank": "Species",
+   "parent": 534028
+  },
+  "1047496": {
+   "name": "Coryphellina lotos",
+   "rank": "Species",
+   "parent": 534028
+  },
+  "1052378": {
+   "name": "Proctonotoidea",
+   "rank": "Superfamily",
+   "parent": 827889
+  },
+  "1052385": {
+   "name": "Doridina",
+   "rank": "Suborder",
+   "parent": 1762
+  },
+  "1055127": {
+   "name": "Mariaglaja",
+   "rank": "Genus",
+   "parent": 22981
+  },
+  "1055130": {
+   "name": "Tubulophilinopsis",
+   "rank": "Genus",
+   "parent": 22981
+  },
+  "1055261": {
+   "name": "Tubulophilinopsis pilsbryi",
+   "rank": "Species",
+   "parent": 1055130
+  },
+  "1055265": {
+   "name": "Tubulophilinopsis gardineri",
+   "rank": "Species",
+   "parent": 1055130
+  },
+  "1057247": {
+   "name": "Euthyneura",
+   "rank": "Infraclass",
+   "parent": 14712
+  },
+  "1057249": {
+   "name": "Ringipleura",
+   "rank": "Subterclass",
+   "parent": 1057247
+  },
+  "1057250": {
+   "name": "Tectipleura",
+   "rank": "Subterclass",
+   "parent": 1057247
+  },
+  "1058953": {
+   "name": "Aplysiida",
+   "rank": "Order",
+   "parent": 1057250
+  },
+  "1059020": {
+   "name": "Pleurobranchida",
+   "rank": "Order",
+   "parent": 411966
+  },
+  "1251040": {
+   "name": "Mariaglaja tsurugensis",
+   "rank": "Species",
+   "parent": 1055127
+  },
+  "1264642": {
+   "name": "Glossodoris buko",
+   "rank": "Species",
+   "parent": 137783
+  },
+  "1264645": {
+   "name": "Glossodoris acosti",
+   "rank": "Species",
+   "parent": 137783
+  },
+  "1297848": {
+   "name": "Hypselodoris paradisa",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1297850": {
+   "name": "Hypselodoris roo",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1297852": {
+   "name": "Hypselodoris skyleri",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1297853": {
+   "name": "Hypselodoris variobranchia",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1297854": {
+   "name": "Hypselodoris violacea",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1297856": {
+   "name": "Hypselodoris katherinae",
+   "rank": "Species",
+   "parent": 137784
+  },
+  "1340020": {
+   "name": "Janolus flavoanulatus",
+   "rank": "Species",
+   "parent": 138379
+  },
+  "1349546": {
+   "name": "Aplysia nigrocincta",
+   "rank": "Species",
+   "parent": 137654
+  },
+  "1370609": {
+   "name": "Chromodoridoidea",
+   "rank": "Superfamily",
+   "parent": 246038
+  },
+  "1370610": {
+   "name": "Chromodoridinae",
+   "rank": "Subfamily",
+   "parent": 23003
+  },
+  "1423460": {
+   "name": "Cadlinellidae",
+   "rank": "Family",
+   "parent": 1370609
+  },
+  "1450726": {
+   "name": "Chromodoris kalawakan",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "1457498": {
+   "name": "Cabangus",
+   "rank": "Genus",
+   "parent": 186
+  },
+  "1457499": {
+   "name": "Cabangus regius",
+   "rank": "Species",
+   "parent": 1457498
+  },
+  "1533655": {
+   "name": "Chromodoris alcalai",
+   "rank": "Species",
+   "parent": 137782
+  },
+  "1561406": {
+   "name": "Goniobranchus fabulus",
+   "rank": "Species",
+   "parent": 558453
+  },
+  "1568876": {
+   "name": "Murphydoris adusta",
+   "rank": "Species",
+   "parent": 723629
+  },
+  "1571927": {
+   "name": "Hexabranchus lacer",
+   "rank": "Species",
+   "parent": 206859
+  },
+  "1578296": {
+   "name": "Coryphellina flamma",
+   "rank": "Species",
+   "parent": 534028
+  },
+  "1663336": {
+   "name": "Pelagella",
+   "rank": "Genus",
+   "parent": 1723339
+  },
+  "1663409": {
+   "name": "Pelagella longicornis",
+   "rank": "Species",
+   "parent": 1663336
+  },
+  "1669236": {
+   "name": "Marioniinae",
+   "rank": "Subfamily",
+   "parent": 183
+  },
+  "1669262": {
+   "name": "Marioniopsis arborescens",
+   "rank": "Species",
+   "parent": 456341
+  },
+  "1720606": {
+   "name": "Tomoberthella",
+   "rank": "Genus",
+   "parent": 1755
+  },
+  "1720806": {
+   "name": "Tomoberthella martensi",
+   "rank": "Species",
+   "parent": 1720606
+  },
+  "1723339": {
+   "name": "Goniodoridinae",
+   "rank": "Subfamily",
+   "parent": 174
+  },
+  "1723419": {
+   "name": "Bermudella brunneomaculata",
+   "rank": "Species",
+   "parent": 138039
+  },
+  "1783800": {
+   "name": "Tenellia puti",
+   "rank": "Species",
+   "parent": 138545
+  },
+  "1783801": {
+   "name": "Tenellia bughaw",
+   "rank": "Species",
+   "parent": 138545
+  },
+  "1783802": {
+   "name": "Tenellia nakapila",
+   "rank": "Species",
+   "parent": 138545
+  },
+  "1814148": {
+   "name": "Cyerce nigra",
+   "rank": "Species",
+   "parent": 494335
+  },
+  "1814153": {
+   "name": "Cyerce katiae",
+   "rank": "Species",
+   "parent": 494335
+  },
+  "1814155": {
+   "name": "Cyerce blackburnae",
+   "rank": "Species",
+   "parent": 494335
+  },
+  "1832555": {
+   "name": "Longibranchus",
+   "rank": "Genus",
+   "parent": 193
+  },
+  "1832557": {
+   "name": "Longibranchus putnami",
+   "rank": "Species",
+   "parent": 1832555
+  },
+  "1883897": {
+   "name": "Thecacera pikachu",
+   "rank": "Species",
+   "parent": 138371
+  }
+ }
 }

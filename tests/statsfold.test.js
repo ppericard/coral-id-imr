@@ -580,11 +580,16 @@ test('readStats makes the whole log when the snapshot is missing, stale, of anot
 
 test("the replays read the snapshot: each player's record and the admin's list are the whole log's", () => {
   const {s, now} = adminLog(37);
-  // The replay's units and the slate (data.json, cached as gen_ and slate_ read them).
-  s.cache.gen1 = JSON.stringify({
-    Acropora: {look: ['Porites'], fam: 'Acroporidae'},
-    Porites: {look: ['Acropora']},
-    Favia: {fam: 'Merulinidae'}
+  // The replay's units and the slate (data.json, cached as gen_ and slate_ read them: the units under the content
+  // editor's pairs, none here, through subjRpl_'s cache, design note v2 step 8).
+  s.cache['scur1:coral'] = JSON.stringify({fp: '', c: {}});
+  s.cache['sgen4:coral:'] = JSON.stringify({
+    gen: {
+      Acropora: {look: ['Porites'], fam: 'Acroporidae'},
+      Porites: {look: ['Acropora']},
+      Favia: {fam: 'Merulinidae'}
+    },
+    st: ''
   });
   s.cache.slate1 = JSON.stringify(G);
   // Answers the replay rates with the pooled stats: logged with the expectation and the ability (e, th), as the app does.

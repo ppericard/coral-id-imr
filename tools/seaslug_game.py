@@ -14,16 +14,25 @@ Inputs, all in the repository (no network but --r2's downloads):
   - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
   - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
     order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order);
-  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources.
+  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources;
+  - tools/seaslug_lookalikes_cand.json (tools/seaslug_lookalikes.py): the look-alike survey's literature sets and genus
+    pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D);
+  - tools/seaslug_cues.json (checked by tools/seaslug_cues.py): the sourced ID marks of genera and families;
+  - tools/seaslug_worms.json (tools/seaslug_worms.py, from WoRMS): the reference taxonomy, AphiaID -> {name, rank,
+    parent} from the class down, and each genus's WoRMS AphiaID.
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
-    circle, as a fish family's), species, genera, look (none sourced yet: study §9 step 8), cues (none: no IMR content,
+    circle, as a fish family's), species, genera, look (none: the look-alikes are the genera's, below), cues (none: no IMR content,
     study §8), tgroup (its taxonomic group's number in taxa)}, in the order of their first species (by circle, then by
     commonness rank);
   - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
     shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
-  - genera {id g:<genus>, name, family, circle (its best species'), species};
+  - genera {id g:<genus>, name, family, circle (its best species'), species, ref (the AphiaID of the WoRMS genus of that
+    name, tools/seaslug_worms.json genera), look, dlook, lsrc}: look, the other genera
+    a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
+    those only iNaturalist's identifications show (data look-alikes: the players' answers can drop them), lsrc each
+    one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D);
   - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
     differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
     tools/seaslugs.json rank), group (the iNaturalist order: Nudibranchia, Sacoglossa...), star (the stars set, Q369 (c),
@@ -36,10 +45,16 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
     own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
     Q369 (d) stands: never a choice, no common-name branch).
+  - on a genus or family tools/seaslug_cues.json gives ID marks: marks, msrc, mby, as a fish genus's (tools/seaslug_cues.py
+    apply; study §9 step 7): shown on its sheets and, a genus's, in the quiz feedback.
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
     is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
-    tag.
+    tag;
+  - ref {AphiaID: {name, rank, parent}}: the reference taxonomy (WoRMS, as fish.json ref; Pierre, 2026-11-13, Q340: the
+    admin's Photos › Tree › Key | WoRMS; 2026-11-17, "on garde WoRMS"), every node from the class (Gastropoda) down to
+    the species of the tree and its genera's WoRMS genera, parent null at the root (worms_ref); a species or a genus
+    tools/seaslug_worms.json lacks fails the build, naming it (run tools/seaslug_worms.py).
 
 seaslug-game.json, in fish-game.json's record shape (core.js fishPhotos, fishGameRead) under each family id, one photo a
 line:
@@ -49,14 +64,24 @@ line:
     photoTarget.perJuvenileForm juvenile photos for a species with a documented juvenile form (photoTarget.juvenile);
     a species with fewer than photoTarget.start such photos has none in play (it cannot be played yet). The same rule
     for every circle;
-  - each record {f, o, src, a, lic, t, sp, loc, own, e, jt, ph, auto: "cand"}, ph "juvenile" for a photo judged a
+  - Pierre's curation (curation.json seaslug, the sea slugs' part: core.js SUBJECTS seaslug admin.cur; written by the
+    admin's Photos › Tree and a report's photo tools, never here: rule A1), as a fish photo follows the fish part
+    (tools/fish_game.py in_play, record): a photo he removed (seen), excluded (exclude, or the top-level exclude, by
+    name or photo id) or moved with Not this (out) is not in play, nor an automatic add of his he undid, and the next
+    sure photo takes its place under the cap; his adds (add {photo: species or genus id}, core.js fishOn) are in play
+    whatever their judgement, never trimmed by the cap, named after the species he moved them to; his ease and tags are
+    the record's (fish_game.py mine_tags), and a count he set to other species one could take for its subject (k) or
+    unclear keeps the photo out (rule P3); his crop (crop, his whole-photo [0, 0, 1, 1] included) replaces the judge's,
+    and his rotation (rot) turns the files, both applied when the photo is downloaded for R2 (ro on the record);
+  - each record {f, o, src, a, lic, t, sp, loc, own, e, jt, ph, auto: "cand"} (no auto on Pierre's adds), ph "juvenile"
+    for a photo judged a
     juvenile (as a fish record's phase: tools/fish_game.py phase), and then either
       r: 1, the photo read from iNaturalist (app.js img), until a run with --r2 has put it on R2; or
-      ar, cr, iv and no r: its four files on R2, as a fish game photo (study §9 step 6; tools/fish_game.py download:
-      the judge's proposed crop applied, tools/photos.py's four sizes), read from R2 by the app (app.js img) with the
-      online original (src) as its fallback (core.js photoAway).
-    A photo already on R2 (the committed file) keeps its files; one whose crop changed is listed with its old files
-    until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
+      ar, cr, ro, iv and no r: its four files on R2, as a fish game photo (study §9 step 6; tools/fish_game.py
+      download: Pierre's crop, else the judge's proposed one, and his rotation applied, tools/photos.py's four sizes),
+      read from R2 by the app (app.js img) with the online original (src) as its fallback (core.js photoAway).
+    A photo already on R2 (the committed file) keeps its files; one whose crop or rotation changed is listed with its
+    old files until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
 
 The R2 step is off in the Candidate photos workflow until Pierre's go (.github/workflows/approved-photos.yml
 SEASLUG_R2): the workflow builds offline (every new photo remote, r: 1) while it is off.
@@ -84,6 +109,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from presence import label_confirmed  # noqa: E402  the label rule beside C8 (Q389 (2))
+import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'seaslug-cand.json')
@@ -91,6 +117,8 @@ SUGGEST = os.path.join(ROOT, 'suggest.json')
 TREE_OUT = os.path.join(ROOT, 'seaslug.json')
 GAME_OUT = os.path.join(ROOT, 'seaslug-game.json')
 V = 1
+# The sea slugs' part of curation.json (core.js SUBJECTS seaslug admin.cur): Pierre's choices in the admin.
+CUR = 'seaslug'
 # The circles in the game: those whose candidates were fetched and judged (circle 1, Q377; circles 2 and 3, #985, #989,
 # #991, #997, #999 and circle 3's last part). Circle 4, the rest, has no candidates.
 CIRCLES = (1, 2, 3)
@@ -108,6 +136,54 @@ def load(p, default=None):
         return default
     with open(p, encoding='utf-8') as fh:
         return json.load(fh)
+
+
+def genus_looks(cand, genera):
+    """The genus look-alikes from the survey's candidates cand (tools/seaslug_lookalikes_cand.json; Pierre, 2026-11-17,
+    Q390 D) between the genera of the tree, {genus id: {look, dlook, lsrc}}, both ways:
+      - look (declared): two genera whose species a literature set names together (the Sea Slug Forum, Nudi Pixel's
+        look-alike index, the papers: tools/seaslug_lookalikes_source.json), its members those rule C6 keeps (the set's
+        members, its outside left out); each source {t: the source and the two genera's species it names, u: its page};
+      - dlook (data): a genus pair of iNaturalist's identifications (the file's listed pairs, its floor) across two
+        families that no set names and with a species pair of the subject under it (not genusOnly: a pair the photos the
+        game shows were never mixed up on, a rename or a slip at the genus rank, says nothing of their look); its source
+        the counts. A pair inside one family is left out: the family's genera are already each other's look-alikes
+        (core.js fishGenUnits).
+    The species pairs wait for the species level (Q390 D)."""
+    gid = {g['name']: g['id'] for g in genera}
+    fam = {g['name']: g['family'] for g in genera}
+    decl, data = {}, {}
+    for s in (cand or {}).get('groups') or []:
+        if s.get('kind') != 'literature':
+            continue
+        by = {}
+        for m in s.get('members') or []:
+            if m.split()[0] in gid:
+                by.setdefault(m.split()[0], []).append(m)
+        src = str(s.get('source') or '')
+        u = re.search(r'https?://[^\s,)]+', src)
+        title = src.split(', http')[0].strip()
+        G = sorted(by)
+        for i, a in enumerate(G):
+            for b in G[i + 1:]:
+                decl.setdefault((a, b), []).append({'t': title + ': ' + ', '.join(by[a] + by[b]),
+                                                    **({'u': u.group(0)} if u else {})})
+    for p in (cand or {}).get('pairs') or []:
+        a, b = sorted((p.get('a') or '', p.get('b') or ''))
+        if p.get('rank') != 'genus' or p.get('genusOnly') or a not in gid or b not in gid or fam[a] == fam[b] \
+                or (a, b) in decl:
+            continue
+        n = lambda k: (p.get(k) or {}).get('n') or 0
+        data[(a, b)] = [{'t': f'iNaturalist identifications, one genus taken for the other: {n("ph")} in the '
+                              f'Philippines, {n("world")} worldwide ({cand.get("pulled")})'}]
+    out = {}
+    for kind, D in (('look', decl), ('dlook', data)):
+        for (a, b), S in sorted(D.items()):
+            for x, y in ((a, b), (b, a)):
+                o = out.setdefault(gid[x], {})
+                o.setdefault(kind, []).append(gid[y])
+                o.setdefault('lsrc', {})[gid[y]] = S
+    return out
 
 
 def sure(j):
@@ -141,9 +217,25 @@ def on_r2(o):
     return bool(o) and not o.get('r') and bool(o.get('ar'))
 
 
-def stale(o, c):
-    """Whether a photo's files on R2 lack its crop c (tools/photos.py stale; the sea slugs have no rotation)."""
-    return o.get('cr') != c or bool(o.get('ro'))
+def stale(o, c, ro=0):
+    """Whether a photo's files on R2 lack its crop c or its rotation ro (Pierre's, curation.json seaslug rot: tools/photos.py
+    stale)."""
+    return o.get('cr') != c or (o.get('ro') or 0) != (ro or 0)
+
+
+def part(cur):
+    """Pierre's part of curation.json for the sea slugs (core.js SUBJECTS seaslug admin.cur), {} without one."""
+    P = (cur or {}).get(CUR)
+    return P if isinstance(P, dict) else {}
+
+
+def crop_mine(F, f):
+    """(set, crop): whether Pierre cropped photo f (his full-photo [0, 0, 1, 1] included: the judge's crop then never
+    applies, as tools/fish_game.py plan reads his), and the crop the files are made with (None for the whole photo)."""
+    c = (F.get('crop') or {}).get(f)
+    if not (isinstance(c, list) and len(c) == 4):
+        return False, None
+    return True, (list(c) if list(c) != [0, 0, 1, 1] else None)
 
 
 def taxa(groups, fams):
@@ -182,13 +274,42 @@ def names_of(N):
     return out
 
 
-def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
+def worms_ref(W, species, genera):
+    """seaslug.json ref from tools/seaslug_worms.json W: {AphiaID: {name, rank, parent}} for every node above (and at)
+    the species' refs and the genera's, in AphiaID order (as fish.json ref). A ref W lacks fails the build, naming it."""
+    N, need, miss = (W or {}).get('nodes') or {}, set(), []
+    for what, aid in [(s['name'], s.get('ref')) for s in species] + [(g['name'], g.get('ref')) for g in genera]:
+        if aid is None:
+            continue
+        if str(aid) not in N:
+            miss.append(f'{what} ({aid})')
+        a = str(aid)
+        while a is not None and a in N and a not in need:
+            need.add(a)
+            a = None if N[a]['parent'] is None else str(N[a]['parent'])
+    if miss:
+        raise SystemExit('seaslug_game: not in tools/seaslug_worms.json (run python3 tools/seaslug_worms.py): ' + ', '.join(miss))
+    return {k: {'name': N[k]['name'], 'rank': N[k]['rank'], 'parent': N[k]['parent']} for k in sorted(need, key=int)}
+
+
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None, worms=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
-    seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
-    circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
+    seaslug-game.json prev: todo [(record, crop, iv, rotation)], the photos in play whose files R2 lacks or holds with
+    another crop or rotation, circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
     tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. inf: tools/seaslug_informal.json,
     the species with no name yet. names: tools/seaslug_names.json, the English names each family, genus and species
-    carries (en, ensrc: names_of), none without it (a species with no name yet has none)."""
+    carries (en, ensrc: names_of), none without it (a species with no name yet has none). looks:
+    tools/seaslug_lookalikes_cand.json, the genus look-alikes (genus_looks), none without it. cur: curation.json, whose
+    sea-slug part (part: Pierre's admin choices) the photos in play follow, as a fish photo follows the fish part
+    (tools/fish_game.py in_play, record): what he removed, excluded or moved leaves, his adds enter, his crop, rotation,
+    ease and tags are the record's. cues: tools/seaslug_cues.json, the sourced ID marks (seaslug_cues.apply), none
+    without it. worms: tools/seaslug_worms.json, the reference taxonomy (ref, each genus's ref: worms_ref), none without
+    it."""
+    import fish_game as FG
+    F = part(cur)
+    top = set((cur or {}).get('exclude') or {})
+    gone = FG.gone_ids(cur, CUR)
+    decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
@@ -205,8 +326,9 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
         f['species'].append(i)
         if gid not in f['genera']:
             f['genera'].append(gid)
+        gref = ((worms or {}).get('genera') or {}).get(s['genus'])
         gens.setdefault(gid, {'id': gid, 'name': s['genus'], 'family': fid, 'circle': c, 'species': [],
-                              **vn('genus', s['genus'])})['species'].append(i)
+                              **({'ref': gref} if gref else {}), **vn('genus', s['genus'])})['species'].append(i)
         w = s.get('worms') or {}
         look = [sid[o] for p in pairs if s['name'] in p for o in p if o != s['name']]
         species.append({
@@ -258,10 +380,13 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
                         'nearN': P.get('nearObs', 0)},
         })
         extra.append((s['key'], s['name']))
+    for k, o in genus_looks(looks, list(gens.values())).items():
+        gens[k].update(o)
     tx, tof = taxa(groups, [f['name'] for f in fams.values()])
     for f in fams.values():
         if f['name'] in tof:
             f['tgroup'] = tof[f['name']]
+    seaslug_cues.apply(cues, fams, gens, species)
     tree = {
         'v': V,
         'about': 'the sea-slug subject\'s tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)',
@@ -279,47 +404,87 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
         'genera': list(gens.values()),
         'species': species,
         'vn': [],
-        'ref': {},
+        'ref': worms_ref(worms, species, gens.values()) if worms else {},
     }
     old = {p['f']: p for P in ((prev or {}).get('photos') or {}).values() for p in P if isinstance(p, dict) and p.get('f')}
     byname = {s['name']: s for s in species}
     photos, todo = {}, []
     C = cand.get('cand') or {}
 
+    def rec(p, unit, j, auto):
+        """The game record of candidate p in play for unit (a species id, or a genus id for a genus-level photo, gl), with
+        Pierre's ease and tags over the judgement j (tools/fish_game.py record, mine_tags), auto for a photo that entered
+        by itself. A photo he moved to another species (Not this, then his add) is named after it."""
+        f = p['f']
+        e = (F.get('ease') or {}).get(f, (j or {}).get('e'))
+        jt = FG.mine_tags(F, f, (j or {}).get('jt')) if f in (F.get('tags') or {}) else (j or {}).get('jt')
+        t = p['t']
+        if not auto and orig.get(f) != unit:
+            t = (sp_of.get(unit) or gens.get(unit) or {}).get('name') or t
+        ph = phase(jt)
+        return {'f': f, 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': t, 'sp': unit,
+                **({'gl': 1} if unit in gens else {}), 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
+                **({'e': int(e)} if e else {}), **({'jt': jt} if jt else {}), **({'ph': ph} if ph else {}),
+                **({'auto': 'cand'} if auto else {}), 'r': 1}
+
     def judged(key, unit, gl=False):
-        """The sure photos of the candidate list key, as records in play for unit (a species id, or a genus id for its
-        genus-level photos, marked gl)."""
-        out = []
+        """The photos in play for unit of the candidate list key: Pierre's adds (below, adds) and the sure photos he has
+        not decided on (fish_game.py in_play: not added, removed, excluded nor moved, by photo id too), as records."""
+        out = list(adds.get(unit) or [])
         for p in C.get(key) or []:
-            j = sug.get(p.get('f'))
-            if sure(j):
-                ph = phase(j['jt'])
-                out.append({'f': p['f'], 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': p['t'],
-                            'sp': unit, **({'gl': 1} if gl else {}), 'loc': p.get('loc'),
-                            **({'own': True} if p.get('own') else {}), 'e': j['e'], 'jt': j['jt'],
-                            **({'ph': ph} if ph else {}), 'auto': 'cand', 'r': 1})
+            f, j = p.get('f'), sug.get(p.get('f'))
+            if not f or f in decided or FG.pid(f) in gone or FG.pid(f) in have or not sure(j):
+                continue
+            r = rec(p, unit, j, True)
+            if not FG.other_out((F.get('tags') or {}).get(f), j.get('jt')):
+                out.append(r)
         return out
 
     def kept(L1, documented_juvenile):
-        """The photos in play of one list: at most cap adults, the easiest first, then the juveniles (perJuvenileForm
-        for a documented juvenile form, else what the cap leaves)."""
-        order = lambda p: (-p['e'], p['f'])  # noqa: E731
-        adults = sorted((p for p in L1 if not juv(p['jt'])), key=order)[:cap]
-        young = sorted((p for p in L1 if juv(p['jt'])), key=order)
-        return adults + (young[:plus] if documented_juvenile else young[:max(0, cap - len(adults))])
+        """The photos in play of one list: Pierre's adds always (as a fish add), then at most cap adults with them, the
+        easiest first, then the juveniles (perJuvenileForm for a documented juvenile form, else what the cap leaves)."""
+        order = lambda p: (-(p.get('e') or 0), p['f'])  # noqa: E731
+        his = sorted((p for p in L1 if 'auto' not in p), key=order)
+        room = max(0, cap - sum(1 for p in his if not juv(p.get('jt'))))
+        auto = [p for p in L1 if 'auto' in p]
+        adults = sorted((p for p in auto if not juv(p['jt'])), key=order)[:room]
+        young = sorted((p for p in auto if juv(p['jt'])), key=order)
+        return his + adults + (young[:plus] if documented_juvenile else young[:max(0, room - len(adults))])
 
     def place(keep, fid):
         for r in keep:
-            c, o = crop(sug.get(r['f'])), old.get(r['f'])
+            his, c = crop_mine(F, r['f'])
+            c = c if his else crop(sug.get(r['f']))
+            ro, o = (F.get('rot') or {}).get(r['f']) or 0, old.get(r['f'])
             if on_r2(o) and o.get('src') == r['src']:
-                # on R2: its files as they are (its crop, shape and rewrite count); made again when its crop changed
+                # on R2: its files as they are (its crop, rotation, shape and rewrite count); made again when Pierre's
+                # crop or rotation, or the judge's crop, changed
                 del r['r']
-                r.update({k: o[k] for k in ('ar', 'cr', 'iv') if k in o})
-                if stale(o, c):
-                    todo.append((r, c, o.get('iv', 0) + 1))
+                r.update({k: o[k] for k in ('ar', 'cr', 'ro', 'iv') if k in o})
+                if stale(o, c, ro):
+                    todo.append((r, c, o.get('iv', 0) + 1, ro))
             else:
-                todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0))
+                todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0, ro))
         photos.setdefault(fid, []).extend(keep)
+
+    # Pierre's adds (curation.json seaslug add {photo: unit}: core.js fishOn, tools/fish_game.py fish_on): a candidate he
+    # put in play for a species, or for a genus (a genus-level photo), there whatever its judgement, never one excluded for
+    # good nor one whose count in force is other species one could take for its subject (rule P3); by unit.
+    by_f = {p['f']: p for P in C.values() for p in P if p.get('f') and p.get('src')}
+    sp_of = {s['id']: s for s in species}
+    # each candidate's own unit, by its list's key (an iNaturalist taxon id, a genus name, an informal species' key)
+    key_unit = {**{str(s['inat']): sid[s['name']] for s in sp}, **{k: 'x:' + k for k, _ in extra},
+                **{G['name']: gid for gid, G in gens.items()}}
+    orig = {p['f']: key_unit.get(k) for k, P in C.items() for p in P if p.get('f')}
+    adds, have = {}, set()
+    for f, unit in sorted((F.get('add') or {}).items()):
+        p = by_f.get(f)
+        if (not p or not FG.fish_on(F, f, unit) or (unit not in sp_of and unit not in gens) or f in top
+                or FG.pid(f) in {FG.pid(x) for x in top}
+                or FG.other_out((F.get('tags') or {}).get(f), (sug.get(f) or {}).get('jt'))):
+            continue
+        adds.setdefault(unit, []).append(rec(p, unit, sug.get(f), False))
+        have.add(FG.pid(f))
 
     for key, name in [(str(s['inat']), s['name']) for s in sp] + extra:
         me = byname[name]
@@ -377,7 +542,7 @@ def check(tree, game, tree_text, game_text):
 
 
 def download_all(todo, out, get=None, pause=None, workers=6):
-    """Downloads each (record, crop, iv) of todo into out with the fish's pipeline (tools/fish_game.py download: an
+    """Downloads each (record, crop, iv, rotation) of todo into out with the fish's pipeline (tools/fish_game.py download: an
     iNaturalist photo host only, the crop applied, tools/photos.py's four sizes, the shape ar), the record then marked on
     R2 (no r; cr, iv). A photo that fails keeps its record as it was (remote, or its older files on R2), for the next
     run. Returns (downloaded, failed)."""
@@ -387,8 +552,10 @@ def download_all(todo, out, get=None, pause=None, workers=6):
     os.makedirs(out, exist_ok=True)
 
     def one(x):
-        r, c, iv = x
-        q = {k: v for k, v in r.items() if k not in ('r', 'ar', 'cr', 'iv')}
+        r, c, iv, ro = x
+        q = {k: v for k, v in r.items() if k not in ('r', 'ar', 'cr', 'ro', 'iv')}
+        if ro:
+            q['ro'] = ro
         FG.download(q, c, out, get, pause)
         q.pop('xc', None)
         q.pop('xn', None)
@@ -404,11 +571,13 @@ def download_all(todo, out, get=None, pause=None, workers=6):
                 failed.append(r['f'])
                 print('failed:', r['f'], e)
                 continue
-            for k in ('r', 'cr', 'iv'):
+            for k in ('r', 'cr', 'ro', 'iv'):
                 r.pop(k, None)
             r['ar'] = q['ar']
             if c:
                 r['cr'] = c
+            if q.get('ro'):
+                r['ro'] = q['ro']
             if iv:
                 r['iv'] = iv
             done += 1
@@ -420,7 +589,10 @@ def inputs(root=ROOT):
     return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
             j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
-            j(os.path.join('tools', 'seaslug_names.json'), {}) or None)
+            j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None, j('curation.json', {}),
+            j(os.path.join('tools', 'seaslug_cues.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_worms.json'), {}) or None)
 
 
 def write(root, tree, game):
@@ -449,7 +621,7 @@ def plan_text(tree, game, todo, n=MAX):
     lines = []
     for c in CIRCLES + (None,):
         on = [p for p in allr if c is None or circle.get(p['sp']) == c]
-        td = [r for r, _, _ in todo if c is None or circle.get(r['sp']) == c]
+        td = [x[0] for x in todo if c is None or circle.get(x[0]['sp']) == c]
         sp = {p['sp'] for p in on}
         tot = len([s for s in tree['species'] if c is None or s['circle'] == c])
         name = f'circle {c}' if c else 'all'

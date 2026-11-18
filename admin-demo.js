@@ -15,11 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v81, with ?demo&v=81: each player's photo exposure, ex; v58: Archive, the archived list; v55: a delete cleans up everything of the account, the
-    // answers it keeps flagged 2; v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
-    // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
-    // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 58,
+    // The script version the demo answers as: the gate floor (core.js SHEET_FLOOR, the oldest script the app and the admin
+    // still know), or a newer one with ?demo&v=N, for the gates above it (tests/admin.smoke.js: the admin then does what
+    // it did before that version; rule D4). A version below the floor answers as the floor.
+    V = Math.max(SHEET_FLOOR, Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 0),
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -36,7 +35,7 @@
   let S = null; // {names: [{name, pin hash...}], rows: [[name, t, shown, answered, ok, mode, photos, id, e, th, nw, choices]], reports, removed, data}
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
-  const build = () => (BUILD = BUILD || make().then(x => (V >= 35 && setTimeout(() => anaReport(true), 0), x)));
+  const build = () => (BUILD = BUILD || make().then(x => (setTimeout(() => anaReport(true), 0), x)));
   // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
   // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
   function live(L, n, end, typed) {
@@ -830,8 +829,9 @@
     // Ben played it last (his Journey opens on it from Players), Ana a little, Mara once.
     const frows = [],
       FS = SUBJECTS.find(x => !x.replay);
-    let fana = [];
-    if (V >= 60 && FS) {
+    // fana: each other subject's made-up answers for its Analyses report alone (anaReport), by subject id
+    const fana = {};
+    if (FS) {
       const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
       let fs = 11;
       const frnd = () => (fs = (fs * 1103515245 + 12345) % 2147483648) / 2147483648,
@@ -839,7 +839,7 @@
         FG = fishGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
-      FANA_META = {ph: {}, fph: ANALYSIS.photoMetaFish(fp)};
+      FANA_META[FS.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(FS)};
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
         ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
@@ -903,14 +903,28 @@
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
       // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
+      // A few genus and species units too (one of fish.json's scientific genera or core.js fishSpUnits for each of 12 of
+      // those families, in turn), on their family's photos (as the game shows a species' photo at every rank), so the
+      // report tells the ranks asked apart as the real one does (analysis.js rankOfUnit): its rank effects, and the views
+      // that list units drawn one rank at a time.
       const FU = Object.keys(FG)
           .filter(id => FG[id].views.wide.length >= 3)
           .slice(0, 24),
+        SPU = fishSpUnits(fj),
+        FR = FU.slice(0, 12)
+          .map((f, i) => (i % 2 ? SPU.find(u => u.family === f) : (fj.genera || []).find(g => g.family === f)))
+          .map((x, i) => x && [x.id, FU[i]])
+          .filter(Boolean),
+        // the units in the order they open in the made-up answers (synth): a genus or species unit after every second family
+        famOf = Object.fromEntries(FU.flatMap((id, i) => [[id, id], ...(i % 2 && FR[i >> 1] ? [FR[i >> 1]] : [])])),
         k = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, x) => t + x[2], 0);
-      fana = ANALYSIS.synth({
+      fana[FS.id] = ANALYSIS.synth({
         players: ANALYSIS.DEMO_PLAYERS.map(x => [x[0], x[1], Math.ceil(x[2] * k), x[3]]),
-        photos: Object.fromEntries(FU.map(id => [id, FG[id].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])),
+        photos: Object.fromEntries(
+          Object.keys(famOf).map(id => [id, FG[famOf[id]].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])
+        ),
         look: Object.fromEntries(FU.map(id => [id, FG[id].look || []])),
+        rk: {genus: [0.6, 0.15], species: [1, 0.3]},
         start: NOW - 30 * DAY,
         end: NOW - 3 * DAY,
         seed: 5,
@@ -922,7 +936,7 @@
     // the unit's look-alikes: Ana enough for her answers to count (core.js trustOf), Mara a few, not yet. Older than their
     // other answers (a Journey opens on the subject they played last), with their own random numbers so the rest of the
     // demo stays the same.
-    if (V >= 60 && FS) {
+    if (FS) {
       const more = SUBJECTS.filter(x => x !== FS && !x.replay && x.sheets && x.admin.files && x.admin.files.gm),
         got = await Promise.all(
           more.map(x =>
@@ -946,6 +960,25 @@
             id => XG[id].circle === 1 && !XG[id].wink && XG[id].views.wide.length && id.startsWith(x.sheets[unitRankOf(x)] || '')
           );
         if (E.length < 4) return;
+        // A subject with an Analyses report (core.js SUBJECTS analyses: the sea slugs) gets one as the fish's: the made-up
+        // analysis players on its units with the most photos, about 1,200 answers, its judged photo features (FANA_META);
+        // only the report is made from them.
+        if (x.analyses) {
+          const XU = Object.keys(XG)
+              .filter(id => id.startsWith(x.sheets[unitRankOf(x)] || '') && !XG[id].wink && XG[id].views.wide.length >= 3)
+              .slice(0, 24),
+            xk = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, y) => t + y[2], 0);
+          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fishGameRead(gm)), rk: ANALYSIS.rankRef(x)};
+          fana[x.id] = ANALYSIS.synth({
+            players: ANALYSIS.DEMO_PLAYERS.map(y => [y[0], y[1], Math.ceil(y[2] * xk), y[3]]),
+            photos: Object.fromEntries(XU.map(id => [id, XG[id].views.wide.slice(0, 8).map(y => ({f: y.f, v: 'wide'}))])),
+            look: Object.fromEntries(XU.map(id => [id, XG[id].look || []])),
+            start: NOW - 30 * DAY,
+            end: NOW - 3 * DAY,
+            seed: 7 + i,
+            subject: x.id
+          });
+        }
         [
           ['Ana Demo', 0.8, 30, NOW - 10 * DAY],
           ['Mara Demo', 0.45, 8, NOW - 9 * DAY]
@@ -998,14 +1031,13 @@
     S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}, excluded: []};
     S.alerts = alerts;
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
-    if (V >= 81)
-      await Promise.all(
-        SUBJECTS.filter(X => X.pool).map(X =>
-          Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
-            .then(F => (S.pools[X.id] = unitPool(X, F)))
-            .catch(() => {})
-        )
-      );
+    await Promise.all(
+      SUBJECTS.filter(X => X.pool).map(X =>
+        Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
+          .then(F => (S.pools[X.id] = unitPool(X, F)))
+          .catch(() => {})
+      )
+    );
 
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
@@ -1016,8 +1048,7 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      // The domain-score bar from the script version that replays it (core.js DOM_SHEET), as the real admin.
-      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET};
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd};
     // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; PR #808: without it one of
     // Ana's genera read stale by a rounding).
     const starts = Object.fromEntries(
@@ -1103,7 +1134,7 @@
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
     // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged. 14 (sheet v44): the device's UTC offset,
     // minutes east: Manila's, Carla's Paris (winter time), so her Journey's Cards show her own local time.
-    const tz = r => (V >= 44 ? (r[0] === 'Carla Demo' ? 60 : 480) : null);
+    const tz = r => (r[0] === 'Carla Demo' ? 60 : 480);
     out.rows = [...S.rows, ...S.after].map(r => [
       aid(r[0]),
       r[1],
@@ -1135,10 +1166,10 @@
       Object.keys(P).forEach(g => (th[g] = P[g].th));
       out.players[aid(u.name)] = [u.learned, u.seen, u.total, th];
     });
-    if (V >= EXCL_SHEET) out.excluded = S.excluded.slice(); // Code.gs sxSet_: the ids left out of the statistics
+    out.excluded = S.excluded.slice(); // Code.gs sxSet_: the ids left out of the statistics
     return out;
   }
-  // The admin's light read (Code.gs live_, from admin.js LIVE_SHEET; Pierre, 2026-11-08): the log's last 50 rows as
+  // The admin's light read (Code.gs live_, sheet v110; Pierre, 2026-11-08): the log's last 50 rows as
   // answers() serves them, each player's last answer time (an archive's and a deleted account's left out), the rows.
   function liveReply() {
     const R = answers().rows,
@@ -1172,7 +1203,7 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    // v68: the per-format offsets (core.js fmtOffsetsOf), from a demo script of that version (?v=68).
+    // v68: the per-format offsets (core.js fmtOffsetsOf).
     return {
       ok: true,
       photos: eloOf(A),
@@ -1180,7 +1211,7 @@
       conf: confusionOf(A).pair,
       ...photoMemOf(A),
       gd: genusOffsetsOf(A),
-      ...(V >= FMT_SHEET ? {fmt: fmtOffsetsOf(A)} : {})
+      fmt: fmtOffsetsOf(A)
     };
   }
   function userList() {
@@ -1216,7 +1247,9 @@
         mix: [],
         reports: 0,
         size: JSON.stringify(u.data).length,
-        ...(V >= 48 ? {groups: (u.groups || []).slice()} : {})
+        groups: (u.groups || []).slice(),
+        // sheet v171 (Code.gs users_): the player's cohort and the staff mark (the trainer role)
+        ...(V >= COHORT_SHEET ? {cohort: u.cohort || '', ...(u.staff ? {staff: 1} : {})} : {})
       };
     });
     const days = {},
@@ -1259,7 +1292,7 @@
       if (u) u.reports++;
     });
     // v42 (Code.gs replayedAll_): each player's full replay, [progress %, learned, the saved copy's %] over the slate.
-    if (V >= 42) {
+    {
       const st = stats(),
         A = answers().rows;
       Object.keys(by).forEach(k => {
@@ -1270,33 +1303,57 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
       });
     }
     // v81 (Code.gs exposure_): each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
-    if (V >= 81)
-      SUBJECTS.forEach(X => {
-        if (!S.pools[X.id]) return;
-        const E = exposureOf(
-          subjRows(S.rows, X.id).map(r => [lc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6]]),
-          S.pools[X.id]
-        );
-        Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
-      });
+    SUBJECTS.forEach(X => {
+      if (!S.pools[X.id]) return;
+      const E = exposureOf(
+        subjRows(S.rows, X.id).map(r => [lc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6]]),
+        S.pools[X.id]
+      );
+      Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
+    });
     return {
       ok: true,
       users: Object.values(by),
       removed: S.removed.slice().reverse(),
-      ...(V >= 58 ? {archived} : {}),
-      ...(V >= EXCL_SHEET ? {excluded: S.excluded.slice()} : {})
+      archived,
+      excluded: S.excluded.slice()
     };
   }
   function users(p) {
+    // Sheet v171: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
+    if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
+      const c = String(p.cohort).replace(/\s+/g, ' ').trim(),
+        L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
+      if (!c || c.length > 40) return {ok: false, error: 'group'};
+      if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
+      let n = 0;
+      L.forEach(x => {
+        const u = S.users[lc(x)];
+        if (!u || (u.cohort === c) === !!p.on) return;
+        u.cohort = p.on ? c : '';
+        n++;
+      });
+      return {ok: true, cohort: c, n, members: Object.values(S.users).filter(u => u.cohort === c).length};
+    }
+    // Sheet v171: the staff, the trainer role (Code.gs roles_ roleGrant, roleRevoke).
+    if (p.roleGrant || p.roleRevoke) {
+      const g = p.roleGrant || p.roleRevoke,
+        u = S.users[lc(g.account || '')];
+      if (g.role !== 'trainer' || g.scope !== 'instance:imr') return {ok: false, error: 'input'};
+      if (!u) return {ok: false, error: 'user'};
+      const was = !!u.staff;
+      u.staff = !!p.roleGrant;
+      return {ok: true, result: p.roleGrant ? (was ? 'held' : 'ok') : was ? 'ok' : 'none'};
+    }
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
-    if (p.userGroup && V >= 48) {
+    if (p.userGroup) {
       const g = String(p.group || ''),
         L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
       if (!SUBJECTS.some(x => subjGroup(x) && x.id === g)) return {ok: false, error: 'group'};
@@ -1311,7 +1368,7 @@
       return {ok: true, group: g, n, members: Object.values(S.users).filter(u => (u.groups || []).includes(g)).length};
     }
     // Sheet v58 (was rename, v20): archive (the record moves apart, Board -2, out of every beta group).
-    if (p.userArchive && V >= 58) {
+    if (p.userArchive) {
       const m = p.userArchive,
         u = S.users[lc(m.from || '')],
         into = String(m.into || '').trim();
@@ -1327,7 +1384,7 @@
       return {ok: true, answers, reports: 0};
     }
     // Sheet v115 (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
-    if (p.statsExclude && V >= EXCL_SHEET) {
+    if (p.statsExclude) {
       const id = String(p.statsExclude);
       if (!/^[A-Za-z0-9+/]{8}$/.test(id)) return {ok: false, error: 'input'};
       S.excluded = p.on ? [...new Set([...S.excluded, id])] : S.excluded.filter(x => x !== id);
@@ -1424,15 +1481,14 @@
   // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
   // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
   let ANA_META = null,
-    // the fish report's photo features (tools/analyses.js metaOf: SUBJECTS analyses photos 'judged'): the judged ease,
-    // phase and framing of the photos its made-up answers show (fish-photos.json's, the game's own records)
-    FANA_META = {ph: {}};
+    // each other subject's report's photo features, by subject id (tools/analyses.js metaOf: SUBJECTS analyses photos
+    // 'judged'): the judged ease, phase and framing of the photos its made-up answers show (the fish's fish-photos.json,
+    // the game's own records; the sea slugs' game file)
+    FANA_META = {};
   const ANA = {};
-  // subject: the one asked (v113, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
-  // and answers with it whatever the subject asked (?demo&v=112).
+  // subject: the one asked (v113: one report per subject).
   const anaReport = (head, subject) => {
-    const per = V >= ANALYSIS.AN_SUBJ_SHEET,
-      sj = per && subject && SUBJECTS.some(x => x.id === subject) ? subject : replaySubject(),
+    const sj = subject && SUBJECTS.some(x => x.id === subject) ? subject : replaySubject(),
       own = sj === replaySubject();
     ANA[sj] =
       ANA[sj] ||
@@ -1441,25 +1497,23 @@
         w.onmessage = e => {
           if (e.data && e.data.prog) return;
           w.terminate();
-          done(e.data && e.data.res ? JSON.stringify({...e.data.res, ...(V >= 105 ? {subject: sj} : {})}) : null);
+          done(e.data && e.data.res ? JSON.stringify({...e.data.res, subject: sj}) : null);
         };
         // one subject's answers, as the Action reads them (tools/analyses.js: core.js subjRows): the corals' with their
-        // photo features; the fish report's made-up answers (S.fana), with its judged features (FANA_META)
-        const rows = own ? subjRows(answers().rows) : S.fana.map(r => [aid(r[0]), ...r.slice(1)]);
-        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META, B: 0, seed: 1});
+        // photo features; another subject's report's made-up answers (S.fana), with its judged features (FANA_META)
+        const rows = own ? subjRows(answers().rows) : (S.fana[sj] || []).map(r => [aid(r[0]), ...r.slice(1)]);
+        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META[sj] || {ph: {}}, B: 0, seed: 1});
       });
     return ANA[sj].then(text => {
       // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
       // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
-      // The fish report's made-up answers count as fish answers too.
+      // Each other subject's report's made-up answers count as its answers too.
       const rows = answers().rows,
         c0 = subjCounts(rows),
-        counts = {...c0, ...(S.fana.length ? {[S.fana[0][17]]: (c0[S.fana[0][17]] || 0) + S.fana.length} : {})},
-        head0 = V >= 105 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
+        counts = {...c0, ...Object.fromEntries(Object.entries(S.fana).map(([k, L]) => [k, (c0[k] || 0) + L.length]))},
+        head0 = {ok: true, subject: sj, answers: counts[sj], counts},
         r = text && JSON.parse(text);
-      const stored = r
-        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, ...(V >= 105 ? {subject: sj} : {})}
-        : null;
+      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, subject: sj} : null;
       return head || !text ? {...head0, stored} : {...head0, stored, report: text};
     });
   };
@@ -1481,16 +1535,16 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
-      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
+      // pages: 1 (v30) reads the Pages tab.
+      if (p.readEvents) return ok({ok: true, rows: (p.pages ? S.pages : S.events).map(r => r.slice())});
       // The Alerts tab (admin.js ALERTS_SHEET): an older script takes it for a progress write without a name ('input').
       if (p.readAlerts) return ok(V >= ALERTS_SHEET ? {ok: true, rows: S.alerts.map(r => r.slice())} : {ok: false, error: 'input'});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      // The light read (admin.js LIVE_SHEET): an older script takes it for a progress write without a name ('input').
-      if (p.readLive) return ok(V >= LIVE_SHEET ? liveReply() : {ok: false, error: 'input'});
-      // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
-      if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head, p.subject));
+      // The light read (sheet v110).
+      if (p.readLive) return ok(liveReply());
+      // v35: the stored Analyses report.
+      if (p.analysesGet) return ok(await anaReport(p.head, p.subject));
       if (
         p.users ||
         p.userData ||
@@ -1498,10 +1552,11 @@
         p.userMerge ||
         p.anonDelete ||
         p.userBoard ||
-        (p.userArchive && V >= 58) ||
-        (p.userStart && V >= 99) ||
-        (p.statsExclude && V >= EXCL_SHEET) ||
-        (p.userGroup && V >= 48)
+        p.userArchive ||
+        p.userStart ||
+        p.statsExclude ||
+        p.userGroup ||
+        ((p.roleGrant || p.roleRevoke) && V >= COHORT_SHEET)
       )
         return ok(users(p));
       return ok({ok: false, error: 'demo'});

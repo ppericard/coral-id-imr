@@ -67,13 +67,66 @@ test('built into fish.json as written: plain, marks, and each line pointing at i
     if (!M.genera[r.name]) for (const k of ['plain', 'marks', 'msrc', 'mby']) assert.ok(!(k in r), `${r.name}: ${k}`);
 });
 
-test('the families done: every circle-1 genus has IMR cues, its own marks or a reason; never marks beside IMR cues', () => {
-  assert.ok(M.families.length, 'at least one family done');
-  for (const id of M.families) {
-    const L = F.genera.filter(g => g.family === id && g.circle === 1);
-    assert.ok(L.length, id);
-    for (const g of L) assert.ok((g.cues || []).length || (g.marks || []).length || M.none[g.name], `${id}: ${g.name}`);
+test('every genus in play, any circle, has IMR cues or a presentation and its marks or a reason; never marks beside IMR cues', () => {
+  // In play: every family but the surprise cards' (wink); circles 2 and 3 too (Pierre, 2026-11-18, "d'abord le contenu",
+  // before their genera open as units).
+  const play = F.families.filter(f => !f.wink);
+  for (const f of play) {
+    const L = F.genera.filter(g => g.family === f.id);
+    assert.ok(L.length, f.id);
+    for (const g of L) {
+      if ((g.cues || []).length) continue;
+      assert.ok(M.families.includes(f.id), `${f.id}: not in families done`);
+      assert.ok(g.plain, `${f.id}: ${g.name} has no presentation`);
+      assert.ok((g.marks || []).length || M.none[g.name], `${f.id}: ${g.name} has neither marks nor a reason`);
+    }
   }
+  for (const id of M.families)
+    assert.ok(
+      play.some(f => f.id === id),
+      `${id}: not a family in play`
+    );
+  assert.ok(
+    F.genera.some(g => g.circle === 3 && g.plain),
+    'circle 3 is covered'
+  );
+  // The surprise cards' genera need nothing (whale shark, thresher sharks).
+  for (const f of F.families.filter(f => f.wink))
+    for (const g of F.genera.filter(g => g.family === f.id)) assert.ok(!M.genera[g.name] && !M.none[g.name], g.name);
+});
+
+test('the build stops on a genus in play of any circle without its presentation, or without marks or a reason', () => {
+  const {spawnSync} = require('child_process'),
+    os = require('os');
+  const run = m => {
+    const tmp = path.join(os.tmpdir(), `genusmarks.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(m));
+    try {
+      const r = spawnSync('python3', [path.join(ROOT, 'tools/build_fish.py'), '--regroup', '--check', '--marks', tmp], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      });
+      return {status: r.status, out: r.stdout + r.stderr};
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  };
+  assert.strictEqual(run(M).status, 0, 'the file as it is passes');
+  // A circle-3 genus with neither (Gobiodon), and a circle-2 one with a reason but no presentation (Aulostomus).
+  const a = JSON.parse(JSON.stringify(M));
+  delete a.genera.Gobiodon;
+  for (const k of Object.keys(a.src)) if (!Object.values(a.genera).some(x => JSON.stringify(x).includes(`"${k}"`))) delete a.src[k];
+  let r = run(a);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /genus Gobiodon of a family in play has neither marks nor a reason in none/);
+  assert.strictEqual(FG.Gobiodon.circle, 3);
+  const b = JSON.parse(JSON.stringify(M));
+  delete b.genera.Aulostomus;
+  for (const k of Object.keys(b.src)) if (!Object.values(b.genera).some(x => JSON.stringify(x).includes(`"${k}"`))) delete b.src[k];
+  r = run(b);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /genus Aulostomus of a family in play has no presentation/);
+  assert.strictEqual(FG.Aulostomus.circle, 2);
   for (const g of F.genera) assert.ok(!((g.cues || []).length && (g.marks || g.plain)), `${g.name}: IMR cues and our marks together`);
   for (const [g, why] of Object.entries(M.none)) assert.ok(FG[g] && typeof why === 'string' && why.trim(), g);
 });
@@ -112,6 +165,7 @@ const ctx = {
   easyCover: C.easyCover,
   fishScoreTree: C.fishScoreTree,
   fishSpUnits: C.fishSpUnits,
+  fishGenSets: C.fishGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
@@ -155,7 +209,9 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
           id
         )
       ),
-    repBtn: () => '<button>report</button>'
+    repBtn: () => '<button>report</button>',
+    // learn.js esrcP: the content editor's source of an edited slot (core.js contentApply esrc)
+    esrcP: (r, k) => (r.esrc && r.esrc[k] ? `<p class="note esrc">Source: ${r.esrc[k].t}</p>` : '')
   };
   vm.createContext(c2);
   vm.runInContext(
@@ -177,6 +233,13 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   );
   assert.ok(h.includes('https://www.fao.org/4/y0870e/y0870e02.pdf'));
   assert.strictEqual(c2.genMarks(g, 'f:Wrasses'), '', 'never on a sheet the genus does not open');
+  // Marks the content editor gave (the sea slugs' content marks) on a genus with no source of its own: his source, no empty
+  // Sources line.
+  const e = c2.genMarks(
+    {...g, plain: '', marks: ['A made-up mark'], msrc: [], mby: {}, esrc: {marks: {t: 'Made-up source'}}},
+    'g:Cheilinus'
+  );
+  assert.ok(e.includes('Source: Made-up source') && !e.includes('Sources:'));
   // A one-species genus: on its species' sheet (Gomphosus varius).
   assert.ok(c2.genMarks(FG.Gomphosus, 's:Gomphosus varius').includes(FG.Gomphosus.marks[0]));
   assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus: its IMR cues only');

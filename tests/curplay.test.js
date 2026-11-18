@@ -90,6 +90,22 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
       fish: {content: {nodes: {'f:X': {cues: K, note: {v: null}}, 'f:Y': {}}}}
     }
   );
+  // Every tree subject's part slimmed alike (curplay.py TREE_PARTS, core.js SUBJECTS admin.cur: the sea slugs' too).
+  assert.deepStrictEqual(
+    execFileSync('python3', ['-c', 'import sys; sys.path.insert(0, "tools"); import curplay; print(" ".join(curplay.TREE_PARTS))'], {
+      cwd: ROOT
+    })
+      .toString()
+      .trim()
+      .split(' '),
+    C.SUBJECTS.map(S => S.admin.cur).filter(Boolean)
+  );
+  const two = {auto: {'2026-11-17': {a: '-a1x', b: 'ate'}}, tags: {a: 'x'}, ease: {a: 2}, kept: {a: 1}, seen: {b: 1}};
+  assert.deepStrictEqual(slim({v: 1, fish: two, seaslug: two}), {
+    v: 1,
+    fish: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}},
+    seaslug: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}}
+  });
   // His confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ, 2026-11-15) reaches the players.
   const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
   assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
@@ -128,12 +144,14 @@ test('the fish units from the players copy: the same photos in play, covers and 
   const src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = {
       fishGen: C.fishGen,
+      fishHeld: C.fishHeld,
       fishPhotos: C.fishPhotos,
       easyRank: C.easyRank,
       easyCover: C.easyCover,
       fishPid: C.fishPid,
       fishScoreTree: C.fishScoreTree,
       fishSpUnits: C.fishSpUnits,
+      fishGenSets: C.fishGenSets,
       refLevel: C.refLevel,
       contentApply: C.contentApply,
       treeCur: C.treeCur,

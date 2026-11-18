@@ -186,3 +186,55 @@ test('filters: tags on the genera, read through the leaves, the same genera in b
     ['star', 'work', 'cand', 'draft']
   );
 });
+
+// The Look-alikes filter with the content editor's pairs (admin-content.js pairRows; Codex review #988): a pair he added
+// with + Pair is an option of its own, so its tools in the bar (structBar: Restore, Remove) can be reached; a withdrawn
+// one says so and leaves Any look-alike; a base pair he never touched is as before. Made-up edits on the real data.
+test('filters: the look-alikes hold the draft’s pairs, an added one selectable, a withdrawn one out of Any look-alike', () => {
+  const C = require('../core.js'),
+    {pairRows} = require('../admin-content.js'),
+    d = adminData(),
+    S = C.subjectOf('coral'),
+    K = ttBuild(ctKeyOf(d)),
+    rows = pairRows(S, d, {
+      pairs: {
+        'Acropora|Porites': {v: 1, was: null, t: 1},
+        'Favites|Goniastrea': {v: null, was: 1, t: 1},
+        'Acropora|Montipora': {v: null, was: 1, t: 1}
+      }
+    }),
+    P0 = [
+      {k: 'Favites|Goniastrea', A: 'Favites', B: 'Goniastrea'},
+      {k: 'Acropora|Anacropora', A: 'Acropora', B: 'Anacropora'}
+    ],
+    F = ctFilters(d, {pairs: P0, rows}),
+    by = k => F.find(x => x.k === k),
+    pass = f => [...ttPass(K, [f.on])].sort();
+  // the base's in their order, then the draft's entries (a base pair he withdrew, the one he added) in key order
+  assert.deepStrictEqual(
+    F.filter(x => x.grp === 'Look-alikes').map(x => [x.k, x.t]),
+    [
+      ['look', 'Any look-alike'],
+      ['look:Favites|Goniastrea', 'Favites · Goniastrea (withdrawn)'],
+      ['look:Acropora|Anacropora', 'Acropora · Anacropora'],
+      ['look:Acropora|Montipora', 'Acropora · Montipora (withdrawn)'],
+      ['look:Acropora|Porites', 'Acropora · Porites (added)']
+    ]
+  );
+  assert.deepStrictEqual(pass(by('look:Acropora|Porites')), ['Acropora', 'Porites']);
+  // Any look-alike: the pairs in force (the added one in, the withdrawn ones out)
+  assert.deepStrictEqual(pass(by('look')), ['Acropora', 'Anacropora', 'Porites']);
+  // without the draft's rows, as before: the base's pairs only
+  assert.deepStrictEqual(
+    ctFilters(d, {pairs: P0})
+      .filter(x => x.grp === 'Look-alikes')
+      .map(x => x.k),
+    ['look', 'look:Favites|Goniastrea', 'look:Acropora|Anacropora']
+  );
+  // a pair entry on a genus the tree does not hold is no option
+  assert.ok(
+    !ctFilters(d, {pairs: P0, rows: [{key: 'Acropora|Zz', a: 'Acropora', b: 'Zz', e: {v: 1}, state: 'orphan', v: null}]}).some(
+      x => x.k === 'look:Acropora|Zz'
+    )
+  );
+});

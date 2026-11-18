@@ -102,6 +102,9 @@
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
   function fishSure(j) {
     if (!j || fishUnsure(j).length) return null;
+    // An egg mass (the sea slugs' egg rule, judging/SEASLUG.md: {egg: 1}, never a code): never a candidate, set aside as
+    // a near-duplicate is (tools/seaslug_game.py sure never puts one in play). The fish's judgements carry no egg.
+    if (j.egg) return {keep: 'reject', why: 'egg'};
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
     if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
@@ -129,7 +132,9 @@
   // not a whole stock (Pierre, 2026-11-08, docs/ROADMAP.md "Surprise-only species"): its target is FISHT.wink, and the
   // admin's Tree shows that many of its photos in play, the rest on demand (fishWinkFold).
   const FISHT = {obs: 8, top: 12, cap: 20, wink: 5};
-  const fishTarget = sp => (sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
+  // A subject with a target of its own (core.js SUBJECTS admin target: the sea slugs' game cap) has it on every species
+  // record the admin reads (fishSpecies tgt).
+  const fishTarget = sp => (sp && sp.tgt > 0 ? sp.tgt : sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
     const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
@@ -450,9 +455,10 @@
     return {...F, [field]: M};
   }
   // One tag of a rubric code changed (pos 0-6: view, whole, light, colour loss, clarity, size, count), or a flag toggled
-  // (pos 'j' juvenile, 'c' camouflage, 'w' watermark), on Pierre's code, else the pass's, else a plain profile one; the
-  // tool-made flags (p phase entry, r reference photo) kept as they were, in the rubric's order.
-  const FFLAGORD = 'jcawpr';
+  // (pos 'j' juvenile, 'c' camouflage, 'w' watermark; the sea slugs' 'f' features hidden, judging/SEASLUG.md), on Pierre's
+  // code, else the pass's, else a plain profile one; the tool-made flags (p phase entry, r reference photo) kept as they
+  // were, in the rubrics' order (the fish's j c a w p r, the sea slugs' j c a w f: one order holds both).
+  const FFLAGORD = 'jcawfpr';
   function fishTag(code, pos, v) {
     const c = FISH_TAGS.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
@@ -939,11 +945,17 @@
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
   // The species records the admin reads ({id: fish.json species}), each species of a wink family (fish.json families
-  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink. Read only, never stored.
-  function fishSpecies(J) {
+  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink; with tgt (its subject's
+  // own target, core.js SUBJECTS admin target), every record marked tgt. Read only, never stored.
+  function fishSpecies(J, tgt) {
     J = J || {};
     const wk = new Set((J.families || []).filter(f => f && f.wink).flatMap(f => f.species || []));
-    return Object.fromEntries((J.species || []).map(x => [x.id, wk.has(x.id) ? {...x, wink: true} : x]));
+    return Object.fromEntries(
+      (J.species || []).map(x => [
+        x.id,
+        wk.has(x.id) || tgt > 0 ? {...x, ...(wk.has(x.id) ? {wink: true} : {}), ...(tgt > 0 ? {tgt} : {})} : x
+      ])
+    );
   }
   // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (FISHT.wink) shown,
   // the rest folded. Its featured photos (Pierre's Feature) always shown, then the surprise card's own photos (fish.json
@@ -1036,19 +1048,42 @@
         ph: [...new Set(rows.flatMap(r => r.ph))],
         wait: rows.reduce((a, r) => a + r.wait, 0)
       }),
-      out = {fam: [], gen: [], sp: []};
+      out = {fam: [], gen: [], sp: []},
+      // A genus's genus-level photos (gl: in play under its own id, the sea slugs' observations agreed at the genus only;
+      // Pierre, 2026-11-17, Q389 (1)): counted in its genus's and its family's photos, observations, easy and reference
+      // photos, phases and candidates waiting (gl, their number), never as a species (of, ok: its species alone).
+      withGl = (r, G) =>
+        G.reduce(
+          (a, g) => ({
+            ...a,
+            n: a.n + g.n,
+            obs: a.obs + g.obs,
+            easy: a.easy + g.easy,
+            ref: a.ref + g.ref,
+            ph: [...new Set([...a.ph, ...g.ph])],
+            wait: a.wait + g.wait,
+            gl: (a.gl || 0) + g.n
+          }),
+          r
+        );
     U.forEach(u => {
       const S = u.species.filter(s => species[s] && !species[s].out).map(s => spRow(s, u.id)),
-        by = Object.fromEntries(S.map(r => [r.id, r]));
+        by = Object.fromEntries(S.map(r => [r.id, r])),
+        GL = Object.fromEntries(
+          u.genera.filter(g => (play[g.id] || []).length || (waiting[g.id] || []).length).map(g => [g.id, spRow(g.id, u.id)])
+        );
       out.sp.push(...S);
       u.genera.forEach(g => {
         const R = g.species.map(s => by[s]).filter(Boolean);
-        if (!R.length) return;
-        const r = sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr});
+        if (!R.length && !GL[g.id]) return;
+        const r = withGl(sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr}), GL[g.id] ? [GL[g.id]] : []);
         r.need = [...(r.of - r.ok ? [`${r.of - r.ok} species under target`] : []), ...(r.n ? [] : ['No photo in play'])];
         out.gen.push(r);
       });
-      const r = sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle});
+      const r = withGl(
+        sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle}),
+        Object.values(GL)
+      );
       r.want = fishUnitPhases(u);
       r.need = fishNeeds(u, play, species, F, j);
       out.fam.push(r);

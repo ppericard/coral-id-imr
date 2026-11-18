@@ -15,6 +15,11 @@
 // - Who may edit: mayContent, the one place the content right is asked (today the token that can publish, phase 0 of the
 //   design; roles step 1 puts can_(account, 'content', instance) there, Q364), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
+// The same code serves every subject's Tree (S: its SUBJECTS entry): the fish's (admin.js renderFishUnits, over fish.json)
+// and the corals' (admin-coraltree.js renderCoralTree, over data.json as the admin holds it; design note v2, step 8: a
+// genus's sheet, its look-alike pairs and no circle, a withdrawal the ★ rule would hold turned off). admin.html loads it
+// before admin.js, as admin-coraltree.js: a Tree page opened cold renders before the later scripts are in (the demo's
+// data comes at once), and found no editor.
 //
 // The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells) runs in Node too: tests/sheeteditor.test.js.
 (function (root) {
@@ -84,20 +89,44 @@
   }
   // Whether node id of fish file R has a sheet of its own in the app (core.js fishTree go, learn.js viewFishSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
-  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species).
+  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species). A subject with
+  // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
+  // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
+  // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a
+  // unit, its look-alikes and their lines shown on the page it opens (learn.js fishGenusLooksOn), its marks in the quiz
+  // feedback (app.js fishGenera qt).
   let OWN = null;
-  function sheetOwn(R, id) {
+  function sheetOwn(R, id, S) {
+    if (S && S.content && !S.sheets) return C.contentNodes(S, R).has(id);
     if (!OWN || OWN.R !== R) OWN = {R, T: C.fishTree(R)};
     const T = OWN.T,
       wink = fid => !T.fam[fid] || !!T.fam[fid].wink;
     if (T.fam[id]) return !T.fam[id].wink;
-    if (T.gen[id]) return T.go(id) === id && !wink(T.gen[id].family);
+    if (T.gen[id]) return (T.go(id) === id || C.unitRankOf(S) === 'genus') && !wink(T.gen[id].family);
     return !!T.sp[id] && !wink(T.sp[id].family);
   }
-  // The text of the editor's box as the slot's value: a list one item per non-empty line; a text its words on one line;
-  // null when nothing is left (the slot hidden).
+  // A list of sources (a slot of type srcs: core.js contentVal) as the editor's box holds it: one source a line, its words
+  // then | and its web address when it has one; and back: a line's address is what follows its last | when that is a web
+  // address (http or https), or a web address that ends the line after a space, else none.
+  const srcsText = v => (Array.isArray(v) ? v : []).map(x => (x.u ? `${x.t} | ${x.u}` : x.t)).join('\n');
+  const srcOfLine = x => {
+    const m = x.match(/^(.*?)\s*\|\s*(https?:\/\/\S+)$/i) || x.match(/^(.*\S)\s+(https?:\/\/\S+)$/i);
+    if (m && m[1].trim()) return {t: m[1].trim(), u: m[2]};
+    const u = m ? m[2] : /^https?:\/\/\S+$/i.test(x) ? x : '';
+    return u ? {t: u, u} : {t: x};
+  };
+  // The text of the editor's box as the slot's value: a list one item per non-empty line; a list of sources one source per
+  // non-empty line (srcOfLine); a text its words on one line; null when nothing is left (the slot hidden).
   function sheetVal(sp, text) {
     const s = String(text || '');
+    if (sp.t === 'srcs') {
+      const L = s
+        .split('\n')
+        .map(x => x.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .map(srcOfLine);
+      return L.length ? L : null;
+    }
     if (sp.t === 'list') {
       const L = s
         .split('\n')
@@ -144,7 +173,7 @@
       rows = new Map();
     N.forEach((n, a) =>
       (Array.isArray(n.rec[D.slot]) ? n.rec[D.slot] : []).forEach(y => {
-        const b = Array.isArray(y) && y[0] != null ? String(y[0]) : '',
+        const b = C.pairIdOf(y),
           k = b && b !== a && N.has(b) ? C.contentPairKey(a, b) : '';
         if (k && !rows.has(k)) rows.set(k, {key: k, a: k.split('|')[0], b: k.split('|')[1], base: 1, e: null, state: ''});
       })
@@ -219,6 +248,7 @@
       sheetSlots,
       sheetOwn,
       sheetVal,
+      srcsText,
       sheetTodo,
       rowKey,
       contentShells,
@@ -255,28 +285,31 @@
   }
   const WHY = {node: 'node gone', slot: 'no such slot', value: 'not its type', shadow: 'old id', key: 'bad pair key'};
   const STATE = {fresh: 'Edited', stale: 'Base changed', absorbed: 'In the base'};
-  // A value as the sheet shows it: a list's lines, a text, a dash for none.
+  // A source's words, a link when its address is a web address (http or https: never a javascript: or data: link on the
+  // page that holds the publishing token, whoever typed it once editors publish through the relay).
+  const srcA = x => (x.u && /^https?:\/\//i.test(x.u) ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t));
+  // A value as the sheet shows it: a list's lines (a list of sources: each its words, linked), a text, a dash for none.
   const shVal = v =>
     v == null
       ? '<p class="adm-csv adm-csnone">—</p>'
       : Array.isArray(v)
-        ? `<ul class="adm-csv">${v.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+        ? `<ul class="adm-csv">${v.map(x => `<li>${isObj(x) ? srcA(x) : esc(x)}</li>`).join('')}</ul>`
         : `<p class="adm-csv">${esc(v)}</p>`;
-  // An edit's source under its text; its link only when it is a web address (http or https: never a javascript: or data:
-  // link on the page that holds the publishing token, whoever typed it once editors publish through the relay).
+  // An edit's source under its text; its link only when it is a web address (srcA).
   const shSrc = s => {
-    const x = C.contentSrc(s),
-      web = x && x.u && /^https?:\/\//i.test(x.u);
-    return x ? `<p class="adm-cssrc">${web ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</p>` : '';
+    const x = C.contentSrc(s);
+    return x ? `<p class="adm-cssrc">${srcA(x)}</p>` : '';
   };
   const shBox = r => {
     const s0 = C.contentSrc(r.e && r.e.src) || {t: '', u: ''},
-      // what was typed so far, else the text in force and its source
-      text = SH_ED.text != null ? SH_ED.text : r.v == null ? '' : Array.isArray(r.v) ? r.v.join('\n') : r.v,
+      srcs = r.sp.t === 'srcs',
+      // what was typed so far, else the text in force (a list of sources: srcsText) and its source
+      text = SH_ED.text != null ? SH_ED.text : r.v == null ? '' : srcs ? srcsText(r.v) : Array.isArray(r.v) ? r.v.join('\n') : r.v,
       s = {t: SH_ED.t != null ? SH_ED.t : s0.t, u: SH_ED.u != null ? SH_ED.u : s0.u || ''},
       ask = SH_ASK === rowKey(r);
-    return `<div class="adm-csed"><textarea data-cst rows="${r.sp.t === 'list' ? Math.max(3, (r.v || []).length + 1) : 2}" aria-label="${esc(r.name)}">${esc(text)}</textarea>
-      <span class="adm-cssrcs${ask ? ' need' : ''}"><input type="text" data-css value="${esc(s.t)}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-csu value="${esc(s.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>
+    // A list of sources is its own source: no Source and Link of the edit's (its lines are "words | link").
+    return `<div class="adm-csed"><textarea data-cst rows="${r.sp.t === 'list' || srcs ? Math.max(3, (r.v || []).length + 1) : 2}" aria-label="${esc(r.name)}"${srcs ? ' placeholder="One source a line: its words | its link"' : ''}>${esc(text)}</textarea>
+      ${srcs ? '' : `<span class="adm-cssrcs${ask ? ' need' : ''}"><input type="text" data-css value="${esc(s.t)}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-csu value="${esc(s.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>`}
       <span class="adm-acts"><button type="button" data-csa="save" class="on">${ask ? 'Save without source' : 'Save'}</button><button type="button" data-csa="cancel">Cancel</button></span></div>`;
   };
   function shRow(r, id, can) {
@@ -306,7 +339,7 @@
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
-    if (!R || !S.content || !sheetOwn(R, id)) return '';
+    if (!R || !S.content || !sheetOwn(R, id, S)) return '';
     const rows = sheetSlots(S, R, shGet(S), id, nameOf),
       can = mayContent(),
       ne = rows.filter(r => r.e).length,
@@ -358,11 +391,14 @@
           if (a === 'keep') return shPut(S, c => C.contentSet(mv(c), id, r.slot, r.e.v, r.base, r.e.src, now));
           if (a === 'save') {
             const v = sheetVal(r.sp, el.querySelector('[data-cst]').value),
-              t = el.querySelector('[data-css]').value.trim(),
-              u = el.querySelector('[data-csu]').value.trim(),
+              si = el.querySelector('[data-css]'),
+              ui = el.querySelector('[data-csu]'),
+              t = si ? si.value.trim() : '',
+              u = ui ? ui.value.trim() : '',
               src = t || u ? {t: t || u, u} : null;
-            // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required).
-            if (r.base == null && v != null && !src && SH_ASK !== rowKey(r)) {
+            // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required). A list
+            // of sources is its own (no box to ask in).
+            if (r.base == null && v != null && !src && si && SH_ASK !== rowKey(r)) {
               SH_ASK = rowKey(r);
               const k = el.querySelector('.adm-cssrcs'),
                 sv = el.querySelector('[data-csa="save"]');
@@ -384,7 +420,7 @@
     const L = sheetTodo(S, R, shGet(S));
     if (!L.length) return '';
     const at = L.find(x => x.why !== 'node') || null;
-    return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? WHY[x.why] || x.why : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
+    return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? whyOf(S, x.why) : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
   }
   // ---- The structure editor (design note v2, step 4; Pierre, 2026-11-15, Q359: circles and look-alike pairs are the
   // instance's, set by its content editor; Q363 h A: a change replays every player's progress) ----
@@ -402,33 +438,46 @@
   // look-alike, the pair's state and tools under one pair.
   const ST_STATE = {fresh: 'Edited', stale: 'Base changed', absorbed: 'In the base'};
   const stLab = c => (c == null ? 'None' : String(c));
-  const stChip = (r, t) =>
+  // Why an entry is never applied, in words: a held one (the subject's own guard, SUBJECTS structure pairs hold: the
+  // corals' ★ rule) in the subject's word for it (held).
+  const whyOf = (S, w) => (w === 'hold' && S && S.structure && S.structure.pairs && S.structure.pairs.held) || WHY[w] || w;
+  const stChip = (r, t, S) =>
     r.state === 'orphan'
-      ? `<b class="warnc adm-cschip">${esc(WHY[r.why] || r.why)}</b>`
+      ? `<b class="warnc adm-cschip">${esc(whyOf(S, r.why))}</b>`
       : r.state
         ? `<span class="adm-src adm-cschip c-${r.state}">${esc(t || ST_STATE[r.state])}</span>`
         : '';
   // A pair's word for its state: Withdrawn or Added while his entry applies, else the state's.
   const pairWord = r => (r.state === 'fresh' || r.state === 'stale' ? (r.v === 1 ? 'Added' : 'Withdrawn') : '');
-  // A pair's tools: Withdraw one in force from the base, ↺ his own, Remove one absorbed or never applied.
-  const pairActs = r =>
+  // Whether withdrawing pair k (a pair of the base, in force) would be held by the subject's own guard (core.js
+  // structEntries hold: the corals' ★ rule, a starred genus keeping a surveyed look-alike), so its Withdraw is off.
+  const wouldHold = (S, R, Cm, k) =>
+    !!(S.structure.pairs && typeof S.structure.pairs.hold === 'function') &&
+    C.structEntries(S, R, C.contentPairSet(Cm, k, null, 1, null, 0)).pairs.some(x => x.key === k && x.why === 'hold');
+  // A pair's tools: Withdraw one in force from the base (off, with why, when the subject's guard would hold it), ↺ his
+  // own, Remove one absorbed or never applied.
+  const pairActs = (r, held, S) =>
     r.state === 'orphan' || r.state === 'absorbed'
       ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
       : r.e
         ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
-        : `<button type="button" data-sta="withdraw">Withdraw</button>`;
-  // The families a pair may join (the pair rank's nodes with a sheet in the app), by name.
+        : held
+          ? `<button type="button" data-sta="withdraw" disabled title="${esc(whyOf(S, 'hold'))}">Withdraw</button>`
+          : `<button type="button" data-sta="withdraw">Withdraw</button>`;
+  // The nodes a pair may join (the pair rank's nodes with a sheet in the app), by name.
   const pairNodes = (S, R, nameOf) =>
     [...C.contentNodes(S, R)]
-      .filter(([id, n]) => n.rank === S.structure.pairs.rank && sheetOwn(R, id))
+      .filter(([id, n]) => n.rank === S.structure.pairs.rank && sheetOwn(R, id, S))
       .map(([id]) => [id, nameOf(id)])
       .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
-  // The add box (ST_ADD): the other family (at a page: a's fixed) or both (the filter), Source and Link, Save, Cancel.
+  // The add box (ST_ADD): the other node (at a page: a's fixed) or both (the filter), Source and Link, Save, Cancel; the
+  // first select named by the subject's unit (SUBJECTS one: Family, Genus).
   function stAddBox(S, R, nameOf) {
     const A = ST_ADD,
       L = pairNodes(S, R, nameOf),
+      one = (s => s.charAt(0).toUpperCase() + s.slice(1))(String(S.one || 'node')),
       sel = (k, v) =>
-        `<select class="adm-fgsel" data-st-${k} aria-label="${k === 'a' ? 'Family' : 'Look-alike'}"><option value="">${k === 'a' ? 'Family…' : 'Look-alike…'}</option>${L.filter(
+        `<select class="adm-fgsel" data-st-${k} aria-label="${k === 'a' ? one : 'Look-alike'}"><option value="">${k === 'a' ? one + '…' : 'Look-alike…'}</option>${L.filter(
           ([id]) => id !== (k === 'a' ? A.b : A.a)
         )
           .map(([id, n]) => `<option value="${esc(id)}"${id === v ? ' selected' : ''}>${esc(n)}</option>`)
@@ -437,42 +486,54 @@
       <span class="adm-cssrcs${A.ask ? ' need' : ''}"><input type="text" data-sts value="${esc(A.t || '')}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-stu value="${esc(A.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>
       <span class="adm-acts"><button type="button" data-sta="save" class="on">${A.ask ? 'Save without source' : 'Save'}</button><button type="button" data-sta="cancel">Cancel</button></span></div>`;
   }
-  // The box on node id's page (R: fish.json as built; nameOf a node's name, href its page), '' for a node of no circle
-  // rank or with no sheet in the app.
+  // The box on node id's page (R: the built file, fish.json or data.json; nameOf a node's name, href its page), '' for a
+  // node with no sheet in the app, or of no circle rank and no pair rank. A subject with pairs and no circles (the corals,
+  // design note v2 step 8: their slate is not the editor's) gets the look-alikes alone.
   function structBox(S, R, id, nameOf, href) {
-    if (!R || !S.structure || !sheetOwn(R, id)) return '';
+    if (!R || !S.structure || !sheetOwn(R, id, S)) return '';
     const Cm = shGet(S),
-      cr = circleRow(S, R, Cm, id);
-    if (!cr) return '';
+      D = S.structure,
+      cr = D.circle ? circleRow(S, R, Cm, id) : null,
+      pn = D.pairs ? C.contentNodes(S, R).get(id) : null,
+      pr = !!pn && pn.rank === D.pairs.rank;
+    // a subject with circles: the box on its circle rank's pages (as before); without: on its pair rank's
+    if (D.circle ? !cr : !pr) return '';
     const can = mayContent(),
-      P = pairRows(S, R, Cm, id),
-      seg = `<span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="Circle">${[...cr.of, null]
-        .map(
-          c =>
-            `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'}>${stLab(c)}</button>`
-        )
-        .join('')}</span>`,
-      cActs = !can
+      P = pr ? pairRows(S, R, Cm, id) : [],
+      seg = !cr
         ? ''
-        : cr.state === 'orphan' || cr.state === 'absorbed'
-          ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
-          : cr.state === 'stale'
-            ? `<button type="button" data-sta="keep">Keep mine</button><button type="button" data-sta="drop">Take the new</button>`
-            : cr.e
-              ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
-              : '',
-      cBody =
-        cr.state === 'stale'
+        : `<span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="Circle">${[...cr.of, null]
+            .map(
+              c =>
+                `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'}>${stLab(c)}</button>`
+            )
+            .join('')}</span>`,
+      cActs =
+        !can || !cr
+          ? ''
+          : cr.state === 'orphan' || cr.state === 'absorbed'
+            ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
+            : cr.state === 'stale'
+              ? `<button type="button" data-sta="keep">Keep mine</button><button type="button" data-sta="drop">Take the new</button>`
+              : cr.e
+                ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
+                : '',
+      cBody = !cr
+        ? ''
+        : cr.state === 'stale'
           ? `<div class="adm-cs3"><div><small>When edited</small><p class="adm-csv">${stLab(cr.e.was)}</p></div><div><small>Now</small><p class="adm-csv">${stLab(cr.base)}</p></div><div><small>Mine</small><p class="adm-csv">${stLab(cr.e.v)}</p></div></div>`
           : cr.state === 'fresh'
             ? `<p class="adm-cssrc">Original: ${stLab(cr.base)}</p>`
             : '',
-      circle = `<div class="adm-cslot${cr.state ? ' is-' + cr.state : ''}" data-stcid="${esc(id)}"><div class="adm-cshd"><b>Circle</b>${seg}${stChip(cr)}${cActs ? `<span class="adm-acts">${cActs}</span>` : ''}</div>${cBody}</div>`,
+      circle = !cr
+        ? ''
+        : `<div class="adm-cslot${cr.state ? ' is-' + cr.state : ''}" data-stcid="${esc(id)}"><div class="adm-cshd"><b>Circle</b>${seg}${stChip(cr, '', S)}${cActs ? `<span class="adm-acts">${cActs}</span>` : ''}</div>${cBody}</div>`,
       other = r => (r.a === id ? r.b : r.a),
       pairs = P.map(r => {
         const o = other(r),
-          own = o && sheetOwn(R, o);
-        return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}${r.v === 1 ? '' : ' is-out'}" data-stp="${esc(r.key)}"><div class="adm-cshd">${own ? `<a href="${esc(href(o))}">${esc(nameOf(o))}</a>` : `<b>${esc(o ? nameOf(o) : r.key)}</b>`}${stChip(r, pairWord(r))}${can ? `<span class="adm-acts">${pairActs(r)}</span>` : ''}</div>${r.e && r.v === 1 ? shSrc(r.e.src) : ''}</div>`;
+          own = o && sheetOwn(R, o, S),
+          held = can && !r.e && r.v === 1 && wouldHold(S, R, Cm, r.key);
+        return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}${r.v === 1 ? '' : ' is-out'}" data-stp="${esc(r.key)}"><div class="adm-cshd">${own ? `<a href="${esc(href(o))}">${esc(nameOf(o))}</a>` : `<b>${esc(o ? nameOf(o) : r.key)}</b>`}${stChip(r, pairWord(r), S)}${can ? `<span class="adm-acts">${pairActs(r, held, S)}</span>` : ''}</div>${r.e && r.v === 1 ? shSrc(r.e.src) : ''}</div>`;
       }).join(''),
       inForce = new Set(P.filter(r => r.v === 1).map(other)),
       add =
@@ -497,8 +558,11 @@
     if (tag === 'look')
       return `<button type="button" class="adm-chip" data-stnew aria-pressed="${!!ST_ADD && ST_ADD.at === ''}">+ Pair</button>`;
     if (!tag.startsWith('look:')) return '';
-    const r = pairRows(S, R, shGet(S)).find(x => x.key === tag.slice(5));
-    return r ? `<span class="adm-stbar adm-acts" data-stp="${esc(r.key)}">${stChip(r, pairWord(r))}${pairActs(r)}</span>` : '';
+    const Cm = shGet(S),
+      r = pairRows(S, R, Cm).find(x => x.key === tag.slice(5));
+    return r
+      ? `<span class="adm-stbar adm-acts" data-stp="${esc(r.key)}">${stChip(r, pairWord(r), S)}${pairActs(r, !r.e && r.v === 1 && wouldHold(S, R, Cm, r.key), S)}</span>`
+      : '';
   }
   // The filter's add box (ST_ADD from + Pair), '' when none is open.
   const structAdd = (S, R, nameOf) =>
@@ -604,6 +668,7 @@
     sheetSlots,
     sheetOwn,
     sheetVal,
+    srcsText,
     sheetTodo,
     mayContent,
     contentShells,

@@ -10,10 +10,17 @@ const {loadCodeGs, bodyOf} = require('./gas.js');
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
-  LIGHT = Number(/const LIGHT_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1]);
-// data.json from GitHub, as the script reads it (Code.gs gen_).
+  CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
+  SV = C.SHEET_FLOOR; // the replies' script version by default: the gate floor, the oldest script the app still knows
+// data.json from GitHub, as the script reads it (Code.gs gen_), and curation.json, whose look-alike pairs the coral replay
+// lays over it (Code.gs subjRpl_; design note v2, step 8).
 const withData = () => ({
-  fetch: url => (/\/main\/data\.json$/.test(url) ? {getResponseCode: () => 200, getContentText: () => DJSON} : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? {getResponseCode: () => 200, getContentText: () => DJSON}
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON}
+        : null
 });
 function storage(init = {}) {
   const m = new Map(Object.entries(init));
@@ -28,10 +35,10 @@ function storage(init = {}) {
   };
 }
 // A page of the app (its own sync.js, a fresh page: its first sync loads) on the sheet s, whose replies say script
-// version v (the light saves from LIGHT_SHEET; Code.gs's VERSION is assigned at merge, rule D3). net(kind, body, n): what
+// version v (core.js SHEET_FLOOR by default; Code.gs's VERSION is assigned at merge, rule D3). net(kind, body, n): what
 // the n-th request gets instead of the sheet's reply (an Error to throw, a reply object), or undefined for the sheet's;
 // lost(kind, body, n): the sheet applies it, then the reply never comes.
-function page(s, {v = LIGHT, SYNC = null, P = {}, ls = {}, net = () => undefined, lost = () => false, zip = true} = {}) {
+function page(s, {v = SV, SYNC = null, P = {}, ls = {}, net = () => undefined, lost = () => false, zip = true} = {}) {
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     appjs = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     groups = /const GROUPS_KEY = [\s\S]*?\nconst subjOpen = .*\n/.exec(appjs)[0],
@@ -116,7 +123,7 @@ function page(s, {v = LIGHT, SYNC = null, P = {}, ls = {}, net = () => undefined
       /const progData = [\s\S]*?\n};\n/.exec(prog)[0] +
       groups +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
-      '\nbindSync = () => {};\nthis.A = {syncPush, syncPull, store, rvApplied, saveWait, SAVE_WAIT, setSaveMs: x => (saveMs = x), lightOn};',
+      '\nbindSync = () => {};\nthis.A = {syncPush, syncPull, store, rvApplied, saveWait, SAVE_WAIT, setSaveMs: x => (saveMs = x)};',
     ctx
   );
   const A = ctx.A;
@@ -150,4 +157,4 @@ const qa = (id, g, ok, t) => ({
   th: 1,
   nw: 1
 });
-module.exports = {page, qa, T, LIGHT, DATA, withData, loadCodeGs, storage};
+module.exports = {page, qa, T, SV, DATA, withData, loadCodeGs, storage};
