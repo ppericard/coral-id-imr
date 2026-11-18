@@ -107,7 +107,7 @@ release an orphan lock**. That is a different state, with its own cancellation A
 
 Pierre, 2026-11-18 11:21 ("lance 1, 2, 3 et 4"): an hourly check that the platform answers, and the numbers to watch before
 it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.py`, `tools/infra.json`, `tools/brief.py`
-`infra_line`, the sheet's `readInfra_` (`Code.gs`, sheet vNEXT) and the admin's card (`admin.js` `infraRows`); tests
+`infra_line`, the sheet's `readInfra_` (`Code.gs`, sheet v180) and the admin's card (`admin.js` `infraRows`); tests
 `tests/infra.test.js` with `tests/infra.fixtures.py` (every request faked: rule D1), `tests/gates.test.js` (`INFRA_SHEET`).
 
 **The hourly check** (`health.yml`, `tools/health.py`; nothing it prints holds a secret, the log is public):
@@ -140,7 +140,7 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
   First figure: about 6.3 GB on 2026-11-15 ([AVIF study](reviews/2026-11-15-avif-study.md) §4), already 63%.
 - **In `python3 tools/brief.py`** one `Infra:` line, read from the latest Health run's `infra` annotation (three REST calls,
   inside the brief's 5 s); in the short brief only when a number warns or the check failed.
-- **In the admin** the card above To do › Alerts' list (`readInfra_`, the `players` right, never public; from sheet vNEXT, rule D4),
+- **In the admin** the card above To do › Alerts' list (`readInfra_`, the `players` right, never public; from sheet v180, rule D4),
   with a "?" paragraph: the five sheet rows live, and the Pages and R2 rows from GitHub with the admin's own token (main's
   tree and `tools/infra.json`), so those two show before the sheet script has the read. It holds what the hourly job does not.
 - **Not wired, for Pierre**: giving the hourly job `ANALYSES_ADMIN_TOKEN` as `INFRA_TOKEN` (one line in `health.yml`) would add the

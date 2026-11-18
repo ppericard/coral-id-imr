@@ -40,7 +40,7 @@ It reaches pCloud one of two ways, set in the script's properties:
     the line ends `[token path; PCLOUD_UPLOAD_CODE not used]`.
 
   The token and the code never appear there (they are scrubbed from any error text), nor pCloud's error text.
-- **Is it recent?** The admin's To do › Alerts card says when the last backup saved (`readInfra`, sheet vNEXT, admin token),
+- **Is it recent?** The admin's To do › Alerts card says when the last backup saved (`readInfra`, sheet v180, admin token),
   flagged past 8 days; the hourly Health check ([PAGES.md](PAGES.md) "Infrastructure health") can fail on it once it is given
   the token. Nothing public exposes the Deploy log, so without the token the check says "not exposed" and passes.
 - **Safety**: the backup runs on its own, never inside a player's request, never under the script's lock and never in

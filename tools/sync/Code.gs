@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 179 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 180 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 179;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 180;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -312,7 +312,7 @@ function doPost_(e){
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readAlerts) return json_(readAlerts_(p.token));  // admin (v152): POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
-  if (p.readInfra) return json_(readInfra_(p.token));  // admin (vNEXT): POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
+  if (p.readInfra) return json_(readInfra_(p.token));  // admin (v180): POST {readInfra: 1, token}, cells, timings, backup (see readInfra_)
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // v156: roles step 1
     if (!who) return json_({ok: false, error: 'token'});
@@ -2330,7 +2330,7 @@ function alertIds_(salt){
   if (sh && sh.getLastRow() > 1) new Set(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(w => w.indexOf('~anon ') === 0)).forEach(w => ids.add(aid_(w, salt)));
   return ids;
 }
-// POST {readInfra: 1, token} (vNEXT; Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4": the infrastructure dashboard, the numbers
+// POST {readInfra: 1, token} (v180; Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4": the infrastructure dashboard, the numbers
 // to watch before the platform outgrows its free tiers; docs/PAGES.md "Infrastructure health") → {ok, cells, answers, tim,
 // backup}. The instance's players right (gate_), never public. Read-only, no script lock, nothing written (not even an
 // Audit row: reads are not audited), no player, name, id or answer in the reply: counts, tab names (fixed words) and times.

@@ -228,7 +228,7 @@ that name nobody stay (`a:` and `ev:` device ids, the global caps). **Not covere
 taken again"): an admin id is the name's, so a new account under a deleted or archived account's name shows that old
 account's id lines again; closing it means rewriting those ids in the tab, a write-path change for its own PR.
 
-## Infrastructure (sheet vNEXT, the hourly Health check)
+## Infrastructure (sheet v180, the hourly Health check)
 
 Pierre, 2026-11-18 11:21 ([PAGES.md](PAGES.md) "Infrastructure health"): the numbers to watch before the platform outgrows
 its free tiers.

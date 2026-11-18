@@ -5439,7 +5439,7 @@ function bindAlerts() {
 // tools/health.py and tools/brief.py: tests/infra.test.js). The Pages site's size and R2's storage are not in the sheet: they
 // come from GitHub with the same token (the tree of main, as tools/health.py sums it, and tools/infra.json, R2's figure
 // measured by hand), so a script before INFRA_SHEET still shows them.
-const INFRA_SHEET = 178;
+const INFRA_SHEET = 180;
 const infraOn = j => !!j && Number(j.v) >= INFRA_SHEET;
 const INFRA = {WARN: 0.7, SLOW: 5000, BACKUP_DAYS: 8};
 const infraFmt = (u, n) => (u === 'ms' ? (n / 1000).toFixed(1) + ' s' : n >= 1e5 ? (n / 1e6).toFixed(2) + ' M' : String(n));

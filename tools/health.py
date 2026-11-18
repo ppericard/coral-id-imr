@@ -191,7 +191,7 @@ def check_sheet(get, url, v_main, age_of, pause=3):
 
 
 def read_infra(post, url, token):
-    """The sheet's readInfra (admin token; sheet vNEXT), the reply or None. The token goes only in the request's body."""
+    """The sheet's readInfra (admin token; sheet v180), the reply or None. The token goes only in the request's body."""
     s, b = post(url, data=json.dumps({'readInfra': 1, 'token': token}).encode(), timeout=30)
     try:
         j = json.loads(b) if s == 200 else None
