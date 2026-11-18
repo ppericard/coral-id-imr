@@ -1,15 +1,12 @@
 require('./slot.js').testGuard();
 // The admin's cost per click (performance pass, 2026-11-09): admin.js autoWhen skips the fish part's keeps when a click
-// left that part as it was (the same object), and putDraft stores the draft's text joined from snap (draftJson). Checked
-// here: no admin script writes into the fish part of the draft in place (each change makes a new one, so the same object
-// means the same keeps), the fish edits the admin runs leave their input as it was, and draftJson is the JSON the store
-// wrote before.
+// left that part as it was (the same object). Checked here: no admin script writes into the fish part of the draft in
+// place (each change makes a new one, so the same object means the same keeps), and the fish edits the admin runs leave
+// their input as it was. (The draft's write stores snap as it is: admin-draft.js, tests/admindraft.test.js.)
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
-  path = require('path'),
-  vm = require('vm'),
-  block = require('./block.js');
+  path = require('path');
 const A = require('../autosort.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
@@ -54,16 +51,4 @@ test('the fish edits the admin runs leave the fish part they are given as it was
     ];
   assert.strictEqual(JSON.stringify(F), before, 'an edit wrote into its input');
   out.forEach((x, i) => assert.ok(x && x !== F, `edit ${i}: a new fish part`));
-});
-
-test('draftJson: the JSON of the draft with its _tab, joined from the draft text', () => {
-  const ctx = {};
-  vm.createContext(ctx);
-  vm.runInContext(block(read('admin.js'), 'const draftJson = ', '\n', {file: 'admin.js'}) + '\nthis.draftJson = draftJson;', ctx);
-  const tab = {rev: 'ab12.7', seen: 'cd34.2'};
-  for (const d of [CUR, {}, {genera: {}}, {2: 'x', genera: {a: 1}, v: 1}, {fish: {add: {'a"b': 's1'}}, note: 'é\n'}]) {
-    const s = JSON.stringify(d);
-    assert.strictEqual(ctx.draftJson(s, tab), JSON.stringify(Object.assign({}, JSON.parse(s), {_tab: tab})));
-  }
-  assert.deepStrictEqual(JSON.parse(ctx.draftJson('{}', null)), {_tab: null});
 });

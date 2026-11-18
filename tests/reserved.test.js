@@ -168,7 +168,8 @@ test('players named like Object.prototype members: every admin read, group and c
   assert.strictEqual(ac.counts.constructor, OLD.length);
   assert.strictEqual(ac.counts.first, OLD.length);
   // Beta groups: added and removed like anyone (groupSet_), seen in the load and the player list.
-  OLD.forEach(n => assert.strictEqual(s.post({userGroup: n, group: 'fish', on: true, token: TOK}).n, 1, n));
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  OLD.forEach(n => assert.strictEqual(s.post({userGroup: n, group: g, on: true, token: TOK}).n, 1, n));
   OLD.forEach(n => assert.deepStrictEqual(s.get({name: n, pin: '1234'}).groups, ['fish'], n));
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, []);
   clear(s);
@@ -176,7 +177,7 @@ test('players named like Object.prototype members: every admin read, group and c
     s.post({users: 1, token: TOK}).users.map(x => [x.name, x.groups]),
     all.map(n => [n, n === 'Ana' ? [] : ['fish']])
   );
-  assert.strictEqual(s.post({userGroup: OLD, group: 'fish', on: false, token: TOK}).n, OLD.length);
+  assert.strictEqual(s.post({userGroup: OLD, group: g, on: false, token: TOK}).n, OLD.length);
   OLD.forEach(n => assert.deepStrictEqual(s.get({name: n, pin: '1234'}).groups, [], n));
   // Archive and delete: the list follows.
   assert.ok(s.post({userArchive: {from: 'constructor', into: 'Arch1'}, token: TOK}).ok);

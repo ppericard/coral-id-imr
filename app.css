@@ -5973,6 +5973,21 @@ button.setlink {
   font: 600 var(--fs-xs) / 1.3 var(--body);
   letter-spacing: 0.02em;
 }
+/* A set that is not at the slate's rank (the fish scientific genera, the species), its own section under the families (Pierre,
+   2026-11-18, Q404 A): smaller tiles at their own size, not fitted to the screen. */
+.pgwrap .psech {
+  margin: 18px 0 0;
+}
+.pgrid.pwall.psect {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-auto-rows: 80px;
+}
+@media (min-width: 600px) {
+  .pgrid.pwall.psect {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-auto-rows: 96px;
+  }
+}
 .pgbonus .gn {
   background: transparent;
   border: 1.5px dashed var(--line);

@@ -404,6 +404,9 @@ def assign(root='.', date=None, dry=False, base=None):
     if not h or old is None or h[0] != old:
         sys.exit('✗ %s: the header and the constant disagree: fix them first (--check)' % GS)
     n = old + 1
+    # The entry itself may name the new version with the placeholder (#1083): it is written into HISTORY.md and
+    # ARCHITECTURE.md with every bare placeholder set to vN, as in the code files (a code span stays as written).
+    entry = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), entry)
     date = date or datetime.now(ZoneInfo('Asia/Manila')).strftime('%Y-%m-%d')
     hist = read(HIST, root) if os.path.exists(os.path.join(root, HIST)) else None
     bad = hist_problems(h, old, hist)

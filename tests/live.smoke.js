@@ -286,6 +286,11 @@ async function shot(p, name) {
     sam.every(a => a[0] === 'Sam' && a[3] === 1 && a[1] === a[2] && a[4]),
     `4: Sam's live answers: ${JSON.stringify(sam)}`
   );
+  // Each with its attempt id for the player and the question (live.js liveAid), so a reload never logs one twice.
+  check(
+    sam.every(a => /^l[0-9a-f]{10}q[0-9a-z]+$/.test(a[5])),
+    `4: Sam's live answers' ids: ${JSON.stringify(sam.map(a => a[5]))}`
+  );
   check(!A.some(r => /Kai|Lia|~anon/.test(String(r[0])) && r[5] === 'live'), '4: a nickname’s live answer reached the sheet');
   const kai = await S[1].p.evaluate(
     () =>

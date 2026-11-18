@@ -81,6 +81,11 @@ const GATES = {
   // serves it; before, an older script answers 'input' and the page names the version it waits for.
   ALERTS_SHEET: (v, N) =>
     fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
+  // To do › Alerts, the infrastructure card above the list (admin.js infraOn, loadInfra; Code.gs readInfra_; docs/PAGES.md
+  // "Infrastructure health"): from the version that serves it; before, an older script answers 'input' and the card shows
+  // the repository's numbers alone, silently (tests/infra.test.js runs the card's numbers).
+  INFRA_SHEET: (v, N) =>
+    fn('admin.js', 'const infraOn = ', '\n', 'infraOn', {INFRA_SHEET: N})({ok: true, cells: {}, ...(v === undefined ? {} : {v})}),
   // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the
   // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
   // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
@@ -130,19 +135,36 @@ const GATES = {
     fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
       subjGroup: S => S.open === 'group',
       USERS: v === undefined ? {} : {v},
-      ASUBJ: null
+      ASUBJ: null,
+      groupsOn: () => false
     })({open: 'group', sheet: N}),
   // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from v171; before, the one
   // general board as before, whatever the reply carries.
   SCOPES_SHEET: (v, N) =>
     fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
       SCOPES_SHEET: N,
+      GROUPS_SHEET: Infinity,
       myCohort: () => '',
       boardMe: () => -1
     })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
-  // The admin's Cohort select and Staff toggle on a player's bar (admin.js cohortOn; Code.gs userGroup cohort, roles_):
-  // from v171.
-  COHORT_SHEET: (v, N) => fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N})(),
+  // The player groups' boards (progress.js boardScopes; Code.gs board_ groups): from the version that serves them, the
+  // player's own groups' boards first, then All players; before, whatever the reply carries, as before.
+  GROUPS_SHEET: (v, N) =>
+    fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
+      SCOPES_SHEET: Infinity,
+      GROUPS_SHEET: N,
+      myGroups: () => ['g:1'],
+      myCohort: () => '',
+      boardMe: () => -1
+    })({ok: true, rows: [['A', 1, null]], groups: [{id: 'g:1', n: 'G', rows: [['B', 2, null]]}], ...(v === undefined ? {} : {v})}).top
+      .length > 1,
+  // The admin's Cohort select on a player's bar (admin.js cohortOn; Code.gs userGroup cohort): from v171, until the
+  // player groups (GROUPADM_SHEET) take its place.
+  COHORT_SHEET: (v, N) =>
+    fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N, groupsOn: () => false})(),
+  // The player groups in the admin (admin.js groupsOn: a player's groups as chips, Players › Groups; Code.gs userGroup,
+  // groupMake, groupEdit, groupDrop): from the version that has them; before, the beta group and the cohort as before.
+  GROUPADM_SHEET: (v, N) => fn('admin.js', 'const groupsOn = ', '\n', 'groupsOn', {USERS: v === undefined ? {} : {v}, GROUPADM_SHEET: N})(),
   // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
   // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
   // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug
@@ -195,6 +217,19 @@ const GATES = {
     const plain = {id: 'a2', m: 'quiz'};
     assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
     return out.pa === 'fi2';
+  },
+  // An answer's content version (quiz.js and live.js cv, app.js contentVer; ROADMAP "Content versions and duplicate-safe
+  // answers"): sent from the version that stores it (Code.gs Content version), through core.js logOut at both of sync.js's
+  // sends; before, the copy sent leaves it out and keeps the rest, the queue untouched.
+  CV_SHEET: v => {
+    const {logOut} = require('../core.js'),
+      a = {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz', ph: 'p1', cv: 'c1x2y3z'}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, cv: 'c1x2y3z'}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.cv === 'c1x2y3z';
   }
 };
 
