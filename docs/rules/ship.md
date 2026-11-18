@@ -383,11 +383,12 @@ the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to
 
 **Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
 checked before it launches or relaunches an agent:
-- **At most four agents at a time, balanced by weight** (Pierre, 2026-11-14: "la limite est plus complexe que ça. Ya des
-  agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"): heavy agents (simulations,
-  smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than two or three of them run at
-  once; light ones (read-only studies, docs) fill the remaining places. Each agent is on one PR or one study with one
-  subject. A finished agent is stopped, not kept waiting.
+- **At most four agents that write code or run tests at a time (conflicts and machine load). Read-only studies, which
+  run no tests, may run on top** (Pierre, 2026-11-18: "ok", the exact wording; before, 2026-11-14: "la limite est plus
+  complexe que ça. Ya des agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"):
+  heavy agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than
+  two or three of them run at once. Each agent is on one PR or one study with one subject. A finished agent is stopped,
+  not kept waiting.
 - **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
   another is the same PR.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
@@ -401,7 +402,7 @@ checked before it launches or relaunches an agent:
   designers"). When the choice changes what he or the players see, he gets the options, each with its benefits and
   risks, and the one recommended.
 - **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
-  and an unclear cell's second look on that cell alone. A check longer than 30 minutes is a tooling bug to fix.
+  and an unclear cell's second look on that cell alone. A check longer than 40 minutes is a tooling bug to fix (rule L11's cap).
 - **One train at a time** (`tools/train.py` through a queue, never two in parallel).
 - **A short or ambiguous request from Pierre is asked back before any work starts** (one question in the chat).
 - **Agents' scratch files carry the PR or topic in their name** (`pr-<N>-<topic>.md`): the scratchpad is shared.
@@ -409,4 +410,4 @@ checked before it launches or relaunches an agent:
 *Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
 conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
 answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
-on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait").
+on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait"); the agents that count, 2026-11-18.

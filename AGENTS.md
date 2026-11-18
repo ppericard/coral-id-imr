@@ -68,6 +68,8 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
 - **Research uses every useful source without asking** (Pierre, 2026-11-17): web search engines, guides, forums,
   publishers, databases and their APIs (paced, rule C7); a query holds only public terms (scientific names, general
   words), never the project's data, and every source used is cited (rule C2).
+- **Estimates are in agent time**: the hours of agent work a task takes, reviews and checks included, never human days
+  or weeks. A study or a PR that quotes an estimate from elsewhere converts it first (Pierre, 2026-11-18).
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
@@ -122,10 +124,10 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **C8** Presence: one rule for every species, a species with no name yet by its label (`tools/presence.py`).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish and sea slugs: reference-quality photos first, then easiest, never by source.
+- **P1** A reference photo is chosen on its objective qualities (reference look, judged ease), never by source, for every subject; reference-route photos enter first.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
-- **P4** All photos of one question come from one observation.
+- **P3** No photo of several corals or fish species in games; no book photo anywhere.
+- **P4** A one-photo question shows one observation; a multi-photo format shows different observations.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 - **P6** Corals: no photo of a coral skeleton anywhere.
 
@@ -140,7 +142,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks proportionate to the change, in two worlds, valid statistics.
+- **L11** The simplest algorithm that works; checks proportionate to the change, valid statistics, a hard cap of 40 minutes of compute, level 3 never on this machine.
 - **L12** Check algorithm changes on the real log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
@@ -199,7 +201,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
-- **W27** Bounded cost: at most four agents balanced by weight, PRs from `main` only, two Codex rounds then cut the scope.
+- **W27** Bounded cost: at most four agents that write code or run tests (read-only studies on top), PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
 

@@ -18,8 +18,9 @@ are silently not reproduced and mentioned to Pierre only. When a source is old, 
 
 **Never invent categories or information.** Groupings come only from existing references: IMR Lecture 6 groups (1-11),
 Coral Finder 2022 categories/boxes, the 7 IMR growth forms, or a mix. Every clue, label or pair carries its source
-(slide number, CF page/box).
-*Why:* Claude-made look-alike "families" were rejected. *Source:* Pierre, by 2026-11-01.
+(slide number, CF page/box). An instance's content editor's own words, pairs and circles carry a source when they give
+one; the editor asks for one when a fact is added.
+*Why:* Claude-made look-alike "families" were rejected. *Source:* Pierre, by 2026-11-01; the content editor's, 2026-11-18 ("ok").
 
 ### C3
 
@@ -37,7 +38,7 @@ technical, descriptive detail of what separates a unit from another goes on its 
 way to group or pick genera: a list of genera is A-Z, the slate order or the IMR lecture groups. Photos use the 7 IMR
 (AIMS lifeform) forms: Branching, Tabulate, Encrusting, Foliose/Plating, Massive, Submassive, Mushroom (+ "x" too close
 to tell, + a separate "polyps extended" flag); one form per photo, the dominant visible one. The polyps flag ✿ only for
-polyps visibly extended at colony scale, only for the Coral Finder "extended by day" genera (Alveopora, Duncanopsammia,
+polyps visibly extended at colony scale, only for the book's "extended by day" genera (Alveopora, Duncanopsammia,
 Goniopora, Heliofungia, Plerogyra, Tubastraea), never on macro photos.
 *Why:* many genera take 3-4 forms or more; only the solitary mushroom corals keep one.
 *Source:* Pierre, by 2026-11-01; grouping by form, 2026-11-03 (the custom quiz's selection screen); subject-neutral
