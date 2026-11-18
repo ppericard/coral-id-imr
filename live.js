@@ -44,6 +44,225 @@ const liveAid = (pid, qi) =>
     : answerId();
 // "1st", "2nd", "3rd", "4th"…
 const liveNth = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+// A QR code of our own (rule U5: no third-party script; docs/decisions/2026-11-18-live-after-v1.md): byte mode, error
+// correction level M, versions 1 to 9 (up to 180 characters), the mask chosen by the standard's four penalties
+// (ISO/IEC 18004). qrMake(text) is a square of 0/1 rows, or null when the text is too long or not Latin-1; qrSvg draws it.
+// Per version: the error-correction codewords per block, the blocks as [count, data codewords], the alignment centres.
+const QRV = [
+  null,
+  [10, [[1, 16]], []],
+  [16, [[1, 28]], [6, 18]],
+  [26, [[1, 44]], [6, 22]],
+  [18, [[2, 32]], [6, 26]],
+  [24, [[2, 43]], [6, 30]],
+  [16, [[4, 27]], [6, 34]],
+  [18, [[4, 31]], [6, 22, 38]],
+  [
+    22,
+    [
+      [2, 38],
+      [2, 39]
+    ],
+    [6, 24, 42]
+  ],
+  [
+    22,
+    [
+      [3, 36],
+      [2, 37]
+    ],
+    [6, 26, 46]
+  ]
+];
+const QRGF = (() => {
+  const e = [],
+    l = [];
+  for (let i = 0, x = 1; i < 255; i++, x = x & 128 ? (x << 1) ^ 0x11d : x << 1) ((e[i] = x), (l[x] = i));
+  for (let i = 255; i < 510; i++) e[i] = e[i - 255];
+  return {e, l};
+})();
+const qrMul = (a, b) => (a && b ? QRGF.e[QRGF.l[a] + QRGF.l[b]] : 0);
+// The n error-correction codewords of a block (the remainder of data·xⁿ by the generator polynomial, in GF(256)).
+function qrEc(data, n) {
+  let g = [1];
+  for (let i = 0; i < n; i++) {
+    const h = new Array(g.length + 1).fill(0);
+    g.forEach((c, j) => ((h[j] ^= c), (h[j + 1] ^= qrMul(c, QRGF.e[i]))));
+    g = h;
+  }
+  const r = new Array(n).fill(0);
+  data.forEach(d => {
+    const f = d ^ r.shift();
+    r.push(0);
+    if (f) for (let j = 0; j < n; j++) r[j] ^= qrMul(g[j + 1], f);
+  });
+  return r;
+}
+// The function modules of a version: {n: size, m: the matrix with them drawn (the format area blank), fn: true where a
+// module is not data}.
+function qrLayout(v) {
+  const n = 17 + 4 * v,
+    m = Array.from({length: n}, () => new Array(n).fill(0)),
+    fn = Array.from({length: n}, () => new Array(n).fill(false)),
+    put = (r, c, d) => {
+      if (r >= 0 && c >= 0 && r < n && c < n) ((m[r][c] = d ? 1 : 0), (fn[r][c] = true));
+    },
+    al = QRV[v][2];
+  for (let i = 0; i < n; i++) (put(6, i, i % 2 === 0), put(i, 6, i % 2 === 0));
+  for (const [r0, c0] of [
+    [0, 0],
+    [0, n - 7],
+    [n - 7, 0]
+  ])
+    for (let dr = -1; dr <= 7; dr++)
+      for (let dc = -1; dc <= 7; dc++) {
+        const d = Math.max(Math.abs(dr - 3), Math.abs(dc - 3));
+        put(r0 + dr, c0 + dc, d <= 1 || d === 3);
+      }
+  for (const r of al)
+    for (const c of al)
+      if (!((r === 6 && c === 6) || (r === 6 && c === al[al.length - 1]) || (c === 6 && r === al[al.length - 1])))
+        for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) put(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+  // The format area is only reserved (its modules are set later); the timing modules it crosses keep their colour.
+  const hold = (r, c) => fn[r][c] || put(r, c, 0);
+  for (let i = 0; i < 9; i++) (hold(8, i), hold(i, 8));
+  for (let i = 0; i < 8; i++) (hold(8, n - 1 - i), hold(n - 1 - i, 8));
+  put(n - 8, 8, 1);
+  return {n, m, fn};
+}
+// The 15 format bits (error correction M, a mask 0-7): five data bits, ten of BCH code, XOR 0x5412.
+const qrFormat = mask => {
+  let r = mask << 10;
+  for (let i = 14; i >= 10; i--) if ((r >> i) & 1) r ^= 0x537 << (i - 10);
+  return ((mask << 10) | r) ^ 0x5412;
+};
+const qrMasks = [
+  (r, c) => (r + c) % 2 === 0,
+  r => r % 2 === 0,
+  (r, c) => c % 3 === 0,
+  (r, c) => (r + c) % 3 === 0,
+  (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+  (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+  (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+  (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0
+];
+// The standard's penalty: runs of five or more, 2×2 blocks, corner-square-like patterns, imbalance of dark and light.
+function qrPenalty(m) {
+  const n = m.length;
+  let p = 0,
+    dark = 0;
+  const lines = [];
+  for (let i = 0; i < n; i++)
+    lines.push(
+      m[i],
+      m.map(row => row[i])
+    );
+  for (const L of lines) {
+    for (let i = 0, run = 1; i < n; i++) {
+      if (i && L[i] === L[i - 1]) run++;
+      else run = 1;
+      if (run === 5) p += 3;
+      else if (run > 5) p++;
+    }
+    const s = L.join('');
+    for (let i = 0; i + 11 <= n; i++) {
+      const w = s.slice(i, i + 11);
+      if (w === '10111010000' || w === '00001011101') p += 40;
+    }
+  }
+  for (let r = 0; r < n; r++)
+    for (let c = 0; c < n; c++) {
+      dark += m[r][c];
+      if (r + 1 < n && c + 1 < n && m[r][c] === m[r][c + 1] && m[r][c] === m[r + 1][c] && m[r][c] === m[r + 1][c + 1]) p += 3;
+    }
+  return p + (Math.ceil(Math.abs(dark * 20 - n * n * 10) / (n * n)) - 1) * 10;
+}
+function qrMake(text) {
+  const t = String(text == null ? '' : text),
+    bytes = [];
+  for (let i = 0; i < t.length; i++) {
+    if (t.charCodeAt(i) > 255) return null;
+    bytes.push(t.charCodeAt(i));
+  }
+  let v = 1;
+  const cap = k => QRV[k][1].reduce((s, [b, d]) => s + b * d, 0);
+  while (v <= 9 && bytes.length + 2 > cap(v)) v++;
+  if (v > 9) return null;
+  // The bit stream: mode 0100, the count (8 bits), the bytes, the terminator, then the pad codewords 0xEC, 0x11.
+  const bits = [],
+    add = (x, k) => {
+      for (let i = k - 1; i >= 0; i--) bits.push((x >> i) & 1);
+    };
+  add(4, 4);
+  add(bytes.length, 8);
+  bytes.forEach(b => add(b, 8));
+  add(0, Math.min(4, cap(v) * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  for (let i = 0; data.length < cap(v); i++) data.push(i % 2 ? 0x11 : 0xec);
+  // The blocks, their error-correction codewords, interleaved.
+  const blocks = [];
+  let o = 0;
+  for (const [cnt, len] of QRV[v][1])
+    for (let i = 0; i < cnt; i++) {
+      const d = data.slice(o, o + len);
+      o += len;
+      blocks.push({d, e: qrEc(d, QRV[v][0])});
+    }
+  const cw = [];
+  for (let i = 0; i < Math.max(...blocks.map(b => b.d.length)); i++) blocks.forEach(b => i < b.d.length && cw.push(b.d[i]));
+  for (let i = 0; i < QRV[v][0]; i++) blocks.forEach(b => cw.push(b.e[i]));
+  const L = qrLayout(v),
+    {n, fn} = L,
+    stream = [];
+  cw.forEach(c => add2(c));
+  function add2(c) {
+    for (let i = 7; i >= 0; i--) stream.push((c >> i) & 1);
+  }
+  // The data modules in the standard's zigzag, two columns at a time from the bottom right, the timing column skipped.
+  const base = L.m.map(r => r.slice());
+  let k = 0,
+    up = true;
+  for (let c = n - 1; c > 0; c -= 2) {
+    if (c === 6) c = 5;
+    for (let i = 0; i < n; i++) {
+      const r = up ? n - 1 - i : i;
+      for (let d = 0; d < 2; d++) if (!fn[r][c - d]) base[r][c - d] = k < stream.length ? stream[k++] : 0;
+    }
+    up = !up;
+  }
+  let best = null,
+    bestP = Infinity;
+  for (let mask = 0; mask < 8; mask++) {
+    const m = base.map((row, r) => row.map((x, c) => (fn[r][c] ? x : x ^ (qrMasks[mask](r, c) ? 1 : 0)))),
+      f = qrFormat(mask),
+      bit = i => (f >> i) & 1,
+      set = (r, c, x) => (m[r][c] = x);
+    for (let i = 0; i < 6; i++) set(i, 8, bit(i));
+    set(7, 8, bit(6));
+    set(8, 8, bit(7));
+    set(8, 7, bit(8));
+    for (let i = 9; i < 15; i++) set(8, 14 - i, bit(i));
+    for (let i = 0; i < 8; i++) set(8, n - 1 - i, bit(i));
+    for (let i = 8; i < 15; i++) set(n - 15 + i, 8, bit(i));
+    const p = qrPenalty(m);
+    if (p < bestP) ((bestP = p), (best = m));
+  }
+  return best;
+}
+// The code as one inline SVG (dark modules on a light field with the standard's four-module quiet zone: it must stay
+// dark on light in both themes, or scanners fail).
+function qrSvg(m, label) {
+  const n = m.length;
+  let d = '';
+  m.forEach((row, r) =>
+    row.forEach((x, c) => {
+      if (x) d += `M${c + 4} ${r + 4}h1v1h-1z`;
+    })
+  );
+  return `<svg class="qr" viewBox="0 0 ${n + 8} ${n + 8}" role="img" aria-label="${label}" shape-rendering="crispEdges"><rect width="${n + 8}" height="${n + 8}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
 // pure: end
 
 // A reply of a script that serves the live mode (rule D4).
@@ -732,9 +951,16 @@ function hostDraw(j, key, last, msg) {
     note = msg ? `<p class="note lvmsg" role="status">${esc(msg)}</p>` : '';
   if (j.ph === 'lobby') {
     const addr = (location.origin + location.pathname).replace(/^https?:\/\//, '') + hr('live');
-    $v.innerHTML = `<div class="live lvhost lvlobby">
-      <p class="lvjoinat">Join at <b>${esc(addr)}</b></p>
-      <p class="lvbigcode" aria-label="Game code">${esc(LH.code.slice(0, 3))}<span> </span>${esc(LH.code.slice(3))}</p>
+    // The QR code opens the join form with the code filled in; the address and the code stay big beside it, for a phone
+    // that cannot scan. Never fatal: without it the lobby is as before.
+    let qr = '';
+    try {
+      const m = qrMake(location.origin + location.pathname + hr('live') + '?code=' + LH.code);
+      if (m) qr = qrSvg(m, 'QR code: scan to join this game');
+    } catch (e) {}
+    $v.innerHTML = `<div class="live lvhost lvlobby${qr ? ' lvhasqr' : ''}">
+      <div class="lvjoin">${qr}<div class="lvjoinx"><p class="lvjoinat">${qr ? 'Scan, or join at' : 'Join at'} <b>${esc(addr)}</b></p>
+      <p class="lvbigcode" aria-label="Game code">${esc(LH.code.slice(0, 3))}<span> </span>${esc(LH.code.slice(3))}</p></div></div>
       <p class="lvsub">${esc(j.t)} · ${j.n} questions · ${j.lim} s each</p>
       <div class="lvnames" id="lhnames">${hostNames(j.names)}</div>
       <p><button class="next lvact" type="button" id="lhgo"${j.names.length ? '' : ' disabled'}>Start the game</button> <button class="linkish lvact" type="button" id="lhend">End</button></p>${note}</div>`;

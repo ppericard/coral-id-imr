@@ -161,6 +161,7 @@ async function shot(p, name) {
   await tp.waitForSelector('.lvbigcode', {timeout: 15000});
   const code = (await tp.textContent('.lvbigcode')).replace(/\D/g, '');
   check(/^\d{6}$/.test(code), `1: no code: ${code}`);
+  check(!!(await tp.$('.lvlobby svg.qr path')), '1: the lobby shows no QR code');
   const unitsOfSet = await tp.evaluate(() => LH.plan);
 
   // 2. Three students: one signed in with every unit of the set unlocked, two by a nickname.
