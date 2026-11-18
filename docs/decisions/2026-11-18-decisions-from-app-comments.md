@@ -47,6 +47,23 @@ Each line: the date, Pierre's words as written (French where he spoke French), w
   opens in a new tab on a computer; the same tab on a phone or tablet. `quiz.js` `sheetTab`.
 - 2026-11-12, of the custom quiz's reminder "N new genera are waiting in the Quiz" while the opening hold is on: "peut-être
   pas quand même". The reminder waits for the hold to end; still shown once ever. `quiz.js` `leftDue`.
+- 2026-11-01: "sources en petit et cliquable sur chaque photo". Every game photo carries a small clickable source label
+  once the answer is out (iNaturalist observation, FishBase page, or the page crediting an IMR lecture photo). `app.js`
+  `photoSrc`.
+- 2026-11-08, of the header's subject chip and its menu: "it makes me click twice on desktop to change mode". With two
+  subjects the header shows a one-click switch; the chip and its menu only from three subjects. `app.js` `subjCtl`.
+- 2026-11-02, an RA tester's words, taken up: "click and drag rather than scrolling". At actual size in the photo
+  viewer, a mouse drags the photo around. `app.js` `zoom`.
+- 2026-11-04, of a name a reference spells another way: "show both, the IMR one first". `app.js` `altName` (data.json
+  `spell`).
+- 2026-11-04, of the fish subject in beta: "some things clearly aren't ready". A subject that opens to a group is shown
+  to the admin and to the players of its group only; anyone else opens on the corals. `app.js` `subjOpen`, `subjAt`.
+- 2026-11-06: "you're invited to test the fish beta". The card a player of the fish beta group gets once, at a calm
+  moment on Home. `app.js` `UNITS` fish `hello`.
+- 2026-11-07, of the card offering the fish families beyond the IMR course: "don't ask again for a while". After a "Not
+  now" the card comes back at most once, OPEN_AGAIN answers later. `app.js` `openOfferDue`; `core.js` `openState`.
+- 2026-11-08: "on the home page on desktop we have the Corals | Fish switch twice". On Home the header's subject control
+  steps aside (kept invisible, so the header keeps its size), Home's own row being the switch there. `app.js` `route`.
 - 2026-11-02, on asking players for feedback: people answer a tap, not "any comments?". The one-tap question between an
   answer and the next question. `quiz.js` `PULSE`, `pulseAsk`; docs/LEARNING.md "What the players say about the
   difficulty".
