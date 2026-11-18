@@ -1,4 +1,4 @@
-// The fish draw's easy share, simulated in the real app (Pierre, 2026-11-06 15:33, Q186: the draw keeps favouring the
+// The fish draw's easy share, simulated in the real app (the draw keeps favouring the
 // easy photos strongly whatever the pool size; at the start at most about 1/3 of the photos under ease 4, well under on
 // average; the hard photos still drawn as the player's level rises, so they get rated). For each entry and each stage of
 // a player's level on it (P[n]: none yet, then answers and an ability), model.js photoSet is drawn DRAWS times on a new

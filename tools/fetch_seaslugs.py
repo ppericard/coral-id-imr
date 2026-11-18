@@ -577,7 +577,7 @@ def run(args):
         # The egg masses' observations first (their next photo keeps their place; not with --own: his search only).
         back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
                                            s.get("genus"), None) for s in S])
-        # Pierre's own for every species with room for them (his search, asked together: rule C7), then the general one.
+        # The admin's own for every species with room for them (his search, asked together: rule C7), then the general one.
         prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, egg)], ["own"])
         if not own_only:
             prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), egg) < target(s, T)[0]], ["ph"])
