@@ -3790,8 +3790,8 @@
     return [Math.round(bt * 100) / 100, stSe(bt, A)];
   }
   // The verdict at a checkpoint (AT: 40 or 60 answers after the choice), null between them and when consistent: 'lo'
-  // or 'hi' (above: the opening hold alone is enough for 'lo'). w: the window's answers [d, g, right, first]; lv: the global level now; met: the slate genera met;
-  // held: the opening hold fired in the window.
+  // or 'hi' (above: the opening hold alone is enough for 'lo'). w: the window's answers [d, g, right, first]; lv: the
+  // global level now; met: the slate genera met; held: the opening hold fired in the window.
   function startCheck(w, c, lv, met, held) {
     const n = (w || []).length;
     if (!CHOICE.AT.includes(n) || !startOpt(c) || typeof lv !== 'number') return null;
@@ -3817,8 +3817,8 @@
       t = G && typeof G.th === 'number' ? G.th : 0;
     return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[1].p - t) < Math.abs(START.W * b[1].p - t) ? o : b))[0];
   }
-  // The global record made at the first answer after this change: it starts from the player's history (every answer so
-  // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
+  // The global record made at the first answer of a record without one: it starts from the player's history (every
+  // answer so far, the answer-weighted mean ability of the genera), so their earlier answers keep counting.
   function levelSeed(P) {
     let ok = 0,
       ko = 0,
@@ -3838,15 +3838,11 @@
     return {ok, ko, th: m ? Math.round((t / m) * 100) / 100 : 0};
   }
 
-  // Common first (Pierre, 2026-11-03: open the genera "easy and common first"): the opening weight of each genus not met
-  // yet (model.js weighted) is multiplied by sqrt((1 + cm) / (1 + median cm of those genera)), cm = how common the genus
-  // is near Dauin on iNaturalist (data.json, tools/commonness.py). No constant: the square root damps it, the median
-  // makes it relative to the genera still to open. A genus without cm counts as the median (factor 1).
-  // An existing account at sign-in (Pierre, 2026-11-03: players type only their first name, so two of them can pick the
-  // same name and code; sync.js bindSync asks "Is it you?" before entering it): what its saved progress, as the sheet's
-  // sign-in reply carries it (data, updated), says about it. n: answers (the LEVEL record's ok + ko; 0 for progress saved
-  // before LEVEL existed), genera: genera answered, at: the last answer (LEVEL.at, else the latest genus s.at, else the
-  // sheet's last save, then saved is true). A missing or broken field counts as nothing, never as an error.
+  // An existing account at sign-in (two players can pick the same first name and code, so sync.js bindSync asks "Is it
+  // you?" before entering it): what its saved progress, as the sheet's sign-in reply carries it (data, updated), says
+  // about it. n: answers (the LEVEL record's ok + ko; 0 for a record without LEVEL), genera: genera answered, at: the
+  // last answer (LEVEL.at, else the latest genus s.at, else the sheet's last save, then saved is true). A missing or
+  // broken field counts as nothing, never as an error.
   function accountOf(data, updated) {
     let R = {};
     try {
@@ -3865,6 +3861,10 @@
     return {n: num(L.ok) + num(L.ko), genera: gs.length, at, saved};
   }
 
+  // Common first (docs/LEARNING.md "Common first"): the opening weight of each genus not met yet (model.js weighted) is
+  // multiplied by sqrt((1 + cm) / (1 + median cm of those genera)), cm = how common the genus is near Dauin on
+  // iNaturalist (data.json, tools/commonness.py). No constant: the square root damps it, the median makes it relative to
+  // the genera still to open. A genus without cm counts as the median (factor 1).
   function commonFactor(cms) {
     const v = (cms || []).filter(x => typeof x === 'number' && x >= 0).sort((a, b) => a - b),
       h = v.length >> 1,
@@ -3872,19 +3872,16 @@
     return (cms || []).map(x => (typeof x === 'number' && x >= 0 ? Math.sqrt((1 + x) / (1 + med)) : 1));
   }
 
-  // Achievements (Pierre, 2026-11-01: "unlocked as milestones are passed, with an animated pop-up, to keep the wish to play";
-  // "well spread out": learning a whole genus takes ~300-430 questions, so most rungs are the quarters on the way there).
-  // Learning milestones only, never time or days played (the learning model's rule), plus one family apart, the
-  // Contributions (kind 'contrib', at the end: reports sent, never learning). Each has a family, a tier
-  // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
-  //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
-  //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met),
-  //    basics (Coral basics done), fb (reports counted for the Contributions, contribAdd)}.
-  // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
-  // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
-  // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
-  // Ryan 1999; counts stay counts: genera met, progress %, Elo).
+  // Achievements (docs/ARCHITECTURE.md "Learning model"): milestones that pop up as they are passed, spread out over the
+  // ~300-430 questions learning a whole genus takes. Learning milestones only, never time or days played (rule L8),
+  // plus one family apart, the Contributions (kind 'contrib', at the end: reports sent). Each has a family, a tier (1
+  // bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
+  //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY],
+  //    learned (Instructor), pct, streak (best run of right answers), duel, cor, hard, elo (0 until 200 answers, app.js
+  //    ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met), basics
+  //    (Coral basics done), fb (reports counted for the Contributions, contribAdd)}.
+  // Descriptions say what the player can now do (informational feedback motivates: Deci, Koestner & Ryan 1999); counts
+  // stay counts (genera met, progress %, Elo).
   const ACH = [
     ['met10', 'Explorer', 'Met 10 genera', 1, '🧭', s => s.met >= 10],
     ['met20', 'Wide eyes', 'Met 20 genera', 1, '🧭', s => s.met >= 20],
@@ -3919,28 +3916,24 @@
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
     ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
     ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
-    // Coral basics done (Pierre, 2026-11-03: completion recognised): every step of the module seen (proto/basics.js), a
+    // Coral basics done: every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
     ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
-    // Contributions (Pierre, 2026-11-05, Q65): a family of its own, apart from the learning ones above, for the players who
-    // send reports and feedback, to encourage it and show it is taken seriously. kind 'contrib': never in the learning
+    // Contributions: a family of its own, apart from the learning ones above, for the players who send reports and
+    // feedback, to encourage it and show it is taken seriously. kind 'contrib': never in the learning
     // count (progress.js badge, viewAch), every tier pops up right after the report that earns it (progress.js achCheck).
     // s.fb = reports counted (contribAdd).
     ['fb1', 'First feedback', 'You sent your first report. Every report is read: thank you!', 1, '💬', s => s.fb >= 1, 'contrib'],
     ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
     ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
-  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start; redesigned around the global
-  // score, 2026-11-08, Q259-Q263: docs/LEARNING.md "Fish achievements, around the global score"). Learning milestones only
+  // The fish achievements (docs/LEARNING.md "Fish achievements, around the global score"). Learning milestones only
   // (rule L8), tested on the fish snapshot (progress.js achSnap: the same fields over the fish slate; core = the IMR
   // course's families; circ = each circle's families, Advanced or above counted; sets.sci = scientific genera at Open
   // Water or above, setsAdv.sci at Advanced or above; pct = the global fish score, treeScore's %), in the shared record
-  // under ids starting with f, so a fish achievement never counts in the corals' (each subject's page and badge count its
-  // own list; SUBJECTS achs). Names short, fun and varied, diver-flavoured (Pierre, 2026-11-08: "des noms sympas,
-  // rigolos, pour varier"); descriptions plain and exact. Retired (Q259, 2026-11-08): fpct25, removed from every record by
-  // the recount (progress.js ACH_V 3, achMigrate), as every % one met on the former families' mean and not on the score.
-  // Wait for the species level, documented, not built: fpct70, fpct100, species named, Fish basics (LEARNING).
-  // Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
+  // under ids starting with f, so a fish achievement never counts in the corals' (SUBJECTS achs). Names short, fun and
+  // diver-flavoured; descriptions plain and exact. fpct25 is retired: the recount (progress.js ACH_V, achMigrate)
+  // removes it from every record. Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
     ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
@@ -3986,7 +3979,7 @@
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
     ],
-    // The global fish score (core.js treeScore, Q242), every 10 points (Q259); 50% is the families' anchor.
+    // The global fish score (treeScore), every 10 points; 50% is the families' anchor.
     ['fpct10', 'Giant stride', '10% fish progress', 1, '📈', s => s.pct >= 10],
     ['fpct20', 'Bubble trail', '20% fish progress', 1, '📈', s => s.pct >= 20],
     ['fpct30', 'Reef crest', '30% fish progress', 2, '📈', s => s.pct >= 30],
@@ -4004,8 +3997,7 @@
     ],
     ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
     ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60],
-    // The species named by a common name (the species level, step 1; Pierre, 2026-11-08, Q259-Q264: a species named at
-    // Advanced, its common-name unit's bar at 80%; docs/LEARNING.md "Fish achievements, around the global score").
+    // The species named by a common name: a species named at Advanced, its common-name unit's bar at 80%.
     ['fsp1', 'First name terms', 'A species at Advanced level (80%+) by its common name', 1, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 1],
     ['fsp10', 'Name tags', '10 species at Advanced level or above by their common names', 2, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 10],
     [
@@ -4017,9 +4009,9 @@
       s => ((s.setsAdv || {}).sp || 0) >= 50
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
-  // The sea slug achievements, a first version (Pierre, 2026-11-17: "une première version des succès pour les limaces de
-  // mer"), modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level, families with every
-  // genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
+  // The sea slug achievements, modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level,
+  // families with every genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug %
+  // every 10 points.
   // Learning milestones only, never time (rule L8), tested on the sea slug snapshot (progress.js achSnap: met, q, learned
   // over its genera; circ, each circle's genera; fam, its families with every genus at Advanced or above; tax, each
   // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %), in the shared record
@@ -4080,7 +4072,7 @@
       (x, L) => x || L.find(a => a.id === id) || null,
       null
     );
-  // Reports that count for the Contributions (Pierre, 2026-11-05, Q65): every report sent (game, enlarged photo, genus
+  // Reports that count for the Contributions: every report sent (game, enlarged photo, genus
   // sheet, Send feedback), signed in or not; one per photo: a report on photos already in a counted report does not count
   // again (several reports on one photo count once); an "Other" report counts only with a note. A counted report goes into
   // the achievements record's _fb (synced like the rest; mergeAch joins two devices' lists): its photos joined by a space,
@@ -4098,7 +4090,7 @@
     return ph.some(f => done.has(f)) ? '' : ph.join(' ');
   }
   // Two devices' lists of counted reports (mergeAch): b's entries join a's by the same rule, so one photo reported on
-  // each device before they synced counts once (Codex review #579); the last CONTRIB_MAX.
+  // each device before they synced counts once; the last CONTRIB_MAX.
   function contribJoin(a, b) {
     const out = Array.isArray(a) ? [...a] : [];
     (Array.isArray(b) ? b : []).forEach(k => {
@@ -4117,8 +4109,8 @@
   }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have, list = ACH) => list.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
-  // The full recount (progress.js achMigrate, achPending; Pierre, 2026-11-01 and 2026-11-08: "recalculer ... leur succès
-  // actuel" from their current progress): into B, every achievement of list that the snapshot meets, dated by the
+  // The full recount from the current progress (progress.js achMigrate, achPending): into B, every achievement of list
+  // that the snapshot meets, dated by the
   // earliest of B's own (a copy already recounted, merged in) and old's (the record before the recount), else t. What the
   // snapshot does not meet is left out (an achievement of an older record never comes back through a merge: mergeAch
   // takes no achievement from a record of another version). Changes B; returns the ids it holds from list.
@@ -4132,7 +4124,7 @@
         return a.id;
       });
   }
-  // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
+  // Achievements taken back: only those that rest on genera learned, and only when a recalculation
   // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
   // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
@@ -4163,16 +4155,15 @@
     });
     return out;
   }
-  // "Your feedback helped" (Pierre, 2026-11-05, Q66): when the admin marks a report done (admin To do › Reports ✓ Done:
-  // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
-  // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
-  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v57 reps) and those already thanked
-  // (_thx), both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and
-  // twice the sheet's REPS_MAX (Code.gs) sent, so an id the sheet lists again is never one whose thanks were dropped
-  // (Codex review #581: equal caps evicted a thanked id the sheet then brought back). Ids only: nothing the admin
-  // wrote reaches the player. repsAdd adds ids (true when A changed). Never again and again for a player who sends many
-  // reports (Pierre, 2026-11-05): thanked at the first report handled, then every report handled since the last thanks in
-  // one, at most once per HELPED_GAP (7 days; the record's _thxAt, the time of the last thanks, the latest of two devices).
+  // "Your feedback helped": when the admin marks a report done (admin To do › Reports ✓ Done: curation.json seen
+  // 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js achHelped). The
+  // achievements record keeps the ids of the reports the player sent (_rep: from this device at sending, sync.js
+  // reportDialog; from the sheet's load reply for those sent signed in, Code.gs reps) and those already thanked (_thx),
+  // both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and twice
+  // the sheet's REPS_MAX sent, so an id the sheet lists again is never one whose thanks were dropped. Ids only: nothing
+  // the admin wrote reaches the player. repsAdd adds ids (true when A changed). A player who sends many reports is
+  // thanked at the first report handled, then for every report handled since the last thanks in one, at most once per
+  // HELPED_GAP (7 days; _thxAt, the time of the last thanks, the latest of two devices).
   // helpedDue returns the ids to thank now ([] within the gap); helpedMark marks them thanked at `now`.
   const REP_ID = /^[a-z0-9]{1,20}$/,
     LIST_MAX = {_fb: CONTRIB_MAX, _rep: 100, _thx: 200};
@@ -4183,7 +4174,7 @@
     A._rep = [...have, ...add].slice(-LIST_MAX._rep);
     return true;
   }
-  // Reports handled in a PR (Pierre, 2026-11-05): reports-handled.json {"<report id>": {pr, at}}, edited in PRs by the
+  // Reports handled in a PR: reports-handled.json {"<report id>": {pr, at}}, edited in PRs by the
   // integrator (agents never write curation.json), counts as Pierre's Done (curation.json seen 'rep:<id>'): handledSeen
   // returns the 'rep:<id>' keys of both, the one map helpedDue and the admin read.
   function handledSeen(seen, file) {
@@ -4221,7 +4212,8 @@
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
-      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx) both devices' entries, each once, the last LIST_MAX.
+      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx)
+      // both devices' entries, each once, the last LIST_MAX.
       if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
       if (Array.isArray(ra[k]))
         return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-(LIST_MAX[k] || CONTRIB_MAX)));
@@ -4232,22 +4224,19 @@
     return A;
   }
 
-  // Progress of a genus (2026-11-02, Pierre: BKT climbed too fast, and a right answer among a few genera counted
-  // almost as much as one against the genus's look-alikes; Pelánek & Řihák 2017 recommend a moving average as the
-  // mastery criterion): s.pg, an exponential moving average of the answers on the genus, each weighed by what it proves
-  // (w, 0 to 1): a right answer s.pg += PROG.A × w × (1 − s.pg), w from the choices (model.js pgWeight); a miss
-  // s.pg −= PROG.A × w × s.pg, w from how hard the photo was for the player (model.js pgMissW: in full on a photo at
-  // the player's level, less on a harder one; Pierre: a miss on a very hard photo does not mean the genus is badly
-  // known, and a miss must not cost more than it proves). Each point
-  // is harder to earn than the last, a run of right answers on easy choices tops out lower than one against look-alikes,
-  // and the bar follows the recent answers. PROG.M = the mastery exam's entry, shown as 95%. docs/LEARNING.md
-  // "Progress (moving average) and mastery" has the simulation behind A 0.15 and M 0.8.
-  // OLD: progress saved before s.pg (BKT's L) is recomputed from what the record holds in order, its last 10 results
-  // (s.h), from 0, a right answer weighed 2/3 (what it proved is not known: the middle weight, a 4-choice question
-  // without look-alike or 2 choices with one). Simulated, that is close for a beginner and below the live value for a
-  // strong player (never above it by much): 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the
-  // exam on old answers alone. A genus learned on such a record lost it (memRecalc, 2026-11-03: its exam was passed under
-  // BKT); until that runs, it counts at the exam entry.
+  // Progress of a genus under the moving average (docs/LEARNING.md "Progress (moving average) and mastery", which has
+  // the simulation behind A 0.15 and M 0.8; Pelánek & Řihák 2017): s.pg, an exponential moving average of the answers on
+  // the genus, each weighed by what it proves (w, 0 to 1): a right answer s.pg += PROG.A × w × (1 − s.pg), w from the
+  // choices (model.js pgWeight); a miss s.pg −= PROG.A × w × s.pg, w from how hard the photo was for the player
+  // (model.js pgMissW: in full on a photo at the player's level, less on a harder one: a miss on a very hard photo does
+  // not mean the genus is badly known, and a miss must not cost more than it proves). Each point is harder to earn than
+  // the last, a run of right answers on easy choices tops out lower than one against look-alikes, and the bar follows
+  // the recent answers. PROG.M = the mastery exam's entry, shown as 95%.
+  // OLD: a record without s.pg (BKT's L) is recomputed from its last 10 results in order (s.h), from 0, a right answer
+  // weighed 2/3 (the middle weight: what it proved is not known). Simulated, that is close for a beginner and below the
+  // live value for a strong player: 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the exam on
+  // old answers alone. A genus learned on such a record loses its mark (memRecalc); until then it counts at the exam
+  // entry.
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
   // A learned genus keeps its mark while its progress stays at PROG.M × (1 − PROG.A) or above after a miss (one miss from
   // PROG.M or above, not two): the game's rule (model.js mxKept, applied in quiz.js answer after each miss) and the
@@ -4270,17 +4259,17 @@
     if (!s) return 0;
     if (s.mx) return 1;
     const b = barOf(s, P, n);
-    // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
-    // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
+    // At most 4 of the 5 exam steps before the exam is passed: an exam can have 5 right answers still waiting for its
+    // typed ones, and only a passed exam (s.mx) makes 100%.
     return b + (examOpen(s, P, n) && s.ex ? ((1 - b) * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
-  // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
+  // computes the leaderboard % with a copy (Code.gs pctOf_): keep the two in step
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
   }
-  // Weights by commonness (Pierre, 2026-11-08, Q242: the fish global score's alternative A): each item weighs 1/√ of its
+  // Weights by commonness (the fish global score's): each item weighs 1/√ of its
   // rank by its count, the largest count first (rank 1 weighs 1, rank 4 weighs 0.5, rank 100 weighs 0.1). Tied counts
   // share the mean of the ranks they span (fractional ranking), so the order of the list never matters, and the items
   // nobody counted (0) share the last ranks' mean: they weigh the least, never nothing. counts: numbers (anything else
@@ -4298,18 +4287,16 @@
     }
     return w;
   }
-  // The tree of the fish global score (treeScore, SUBJECTS fish score; Pierre, 2026-11-08, Q242; docs/FISH_PATH.md
-  // "My progress (fish)"): the families of the slate on the trunk, each weighted by the sum of its species' weights; on the
-  // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
-  // present.dauinU, its distinct Research Grade observers within 40 km: observers, not observations, so a few keen
-  // photographers of one species do not weigh; Codex review #730), with its units: its genus when the game has it as a unit (the scientific
-  // genera of every circle, fishGenSets, app.js fishGenera), its scientific and common names none until the species level exists. The species with
-  // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
-  // The circle is the family's (treeScore by: the components per circle).
-  // on: the species level on (sync.js speciesOn: the sheet keeps the tree in chunks and replays the species units; rule
-  // D4): each species with a common-name unit (fishSpUnits, Q362: one unit per species, filled by its names, Q376 (b))
-  // then has an entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C, Q242);
-  // its scientific name has no unit yet (''). Off, the tree is the one of before, whatever the data.
+  // The tree of the fish global score (treeScore, SUBJECTS fish score; docs/FISH_PATH.md "My progress (fish)"): the
+  // families of the slate on the trunk, each weighted by the sum of its species' weights; on the branches every species
+  // of those families, weighted by how common it is near Dauin (rankWeights over fish.json present.dauinU, its distinct
+  // Research Grade observers within 40 km: observers, not observations, so a few keen photographers of one species do
+  // not weigh), with its units: its genus when the game has it as a unit (fishGenSets, app.js fishGenera). The species
+  // with no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can
+  // keep). The circle is the family's (treeScore by: the components per circle).
+  // on: the species level on (sync.js speciesOn; rule D4): each species with a common-name unit (fishSpUnits) has an
+  // entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C); its scientific
+  // name has no unit (''). Off, every species is packed, whatever the data.
   function fishScoreTree(X, F, on) {
     const sp = new Map((F.species || []).map(s => [s.id, s])),
       fam = new Map((F.families || []).map(f => [f.id, f])),
@@ -4324,9 +4311,9 @@
       fw[id] = (fw[id] || 0) + w[i];
       const g = s.genus && X.gen[s.genus] ? s.genus : '';
       // The species level on: a species with a listed name has its own entry, its unit as its common names; one with none
-      // (Q247) has none, null, packed as before.
+      // has none, null, and is packed.
       if (on && (s.cn || []).length) return pack.set('s:' + s.id, [w[i], g, '', ['s:' + s.id], circ(id)]);
-      const named = on ? false : !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+      const named = on ? false : !!s.common, // no common name at all: null (treeScore), never packed with the others
         key = g + '|' + circ(id) + '|' + named,
         e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
       e[0] += w[i];
@@ -4334,16 +4321,15 @@
     });
     return {f: fams.map(id => [id, r4(fw[id] || 0), circ(id)]), s: [...pack.values()].map(e => [r4(e[0]), ...e.slice(1)])};
   }
-  // A subject's global score and its components, from one computation (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the
-  // weights and the √ display; docs/FISH_PATH.md "My progress (fish)"). Every unit keeps its own bar (scoreOf: the bar as
-  // the app shows it, 1 once its exam is passed, 0 never answered), which drives its levels and its exam, unchanged; this
-  // only adds them up.
+  // A subject's global score and its components, from one computation (docs/FISH_PATH.md "My progress (fish)"). Every
+  // unit keeps its own bar (scoreOf: 1 once its exam is passed, 0 never answered), which drives its levels and its exam;
+  // this only adds them up.
   // T, the subject's tree (app.js UNITS tree): f [[family unit, weight, circle]], the trunk; s [[weight, genus unit,
   // species unit, [common-name units], circle]], the branches, one per species ('' and [] for units that do not exist
   // yet). An entry of s may stand for several species of one genus with no unit of their own (their weights summed: the
   // same score, a shorter tree for the sheet). A family's weight is the sum of its species' (rankWeights over the
   // observers near Dauin), a genus's the sum of its species' too.
-  // K, the subject's constants (core.js SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
+  // K, the subject's constants (SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
   // with its common names only, its scientific name only), half (a genus's share of its species' scientific credit), pow
   // (the display: 100 raw^pow, 0.5 the square root).
   // Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, half × its genus's bar),
@@ -4352,7 +4338,7 @@
   // families), genera (the genera, each weighted by its species), common (C over the species), scientific (the species'
   // own scientific names, no genus credit), S (S over the species, the genus credit included), credit; by: the same per
   // circle, {1: {...}, 2: {...}}; units: every unit of the tree with its own bar}. A rule that reads a score reads one of
-  // these (app.js fishGate: by[1].entries). A species entry whose common names are null has none at all (Q247, below).
+  // these (app.js fishGate: by[1].entries). A species entry whose common names are null has none at all (below).
   function treeScore(P, T, K) {
     const F = (T && T.f) || [],
       S = (T && T.s) || [],
@@ -4373,10 +4359,9 @@
       [all, at(c || 1)].forEach(o => ((o.fw += w), (o.f += x)));
     });
     S.forEach(([w, g, sp, names, c]) => {
-      // names null: a species with no common name at all (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la
-      // branche nom commun"): out of the Common names component, and its credit is its scientific value alone (S), so it
-      // still reaches 1 once its scientific name is mastered (100% stays reachable). [] : its common names have no unit
-      // yet (0 until the species level).
+      // names null: a species with no common name at all: out of the Common names component, and its credit is its
+      // scientific value alone (S), so it still reaches 1 once its scientific name is mastered (100% stays reachable).
+      // []: its common names have no unit (0).
       const none = names === null,
         N = Array.isArray(names) ? names : [],
         C = N.length ? N.reduce((t, n) => t + m(n), 0) / N.length : 0,
@@ -4410,15 +4395,15 @@
     return R;
   }
 
-  // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
-  // genus is the share of ALL its possible photos, easy to hard, the player would name right, one photo alone with no
-  // choices to guess from (100% = every photo named), as far as their own answers on that genus have shown (Q128: never
-  // the global level, never another genus). The IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo
+  // The domain-score bar (docs/LEARNING.md "The domain-score bar"): the bar of a genus is the share of ALL its possible
+  // photos, easy to hard, the player would name right, one photo alone with no choices to guess from (100% = every photo
+  // named), as far as their own answers on that genus have shown (never the global level, never another genus). The
+  // IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo
   // population (random-item IRT, De Boeck 2008: a photo's difficulty d ~ N(mu_g, DOM.TAU²), mu_g the sheet's genus
   // offset gd, so adding photos moves no bar), estimated as the POSTERIOR EXPECTED domain score on a grid of abilities
   // (docs/reviews/2026-11-06-engine-algorithms-review.md §14): a fixed population prior N(DOM.M0, DOM.SD0²) for a genus
   // never answered, then each own answer's likelihood, format-aware (guess rate 1/k, none typed; a per-format offset and
-  // the shared slope as inputs, Q138, Q147), with the photo's difficulty, memory and mix-ups term as the game scores it.
+  // the shared slope as inputs), with the photo's difficulty, memory and mix-ups term as the game scores it.
   // With a logistic likelihood a miss shifts the posterior down (monotone likelihood ratio), so the bar never rises on a
   // miss; the caution comes from the prior, not from a lower bound (θ - z SE rose after a miss). Learners change: before
   // each own answer the posterior drifts by DOM.Q (the process noise of a Kalman filter, Glicko's growing deviation), so
@@ -4427,9 +4412,9 @@
   // player answers (or a replay rebuilds it), never when the photo stats change. A genus never answered shows 0: s.ds is
   // the domain score from twice the prior's own (D0) up, a ramp from 0 at D0 below (domBar): increasing, so monotone too.
   // The dynamic bar runs 0 to 95% (min(0.95, s.ds)); the mastery exam opens at s.ds >= DOM.EX and only the exam takes
-  // the genus to 100% (Pierre's Q decisions, 2026-11-06). A learned genus keeps its mark while s.ds >= DOM.KEEP.
-  // A record the new rules have not rebuilt (no s.dp: progress from before rules version 9, until the sheet's full
-  // replay under it reaches the device) keeps its former moving average s.pg (pgOf, PROG) as before (rule D4).
+  // the genus to 100%. A learned genus keeps its mark while s.ds >= DOM.KEEP.
+  // A record these rules have not rebuilt (no s.dp, until the sheet's full replay reaches the device) keeps its moving
+  // average s.pg (pgOf, PROG; rule D4).
   // Grid: LO + i STEP, N points (-4 to 6, the abilities and photo difficulties the game meets, with room for the prior).
   // M0, SD0: the population prior of a genus never answered: most players start a genus not knowing it (the game's
   // ability floor ELO.lo is -1.5; a broad 1.5 lets an expert's first right answers on hard photos lift it within a
@@ -4447,7 +4432,7 @@
   // The record's log posterior on the grid: its own (s.dp), else the prior (a genus never answered under these rules).
   const domLp = s => (s && Array.isArray(s.dp) && s.dp.length === DOM.N ? s.dp : DOM_PRIOR);
   // The chance of a right answer at ability th: g + (1 - g) R sig(S (th - d)), g the guess rate 1/k (0 typed: k
-  // infinite), R the recall after a break, S the shared slope (Q147: 1, the Elo's, until the sheet estimates it).
+  // infinite), R the recall after a break, S the shared slope (1, the Elo's, unless the sheet estimates it).
   const domP = (th, d, k, R = 1, S = 1) => {
     const g = isFinite(k) && k > 1 ? 1 / k : 0;
     return g + (1 - g) * R * sigm(S * (th - d));
@@ -4470,7 +4455,7 @@
   // The domain score of a log posterior: the expected share of the genus's photos named right alone and typed,
   // E over θ of E over d ~ N(mu', TAU²) of sig(S (θ - d)), the inner one in closed form (sig(x / sqrt(1 + pi v / 8)),
   // the probit approximation of the logistic-normal integral). mu' = mu (the genus offset gd) + SINGLE + ot (the typed
-  // format's offset, Q138: 0 until the sheet serves it).
+  // format's offset: 0 unless the sheet serves it).
   function domScore(lp, mu = 0, S = 1, ot = 0) {
     const c = Math.sqrt(1 + (Math.PI / 8) * S * S * DOM.TAU * DOM.TAU),
       m = (Number(mu) || 0) + DOM.SINGLE + (Number(ot) || 0);
@@ -4485,15 +4470,15 @@
   }
   // The bar's value, 0 to 1: the domain score itself from the knee up; below, a straight ramp from 0 at the prior's own
   // (D0), so a genus never answered shows 0 and a miss from there leaves it at 0. The knee is twice D0, or halfway from
-  // D0 to 1 for a very easy genus (D0 over 1/3: Codex review #646, mu -3 put 2 D0 above 1 and the exam out of reach), so
-  // the bar always reaches every value up to 1. An increasing map: the bar moves the posterior's way.
+  // D0 to 1 for a very easy genus (D0 over 1/3, where 2 D0 would be above 1 and the exam out of reach), so the bar always
+  // reaches every value up to 1. An increasing map: the bar moves the posterior's way.
   function domBar(lp, mu = 0, S = 1, ot = 0) {
     const d0 = domScore(DOM_PRIOR, mu, S, ot),
       x = domScore(lp, mu, S, ot),
       knee = Math.min(DOM.KNEE * d0, (1 + d0) / 2);
     return Math.max(0, Math.min(1, x >= knee ? x : (knee * (x - d0)) / (knee - d0)));
   }
-  // One own answer on the genus record s (scoreAnswer: the genus shown; the genus wrongly given, Pierre's rule L2, as a
+  // One own answer on the genus record s (scoreAnswer: the genus shown; the genus wrongly given, rule L2, as a
   // miss on its photo). d: the question's difficulty for the player, k the plausible choices, R the recall, f {mu: the
   // genus offset, o: this format's offset, t: the typed format's, S: the slope}. The stored bar moves the answer's way
   // only (a right answer never lowers it, a miss never raises it): the drift alone can move the posterior's expectation
@@ -4511,15 +4496,15 @@
   // barOf (the dynamic bar, 0 to 0.95), examOpen (the mastery exam may start), keepsMark (a learned genus stays learned).
   const domOn = s => !!s && Array.isArray(s.dp) && typeof s.ds === 'number';
   // A record of a subject the sheet does not replay (SUBJECTS replay false: fish), kept under the former moving average
-  // s.pg, rebuilt on the device under the domain-score rules (Pierre, 2026-11-06, Q200; model.js domRecalcAll), silently.
+  // s.pg, rebuilt on the device under the domain-score rules (model.js domRecalcAll), silently.
   // Signed-in devices keep no log of the answers the sheet has confirmed, and the sheet's answer log is not readable by
   // players, so the rebuild works from what every copy of the record holds: its right and wrong answers (ok, ko) and the
   // order of its last 10 (h). The earlier answers are spread evenly, rights among misses, then the last 10 in their
   // order, each on a photo of the unit's average difficulty d (its genus offset with one view alone) among k choices.
   // Approximate (the photos, formats and memory of each answer are not kept), deterministic, the same on every device.
   // A false alarm (this unit named on another unit's photo, scoreAnswer) adds a 0 to h and no ko: it is no miss on the
-  // unit's own photos (Q174, faOf takes it), so h keeps at most ko of its zeros, the latest (Codex review #688: its
-  // earlier zeros could be false alarms, and an own miss invented there would count each false alarm twice).
+  // unit's own photos (faOf takes it), so h keeps at most ko of its zeros, the latest (its earlier zeros could be false
+  // alarms, and an own miss invented there would count each false alarm twice).
   // Returns the record's new dp and ds (domStep from the prior), the record itself unchanged.
   function domFromCounts(s, d, k = 4, mu = 0) {
     const ok = Math.max(0, s.ok || 0),
@@ -4546,17 +4531,16 @@
     seq.forEach(ok1 => domStep(x, ok1, d, k, 1, {mu}));
     return {dp: x.dp, ds: x.ds};
   }
-  // The false-alarm correction (Pierre, 2026-11-06, Q174; it replaces rule L2's miss on the genus wrongly given in the
-  // bar). Naming genus n for a photo of another genus is a false alarm: it says the player answers n too readily (a
+  // The false-alarm correction (in the bar, in place of rule L2's miss on the genus wrongly given). Naming genus n for a
+  // photo of another genus is a false alarm: it says the player answers n too readily (a
   // response bias), not that they fail to name n's own photos, so it does not enter n's posterior. Signal detection
   // theory separates the two (Green & Swets 1966; Macmillan & Creelman 2005): the two-high-threshold corrected
   // recognition Pr = H - FA (Snodgrass & Corwin 1988, J. Exp. Psychol. Gen. 117(1)), H the hit rate, here the domain
   // score from n's own photos, FA the false-alarm rate: the times n was given for another genus's photo (the other
   // records' s.conf[n]) over the questions where n was a possible answer (offered among the choices, the other records'
   // s.off[n], or any typed question on another unit of its rank: P[LEVEL].tyk[rank] - s.ty, every unit of the rank asked
-  // can be typed). 0 without P or
-  // without a question where n could be given. The rule L2 count of the genus given (its recent results, its run) and
-  // the ability are untouched.
+  // can be typed). 0 without P or without a question where n could be given. The rule L2 count of the genus given (its
+  // recent results, its run) and the ability are untouched.
   // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
   // The typed questions on other units of n's rank, where the chances to give n start (above).
