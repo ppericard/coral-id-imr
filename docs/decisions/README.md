@@ -58,6 +58,7 @@ Newest first.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-18 | [Decisions kept from the front-end comments: Pierre's words that only the code held](2026-11-18-decisions-from-comments-3.md) | #1126 |
 | 2026-11-18 | [Decisions found in the comments of tools/ and tests/](2026-11-18-decisions-from-comments-tools-tests.md) | #1127 |
 | 2026-11-18 | [Decisions from the app's code comments: kept here when the comments were cleaned](2026-11-18-decisions-from-app-comments.md) | #1124 |
 | 2026-11-18 | [Player groups: no "apart" setting; group changes show at once](2026-11-18-no-apart-groups.md) | #1113 |
