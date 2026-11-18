@@ -1717,8 +1717,9 @@ async function signin(base) {
         fails.push("rename: this device's progress was not kept: " + JSON.stringify(s.prog).slice(0, 120));
       if ((s.prog.Acropora || {}).ok !== 30) fails.push("rename: the account's progress saved under the old names was not read");
       if (s.theme !== 'dark') fails.push(`rename: the theme saved under the old name is not applied (${s.theme})`);
-      if (!s.sent.includes('reefid-sync-coral-progress') || !s.sent.includes('imr-coral-progress') || s.sent.includes('reefid-account'))
-        fails.push('rename: the sync does not send the new names with the old-name copies: ' + s.sent.join(', '));
+      // The save is a light one (sheet v116): the new names only, the sheet adds the old-name copies (Code.gs lightData_).
+      if (!s.sent.includes('reefid-sync-coral-progress') || s.sent.some(k => k.startsWith('imr-')) || s.sent.includes('reefid-account'))
+        fails.push('rename: the sync does not send the new names only: ' + s.sent.join(', '));
     }
   );
   // rename-app: keep-end
@@ -2031,7 +2032,14 @@ async function replayAdoptCheck(base) {
         localStorage.setItem('test-sheet-log', JSON.stringify(log));
         // The replay comes with every reply, whatever rv the app sends: the app must not adopt it twice. A test can
         // change it (test-rec) to see whether it is adopted again. The sheet keeps what was last sent.
-        const replay = {rv, n: 3, rec: JSON.parse(localStorage.getItem('test-rec') || 'null') || rec, ids: ['s1', 's2', 's3']},
+        // fp: the first-launch history it was made with (Code.gs v36), this device's here (core.js startFp).
+        const replay = {
+            rv,
+            n: 3,
+            rec: JSON.parse(localStorage.getItem('test-rec') || 'null') || rec,
+            ids: ['s1', 's2', 's3'],
+            fp: startFp(JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'))
+          },
           rev = Number(localStorage.getItem('test-rev') || 4);
         if (body) {
           localStorage.setItem('test-data', JSON.stringify(body.data));
