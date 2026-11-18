@@ -1,6 +1,6 @@
 # Decisions found in the comments of tests/ (second pass)
 
-Date: 2026-11-18. Rules or docs touched: W19.
+Date: 2026-11-18. PR: #1128. Rules or docs touched: W19.
 
 ## Context
 
