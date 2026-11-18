@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the content editor's circles and
+// The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md): the content editor's circles and
 // look-alike pairs in the apply (core.js structApply, treeStructure), the structure stamp (structStamp), the sheet's
 // replay under the structure in force (Code.gs subjRpl_, replay_, replays_, boardRpl_), and the photo tools' circles in
 // force (tools/fish_inforce.py). The edits here are made-up fixtures: the real curation.json holds none.
@@ -228,7 +228,7 @@ test('orphans: a node the base lacks, a circle not declared, a bad pair key or v
   const st = C.structEntries(S, F, {nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}}).circles[0];
   assert.strictEqual(st.state, 'stale');
   assert.strictEqual(fam(C.contentApply(S, F, cur({nodes: {'f:Damselfishes': {circle: {v: 2, was: 3}}}})), 'f:Damselfishes').circle, 2);
-  // A subject with no circle declared (the corals: pairs only, design note v2 step 8): a circle slot applies nothing, the
+  // A subject with no circle declared (the corals: pairs only, design note step 8): a circle slot applies nothing, the
   // stamp is empty.
   const K = C.subjectOf('coral');
   assert.ok(K.structure && !K.structure.circle);
@@ -519,7 +519,7 @@ test('rule D8: the trigger replays under the new structure a player who never re
   assert.strictEqual(s.ctx.boardWarm_(), 0);
 });
 
-// ---- The leaderboard's score tree under the structure (design note v2, step 4) ----
+// ---- The leaderboard's score tree under the structure (design note, step 4) ----
 
 test("treeBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
   const ctx = {

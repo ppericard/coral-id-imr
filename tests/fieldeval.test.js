@@ -6,8 +6,8 @@ const test = require('node:test'),
   assert = require('node:assert');
 const {fit, pOf, holm} = require('../tools/fieldeval.js');
 
-// Codex review #619: three players, 100 answers each over five genera, right and wrong in turn with e = 0.9; plain
-// Newton steps diverged (slope above a billion, a non-finite log-loss, and still an exact p printed).
+// Three players, 100 answers each over five genera, right and wrong in turn with e = 0.9: plain Newton steps diverge
+// here (slope above a billion, a non-finite log-loss, and still an exact p printed).
 test('the fit stays finite when the answers fall far below the expectation', () => {
   const rows = [];
   for (let p = 0; p < 3; p++)
