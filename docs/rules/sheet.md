@@ -47,7 +47,7 @@ line 1 set to the short form for it, the entry written at the top of HISTORY.md 
 every gate the PR adds and every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any
 other, then merged (docs/INTEGRATOR.md). The self-update reads only `const VERSION = N;`, so line 1 and HISTORY.md are for people.
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
-itself within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md "Code.gs"); check
+itself within about 15 minutes of the train that merged it (`autoUpdate`, below; Pierre's setup of 2026-11-01: HANDOVER.md "Code.gs"); check
 the live `v` about 15 minutes after the train that merged it, and the sheet's "Deploy log" tab says what happened.
 - **The script installs from the `release` branch, not from `main`** (Pierre, 2026-11-18, review R5 question h).
   `release` is a branch of the same repository that only the merge train moves (`tools/train.py`, rule W26): after
