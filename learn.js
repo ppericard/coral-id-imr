@@ -446,7 +446,6 @@ function viewShot(n, v) {
     ? `<img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">`
     : '<span class="none">no photo</span>';
 }
-const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
 let cmpView = store.get('reefid-sync-cmpview', 'medium');
 const viewSeg = () =>
   `<div class="seg" role="group" aria-label="View">${VIEWS.map(([v, t]) => `<button type="button" data-cv="${v}" aria-pressed="${cmpView === v}">${t}</button>`).join('')}</div>`;
@@ -498,40 +497,16 @@ function lookHub(name) {
     }).join('')}</div>
     ${cmpShots([name])}`;
 }
-// Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
-// in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
-// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
-// genera reads the same references (model.js weighted: a ★ genus opens after the genera its card names).
-function shownGroup(n) {
-  return lectureGroup(DATA, n);
-}
-const starNote = n => {
-  const L = starRefs(DATA, n);
-  return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
-};
-function pairs() {
-  const seen = new Set(),
-    out = [];
-  Object.keys(DATA.gen).forEach(a =>
-    DATA.gen[a].look.forEach(b => {
-      const k = [a, b].sort().join('|');
-      if (DATA.gen[b] && !seen.has(k)) {
-        seen.add(k);
-        out.push(k.split('|'));
-      }
-    })
-  );
-  return out;
-}
+// The look-alike pairs (pairs), each pair's source (lsrcOf), the classic ones (isClassic), the mix-ups (mixedUp), a
+// montage's two photos (photoPair) and a starred genus's group and note (shownGroup, starNote) are in model.js: the quiz
+// reads them too, and learn.js comes after the quiz's tier (docs/spec/loading.md "Load order in tiers").
 // Classic look-alikes: only the pairs a source compares in so many words, the IMR lecture
 // (lsrc "IMR Lecture 6...") or the Coral Finder text ("Coral Finder p. ..."). Pairs that only share a Coral Finder box
 // or an IMR group stay on the genus sheets and in duels. IMR pairs first, then by slate order.
 const pairKey = (a, b) => [a, b].sort().join('|');
-const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
-// The source the content editor gave with his edit of that line ('; <its words>', esrcT), from the side lsrcOf reads it
-// from; '' when none (rule C2).
+// The source the content editor gave with his edit of that line ('; <its words>', esrcT), from the side model.js lsrcOf
+// reads it from; '' when none (rule C2).
 const lsrcEsrc = (a, b) => ((GX(a).lsrc || {})[b] ? esrcT(GX(a), 'lsrc/' + b) : (GX(b).lsrc || {})[a] ? esrcT(GX(b), 'lsrc/' + a) : '');
-const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
 function classics() {
   const tier = ([a, b]) => (/^IMR/.test(lsrcOf(a, b)) ? 0 : 1);
   return pairs()
@@ -553,26 +528,6 @@ const MONT_V = {
   'Fungia|Lithophyllon': 'medium',
   'Danafungia|Lithophyllon': 'medium'
 };
-// The two photos of two genera that make the best side by side: same growth form first, then nearest the front and,
-// when the photos come from all zoom levels ("All"), the nearest zoom levels. The same form is looked for in every
-// photo of the lists, not only the first 6, so a plate genus is shown beside a plate look-alike when one exists; "x"
-// (form not visible) matches nothing. Without a same-form pair, the best pair among the first 6 of each list.
-const ZOOM = {wide: 0, medium: 1, macro: 2};
-function photoPair(LA, LB, fa, fb) {
-  let best = null;
-  const A = fa ? [fa] : LA,
-    B = fb ? [fb] : LB;
-  const gap = (x, y) => (x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0);
-  A.forEach((x, i) =>
-    B.forEach((y, j) => {
-      const same = !!x.form && x.form !== 'x' && x.form === y.form;
-      if (!same && (i >= 6 || j >= 6)) return;
-      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
-      if (!best || sc < best[0]) best = [sc, x, y];
-    })
-  );
-  return best ? [best[1], best[2]] : [];
-}
 // The admin can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
 // Montages), and pick "all" as the view to pair photos of nearby zoom levels.
 function montage(a, b) {
