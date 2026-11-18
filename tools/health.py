@@ -70,7 +70,7 @@ def human(unit, n):
 
 def http(url, data=None, headers=None, timeout=15):
     """(status, body bytes); (0, error name) when nothing answered. Follows redirects (Apps Script answers through one)."""
-    req = urllib.request.Request(url, data=data, headers=dict({'User-Agent': 'imr-reef-id-health'}, **(headers or {})))
+    req = urllib.request.Request(url, data=data, headers=dict({'User-Agent': 'reefid-health-check'}, **(headers or {})))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read()
