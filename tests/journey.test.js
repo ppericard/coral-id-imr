@@ -266,3 +266,28 @@ test('jUtcText: the offset in words', () => {
     'UTC−12'
   ]);
 });
+
+// The opt-in choices in a player's saved quiz settings (app.js bonusSet, openNo), as the Journey lists them.
+const {jOptin} = new Function(cut('// joptin: begin', '// joptin: end') + '\nreturn {jOptin};')();
+
+test('jOptin: the fish opt-in choices of a saved copy: on, declined, never offered', () => {
+  const FISH = C.subjectOf('fish'),
+    q = {sci: true, sciT: 5000, sciH: true, beyond: false, beyondT: 9000, beyondN: 2, beyondA: 140};
+  assert.deepStrictEqual(jOptin(q, FISH), [
+    [5000, 'Scientific names', 'on, by hand before it was due'],
+    [9000, 'Families beyond the IMR course', 'offer declined 2 times, the last after answer 140']
+  ]);
+  // on after an offer declined once, off by hand, an offer declined and never answered, nothing saved
+  assert.deepStrictEqual(jOptin({sci: true, sciT: 7, sciN: 1, sciA: 30}, FISH), [
+    [7, 'Scientific names', 'on (the offer was declined once before)']
+  ]);
+  assert.deepStrictEqual(jOptin({sci: false, sciT: 7}, FISH), [[7, 'Scientific names', 'off']]);
+  assert.deepStrictEqual(jOptin({beyondN: 1, beyondA: 12}, FISH), [
+    [null, 'Families beyond the IMR course', 'offer declined once, the last after answer 12']
+  ]);
+  assert.deepStrictEqual(jOptin({}, FISH), []);
+  assert.deepStrictEqual(jOptin(null, FISH), []);
+  // the sets of the subject only: the corals' bonus genera, nothing of the fish's
+  assert.deepStrictEqual(jOptin(q, CORAL), []);
+  assert.deepStrictEqual(jOptin({bon: true, bonT: 1}, CORAL), [[1, 'Bonus genera', 'on']]);
+});

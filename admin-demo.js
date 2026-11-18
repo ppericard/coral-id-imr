@@ -759,7 +759,7 @@
           };
           if (prof === 'ra') {
             add(P, 'home', 1, vint(5, 30));
-            for (let i = vint(1, 3); i--;) sheet(vpick(['learn', 'learn', 'progress']));
+            for (let i = vint(1, 3); i--; ) sheet(vpick(['learn', 'learn', 'progress']));
             if (vr() < 0.5) add(P, 'learn.look-alikes', 1, vint(60, 300));
             add(P, 'progress', 1, vint(30, 200));
           } else if (prof === 'anon') {
@@ -771,7 +771,7 @@
             p0 = vr() < 0.6 ? 'identify.key' : 'home';
             if (p0 === 'home') add(P, 'home', 1, vint(5, 25));
             add(P, 'identify.key', vint(1, 2), vint(180, 1100));
-            for (let i = vint(0, 3); i--;) sheet(vpick(['learn', 'other', 'other']));
+            for (let i = vint(0, 3); i--; ) sheet(vpick(['learn', 'other', 'other']));
             if (vr() < 0.3) add(P, 'learn.compare', 1, vint(40, 200));
             if (vr() < 0.3) add(P, 'tools.anatomy', 1, vint(60, 300));
           } else if (prof === 'second') {
@@ -903,7 +903,18 @@
         const t0 = mine[0][1] - 1;
         Object.assign(users['ben demo'].data, {
           [subjKey(FS.id, 'intro')]: JSON.stringify(fi),
-          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]})
+          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]}),
+          // the opt-in choices (quiz settings): circle 3's offer declined once, Scientific names on just before the first
+          // genus card
+          [subjKey(FS.id, 'quiz')]: JSON.stringify({
+            beyond: false,
+            beyondT: mine[Math.max(0, mine.length - 20)][1] + 1,
+            beyondN: 1,
+            beyondA: Math.max(1, mine.length - 20),
+            sci: true,
+            sciT: mine[mine.length - 5][1],
+            sciH: false
+          })
         });
       }
       // The fish side's Analyses report (one report per subject): the seven made-up analysis players

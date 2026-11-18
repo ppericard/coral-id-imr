@@ -185,7 +185,10 @@ subject switch at the top (each side with the player's answers in it); the list 
 Cards in its words (Open all families) with the cards of units outside the slate on a line per word (`jOffSlate`: Genus
 cards); the **steps** of the path from the answer log (`jSteps`, pure, tested in `tests/journey.test.js`: the first
 question on each rank other than the subject's own, `SUBJECTS` `sheets` and `rank`, and on each circle after the first, a
-unit record's `circle`), listed under Cards and steps and marked on the units-met chart; the times of **Cards and steps**
+unit record's `circle`), listed under Cards and steps and marked on the units-met chart; the player's **opt-in choices**
+(`jOptin`, pure, tested there: `SUBJECTS` `optin`, from the subject's quiz settings in their saved copy, `quiz` in
+`admin.js` `savedPump`: on, off or the offer declined, with the time of the choice and, for a declined offer, the answer
+count of the last "Not now"), listed with the steps, in time order, not marked on the chart; the times of **Cards and steps**
 in the player's own local time (`jlocal`, pure, tested in `tests/journey.test.js`: `jOffAt`, the UTC offset logged with
 their answer nearest in time, the earlier of two as near; `jAtText`, the time written at that offset in UTC, so the
 admin's own zone and daylight saving never enter; the offset in the time's title, a tap shows it on a phone; the admin's

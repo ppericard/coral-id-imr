@@ -6077,7 +6077,7 @@ async function sealPart(b, base, fails) {
           felt.forEach(x => (x.style.display = ''));
           const plain = [],
             tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode());)
+          for (let n; (n = tw.nextNode()); )
             if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
               plain.push(n.textContent.trim().slice(0, 80));
           return {
@@ -6922,6 +6922,9 @@ async function sealPart(b, base, fails) {
           !has(jo.cards, /^Circle 3 from answer 50 /) ||
           !has(jo.cards, /^Genus questions from answer 51 · Amphiprion/) ||
           !has(jo.cards, /^Open all families not used/) ||
+          // the opt-in choices of the saved copy (jOptin): Scientific names on, circle 3's offer declined once
+          !has(jo.cards, /^Scientific names on · /) ||
+          !has(jo.cards, /^Families beyond the IMR course offer declined once, the last after answer \d+ · /) ||
           has(jo.cards, /genera/) ||
           ['Circle 2', 'Circle 3', 'Genus'].some(m => !jo.marks.includes(m)) ||
           !/Family questions/.test(jo.games) ||
