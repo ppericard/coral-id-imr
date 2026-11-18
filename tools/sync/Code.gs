@@ -2988,14 +2988,16 @@ function deleteAccount_(name, all, by){
   rosterChanged_();
   return {ok: true, answers: answers, reports: reports};
 }
-// v58 (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves"): POST {selfDelete: 1,
+// A player deletes their own account and all their data themselves (decision in
+// docs/decisions/2026-11-18-decisions-from-code-comments.md): POST {selfDelete: 1,
 // dname, dpin, av} → {ok, deleted: true, answers, reports}. The player's name and code in dname / dpin, never name / pin,
 // so an older script answers 'input' and never takes it for a progress write. The code is checked as a load's (a wrong
 // one counts towards the 10-minute wait, blocked_), then everything of the account is deleted as the admin's "Delete
 // everything" does (deleteAccount_ with its answers and reports) and its Removed tombstone written, so its other devices
 // get 'gone'. A name already removed with this code answers deleted (a retry after a lost reply); an archive is the
 // trainer's, never deleted here. Caps (over_, under the script lock as every write): 3 tries per name and 30 in all
-// every 6 hours; the per-name key is the name's anonymous id, so an Alerts line never names the player (Codex #603). Errors: input, wait, pin, user (no such account), busy.
+// every 6 hours; the per-name key is the name's anonymous id, so an Alerts line never names the player. Errors: input,
+// wait, pin, user (no such account), busy.
 function selfDelete_(p){
   const {name, pin} = clean_({name: p.dname, pin: p.dpin});
   if (!name || !/^\d{4}$/.test(pin)) return {ok: false, error: 'input'};
@@ -3004,14 +3006,14 @@ function selfDelete_(p){
     if (blocked_(name)) return {ok: false, error: 'wait'};
     if (over_('selfdel', 30) || over_('sd:' + aid_(name), 3)) return {ok: false, error: 'busy'};
     const ra = sheet_('RAs', HEAD), r = find_(ra, name), h = hash_(name, pin);
-    // Already deleted (a retry after a lost reply): done. Merged meanwhile (Codex review #603): nothing was deleted, the
+    // Already deleted (a retry after a lost reply): done. Merged meanwhile: nothing was deleted, the
     // data is the joined name's now; the app says so and the player deletes that account.
     if (!r) { const g = gone_(name, h); return !g ? {ok: false, error: 'user'} : g.into ? {ok: false, error: 'gone', into: g.into} : {ok: true, deleted: true, answers: 0, reports: 0}; }
     const row = ra.getRange(r, 1, 1, HEAD.length).getValues()[0];
     if (row[6] !== h) { failed_(name); return {ok: false, error: 'pin'}; }
     if (archived_(row)) return {ok: false, error: 'user'};
     // The generation the device saved under (dacct, sync.js acct): another one means the name was taken again after an
-    // archive; this device's account is not this one, so nothing is deleted (Codex review #603).
+    // archive; this device's account is not this one, so nothing is deleted.
     if (typeof p.dacct === 'string' && p.dacct) { let d = {}; try { d = JSON.parse(readData_(String(row[0]), String(row[7] || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.dacct) return {ok: false, error: 'archived'}; }
     const n = String(row[0]), out = deleteAccount_(n, true, aid_(n));
@@ -3027,7 +3029,7 @@ function anonReports_(name, into){
   if (n) rg.setValues(v);
   return n;
 }
-// A removed name in the log tabs (v55): Events' Message names a player in brackets ("app before 2026-11-03: load
+// A removed name in the log tabs: Events' Message names a player in brackets ("app before 2026-11-03: load
 // (<name>)", oldApp_), Alerts names a capped name as "n:<name> (" (over_). Each mention becomes `into` (a deleted
 // account's "~deleted <id>", or the name a merged one joined). Case-blind, as names are.
 function redact_(name, into){
@@ -3043,7 +3045,7 @@ function redact_(name, into){
   });
   return n;
 }
-// v156 (roles step 1): the instance's players right (gate_), and one Audit row per change, its target by anonymous id
+// The instance's players right (gate_), and one Audit row per change, its target by anonymous id
 // (never the name the request carries). The action is told as usersDo_ below picks its branch; the list and userData
 // are reads, not audited.
 function users_(p){
@@ -3066,24 +3068,24 @@ function usersDo_(p, who){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = sheet_('RAs', HEAD);
   const row_ = name => { const r = find_(ra, name); return r ? {r: r, v: ra.getRange(r, 1, 1, HEAD.length).getValues()[0]} : null; };
   const removed_ = (name, h, into) => sheet_('Removed', REMOVED).appendRow([safe_(name), h, safe_(into || ''), new Date()]);
-  // v20: {userBoard: name, hide: true|false, token} hides the player from the public leaderboard (Board -1, which their
-  // own syncs keep) or shows them again (1). Pierre, 2026-11-02: a renamed test account must not be on the leaderboard.
-  // Under the script lock, as progress saves (Codex review #352): a sync between the read and the write could otherwise
+  // {userBoard: name, hide: true|false, token} hides the player from the public leaderboard (Board -1, which their own
+  // syncs keep; a test account, say) or shows them again (1). Under the script lock, as progress saves: a sync between
+  // the read and the write could otherwise
   // put back the Board value it read.
   if (p.userBoard) {
     const lock = lock_();
     try {
       const u = row_(String(p.userBoard)); if (!u) return {ok: false, error: 'user'};
-      if (archived_(u.v)) return {ok: false, error: 'archived'};  // v58: an archive stays off the leaderboard
+      if (archived_(u.v)) return {ok: false, error: 'archived'};  // an archive stays off the leaderboard
       const b = p.hide ? -1 : 1;
       ra.getRange(u.r, 10).setValue(b);
-      CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));  // v95: every subject's board
+      CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));  // every subject's board
       return {ok: true, board: b};
     } finally { lock.releaseLock(); }
   }
-  // v48: {userGroup: name | [names], group, on: true|false, token} adds players to a group, or removes them (groupSet_);
-  // answers how many changed and the group's members. v179: group is any group's id (groupState_), not only a subject's
-  // beta group; v171's cohort form is gone. Under the script lock, as a rename or a merge could otherwise move a name
+  // {userGroup: name | [names], group, on: true|false, token} adds players to a group, or removes them (groupSet_);
+  // answers how many changed and the group's members. group is any group's id (groupState_). Under the script lock, as
+  // a rename or a merge could otherwise move a name
   // between the read and the write; every board's cache is dropped (the groups' boards follow).
   if (p.userGroup) {
     const g = String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
@@ -3097,12 +3099,12 @@ function usersDo_(p, who){
       return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
     } finally { lock.releaseLock(); }
   }
-  // v179: the groups themselves (groupDo_): make, rename or set, delete an empty one.
+  // The groups themselves (groupDo_): make, rename or set, delete an empty one.
   if (p.groupMake || p.groupEdit || p.groupDrop) {
     const lock = lock_();
     try { groupsNow_(); return groupDo_(p); } finally { lock.releaseLock(); }  // groups-migration: groupsNow_
   }
-  // v99 (Pierre, 2026-11-08, Q228: a fallback card had moved a player to the wrong first-launch answer): {userStart: name,
+  // {userStart: name,
   // s: subject id, c: answer, token} changes the player's answer to the subject's first-launch question (core.js
   // startAdminSet: a choice event appended, via 'admin', every earlier one kept), under the script lock as a progress save,
   // and writes the copy with the revision bumped: a device that read the copy before is answered 'stale' at its next save,
@@ -3126,7 +3128,7 @@ function usersDo_(p, who){
       return {ok: true, rev: cur.rev + 1, start: out.start};
     } finally { lock.releaseLock(); }
   }
-  // v115: {statsExclude: admin id, on: true|false, token} leaves a player or a device not signed in out of the
+  // {statsExclude: admin id, on: true|false, token} leaves a player or a device not signed in out of the
   // statistics, or counts them again (sxPut_); the photo stats are recomputed and the Analyses report refitted
   // (rosterChanged_). Answers {ok, excluded: every id left out}.
   if (p.statsExclude) {
@@ -3141,12 +3143,11 @@ function usersDo_(p, who){
   if (p.userData) {
     const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
     const d = readData_(String(u.v[0]), String(u.v[7] || '')), data = JSON.parse(d.json);
-    if (data && typeof data === 'object') delete data._acct;  // v58: the generation stays the sheet's (userMerge keeps into's)
+    if (data && typeof data === 'object') delete data._acct;  // the generation stays the sheet's (userMerge keeps into's)
     return {ok: true, rev: d.rev, data: data};
   }
-  // v17: {anonDelete: [anonymous ids], token} deletes every answer of those ids among the rows without a name (devices
-  // that never signed in, accounts deleted with their answers kept): test runs and junk (Pierre, 2026-11-02). Never a
-  // named player's answers.
+  // {anonDelete: [anonymous ids], token} deletes every answer of those ids among the rows without a name (devices that
+  // never signed in, accounts deleted with their answers kept): test runs and junk. Never a named player's answers.
   if (Array.isArray(p.anonDelete)) {
     const ids = new Set(p.anonDelete.map(String).slice(0, 500)), salt = anonSalt_();
     const lock = lock_();
@@ -3160,33 +3161,32 @@ function usersDo_(p, who){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
-      Object.keys(hit).forEach(w => hit[w] && rplDrop_(w));  // v55: their full replay records too (every subject's)
-      // v30: their sheets opened too (ids are the admin's, as the Pages tab keeps them); never a named player's.
+      Object.keys(hit).forEach(w => hit[w] && rplDrop_(w));  // their full replay records too (every subject's)
+      // Their page summaries too (ids are the admin's, as the Pages tab keeps them); never a named player's.
       const named = new Set(ss.getSheetByName('RAs') && ra.getLastRow() > 1 ? ra.getRange(2, 1, ra.getLastRow() - 1, 1).getValues().map(r => aid_(String(r[0]), salt)) : []);
       pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
-      [...ids].filter(x => SX_ID.test(x) && !named.has(x)).forEach(x => sxPut_(x, false));  // v115: no row left for ids with no answer
-      statsSubjects_().forEach(sid => { try { CacheService.getScriptCache().remove(statsKey17_(sid)); } catch (e) {} });  // v137: every subject's
-      if (n) statsDirty_(true);  // v134: the pooled stats' snapshot without them, rebuilt
+      [...ids].filter(x => SX_ID.test(x) && !named.has(x)).forEach(x => sxPut_(x, false));  // no row left for ids with no answer
+      statsSubjects_().forEach(sid => { try { CacheService.getScriptCache().remove(statsKey17_(sid)); } catch (e) {} });  // every subject's
+      if (n) statsDirty_(true);  // the pooled stats' snapshot without them, rebuilt
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
   if (p.userDelete || p.userMerge || p.userArchive) {
     const lock = lock_();
     try {
-      // v58 (was userRename, v20): {userArchive: {from, into}, token} → the player's record moves to an archive name
-      // (Pierre, 2026-11-02: keep his account played with the old algorithms apart, as "Pierre-test", and start over as
-      // "Pierre"): RAs row, saved progress, By genus, answers and reports, marked Board -2 (ARCHIVED; Pierre, 2026-11-05,
-      // Q84: no new column). An archive is kept, never used in normal operation (liveRows_). The code hash is tied to the
-      // name (hash_), so the app no longer opens it. The old name is not marked removed: a new sign-in may start a new
-      // account there; a device still signed in with it is told the record was archived (sync.js, Q88).
+      // {userArchive: {from, into}, token} → the player's record moves to an archive name (to keep an account played
+      // under old rules apart and start over under the name): RAs row, saved progress, By genus, answers and reports,
+      // marked Board -2 (ARCHIVED). An archive is kept, never used in normal operation (liveRows_). The code hash is tied
+      // to the name (hash_), so the app no longer opens it. The old name is not marked removed: a new sign-in may start a
+      // new account there; a device still signed in with it is told the record was archived (sync.js).
       if (p.userArchive) {
         const m = p.userArchive || {}, a = row_(String(m.from || '')), into = String(m.into || '').trim().slice(0, 40);
         if (!a || !into) return {ok: false, error: 'user'};
-        if (CORE_.reservedName(into)) return {ok: false, error: 'reserved'};  // v119: no archive under a reserved name either
+        if (CORE_.reservedName(into)) return {ok: false, error: 'reserved'};  // no archive under a reserved name either
         if (archived_(a.v)) return {ok: false, error: 'archived'};
         if (row_(into)) return {ok: false, error: 'exists'};
         const from = String(a.v[0]);
-        adminDrop_(a.v[6]);  // v125: an archive is no longer the admin's account
+        adminDrop_(a.v[6]);  // an archive is no longer the admin's account
         ra.getRange(a.r, 1).setValue(safe_(into));
         ra.getRange(a.r, 10).setValue(ARCHIVED);
         relabel_(DATA_TAB, 1, from, into);
@@ -3194,14 +3194,14 @@ function usersDo_(p, who){
         const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
         pagesMove_(from, into);
         // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
-        // them must not log into the new account under the old name (Codex review #352).
+        // them must not log into the new account under the old name.
         relabel_('Removed', 3, from, into);
-        redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none (Codex review #603)
-        dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no group
-        rolesDrop_(from, who.id);  // v156: nor holds any role (rule D7): the name is free again at once, so a grant kept by name would pass to whoever takes it
-        sxMove_(from, into);  // v115: its answers stay out of the statistics if they were
-        rplDrop_(from);  // the replay (v28; every subject's) is made again under the new name when asked
-        rosterChanged_();  // v55: the three caches (achs15 too) and the Analyses report
+        redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none
+        dropRows_(GROUPS.TAB, from, 2);  // an archive is in no group
+        rolesDrop_(from, who.id);  // nor holds any role (rule D7): the name is free again at once, so a grant kept by name would pass to whoever takes it
+        sxMove_(from, into);  // its answers stay out of the statistics if they were
+        rplDrop_(from);  // the replays (every subject's) are made again under the new name when asked
+        rosterChanged_();  // the caches and the Analyses report
         return {ok: true, answers: answers, reports: reports};
       }
       if (p.userDelete) {
@@ -3213,40 +3213,40 @@ function usersDo_(p, who){
       }
       const m = p.userMerge || {}, a = row_(String(m.from || '')), b = row_(String(m.into || ''));
       if (!a || !b || a.r === b.r || !m.data || typeof m.data !== 'object') return {ok: false, error: 'user'};
-      if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // v58: an archive is never merged
+      if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // an archive is never merged
       const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
-      adminDrop_(a.v[6]);  // v125: the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
+      adminDrop_(a.v[6]);  // the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
       // account's devices ask for the replay of the whole merged history (replay_).
       delete m.data['reefid-sync-coral-rv'];
       delete m.data['imr-coral-rv'];  // rename-app: keep (its name before the rename to IMR Reef ID, v33)
       CORE_.SUBJECTS.forEach(S => delete m.data[CORE_.subjKey(S.id, 'rv')]);  // every subject's (fish's too: its own rules versions)
       let curData = {}; try { curData = JSON.parse(cur.json || '{}') || {}; } catch (e) {}
-      if (curData._acct) m.data._acct = curData._acct; else delete m.data._acct;  // v58: the kept account's generation
+      if (curData._acct) m.data._acct = curData._acct; else delete m.data._acct;  // the kept account's generation
       const json = JSON.stringify(m.data);
       writeData_(into, json, cur.rev + 1);
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
       pagesMove_(from, into);
-      // v48: the merged name's groups join the kept name's (each once); v179: every group, the kept name keeps its own too.
+      // The merged name's groups join the kept name's (each once); the kept name keeps its own too.
       groupsNow_();  // groups-migration
       groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
-      rolesDrop_(from, who.id);  // v156: the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
-      sxMove_(from, '');  // v115: the kept name's choice holds for the answers it takes
+      rolesDrop_(from, who.id);  // the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
+      sxMove_(from, '');  // the kept name's choice holds for the answers it takes
       ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // every subject's replay
-      redact_(from, into);  // v55: its name in the log tabs becomes the name it joined
-      relabel_('Removed', 3, from, into);  // names merged into from earlier now point to into (Codex review #600)
+      redact_(from, into);  // its name in the log tabs becomes the name it joined
+      relabel_('Removed', 3, from, into);  // names merged into from earlier now point to into
       removed_(from, a.v[6], into);
       rosterChanged_();
       return {ok: true, rev: cur.rev + 1, answers: answers, reports: reports};
     } finally { lock.releaseLock(); }
   }
   // The list, with each player's numbers from the Answers and Reports tabs.
-  // id (v13): the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
-  // v58: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
-  // v119: every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
+  // id: the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
+  // Archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
+  // Every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
   const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
@@ -3254,7 +3254,7 @@ function usersDo_(p, who){
       review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
     out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
   });
-  // v60: the replayed subject's answers (the corals'), as before fish answers were logged: its mix-ups name its genera.
+  // The replayed subject's answers (the corals'): its mix-ups name its genera.
   const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
   all.filter(replayed_).forEach(r => {
     const u = by[lc_(r[0])]; if (!u) { const a = arch[lc_(r[0])]; if (a) a.answers++; return; }
@@ -3269,22 +3269,22 @@ function usersDo_(p, who){
     u.days = Object.keys(days[k] || {}).length;
     const L = (last50[k] || []).sort((a, b) => a[0] - b[0]).slice(-50); u.recent = [L.length, L.reduce((t, x) => t + x[1], 0)];
     u.mix = Object.keys(mixes[k] || {}).map(x => x.split('|').concat([mixes[k][x]])).sort((a, b) => b[2] - a[2]).slice(0, 5); });
-  // v81: each player's photo exposure in every subject with game photos (exposure_): ex {subject id: [seen, of, hit, asked, units]}.
+  // Each player's photo exposure in every subject with game photos (exposure_): ex {subject id: [seen, of, hit, asked, units]}.
   exposure_(all, by);
   const rp = ss.getSheetByName('Reports');
   if (rp && rp.getLastRow() > 1) rp.getRange(2, 2, rp.getLastRow() - 1, 1).getValues().forEach(r => { const u = by[lc_(r[0])] || arch[lc_(r[0])]; if (u) u.reports++; });
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
-  // v48: the subjects in beta each player's groups open; v179: gids, the ids of their groups, and every group's settings
+  // The subjects in beta each player's groups open; gids, the ids of their groups, and every group's settings
   // (groupDefs: [{id, n, board, apart, beta, at}], in the order they were made).
   const gs = groupState_(), gm = groupMap_(gs);
   out.users.forEach(u => { const g = gm[lc_(u.name)]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; });
   out.groupDefs = gs.defs;
   replayedAll_(out.users, dcol);
-  out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics
+  out.excluded = [...sxSet_()];  // the ids left out of the statistics
   return out;
 }
-// v81 (Pierre, 2026-11-06, Q191; the photo exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5): the
+// Photo exposure (docs/LEARNING.md "Photo exposure"; docs/reviews/2026-11-06-photo-exposure-study.md): the
 // admin's player list gives each player's photo exposure per subject, ex: {subject id: [seen, of, hit, asked, units]}
 // (core.js exposureOf over that subject's rows, core.js subjRows): Seen % = seen / of, the distinct game photos they have
 // been shown out of the game photos of the units they have met; Spread % = hit / asked, in time order, of the questions
@@ -3295,7 +3295,7 @@ function exposure_(rows, by){
   const pools = pools_();
   CORE_.SUBJECTS.forEach(S => {
     if (!pools[S.id]) return;
-    // v115 (review of #801): a row logged before word_ refused ids named like Object.prototype's members (a unit
+    // A row logged before word_ refused ids named like Object.prototype's members (a unit
     // constructor) is left out, and a subject whose exposure fails anyway gets none: the list is served all the same.
     let E = {};
     try { E = CORE_.exposureOf(CORE_.subjRows(rows, S.id).filter(r => !protoRow_(r)).map(r => [lc_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]), pools[S.id]); } catch (e) { return; }
@@ -3304,10 +3304,10 @@ function exposure_(rows, by){
 }
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
 // read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool3<id>, cut in
-// parts by cacheBigPut_: the corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB from v167, over
-// the script cache's 100 KB a value). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
-// only (v115): true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that
-// subject's pool fetched when not cached, the others from the cache only. ups (v115): an object given gets each
+// parts by cacheBigPut_: the corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, over the script
+// cache's 100 KB a value). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
+// only: true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that subject's
+// pool fetched when not cached, the others from the cache only. ups: an object given gets each
 // subject's parent units, cached with its pool (unitUp_: a fish genus or species to its family; photoCheck_).
 function pools_(only, ups){
   const c = CacheService.getScriptCache(), out = {}, files = {};
