@@ -214,6 +214,7 @@ function rebase(next) {
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next);
   SAVED.genera = SAVED.genera || {};
+  unitRefresh();
   snap = JSON.stringify(DRAFT);
   memoReset();
   if (TOKEN) {
@@ -5524,12 +5525,26 @@ const unitRead = S => {
     k = ['f', 'ph', 'gm'].filter(x => W[x]);
   return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
     const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
-    const R = !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
-    // the files as read, for the units of the sheet's replay (unitsOf, unitRpl)
-    if (R) R.raw = J;
-    return R;
+    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : unitBuild(S, J);
   });
 };
+// A registry of subject S from its files as read (J: f, ph, gm) under the published curation (SAVED: the content editor's
+// structure and text in force, as the app and unitRpl lay them over the file). raw, the files as read, for the units of the
+// sheet's replay (unitsOf, unitRpl); cur, the curation it was built under (a Publish builds it again: rebase).
+const unitBuild = (S, J) => {
+  const R = repReg(J.f, J.ph, J.gm, unitRankOf(S), S, SAVED);
+  if (R) Object.assign(R, {raw: J, cur: SAVED});
+  return R;
+};
+// The registries read again under the published curation after it changed (a Publish, the base another tab's Publish or a
+// rebase put in): each built again from its files as read; FISHA is the tree subject in force's.
+function unitRefresh() {
+  SUBJECTS.forEach(S => {
+    const R = UNITA[S.id];
+    if (R && R.raw && R.cur !== SAVED) UNITA[S.id] = unitBuild(S, R.raw);
+    if (S === FISHS && UNITA[S.id]) FISHA = UNITA[S.id];
+  });
+}
 // The tree subject in force's (FISHS: FISHA is its registry in UNITA).
 const fishAdmin = () => unitAdmin(FISHS);
 // A family's page (Photos › Tree) under the prefix of the tree subject in force (FISHS, above), or of another subject S.
@@ -5561,8 +5576,10 @@ const unitPhOf = f => {
   const S = SUBJECTS.find(x => x !== FISHS && UNITA[x.id] && UNITA[x.id].ph[f]);
   return S ? {S, p: UNITA[S.id].ph[f]} : null;
 };
-// A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
-// species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
+// repunit: begin
+// A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus in
+// italics (its id's prefix off), a fish species unit (s:s091) by its scientific name in italics (FA.spu), each with its
+// family's page once the fish data are read (fishAdmin).
 // bare: without the subject's name after it (a page that is that subject's already: its Stops). S0: the report's subject
 // (a unit id two subjects' prefixes fit: reports.js repCtx), else the unit's (unitSubj); its family's page only when the
 // subject has the family pages (Photos › Tree).
@@ -5570,11 +5587,13 @@ const repUnit = (x, bare, S0) => {
   const S = S0 && S0.sheets ? S0 : unitSubj(x);
   if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
   const R = unitRegOf(S),
-    fam = R && hasPage(S, TREE) && R.fam[x],
-    nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
+    sp = R && R.spu && R.spu[x],
+    fam = R && hasPage(S, TREE) && (R.fam[x] || (sp && sp.family)),
+    nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(sp ? sp.name : String(x).replace(/^[a-z]:/, ''))}</i>`;
   // its family's page, or its own node when the subject's units are narrower than the tree's families (a sea-slug genus)
   return `${fam ? `<a class="adm-gen" href="${esc(famHref(unitRankOf(S) === S.rank ? fam : x, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
+// repunit: end
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there, without the drag handle, its genus first; bound by bindTiles,
 // bindF and bindQ as on the genus page. o: {lead (after the genus), cap (caption last), extra (more actions)}. null for a
@@ -7877,6 +7896,7 @@ async function save() {
     SHA = r.content.sha;
     SAVED = clone(out);
     DRAFT = clone(out);
+    unitRefresh();
     if (DW) DW.base();
     saveDraft();
     toast('Published. The public site shows it within a minute or two.' + confNote(conf));
@@ -8294,6 +8314,7 @@ async function draftOpen() {
     adoptBase: c => {
       SAVED = c;
       SAVED.genera = SAVED.genera || {};
+      unitRefresh();
       memoReset();
       setTimeout(render, 0);
     },
