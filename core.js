@@ -2918,13 +2918,14 @@
     return P;
   }
 
-  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
-  // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
+  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_: players, devices that never signed in
+  // included, with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z
+  // against each question's guess rate).
   const TRUST = {N: 10, Z: 1.645}; // answers per player, not per photo
-  // As Code.gs guess_ (v20): without |kN, a photo-quiz question with 2 or 3 genera in its choices (readAnswers row
-  // index 10) is rated with 1 / choices ("Again: A or B?", logged plain "quiz" until 2026-11-02).
-  // A typed answer (|t, 2026-11-03: the player types the genus instead of picking one of the choices) has no guess rate:
-  // nothing to pick from, so the expected success has no 1/k floor (Code.gs guess_ v27; model.js TYPED.k).
+  // As Code.gs guess_: without |kN, a photo-quiz question with 2 or 3 genera in its choices (readAnswers row index 10) is
+  // rated with 1 / choices ("Again: A or B?", logged as plain "quiz" in the oldest rows).
+  // A typed answer (|t: the player types the name instead of picking a choice) has no guess rate: nothing to pick from,
+  // so the expected success has no 1/k floor (model.js TYPED.k).
   const TYPED_RE = /\|t(\||$)/;
   const guessOf = (mode, choices) => {
     if (TYPED_RE.test(mode)) return 0;
@@ -2949,9 +2950,9 @@
     const k = /\|k(\d)/.exec(m);
     return k && Number(k[1]) < 4 ? (Number(k[1]) >= 3 ? 'k3' : 'k2') : 'k4';
   }
-  // Per-format offsets (Pierre, 2026-11-06, Q138; docs/LEARNING.md "Per-format offsets"): on the real answers a question's
-  // format moved its success beyond what the app's guess rate 1/k allows for (2 plausible choices among 4 shown: right
-  // 87% where the app expected 74%; typed: 76% where it expected 82%). Each format f gets an offset d_f, in logits, added
+  // Per-format offsets (docs/LEARNING.md "Per-format offsets"): a question's format moves its success beyond what the
+  // app's guess rate 1/k allows for (2 plausible choices among 4 shown: right 87% where the app expected 74%; typed: 76%
+  // where it expected 82%, on the real answers). Each format f gets an offset d_f, in logits, added
   // to the app's log-odds: P(right) = 1/k + (1 - 1/k) sig(ability - difficulty + d_f) (positive: easier than the app
   // thought). Fitted by the sheet (Code.gs stats_, ?stats=1 fmt) on the trusted answers with their logged expectation e,
   // the app's log-odds then x = logit((e - 1/k) / (1 - 1/k)), clamped to 1-99%: Newton's method on d_f with a normal prior
@@ -3016,14 +3017,13 @@
     const o = F && F[f];
     return Array.isArray(o) && typeof o[0] === 'number' && isFinite(o[0]) ? o[0] : 0;
   };
-  // The per-format offsets of a ?stats=1 reply (Code.gs v77 serves fmt and replays with it), {} when it has none.
+  // The per-format offsets of a ?stats=1 reply (fmt; the sheet replays with them too), {} when it has none.
   const fmtsOf = j => (j && j.fmt && typeof j.fmt === 'object' ? j.fmt : {});
-  // How sure a player's level is (Pierre, 2026-11-03: a level from 35 answers at 97% right sat above one from 245):
-  // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level
-  // itself (eloReplay, Code.gs stats_ ras; Codex review #375): an answer that was a near-sure success tells little, so a
-  // run of easy right answers keeps the margin wide.
-  // A player's right rate in the photo quiz apart from the Duel tab (Pierre, 2026-11-03: a new player's 31 duels on one
-  // chosen pair, 2 choices each, made 89% in the quiz read as 95%): per anonymous id, [answers, right] in the quiz (mode
+  // How sure a player's level is (a level from 35 answers at 97% right must not read above one from 245): {player id:
+  // 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level itself
+  // (eloReplay, Code.gs stats_ ras): a near-sure success tells little, so a run of easy right answers keeps it wide.
+  // A player's right rate in the photo quiz apart from the Duel tab (31 duels on one chosen pair, 2 choices each, can
+  // make 89% in the quiz read as 95%): per anonymous id, [answers, right] in the quiz (mode
   // quiz or quiz|…, duels slipped into the quiz included), in its last 50, and in the Duel tab (quiz-duel…). Other
   // games are in neither. rows: readAnswers rows [id, t, shown, answered, ok, mode, …].
   function playSplit(rows) {
@@ -3049,7 +3049,7 @@
     return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
   }
   // Keyed by player (names lower-cased in the sheet, anonymous ids in the admin), with no prototype: a player named
-  // constructor or __proto__ is an entry like any other, never Object's member (reserved names, Pierre 2026-11-09).
+  // constructor or __proto__ is an entry like any other, never Object's member.
   function trustOf(rows) {
     const T = Object.create(null),
       out = Object.create(null);
@@ -3070,32 +3070,28 @@
     return out;
   }
 
-  // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player.
-  // NEW and KNOWN: the fixed memory rule of v17-v25 (a photo new to the player 0.5 harder, one right twice before 1
-  // easier), now only the prior of the estimated photo memory below (MEM).
-  const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1}; // v18: 10, was 30 (same reason)
+  // How much one answer moves the photos, as Code.gs PHOTO_W: weight n / (n + N) after n answers of the player.
+  // NEW and KNOWN: a fixed memory rule (a photo new to the player 0.5 harder, one right twice before 1 easier), the prior
+  // of the estimated photo memory below (MEM).
+  const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
   // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
   const PLAYER0 = -1;
-  // Photo memory (Pierre, 2026-11-03: in a genus with few photos the same ones come back, players learn the photos
-  // rather than the genus, and that skews the photo difficulty and the player's progress). One rule for the sheet, the
-  // admin and the app: an answer on a photo is expected easier by an offset (logits subtracted from its difficulty) that
-  // depends on the player's own history with that photo, [times shown, times right] (H in the replay, s.ps in the app):
-  // bucket 0 new, 1 shown but never right, 2 right once, 3 right twice or more (memBucket). A question with several
-  // photos takes the mean offset of its photos (memFam). New is the reference, 0: a photo's rating is what a player meets
-  // on it the first time. The other three are estimated from the trusted answers, rated in the same replay as the photos
-  // and the players (eloReplay, Code.gs stats_, v26): after each answer, each offset its photos fall in moves by its
-  // surprise (right - expected) over the information gathered so far plus the prior's (a step of Newton's method on the
-  // log-likelihood, as Glicko moves a rating by what it learns over how sure it already is), the prior MEM.PRIOR weighing
-  // as much as MEM.N answers at the game's usual chance (80%, 4 choices). The prior is the old fixed rule (PHOTO_W) as
-  // offsets from a new photo: 0, -0.5, -0.5, -1.5; a bucket with few answers stays close to it. N 10: answers on a
-  // remembered photo are 90% right or more, where each tells little, so the 64 "right once" answers of the first 550
-  // move it about two thirds of the way to what they show (30: half way). ?stats=1 serves the estimate as mem (memn:
-  // answers behind each bucket); the app falls back to the prior with an older sheet (memOf). docs/LEARNING.md "Photo
-  // memory".
+  // Photo memory (docs/LEARNING.md "Photo memory"): in a genus with few photos the same ones come back and players learn
+  // the photos rather than the genus. One rule for the sheet, the admin and the app: an answer on a photo is expected
+  // easier by an offset (logits subtracted from its difficulty) that depends on the player's own history with that
+  // photo, [times shown, times right] (H in the replay, s.ps in the app): bucket 0 new, 1 shown but never right, 2 right
+  // once, 3 right twice or more (memBucket). A question with several photos takes the mean offset of its photos (memFam).
+  // New is the reference, 0. The other three are estimated from the trusted answers in the same replay as the photos and
+  // the players (eloReplay, Code.gs stats_): after each answer, each offset its photos fall in moves by its surprise over
+  // the information gathered so far plus the prior's (a Newton step, as Glicko moves a rating), the prior MEM.PRIOR (the
+  // fixed rule PHOTO_W as offsets: 0, -0.5, -0.5, -1.5) weighing as much as MEM.N answers at the game's usual chance (80%,
+  // 4 choices). N 10: answers on a remembered photo are 90% right or more and each tells little, so a few dozen move a
+  // bucket about two thirds of the way to what they show. ?stats=1 serves the estimate as mem (memn: answers behind each
+  // bucket); the app falls back to the prior without it (memOf).
   const MEM = {N: 10, PRIOR: [0, -PHOTO_W.NEW, -PHOTO_W.NEW, PHOTO_W.KNOWN - PHOTO_W.NEW]};
   const memBucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3);
   const memFam = (hs, mem) => (hs.length ? hs.reduce((t, h) => t + mem[memBucket(h)], 0) / hs.length : 0);
-  // The offsets of a ?stats=1 reply (mem, sheet v26), or the prior from an older sheet.
+  // The offsets of a ?stats=1 reply (mem), or the prior when it has none.
   const memOf = m =>
     Array.isArray(m) && m.length === 4 && m.every(x => typeof x === 'number' && isFinite(x)) ? m.slice() : MEM.PRIOR.slice();
   // Fisher information of one answer at ability - difficulty x with k choices; the prior's weight is MEM.N of them at
@@ -3105,19 +3101,19 @@
       p = 1 / k + (1 - 1 / k) * s;
     return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p));
   };
-  // Hierarchical photo Elo (Pierre, 2026-11-03; docs/LEARNING.md "Hierarchical photo Elo"): a photo's difficulty is its
+  // Hierarchical photo Elo (docs/LEARNING.md "Hierarchical photo Elo"): a photo's difficulty is its
   // genus's offset plus its own residual, the player rule "global level + genus" (Pelánek et al. 2017) applied to the
   // photos. Both move on every trusted answer by the same surprise: the residual as the photo rating always did, the
   // genus offset by GENUS_K / (1 + its weighed answers / 10), the photos' damping form. A photo nobody has answered starts
   // at its genus's offset instead of 0. GENUS_K 0.4: on the real answer log, replayed with each answer scored before it
   // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
-  // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd (sheet v31), the photos' ratings as totals.
+  // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd, the photos' ratings as totals.
   const GENUS_K = 0.4;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
-  // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
-  // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
-  // and the photos used the fixed rule, so the two pulled apart).
+  // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf),
+  // weighed as above. All against the same expectation, photo memory included, so the level and the photos never pull
+  // apart.
   // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
   // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
   // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
@@ -3190,9 +3186,9 @@
     const {mem, memn} = eloReplay(rows);
     return {mem, memn};
   }
-  // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: the replay of the real
-  // answer log moved the bars down 1-3 points, so no pop-up). Every answer since the change weighs a right answer on a
-  // known photo x pgMemW (model.js); the answers before it counted in full. The device keeps no answer log for a
+  // Progress saved before the photo memory, recalculated once and silently (the replay of the real answer log moved the
+  // bars down 1-3 points, so no pop-up). Every answer since the change weighs a right answer on a known photo x pgMemW
+  // (model.js); the answers before it counted in full. The device keeps no answer log for a
   // signed-in player (the sheet has it), only each genus's record: its photos [shown, right] (s.ps). A uniform factor f
   // on the right answers' weights multiplies the moving average's balance odds by f (pg = p w / (p w + (1 - p) m) for a
   // success rate p, right weight w, miss weight m), so pg' = f pg / (f pg + 1 - pg), f the mean weight of the genus's
@@ -3204,17 +3200,14 @@
   // change) and travels with s.pg between devices (mergeProgress, mergeUsers), so no device corrects a record twice; a
   // record made after the change is marked at its first answer (quiz.js answer) and never corrected. Returns true when
   // it marked the record now or dropped a former learned mark (below).
-  // Learned under the former model (Pierre, 2026-11-03: "I find it hard to believe that the two genera marked as learned
-  // really are"): a genus learned on a record without s.pg passed its exam under BKT (before 2026-11-02), whose
-  // estimate reached 95% after about 4 right answers, so the exam came at once, mostly against easy choices; replayed
-  // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
-  // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
-  // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
-  // (s.pg kept beside s.mx) is left alone. Silent (Pierre, 2026-11-09 ~15:40 Manila, Q332): the app sees the mark go
-  // (model.js mxRecalc) and tells nothing; until then a card told it once (progress.js mxLostNotice) and the
-  // learned-based achievements the progress no longer met were taken back (achRevoke, progress.js achRecheck).
-  // Since the sheet's full replay (replayProgress, RVS; 2026-11-03) this is only the fallback for a device that never
-  // reaches the sheet: a record adopted from the replay carries pm 1, so it is never corrected here.
+  // Learned under the former model (docs/LEARNING.md "Learned under the former model"; decision in
+  // docs/decisions/2026-11-18-decisions-from-code-comments.md): a genus learned on a record without s.pg passed its exam
+  // under BKT, whose estimate reached 95% after about 4 right answers; replayed with today's rules (tools/memreplay.js)
+  // those genera stand at 78-83%, under the exam's entry. Their learned mark (and any exam in course) is dropped at every
+  // call (load, pull, answer: a copy from another device that still has it loses it too); the genus keeps its bar (pgOf,
+  // s.h) and takes the exam again. An exam passed since (s.pg kept beside s.mx) is left alone. Silent: the app sees the
+  // mark go (model.js mxRecalc) and tells nothing. This is only the fallback for a device that never reaches the sheet's
+  // full replay (replayProgress): a record adopted from the replay carries pm 1, so it is never corrected here.
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
@@ -3252,20 +3245,20 @@
     );
     return out;
   }
-  // The genus offsets as Code.gs ?stats=1 gd (v31): {genus: [offset, weighed answers]}.
+  // The genus offsets as Code.gs ?stats=1 gd: {genus: [offset, weighed answers]}.
   function genusOffsetsOf(rows) {
     const {G} = eloReplay(rows);
     return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
-  // Confusions between genera (Pierre, 2026-11-01): from the answer log rows (as eloOf; row[10] = the genera offered,
-  // space-separated, logged since sheet script v10). pair["A|B"] (A before B alphabetically) = [offered together, mixed up]:
-  // one was shown with the other among the choices, and the other was answered. Same counts as Code.gs stats_ conf (tests
-  // check it). dir["shown|other"] = [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without
-  // their choices (before v10): they can't be turned into a rate, only counted.
+  // Confusions between genera: from the answer log rows (as eloOf; row[10] = the genera offered, space-separated).
+  // pair["A|B"] (A before B alphabetically) = [offered together, mixed up]: one was shown with the other among the
+  // choices, and the other was answered. Same counts as Code.gs stats_ conf (tests check it). dir["shown|other"] =
+  // [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without their choices (the oldest
+  // rows): they can't be turned into a rate, only counted.
   function confusionOf(rows) {
     const trust = trustOf(rows);
-    rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_ (v17)
+    rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_
     const pair = {},
       dir = {},
       old = {},
@@ -3296,18 +3289,17 @@
   }
   // Confusion score of a pair: its mix-up rate when offered together, starting from a prior rate worth CONF.W offers (the
   // declared look-alikes of the IMR lecture and the Coral Finder start high), then following the players' real answers.
-  // N (2026-11-04): the offers a pair needs before the data can make it a look-alike (dataLook, below).
+  // N: the offers a pair needs before the data can make it a look-alike (dataLook, below).
   const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2, N: 20};
   const confScore = (c, prior) => ((c ? c[1] : 0) + CONF.W * prior) / ((c ? c[0] : 0) + CONF.W);
-  // A look-alike from the data (Pierre, 2026-11-04: "if the data says people constantly confuse two genera, they become
-  // look-alikes by force; that was the point of the confusion data: to find look-alikes the courses never named"): a
-  // pair offered together CONF.N times or more (c, the pooled [offered, mixed up]) whose pooled score (score, confScore
-  // on the pair's own prior: same family, a shared growth form or neither) reaches CONF.TRAP. The prior's weight (CONF.W
-  // offers at a low rate) is what makes it clear: at 20 offers a pair of unrelated genera needs 6 mix-ups (30%), when
-  // the declared look-alikes were mixed up 13% of the time they were offered (the real answers of 2026-11-03).
+  // A look-alike from the data (docs/LEARNING.md "Confusion groups"): genera the players keep confusing become
+  // look-alikes, which the courses may never have named. A pair offered together CONF.N times or more (c, the pooled
+  // [offered, mixed up]) whose pooled score (confScore on the pair's own prior: same family, a shared growth form or
+  // neither) reaches CONF.TRAP. The prior's weight (CONF.W offers at a low rate) keeps it clear: at 20 offers a pair of
+  // unrelated genera needs 6 mix-ups (30%), where the declared look-alikes are mixed up about 13% of the time.
   const dataLook = (c, score) => !!c && c[0] >= CONF.N && score >= CONF.TRAP;
   // How much harder a question is for a player who mixes up its genus with one of its choices more than everyone does
-  // (2026-11-04, docs/LEARNING.md "Known mix-ups"): the player's own score of the pair (own, pairConf, shrunk toward the
+  // (docs/LEARNING.md "Known mix-ups"): the player's own score of the pair (own, pairConf, shrunk toward the
   // pooled score as confOf does) against the pooled score, in logits, when higher; 0 for a pair the player mixes up no
   // more than everyone. The pooled score already shows in the photos' difficulty (every player's answers); this is the
   // player's own excess, so it is never counted twice. No constant: confScore's own prior weight sets how fast it grows.
@@ -3317,7 +3309,7 @@
     return Math.max(0, logitOf(Math.min(0.99, confScore(own, q))) - logitOf(q));
   };
   // One player's own record on a pair (progress P): [times the two were offered together, times mixed up], both directions.
-  // Offers are counted since 2026-11-01 (P[g].off); mix-ups logged before that count as offered at least once each.
+  // Offers (P[g].off) are missing from the oldest records: a mix-up counts as offered at least once.
   function pairConf(P, a, b) {
     const x = P[a] || {},
       y = P[b] || {},
@@ -3325,18 +3317,18 @@
     return [Math.max(mix, ((x.off || {})[b] || 0) + ((y.off || {})[a] || 0)), mix];
   }
 
-  // An apology, once (Pierre, 2026-11-04): from the opening rule of #408 (merged FROM) to this fix, the app opened too
-  // many genera at once to strong players and did not ease the questions after misses. Only to the players who really
-  // felt it (Pierre: "a player who answered a single question then must not get it"), read from the device's own data
-  // when this version first runs on it (progress.js sorryNotice keeps it, so later play changes nothing):
+  // An apology, once (docs/ARCHITECTURE.md "Progress sync (Google Sheet)"; decision in
+  // docs/decisions/2026-11-18-decisions-from-code-comments.md): between FROM and the fix, the app opened too many genera
+  // at once to strong players and did not ease the questions after misses. Only to the players who really felt it, read
+  // from the device's own data at its first run of the fix (progress.js sorryNotice keeps it):
   // - n: their answers in the window, at least SORRY.N (20). Exact from the answers the device still keeps (signed out:
   //   all of them); else the answers since the last card shown before FROM (the cards keep the answers count and time).
   // - h: the opening hold's sum then (model.js holdStep: a CUSUM of the shortfall against each answer's expected
   //   success e, 0.1 allowed per answer), so where their last run ended: SORRY.H (3, 2 x INTRO.HOLD, the evidence the
   //   back-to-one-at-a-time card asks for) or more; or half of it with SORRY.CARDS (4, one more than OPEN.MAX now allows)
   //   genera or more opened on cards within OPEN.WIN answers in the window (c, the most in any 15).
-  // On the real answers (2026-11-03) it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31
-  // answers, h 4.31) and nobody else; a run at the expected success ends at 3 or more about 2-5% of the time
+  // On the real answers it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31 answers, h 4.31)
+  // and nobody else; a run at the expected success ends at 3 or more about 2-5% of the time
   // (simulated, 20-80 answers at e 0.7-0.9). Not after UNTIL: a player back weeks later would not know what it is about.
   const SORRY = {FROM: Date.parse('2026-11-03T11:34:11Z'), UNTIL: Date.parse('2026-11-17T00:00:00Z'), N: 20, H: 3, CARDS: 4, WIN: 15};
   const sorryFelt = ({n, h, c}) =>
@@ -3359,8 +3351,8 @@
     };
   };
   const sorryDue = ({felt, now, shown}) => !shown && now < SORRY.UNTIL && !!felt && sorryFelt(felt);
-  // The first name to greet a player with, from their sign-in name (Pierre, 2026-11-04, for every personalised card,
-  // rule U10): the first word ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
+  // The first name to greet a player with on a personalised card (rule U10), from their sign-in name: the first word
+  // ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
   // only the letters it starts with (an apostrophe or a hyphen inside kept: "O'Neil", "Jean-Luc"), so a name with no
   // letter first ("~a12", "123") gives '' and the card says a plain "Hi!".
   const firstName = name => {
@@ -3369,14 +3361,13 @@
     return w ? w[0].toUpperCase() + w.slice(1) : '';
   };
   const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
-  // Account names refused for a new account or an archive name (Pierre, 2026-11-09): a name holding, as one of its words,
-  // a member name of Object.prototype or a word like it (prototype). Such a name, as a key of a plain object (the sheet's
-  // maps by player: stats, replays, board, groups), reads the inherited member instead of an entry; the code no longer
-  // relies on it (maps with no prototype), and the front door refuses them too. Words split as Code.gs PROTO_RE splits a
-  // value (spaces, | : ,), any capitalisation (the sheet matches names case-blind, and keys them in lower case). An
-  // account that already has such a name keeps working: only a sign-up (the app's form, Code.gs doPost_ with no row
-  // yet) and an archive name (users_ userArchive) are refused, with error 'reserved'. The list is the one Pierre saw;
-  // whatever else this engine's Object.prototype has is refused as well.
+  // Account names refused for a new account or an archive name: a name holding, as one of its words, a member name of
+  // Object.prototype or a word like it (prototype). As a key of a plain object such a name reads the inherited member;
+  // the sheet's maps by player have no prototype, and the front door refuses them too. Words split as Code.gs PROTO_RE
+  // splits a value (spaces, | : ,), any capitalisation (the sheet keys names in lower case). An account that already has
+  // such a name keeps working: only a sign-up (the app's form, Code.gs doPost_ with no row yet) and an archive name
+  // (users_ userArchive) are refused, with error 'reserved'. Whatever else this engine's Object.prototype has is refused
+  // as well.
   const RESERVED_NAMES = [
     '__proto__',
     'constructor',
@@ -3393,11 +3384,10 @@
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
-  // The seedling 🌱 is the admin's own mark after his name (Pierre, 2026-11-09, Q328 corrected: "an icon the others are not
-  // allowed to have", added on its own, the name unchanged): the app shows it after the admin's account name (Code.gs
-  // adminAcct_, v125; adminMark below), and no player may show it: a new account or an archive name holding it, or one
-  // of its look-alikes, anywhere is refused as reserved. Seedling, herb, potted plant, shamrock, four-leaf clover,
-  // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
+  // The seedling 🌱 is the admin's own mark after his name, the name unchanged (docs/ARCHITECTURE.md "Pages and routing"): the
+  // app shows it after the admin's account name (Code.gs adminAcct_; markHtml below), and no player may show it: a new
+  // account or an archive name holding it, or one of its look-alikes, anywhere is refused as reserved. Seedling, herb,
+  // potted plant, shamrock, four-leaf clover, leaf fluttering in wind (a variation selector after it changes nothing).
   const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
   const SEED_RE = new RegExp('[' + SEED_LOOKALIKES.join('') + ']', 'u');
   const reservedName = name =>
@@ -3406,7 +3396,7 @@
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
   const SEED = '\u{1F331}';
-  // The admin's mark (v125): the script knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its leaderboard
+  // The admin's mark: the script knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its leaderboard
   // rows, admin: 1 in its load reply). markRow: whether a leaderboard row carries it. markHtml: the mark itself, plain
   // text after the name's element, outside its text (the name stays the account's name).
   const markRow = row => Array.isArray(row) && row[3] === 1;
@@ -3443,7 +3433,7 @@
     return m;
   }
 
-  // Pierre's curation and the photos per context (moved from app.js, code re-review 2026-11-01 M2, so the rules can be tested).
+  // Pierre's curation and the photos per context (here, not in app.js, so the rules can be tested).
   const VIEWS = [
     ['wide', 'Colony'],
     ['medium', 'Close-up'],
@@ -3454,12 +3444,12 @@
   // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
   // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
   function applyCuration(d, c) {
-    // The Coral Finder book's crops left the app on 2026-11-08 (Pierre: copyrighted, R. Kelley / BYOGUIDES). curation.json
-    // still names some (add, feat, quality, crop, seen: rule A1, never rewritten): those ids match no photo, so every step
-    // below drops them (tests/nobook.test.js).
+    // The Coral Finder book's crops are out of the app (copyrighted; docs/ARCHITECTURE.md "Photos"). curation.json still
+    // names some (rule A1: never rewritten): those ids match no photo, so every step below drops them
+    // (tests/nobook.test.js).
     // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
-    // So do the coral skeleton photos (data.json skel: 1, rule P6, Pierre, 2026-11-09: never shown, the features cannot
-    // be seen properly; tools/apply_skeletons.py from judging/skeletons.json; tests/skeletons.test.js).
+    // So do the coral skeleton photos (data.json skel: 1, rule P6: the features cannot be seen properly;
+    // tools/apply_skeletons.py; tests/skeletons.test.js).
     const X = (c && c.exclude) || {},
       keep = L => (L || []).filter(p => !X[p.f] && !p.skel);
     Object.values(d.gen).forEach(g =>
@@ -3576,20 +3566,16 @@
       }
     });
   }
-  // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
-  // photos from other iNat observers only fill a set that is short. Per genus
-  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept
-  // (game: the featured first, then IMR/own, each by quality, Poor last; until 2026-11-03 it was split into Easy / Medium
-  // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
-  // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
-  // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Coral ID Key (needs variety) = featured + 5 photos from other iNat observers (Pierre, 2026-11-08: 2 before; field
-  // photos fill the variety the Coral Finder book's crops gave, removed that day). Pierre's picks (feat, hide, quality,
-  // use) always win; Claude's suggestions (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'}
-  // keeps a photo on the sheet only or in games only. Nothing is written back: photos left out simply stay unused.
+  // Photos per context (applySlots; docs/ARCHITECTURE.md "Photos per context"). Every IMR photo and every photo of
+  // Pierre's own is used, with no cap; photos from other iNat observers only fill a set that is short. Per genus and
+  // view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept (the
+  // featured first, then IMR/own, each by quality, Poor last: the players' answers rate them); Coral ID Key (needs
+  // variety) = featured + 5 photos from other iNat observers. Pierre's picks (feat, hide, quality, use) always win;
+  // Claude's suggestions (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo
+  // on the sheet only or in games only. Nothing is written back: photos left out simply stay unused.
   const CAP = {feat: 3, sheet: 6, inat: 5};
-  // A Coral Finder book crop's id (<genus>-cf-<page>-<tag>). The crops left the app and the repository on 2026-11-08
-  // (Pierre); curation.json still names some (rule A1: never rewritten), ids that match no photo any more.
+  // A Coral Finder book crop's id (<genus>-cf-<page>-<tag>). The crops are out of the app and the repository;
+  // curation.json still names some (rule A1: never rewritten), ids that match no photo.
   const cfCrop = f => /^[a-z]+-cf-\d/.test(f || '');
   // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
@@ -3633,17 +3619,16 @@
       VIEWS.forEach(([v]) => {
         const field = (g.views[v] || []).filter(p => !p.multi),
           q = p => qualOf(c, p.f),
-          // Equal quality: an open licence or his own first (rightsRank, Q270), else the list's order: the sheet, the
+          // Equal quality: an open licence or his own first (rightsRank), else the list's order: the sheet, the
           // featured photos and the Coral ID Key. The game list keeps the quality order alone (byQ0), its featured lead
-          // included, so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence
-          // (Codex review #742).
+          // included, so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence.
           byQ0 = L => L.slice().sort((a, b) => q(b) - q(a)),
           byQr = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
         // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
         // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
         // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
-        // A pin or a suggestion naming no photo (a removed one: a Coral Finder book crop, 2026-11-08) is dropped.
+        // A pin or a suggestion naming no photo (a removed one: a Coral Finder book crop) is dropped.
         const slot = byQ => {
           const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
           const others = byQ(all.filter(p => !isCore(p)));
@@ -3670,12 +3655,12 @@
           feat0 = slot(byQ0).feat;
         // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
         const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
-        // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral photos.
+        // Games: field photos and IMR lecture photos, never multi-coral photos.
         const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
-        // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
-        // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
+        // One list per view (docs/LEARNING.md "Hierarchical photo Elo"): the featured game photos first, then IMR / own
+        // before other observers, each by quality, Poor last.
         const lead = feat0.filter(p => gm.includes(p)),
           after = [...core, ...rest].filter(p => !lead.includes(p));
         g.sl[v] = {
@@ -3696,17 +3681,18 @@
     });
   }
 
-  // Global player level (Pierre, 2026-11-01: "good beta testers must not wait 100 questions for it to get harder"): the
-  // starting ability of a genus the player has never answered. The player's global ability is an Elo over ALL their answers
-  // (app.js keeps it in the progress as the pseudo-genus LEVEL, '~level': ok, ko and th like a genus, so it syncs and
-  // merges like one); progress saved before it existed falls back on the mean ability of the genera answered. It is shrunk
+  // Global player level (docs/LEARNING.md "Global level and genus"; decision in
+  // docs/decisions/2026-11-18-decisions-from-code-comments.md): the starting ability of a genus the player has never
+  // answered. The player's global ability is an Elo over ALL their answers (app.js keeps it in the progress as the
+  // pseudo-genus LEVEL, '~level': ok, ko and th like a genus, so it syncs and merges like one); a record without it
+  // falls back on the mean ability of the genera answered. It is shrunk
   // towards 0 while answers are few (M / (M + N)) and only partly carried over (W: knowing Acropora well says something,
   // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
   // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
   // on the genus saves its own ability (s.th) from there.
-  // p (2026-11-03, the first-launch question, CHOICE below): the level the player said they start from. The answers are
-  // shrunk towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the
-  // default, "I'm new to corals") is the rule as it was. No new constant.
+  // p (the first-launch question, CHOICE below): the level the player said they start from. The answers are shrunk
+  // towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the default,
+  // "I'm new to corals") shrinks towards 0.
   const LEVEL = '~level',
     START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
   function playerStart(P, skip, p = 0) {
@@ -3731,28 +3717,25 @@
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
   }
 
-  // The first-launch question (Pierre, 2026-11-03): a forced choice among three, in the welcome tour before the first
-  // question (or on a card before the next quiz question for a player who skipped the tour, and once for an existing
-  // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
-  // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
-  // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
-  // the shaky signal that paces the opening of genera); v.basics, Coral basics offered first. "new" is the
-  // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
-  // launch question". Each subject asks its own (SUBJECTS start: its words; the fish welcome question, Pierre 2026-11-04),
-  // with these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the
-  // progress): {c, t, at, via, w, v, hd, fb, h}.
+  // The first-launch question (docs/LEARNING.md "The first-launch question"): a forced choice among three, in the welcome
+  // tour before the first question (or on a card before the next quiz question for a player who skipped the tour, and
+  // once for an existing player with fewer than ASK answers; from ASK answers on the choice is inferred silently:
+  // startInfer). It initialises a few variables of the existing model, never a coded path: v.p, the level the answers
+  // are shrunk towards (playerStart: the starting ability of a genus never answered, hence the photos, traps and single
+  // views of its first questions, and the shaky signal that paces the opening of genera); v.basics, Coral basics offered
+  // first. "new" is the default (a new player is a beginner). Each subject asks its own (SUBJECTS start: its words), with
+  // these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the progress):
+  // {c, t, at, via, w, v, hd, fb, h}.
   // Fallback (for everyone, also those who answered: they may have picked wrong): the answers after the choice (w:
   // [difficulty, guess rate, right, first answer on its genus], kept up to the last checkpoint) are checked at AT (40
-  // and 60) answers only (Pierre, 2026-11-04: no card before 40 answers in either direction, "an expert, 20 answers
-  // isn't enough: with few genera unlocked even a mediocre player gets everything right"; startCheck). The level each
-  // answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to
-  // 0.875, know well above). The rule reads the level the game already keeps, the global level (the Elo over every
-  // answer, difficulty allowed for), with its standard error over the window (Pierre's pick, 2026-11-04, variant
-  // "Ba80H", after weighing the errors: a true beginner left on a harder path is the costliest one, so "lower" is
-  // sensitive and its card a gentle offer, cheap when it is wrong): 'lo' (Coral basics, or a lower answer; only for the
-  // answers with a floor, IMR course and know well) when the global level is below the floor with one-sided 80%
-  // confidence (ZL), or the opening hold has fired in the window (#425 eases the questions then, so the misses do not
-  // show in the level); 'hi' (a higher answer), with OFFER.MET (10) genera met, when the global level is above the
+  // and 60) answers only: with few genera unlocked even a mediocre player gets everything right at 20 (startCheck). The
+  // level each answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR
+  // course 0.25 to 0.875, know well above). The rule reads the global level (the Elo over every answer, difficulty
+  // allowed for), with its standard error over the window (variant "Ba80H": a true beginner left on a harder path is the
+  // costliest error, so "lower" is sensitive and its card a gentle offer): 'lo' (Coral basics, or a lower answer; only
+  // for the answers with a floor, IMR course and know well) when the global level is below the floor with one-sided 80%
+  // confidence (ZL), or the opening hold has fired in the window (it eases the questions, so the misses do not show in
+  // the level); 'hi' (a higher answer), with OFFER.MET (10) genera met, when the global level is above the
   // band's ceiling with 95% confidence (Z, as the admin's level margin) and, as a guard only, the level fitted on each
   // genus's FIRST answer (before the game has adapted to it; levelFit) is above the ceiling too: a player who did well
   // only on the few genera they have learned is not moved up. The simulation, the real log and the variants compared:
