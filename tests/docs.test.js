@@ -9,9 +9,14 @@ const test = require('node:test'),
   crypto = require('crypto');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+// The specification files ARCHITECTURE.md's map sections point to (docs restructuring of 2026-11-18, PR 4).
+const SPECS = fs
+  .readdirSync(path.join(ROOT, 'docs', 'spec'))
+  .filter(f => /\.md$/.test(f))
+  .map(f => 'docs/spec/' + f);
 
 test('no running "done" list in the living docs', () => {
-  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md'])
+  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', ...SPECS])
     assert.ok(!/^#+ .*\b(Done|Shipped|Changelog)\b/im.test(read(f)), f + ': a done / shipped / changelog section');
 });
 
@@ -30,7 +35,7 @@ test('the archived done list stays frozen', () => {
 // The deploy stamps the version numbers: no doc may tell a PR to bump them by hand or to run the retired
 // check_versions.py flags (--fix, --base, --no-base).
 test('the docs never tell a PR to bump version numbers by hand', () => {
-  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
+  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md', ...SPECS])
     assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
 });
 
@@ -351,6 +356,17 @@ test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in o
   assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
 });
 
+// ARCHITECTURE.md is a map: each docs/spec/ file is reached from it, so no specification is orphaned.
+test('every docs/spec/ file is linked from docs/ARCHITECTURE.md', () => {
+  const arch = read('docs/ARCHITECTURE.md');
+  assert.ok(SPECS.length > 0, 'docs/spec/ holds no specification');
+  assert.deepStrictEqual(
+    SPECS.filter(f => !arch.includes('](' + f.replace(/^docs\//, ''))),
+    [],
+    'docs/spec/ files no ARCHITECTURE.md section links to'
+  );
+});
+
 test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {
   const dir = path.join(ROOT, '.github', 'workflows'),
     files = fs.readdirSync(dir).filter(f => /\.ya?ml$/.test(f)),
@@ -370,7 +386,7 @@ test('docs/PAGES.md lists every workflow, and only workflows that exist', () => 
 });
 
 // The identifier-existence check: the code identifiers the governing docs cite in
-// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
+// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE and its docs/spec/ files, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
 // follows or takes over from. ROADMAP and STATUS name work to come and are overwritten daily, README / PAGES / FORMATS / DESIGN
 // have no habit of naming code, and the archive and the copied reviews are history. Offline: files only. Two forms count:
 //   - a backticked path (`tools/x.py`, `tests/y.test.js`, `admin.js`, `tools/` ...) exists: from the root, from the doc's own
@@ -386,6 +402,7 @@ const ID_DOCS = [
     .filter(f => /\.md$/.test(f))
     .map(f => 'docs/rules/' + f),
   'docs/ARCHITECTURE.md',
+  ...SPECS,
   'docs/HANDOVER.md',
   'docs/INTEGRATOR.md',
   'docs/LEARNING.md'
