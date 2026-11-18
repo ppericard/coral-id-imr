@@ -517,6 +517,29 @@ test('live.js: an accepted answer waits, kept per tab, until it is logged; a fai
   );
 });
 
+test('live.js: a page redrawn while an answer is being logged never logs it twice (Codex review #1049)', async () => {
+  let open;
+  const held = new Promise(ok => (open = ok)),
+    logged = [],
+    A = liveApp(() => ({}), {SYNC: {name: 'Ann'}, UNITS: {fish: {load: () => held}}});
+  A.ctx.liveLog = (S, o) => (logged.push(o.qi), 'ok');
+  onQuestion(A);
+  const past = {qi: 0, t: 'Acropora', c: 'Acropora', ch: CH4.map(c => c[0]), f: ['acropora-1']};
+  A.run(`liveCatch(${JSON.stringify({ok: true, ph: 'rev', qi: 0, s: 'fish', hn: 1, past: [past]})})`);
+  await settle();
+  // The route draws the live page again (viewLive: LV made again from the tab's copy) while the fish data is on its way.
+  A.run(`viewLive('live')`);
+  open();
+  await settle();
+  assert.deepStrictEqual(logged, [0]);
+  assert.strictEqual(A.run('LV.pend.length'), 0);
+  assert.deepStrictEqual(JSON.parse(A.store['reefid-live-me']).pend, []);
+  // The next poll finds nothing left to log.
+  A.run(`liveCatch(${JSON.stringify({ok: true, ph: 'rev', qi: 0, s: 'fish', hn: 1})})`);
+  await settle();
+  assert.deepStrictEqual(logged, [0]);
+});
+
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {
   let loaded = false;
   const A = liveApp(

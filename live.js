@@ -408,7 +408,7 @@ function liveFlush() {
       (p, o) =>
         p.then(n =>
           liveRecord(o).then(r => {
-            if (r !== 'fail' && LV === me) ((me.pend = me.pend.filter(x => x !== o)), liveSave());
+            if (r !== 'fail') liveDone(me, o.qi);
             return n + (r === 'ok' ? 1 : 0);
           })
         ),
@@ -416,6 +416,16 @@ function liveFlush() {
     )
     .finally(() => (LVF = null));
   return LVF;
+}
+// Answer qi of game me out of the queue: of me, of the LV the page holds now for the same game (viewLive makes it again
+// from the tab's copy, a drain may be on its way meanwhile) and of the tab's copy, so it is never logged twice.
+function liveDone(me, qi) {
+  const same = x => x && x.code === me.code && x.pid === me.pid,
+    out = L => (L || []).filter(x => x.qi !== qi);
+  me.pend = out(me.pend);
+  if (same(LV)) return void ((LV.pend = out(LV.pend)), liveSave());
+  const k = liveGet(LIVE_KEY.ME);
+  if (same(k)) liveSet(LIVE_KEY.ME, {...k, pend: out(k.pend)});
 }
 // The end screen's drain: tried again while something still waits (no connection), then says how many were kept.
 function liveKeep(n0 = 0) {
