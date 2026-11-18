@@ -5402,9 +5402,9 @@
       const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p, q.from),
         look = typeof q.look === 'function' ? !!q.look() : !!q.look;
       let w = null;
-      // The bar (Q135): the domain score from the player's own answers on the genus, the question's difficulty as the game
+      // The bar: the domain score from the player's own answers on the genus, the question's difficulty as the game
       // scores it (photo, memory, mix-ups), its format and recall (domStep); a record not rebuilt under these rules yet,
-      // or a game whose sheet does not replay them yet (q.dom false, rule D4), the former moving average as before.
+      // or a replay with q.dom false (rule D4), the moving average.
       if (domIn(q, s)) domStep(s, ok, dm, k, R, domF(q, q.mu));
       else {
         // The miss weighs against the aim at the player's level before this answer's own step on it.
@@ -5427,7 +5427,7 @@
     // any other genus was a possible answer, the false-alarm rate's denominator (faOf).
     if (!isFinite(k)) {
       // Per rank (rankKey: a fish family's f:, a genus's g:; the corals none): a typed answer can only be a unit of the
-      // rank asked (quiz.js typeMatch), so only those are possible answers (Codex review #646).
+      // rank asked (quiz.js typeMatch), so only those are possible answers.
       const tk = (P[LEVEL].tyk = P[LEVEL].tyk || {}),
         rk = rankKey(t);
       tk[rk] = (tk[rk] || 0) + 1;
@@ -5435,11 +5435,9 @@
     }
     if (scored) {
       eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p, slopeOf(q));
-      // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
-      // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
-      // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
-      // level before (eloStep's s.lt), it moved the genus once by its own step and again, at its next question, by the
-      // share of the level's step on the same answer (a first right answer: 0.30, then 0.22 more).
+      // One surprise counted once (docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it
+      // stands after this answer's step on it, so its levelMove carries only the level's moves from the other answers
+      // (against the level before, the genus would also take, at its next question, the level's step on this answer).
       s.lt = P[LEVEL].th;
     }
     if (q.rt !== false) rtAdd(P[LEVEL], q.sec, k);
@@ -5454,7 +5452,7 @@
     });
     if (q.hint) (ps[q.hint] = ps[q.hint] || [0, 0])[0]++;
     s.h = (s.h + (ok ? 1 : 0)).slice(-10);
-    // Pierre's rule L2: a wrong answer counts against the genus given too: its progress by the chance the player had on it
+    // Rule L2: a wrong answer counts against the genus given too: its progress by the chance the player had on it
     // (its own ability now, against the photo's difficulty without the memory, which is of the genus shown; its recall
     // Rc after a break), a miss in its recent results, its run reset. Not its ability (docs/LEARNING.md "The genus wrongly
     // given in the Elo"): the Elo moves on the questions about the genus itself.
@@ -5463,7 +5461,7 @@
       if (scored) {
         const Rc = typeof q.Rc === 'number' ? q.Rc : 1;
         // The bar: no miss in its posterior (a false alarm, counted by its record's offers and mix-ups and taken off its
-        // bar by faOf, Q174); a record of the former rules (s.pg): a miss on the photo shown, as before.
+        // bar by faOf); a record under the moving average (s.pg): a miss on the photo shown.
         if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p, q.cfrom), d0, k, Rc, aimOf(P[LEVEL].th)));
         delete x.L;
         x.u = (x.u || 0) + 1;
@@ -5473,15 +5471,15 @@
     }
     return out;
   }
-  // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring,
-  // Code.gs v61, and the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log
-  // (Pierre, 2026-11-06, Q132: "replayed" means what the game scored, whenever and wherever it is replayed).
+  // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring, and
+  // the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log, so a
+  // replay scores what the game scored, whenever and wherever it runs.
   // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
-  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (Q138:
-  // the sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c,
-  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
-  // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
-  // before the scorer, or broken).
+  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (the
+  // sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c, r,
+  // g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below). Numbers to 3
+  // decimals: the game rounds them before scoring (scoreIn), so the replay meets exactly what it used. x: the record as
+  // an object or its JSON (a sheet cell); null when it has no d (a row logged before the scorer, or broken).
   const SC_MAX = 50;
   const r3 = x => Math.round(x * 1000) / 1000;
   const scNum = x => (typeof x === 'number' && isFinite(x) && Math.abs(x) <= SC_MAX ? r3(x) : null);
@@ -5503,9 +5501,9 @@
     if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
     if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
     if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
-    // The domain-score bar's inputs (rules version 9): m the genus offset of the genus shown and n that of the genus
-    // given (kept even at 0: absent means a row logged before, whose replay takes the sheet's gd), o (above) the format's offset
-    // df, which the bar takes too, and t the typed format's dt (left out at 0), s the shared slope (left out at 1).
+    // The domain-score bar's inputs: m the genus offset of the genus shown and n that of the genus given (kept even at 0:
+    // absent means an older row, whose replay takes the sheet's gd), o (above) the format's offset df, which the bar takes
+    // too, and t the typed format's dt (left out at 0), s the shared slope (left out at 1).
     if (scNum(o.m) !== null) out.m = scNum(o.m);
     if (scNum(o.n) !== null) out.n = scNum(o.n);
     if (scNum(o.o)) out.o = scNum(o.o);
@@ -5544,20 +5542,17 @@
       s: q.S
     });
 
-  // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
-  // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
-  // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
-  // an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the announcement card
-  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, rule D6;
-  // with only: 'changed', shown only when the adoption moved the player's progress % by min points or more, {from} and
-  // {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: rule D5);
-  // Pierre is asked only for a different text. The sync script, which embeds this file
-  // (tools/sync_core.py), replays a player's log again when their stored replay is older than RV, and the app adopts a
-  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay". The leaderboards follow
-  // on their own (rule D8): the script's 15-minute trigger replays every listed player behind the new version (Code.gs
-  // boardWarm_), and each board ranks them by what their app will adopt (board_, replayAdopted); nothing to add here.
-  // The standard recalculation card (Pierre, 2026-11-03: "only to the players whose progress the replay moves a lot; if
-  // it moves everyone a lot, everyone gets it"): shown to a player whose progress % the adoption moved by 5 points or
+  // Rules versions: progress is recalculated from the whole answer log, by the sheet, whenever the progress engine
+  // changes (docs/LEARNING.md "Full replay"; rules D5, D6, D8, D9). Every change to a rule that moves the progress (what
+  // an answer weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...)
+  // appends an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the card
+  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, rule D6; with
+  // only: 'changed', shown only when the adoption moved the player's progress % by min points or more, {from} and {to}
+  // in p being the two %). The sync script, which embeds this file (tools/sync_core.py), replays a player's log again
+  // when their stored replay is older than RV, and the app adopts a replay newer than the one it applied (sync.js
+  // replayAdopt). The leaderboards follow on their own (rule D8): the script's 15-minute trigger replays every listed
+  // player behind the new version (Code.gs boardWarm_), and each board ranks them by what their app will adopt.
+  // The standard recalculation card (rule D5): shown to a player whose progress % the adoption moved by 5 points or
   // more, either way (progress.js rvNoticeAdd), with the two %.
   const RV_CARD = {
     kind: 'update', // the card's kind (app.js cardShow, CARD_KINDS)
@@ -5566,25 +5561,22 @@
     only: 'changed',
     min: 5
   };
-  // The apology of rules version 9 (Pierre, 2026-11-06: the recalculation approved with the domain-score bar; the card
-  // and its PS from PR #611, Q109: sincere, say it does not mean they know less, turn it into encouragement, our mistake
-  // not theirs, the new bar means more; Pierre 2026-11-06: 2-3 short lines, never "bars" but "progress", encouraging: it
-  // is because they learned so fast that the old count could not keep up; no mechanics on the card; heading "Sorry"; his
-  // text of 14:43). Shown to every player whose % the
-  // adoption took down by a point or more (down: a rise gets the standard card when it is of 5 points or more). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab;
-  // sync.js NOTES_KEY), shown small under the text when it is set: Pierre's PS, which may name a player. A name is never
-  // written in the repo (rule D2).
+  // The apology card of the domain-score bar's rules version (Pierre's text; docs/LEARNING.md "The domain-score bar"):
+  // shown to every player whose % the adoption took down by a point or more (down: a rise gets the standard card when it
+  // is of 5 points or more). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js NOTES_KEY),
+  // shown small under the text when it is set: Pierre's PS, which may name a player. A name is never written in the repo
+  // (rule D2).
   const RV_SORRY = {
     kind: 'apology',
     kick: 'Sorry',
     t: 'Sorry: we recalculated your progress',
     p: "You've been learning so fast that our old way of counting couldn't keep up. It wasn't you, it was us: your new progress is lower, but you haven't lost anything you know.",
-    // The two %, on a line of their own that never wraps (Pierre, 2026-11-06: "Your progress: 38% → 24%").
+    // The two %, on a line of their own that never wraps.
     pct: 'Your progress: {from}% → {to}%',
     ps: 'card.rv8.ps',
     only: 'changed',
     min: 1,
-    // Only to the players whose % went down (Pierre, 2026-11-06: the card says the new progress is lower); a rise of
+    // Only to the players whose % went down (the card says the new progress is lower); a rise of
     // RV_CARD.min points or more gets the standard card instead (rvMsgs with skip, progress.js rvNoticeAdd).
     down: true
   };
@@ -5593,8 +5585,6 @@
       v: 1,
       at: '2026-11-03',
       why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given, a genus ability moving with the global level and the miss weighed against the aim at that level (#415), a learned mark kept unless a miss logged after its exam takes it away as the game does',
-      // Pierre, 2026-11-03: the standard card, only for the players whose progress % moves by 5 points or more (several
-      // lose points: the former model's learned marks are dropped).
       msg: RV_CARD
     },
     {
@@ -5607,9 +5597,7 @@
       v: 3,
       at: '2026-11-04',
       why: 'Hierarchical photo Elo (sheet v31): the genus offset enters the expectation the photo memory offsets are fitted against, so the memory offsets the replay uses change',
-      // Codex P1 on #422: mem (?stats=1, Code.gs stats_) feeds replayProgress, so a log replayed under v2 gives other
-      // bars than under v3. Pierre's standing rule (2026-11-03): every rules version gets the standard recalculation
-      // card, only for the players whose progress % moves by 5 points or more.
+      // mem (?stats=1, Code.gs stats_) feeds replayProgress, so this version's replay gives other bars.
       msg: RV_CARD
     },
     {
@@ -5646,22 +5634,21 @@
       v: 9,
       at: '2026-11-06',
       why: "The domain-score bar (Q127-Q129, Q135, sheet v87): a genus's bar is the share of all its possible photos the player would name alone and typed, the posterior expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only (format-aware, the photo's difficulty, memory and mix-ups as scored, a drift per answer so old answers fade), at most 95% until the mastery exam, which opens at 85% once the genus has been asked beside each of its look-alikes; a genus named by mistake counts as a false alarm, its bar less its false-alarm rate (Pr = H - FA, Snodgrass & Corwin 1988), not as a miss on its photos; it replaces the moving average s.pg, and the learned marks passed since 2026-11-02 are kept unless a miss logged after the exam takes them away",
-      // Pierre, 2026-11-06 (Q172): the apology card (PR #611's, Q109) for every player whose % the replay moved; its PS
-      // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
-      // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
+      // The apology card; its PS from the sheet's Notes tab under the key card.rv8.ps, kept as it is so the row Pierre
+      // added there still matches (progress.js rvNotice).
       msg: RV_SORRY
     },
     {
       v: 10,
       at: '2026-11-09',
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
-      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330): the progress is updated everywhere without telling the player.
+      // No card (rule D6): the progress is updated everywhere without telling the player.
       msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
-  // The rules versions of the fish progress replayed by the sheet (SUBJECTS fish replayed rvs; ROADMAP "Fish progress
-  // replayed from the answer log", Pierre 2026-11-08, Q298, Q310): its own list, numbered from 1 as RVS is, so a fish
+  // The rules versions of the fish progress replayed by the sheet (SUBJECTS fish replayed rvs; docs/LEARNING.md "Fish:
+  // the progress replayed from the answer log"): its own list, numbered from 1 as RVS is, so a fish
   // replay never makes a coral device take its replay again, nor the other way round. Each entry as in RVS; its card is
   // told under the subject's id (progress.js rvNoticeAdd: 'fish:1').
   const FISH_RVS = [
@@ -5675,15 +5662,15 @@
       v: 2,
       at: '2026-11-09',
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a unit and its answer count win over the saved copy, also when the copy holds more answers there (counted twice, or played before the fish log began: in no log, so dropped), and no floor any more: a unit's bar may go down.",
-      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
+      // No card (rule D6).
       msg: null
     },
     {
       v: 3,
       at: '2026-11-17',
       why: "Learned asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): a unit's mastery exam is passed only once each variant group it has (its juveniles; its sexes and colour phases), released by its own mastery, has a right answer, its exam drawing that group's photo while one is left (model.js varLeft, examPassed); a learned mark whose unit has a variant group with no right answer in the answer log is taken away by the sheet's replay for every player at once, the leaderboards included (rules D8, D9: replayProgress vars, fishVarTable, replayedOf; Code.gs subjVar_), silently (rule D6), its exam kept as passed but for that group",
-      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330; a learned mark taken away silent too, Q332).
-      // The replay reads the variant table from this version (vars: replayProgress vars; sync.js replayAdoptS).
+      // No card (rule D6). The replay reads the variant table from this version (vars: replayProgress vars; sync.js
+      // replayAdoptS).
       vars: true,
       msg: null
     },
@@ -5691,7 +5678,7 @@
       v: 4,
       at: '2026-11-18',
       why: "The scientific genera of every circle (Pierre, 2026-11-18 ~06:32 Manila, \"lance\"; docs/FISH_PATH.md \"Levels\"): the genera of the families of circles 2 and 3 are units as circle 1's are (fishGenSets: their sibling genera as look-alikes, their family's line), so the sheet's replay counts a wrong pick of one against it (rule L2), its variant table holds them and the score's tree credits their species' scientific names with them (fishScoreTree, fishBoardTree), every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
-      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
+      // No card (rule D6).
       msg: null
     }
   ];
@@ -5711,38 +5698,36 @@
     return S.replay ? RVS : S.replayed && typeof S.replayed.rvs === 'function' ? S.replayed.rvs() : [];
   };
   const rvOf = id => (L => (L.length ? L[L.length - 1].v : 0))(rvsOf(id));
-  // Whether a replay under rules version rv of subject id reads the variant table (FISH_RVS vars; Q391 b): this device's
-  // answers replayed on top of the sheet's then recompute a unit's variant groups left (vl) with them (Codex review #953).
+  // Whether a replay under rules version rv of subject id reads the variant table (FISH_RVS vars): this device's answers
+  // replayed on top of the sheet's then recompute a unit's variant groups left (vl) with them.
   const rvVars = (id, rv) => rvsOf(id).some(e => e && e.vars && e.v <= rv);
-  // The gate floor (architecture review 2026-11-18, R3, step 2): a sheet script version already confirmed live, at least
-  // three days before it was set here, never the version the app is built against (Pages deploys on a push to main, the
-  // script only at its next self-update, so the build's VERSION can run ahead of the live script: rule D4). The app reads
-  // the script version as at least this (sync.js sheetV), also before any reply (a new device, an offline first launch),
-  // and every gate at or below it is gone with its old branch: the full replay (v28), the answer time (v32), the
-  // first-launch prior (v36), each answer filed under its subject (v60), the domain-score bar (v87), the surprise cards'
-  // answers (v98), the global score (v101), the other subjects' replays (v112) and the rest (tests/gates.test.js). Raised
-  // by hand in a PR, to a version merged at least three days before (tools/sync/Code.gs VERSION's git log); never above
-  // main's VERSION (the ratchet in tests/gates.test.js). Not a gate: tools/sheet_version.py leaves it alone.
+  // The gate floor (rule D4): a sheet script version already confirmed live, at least three days before it was set
+  // here, never the version the app is built against (Pages deploys on a push to main, the script only at its next
+  // self-update, so the build's VERSION can run ahead of the live script). The app reads the script version as at least
+  // this (sync.js sheetV), also before any reply (a new device, an offline first launch), and no gate is left at or
+  // below it (tests/gates.test.js lists those removed). Raised by hand in a PR, to a version merged at least three days
+  // before (tools/sync/Code.gs VERSION's git log); never above main's VERSION (the ratchet in tests/gates.test.js). Not a
+  // gate: tools/sheet_version.py leaves it alone.
   const SHEET_FLOOR = 131;
-  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs v146:
-  // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
-  // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
-  // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
-  // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
+  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs subjGen_
+  // applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not its
+  // own). The app lays the structure over its units, sends its stamps and adopts a replay made under a new stamp only
+  // once the script's replies say v >= STRUCT_SHEET (rule D4); below, it applies the text slots alone (app.js fishBuild,
+  // sync.js stsAsk, replayAdoptS).
   const STRUCT_SHEET = 146;
   // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
-  // editor's look-alike pairs (Code.gs v163: gen_ and replay_ under curation.json's pairs, keyed by the structure stamp;
-  // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
+  // editor's look-alike pairs (Code.gs gen_ and replay_ under curation.json's pairs, keyed by the structure stamp). That
+  // subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
   const PAIRS_SHEET = 163;
   const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
-  // The sync script version that stores the photo a Find the X answer tapped (Code.gs v141: Answers Photo answered, the
-  // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
-  // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
-  // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
+  // The sync script version that stores the photo a Find the X answer tapped (Code.gs: Answers Photo answered, the
+  // entry's pa). An answer goes to the sheet with pa only once the script's replies say v >= PA_SHEET; below, the copy
+  // sent leaves it out (the queue keeps it), so an older script gets what it knows (rule D4). sync.js sends every answer
+  // through it, a save's and an anonymous send's.
   const PA_SHEET = 141;
-  // The sync script version that stores an answer's content version (Code.gs v178: Answers Content version, the entry's
-  // cv; ROADMAP "Content versions and duplicate-safe answers", Pierre 2026-11-18). Sent with cv only once the script's
-  // replies say v >= CV_SHEET; before, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
+  // The sync script version that stores an answer's content version (Code.gs: Answers Content version, the entry's cv;
+  // docs/ROADMAP.md "Content versions and duplicate-safe answers"). Sent with cv only once the script's replies say
+  // v >= CV_SHEET; below, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
   const CV_SHEET = 178;
   const logOut = (a, v) => {
     // (a reply with no version, NaN, is below both)
@@ -5758,17 +5743,17 @@
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
   // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
-  // Until 2026-11-18 its random part was 4 characters of Math.random: two answers of one millisecond could meet, and the
-  // sheet then skipped the second as a resend. rnd: the random bytes (tests); else crypto.getRandomValues, else
-  // Math.random (a runtime without crypto, never a browser the app runs in).
+  // Enough random characters that two answers of one millisecond never meet (the sheet would skip the second as a
+  // resend). rnd: the random bytes (tests); else crypto.getRandomValues, else Math.random (a runtime without crypto,
+  // never a browser the app runs in).
   const AID = 'abcdefghijklmnopqrstuvwxyz0123456789';
   function answerId(now = Date.now(), rnd) {
     const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
   }
-  // The content version of an answer (ROADMAP "Content versions and duplicate-safe answers"; Pierre, 2026-11-18: "A
-  // implémenter rapidement parce que le contenu évolue vite"): a short id of the content its subject's units were built
+  // The content version of an answer (docs/ROADMAP.md "Content versions and duplicate-safe answers"): a short id of the
+  // content its subject's units were built
   // from on this device, so analyses and replays can tell which content an answer saw. Per subject, from:
   // - files: the version of each data file the subject's units are built from, in a fixed order (app.js contentVer): the
   //   deploy's hash of the file (its ?v=, tools/stamp_versions.py), else, for a file fetched without one (the sea slugs'),
