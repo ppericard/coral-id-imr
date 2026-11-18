@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-19, about 03:35 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 04:50 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
 Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since the 11/17 report, already handled).
@@ -16,20 +16,18 @@ Main: sheet script **v187** (#1146); the script updates from `release`, which on
 `tools/train.py`, one at a time. Agents: at most 4 that write code or run tests, studies on top; model per the table
 (#1086); files only with Write/Edit; no scheduled reminders from agents (they land in the integrator's session).
 
-- **Merged since 02:10**: #1152, #1155; #1153, #1157, #1160 (comments of tests/, tools/, workflows); #1154
-  (ARCHITECTURE a map: 760 KB at 18:00 → 36 KB); #1156, #1158, #1163 (LEARNING as the code runs, history in the
-  notebook: 740 → 170 KB); #1162 (mimicry pairs drilled in traps, duels, Agains; level 1: guardrails held, primary
-  "cannot tell", 3 class questions in 7,500); #1165 (ROADMAP and the reviews index hygiene).
-- **Train queue**: #1164 (sea slug literature: two sourced species pairs, judging hints), #1159 (fish species units named
-  in the admin; Prettier fixed after a merge), then #1161 (the admin's registry follows the published content) and
-  #1166 (the fish Journey's opt-in choices), each with main merged first (both decision index rows kept).
-- **Agents running (4)**: load order (b) and (d) (`learn.js` and `proto/lab.css` out of the quiz's tier); the fish
-  genus page's "Don't confuse with" (F11); the taxonomy reference's monthly refresh (P10: the reference file only);
-  the admin's read-only Taxa view (admin plan PR 12).
+- **Merged since 03:35**: #1167, #1164, #1159, #1161, #1166, #1173 (admin smoke waits 60 s on Analyses: the cause of
+  #1168's red train), #1168 (taxonomy refresh), #1172 (inventory recheck: `docs/reviews/2026-11-19-backlog-recheck.md`,
+  pick work from it, not the 11-18 snapshot), #1174 (watermark pass 4), #1169 (admin Taxa view).
+- **Train chain (scratchpad queue files q91-q93)**: #1178 (A. wallaceae presence) → #1180 (coral near-dups) → #1175
+  (load order (b)+(d), already brought up to date). Then, each brought up to date first (`scratchpad/bring.sh WT BRANCH`,
+  then `@codex review`, then queue): #1170 (coral pairs split, wt-c2), #1176 (sea slug marks, wt-s6), #1179 (after
+  #1176, wt-s6b). Held: **#1171** (Q418).
+- **Agents running (4)**: CI speed (I7, wt-ci); tricky pairs on My progress (L24 f, wt-tricky); circle-1 genera with no
+  name root, a build report (wt-tree); auto-sort follow-up (A7, wt-autosort). Each reports a PR; queue it the same way.
 - **Waiting**: #1121 core.js + Code.gs comments: two CodeQL false positives (Pierre's hands), then re-assign v188.
   #1117 (hooks, analysis session): its 6 Codex threads. #1116, #1130, #1148: Pierre's answers (Q411-Q413).
-- Every new decision record: "Date: … PR: #N." and an index row; two PRs adding a row (or lowering the same budget line
-  in `tests/docs.test.js`) conflict: merge one at a time, keep both rows (`scratchpad/union.py`) or the lower budget.
+- Two PRs adding a decision index row conflict: bring each up to date just before its train (`bring.sh`).
 - Slips tonight: agents' force-pushes (one `--force-with-lease`, #1164), `sed -i`, `&`, heredocs; the integrator
   committed conflict markers once (fixed next commit) and chained a queue on a waiter that did not wait (train refused).
 
@@ -46,7 +44,7 @@ the same (acorn, `ast.dump`, parsed YAML); decisions found only in comments move
 
 1. Versions one at a time: #1121 (re-assign v188) once Pierre has dismissed its two CodeQL alerts.
 2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): the Matrix fish game (decided; it needs core.js, so after
-   #1121); F15's rest; S4 the sea slugs' judging pass; C2 the coral lecture pairs apart from the Coral Finder's.
+   #1121); the open rows of `docs/reviews/2026-11-19-backlog-recheck.md`.
 
 ## Questions for Pierre
 
@@ -73,10 +71,12 @@ dropped (the docs describe a coherent model in our words; no new manual step for
   mix-up between the two (yes, next, recommended); Find the X on the pair (after species units); duels kept at ×2.
 - **Q417** The "Pikachu" nickname: to *Thecacera pikachu* (the species named for it), moving the star from
   *T. pacifica*? (the sea slug literature scan §6, #1164)
+- **Q418** #1171 fish genus page "Don't confuse with": every sibling genus of the family with our marks (92 of 99
+  pages, up to 23 cards, 4 then More). Merge as is, or only sourced look-alike pairs? (held until you answer)
 
 Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points; #1098 (a)-(f); #1041 §6.
 
-Last question number: Q417
+Last question number: Q418
 
 ## Pierre's hands
 
