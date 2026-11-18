@@ -1899,8 +1899,8 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
     col = A.rows[0].indexOf('Scoring');
   assert.deepStrictEqual(
     [col, A.rows[0].length],
-    [22, 26],
-    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312) and Photo answered (Q371) after it'
+    [22, 27],
+    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312), Photo answered (Q371) and Content version after it'
   );
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(
