@@ -51,7 +51,6 @@ function engine(U, refused) {
     imrFormsOf: n => Array.from({length: U[n].forms}, (_, i) => 'f' + i),
     gamePics: (n, v) => U[n].views[v] || [],
     gamePhotoOk: (n, p) => !refused.has(p.f),
-    isCore: () => false,
     level: () => ['new'],
     rankOf: () => '',
     shaky: () => false,
@@ -97,4 +96,33 @@ test('photoAny: true exactly when photoSet shows a photo, on units of every shap
     for (let k = 0; k < 4; k++) assert.strictEqual(any, E.photoSet(n).shown.length > 0, `${n} ${JSON.stringify(U[n])}`);
   });
   assert.ok(kinds.yes > 50 && kinds.no > 50, JSON.stringify(kinds));
+});
+
+// Rule P1 (Pierre, 2026-11-18: no source priority): a photo never weighs more in the draw for who took it. The same unit
+// drawn from the same seed with some photos marked as IMR lecture photos or Pierre's own, and with none marked, shows
+// exactly the same photos in the same order (the corals' draw, where a never-seen IMR or own photo weighed × 1.3).
+test("photoSet: an IMR lecture photo or Pierre's own weighs the same as any other photo of equal qualities (rule P1)", () => {
+  const unit = mark => ({
+    levels: 3,
+    forms: 1,
+    views: {
+      wide: Array.from({length: 8}, (_, i) => ({f: 'w' + i, o: 'o' + i, ...mark(i)})),
+      medium: Array.from({length: 8}, (_, i) => ({f: 'm' + i, o: 'o' + i, ...mark(i)}))
+    }
+  });
+  const run = mark => {
+    seed = 4242;
+    const E = engine({u: unit(mark)}, new Set());
+    return Array.from({length: 300}, () =>
+      E.photoSet('u')
+        .shown.map(p => p.f)
+        .join()
+    );
+  };
+  const none = run(() => ({})),
+    own = run(i => (i % 3 === 0 ? {own: true} : {})),
+    imr = run(i => (i % 3 === 1 ? {imr: true} : {}));
+  assert.ok(new Set(none.join().split(',')).size >= 8, 'the draw ranges over the unit');
+  assert.deepStrictEqual(own, none, "Pierre's own photos drawn as any other");
+  assert.deepStrictEqual(imr, none, 'IMR lecture photos drawn as any other');
 });

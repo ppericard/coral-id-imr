@@ -260,9 +260,6 @@
   //           #fish/inbox/todo/reports; routeOut, routeIn, admin.js subjOfHash)
   //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
   //           them apart)
-  //   tiers   its photo sources rank its photos (rule P1: IMR lecture photos, then Pierre's own, then other observers):
-  //           the draw's bonus for a core photo never seen (app.js isCore, model.js photoSet). Off for fish (Pierre,
-  //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
   //   calib   the difficulty engine's calibration for its photos (Pierre, 2026-11-06 14:18: one engine, its calibration may
   //           differ per subject), over CALIB (calibOf): ease, the logits one judged ease point moves a photo's prior
   //           difficulty (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the
@@ -449,7 +446,6 @@
       flat: true,
       replay: true,
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
-      tiers: true,
       ach: true,
       // Its achievements (core.js ACH; a function: the list is defined below) and whether its answers keep the feats of the
       // shared record (runs, corallites, hard photos: progress.js achAfter).
@@ -3711,23 +3707,24 @@
       }
     });
   }
-  // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
-  // photos from other iNat observers only fill a set that is short. Per genus
-  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept
-  // (game: the featured first, then IMR/own, each by quality, Poor last; until 2026-11-03 it was split into Easy / Medium
-  // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
-  // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
-  // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Coral ID Key (needs variety) = featured + 5 photos from other iNat observers (Pierre, 2026-11-08: 2 before; field
-  // photos fill the variety the Coral Finder book's crops gave, removed that day). Pierre's picks (feat, hide, quality,
-  // use) always win; Claude's suggestions (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'}
-  // keeps a photo on the sheet only or in games only. Nothing is written back: photos left out simply stay unused.
+  // Photos per context (applySlots). Every photo kept is used, field and IMR lecture photos alike. Per genus and view, one
+  // order whoever took the photo (rule P1, Pierre 2026-11-18: no source priority, IMR lecture photos and his own come first
+  // only when they are themselves the best): by quality, Poor last, then core.js easyRank's ties (the licence where an
+  // order allows it, then a fixed hash of the file name: data.json's lists put his own photos first, so their order never
+  // decides). sheet = 3 featured + the next ones in that order (6 in all); games = one list, every photo kept (the
+  // featured first, then that order without the licence; until 2026-11-03 it was split into Easy / Medium / Hard sets
+  // that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must come into
+  // the games, the players' answers rate them) games take every photo kept; Coral ID Key (needs variety) = featured + 5
+  // more photos in that order, a different observation each first (Pierre, 2026-11-08: 2 before; field photos fill the
+  // variety the Coral Finder book's crops gave, removed that day). Pierre's picks (feat, hide, quality, use) always win;
+  // Claude's suggestions (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo
+  // on the sheet only or in games only. Nothing is written back: photos left out simply stay unused.
   const CAP = {feat: 3, sheet: 6, inat: 5};
   // A Coral Finder book crop's id (<genus>-cf-<page>-<tag>). The crops left the app and the repository on 2026-11-08
   // (Pierre); curation.json still names some (rule A1: never rewritten), ids that match no photo any more.
   const cfCrop = f => /^[a-z]+-cf-\d/.test(f || '');
-  // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
-  const isCore = p => !!(p.imr || p.own);
+  // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images; rule P1: an IMR photo
+  // is always evaluated, never auto-rated Poor); only his own rating can (autoQ).
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
   function applySlots(d, c, o = {}) {
     const AUTOQ = o.autoq || {},
@@ -3768,21 +3765,19 @@
       VIEWS.forEach(([v]) => {
         const field = (g.views[v] || []).filter(p => !p.multi),
           q = p => qualOf(c, p.f),
-          // Equal quality: an open licence or his own first (rightsRank, Q270), else the list's order: the sheet, the
-          // featured photos and the Coral ID Key. The game list keeps the quality order alone (byQ0), its featured lead
-          // included, so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence
-          // (Codex review #742).
-          byQ0 = L => L.slice().sort((a, b) => q(b) - q(a)),
-          byQr = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
+          // By quality (the higher first, Poor last), whoever took the photo (rule P1), then easyRank's ties: an open
+          // licence or his own first (rightsRank, Q270), then the file name's hash, for the sheet, the featured photos and
+          // the Coral ID Key. The game list keeps the quality order alone (byQ0, no licence), its featured lead included,
+          // so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence (Codex
+          // review #742). A coral photo has no judged ease nor reference tags: easyRank's first keys are equal for all.
+          byQ0 = L => easyRank(L, p => -q(p), false),
+          byQr = L => easyRank(L, p => -q(p), true);
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
-        // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
-        // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
+        // Sheet order: by quality, Poor photos last, never a Poor photo while better ones exist.
         // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
         // A pin or a suggestion naming no photo (a removed one: a Coral Finder book crop, 2026-11-08) is dropped.
         const slot = byQ => {
-          const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
-          const others = byQ(all.filter(p => !isCore(p)));
-          const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
+          const ranked = byQ(all);
           const find = f => all.find(p => p.f === f);
           const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
             hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
@@ -3792,41 +3787,39 @@
             ...pin.slice(0, CAP.feat),
             ...fill(
               take(
-                pool.filter(p => p.imr || q(p) !== 1),
+                pool.filter(p => q(p) !== 1),
                 k
               ),
               pool,
               k
             )
           ];
-          return {others, ranked, feat};
+          return {ranked, feat};
         };
-        const {others, ranked, feat} = slot(byQr),
+        const {ranked, feat} = slot(byQr),
           feat0 = slot(byQ0).feat;
         // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
         const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
         // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral photos.
-        const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
-          core = gm.filter(isCore),
-          rest = gm.filter(p => !isCore(p));
+        const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref'));
         // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
-        // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
-        const lead = feat0.filter(p => gm.includes(p)),
-          after = [...core, ...rest].filter(p => !lead.includes(p));
+        // photo Elo"): the featured game photos first, then the others by quality, Poor last.
+        const lead = feat0.filter(p => gm.includes(p));
         g.sl[v] = {
           feat,
           more,
-          game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
+          game: [...lead, ...gm.filter(p => !lead.includes(p))],
           idkey: [
             ...feat,
             ...take(
-              others.filter(p => !feat.includes(p) && !p.imr),
+              ranked.filter(p => !feat.includes(p)),
               CAP.inat
             )
           ]
         };
-        // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them.
-        if (g.views[v]) g.views[v] = [...feat.filter(p => g.views[v].includes(p)), ...g.views[v].filter(p => !feat.includes(p))];
+        // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them;
+        // the rest follow in the same order (byQr), never data.json's, which lists his own photos first (rule P1).
+        if (g.views[v]) g.views[v] = [...feat.filter(p => g.views[v].includes(p)), ...byQr(g.views[v].filter(p => !feat.includes(p)))];
       });
     });
   }
