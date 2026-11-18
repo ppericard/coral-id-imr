@@ -69,11 +69,15 @@ vm.runInContext(
 );
 const {pairLine, pairText, fbLine} = ctx.M;
 const plain = o => JSON.parse(JSON.stringify(o));
+// The text of a line of the sheet's markup (tests only): what follows each tag's closing bracket, the words kept, the spaces joined.
 const text = h =>
   h
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .split('<')
+    .map((s, i) => (i ? s.slice(s.indexOf('>') + 1) : s))
+    .join('')
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(' ');
 
 test('a pair line is the one a record gives for its look-alike: IMR first (lk), then ours (ap), each with its source', () => {
   assert.deepStrictEqual(plain(pairLine('f:Butterflyfishes', 'f:Angelfishes')), {

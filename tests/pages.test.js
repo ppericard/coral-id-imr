@@ -384,7 +384,8 @@ test('quiz.js counts the sheet shown, More once an answer, its seconds capped, a
       },
       querySelector: () => (el.again ? {} : null)
     },
-    listeners = [];
+    listeners = [],
+    visible = [];
   let now = 1e6,
     told = 0;
   const ctx = {
@@ -395,6 +396,8 @@ test('quiz.js counts the sheet shown, More once an answer, its seconds capped, a
     fitStage: () => {},
     againTold: () => told++,
     document: {
+      visibilityState: 'visible',
+      addEventListener: (t, f) => t === 'visibilitychange' && visible.push(f),
       getElementById: id => ({fbmbtn: btn, fbmore: panel, after: {addEventListener: (t, f) => listeners.push(f)}})[id]
     }
   };
@@ -443,5 +446,22 @@ test('quiz.js counts the sheet shown, More once an answer, its seconds capped, a
     ['shown', undefined],
     ['sec', 3],
     ['sec', 3]
+  ]);
+  // The app hidden stops the clock (Codex review #1110): 2 s read, 5 minutes in the background, 1 s more: 3 s, not 120
+  counts.length = 0;
+  fbShown();
+  now += 2000;
+  ctx.document.visibilityState = 'hidden';
+  visible[0](); // the app is hidden: the seconds so far are counted, the clock stops
+  now += 300 * 1000;
+  fbEnd(false); // a summary taken meanwhile (pagesSend) adds nothing
+  ctx.document.visibilityState = 'visible';
+  visible[0](); // back: the clock starts again
+  now += 1000;
+  fbEnd();
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['sec', 2],
+    ['sec', 1]
   ]);
 });

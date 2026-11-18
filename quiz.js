@@ -1126,16 +1126,23 @@ function fbShown() {
 }
 // Counts the seconds the sheet has been on screen since the last time, at most FBSEC for the answer; end: it left the screen.
 // Called when the page is left (app.js route) and when the summary is taken (sync.js pagesSend).
+// The time the app is hidden never counts (Codex review #1110): hidden, the clock stops (t null), shown again it starts anew.
 function fbEnd(end = true) {
   if (!FBS) return;
   const now = Date.now();
-  FBS.s = Math.min(PAGES.FBSEC, FBS.s + (now - FBS.t) / 1000);
-  FBS.t = now;
+  if (FBS.t !== null) FBS.s = Math.min(PAGES.FBSEC, FBS.s + (now - FBS.t) / 1000);
+  FBS.t = !end && document.visibilityState === 'hidden' ? null : now;
   const k = Math.round(FBS.s);
-  fbCount('sec', k - FBS.k);
+  if (k > FBS.k) fbCount('sec', k - FBS.k);
   FBS.k = k;
   if (end) FBS = null;
 }
+if (typeof document !== 'undefined' && document.addEventListener)
+  document.addEventListener('visibilitychange', () => {
+    if (!FBS) return;
+    if (document.visibilityState === 'hidden') fbEnd(false);
+    else if (FBS.t === null) FBS.t = Date.now();
+  });
 // More / Less on the sheet's row: shows or hides the panel behind it; the first opening of an answer is counted, and tells
 // "this pair comes back as a duel" (its own count of three tellings).
 function fbMoreBind() {
