@@ -68,6 +68,7 @@ function question(subject, F, {mode, chs, k}) {
     k,
     chs,
     seenPh: ph,
+    mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
     unseen: null,
     ph,
     solo: 0.5,

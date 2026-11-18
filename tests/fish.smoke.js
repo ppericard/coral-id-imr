@@ -524,6 +524,31 @@ async function freshPlayers(b, base, errs) {
           ok(mimSeen('M1') && !mimSeen('M2'), 'marked shown for its pair only');
           ok(mimCardOf([{n: nM, p: pM}], mimSeen) === null, 'not again');
         }
+        // The pair drilled (model.js mimUnit, mimPairs, mimKeep; quiz.js duelPick): the juvenile sets the angelfishes as
+        // its trap; once the surgeonfishes pass Open Water (the angelfishes met on the first cards, the card shown), the
+        // pair duels, each side on the pair's species, as its Again does.
+        const m1 = GX(nM).mim.find(m => m.pair.id === 'M1'),
+          s0 = JSON.parse(JSON.stringify(st(nM))),
+          adult = GX(nM).views.wide.find(p => p.sp === m1.sp && !phaseOf(p)),
+          duels = () => mimPairs([nM, m1.fb], m => mimSeen(m.pair.id));
+        ok(mimUnit(nM, pM) === m1.fb, `the juvenile's trap: ${mimUnit(nM, pM)}`);
+        ok(!adult || mimUnit(nM, adult) === null, 'an adult of the species sets none');
+        P[nM] = {ok: 0, ko: 0, th: 0, pg: 0.3};
+        ok(!duels().length, 'no duel before Open Water: its juveniles held back');
+        P[nM] = {ok: 12, ko: 2, th: 1, pg: 0.7};
+        const pr = duels().find(p => p.mim === 'M1');
+        ok(!!pr, 'the pair duels from Open Water once its card was shown');
+        if (pr) {
+          const draw = n => {
+            const k = mimKeep('M1', pr, n);
+            return Array.from({length: 20}, () => photoSet(n, null, 0, 2, 'qduel', k).shown[0]);
+          };
+          const a = draw(nM).filter(p => !p || mimOf(nM, p) !== m1),
+            b = draw(m1.fb).filter(p => !p || p.sp !== m1.pair.b);
+          ok(!a.length, 'the surgeonfishes’ side: its juveniles that resemble');
+          ok(!b.length, 'the angelfishes’ side: the species resembled');
+        }
+        P[nM] = s0;
       }
       return {fails, gated};
     }, 15);
