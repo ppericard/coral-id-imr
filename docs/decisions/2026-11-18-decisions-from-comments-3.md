@@ -1,6 +1,6 @@
 # Decisions kept from the front-end comments: Pierre's words that only the code held
 
-Date: 2026-11-18. PR: the comment clean-up of the front-end files under 1,000 comment lines (`progress.js`,
+Date: 2026-11-18. PR: #1126, the comment clean-up of the front-end files under 1,000 comment lines (`progress.js`,
 `autosort.js`, `learn.js`, `analysis.js`, `admin-analyses.js`, `admin-demo.js` and the smaller ones). Rules or docs
 touched: none (rule W19: history stays in git and the PRs, a decision goes to docs/decisions/).
 
@@ -23,6 +23,10 @@ lives in the code.
 - 2026-11-01: "the leaderboard takes long to load": the last board is kept on the device and shown at once, then
   replaced when the fresh one arrives; it is also fetched a few seconds after start-up. `progress.js` `BOARD_C`,
   `boardCached`, `loadBoard`.
+- 2026-11-01: "redo the calculation cleanly for everyone, achievements too, locking again those unlocked when they
+  should not have been" (the principle docs/LEARNING.md quotes from 2026-11-08): every achievement of every subject is
+  tested again on the current progress with the current rules, once per device and record version. `progress.js`
+  `achMigrate`, `ACH_V`.
 - 2026-11-02, the first RAs playing: "more on each player: their progress, the genera that were easy and less easy for
   them, when they unlocked each genus, an analysis of a person's path": the admin's player Journey. `admin-journey.js`
   `renderJourney`. The same day, on it: "bring that page's numbers into the journey" (the Games card, Players' numbers
@@ -32,6 +36,9 @@ lives in the code.
   2-3 large photos per IMR form (`proto/basics.js` `FORMS7`); "many will look at Separate and move on to step 7 without
   seeing the other wall types": the walls step shows the four types one after the other, its main button "Next wall
   type" until all are seen (`proto/basics.js`, the walls step).
+- 2026-11-03, of the auto-sort's quality field (the blind test of the calibrated pass gave 73%): "good enough since Elo
+  takes over": its auto stays on from 73% agreement, the players' answers setting a photo's difficulty. `autosort.js`
+  `AUTO.min.quality`.
 - 2026-11-04: "I love this kind of multifactor report… every 1000 new answers… a new section in the admin with several
   sub-pages, with visualisations, reports, graphs, tables": the admin's Analyses group, one report per 1000-answer
   milestone, computed by a GitHub Action and stored in the sheet. `analysis.js`, `admin-analyses.js`.
@@ -51,6 +58,10 @@ lives in the code.
   `quizBoard` (`[data-seton]`).
 - 2026-11-09, of the fish auto-sort's blind Checks, as the comment gave his ruling: not to-dos, they have their own count
   in Candidates. `autosort.js` `fishCandTodo`.
+- 2026-11-14, of the confusion heatmaps (Q123 m): "the fish, once their admin pages name the view": a subject has the
+  Heatmap only once its admin pages name it. `admin-heatmap.js`, `core.js` `SUBJECTS` admin pages.
+- 2026-11-14, of the light proposals: "ok pour (a)": the admin's adds that kept tags and ease from before rubric 6 get
+  the re-judged ones as a proposal, Accept or Keep mine. `admin-light.js`.
 - 2026-11-17, of the other cohorts' leaderboards: "éventuellement mais pas forcément en priorité ou mis en avant": they
   sit behind a discreet "Other cohorts" fold, after the player's own cohort, the staff and the general board.
   `progress.js` `boardScopes`.

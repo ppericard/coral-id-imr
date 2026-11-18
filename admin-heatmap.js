@@ -8,7 +8,7 @@
 // the study's "entry and genus blocks"; never by growth form, rule C4), the biggest block first, each block ordered so the
 // pairs mixed up most sit side by side (heatOrder). Typed mix-ups (no choices, so no rate) are listed apart, as on
 // Pairs. A cell opens the pair on the site's compare page when the subject has one. Only the subjects whose admin pages
-// name it (core.js SUBJECTS admin pages); the sea slugs' genera sit in their family's block, the families in their
+// name it (core.js SUBJECTS admin pages; docs/decisions/2026-11-18-decisions-from-comments-3.md); the sea slugs' genera sit in their family's block, the families in their
 // taxonomic group (supOf, the tree's taxa).
 // A subject with units at several ranks (SUBJECTS sheets: the fish's families, genera, species) has one matrix per rank
 // the log asked (heatRanks: a rank switch, a rank on it once one of its questions is logged; the choices of a question

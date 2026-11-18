@@ -935,7 +935,7 @@ function hostDraw(j, key, last, msg) {
   if (j.ph === 'lobby') {
     const addr = (location.origin + location.pathname).replace(/^https?:\/\//, '') + hr('live');
     // The QR code opens the join form with the code filled in; the address and the code stay big beside it, for a phone
-    // that cannot scan. Never fatal: without it the lobby is as before.
+    // that cannot scan. Never fatal: without it the lobby shows the address and the code alone.
     let qr = '';
     try {
       const m = qrMake(location.origin + location.pathname + hr('live') + '?code=' + LH.code);

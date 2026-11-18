@@ -230,8 +230,8 @@ self.addEventListener('fetch', e => {
   // A newer version waits for this worker, which is busy, or running again after the stop for the swap (SKIP, above).
   if (self.registration.waiting) self.registration.waiting.postMessage({t: SKIP});
   if (e.request.method !== 'GET') return;
-  // A page opened while a newer version waits for this worker is left to the browser: the navigation makes Chromium take the waiting version over and stop this worker with the
-  // navigation's fetch event in it, and a page whose reply the worker was to give then never loads, not even with a
+  // A page opened while a newer version waits for this worker is left to the browser: the navigation makes Chromium take
+  // the waiting version over and stop this worker with the navigation's fetch event in it, and a page whose reply the worker was to give then never loads, not even with a
   // worker that only passes the request on. Not answered here, it loads from the network. The cost, only while a version
   // waits (usually under a second; longer while the old worker is kept busy or was started again): such a page gets neither
   // the copy kept offline nor, on a slow line, the cached copy after SLOW. docs/ARCHITECTURE.md "Service worker".

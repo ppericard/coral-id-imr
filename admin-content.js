@@ -1,5 +1,6 @@
 // Photos › Tree, a node's page: its sheet's text and the content editor's edits (docs/reviews/2026-11-14-sheet-overlay-
-// design.md v2, step 2; docs/ARCHITECTURE.md "The content editor's edits"). Every slot the subject declares for the node's rank (core.js
+// design.md v2, step 2; docs/ARCHITECTURE.md "The content editor's edits"). Every slot the subject declares for the
+// node's rank (core.js
 // SUBJECTS content: its name, IMR's or ours) with its text in force: the built file's (fish.json, the base: the sources and
 // the instance's layer), else his edit (core.js contentApply).
 // - ✎ Edit opens a box (a list one line per item; an emptied box hides the slot), with Source and Link (optional and
@@ -496,7 +497,7 @@
       cr = D.circle ? circleRow(S, R, Cm, id) : null,
       pn = D.pairs ? C.contentNodes(S, R).get(id) : null,
       pr = !!pn && pn.rank === D.pairs.rank;
-    // a subject with circles: the box on its circle rank's pages (as before); without: on its pair rank's
+    // a subject with circles: the box on its circle rank's pages; without: on its pair rank's
     if (D.circle ? !cr : !pr) return '';
     const can = mayContent(),
       P = pr ? pairRows(S, R, Cm, id) : [],

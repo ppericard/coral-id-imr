@@ -1,5 +1,5 @@
 // Photos › Photo review › Light proposals on the fish side (#fish/photos/review/light-proposals; docs/ROADMAP.md "Fish
-// judging: a flash or lamp on a dark background is not a night shot"). With rubric 6 (a flash or a lamp on a dark
+// judging: a flash or lamp on a dark background is not a night shot"; docs/decisions/2026-11-18-decisions-from-comments-3.md). With rubric 6 (a flash or a lamp on a dark
 // background is good light, not a night shot) the judging pass re-judged its photos, but some of the admin's adds keep
 // in curation.json fish.tags / fish.ease the tags and ease he took from the earlier
 // judgement: judging/fish-light-q308.json `curation`, [{photo, curated: [tags, ease], rejudged: [tags, ease]}], a

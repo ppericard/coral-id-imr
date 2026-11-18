@@ -100,7 +100,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = {flagFile,
     true
   );
   // The button follows its photo when the page scrolls or the photo is resized, and goes away once the photo leaves the
-  // page (new question, other page): on a phone it used to stay where the last photo was, e.g. over the tab bar.
+  // page (new question, other page), so on a phone it never stays where the last photo was, e.g. over the tab bar.
   const follow = () => {
     if (target && target.isConnected) place(target);
     else {

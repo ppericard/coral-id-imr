@@ -1,6 +1,6 @@
 // Fish basics: the fish twin of Coral basics (proto/basics.js, the same engine and screens), a short guided path for
 // complete beginners: what to look at first on a reef fish. Body shape first (identification always starts with it;
-// docs/decisions/2026-11-04-fish-basics.md), then the identification groups, then the vocabulary: fins (the dorsal fin
+// docs/FISH_PATH.md), then the identification groups, then the vocabulary: fins (the dorsal fin
 // is the second screen of the Fins step), tail shapes, markings and a few key features. One step = a drawing of ours (the part being taught in --hl,
 // theme tokens only) or, for the groups, the app's own family photos with their credit; one plain sentence; an optional
 // one-question check. Nothing is forced: every step can be skipped, the checks are optional.

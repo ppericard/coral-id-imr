@@ -73,7 +73,7 @@
     }
   };
   // The steps for this player, worked out again at each step (the subject picked changes the words; a sign-in can open a
-  // subject). Everyone with one subject: the six steps as they were. Two subjects or more from the start: pick, the picked
+  // subject). Everyone with one subject: the six standard steps. Two subjects or more from the start: pick, the picked
   // subject's question, swap, then the rest. A subject that opens on signing in during the tour (a player of the fish group
   // on a new device: the sheet's reply names the group, sync.js groupsSeen, and the page reloads back on the sign-in step)
   // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and

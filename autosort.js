@@ -32,7 +32,7 @@
     //   wrong reject loses one candidate among many, and the Checks and Undo bring it back.
     // view 0.85: measured 90% on the same photos; a wrong view is a one-click move, and a question of the wrong zoom.
     // quality 0.73: the blind test of the calibrated pass, enough since the players' answers (Elo) set the photo's
-    //   difficulty and quality only sets where it starts.
+    //   difficulty and quality only sets where it starts (docs/decisions/2026-11-18-decisions-from-comments-3.md).
     // form 0.80: growth form ranks, never filters (rule C4): an error costs less than a wrong view; no measure yet.
     min: {keep: 0.9, view: 0.85, quality: 0.73, form: 0.8},
     n0: 10,

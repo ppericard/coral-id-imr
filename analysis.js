@@ -50,7 +50,7 @@
   // Bootstrap refits stop earlier (looser tolerance): their spread matters, not their fourth decimal.
   let FAST = false;
   // Bootstrap refits start from the full fit of the same model (warm start): the same fit, reached in fewer steps, so
-  // 999 draws fit in the Action's time. WARM[sig] holds the last full
+  // 999 draws fit in the Action's time (docs/reviews/2026-11-05-stats-methods-study.md §5.3). WARM[sig] holds the last full
   // fit's fixed effects, variance components and shrunk effects; runAll empties it before each analysis. A player
   // drawn twice in a bootstrap sample is named id + DUP + draw index: both copies start from that player's own effect.
   let WARM = {};
@@ -996,7 +996,7 @@
       return a;
     });
   }
-  // The fish photos' own features in What makes a photo hard (docs/ROADMAP.md "Analyses for the fish"): judged ease,
+  // The fish photos' own features in What makes a photo hard (docs/LEARNING.md "Analyses for the fish"): judged ease,
   // phase and framing. meta.fph {file: [ease 1-5, phase word ('' none,
   // 'juvenile', 'male'...), view letter (p profile, o oblique, h head-on, t tail, d from above), whole ('1' the whole fish,
   // '0' part of it)]} (photoMetaFish). The same model as the corals' (LLTM with player, unit and photo random effects):
@@ -1168,7 +1168,7 @@
         a => a.g0,
         seed
       ),
-      // the tables of answers by feature: the corals' views, sources and quality as before; another subject's under tabs
+      // the tables of answers by feature: the corals' views, sources and quality; another subject's under tabs
       ...(SP.of
         ? {
             of: SP.of,

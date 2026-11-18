@@ -752,8 +752,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
-// Full recount, once per device and record version (docs/LEARNING.md: progress and achievements recalculated for
-// everyone): every achievement of every subject is tested again on that subject's progress with the current rules
+// Full recount, once per device and record version (progress and achievements recalculated for everyone: docs/LEARNING.md,
+// docs/decisions/2026-11-18-decisions-from-comments-3.md): every achievement of every subject is tested again on that subject's progress with the current rules
 // (core.js achRecount); those still met keep their date, the others go, as do ids no list holds. Feats (runs,
 // corallites, hard photo, removals) stay. Silent; then one sync, so the sheet's copy follows. Each subject with
 // achievements (SUBJECTS ach) checks its own list (achs) on its own progress (inSubject); the Contributions once, with
