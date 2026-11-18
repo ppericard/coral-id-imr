@@ -276,6 +276,25 @@ async function sealPart(b, base, fails) {
   }));
   if (mv.token !== 'demo' || !mv.kept || mv.out || !/could not be sealed/.test(mv.toast))
     fails.push(F + `a draft whose move failed was left in plain by a Sign out that did not warn ${JSON.stringify(mv)}`);
+  // The store opens but its first read fails (Codex review #1078): no store, and leaving the page warns
+  const R = await sc.newPage();
+  await R.addInitScript(() => {
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.load = () => Promise.reject(new Error('read failed'));
+          return T;
+        })
+    });
+  });
+  await R.goto(base + 'admin.html?demo#photos/quality');
+  await R.waitForFunction(() => typeof snap !== 'undefined' && snap !== null, null, {timeout: 60000});
+  const rl = await R.evaluate(() => ({dw: DW, busy: draftBusy()}));
+  if (rl.dw !== null || !rl.busy) fails.push(F + `a store whose first read failed was used, or leaving did not warn ${JSON.stringify(rl)}`);
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }

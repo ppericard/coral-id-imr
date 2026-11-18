@@ -7933,20 +7933,26 @@ async function start() {
   // (draftMove); this token's draft sealed at its last Sign out is opened into it, under a newer plain draft left in
   // this browser (that one wins where both changed), in the transaction that writes them (admin-draft.js load).
   let L = {old: null, base: null};
+  // No store (IndexedDB unavailable, or its first read failed: Codex review #1078): nothing is kept, leaving the page warns.
+  const noStore = () => {
+    DW = null;
+    if (TOKEN) {
+      draftLost = true;
+      setTimeout(() => toast('This browser cannot keep a draft: Publish before you leave the page.', 8000), 0);
+    }
+  };
   try {
     await draftOpen();
   } catch (e) {
-    DW = null;
-    if (TOKEN) {
-      draftLost = true; // nothing is kept: leaving the page warns
-      setTimeout(() => toast('This browser cannot keep a draft: Publish before you leave the page.', 8000), 0);
-    }
+    noStore();
   }
   if (DW) {
     await draftMove();
-    L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, draftRebase(plain), draftRebase(sealed)) : draftRebase(sealed))).catch(
-      () => L
-    );
+    try {
+      L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, draftRebase(plain), draftRebase(sealed)) : draftRebase(sealed)));
+    } catch (e) {
+      noStore();
+    }
     if (L.failed)
       setTimeout(() => toast('Your draft sealed at your last sign out could not be opened (storage full): it is kept.', 8000), 0);
   }
