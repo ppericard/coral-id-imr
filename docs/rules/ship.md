@@ -374,7 +374,8 @@ its own head, the integrator runs `python3 tools/train.py N` (`--dry-run` first;
 train: `N1 N2 …`, in merge order). A PR is never brought up to date with `main` just to merge: a new branch
 `train/<time>` holds `main` plus the heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
 order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
-equal the train's, and the train stops if a Publish, an Action or another merge lands in between. A red train merges
+equal the train's, and the train stops if a Publish, an Action or another merge lands in between; then it moves the
+`release` branch (the sheet script's source) to the commit `main` ended on, and nothing else does (rule D3). A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
 `Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
 conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for

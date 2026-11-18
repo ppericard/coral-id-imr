@@ -14,6 +14,10 @@ the next newer entry; for v7 to v34, which no record dates, that is 2026-11-04, 
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v181 (2026-11-18)
+
+The script updates itself from the `release` branch, not from `main` (`autoUpdate`, `selfRaw_`; Pierre, 2026-11-18, architecture review R5 question h, approved): only the merge train (`tools/train.py`) moves `release`, after its tree went green, so a commit that reaches `main` without the train (the admin's Publish, the Candidate photos workflow) never reaches the live script. While `release` does not exist (GitHub answers 404 for it) the script reads `main` as before, so the update that brings this line cannot lose its way; any other answer is a failed read and installs nothing, and the manifest always comes from the branch that answered for `Code.gs`. The data files it reads (`data.json`, `curation.json`, the fish files) stay on `main`. The Deploy log's install line and the saved version's description say which branch the code came from
+
 ## v180 (2026-11-18)
 
 The infrastructure dashboard's read (Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4"; docs/PAGES.md "Infrastructure health"): `POST {readInfra: 1, token}` serves, to the admin token only (`gate_`, the `players` right: never public, no lock, nothing written), what to watch before the sheet outgrows its free limits: the spreadsheet's cells against Google's 10 million (every tab's allocated grid, rows x columns, with the five biggest tabs and the Answers tab's own rows, columns and grid), the Timings tab's last seven days per operation (calls, weighted median, 90th percentile and maximum of Ms: `timSum_`), and the Deploy log's last `pCloud backup:` line with the time of the last one that saved. Counts, fixed tab names and times only: no player, name, id or answer. The admin's To do > Alerts page shows it from this version (admin.js `INFRA_SHEET`, rule D4); an older script answers `input` and the page shows only the repository's numbers (Pages, R2), no line and no error
