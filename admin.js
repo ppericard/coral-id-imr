@@ -778,6 +778,7 @@ function lockScreen(msg) {
       await checkToken();
       if (!has) await lockToken($('pw').value, TOKEN);
       sess.set(TOKEN);
+      RESUMED = false; // the password typed: a fresh unlock, which opens the token's seal
       start();
     } catch (x) {
       TOKEN = null;
@@ -7960,10 +7961,16 @@ async function start() {
   if (DW) {
     await draftMove();
     try {
-      L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, draftRebase(plain), draftRebase(sealed)) : draftRebase(sealed)));
+      L = await DW.load(
+        (plain, sealed) => (plain ? mergeCur(SAVED, draftRebase(plain), draftRebase(sealed)) : draftRebase(sealed)),
+        TOKEN && RESUMED && !DEMO ? sess.gen() : null
+      );
     } catch (e) {
       noStore();
     }
+    // A session restored at a reload whose token signed out since, in another tab: locked, nothing opened or written.
+    if (L.stale) return lockNow();
+    if (DW && TOKEN && !DEMO) sess.setGen(DW.gen);
     if (L.failed)
       setTimeout(() => toast('Your draft sealed at your last sign out could not be opened (storage full): it is kept.', 8000), 0);
   }
@@ -8128,7 +8135,8 @@ async function start() {
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
 // The unlocked token lives in sessionStorage only (Pierre, 2026-11-01, code review H1): it survives reloads in this tab and
 // is gone when the browser closes, so the plain token never stays on disk. localStorage only holds the encrypted vault.
-const SESSION = SK('reefid-admin-session');
+const SESSION = SK('reefid-admin-session'),
+  SESSION_GEN = SK('reefid-admin-session-gen');
 const sess = {
   get() {
     try {
@@ -8139,10 +8147,28 @@ const sess = {
   },
   set(t) {
     try {
-      t ? sessionStorage.setItem(SESSION, t) : sessionStorage.removeItem(SESSION);
+      if (t) sessionStorage.setItem(SESSION, t);
+      else [SESSION, SESSION_GEN].forEach(k => sessionStorage.removeItem(k));
+    } catch (e) {}
+  },
+  // The draft store's generation this session was opened in (admin-draft.js load), kept beside it: a session restored at
+  // a reload whose token signed out since, in another tab, opens no seal and locks (Codex review #1078: a discarded tab
+  // missed the sign out). None kept counts as 0: refused once the token has signed out.
+  gen() {
+    try {
+      return +sessionStorage.getItem(SESSION_GEN) || 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+  setGen(g) {
+    try {
+      sessionStorage.setItem(SESSION_GEN, String(g));
     } catch (e) {}
   }
 };
+// True when this page's session was restored from sessionStorage (a reload), not unlocked with the password.
+let RESUMED = false;
 store.set(SESSION, null); // drop the plain copy older versions kept in localStorage
 // A draft with nothing unpublished over base b (Sign out takes it off rather than sealing it), and a sealed draft d made
 // on base b re-based on the published curation, as at the start (a draft from before bases only adds).
@@ -8338,6 +8364,7 @@ const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRou
   const t = sess.get();
   if (t) {
     TOKEN = t;
+    RESUMED = true;
     early();
     try {
       await checkToken();

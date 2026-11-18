@@ -73,8 +73,9 @@ async function tab(idb, id, token, G = gates(), o = {}) {
   s.db = db;
   if (token) T.unlock(await ddbKeys(token, subtle));
   // admin.js start: the token's seal opened, else the plain draft re-based (here: kept as it is), then written.
-  const L = await T.load((plain, sealed) => (plain ? mergeTabs(s.saved, plain.d, sealed.d).draft : sealed.d));
+  const L = await T.load((plain, sealed) => (plain ? mergeTabs(s.saved, plain.d, sealed.d).draft : sealed.d), o.since);
   s.L = L;
+  if (L.stale) return s; // a restored session signed out since: admin.js locks (nothing loaded, nothing written)
   s.draft = L.draft || (L.old ? L.old : clone(s.saved));
   if (token) {
     T.base();
@@ -502,6 +503,60 @@ test('Codex #1078: a tab locking after a clean sign out carries only its own pen
   const s = await sealOf(idb, 'tok');
   assert.strictEqual(s.quality.p2, 1);
   assert.strictEqual(s.quality.p1, 2); // the published value, not the choice undone
+});
+
+test('Codex 4608813485: a late seal made while the token is unlocked again never brings back a choice undone since', async () => {
+  const idb = fakeIDB(),
+    A = await tab(idb, 'A', 'tok'),
+    B = await tab(idb, 'B', 'tok');
+  await A.click('p1', 3);
+  await B.T.sync(); // B holds p1: 3
+  await A.T.seal();
+  const C = await tab(idb, 'C', 'tok'); // unlocks again: the seal opened, p1: 3 in the plain draft
+  assert.strictEqual(q(C, 'p1'), 3);
+  B.set('p2', 1); // B's note, never stored: B missed the sign out
+  assert.ok((await B.T.sync()).refused);
+  await B.T.intoSeal(); // no seal now (C opened it): a new one, with B's note
+  C.draft = {...C.draft, quality: {...C.draft.quality, p1: 2}}; // C undoes p1, back to its published value
+  await C.T.sync();
+  await C.T.seal();
+  const R = await tab(idb, 'R', 'tok');
+  assert.strictEqual(q(R, 'p2'), 1); // B's note kept
+  assert.strictEqual(q(R, 'p1'), 2); // C's Undo kept
+});
+
+test('Codex 4608813493: a session restored after its token signed out opens no seal; a fresh unlock or a newer session does', async () => {
+  const idb = fakeIDB(),
+    A = await tab(idb, 'A', 'tok');
+  const g0 = A.T.gen; // the generation B's session was opened in (admin.js keeps it beside the session)
+  await A.click('p1', 3);
+  await A.T.seal();
+  // B, a discarded tab of the token that missed the sign out, reloads with its session: refused, nothing opened or written
+  const B = await tab(idb, 'B', 'tok', gates(), {since: g0});
+  assert.deepStrictEqual(B.L, {stale: true});
+  assert.strictEqual((await store(idb)).draft, undefined);
+  assert.strictEqual((await sealOf(idb, 'tok')).quality.p1, 3);
+  assert.deepStrictEqual(await B.T.sync(), {early: true}); // and it writes nothing
+  // a session opened after the last sign out opens the seal, and so does a fresh unlock (the password typed again)
+  const R = await tab(idb, 'R', 'tok', gates(), {since: A.T.gen});
+  assert.strictEqual(q(R, 'p1'), 3);
+  const gR = R.T.gen;
+  await R.click('p2', 1);
+  await R.T.seal();
+  assert.deepStrictEqual((await tab(idb, 'E', 'tok', gates(), {since: gR})).L, {stale: true});
+  const F = await tab(idb, 'F', 'tok');
+  assert.deepStrictEqual([q(F, 'p1'), q(F, 'p2')], [3, 1]);
+  await F.T.seal();
+  // a clean sign out (no seal) also locks a session from before it
+  const H = await tab(idb, 'H', 'tok'),
+    gH = H.T.gen;
+  H.draft = clone(H.saved);
+  await H.T.sync();
+  assert.deepStrictEqual(await H.T.seal(), {sealed: false});
+  assert.deepStrictEqual((await tab(idb, 'I', 'tok', gates(), {since: gH})).L, {stale: true});
+  // a missing generation (a session from before this check) is refused once the token has signed out
+  assert.deepStrictEqual((await tab(idb, 'J', 'tok', gates(), {since: 0})).L, {stale: true});
+  assert.ok(!(await tab(idb, 'K', 'tok')).L.stale);
 });
 
 test('a second Sign out while the first seals leaves one seal and loses nothing', async () => {

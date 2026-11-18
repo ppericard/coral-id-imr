@@ -246,12 +246,18 @@
     // plain one null when there is none; join runs in the transaction, on the plain draft as it is then). The seal goes
     // in the same transaction that writes the draft and its base (Codex review #798: a draft kept without its base, or
     // a seal dropped that was not the one opened, lost work), so all of it is written or none.
-    T.load = async join => {
+    // since: for a session restored at a reload (admin.js), the generation it was opened in. If its token signed out after
+    // that (in another tab: a discarded tab misses the sign out), it resolves {stale: true}, opening, writing and loading
+    // nothing (Codex review #1078: the seal opened without the password typed again); admin.js locks. A fresh unlock
+    // passes none.
+    T.load = async (join, since) => {
+      const stale = S => since != null && !!T.K && (((S && S.outs) || {})[T.K.mark] || 0) > since;
       for (let i = 0; i < TRIES; i++) {
         const k = T.K ? SEAL(T.K.mark) : null,
           v = await ddbRead(o.db, ['state', 'draft', 'base', ...(k ? [k] : [])]),
           S = v.state || {gen: 0},
           cur = k && v[k];
+        if (stale(S)) return {stale: true};
         let p = null;
         if (cur)
           try {
@@ -265,6 +271,7 @@
               api.get(['state', 'draft', 'base', k], x => {
                 const S2 = x.state || {gen: 0},
                   c2 = x[k];
+                if (stale(S2)) return (api.out = {stale: true});
                 if (!c2 || c2.id !== cur.id) return (api.out = null); // replaced meanwhile (another tab's sign-out): again
                 const d = join(x.draft ? {d: JSON.parse(x.draft.j), b: x.base ? JSON.parse(x.base.j) : null} : null, {
                     d: JSON.parse(p.j),
@@ -281,6 +288,7 @@
               })
             );
             if (!r) continue;
+            if (r.stale) return r;
           } catch (e) {
             failed = e; // storage full: nothing of it written, the seal stays for the next unlock (or this tab's sign out)
           }
@@ -378,7 +386,8 @@
     // was refused or failed, a note flushed at the lock) goes into the token's seal: the seal opened, this tab's changes
     // merged on it against the draft this tab last stored, sealed again, written only if the seal is still the one read
     // (Codex review #798: a note typed in another tab, two tabs of one token signing out at once). With no seal (a sign
-    // out with nothing to seal, or one an unlock opened since), a seal of this tab's draft. Resolves {kept}.
+    // out with nothing to seal, or one an unlock opened since), a seal of those changes on the published curation.
+    // Resolves {kept}.
     T.intoSeal = async () => {
       if (!T.K) throw new Error('no key');
       const k = SEAL(T.K.mark);
@@ -386,12 +395,14 @@
         const j = o.snap();
         if (j === T.storedJ) return {kept: true}; // all of it was stored before the seal, which holds it
         // Only this tab's changes since it last stored are carried: onto the seal, or with no seal (a sign out with nothing
-        // to seal, or one an unlock opened since) onto the plain draft stored now or else the published curation, never
-        // this tab's whole draft, which may hold a choice another tab undid since (Codex review #1078).
-        const v = await ddbRead(o.db, [k, 'draft']),
+        // to seal, or one an unlock opened since) onto the published curation it is sealed with, never this tab's whole
+        // draft, which may hold a choice another tab undid since (Codex review #1078). Never onto the plain draft stored
+        // now: a session of the token unlocked again edits it, and a later merge of this seal on the published curation
+        // would take that copy's choices for changes, bringing back one that session undid since (Codex review #1078).
+        const v = await ddbRead(o.db, [k]),
           cur = v[k] || null,
           p = cur ? await openRec(o.subtle, T.K, cur) : null,
-          onto = p ? JSON.parse(p.j) : v.draft ? JSON.parse(v.draft.j) : o.saved(),
+          onto = p ? JSON.parse(p.j) : o.saved(),
           d = o.merge(parsed(T.seen) || o.saved(), o.draft(), onto).draft,
           rec = await sealRec(o.subtle, T.K, {j: JSON.stringify(d), b: p ? p.b : JSON.stringify(o.saved())});
         const done = await ddbTx(o.db, 'readwrite', api =>
