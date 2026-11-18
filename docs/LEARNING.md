@@ -1302,7 +1302,19 @@ null effect the model gets wrong can stay clear, which the bootstrap's wider int
 
 ## Considered and not adopted
 
-SPEC-PLACEHOLDER
+What the code does instead of what was weighed and left out; the options, their figures and their dates are in the
+notebook: [docs/archive/learning-notebook.md](archive/learning-notebook.md) (the section of the same name).
+
+- **First answer per photo only**: not used. Every trusted answer of a player counts, weighted by the player's
+  experience (`PHOTO_W`; "Photo memory" for what a repeat owes to memory).
+- **Urnings**: not used. The photo ratings are Elo, with the drift the references describe ("Keeping Elo alive").
+- **Coded tracks or tiers**: none. Every threshold is continuous or performance-driven; nothing is coded per kind of
+  player.
+- **Time between sessions** never changes progress, mastery or ability (rule L1). The exceptions are told where they
+  act: the comeback after a break, photo memory ("Photo memory"), and the seconds an answer takes ("Response time"),
+  which are evidence about that answer, never a decay.
+- **Answer time compared within the same question format**: not used. One pooled median of the player's own timed
+  answers (`RTIME`, `rtWeight`).
 
 ## Real-answer replay (`tools/abilityeval.js`): judging a paired difference (2026-11-05)
 
@@ -1845,7 +1857,11 @@ and the judge's first design.
 
 ## Decision log
 
-SPEC-PLACEHOLDER
+This file says what the code does now, so it holds no log. Each decision, with its context and Pierre's
+words, is a record in [docs/decisions/README.md](decisions/README.md); the ones taken before the records began, with
+their dates and question numbers, are in the notebook's section of the same name:
+[docs/archive/learning-notebook.md](archive/learning-notebook.md). The rules in force are in
+[docs/rules/learning.md](rules/learning.md), the algorithms in the sections above.
 
 ## References
 

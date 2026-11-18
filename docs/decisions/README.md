@@ -78,6 +78,7 @@ Newest first.
 | 2026-11-18 | [The 2026-11-18 rule wordings](2026-11-18-rules-wordings.md) | #1086 |
 | 2026-11-04 | [Fish basics: the fish twin of Coral basics, on the same engine, from the IMR fish presentation](2026-11-04-fish-basics.md) | #1108 |
 
-Older decisions are still in LEARNING.md "Decision log", the rules' *Source* lines, ROADMAP source cells and the PRs; they
-move here when the docs that hold them are cut to what the code does now (the docs restructuring of 2026-11-18,
+Older decisions are still in the notebook's "Decision log"
+([docs/archive/learning-notebook.md](../archive/learning-notebook.md); LEARNING.md "Decision log" points there), the
+rules' *Source* lines, ROADMAP source cells and the PRs; they move here when the docs that hold them are cut to what the code does now (the docs restructuring of 2026-11-18,
 [docs/reviews/2026-11-18-docs-audit.md](../reviews/2026-11-18-docs-audit.md) section 6).
