@@ -43,7 +43,8 @@ function engine(
     varAt = null, // its variant thresholds' overrides (fish.json varAt: model.js varAtOf)
     ex = null, // its mastery exam under way (s.ex: model.js examSet)
     held = null, // its held-out photos (g.held: model.js HELD, examSet, heldSet)
-    others = {} // the player's records of other units (P: model.js shownAll)
+    others = {}, // the player's records of other units (P: model.js shownAll)
+    calset = {} // the calibration set as app.js reads it (model.js CALSET: {subject id: {unit: [files]}})
   } = {}
 ) {
   let s = 12345;
@@ -95,12 +96,13 @@ function engine(
     ability: () => th,
     genScore: () => score,
     LV_AT: [0.5, 0.8, 0.95],
-    pick: a => a[Math.floor(rnd() * a.length)]
+    pick: a => a[Math.floor(rnd() * a.length)],
+    CALSET0: calset
   };
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));

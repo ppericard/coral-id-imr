@@ -18,8 +18,9 @@
 //     the set does too; the views alternate across the genera (a hash order), so it holds colony and close-up photos.
 //   - Which photo: in its genus and view, the first in a fixed hash order (sha256 of SALT and the file), one per colony
 //     (a question shows one colony: two members of one colony would share their answers).
-//   - Sticky: a member stays while it is eligible; a genus short of its count (a member out of play, Poor, or removed)
-//     takes the next eligible photo by the same order. A redraw would throw away the answers the members gathered.
+//   - Sticky: a member stays while it is eligible, even when its genus's count falls (the set may then hold a few more
+//     than TARGET); a genus short of its count (a member out of play, Poor, or removed) takes the next eligible photo by
+//     the same order. A redraw would throw away the answers the members gathered.
 //
 //   node tools/calibset.js                       write calibration-set.json (sticky) from data.json, curation.json,
 //                                                quality.json, forms.json and the file itself
@@ -78,19 +79,22 @@ function eligible(d, raw, cur, autoq, forms) {
   return out;
 }
 
-// {genus: how many members}: TARGET over the genera with an eligible photo, one each (fewer genera than TARGET), the
-// rest to those with the most eligible colonies, ties in hash order.
+// {genus: how many members}: TARGET places dealt in rounds over the genera with an eligible photo, the genera with the
+// most eligible colonies first (ties in hash order), a genus out of colonies skipped: one each first, the rest to the
+// commonest in play.
 function quotas(E) {
   const G = Object.keys(E).filter(n => Object.values(E[n]).some(L => L.length)),
-    cols = n => new Set(Object.values(E[n]).flat().map(colonyOf)).size,
-    base = Math.floor(TARGET / Math.max(1, G.length)),
-    extra = TARGET - base * G.length,
-    order = G.slice().sort((a, b) => cols(b) - cols(a) || byHash(a, b)),
-    out = Object.fromEntries(G.map(n => [n, Math.min(base, cols(n))]));
-  let k = extra;
-  for (const n of order) {
-    if (k <= 0) break;
-    if (out[n] < cols(n)) (out[n] += 1), (k -= 1);
+    cols = Object.fromEntries(G.map(n => [n, new Set(Object.values(E[n]).flat().map(colonyOf)).size])),
+    order = G.slice().sort((a, b) => cols[b] - cols[a] || byHash(a, b)),
+    out = Object.fromEntries(G.map(n => [n, 0]));
+  for (let k = TARGET, gave = true; k > 0 && gave; ) {
+    gave = false;
+    for (const n of order)
+      if (k > 0 && out[n] < cols[n]) {
+        out[n] += 1;
+        k -= 1;
+        gave = true;
+      }
   }
   return out;
 }
@@ -102,11 +106,12 @@ function build(E, prev) {
     out = {};
   const where = {};
   Object.entries(E).forEach(([n, V]) => Object.entries(V).forEach(([v, L]) => L.forEach(p => (where[p.f] = {n, v, p}))));
-  // The members kept first, in their genus, one per colony, up to its count.
+  // The members kept first, in their genus, one per colony, all of them: a genus whose count fell (another genus gained
+  // colonies and took one of the extra places) keeps its members, so the set may hold a few more than TARGET.
   Object.entries(prev || {}).forEach(([n, L]) =>
     (L || []).forEach(f => {
       const w = where[f];
-      if (!w || w.n !== n || used.has(colonyOf(w.p)) || (out[n] || []).length >= (Qn[n] || 0)) return;
+      if (!w || w.n !== n || used.has(colonyOf(w.p))) return;
       used.add(colonyOf(w.p));
       (out[n] = out[n] || []).push(f);
     })
@@ -201,7 +206,7 @@ function main(argv) {
   const i = argv.indexOf('--progress');
   if (i >= 0) {
     const file = argv[i + 1];
-    if (!file || !old) return console.error(old ? '--progress STATS (a saved ?stats=1 reply)' : `${OUT} is missing: run the tool`), 2;
+    if (!file || !old) return console.error(old ? "--progress STATS (the sheet's photo statistics, saved)" : `${OUT} is missing: run the tool`), 2;
     const r = progress(old, JSON.parse(fs.readFileSync(file, 'utf8')), E),
       r2 = x => (x == null ? '-' : Math.round(x * 100) / 100);
     r.rows

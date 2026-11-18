@@ -5946,16 +5946,19 @@ docs/decisions/2026-11-18-coral-calibration-set.md.
   of 2026-11-18, the 48 members already rated sit from −1.14 (10%) to 0.67 (90%), median −0.03, and 4 answers each
   (median; 0 to 11, 212 in all). The hard end of a test comes from its formats (a single view, look-alike choices, a
   typed name: the format offsets), not from a set of hard photos.
-- **Sticky**: a member stays while it is in play; a genus whose member left play (Pierre removed it, rated it Poor,
+- **Sticky**: a member stays while it is in play, even when its genus's share of the 50 falls (the set may then hold a
+  few more); a genus whose member left play (Pierre removed it, rated it Poor,
   excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
   says when it would). Until then the member out of play is simply never drawn. A redraw would waste the answers the
   members have gathered.
 - **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
   sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
-  online calibration's bonus (`calBonus`); then 1. It multiplies the photo's weight and nothing else: the difficulty
-  targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the format and the scoring
-  are any photo's, so the question is a normal one. A subject with no set, or a device where the file did not come,
-  draws as before.
+  online calibration's bonus (`calBonus`); then 1. Only on a unit the player holds (met, not shaky: the calibration
+  questions' condition) and for a photo within one width of the question's target (|x| ≤ 1 in the targeting's
+  Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
+  else: the difficulty targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the
+  format and the scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
+  file did not come, draws as before.
 - **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
   lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
 
@@ -5968,6 +5971,35 @@ draw of `main`) against the set, on the same seeds):
   the run), margin +1 point;
 - reported: the questions that showed each member, pooled over the 20 runs as one cohort (minimum, quartiles, members
   never shown), before and after.
+
+**What the check found.**
+- **The run as declared measured nothing**: `--truth gen` tells the app that every photo has 20 answers (learnsim's
+  `PSTAT` of that world), so no member is under its goal and the factor is 1 everywhere; both files were identical. The
+  same check without `--truth gen` (the learner reads the app's own photo difficulty, learnsim's default; the sheet's
+  real counts) is the one below.
+- **First version** (×2 on every unit): the members' share of questions 4.17% → 5.94% (20 of 20 pairs up); but the
+  beginner met 2.4 fewer genera at 300 (breached) and reached its first Open Water 44 answers later (breached, mostly one
+  seed). **Held units only**: share 5.21%; on 15 fresh seeds (6-20) the beginner's true knowledge at 300 fell 0.023
+  (breached). **Held units and within one width (built)**, below.
+- **Built version, the four profiles × 5 seeds** (seeds 1-5, 600 questions): members' share 4.17% → 5.35% (19 of 20
+  up; beginner +1.5 points, strong RA +1.4, lecture RA +1.1, expert +0.7); questions showing each member, pooled over
+  the 20 runs: minimum 1 → 3, quartiles 7 / 9 / 12 → 8 / 11 / 17, total 500 → 642, none never shown either way. Colony
+  repeats 10.2% → 10.5% (+0.36 points, 11 of 20 up; margin 1 point). `learncmp`'s guardrails on 5 seeds: true
+  knowledge and units met held for every profile; the run-level ones swung both ways (the beginner's first Open Water
+  +25.8 answers, the lecture RA's longest plateau +8, the strong RA's −6), as they did between the variants, so they
+  were run again on fresh seeds.
+- **Fresh seeds** (rule L11, one step up on the unclear and breached cells): the beginner on 45 (seeds 6-50; 6-20 to
+  600 questions, 21-50 to 300), the lecture and strong RAs on 15 (6-20, 600). Every guardrail held but one: first Open
+  Water −0.5 answers [bound +5.3], units met at 300 −1.2 [−1.8], units at Open Water at 300 +0.7, longest plateau +0;
+  lecture and strong RA all held (first Open Water −2.7 and +1.3, plateau −3 and −2, colony repeats +0.8 and −0.8
+  points). **The one left: the beginner's true knowledge at 300 questions, −0.012 [bound −0.020], at the margin
+  (unclear)**, +0.003 at 600: the simulated beginner meets about one genus fewer by question 300 and has caught up by
+  600. A cost the integrator or Pierre accepts or not (the PR's "For Pierre").
+- Compute: about 30 minutes in all (rule L11's cap 40), level 1 only.
+- **Pace** [guess, from the sheet's counts of 2026-11-18]: the members hold 212 answers (median 4); at the traffic of
+  the study (about 3,500 coral answers in 17 days) and the share above (+28%), the median member reaches 20 in roughly
+  7 weeks, the starred genera's later (they open after their look-alikes, rule L5). The check measures the share, not
+  real players' pace: `--progress` tells.
 
 ### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
