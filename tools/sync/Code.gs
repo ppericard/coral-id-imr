@@ -2803,6 +2803,12 @@ function gdefRows_(){
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GDEF.HEAD.length).getValues() : [];
 }
 const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, apart: Number(r[3]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});
+// Writes a group's settings at row r of the Group settings tab, its Name cell plain text first, so a name such as
+// "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
+function gdefPut_(sh, r, d){
+  sh.getRange(r, 2).setNumberFormat('@');
+  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, d.apart, d.beta, new Date(d.at || Date.now())]]);
+}
 // A group's name as typed, its spaces folded ('' for one that cannot be: empty, too long, a control character).
 const gname_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= GNAME_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? s : ''; };
 // Every group and membership, read once: {defs: [{id, n, board, apart, beta, at}] in the tab's order, rows: [[group id,
@@ -2880,13 +2886,12 @@ function groupDo_(p){
   }
   const n = o.n === undefined && cur ? cur.n : gname_(o.n);
   if (!n) return {ok: false, error: 'name'};
-  if (gs.defs.some(d => d !== cur && lc_(d.n) === lc_(n))) return {ok: false, error: 'exists'};
+  if (o.n !== undefined && gs.defs.some(d => d !== cur && lc_(d.n) === lc_(n))) return {ok: false, error: 'exists'};  // a setting changed alone never asks
   const beta = o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '');
   if (beta && groupIds_().indexOf(beta) < 0 && !(cur && cur.beta === beta)) return {ok: false, error: 'beta'};
   const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
   const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), apart: flag('apart', cur ? cur.apart : 0), beta: beta, at: cur ? cur.at : Date.now()};
-  const vals = [safe_(d.id), safe_(d.n), d.board, d.apart, d.beta, new Date(d.at)];
-  if (cur) sh.getRange(row(), 1, 1, GDEF.HEAD.length).setValues([vals]); else sh.getRange(sh.getLastRow() + 1, 1, 1, GDEF.HEAD.length).setValues([vals]);
+  gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
   boardsDrop_();
   return {ok: true, group: d};
 }
@@ -2931,8 +2936,8 @@ function groupsMigrate_(){
   if (groupsMigrated_()) return 'already made by a change to the groups';
   const st = groupsBefore_(), sh = sheet_(GDEF.TAB, GDEF.HEAD), have = Object.create(null);
   gdefRows_().forEach(r => (have[String(r[0])] = 1));
-  const add = st.defs.filter(d => !have[d.id]).map(d => [safe_(d.id), safe_(d.n), d.board, d.apart, d.beta, new Date(d.at || Date.now())]);
-  if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, GDEF.HEAD.length).setValues(add);
+  const add = st.defs.filter(d => !have[d.id]);
+  add.forEach(d => gdefPut_(sh, sh.getLastRow() + 1, d));
   const ra = sheet_('RAs', HEAD), staff = st.rows.filter(r => r[0] === GSTAFF_).map(r => r[1]), n = groupSet_(ra, staff, GSTAFF_, true);
   props.setProperty('ONCE_groups', String(Date.now()));
   boardsDrop_();

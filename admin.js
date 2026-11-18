@@ -9995,7 +9995,7 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // Groups lists every group with its settings (Board, Apart, Beta) and members, makes, renames and deletes an empty one.
 // Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
 // (the Staff toggle, which granted the trainer role, is gone at every version).
-const GROUPADM_SHEET = 175;
+const GROUPADM_SHEET = 177;
 const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
 const gdefs = () => (USERS && USERS.groupDefs) || [];
 const gdefOf = id => gdefs().find(d => d.id === id);

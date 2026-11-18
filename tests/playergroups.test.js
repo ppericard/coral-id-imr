@@ -81,6 +81,8 @@ test('a group: made with a name and settings; its name unique, 40 characters at 
   assert.strictEqual(make(s, 'Beta', {beta: 'coral'}).error, 'beta', 'beta: only a subject that opens to a group');
   assert.strictEqual(s.post({groupMake: {n: 'X'}}).error, 'token');
   assert.strictEqual(make(s, '=1+1').group.n, '=1+1', 'kept as text');
+  const F = s.sheets['Group settings'].formats;
+  assert.deepStrictEqual([F['2,2'], F['3,2']], ['@', '@'], 'every Name cell plain text first: "November 2026" stays text, never a date');
   assert.strictEqual(s.sheets['Group settings'].rows[2][1], '=1+1', 'never a formula in the sheet (the quote prefix, not read back)');
   const L = s.post({users: 1, token: TOK});
   assert.deepStrictEqual(
@@ -366,6 +368,31 @@ test('the migration: a change to the groups before it makes it first, once; once
   assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 5, 'not made twice');
   assert.strictEqual(s.sheets.Groups.rows.filter(r => r[0] === 'staff').length, 2);
   assert.deepStrictEqual(view(s).boards[0], ['RA December 2026', ['Fay']]);
+});
+
+test('the migration: two cohorts whose names differ by case only both stay; a setting changes alone, a rename to the other is refused', () => {
+  const s = before();
+  s.sheets.Groups.rows.push(['cohort:ra october 2026', 'Fay', new Date('2026-11-11T00:00:00Z')]);
+  run(s, 'ONCE_.groups()');
+  const defs = s.post({users: 1, token: TOK}).groupDefs.filter(d => /october/i.test(d.n));
+  assert.deepStrictEqual(
+    defs.map(d => d.n),
+    ['RA October 2026', 'ra october 2026']
+  );
+  assert.strictEqual(edit(s, defs[1].id, {apart: 1}).group.apart, 1, 'not refused as a name taken');
+  assert.strictEqual(edit(s, defs[1].id, {n: 'RA OCTOBER 2026'}).error, 'exists');
+});
+
+test('the migration tried again after a failure part way: nothing made twice', () => {
+  const s = before();
+  // A try that wrote the settings rows and failed before the staff's memberships and its mark.
+  const add = run(s, 'groupsBefore_().defs');
+  run(s, `(sh => ${JSON.stringify(add)}.forEach(d => gdefPut_(sh, sh.getLastRow() + 1, d)))(sheet_(GDEF.TAB, GDEF.HEAD))`);
+  assert.ok(!run(s, 'groupsMigrated_()'));
+  assert.match(run(s, 'ONCE_.groups()'), /^0 groups set .*, 2 staff members added$/);
+  assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 4);
+  assert.strictEqual(run(s, 'ONCE_.groups()'), 'already made by a change to the groups');
+  assert.strictEqual(s.sheets.Groups.rows.filter(r => r[0] === 'staff').length, 2);
 });
 
 test('the migration marked done on a sheet with nothing to migrate: no group', () => {
