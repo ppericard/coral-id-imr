@@ -5,9 +5,10 @@ The studies, measurements, options weighed and not adopted, and first versions o
 LEARNING.md copied word for word, with its dates, question numbers, PR numbers and Pierre's words, as it stood when it
 moved: "The player's own model (app)" at `origin/main` `2b4277ac`, "Pooled statistics: photo difficulty and
 confusions" at `7d57ce92` (both 2026-11-18), "Simulation (`tests/profiles.smoke.js`, CI)" at `d883e3ea`
-(2026-11-19), "Multifactor analyses (admin Analyses, 2026-11-04)" at `1ce0178f` (2026-11-19). Its relative links were
-given `../` so they still resolve from this folder; the section names it cites are those of LEARNING.md then and are
-not kept up to date.
+(2026-11-19), "Multifactor analyses (admin Analyses, 2026-11-04)" at `1ce0178f` (2026-11-19), "Considered and not
+adopted" and "Decision log" at `6c4c05d1` (2026-11-19). Its relative links were given `../` so they still resolve from
+this folder; the section names it cites are those of LEARNING.md then and are not kept up to date. A real player's
+name is replaced by a label (rule D2, which has no exception for an archive).
 
 Where this notebook and LEARNING.md or the code differ, LEARNING.md and the code say what runs now: a value or a rule
 here may since have changed. New studies go to `docs/reviews/`; this file only takes further parts moved out of
@@ -6667,3 +6668,286 @@ Two views show how effects and genera relate (the multifactor visualisation stud
 
 8. **Sessions** (30 minutes without an answer ends one): Kaplan-Meier of the length (open sessions censored) and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (against the player's usual) + log position + (player).
 9. **Time and difficulty** (Pierre, 2026-11-08; `tdiff`, `tdFeat`, `AV` 9; "Response time as information on difficulty" above): the reverse of Response time and Zoom. Before each answer, the earlier answers of other players on its photo (the question's first photo): their right answers' z (log seconds minus their own median over their earlier timed answers, from the 11th; typed and enlarged answers out) and their enlarging minus their own habit so far, each the photo's mean shrunk by `TD_K` = 3 answers' worth; right ~ offset (the app's log-odds, its photo rating included) + slow + enlarged + (player), with each question's guess rate. Then the time intensity beside difficulty: log seconds ~ right + typed + enlarged + 2 choices + (player) + (genus) + (photo), and right ~ the photo's time intensity + typed + 2 choices + (player) + (genus) + (photo). The genera's and the slowest and fastest photos' time intensity beside their difficulty from the accuracy alone (a third fit, no covariate), their correlation over the photos with 3 timed answers or more and the genera with 5 (descriptive; shrinkage lowers it); right against expected by the others' speed (faster, about, slower than their usual: ±0.1). The others' features are fixed in the bootstrap (it resamples the answers' players, not the features' sources). The genus's time intensity is not tested: beside the genus's own effect it is not identified with a few dozen genera. Tested on a planted link (`TRUTH.td`: `link`, the photo's time per logit of its own difficulty; `blind`, the share of that difficulty the app's expectation misses): both effects come back, none without the link, and others' time adds nothing when the app already knows the photo. Corals only, as every analysis (the replayed subject).
+
+## Considered and not adopted
+
+- **First answer per photo only** (Papoušek 2014): standard for prior knowledge, where people already know the facts.
+  Our players learn the corals in the app, so the first answer is the noisiest and later informed ones would be dropped.
+  Tried in v17's first draft; Pierre rejected it, replaced by the experience weight and the history-aware repeats.
+- **Urnings**: principled standard errors and robustness to adaptive selection; heavier to build and to run in the sheet
+  script. To revisit if the photo ratings drift (the variance inflation "Keeping Elo alive" describes).
+- **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
+  Pierre. Every threshold above is continuous or performance-driven.
+- **Time between sessions** for progress, mastery or ability (spaced-repetition days, decay, a "refresh"): ruled out
+  (rule L1). Two exceptions: time to plan the questions after a break (the comeback above), and photo memory (Pierre,
+  2026-11-09, Q317: the time since a photo was last shown may set how much a new answer on it is expected to owe to
+  memory of that photo, never a decay of progress, mastery or ability, never a delay or gate; "Photo memory"). The seconds
+  taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule L1): they are evidence about that
+  answer, and since rules version 4 they weigh how much a right answer moves the ability ("Response time"); never a
+  decay, never a penalty for being slow on its own.
+- **Answer time compared within the same question format** (2026-11-04, not adopted). A Duel-tab run (P1) where the
+  time weight raised two genera's ability fast (fast 2-choice answers against a 4 s overall median) prompted it. On the
+  real log (1,580 answers, 10 players, `tools/abilityeval.js`, paired next-answer log-loss against no time weight,
+  ×10⁻³ ± SE): the current pooled rule −2.59 ± 0.98; split 2-choice / 3+-choice −1.40 ± 0.67 (with a fallback to the
+  pooled median −1.76 ± 0.70); split Duel tab / rest −1.44 ± 0.55; weight capped at 1 −1.22 ± 1.04; no weight on
+  2-choice questions −0.71 ± 0.36. Against the current rule every variant is worse (+0.8 to +1.9). In the quiz a
+  2-choice question is not answered faster than a 4-choice one (4 of 6 players slower); only the Duel tab is fast. No
+  variant predicted the run's collapse (all expected 0.76-0.80 on the photos given). Kept: the pooled median (`RTIME`,
+  `rtWeight`).
+
+## Decision log
+
+- 2026-11-17, Q391 (Pierre, 10:52 Manila: "Q391 a oui, b oui"), #953 rebuilt ("Juveniles and colour phases on their
+  unit's mastery"): the fixed stage of 2026-11-15 replaced by a ramp of each unit's own bar per variant kind (`core.js`
+  `VAR_AT`: early-class juveniles from the start, the other juveniles and the sexes and colour phases from Open Water to
+  Advanced, late-class juveniles at Advanced; a family's own thresholds in `fish.json` `varAt`), and "Learned" asking a
+  right answer on each variant group (fish rules version 3). Its level 2 check declared there, results pending.
+- 2026-11-15, the ROADMAP row of 2026-11-07 (Pierre: "we must put back a progressive path that presents juveniles and
+  sexual dimorphism"), built in #953 ("Juveniles and colour phases in stages"): phase photos held back from a unit's
+  first `SUBJECTS` `calib` `phase` answers (fish 10), then in stages; two cards per subject. Checked at level 2: the
+  primary as intended in both worlds; the app world's no-wall check fails at 300 questions (10 runs of 100 meet no phase
+  photo), the rated world's heavy tails breach the lecture RA's wait for the first Open Water (+14 answers); N, the
+  class-A juveniles and the breach go to Pierre with the PR.
+- 2026-11-14, Pierre (Q350, "oui à tout" to the confusion-group study's a-j, f changed: declared pairs forced): look-alike
+  units open by confusion group, the exam waits for the group, `INTRO.EVERY` removed ("Confusion groups"). Built and
+  checked: partners 4-5 times closer, fish every guardrail held; the corals' start of the path breached guardrails
+  (the beginner's first unit at Open Water, the first answers' right %), back to Pierre with options before it ships.
+- 2026-11-12, Pierre (Q337 (a)): the card that offered to open all genera goes, for every subject; Open all stays on the
+  first cards and in My progress, the back card stays ("First meeting with a genus"). Q338 (a), "a unit still shaky
+  after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan
+  declared before the runs (N 8 and N 10 free the real stretches but lower a rated-world beginner's score and lengthen
+  its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky",
+  "Calibrated, not adopted"). Q338 (b), N 10 only above a global level L (0.25, 0.5 or 0.75) once it rests on 200
+  answers: calibrated, none passed (the simulated beginner's level is past every L from about answer 200, so it pays the same cost), nothing
+  changed; back to Pierre (the notebook's "Above a level"). Q338, decided: "option a, B10 après 200 réponses": N 10 from 200 answers,
+  no level (the arm "N 10, floor alone"), the beginner's shown-score cost accepted; adopted ("A unit stuck shaky").
+- 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
+  with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
+  species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation
+  with its components (per family, genus, species × common / scientific name, per circle); a species with no common name
+  has no common branch (credit = S); the rules that read a global fish % read the new scores (circle 3: the circle-1
+  Entries component at 55%).
+- 2026-11-06, Pierre (Q187-Q190, after the photo exposure study; fish too, 15:36): the Colony cap 40 colonies per genus
+  (corals; fish no cap); the calibration questions are an exploration share of 30% drawing colonies (observations)
+  never seen, on a unit held (simulated); a beginner's multi-view question weighs a colony by cov, not cov² (corals); a
+  colony counts as seen whatever view was shown ("Photo exposure").
+- 2026-11-06, Pierre (Q127-Q129, Q135; PR "domain-score bar"): the bar is the posterior expected domain score of the
+  genus from the player's own answers on it (grid, fixed population prior, format-aware, a drift per answer), 0 to 95%,
+  the exam from 85% to 100%; the moving average `s.pg` retired as the bar (kept for records not rebuilt, rule D4); the
+  learned-mark guard made explicit (`afterBkt`); the shared slope and the per-format offsets as inputs (Q147, Q138).
+
+- 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in
+  commonness order, the index of field counts near Dauin (weight 3), the IMR 24 most sighted (2) and iNaturalist distinct
+  observers in three rings (1), shrunk toward the entry's mean with M = 5, log scale over 2 decades
+  (`tools/fish_commonness.py`, `fish.json` `cmi`; "Fish: species order, the commonness index").
+- 2026-11-04, Pierre (approved; design only, docs/FISH_PATH.md "My progress (fish)"): the global fish score's formula. Per species,
+  C = mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S + (1 − a − b)·C·S
+  with b = 0.80, a ≈ 0.73; global = 25% × mean entry mastery + 75% × mean species credit over circle 1. Entries only 25%, every
+  common name 80%, every scientific name 85%, both 100%. The entries' share and the genus's half credit are checked by simulation
+  (rule L11) before it ships.
+- 2026-11-04, Pierre (latest; design only, docs/FISH_PATH.md): the fish path is a **tree** (trunk: families; branch A: species
+  by common name; branch B: scientific genus names, then species scientific names), and the players choose common, scientific
+  or both names; the global fish score reaches 100% only with both names of every species, about 80% with every common name
+  and no scientific one, about 85% with every scientific name and no common one, non-linear per species (credit a < b < 1, the
+  genus partial credit inside b; a, b and the families' share set by simulation, rule L11), never additive. Replaces the 80 / 20
+  split below.
+- 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
+  at the start, 80% for every entry and species known by common name, scientific names filling the last 20% slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
+  names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
+  species or per family, e.g. about 20 hard questions answered with the scientific name); milestone cards for species
+  names and scientific names; juveniles, colour phases and dimorphism introduced with an explanation card.
+- 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
+  that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
+  `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
+  `tools/learnsim.js`); **one global fish progress score** from 0 to every species in Latin (entries, species named,
+  species in Latin as stages of one scale, the weights set by simulation), used by the fish leaderboard; the
+  name-display thresholds start from learnsim, then are computed per species from the measured difficulty of the
+  common against the Latin name; the first fish entries are a starter core of easy families and the first photos
+  very easy (no juveniles or colour phases at the very start).
+- 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
+  changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
+  run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same
+  run) / Keep drilling, at most once a run, logged as a tip (`tip:duelhold`). Same detector, no new constant ("The Duel tab when the hold sets in").
+- 2026-11-04: answer time compared within the same question format (2-choice apart, or the Duel tab apart) **not
+  adopted**: every variant scored worse than the pooled median on the real log ("Considered and not adopted").
+- 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule L1
+  was about days between sessions, not the seconds an answer takes): **answer time weighs right answers** (rules
+  version 4, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
+  against the median of the player's own earlier timed answers (kept exactly in `P['~level'].rt`, replayed from the
+  log); misses, typed, untimed and the first 10 timed answers unchanged; on in the app only once the script is v32.
+  Real answers: −2.20 ± 0.72 × 10⁻³ log-loss per answer against main, every timed player better, no group worse.
+  learnsim (a time model calibrated on the two real measures, −0.88 and −0.39): no profile learns less, Elo error
+  lower or within its spread ("Response time", section 5). rule L1 reworded.
+- 2026-11-03, Pierre ("new genera open right after a wrong answer: it feels like a reward for it"): an opening only
+  after a right answer (`model.js` `openRight`, `P['~level'].h`): after a miss no genus opens until the player answers
+  right again, in any game; a card planned before the miss is planned again. Nothing else in the pace changes.
+  Simulated (5 seeds x 300 questions): one to two genera fewer by question 100 for the beginner and the RAs (beginner
+  18.4 → 16.2, lecture RA 20.6 → 18.6, strong RA 19.8 → 18.6), the expert unchanged, true knowledge within the spread
+  from question 200 (beginner 0.28 → 0.26 at 100); on `main` about one card in five came right after a miss. Real
+  answers: 22 of 130 first meetings on the path (17%) came on the question right after a miss ("An opening only after
+  a right answer").
+
+- 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
+  (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a
+  carded genus asked as soon as ready; replaces the hotfix's cap and `OPEN.UNASKED`), easier questions while the hold
+  is on (`holdEase`, h − `INTRO.HOLD` logits), the player's own mix-ups in the expectation (`confTerm`, on 3 or more
+  plausible choices only: worse on the 2-choice questions on the real answers), the Again queue of 3 pairs, look-alikes
+  from the data (`dataLook`: 20 offers, pooled score 0.2; one pair today, *Alveopora* / *Tubastraea*), an Again never
+  on a genus not met, and a one-time apology card, only to the players who felt it (Pierre: not to a player of a
+  single answer; 20 answers in the window and the hold at 3). Simulated: the pace bounded, knowledge as before or
+  better, genera learned by 600 within the spread except the strong RA against the hotfix; real answers: the
+  confusion term neutral overall (−0.0009 ± 0.0019) and better calibrated where it applies ("After the collapsed runs
+  of 2026-11-03").
+
+- 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
+  answers, three of them never asked, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and
+  no genus opens while `OPEN.UNASKED` (3) genera opened earlier are still unasked. A stopgap until the full fix (opening
+  pace per window, easier questions while the hold is on, the pair confusion term, data look-alikes).
+  `tools/learnsim.js`, 5 seeds x 300 questions, true knowledge of the slate / genera met at questions 100 and 300:
+
+  | Profile | `main` q100 | hotfix q100 | `main` q300 | hotfix q300 |
+  | --- | --- | --- | --- | --- |
+  | beginner | 0.31 / 23.2 | 0.29 / 18.8 | 0.65 / 38.2 | 0.60 / 34.6 |
+  | lecture RA | 0.49 / 24.2 | 0.48 / 21.8 | 0.76 / 40.0 | 0.74 / 39.2 |
+  | strong RA | 0.69 / 32.2 | 0.68 / 22.8 | 0.86 / 40.0 | 0.85 / 39.6 |
+  | expert | 0.94 / 26.4 | 0.94 / 19.8 | 0.95 / 40.0 | 0.95 / 39.8 |
+
+  Right %: within the seeds' spread (beginner 74 / 83 at 100 / 300, main 73 / 80). Tried first: no genus while any
+  opened genus is unasked (`OPEN.UNASKED` 1): genera met by question 300 fell to 24-25 for every profile and true
+  knowledge with them (strong RA 0.77, beginner 0.48): rejected; 2: 33-35 genera, strong RA 0.81: rejected; the cap
+  alone: knowledge as `main`, but nothing stops a run of openings whose genera are never asked. Real log (rule L12):
+  the rule only changes which question comes, not the Elo's predictions, so the log's log-loss is unchanged by
+  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, 4 pass the
+  unasked rule (each then at a chance of at most 0.5) and 3 are blocked, 2 of them genera the run never asked.
+- 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
+  developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
+  repeats; players start as beginners.
+- 2026-11-02, Pierre: three player paths, nothing coded per path; progressive opening of genera, easiest first, from
+  the data; experts keep hard traps; adaptive step (volatility); BKT start from the global level (point 3).
+- 2026-11-02, Pierre: genera should open a little more easily for the RAs: `OPEN.K` 3 → 5 (table above); to
+  recalibrate with real answers.
+- 2026-11-02, Pierre: devices that never signed in count again for photo difficulty and confusions (sheet v18), under
+  the same rule as everyone (clearly above chance, weighed by experience): the rule, not the
+  sign-in, is what tells a real player from a bot or a test run. Signing in still saves the progress, for the trainer
+  and on any device, and puts the player on the leaderboard.
+- 2026-11-02, Pierre: the photo ratings must move quickly, the first players being RAs and experts who all bring real
+  information (Pierre, a named RA, and an anonymous player who is probably IMR staff): `PHOTO_W.N` 30 → 10 (sheet v18). The
+  10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). `TRUST.N` stays 10: it counts a player's
+  answers, which every real player passes quickly (lowered to 5 for a moment, when it read as answers per photo; there
+  is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To
+  revisit if beginners or bots arrive in numbers.
+- 2026-11-02, Pierre (beginner RA review): first-meeting cards, kinder first My progress, plain words, a bar under
+  "Loading…" (above and ARCHITECTURE); ★ genera stay in from the start, being there for comparison. Then: 4 cards to
+  start and questions among those, new genera one at a time, never asked right after their card; `OPEN.K` 5 → 6 to
+  keep the RA's pace (table above). For the RAs, a button opens all genera at once (on the first cards and in My
+  progress), and a card offers it after about 50 answers at a high level; all of it synced.
+- 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
+- 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
+  and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a
+  photo with few answers gets a wider targeting (`CAL.U`). Three seeds vary by ±5 genera at a given question count:
+  the opening table moved within that noise (a run without `CAL.U` gave the RA 19-21 genera at question 300).
+- 2026-11-02, Pierre: the opening as a slope rather than a switch, `OPEN.K` 6 → 10 (tables above), and no duel slipped
+  into the quiz on a question that opens a genus. No setting added: "the simpler the algorithm, the better; rethink or
+  recalibrate the existing variables rather than add one to patch a problem". K 12 on the first grid, 10 once the
+  new photos were in. An independent review of the algorithm against the literature (Pelánek, Papoušek, Duolingo,
+  BKT, interleaving) is done (ROADMAP, "To discuss") and may revisit this.
+- 2026-11-02, Pierre: the progress % climbed far too fast and a right answer among a few genera counted almost as much
+  as one against the genus's look-alikes. Agreed: a moving average weighed by what each answer proves, simulated first
+  (6 seeds, 4 profiles, up to 1500 questions). BKT dropped; `PROG` A 0.15, exam entry 0.8 shown as 95%, look-alike
+  factor 0.5, misses in full, a learned genus survives one miss; old progress recomputed from its last 10 results
+  ("Progress (moving average) and mastery"). Sheet v22 computes the leaderboard % the same way. A pop-up announcing the
+  recalculation to the players is not built yet (ROADMAP).
+- 2026-11-02, Pierre: *Millepora* joins the slate (on the IMR benthic slate; the progress goes over 40 genera, announced
+  with a second `RECALC` note); the other bonus genera become opt-in, offered once every slate genus has been asked, and open
+  like slate genera, without their thresholds, weight cap or share limit ("Millepora and the bonus genera").
+- 2026-11-02, Pierre: the fixed gentle restart (10 easy questions at every visit, left out of the hold) becomes a
+  comeback planned from the time away (FSRS forgetting curve, stability from how solid each genus is and the days it
+  was answered right), ended by the answers (a CUSUM), with no cap or duration threshold; time is used for that only
+  (rule L1 exception), progress, mastery and ability never decay. Then: a new visit (30 minutes without an
+  answer, the web-analytics session timeout) opens no genus in its first 10 answers, comeback or not; the comeback's
+  answers feed the opening hold with the expectation they really had (logged `|c`, not left out like `|w`).
+- 2026-11-03, Pierre: open the genera "easy and common first": `cm` from iNaturalist near Dauin (geometric mean of
+  observations and observers, `tools/commonness.py`), one factor √((1 + cm) / (1 + median)) on the opening weight, no new
+  constant ("Common first").
+- 2026-11-03, Pierre: photo memory, points 1 and 2 of the proposal ("Photo memory"): one rule in the sheet (v26) and
+  the app, estimated from the trusted answers with the old fixed rule as prior; the app's expectation includes it, a
+  right answer on a known photo counts in the progress only for what memory does not explain (a ratio of chances, after
+  the room-for-surprise version over-corrected in the simulation), misses weigh the chance the player had; ordinary
+  questions weigh a photo already shown e^offset. Point 3 (more photos for the thinnest genera) stays with Pierre.
+  Then, after the replay of the real log (bars down 1-3 points): everyone's saved progress recalculated once, silently.
+- 2026-11-03, Pierre: after Open all, offer once to go back to one at a time when the answers fall clearly below
+  expectation (a player at 90% on 13 genera fell to 62% on the ~27 opened at once): the opening hold's CUSUM counted
+  from Open all, due at 2 × `INTRO.HOLD`, no answer count and no new constant (a replay of the answers: at the 21st
+  after Open all; 30 answers + the hold would have come 4 answers before the player quit); One at a time closes every genus
+  opened at once, answered or not, until its card reopens it, answers and progress kept ("First meeting with a genus").
+  The starting ability of those genera measured, not changed ("Open all: the app's expectation against the truth").
+- 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
+  Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
+  SAME}; duels from the first answers ("One contrast queue").
+- 2026-11-03, review item 8 (first half, Pierre the same day): one draw weight, `drawW` = 1 − x · c from the Elo's
+  chance and its uncertainty, instead of the status weights; "Review" = shaky instead of 2 misses in the last 5. The
+  wrong-pick update stayed (rule L2; its weight recalibrated in the next entry, which removed its Elo step) ("One draw
+  weight").
+- 2026-11-03, review item 4: one difficulty controller, the photo aimed so every question is right with the chance
+  `PICKD.P` 0.8 in its format (`aimOff(k)`, typed included), the traps and single views on one schedule (`FORMAT`);
+  `TARGET_OFF`, `TRAP` and `singleP`'s ramp removed ("One difficulty controller").
+- 2026-11-03, review item 6: one opening rule, a card with the chance 1 − shaky / `OPEN.K` when the path allows one
+  (`openChance`, `openPick`); `OPEN.READY`, `OPEN.TRICKLE` and the share of the draw removed; `OPEN.K` 10 → 8 ("One
+  opening rule").
+- 2026-11-03, Pierre: the app under-estimates strong players; the principle that a confusion affects both genera stays,
+  its weight follows standard practice. The genus wrongly given no longer gets an Elo step (it counts in its progress,
+  recent results and runs, as before), as in the Elo learner models of adaptive practice (Pelánek et al. 2017); on the
+  real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.11 to
+  0.59 (fit 0.73); simulated, the error of the ability falls for every profile ("The genus wrongly given in the Elo").
+- 2026-11-03, Pierre (strong players remain the priority): a genus moves with the global level since its own last
+  step, weighed by its own uncertainty, both ways, and the level's step loses its `kmin` floor (Pelánek et al. 2017's
+  global + concept skill). Real answers: log-loss 0.465 → 0.457, strong players' band −0.021; simulated, strong players
+  recognised sooner and a beginner not over-rated. A one-way version (rises only) was rejected: biased upward ("Global
+  level and genus").
+- 2026-11-03, Pierre (22 genera by question 100 too many for a beginner; aim a beginner at about 85%): the success
+  aimed for follows the global level, `PICKD.AIM` 85% up to 0.5 → 75% from 1.5, a straight line between; a genus is
+  shaky against the same target (OPEN.P + aimed − 0.8). Simulated: the beginner back to `main`'s pace (20.2 / 28.0
+  genera by questions 100 / 200), not over-rated, the strong players' gains kept; the opening's capacity by level and a
+  sign gate on the level's move measured, not adopted ("Beginners and experts").
+
+- 2026-11-03, Pierre: the Easy / Medium / Hard photo sets removed (one game list per view, the same photos), and the
+  photo difficulty made hierarchical: a genus offset learned from every answer on the genus + the photo's own residual
+  (sheet v31, `GENUS_K` 0.4, `?stats=1` `gd`), the app's prior for a photo with few answers the genus offset (0 with an
+  older sheet). On the real log the app's next-answer log-loss goes from 0.4976 to 0.4812 (−0.016 [−0.028, −0.006]);
+  simulated, no learning path changes beyond the seeds' spread ("Hierarchical photo Elo").
+- 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
+  beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
+  (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
+  they are met, Open all unchanged, no new constant ("Starred genera after their reference").
+- 2026-11-03, Pierre: the first-launch question (new to corals / had the IMR coral course / know corals well), forced,
+  in the welcome tour; it initialises variables of the model only (`playerStart` shrinks towards p 0 / 0.5 / 1.25, the
+  open-all offer from answer 50 / 30 / 20, Coral basics offered first for "new"); existing players under 50 answers are
+  asked once, the others inferred silently; a fallback card once per answer and direction when the first 20 answers'
+  surprise is below −0.1 or above +0.18 ("The first-launch question").
+- 2026-11-04, Pierre (on #428, after the variants compared): the fallback rule weighs the errors: a true beginner on
+  the harder path is the costliest, so "lower" is sensitive (checkpoints 40 and 60 only; the global level under the
+  band's floor at one-sided 80%, or the opening hold alone; "IMR course" and "know well" only) and its card a gentle
+  offer (Coral basics or "No thanks, I know the basics"; Coral basics also moves the start variables one band down,
+  silently, the answer given kept); "higher" unchanged; the open-all offer card shows the step as a big one ("Not now"
+  on top). 36 of 40 wrong answers caught, 7 of 20 gentle offers to truthful answers; 40-60 adaptive answers cannot tell
+  a beginner who said "IMR course" from a lecture RA: a placement test is the follow-up (the notebook's "The rule since 2026-11-04").
+- 2026-11-04, Pierre (on #428): the fallback test redesigned: checked at 20, 40 and 60 answers; "lower" from the level
+  of the first answers on each genus (or the opening hold fired), "higher" only from 40 answers and 10 genera met, from
+  the global level and the first answers together; no move back after a change made on its card; 35 of 40 wrong answers
+  caught instead of 10 ("The fallback test, redesigned"). The full replay applies the first-launch prior (RVS v3).
+- 2026-11-03, Pierre: a custom quiz, the photo quiz on the genera the player picks: the genus asked drawn among them by
+  the usual weights with no opening path (a genus not met yet is asked with its card), the choices from them first
+  (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a
+  photo-quiz answer, logged `quiz|s…` ("Custom quiz: the photo quiz on the genera the player picks").
+
+- 2026-11-03, Pierre: the one-tap question varies (six items on felt difficulty, fun, frustration and boredom, in
+  rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
+  level-dependent target can be checked by level band; logged in the existing v19 events, no new sheet version; nothing
+  in the game reads the answers yet ("What the players say about the difficulty").
+- 2026-11-03, Pierre (reviewing that PR): every 40 answers approved; the rule that turns the answers into the
+  level-dependent target approved, with the caution that felt difficulty is subjective (no move before the thresholds;
+  built later, once data exists); "For me, the challenge is: Too low / Too high" replaced by "Right now I feel: Bored /
+  In the zone / Struggling"; the question made a block of its own before Next; the response rate logged.
+- 2026-11-05, Pierre (a bug seen on his phone: the one-tap question came when he had barely started his session): it
+  never shows early in a session; the thresholds, 15 answers and 5 minutes into the current session (answers less than
+  30 minutes apart), the integrator's call ("What the players say about the difficulty").
