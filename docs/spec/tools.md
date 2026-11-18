@@ -187,8 +187,8 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
   (`original`, `copy-only`, `none`), the source page and picture, the species and place it is captioned with, the
   photographer and the site's terms, the copies; `searched` says what was searched.
   `apply_imr_sources.py` reads it and credits each photo found as an original on its course record in `data.json` and
-  `excluded.json` (`a` the credit, `pg` the page that states it; `--check`), and the admin reads the sites' `terms`
-  (`tests/imrsources.test.js`).
+  `excluded.json` (`a` the credit, `pg` the page that states it; `--check`); the admin shows the traced sites' terms
+  from its own copy of the file's `terms` (`admin.js` `LECT_TERMS`) (`tests/imrsources.test.js`).
 - **`apply_book_rewrite.py`, `book_rewrite.json`**: the Coral Finder texts (criteria, summaries, look-alike sources, Coral
   ID Key box labels) that followed the book too closely, reworded in our own words (found by comparing each text with an
   OCR of its cited pages, outside the repository: a 6-word run shared, or 80% of its words in the book's order). The map

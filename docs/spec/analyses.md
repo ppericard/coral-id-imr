@@ -34,8 +34,9 @@ read live from the answer log (`admin.js` `LIVE_STATS`) read their answers there
 Conditions by rank and, once players type, typed against picked, `logConds`; no Elo column, the sheet sending the
 corals' levels only) and Pairs (`statsConf`: a pair starts as Look-alike when its families are declared look-alikes or it
 is two genera of one family, `fishUnitRec`, else Other; no compare page, a name opens its family in Tree; its photos
-enlarge alone and its observations are iNaturalist's, `SUBJECTS` `admin` `obs`; on both sides the typed mix-ups apart
-from the choices', `noChoiceMixups`; `tests/answerlog.test.js`).
+enlarge alone and its observations are iNaturalist's, `SUBJECTS` `admin` `obs`; on both sides the mix-ups logged with
+no other unit among the choices counted apart, the typed ones and those logged before the choices were,
+`noChoiceMixups`; `tests/answerlog.test.js`).
 
 ## Where it computes
 
@@ -237,8 +238,7 @@ unless said, so outside the multiple-testing correction.
 
 ### Recompute here
 
-A quiet link on every screen, phones included (a 44 px tall touch area on touch screens), in the Analyses tab only: the
-same module in a Web Worker (`new Worker('analysis.js?v=N')`) on the answer log the page reads (`ANS`) and the photo
+A quiet link on every Analyses screen, phones included (a 44 px tall touch area on touch screens): the same module in a Web Worker (`new Worker('analysis.js?v=N')`) on the answer log the page reads (`ANS`) and the photo
 features of the draft (`photoMeta(DATA, DRAFT, …)`), so the page stays responsive, with 199 bootstrap draws read as
 normal intervals (`B: 199, Bh: 0, bse: 1`: about 2 minutes at 5,000 answers on a desktop, where the Action's 999
 percentile draws take about 9; the stored report's milestones are reused when their answers and photo features match,
