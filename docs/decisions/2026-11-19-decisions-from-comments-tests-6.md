@@ -1,6 +1,6 @@
 # Decisions found in the comments of tests/ (sixth pass)
 
-Date: 2026-11-19. PR: #1156. Rules or docs touched: W19.
+Date: 2026-11-19. PR: #1157. Rules or docs touched: W19.
 
 ## Context
 
