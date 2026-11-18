@@ -58,6 +58,7 @@ Newest first.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-18 | [Player groups: no "apart" setting; group changes show at once](2026-11-18-no-apart-groups.md) | #1113 |
 | 2026-11-18 | [Live mode after version 1: a QR code of our own on the lobby screen](2026-11-18-live-after-v1.md) | #1114 |
 | 2026-11-18 | [Sea slug achievements: the % ladder beyond 50%](2026-11-18-seaslug-achievements-high.md) | #1112 |
 | 2026-11-18 | [The short feedback sheet: the verdict, one line, the rest behind More](2026-11-18-feedback-sheet.md) | #1110 |
