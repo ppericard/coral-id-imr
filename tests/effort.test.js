@@ -152,6 +152,18 @@ print(json.dumps(errs))`;
   assert.strictEqual(r.status, 0, r.stderr);
   assert.deepStrictEqual(JSON.parse(r.stdout), []);
   assert.deepStrictEqual(fs.readdirSync(path.join(home, 'coral-id-imr', 'effort')), ['pr-5.json'], 'no temporary file is left');
+  // a damaged merged-list or PR file is read again, never fatal; the list is written atomically
+  const dir = path.join(home, 'coral-id-imr', 'effort');
+  fs.writeFileSync(path.join(dir, 'merged-list.json'), '[12, 1');
+  fs.writeFileSync(path.join(dir, 'pr-5.json'), '');
+  const r2 = spawnSync(
+    'python3',
+    ['-B', '-c', code.replace('effort.gh = fake', 'effort.gh = fake\nprint(len(effort.merged_numbers(3, False)))')],
+    {cwd: ROOT, env: {...process.env, XDG_CACHE_HOME: home}, encoding: 'utf8', timeout: 20000}
+  );
+  assert.strictEqual(r2.status, 0, r2.stderr);
+  assert.strictEqual(r2.stdout.split('\n')[0], '0', 'the damaged list was dropped and re-read (the stub knows no PR)');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'merged-list.json'), 'utf8')), []);
   fs.rmSync(home, {recursive: true});
 });
 
@@ -176,6 +188,7 @@ test('--check finds every kind of effort figure', () => {
   assert.deepStrictEqual(bad('Two weeks at most, so 2 weeks.').length, 1, 'a figure is reported once, not once per pattern');
   assert.deepStrictEqual(bad('Several days of work, a few weeks of waiting.'), ['Several days', 'a few weeks']);
   assert.deepStrictEqual(bad('Takes 30 min, or 20-40 minutes, or 20 to 40 mins.'), ['30 min', '20-40 minutes', '20 to 40 mins']);
+  assert.deepStrictEqual(bad('The tool prints 3.0 d, or 2.5-4 d, or 1.5 d.'), ['3.0 d', '2.5-4 d', '1.5 d']);
   assert.deepStrictEqual(bad('1.5 h, then 0,5 hours'), ['1.5 h', '0,5 hours']);
 });
 

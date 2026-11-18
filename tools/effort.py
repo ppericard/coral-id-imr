@@ -150,6 +150,14 @@ def cache_dir():
     return d
 
 
+def write_json(f, obj):
+    """Write a cache file atomically: a temporary file of its own for each writer, then a rename."""
+    with tempfile.NamedTemporaryFile('w', dir=os.path.dirname(f), prefix=os.path.basename(f) + '.', suffix='.tmp',
+                                     delete=False) as out:
+        json.dump(obj, out)
+    os.replace(out.name, f)
+
+
 def gh(path):
     last = ''
     for attempt in range(4):
@@ -177,9 +185,12 @@ def gh_pages(path, per_page=100, max_pages=20):
 def merged_numbers(limit, refresh):
     f = os.path.join(cache_dir(), 'merged-list.json')
     if not refresh and os.path.exists(f) and time.time() - os.path.getmtime(f) < LIST_TTL:
-        data = json.load(open(f))
-        if len(data) >= limit:
-            return data[:limit]
+        try:
+            data = json.load(open(f))
+            if len(data) >= limit:
+                return data[:limit]
+        except ValueError:
+            pass  # a damaged cache file is read again from GitHub
     found = []
     page = 1
     while len(found) < limit and page <= 30:
@@ -188,14 +199,17 @@ def merged_numbers(limit, refresh):
             break
         found += [p['number'] for p in chunk if p.get('merged_at')]
         page += 1
-    json.dump(found, open(f, 'w'))
+    write_json(f, found)
     return found[:limit]
 
 
 def fetch_raw(n):
     f = os.path.join(cache_dir(), 'pr-%d.json' % n)
     if os.path.exists(f):
-        return json.load(open(f))
+        try:
+            return json.load(open(f))
+        except ValueError:
+            pass
     base = 'repos/%s' % REPO
     pr = gh('%s/pulls/%d' % (base, n))
     raw = {
@@ -215,9 +229,7 @@ def fetch_raw(n):
                     'conclusion': c.get('conclusion')}
                    for c in gh_pages('%s/commits/%s/check-runs' % (base, pr['head']['sha']))],
     }
-    with tempfile.NamedTemporaryFile('w', dir=os.path.dirname(f), prefix='pr-%d.' % n, suffix='.tmp', delete=False) as out:
-        json.dump(raw, out)  # a temporary file of its own for each writer
-    os.replace(out.name, f)
+    write_json(f, raw)
     return raw
 
 
@@ -373,12 +385,11 @@ def cmd_estimate(recs, type_spec, band):
 # ---------------------------------------------------------------- --check: effort figures need PR references
 
 NUM = r'\d+(?:[.,]\d+)?'
-UNIT = r'(?:agent[- ])?(?:hours?|hrs?|h|days?|weeks?|minutes?|mins?)'
 FIGURE_RES = [
     # 2-4 agent hours, 50-140 h, 1 to 2 days
-    re.compile(r'(?<![\w.#])%s\s*(?:-|–|—|to)\s*%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|weeks?)\b' % (NUM, NUM), re.I),
+    re.compile(r'(?<![\w.#])%s\s*(?:-|–|—|to)\s*%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|d|weeks?)\b' % (NUM, NUM), re.I),
     # 3 h, 3.5 hours, 2 agent days, 4 hours of agent
-    re.compile(r'(?<![\w.#])%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|weeks?)\b' % NUM, re.I),
+    re.compile(r'(?<![\w.#])%s\s*(?:agent[- ])?(?:hours?|hrs?|h|days?|d|weeks?)\b' % NUM, re.I),
     # 30 min, 20-40 minutes, 30 agent minutes (the tool's own output says "N min")
     re.compile(r'(?<![\w.#])%s\s*(?:(?:-|\u2013|\u2014|to)\s*%s\s*)?(?:agent[- ])?(?:minutes?|mins?)\b' % (NUM, NUM), re.I),
     # agent-day(s), agent day(s), agent-hour(s), agent-week(s)
