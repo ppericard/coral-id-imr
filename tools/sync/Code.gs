@@ -1930,7 +1930,7 @@ function lvPoll_(p){
 // What a student's page shows: never the right answer before the reveal, never another student's key or answers.
 // past: the student's own accepted answers to the questions revealed since the page's hx-th (hn: how many are revealed),
 // each {qi, t: the right choice's id, c: the one accepted, ch: the choices' ids, f: the photos' stems}, so the page logs
-// every accepted answer, and only those, even one whose reveal it never saw (Codex review #1049).
+// every accepted answer, and only those, even one whose reveal it never saw.
 function lvView_(S, me, now, L, hx){
   const a = me.a[S.qi], out = {ok: true, ph: S.ph, qi: S.qi, n: S.n, lim: S.lim, s: S.s, me: {n: me.n, s: me.s, r: me.r}};
   if (S.ph === 'q' || S.ph === 'rev') out.q = {ph: S.q.ph, ch: S.q.ch};
@@ -1949,7 +1949,7 @@ function lvView_(S, me, now, L, hx){
 }
 // The answer's time is when it came (now), before any wait for the lock. Checked once without the lock (a late or wrong
 // call never waits for it), then again under it with the session and the record read afresh: a reveal (lvHost_) either
-// came first, and the answer is too late, or comes after, and holds it (Codex review #1049).
+// came first, and the answer is too late, or comes after, and holds it.
 function lvAnswer_(p){
   const now = Date.now(), c = Number(p.c), late = S => S.ph !== 'q' || Number(p.qi) !== S.qi || now > S.ends + LV.GRACE;
   let x = lvMe_(p);
@@ -1980,49 +1980,42 @@ function reports_(token){
   if (!gate_(token, 'players', 'readReports')) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
-  // v58: verified 2 = the reporter is an archived record (Players › Archived), so the Inbox says so without the player
-  // list (Codex review #603).
+  // verified 2 = the reporter is an archived record (Players › Archived), so the Inbox says so without the player list.
   const arch = archivedSet_();
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[11])
     .map(x => [String(x[11]), new Date(x[0]).getTime() || 0, String(x[1]), arch.has(lc_(x[1])) ? 2 : Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9]), String(x[10])]);
   return {ok: true, rows: rows.reverse()};
 }
 
-// Analyses report (v35, Pierre 2026-11-04: multifactor analyses of the answer log "every 1000 new answers", read in the
-// admin's Analyses group; docs/ARCHITECTURE.md "Analyses"). Computed by a GitHub Action (tools/analyses.js) from
+// Analyses report (docs/ARCHITECTURE.md "Analyses"): multifactor analyses of the answer log, refitted every 1000 new
+// answers of a subject, read in the admin's Analyses group. Computed by a GitHub Action (tools/analyses.js) from
 // readAnswers, never on a phone; kept here because it holds per-player results (anonymous ids) and must stay private.
 // POST {analysesGet: 1, token, head: 1, subject?} -> {ok, subject, answers, counts, stored: {answers, made, av, size, at,
-// roster, subject} | null}; without head, also report: the stored JSON text. v105 (Pierre, 2026-11-08: a subject's
-// analyses are refitted every 1000 answers of that subject, "pour le nombre de réponses dans le mode de jeu"): counts,
-// each subject's answers (core.js subjCounts: its rows with a player, the count the Action and the admin use too);
-// answers, those of the subject asked (default the stored report's, else the replayed one: the corals), no longer every
-// row of every subject. POST {analysesPut: 1, token, report: JSON text} -> {ok, stored}: replaces the whole report
-// (Analyses tab: row 2 its meta, then 45,000-character parts; 2.5 MB at most); its meta keeps the report's subject.
-// v113 (Pierre, 2026-11-08: each subject's analyses, "fish when the fish analyses exist"): one report per subject, each
-// in its own tab: the corals' (the replayed subject's) in Analyses as before, another subject's in "Analyses Fish"
-// (anTab_, as rplTab_ names its replay records); analysesGet reads the tab of the subject asked (default the replayed
-// one), analysesPut writes the tab of the report's subject, and refuses a subject the script does not know (input).
-// Admin token only.
+// roster, subject} | null}; without head, also report: the stored JSON text. counts: each subject's answers (core.js
+// subjCounts, the count the Action and the admin use too); answers: those of the subject asked (default the stored
+// report's, else the replayed one: the corals). POST {analysesPut: 1, token, report: JSON text} -> {ok, stored}:
+// replaces the whole report (row 2 its meta, then 45,000-character parts; 2.5 MB at most); its meta keeps the
+// report's subject. One report per subject, each in its own tab: the corals' in Analyses, another subject's in
+// "Analyses Fish" (anTab_); a subject the script does not know is refused (input). Admin token only.
 const AN_TAB = 'Analyses', AN_MAX = 2500000;
 const anTab_ = sid => (CORE_.subjectOf(sid).id === CORE_.replaySubject() ? AN_TAB : AN_TAB + ' ' + CORE_.subjectOf(sid).name);
 const anKnown_ = sid => CORE_.SUBJECTS.some(S => S.id === sid);
-// v55: when an account last left normal operation (deleted, merged or archived): the Script Property ROSTER_AT set by
-// rosterChanged_, or the newest row of the Removed tab (an account removed before v55).
+// When an account last left normal operation (deleted, merged or archived): the Script Property ROSTER_AT set by
+// rosterChanged_, or the newest row of the Removed tab, whichever is later.
 function rosterAt_(){
   let t = Number(PropertiesService.getScriptProperties().getProperty('ROSTER_AT') || 0) || 0;
   const rm = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) rm.getRange(2, 4, rm.getLastRow() - 1, 1).getValues().forEach(r => { t = Math.max(t, new Date(r[0]).getTime() || 0); });
   return t;
 }
-// v55: after a delete, merge or archive: the caches that still hold the account (the public leaderboards board14 and,
-// v80, each other subject's, the achievement shares achs15, the photo stats and abilities stats15) are dropped, and the
-// Analyses report marked stale.
+// After a delete, merge or archive: the caches that still hold the account (every subject's public leaderboard, the
+// achievement shares, the photo stats and abilities) are dropped, and the Analyses report marked stale.
 function rosterChanged_(){
   ['achs15'].concat(statsSubjects_().map(statsKey17_), CORE_.SUBJECTS.filter(S => S.board).map(boardCache_)).forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
   try { PropertiesService.getScriptProperties().setProperty('ROSTER_AT', String(Date.now())); } catch (e) {}
-  statsDirty_(true);  // v134: the pooled stats' snapshot, its player data blanked now and rebuilt without the account (rule D7)
+  statsDirty_(true);  // the pooled stats' snapshot, its player data blanked now and rebuilt without the account (rule D7)
 }
-// The Analyses report holds per-player results: the instance's players right (gate_). A put is audited (roles step 1).
+// The Analyses report holds per-player results: the instance's players right (gate_). A put is audited.
 function analyses_(p){
   const act = p.analysesGet ? 'analysesGet' : 'analysesPut', who = gate_(p.token, 'players', act);
   if (!who) return {ok: false, error: 'token'};
@@ -2033,20 +2026,19 @@ function analyses_(p){
 function analysesDo_(p){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), a = ss.getSheetByName('Answers');
   if (p.analysesGet) {
-    // v113: the subject asked, else the replayed one (the corals); one it does not know is refused, never read as the corals'
+    // The subject asked, else the replayed one (the corals); one it does not know is refused, never read as the corals'
     const subject = String(p.subject || CORE_.replaySubject());
     if (!anKnown_(subject)) return {ok: false, error: 'input'};
     const sh = ss.getSheetByName(anTab_(subject)), n = sh ? sh.getLastRow() : 0;
     let st = null;
     try { st = n >= 2 ? JSON.parse(String(sh.getRange(2, 2).getValue() || 'null')) : null; } catch (e) { st = null; }
-    // v105: up to the Subject column (Mode included), all that subjRows reads
+    // Up to the Subject column (Mode included), all that subjRows reads
     const counts = CORE_.subjCounts(a ? logRows_(a, CORE_.LOG_SUBJ + 1) : []);
     const out = {ok: true, subject: subject, answers: counts[subject] || 0, counts: counts, stored: st};
-    // v55: a report made before the last delete, merge (or archive) of an account is stale: the Action refits it at once
+    // A report made before the last delete, merge or archive of an account is stale: the Action refits it at once
     // instead of 1000 answers later (tools/analyses.js), so no per-player result of a removed account stays in it.
-    // The roster as the report's answers were read (readAnswers roster, sent back with analysesPut; Codex review #600: a
-    // removal while the job computed must still make it stale), else the time it was stored.
-    // A snapshot of 0 (nothing removed yet when the answers were read) is a snapshot, not a missing one (Codex #603).
+    // The roster as the report's answers were read (readAnswers roster, sent back with analysesPut: a removal while the
+    // job computed still makes it stale), else the time it was stored. A roster of 0 is a snapshot, not a missing one.
     if (out.stored) out.stale = rosterAt_() > (typeof out.stored.roster === 'number' ? out.stored.roster : Number(out.stored.at) || 0);
     if (!p.head && out.stored && n >= 3) out.report = sh.getRange(3, 2, n - 2, 1).getValues().map(r => String(r[0])).join('');
     return out;
@@ -2055,7 +2047,7 @@ function analysesDo_(p){
   if (!text || text.length > AN_MAX) return {ok: false, error: 'size'};
   let rep; try { rep = JSON.parse(text); } catch (e) { return {ok: false, error: 'input'}; }
   if (!rep || typeof rep !== 'object' || !rep.R) return {ok: false, error: 'input'};
-  // v113: the report's subject picks its tab (a report without one is the replayed subject's, as before)
+  // The report's subject picks its tab (a report without one is the replayed subject's)
   const subject = String(rep.subject || CORE_.replaySubject());
   if (!anKnown_(subject)) return {ok: false, error: 'input'};
   const meta = {answers: Number(rep.answers) || 0, made: Number(rep.made) || 0, av: Number(rep.AV) || 0, size: text.length, at: Date.now(), roster: typeof p.roster === 'number' && isFinite(p.roster) ? p.roster : null,
@@ -2072,20 +2064,20 @@ function analysesDo_(p){
   return {ok: true, stored: meta};
 }
 
-// Events (v19, Pierre 2026-11-02: most RAs will not report problems, so the app reports what it can by itself). POST
+// Events (most players never report problems, so the app reports what it can by itself). POST
 // {dev: random device id (never a name), events: [{id, t, k, ...}]} → {ok, ev: true}. Kinds: 'err' (an app error: msg,
 // src = file:line, pg = page), 'photo' (a photo that did not load after its retries: f, pg), 'sync' (a save that failed
 // while online: msg = the error code), 'pulse' (the occasional one-tap question: r = easy | ok | hard, m = game mode,
-// n = answers this visit, rr = right % of the last 10, lv = overall level, met = genera met), 'load' (v21, once a visit:
+// n = answers this visit, rr = right % of the last 10, lv = overall level, met = genera met), 'load' (once a visit:
 // pop = the CDN server that sent data.json; p0 / t0 = first page and seconds to draw it, qo / q1 = seconds to the quiz
 // and to its first photo, nx = next page, bps = line in kbit/s, kb = KB downloaded, sw = served by the offline copy,
-// sv = Saver, th = theme, w = window width, st = installed as an app rather than in a browser tab), 'pages' (v30, see
+// sv = Saver, th = theme, w = window width, st = installed as an app rather than in a browser tab), 'pages' (see
 // evWho_ and pagesClean: in the Pages tab, Message = the admin's id of the player, Detail = the cleaned summary). Every event also carries
 // the app version (av) and a short browser name (ua). One row each in the "Events" tab, text cut short and never run as
 // a formula. Caps: 50 events per request, 200 per device and 3000 in all every 6 hours; an id already logged is skipped.
 const EVH = ['Time', 'Device', 'Kind', 'Message', 'Where', 'Page', 'Detail', 'App', 'Browser', 'Id'];
-// v25 (Pierre, 2026-11-03: find the devices still running one of the first versions of the app): the app sends its
-// version (av) with every request; one without it comes from a version before 2026-11-03. Logged in Events as kind
+// The devices still running one of the first versions of the app: the app sends its version (av) with every request;
+// one without it comes from one of those first versions. Logged in Events as kind
 // 'old' with what it asked and, when the request carries one, the player's name or anonymous id; at most once an hour
 // per sender and request. The new service worker reloads such pages onto the current version (sw.js activate).
 function oldApp_(what, who){
@@ -2093,13 +2085,12 @@ function oldApp_(what, who){
     const c = CacheService.getScriptCache(), k = 'old:' + what + ':' + lc_(who || '');
     if (c.get(k)) return;
     c.put(k, '1', 3600);
-    // A global cap too (Codex review #373: names or ids made up by the thousand must not fill the tab): 300 per 6 hours.
+    // A global cap too (names or ids made up by the thousand must not fill the tab): 300 per 6 hours.
     if (over_('old', 300, 1)) return;
     sheet_('Events', EVH).appendRow([new Date(), '', 'old', safe_('app before 2026-11-03: ' + what + (who ? ' (' + who + ')' : '')), '', '', '', '', '', 'old' + Date.now().toString(36)]);
   } catch (e) {}
 }
-// v50 (2026-11-05: the 'old' events said neither which device nor which version; those of 11-03 and 11-05 turned out
-// to be the project's own tools reading ?stats=1 without av, not players): the app's photo stats request (at launch, every 10 minutes while in view) carries its version (av:
+// The app's photo stats request (at launch, every 10 minutes while in view) carries its version (av:
 // "<build>-<hash>", the deploy's build number first), its anonymous device id (dev, the Device of its events, which the
 // Pages tab ties to the player's answers) and the minutes its page has been open (up). The newest build reported is kept
 // (Script Property BUILD_TOP: the build and when it was first reported; a build far ahead of it, BUILD_JUMP, is not
@@ -2126,10 +2117,10 @@ function behind_(p){
     sheet_('Events', EVH).appendRow([new Date(), dev, 'old', safe_('app behind: build ' + b + ', newest ' + top.b + ' for ' + Math.floor(h) + ' h, page open ' + Math.round(up) + ' min'), '', '', '', text_(p.av, 20), '', 'old' + now.toString(36)]);
   } catch (e) {}
 }
-// v124 'fromhome': the first page a visit opens from Home (app.js fromHome; ROADMAP "Load order, further steps" (c)):
+// 'fromhome': the first page a visit opens from Home (app.js fromHome; docs/ROADMAP.md "Load order, further steps"):
 // its page name in the message column, {s: seconds on Home, w: its tier not in yet, tr: the welcome tour ran} in the detail.
 const EVK = {err: 1, photo: 1, sync: 1, pulse: 1, load: 1, pages: 1, fromhome: 1};
-// v30: the player behind a request's 'pages' events, as the admin knows them (aid_: the id readAnswers and the player
+// The player behind a request's 'pages' events, as the admin knows them (aid_: the id readAnswers and the player
 // list use), never the name. A signed-in player's request carries the name and code (ename, epin), checked like a load:
 // a right code gives aid_(name); a wrong one, an unknown or a throttled name give '' and count no failure (the reply is
 // the same either way, so it tells nothing about the code). A device not signed in sends its anonymous answer id
@@ -2142,7 +2133,7 @@ function evWho_(p){
       if (!name || !/^\d{4}$/.test(pin) || blocked_(name)) return '';
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = sh && sh.getLastRow() > 1 ? find_(sh, name) : 0;
       if (!r || sh.getRange(r, 7).getValue() !== hash_(name, pin)) return '';
-      // v58 (Codex review #603): summaries queued under another generation of the name (archived, taken again since): no player.
+      // Summaries queued under another generation of the name (archived, taken again since): no player.
       if (typeof p.eacct === 'string' && p.eacct) { let d = {}; try { d = JSON.parse(readData_(String(sh.getRange(r, 1).getValue()), String(sh.getRange(r, 8).getValue() || '')).json || '{}') || {}; } catch (e) {}
         if (d._acct && d._acct !== p.eacct) return ''; }
       return aid_(name, salt);
@@ -2152,7 +2143,7 @@ function evWho_(p){
   } catch (e) { return ''; }
 }
 const PAGES_TAB = 'Pages', PAGES_READ = 10000;
-// The Pages tab follows the answers (Codex review #423): its rows carry the admin's id of the answers' Name column
+// The Pages tab follows the answers: its rows carry the admin's id of the answers' Name column
 // (aid_), so whenever answers change name (a device's answers claimed at sign-in, an admin rename, merge or delete) the
 // summaries move with them, and they are deleted with them (anonDelete, a delete with the answers). Ids are compared
 // exactly (base64: case matters), and every value goes back through safe_ (an id can start with + or =).
@@ -2191,7 +2182,7 @@ function events_(p){
             : x.k === 'fromhome' ? JSON.stringify({s: num(x.s, 0, 86400), w: x.w ? 1 : 0, tr: x.tr ? 1 : 0}) : '';
       return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.k === 'pages' ? who : x.k === 'fromhome' ? pg(x.to) : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
     };
-    // The pages summaries in their own tab (v30), the other events in Events; an id already in its tab is skipped.
+    // The pages summaries in their own tab, the other events in Events; an id already in its tab is skipped.
     [['Events', L.filter(x => x.k !== 'pages')], [PAGES_TAB, L.filter(x => x.k === 'pages')]].forEach(([tab, M]) => {
       if (!M.length) return;
       const sh = sheet_(tab, EVH), n = sh.getLastRow() - 1;
@@ -2204,30 +2195,30 @@ function events_(p){
     return {ok: true, ev: true};
   } finally { lock.releaseLock(); }
 }
-// POST {readEvents: 1, token} (v19) → {ok, rows: [[id, time ms, device, kind, message, where, page, detail, app, browser]]},
-// newest first, the last 3000. Admins only (isAdmin_), like the reports. With pages: 1 (v30), the Pages tab instead, the
+// POST {readEvents: 1, token} → {ok, rows: [[id, time ms, device, kind, message, where, page, detail, app, browser]]},
+// newest first, the last 3000. Admins only (gate_), like the reports. With pages: 1, the Pages tab instead, the
 // last PAGES_READ rows: one a visit, kept apart so that errors and load times never push them out of the window.
 function readEvents_(token, pages){
   if (!gate_(token, 'players', pages ? 'readPages' : 'readEvents')) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(pages ? PAGES_TAB : 'Events');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - (pages ? PAGES_READ : 3000));
-  // v58: an archive's page summaries stay in the tab, out of every normal view (Codex review #603).
+  // An archive's page summaries stay in the tab, out of every normal view...
   const salt = pages ? anonSalt_() : '', arch = pages ? new Set(liveRows_(false).map(r => aid_(String(r[0]), salt))) : new Set();
-  // ...apart in arch, for the archived record's own Journey only (Codex review #603).
+  // ...apart in arch, for the archived record's own Journey only.
   const all = sh.getRange(from, 1, n - from + 2, EVH.length).getValues().filter(x => x[9])
     .map(x => [String(x[9]), new Date(x[0]).getTime() || 0, String(x[1]), String(x[2]), String(x[3]), String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8])]);
   const out = {ok: true, rows: all.filter(x => !(pages && arch.has(x[4]))).reverse()};
   if (pages) out.arch = all.filter(x => arch.has(x[4])).reverse();
   return out;
 }
-// POST {readAlerts: 1, token} (v152; ROADMAP "Security follow-ups", Pierre 2026-11-01: show the Alerts tab in the admin)
-// → {ok, rows: [[time ms, event]]}, newest first, the last 3000, as readEvents. The instance's players right, as readEvents
-// (gate_; v156, roles step 1: the admin token passes, a refusal audited). The tab's writers:
+// POST {readAlerts: 1, token} (the Alerts tab in the admin; docs/ROADMAP.md "Security follow-ups") → {ok, rows: [[time
+// ms, event]]}, newest first, the last 3000, as readEvents. The instance's players right, as readEvents (gate_: the
+// admin token passes, a refusal audited). The tab's writers:
 // over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
 // One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
 // Players shows beside the name), so the page shows no name.
-// Rule D7 (the integrator, 2026-11-16; Codex review #996): a line that names an account or a device (alertId_) is
+// Rule D7: a line that names an account or a device (alertId_) is
 // served only while that id is a current writer's (alertIds_): a live account, or a device not signed in that still has
 // its answers. So a deleted ("~deleted <id>", redact_), merged-away or archived account's line is left out, as
 // readEvents_ leaves out an archive's page summaries, and so is a device's once it signed in (its answers are the
@@ -2262,8 +2253,8 @@ function alertIds_(salt){
   if (sh && sh.getLastRow() > 1) new Set(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(w => w.indexOf('~anon ') === 0)).forEach(w => ids.add(aid_(w, salt)));
   return ids;
 }
-// POST {readInfra: 1, token} (v180; Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4": the infrastructure dashboard, the numbers
-// to watch before the platform outgrows its free tiers; docs/PAGES.md "Infrastructure health") → {ok, cells, answers, tim,
+// POST {readInfra: 1, token} (the infrastructure dashboard, the numbers to watch before the platform outgrows its free
+// tiers; docs/PAGES.md "Infrastructure health"; docs/decisions/2026-11-18-infrastructure-health.md) → {ok, cells, answers, tim,
 // backup}. The instance's players right (gate_), never public. Read-only, no script lock, nothing written (not even an
 // Audit row: reads are not audited), no player, name, id or answer in the reply: counts, tab names (fixed words) and times.
 // - cells: Google's limit counts every cell of every tab's grid (rows x columns as allocated, what getMaxRows and
@@ -2323,29 +2314,26 @@ function timSum_(rows, since){
   }).sort((a, b) => b.p90 - a.p90);
 }
 
-// Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence
-// review's F5, docs/reviews/2026-11-06-engine-coherence-review.md, two formulas drift apart): the domain-score bar of a
-// genus (core.js barOf: its stored s.ds less its false-alarm rate), a record not rebuilt yet its moving average s.pg as
-// before, the exam's steps and a passed exam (mx) 100%.
+// Progress % of a saved progress over a list of genera: core.js pctOf itself (never a copy: two formulas drift apart):
+// the domain-score bar of a genus (core.js barOf), a record not rebuilt yet its moving average s.pg, the exam's steps
+// and a passed exam (mx) 100%.
 function pctOf_(P, list){ return CORE_.pctOf(P, list); }
 const ELO_MIN = 200;
-// Public leaderboard (v14; Pierre, 2026-11-01: "a small leaderboard to keep a little competition going"): GET ?board=1 →
-// {ok, rows: [[name, progress %, level]]} (v125: a 4th field 1 on the admin's account, adminAcct_), every signed-in player with answers who did not opt out (Board 0), ranked by
-// progress then level, so players at 100% still rank by skill. Level (v63; Pierre, 2026-11-06, Q134: one player level
-// shown everywhere) = the app's own global level, the th of the '~level' record in the player's saved progress (core.js
-// LEVEL: the number the app shows in My progress), from ELO_MIN answers of that record (ok + ko); before v63 it was
-// stats_'s separate chain R, which now stays inside stats_ as the photo Elo's player term (ras: admin only). Names are
-// public here by design: the app says so and lets each player opt out in its settings (privacy.html). Nothing else of
-// the player leaves the sheet. Cached 5 minutes.
-// One leaderboard per subject (v95; Pierre, 2026-11-04: separate per subject, no merged ranking): &s=<id> asks for that
-// subject's (core.js SUBJECTS board), the same rule on its own progress and level (its saved progress key, core.js
-// subjKey), over the units its apps last sent (boardUnitsSave_); no s, or a subject without a leaderboard, the first
-// one's (the corals), as before. The opt-out, an admin's hide and an archive (the Board column) hold for every subject.
+// Public leaderboard: GET ?board=1 → {ok, rows: [[name, progress %, level]]} (a 4th field 1 on the admin's account,
+// adminAcct_), every signed-in player with answers who did not opt out (Board 0), ranked by progress then level, so
+// players at 100% still rank by skill. Level = the one player level shown everywhere, the app's own global level, the
+// th of the '~level' record in the player's saved progress (core.js LEVEL), from ELO_MIN answers of that record (ok +
+// ko). Names are public here by design: the app says so and lets each player opt out in its settings (privacy.html).
+// Nothing else of the player leaves the sheet. Cached 5 minutes.
+// One leaderboard per subject, no merged ranking: &s=<id> asks for that subject's (core.js SUBJECTS board), the same
+// rule on its own progress and level (core.js subjKey), over the units its apps last sent (boardUnitsSave_); no s, or a
+// subject without a leaderboard, the first one's (the corals). The opt-out, an admin's hide and an archive (the Board
+// column) hold for every subject.
 const boardSubj_ = id => CORE_.SUBJECTS.find(S => S.board && S.id === String(id || '')) || CORE_.SUBJECTS.find(S => S.board);
 const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14' : 'board14:' + S.id;
 const BOARD_UNITS_ = 'BOARD_UNITS_';
-// v125 (Pierre, 2026-11-09, Q328 corrected: the seedling 🌱 after his name, added on its own, the name itself unchanged
-// and no step for him): the admin's account, one at most, is the player account the admin page is signed in to when it
+// The admin's mark (core.js SEED, the seedling after his name, the name itself unchanged): the admin's account, one at
+// most, is the player account the admin page is signed in to when it
 // reads the answer log with a valid admin token (answers_: its name and code sent as aname / apin, the code checked), kept
 // as that account's code hash in the script's properties (ADMIN_ACCT); another account signed in there replaces it. Its
 // rows on every leaderboard carry a 4th field 1 (board_) and its load reply admin: 1 (load_), which the app shows as
@@ -2361,7 +2349,7 @@ function adminSet_(h){
 }
 // The account the admin page is signed in to becomes the admin's (answers_), under the script lock, as a delete, a merge
 // or an archive clears it under that lock: its row is read again there and must still be live with that code hash, so a
-// log read that began before one of them can never bring the mark back (Codex review #841). Lock busy: nothing written
+// log read that began before one of them can never bring the mark back. Lock busy: nothing written
 // (the admin page's next read tries again).
 function adminClaim_(name, h){
   const lock = LockService.getScriptLock();
@@ -2380,17 +2368,16 @@ function adminDrop_(h){
   PropertiesService.getScriptProperties().deleteProperty(ADMIN_ACCT_);
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));
 }
-// The units a subject's leaderboard counts (v95), for a subject after the first (the first reads the "By genus" tab's
+// The units a subject's leaderboard counts, for a subject after the first (the first reads the "By genus" tab's
 // columns): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
 // script's properties when it changed, so every player's % is computed over the same units, as the "By genus" columns
 // do for the corals. A unit is a word of the answer log (the Answers tab's Genus shown), at most 400 of them.
-// v101: a subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]],
-// s: [[weight, genus, species, [common names] (null: none at all), circle]]} (app.js UNITS tree, core.js treeScore), kept the same way once it
-// passes boardTreeOk_ (and a list sent afterwards by an older app never replaces it): every unit a word as above, every weight a finite number from 0 to 1000, every circle 1 to 9, at
-// most 400 families and 1500 species entries, its JSON at most BOARD_TREE_MAX_ characters (9000 before v143).
-// v143 (Pierre, 2026-11-15, Q375: "ok", docs/reviews/2026-11-14-species-step1.md (c) A): the tree is kept in chunks, so a
-// tree with one entry per species fits (Q362: one unit per species; fish.json measured at 662 entries, about 26,000
-// characters with short species units and 41,000 with the longest; today's packed tree about 6,000):
+// A subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]], s:
+// [[weight, genus, species, [common names] (null: none at all), circle]]} (app.js UNITS tree, core.js treeScore), kept
+// the same way once it passes boardTreeOk_ (a list sent afterwards by an older app never replaces it): every unit a word
+// as above, every weight a finite number from 0 to 1000, every circle 1 to 9, at most 400 families and 1500 species
+// entries, its JSON at most BOARD_TREE_MAX_ characters. The tree is kept in chunks, so a tree with one entry per species
+// fits (about 26,000 to 41,000 characters):
 // - its entries are cut, in order, into chunks {f, s} of at most BOARD_CHUNK_ characters of JSON (a script property holds
 //   9 kB; boardChunks_), each kept as BOARD_UNITS_<id>@<sum>#<i>, sum the tree's checksum (core.js dataSum); then the
 //   subject's own key is set to '@<chunks> <sum>', last, and the chunks of any other sum are deleted (boardTreePut_). A
@@ -2399,12 +2386,11 @@ function adminDrop_(h){
 // - every chunk passes the entry checks on its own (boardChunkOk_) and the whole tree boardTreeOk_, when it comes in and
 //   when it is read back, its checksum too when read back;
 // - a tree refused, a kept tree that cannot be read back, or a save whose leaderboard step failed is never dropped
-//   silently: a line goes to the Deploy log (boardLog_), once per tree and reason in 6 hours, since an app from before
-//   sync.js TREE_SHEET sends its tree with every save;
+//   silently: a line goes to the Deploy log (boardLog_), once per tree and reason in 6 hours;
 // - every save reply carries bt {id: the checksum of the tree the sheet holds, '' for none} for each subject with a
-//   score, once this step ran to the end, so an app from TREE_SHEET sends its tree only when it changed, or when the
-//   sheet holds another one (sync.js boardUnits, treesSeen);
-// - a value kept by an older script (a list, or the tree's JSON itself) is read as before.
+//   score, once this step ran to the end, so an app sends its tree only when it changed, or when the sheet holds another
+//   one (sync.js boardUnits, treesSeen);
+// - a value kept by an older script (a list, or the tree's JSON itself) is still read.
 const BOARD_U_ = /^[A-Za-z][A-Za-z0-9: -]{0,39}$/;
 const BOARD_TREE_MAX_ = 50000, BOARD_CHUNK_ = 8000;
 const boardU_ = x => typeof x === 'string' && BOARD_U_.test(x),
