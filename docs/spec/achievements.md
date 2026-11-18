@@ -153,7 +153,9 @@ kept 1 minute in memory).
 **One leaderboard per subject** (`SUBJECTS` `board`), no merged ranking. The page shows the subject on screen's
 (`boardSubj()`; the header's subject switch redraws it, the address stays `#leaderboard`): the corals' by coral %, the
 fish's by the fish global score (My progress's ring: `model.js` `headPct`, `core.js` `treeScore` over the subject's
-tree, `UNITS` `tree`), each then by that subject's Elo (its own `P['~level']`). The first subject's board is
+tree, `UNITS` `tree`), the sea slugs' by their own %, each then by that subject's Elo (its own `P['~level']`). A
+subject's board is live once the sheet serves it (`boardLive`); until then the page shows the first subject's, with no
+rank on My progress and no announcement. The first subject's board is
 `?board=1`, another's `?board=1&s=<id>`, shown from a board reply (`boardOk()`; a subject whose board comes with a later
 script, `SUBJECTS` `boardSheet`, only from a reply that says it, rule D4: an older script answers with the first
 subject's board, never shown as another's). Each subject's copy is kept apart on the device
@@ -161,9 +163,10 @@ subject's board, never shown as another's). Each subject's copy is kept apart on
 with tier 4 after the quiz and its next photos.
 
 **The fish score's tree.** The app sends its tree with a save (`summary.boards {fish: {f, s}}`) and `board_` ranks by
-`treeScore` over it (an older app's list read as before). The sheet keeps the tree in chunks of up to 50,000
-characters, so one entry per species fits (`Code.gs` `boardTreePut_`, `boardTreeGet_`, each chunk and the whole tree
-checked both ways, a refused or unreadable tree logged in the Deploy log, `boardLog_`). Every save reply carries `bt`,
+`treeScore` over it (an older app's list read as before). The sheet keeps the tree in chunks (`BOARD_CHUNK_`), up to
+`BOARD_TREE_MAX_` = 50,000 characters, so one entry per species fits (`Code.gs` `boardTreePut_`, `boardTreeGet_`,
+each chunk and the whole tree checked both ways, a refused or unreadable tree logged in the Deploy log, `boardLog_`).
+Every save reply carries `bt`,
 the checksum of the tree the sheet holds, and from a reply with `v` ≥ `sync.js` `TREE_SHEET` the app sends the tree only
 when it changed or the sheet holds another (`treesSeen`, `reefid-board-trees` on the device; with every save before).
 The species units open only from `TREE_SHEET` and `SPECIES_SHEET` (`sync.js` `speciesOn`, rule D4); the tree then holds

@@ -82,7 +82,7 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
 - **Practice › Quiz** (`#practice/quiz`, tab "Quiz"): the adaptive photo quiz, with typed answers and duels slipped
   in. Its page key and answer modes keep the name `quiz` (answer modes `quiz|…`, which the sheet parses):
   [model.md](model.md), [quiz.md](quiz.md).
-- **Practice › Custom quiz** (`#practice/custom`, `#practice/custom/play`; tab "Custom quiz", "Custom" on phones):
+- **Practice › Custom quiz** (`#practice/custom`, `#practice/custom/play`; tab "Custom quiz" at every width):
   [quiz.md › Custom quiz](quiz.md#custom-quiz).
 - **Practice › Look-alike duels** (`#practice/duels`; "Duels" on phones): its answers neither extend nor break the run
   of right answers and never earn Sharp eye (`progress.js` `achRunIn`).
@@ -112,7 +112,8 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
 - **Live** (`#live`, `#live/host`; `live.js`): a live game's join page and the trainer's page:
   [sync.md › Live games](sync.md#live-games).
 
-Phone tab labels: "Custom" and "Duels" (`.wide` / `.narrow`), so the four Practice tabs fit 360 px.
+Phone tab labels (`.wide` / `.narrow` in `MODES`): "Basics" for the basics tab and "Duels" for Look-alike duels, so
+the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scrolling.
 
 ## Shared helpers (`app.js`)
 

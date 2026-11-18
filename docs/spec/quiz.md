@@ -57,7 +57,7 @@ Free-text answers: `model.js` `TYPED`, `typedP`, `examTyped`; `quiz.js` `typeFor
   offered.
 - **In the mastery exam**: `TYPED.exam` typed right answers among its `EXAM.n` (`s.ex.t`; `examTyped`: typed while the
   typed answers still needed fill the questions left, else with the unit's usual share, so the format gives nothing
-  away); an exam begun without its typed answers needs them first (its count held below `EXAM.n`).
+  away); an exam begun without its typed answers needs them first (its count held at `EXAM.n`).
 - The Lab prototype `proto/type.js` (Tools › Type the genus) uses the same code. The admin's player journey shows a
   "Typed (recall)" row under Games.
 
