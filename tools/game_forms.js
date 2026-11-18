@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Game photos with no growth form, and the guesses that fill them (rule C4). learn.js photoPair matches photos
+// Game photos with no growth form, and the guesses that fill them (rule C4). model.js photoPair matches photos
 // by growth form (the quiz's mix-up montage "Your answer, same view", the Look-alikes montages): a photo with no form
 // matches nothing. A player's report: a plate Turbinaria with no form recorded, answered Echinopora, was shown
 // a branching Echinopora. Photos added after the first form pass (mostly approved candidates) had none.
