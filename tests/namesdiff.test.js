@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Similar names after a mix-up (the name study's question b, docs/reviews/2026-11-05-name-confusion-study.md 5.1 and 6;
-// Pierre, 2026-11-14, Q124: the study's recommendations): quiz.js namesAlike (same first letter, or a bigram Dice of 0.4
+// Similar names after a mix-up (the name study's question b and its recommendations,
+// docs/reviews/2026-11-05-name-confusion-study.md 5.1 and 6): quiz.js namesAlike (same first letter, or a bigram Dice of 0.4
 // or more, the study's own measure), namesDiff (the letters that differ in bold: between the two names' common beginning
 // and common ending, letters only, escaped) and namesLine (the feedback's line, each name set as uname sets it), run
 // from quiz.js and app.js themselves.

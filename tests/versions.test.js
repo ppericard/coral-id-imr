@@ -99,7 +99,7 @@ test('a changed file changes its own ?v= and the cache name V, nothing else; a L
     assert.notStrictEqual(C.LAB_V, A.LAB_V);
     assert.notStrictEqual(C['sw V'], A['sw V']);
     assert.strictEqual(C['app.js'], A['app.js']);
-    // An admin-only change still makes a new worker, the open admin page's signal to reload (Codex review #499).
+    // An admin-only change still makes a new worker, the open admin page's signal to reload.
     fs.appendFileSync(path.join(e, 'admin.js'), '\n// changed\n');
     // Another build number only: the shell is the same, so is its cache name (a deploy never empties it for nothing).
     const E = stamp(e);
@@ -134,7 +134,7 @@ test('a changed data file changes the hash of the script that names it', () => {
   }
 });
 
-// Codex review #818: the shell keeps the players' curation, which the deploy writes before the stamps (pages.yml); the
+// The shell keeps the players' curation, which the deploy writes before the stamps (pages.yml); the
 // copies above write it too (copy). A site without it fails the stamp, as the deploy would without that step.
 test("the players' curation is in the stamped copy; a site without it fails the stamp", () => {
   const d = copy();

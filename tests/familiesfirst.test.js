@@ -1,10 +1,10 @@
 'use strict';
 require('./slot.js').testGuard();
-// Families met first (Pierre, 2026-11-09, Q208 A; docs/FISH_PATH.md "Levels", docs/LEARNING.md "Fish: scientific
-// genera"): once the "Scientific names" offer is accepted, no new scientific-genus card opens while a family in play is
-// still not met (model.js openPick, laterWaits; app.js setLater). Exempt: an IMR player's IMR genera (the set's auto
-// units, Q219), the set turned on by hand before it was due (Q.sciH, Q240) and Open all. Nothing changes when no family
-// is left to open. model.js runs whole in the rated world's vm (tools/ratedworld.js engine), the app's globals around it.
+// Families met first (docs/FISH_PATH.md "Levels", docs/LEARNING.md "Fish: scientific genera"): once the "Scientific
+// names" offer is accepted, no new scientific-genus card opens while a family in play is still not met (model.js
+// openPick, laterWaits; app.js setLater). Exempt: an IMR player's IMR genera (the set's auto units), the set turned on
+// by hand before it was due (Q.sciH) and Open all. Nothing changes when no family is left to open. model.js runs whole
+// in the rated world's vm (tools/ratedworld.js engine), the app's globals around it.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -40,12 +40,12 @@ test('a strong player with the offer accepted: no genus card while a family is n
 test('once no family is left to open, the genera open as before: the same draws, seed for seed', () => {
   const a = eng('know', 9),
     b = eng('know', 9);
-  delete b.ctx.setLater; // the engine without the rule (as on main)
+  delete b.ctx.setLater; // the engine without the rule
   for (const fresh of [GEN, ['f:Spadefishes', 'f:MoorishIdol']]) assert.deepStrictEqual(picks(a, fresh, 50), picks(b, fresh, 50));
 });
 
 test('exempt: an IMR player’s IMR genera (auto), the set turned on by hand early (Q240), Open all', () => {
-  // An IMR player: the IMR genus of a family at Open Water comes without the offer (Q219) and is never held back; the
+  // An IMR player: the IMR genus of a family at Open Water comes without the offer and is never held back; the
   // other genera of the family wait like everyone's.
   const imr = eng('imr');
   imr.ctx.genScore = n => (n === FAM ? 0.6 : 0);
