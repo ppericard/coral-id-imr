@@ -94,7 +94,8 @@ const files = (() => {
 })();
 
 // A word as code names it: not part of a longer name nor a file's name (judging/FISH.md).
-const word = n => new RegExp('(?<![\\w$])' + n.replace(/\$/g, '\\$') + '(?![\\w$])(?!\\.(?:md|json|js|py|html|css|gs)\\b)');
+const word = n =>
+  new RegExp('(?<![\\w$])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w$])(?!\\.(?:md|json|js|py|html|css|gs)\\b)');
 // A rules version's text (why:) is history and keeps the names it was written with.
 const lines = src => src.split('\n').filter(l => !/^\s*why:\s*['"`]/.test(l));
 // A test or tool with a FISH of its own (the fish subject, a fixture) is not the app's global.
