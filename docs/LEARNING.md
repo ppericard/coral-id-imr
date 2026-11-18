@@ -5929,6 +5929,46 @@ targeting removes it. So this goes in after #678. Today's pool (1,935 photos, 5 
 37.2% → 35.7%, repeats 8.7% → 8.0%. With pools this big the fish repeats are low already; the re-measure at about 500
 fish answers is in ROADMAP (Q193).
 
+### The calibration set (corals, 2026-11-18)
+
+Pierre's answer to the placement test study (docs/reviews/2026-11-18-placement-test-check.md, #1080), the first step
+before an explicit placement test: a fixed set of about 50 coral photos, each drawn a little more often in normal play
+until it has 20 or more answers, never as a hidden probe. Today no coral photo has 20 answers (the study: 39 have 10 or
+more), and a test of 20-25 adaptive questions needs about 40-60 photos whose difficulty is measured. Decision record:
+docs/decisions/2026-11-18-coral-calibration-set.md.
+
+- **Which photos** (`tools/calibset.js`, `calibration-set.json`): game photos of the slate genera (the bonus genera are
+  opt-in: few players meet them), in the views every question shows (colony and close-up; a two-level genus's colony
+  and close-up), never several corals, a photo rated Poor or a Colony photo whose growth form is not visible. One each
+  for every slate genus, the rest of the 50 to the genera with the most eligible colonies; within a genus, the views
+  alternate and the photo is the first of a fixed hash order, one per colony. Never by source, licence, observer or the
+  answers a photo already has (rule P1). The genera span the slate's difficulty, so the set does: on the sheet's ratings
+  of 2026-11-18, the 48 members already rated sit from −1.14 (10%) to 0.67 (90%), median −0.03, and 4 answers each
+  (median; 0 to 11, 212 in all). The hard end of a test comes from its formats (a single view, look-alike choices, a
+  typed name: the format offsets), not from a set of hard photos.
+- **Sticky**: a member stays while it is in play; a genus whose member left play (Pierre removed it, rated it Poor,
+  excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
+  says when it would). Until then the member out of play is simply never drawn. A redraw would waste the answers the
+  members have gathered.
+- **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
+  sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
+  online calibration's bonus (`calBonus`); then 1. It multiplies the photo's weight and nothing else: the difficulty
+  targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the format and the scoring
+  are any photo's, so the question is a normal one. A subject with no set, or a device where the file did not come,
+  draws as before.
+- **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
+  lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
+
+**The check, declared before running** (rule L11 level 1, the app world: `tools/learnsim.js --stats` (the sheet's
+reply of 2026-11-18) `--truth gen`, the four profiles × 5 seeds × 600 questions, item learner; `--set none` (no set, the
+draw of `main`) against the set, on the same seeds):
+- primary: the share of questions 1-600 showing a member, pooled over the 20 pairs, up;
+- guardrails: `tools/learncmp.js`'s (true knowledge at 300 and 600, units met at 100 and 300, E = bar − D\* at 300 and
+  600), with their margins; and the colony repeat rate over questions 1-600 (a question showing a colony shown before in
+  the run), margin +1 point;
+- reported: the questions that showed each member, pooled over the 20 runs as one cohort (minimum, quartiles, members
+  never shown), before and after.
+
 ### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
 Pierre asked whether part of a photo's difficulty can be shared, so that a new photo starts from what similar photos

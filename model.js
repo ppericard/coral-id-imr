@@ -86,6 +86,22 @@ const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
 // u: calU(), passed in by a caller that reads it once for many photos (photoSet).
 const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+// The calibration set (calibration-set.json, written by tools/calibset.js, read by app.js into CALSET: {subject id:
+// {unit: [photo files]}}; docs/LEARNING.md "The calibration set"): a fixed set of game photos, each drawn CSET.B times
+// as often while the sheet's plain count of its answers is under CSET.N, so each gathers the answers that measure its
+// difficulty, for a placement test built on them later. A normal question in every way: the factor multiplies the
+// photo's weight in photoSet and nothing else (its targeting, memory, format and scoring are any photo's). A subject
+// without a set, or a file that could not come, draws as before (factor 1).
+const CSET = {B: 2, N: 20};
+let CALSET = {},
+  SETF = null;
+// The current subject's members, one Set, made again when the subject or the file changes.
+const setFiles = () => {
+  if (!SETF || SETF.s !== SUBJ.id || SETF.c !== CALSET)
+    SETF = {s: SUBJ.id, c: CALSET, f: new Set(Object.values((CALSET && CALSET[SUBJ.id]) || {}).flat())};
+  return SETF.f;
+};
+const setBonus = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals), so in a big pool the floor's
 // mass does not drown the prior's lean.
@@ -157,7 +173,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
       k = mem[p.o || p.f];
-    let r = Math.exp((-x * x) / 2) * calBonus(p);
+    let r = Math.exp((-x * x) / 2) * calBonus(p) * setBonus(p);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
