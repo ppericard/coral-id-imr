@@ -1,10 +1,9 @@
 require('./slot.js').testGuard();
-// Rarely under ease 4 before Open Water (Pierre, 2026-11-06 14:17: "No wall: before Open Water a photo under ease 4 may
-// come, but rarely"; model.js RARE, rareCap): model.js photoSet runs in Node on a unit whose pool is dominated by hard
+// Rarely under ease 4 before Open Water (no wall: a photo under ease 4 may come, but rarely; model.js RARE, rareCap): model.js photoSet runs in Node on a unit whose pool is dominated by hard
 // photos, as the fish starter families are (about two thirds of their photos under ease 4, and many more observations
 // than a pool-sized unit). Before Open Water the photos under ease 4 make at most about RARE.SHARE of the draws, whatever
 // their number; they still come (no wall); past Open Water they come back; a photo with no judged ease (the corals) is
-// never held back; only the units of the subject's own rank are capped, the fish families (Q271). docs/LEARNING.md
+// never held back; only the units of the subject's own rank are capped, the fish families. docs/LEARNING.md
 // "Rarely under ease 4 before Open Water". The checks are in three files that run in parallel (this one,
 // rareease-mixed.test.js, rareease-rank.test.js), on one harness (tests/rareease.js).
 const test = require('node:test'),

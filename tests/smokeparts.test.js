@@ -65,7 +65,7 @@ test('the guard reads what it guards: groups and jobs as written', () => {
   ]);
 });
 
-// Q305 d (Pierre, 2026-11-08): the smokes are their own workflow, which a docs-only PR skips, so none may slip back into
+// The smokes are their own workflow, which a docs-only PR skips, so none may slip back into
 // checks.yml (it would run them on docs PRs again), and the skip lists docs only (never tools/, tests/ or data).
 test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run on a merge train', () => {
   const checks = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
