@@ -157,7 +157,8 @@ const paint = (rows, v, extra = {}) => {
     SUBJ: {},
     innerHeight: 800,
     store: {get: (k, d) => d},
-    COHORT_KEY: 'reefid-cohort'
+    COHORT_KEY: 'reefid-cohort',
+    GROUPS_KEY: 'reefid-groups'
   };
   vm.createContext(ctx);
   const src = read('progress.js');
@@ -207,6 +208,27 @@ test("the staff and cohort boards (sheet v171): the mark on every board, a cohor
     html
   );
   assert.ok(!html.includes('<i>'), 'no markup from a cohort name');
+});
+
+test("the player groups' boards (sheet GROUPS_SHEET): the mark on every board, a group's name escaped as a player's", () => {
+  const N = Number(/const GROUPS_SHEET = (\d+);/.exec(read('progress.js'))[1]),
+    html = paint([['Cy', 60, null]], N, {
+      groups: [
+        {id: 'g:1', n: 'Staff', rows: [['Ana B.', 80, 1.2, 1]]},
+        {id: 'g:2', n: '<i>RA</i> & co', rows: [['Cy', 60, null]]}
+      ]
+    }),
+    mark = C.markHtml();
+  assert.ok(html.includes('<h3 class="bhead">All players</h3>'), html);
+  assert.ok(
+    html.includes(
+      '<summary>Other groups</summary><section class="bscope" data-scope="other"><h3 class="bhead">Staff</h3><ol class="blist"><li><span class="brank">🥇</span><span class="bwho"><b class="bname">Ana B.</b>' +
+        mark
+    ),
+    html
+  );
+  assert.ok(html.includes('<h3 class="bhead">&lt;i&gt;RA&lt;/i&gt; &amp; co</h3>'), html);
+  assert.ok(!html.includes('<i>'), 'no markup from a group name');
 });
 
 test('the account line: the mark from a load reply that says the admin, for that account only', () => {

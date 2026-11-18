@@ -396,6 +396,115 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
   assert.deepStrictEqual(g.calls, []);
 });
 
+// The release branch (v181; Pierre, 2026-11-18, review R5 question h): the script installs from `release`, which only the
+// merge train moves; main is read only while GitHub says `release` does not exist (404).
+// `branches`: what each branch answers for tools/sync/*: a status number, or the text of its Code.gs (its manifest then
+// says which branch it came from). `seen` lists what was read, `installed` the files the script put.
+function fakeBranches(branches) {
+  const g = fakeGoogle(''),
+    seen = [],
+    installed = [];
+  return {
+    calls: g.calls,
+    seen,
+    installed,
+    fetch: (url, o) => {
+      const m = /raw\.githubusercontent\.com\/[^/]+\/[^/]+\/([^/]+)\/tools\/sync\/([\w.]+)\?/.exec(url);
+      if (!m) {
+        if ((o || {}).method === 'put' && /\/content$/.test(url)) installed.push(JSON.parse(o.payload));
+        return g.fetch(url, o);
+      }
+      seen.push(m[1] + '/' + m[2]);
+      const a = branches[m[1]];
+      if (typeof a === 'number') return resp(a, 'status ' + a);
+      if (m[2] === 'Code.gs') return resp(200, a);
+      return (branches.noManifest || []).includes(m[1])
+        ? resp(404, 'no manifest')
+        : resp(200, JSON.stringify({timeZone: 'Asia/Manila', from: m[1]}));
+    }
+  };
+}
+const bump = (code, n) => code.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + n};`);
+
+test('autoUpdate reads release, never main, once release exists: main is ahead of it and that is not installed', () => {
+  const g = fakeBranches({release: CODE, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+});
+
+test('autoUpdate installs the release branch: its code and its manifest, the version says where from', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 5)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  const files = g.installed[0].files;
+  assert.strictEqual(files.find(f => f.name === 'Code').source, bump(CODE, 1), 'the release code, not the main one');
+  assert.strictEqual(JSON.parse(files.find(f => f.name === 'appsscript').source).from, 'release');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub release/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /^deployed v\d+ as version 7 \(1 web app deployment\), from release$/);
+});
+
+test('autoUpdate falls back to main only while release does not exist (404), one branch for the whole run', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs', 'main/appsscript.json']);
+  assert.strictEqual(JSON.parse(g.installed[0].files.find(f => f.name === 'appsscript').source).from, 'main');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub main/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /, from main$/);
+});
+
+test('autoUpdate with no release branch and main up to date: up to date, nothing logged, the trigger work still runs', () => {
+  const g = fakeBranches({release: 404, main: CODE}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+  assert.ok(
+    Object.keys(s.props).some(k => /^ONCE_/.test(k)),
+    'the one-shot migrations ran: the up-to-date path was reached through the fallback'
+  );
+  assert.strictEqual(s.sheets['Deploy log'].rows.slice(1).filter(r => /from main/.test(r[1])).length, 0, 'no log row for the fallback');
+});
+
+test('autoUpdate: any answer for release but 404 (a 5xx, a rate limit) is a failed read: main is never consulted', () => {
+  for (const code of [500, 502, 429, 403, 301]) {
+    const g = fakeBranches({release: code, main: bump(CODE, 1)}),
+      s = loadCodeGs({fetch: g.fetch});
+    assert.strictEqual(s.ctx.autoUpdate(), 'github ' + code);
+    assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+    assert.deepStrictEqual(g.calls, []);
+    assert.deepStrictEqual(g.installed, []);
+  }
+});
+
+test('autoUpdate: a main with no release and no autoUpdate is skipped as before, and main answering 404 too is a failed read', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1).replace(/function autoUpdate\(/g, 'function gone(')}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'skipped');
+  const h = fakeBranches({release: 404, main: 404}),
+    t = loadCodeGs({fetch: h.fetch});
+  assert.strictEqual(t.ctx.autoUpdate(), 'github 404');
+  assert.deepStrictEqual(h.seen, ['release/Code.gs', 'main/Code.gs']);
+});
+
+test('autoUpdate: the manifest is never taken from another branch than the code (release has the code, no manifest)', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 1), noManifest: ['release']}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  assert.ok(!g.seen.some(x => x.startsWith('main/')), g.seen.join(','));
+  assert.strictEqual(g.installed[0].files.find(f => f.name === 'appsscript').source, '{}', 'the stored manifest is kept');
+});
+
 test('autoUpdate: an interrupted update (code in place, deploy failed) is finished on the next run', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
   // First run: the code goes in, then /versions fails.
@@ -1166,7 +1275,8 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
-// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch).
+// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch); v179: a
+// group whose beta setting names the subject (Code.gs groupDo_; tests/playergroups.test.js has the rest of the model).
 test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
   const s = seed();
   // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
@@ -1174,23 +1284,24 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   const groups = (n, pin) => s.get({name: n, pin}).groups;
   assert.deepStrictEqual(groups('Ana', '1234'), [], 'in no group: [] (the app closes the beta subject)');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true}).error, 'token', 'admin only');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'coral', on: true, token: TOK}).error, 'group', 'a subject in beta only');
-  assert.strictEqual(s.post({userGroup: 'Nobody', group: 'fish', on: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userGroup: 'ana', group: 'fish', on: true, token: TOK}), {
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).error, 'group', 'a group that exists only');
+  assert.strictEqual(s.post({userGroup: 'Nobody', group: g, on: true, token: TOK}).error, 'user');
+  assert.deepStrictEqual(s.post({userGroup: 'ana', group: g, on: true, token: TOK}), {
     ok: true,
-    group: 'fish',
+    group: g,
     n: 1,
     members: 1,
     v: SV
   });
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 0, 'once');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 0, 'once');
   assert.deepStrictEqual(groups('Ana', '1234'), ['fish'], 'the load reply');
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).groups, ['fish'], 'the save reply');
   assert.deepStrictEqual(groups('Ben', '1111'), [], 'the others not');
   assert.strictEqual(s.get({name: 'Ana', pin: '9999'}).groups, undefined, 'never with a wrong code');
   // Everyone at once (a list): unknown names skipped, members counted once.
-  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: 'fish', on: true, token: TOK});
+  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: g, on: true, token: TOK});
   assert.deepStrictEqual([all.n, all.members], [2, 3]);
   const list = s.post({users: 1, token: TOK}).users;
   assert.deepStrictEqual(
@@ -1200,7 +1311,7 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   );
   assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added']);
   // Out again.
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: false, token: TOK}).n, 1);
+  assert.strictEqual(s.post({userGroup: 'Ben', group: g, on: false, token: TOK}).n, 1);
   assert.deepStrictEqual(groups('Ben', '1111'), []);
   // A merge carries the memberships; an archive (v58) and a delete remove them.
   assert.strictEqual(s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
@@ -1211,22 +1322,23 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ana B'), 'the merged name leaves the tab');
   assert.strictEqual(s.post({userDelete: 'Ben', token: TOK}).ok, true);
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ben'), 'deleted: out of the group');
-  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: 'fish', on: true, token: TOK}).members, 0, 'an archive is never added');
+  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: g, on: true, token: TOK}).members, 0, 'an archive is never added');
 });
 
-// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all has no
-// group (its rows kept in the tab, read again once it is back to 'group').
-test("groups (v53): a subject that opens to all has no group, whatever its beta label; back to 'group', its rows count again", () => {
+// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all opens
+// to everyone, its group's members kept (v179: the group stays, its beta setting opens nothing until it is back to 'group').
+test("groups (v53): a subject that opens to all opens nothing through a group, whatever its beta label; back to 'group', its members count again", () => {
   const s = seed();
   const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
   open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 1);
   open('all');
   // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
   assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
   assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
+  assert.strictEqual(s.post({groupMake: {n: 'Sea slug beta', beta: 'seaslug'}, token: TOK}).error, 'beta', 'no beta setting for it');
   assert.ok(
     s.sheets.Groups.rows.some(r => r[1] === 'Ana'),
     'the rows stay in the tab'
@@ -1899,8 +2011,8 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
     col = A.rows[0].indexOf('Scoring');
   assert.deepStrictEqual(
     [col, A.rows[0].length],
-    [22, 26],
-    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312) and Photo answered (Q371) after it'
+    [22, 27],
+    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312), Photo answered (Q371) and Content version after it'
   );
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(

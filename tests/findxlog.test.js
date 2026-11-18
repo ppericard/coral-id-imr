@@ -41,14 +41,14 @@ const save = (s, name, L, extra = {}) => s.post({name, pin: '1234', data: {}, su
 const col = s => s.sheets.Answers.rows[0].indexOf('Photo answered');
 const pas = s => s.sheets.Answers.rows.slice(1).map(r => [r[7], r[col(s)] ?? '']);
 
-test('Code.gs: Photo answered is the last Answers column, after Device; every column before it stays where it was', () => {
+test('Code.gs: Photo answered is the Answers column after Device, before Content version; every column before it stays where it was', () => {
   const s = loadCodeGs();
   save(s, 'Ana', [fx('a1')]);
   const H = s.sheets.Answers.rows[0],
     LOG = vm.runInContext('LOG', s.ctx);
   assert.deepStrictEqual([...H], [...LOG]);
-  assert.strictEqual(H.at(-1), 'Photo answered');
-  assert.strictEqual(H.length, 26);
+  assert.strictEqual(H[25], 'Photo answered');
+  assert.strictEqual(H.length, 27, 'Content version after it (tests/contentver.test.js)');
   assert.strictEqual(H[24], 'Device');
   assert.strictEqual(LOG.indexOf('Photos'), 6, 'Photos never moves');
 });

@@ -1248,24 +1248,25 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), false, 'in no group: closed');
-  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: true, token: TOK}).ok);
+  const g = s.post({groupMake: {n: 'Fish beta', beta: fish.id}, token: TOK}).group.id; // v179: a group whose beta is fish
+  assert.ok(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).ok);
   await a.syncPull();
   assert.strictEqual(a.subjOpen(fish), true, 'the load reply opens it');
-  assert.deepStrictEqual(copy(a.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]});
+  assert.deepStrictEqual(copy(a.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id], ids: [g]});
   // Another account on this device is in no group.
   const ana = a.store.get('reefid-account', null);
   a.store.set('reefid-account', {...ana, name: 'Ben'});
   assert.strictEqual(a.subjOpen(fish), false, "another account: not in Ana's group");
   a.store.set('reefid-account', ana);
   // Taken out: the next load's reply closes it; Fish on screen reloads the app (on the corals, app.js subjAt).
-  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: false, token: TOK}).ok);
+  assert.ok(s.post({userGroup: 'Ana', group: g, on: false, token: TOK}).ok);
   a.ctx.SUBJ = fish;
   await a.syncPull();
   a.ctx.SUBJ = C.subjectOf('coral');
   assert.strictEqual(a.subjOpen(fish), false, 'the load reply closes it');
   assert.ok(a.ctx.reloads > 0, 'Fish on screen: the app reloads');
   // Back in: the save's reply opens it too.
-  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: true, token: TOK}).ok);
+  assert.ok(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).ok);
   a.ctx.SYNC.dirty = true;
   a.ctx.SYNC.log = [];
   await a.syncPush();
@@ -1280,7 +1281,11 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   assert.strictEqual(b.store.get('reefid-groups', null), null, 'no groups field: nothing stored');
   const c = app();
   c.signIn('Ana', '1234', {found: true, groups: [fish.id, 'nope'], data: {'reefid-sync-coral-progress': '{}'}});
-  assert.deepStrictEqual(copy(c.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]}, 'at sign-in, beta subjects only');
+  assert.deepStrictEqual(
+    copy(c.store.get('reefid-groups', null)),
+    {n: 'Ana', g: [fish.id]},
+    'at sign-in, beta subjects only (no gids: no ids)'
+  );
   assert.strictEqual(c.subjOpen(fish), true);
 });
 

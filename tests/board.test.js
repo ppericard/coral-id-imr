@@ -37,9 +37,9 @@ const withAll = (n = {data: 0, fish: 0, seaslug: 0}, hook = {}) => ({
           ? ((n.seaslug = (n.seaslug || 0) + 1), resp(200, SJSON))
           : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
             ? resp(200, CJSON)
-            : /\/main\/tools\/sync\/Code\.gs/.test(url)
+            : /\/release\/tools\/sync\/Code\.gs/.test(url) // the script installs from the release branch (rule D3)
               ? resp(200, CODE)
-              : /\/main\/tools\/sync\/appsscript\.json/.test(url)
+              : /\/release\/tools\/sync\/appsscript\.json/.test(url)
                 ? resp(200, '{}')
                 : null
 });
@@ -125,9 +125,10 @@ const dataOf = (P, rv = {}) =>
 const allSaved = () => Object.fromEntries(BOARDED.map(S => [S.id, FIX[S.id].saved]));
 // A player saved with an app that asks for no replay (no rv): their answers logged, their copy as sent.
 function play(s, name, pin, rv, extra = {}) {
-  // Answer ids from the name's letter codes: an id holding "__proto__" is refused when logged (Code.gs protoWord_), and
-  // the log is the only reference (rule D9), so such a player would have no answer at all.
-  const id = [...name.toLowerCase()].map(c => c.charCodeAt(0).toString(36)).join(''),
+  // Answer ids from a hash of the name: an id holding "__proto__" is refused when logged (Code.gs protoWord_), and the log
+  // is the only reference (rule D9), so such a player would have no answer at all. Short: the sheet keeps an id's first 20
+  // characters and logs each once (Code.gs newIds_), so two answers whose ids share them would be one.
+  const id = C.hash53(name.toLowerCase()).slice(0, 6),
     answers = BOARDED.flatMap(S => FIX[S.id].answers('p' + id + S.id));
   // each subject's board units joined (boards: {subject: units})
   const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra, {

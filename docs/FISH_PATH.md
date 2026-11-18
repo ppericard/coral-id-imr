@@ -663,6 +663,9 @@ on families only to an IMR RA with every species open:
   RAs who had the IMR course and players who know corals well see the genera as today (`progress.js` `mysteryOf`, `app.js` `UNITS`
   `mystery`; docs/ARCHITECTURE.md "Pages and routing"). Built for the families and scientific genera on the photo wall; the species
   tiles get the same mask when the species level brings them.
+  The families' grid holds family units only: the scientific genera and the species each have their own section under it,
+  a unit met always shown, the "?" tiles of a set only while it is on (the species have no switch: met ones only;
+  `progress.js` `boardParts`; Pierre, 2026-11-18, Q404 A, Q402 A).
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 

@@ -655,6 +655,23 @@ body.adm-dragging * {
 .adm-toast[hidden] {
   display: none;
 }
+/* Sign out sealing the draft: the page is read-only under it (admin.js sealing) */
+.adm-sealing {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.adm-sealing span {
+  padding: 10px 16px;
+  border-radius: var(--r);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-hover);
+  font-size: 0.9rem;
+}
 .lb-cap code {
   font-size: 0.75rem;
   opacity: 0.8;
@@ -3432,6 +3449,91 @@ td.cov-c .cov-off {
   align-items: center;
   gap: 8px;
   margin: 8px 0;
+}
+/* Player groups (admin.js ugChips, renderGroups; sheet GROUPADM_SHEET): a group as a chip with its ×, in a player's bar
+   and in a group's members; "+ Add to a group" a small list beside them. */
+.adm-ugchips,
+.adm-gmem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.adm-gchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 2px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+.adm-gx {
+  font: inherit;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.adm-gx:hover,
+.adm-gx:focus-visible {
+  background: var(--surface);
+  color: var(--ink);
+}
+.adm-gadd {
+  font: inherit;
+  font-size: 0.84rem;
+  min-height: 30px;
+  max-width: 100%;
+}
+/* Players › Groups: a card a group, its name and count, its settings, its members, its bulk actions. */
+.adm-groups {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.adm-gcard {
+  display: grid;
+  gap: 10px;
+}
+.adm-ghead,
+.adm-gset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.adm-gname {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.adm-gcount {
+  color: var(--muted);
+}
+.adm-ghead .adm-danger {
+  margin-left: auto;
+}
+.adm-gset > span,
+.adm-gset > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.adm-gcard .adm-ugroup {
+  margin: 0;
+}
+.adm-gcard .adm-ugroup:empty {
+  display: none;
 }
 .adm-ubar .next {
   margin: 0;
