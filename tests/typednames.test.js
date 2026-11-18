@@ -245,7 +245,8 @@ test('regional names and the new genus names (Q376): right on a photo they desig
     assert.strictEqual(on(t, 'f:Lionfishes', 'Dendrochirus zebra'), 'f:Lionfishes', t);
 });
 
-// Two species may carry the same common name. Four names kept with their IMR species are listed by both: typed on a family question, each is right on a photo of either species, a mistake on another.
+// Two species may carry the same common name. Four names kept with their IMR species are listed by both: typed on a
+// family question, each is right on a photo of either species, a mistake on another.
 test('a common name two species share (Q381): right as their family on a photo of either, a mistake on another', () => {
   const on = (text, fam, name) => family(text, fam, NAMES, [sid(name)]).got.c;
   [

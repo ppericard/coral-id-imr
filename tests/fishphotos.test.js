@@ -1184,7 +1184,8 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
 
 // Sheet-only photos (tools/fish_photos.py sheet_ok, sheet_pick, sheet_photo): a sheet photo passes every game photo
 // rule (licence CC0 / CC BY / CC BY-NC or Pierre's own; Research Grade or Pierre's own identified to the species; the
-// Indo-West Pacific box; never captive or Dead), checked on the observation that holds it; the cover first, then the taxon's photos, then the observations.
+// Indo-West Pacific box; never captive or Dead), checked on the observation that holds it; the cover first, then the
+// taxon's photos, then the observations.
 test('sheet-only photos: the game photo rules on the observation; the cover first, then the taxon photos, then observations', () => {
   const out = execFileSync(
     'python3',

@@ -3,8 +3,9 @@ require('./slot.js').testGuard();
 // version 2, no card): the replay's record of a unit and its answer count win over the device's, also when the device
 // holds more answers there (counted twice: a save whose reply was lost, then another device's save), and a unit the log
 // has no answer on loses the answers the device counts on it. No exception for answers played before the log began, no
-// floor. The fixtures are patterns found on the real sheet (counts only, made-up names): a whole record doubled, small excesses on some units, fish only, and the fish
-// answers from before the fish log. Nothing leaves this process (rule D1).
+// floor. The fixtures are patterns found on the real sheet (counts only, made-up names): a whole record doubled, small
+// excesses on some units, fish only, and the fish answers from before the fish log. Nothing leaves this process
+// (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

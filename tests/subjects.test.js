@@ -713,6 +713,6 @@ test('admin todo: each subject names its To do sections; the fish have To do ›
   const fish = C.subjectOf('fish').admin;
   assert.deepStrictEqual(fish.todo, ['photos']);
   ['inbox/todo/all', 'inbox/todo/points'].forEach(p => assert.ok(fish.pages.includes(p), p));
-  // admin.js renderTriage draws each section only for a subject that has it (the fish show none of the coral photo sections)
+  // admin.js renderTriage draws each section only for a subject that has it (no coral photo section for the fish)
   KNOWN.forEach(k => assert.ok(admin.includes(`has('${k}')`), `renderTriage gates ${k}`));
 });

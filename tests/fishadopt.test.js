@@ -533,7 +533,8 @@ test('a saved copy without the fish rules version: the fish replay asked for aga
   assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save scheduled: it brings the replay again');
 });
 
-// Rule D9: a fish player's saved answers from before the fish log (30 saved, 20 logged) are in no log: the adoption takes the log's counts, its level's too, with no floor.
+// Rule D9: a fish player's saved answers from before the fish log (30 saved, 20 logged) are in no log: the adoption
+// takes the log's counts, its level's too, with no floor.
 test("a device with more answers than the log (played before the fish log): the log's counts and level, no floor (Q330)", async () => {
   const s = loadCodeGs(withFiles()),
     dp = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5, 4, 0).dp,

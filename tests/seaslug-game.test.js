@@ -155,7 +155,8 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
 });
 
 // The sea slugs without a species name: a species defined by a paper, present by its label's observers
-// (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; and the genus-level photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
+// (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; and the genus-level
+// photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
 // Pierre's curation reaches the sea slugs' game (curation.json seaslug, core.js SUBJECTS seaslug admin.cur: the admin's
 // Photos › Tree and a report's photo tools write it), as the fish part reaches fish-game.json (tools/fish_game.py
 // in_play, record): what he removed, excluded or moved leaves and the next sure photo takes its place; his adds enter,
@@ -326,7 +327,8 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
   assert.strictEqual(pr.stdout.trim(), '[False, False, True, True]', pr.stderr);
 });
 
-// A species judged later (as circle 3's last part) enters by itself: its judgements in suggest.json "seaslug" are all the build needs.
+// A species judged later (as circle 3's last part) enters by itself: its judgements in suggest.json "seaslug" are all
+// the build needs.
 test('a species judged later enters at the next build, by the same rule as circle 1', () => {
   const C3 = {...CAND, cand: {...CAND.cand, 5: [20, 21, 22].map(n => cand(5, n))}},
     S3 = {...SUG, 'seaslug-5-cand-20': {jt: 'p1g0sl1', e: 5, k: 'best'}, 'seaslug-5-cand-21': {jt: 'o1g0sm1', e: 3, k: 'alt'}};
@@ -547,7 +549,8 @@ test('UNITS seaslug: the three circles on the path, opened by the fish gate', ()
 });
 
 // The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py
-// TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside. The fish's rubric never writes v or f, so no fish judgement is read differently.
+// TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside. The
+// fish's rubric never writes v or f, so no fish judgement is read differently.
 test('a sure sea-slug code with f or v is kept by the sure rule; the fish judgements never carry either', () => {
   const {fishSure} = require('../autosort.js');
   ['d1g0sl1f', 'v1g0sl1', 'p1g0sm1jf', 'o1g0slo'].forEach(jt =>

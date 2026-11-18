@@ -873,7 +873,8 @@ test('replayProgress with the format offsets: a right 2-choice answer the format
   // The domain-score bar takes the offset too (rules version 9): the right answers the format explains prove less.
   const ds = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.ds;
   assert.ok(ds({fmt: {again: [1, 100]}}) < ds({}), [ds({fmt: {again: [1, 100]}}), ds({})].join(' '));
-  // The moving average (a record of the former rules, dom: false) replays the same with or without them: the offsets are not its.
+  // The moving average (a record of the former rules, dom: false) replays the same with or without them: the offsets
+  // are not its.
   assert.strictEqual(
     C.replayProgress(rows, {gen: GEN, dom: false, fmt: {again: [1, 100]}}).p.P.A.pg,
     C.replayProgress(rows, {gen: GEN, dom: false}).p.P.A.pg
