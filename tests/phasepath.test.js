@@ -364,19 +364,26 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
     require('./block.js')(app, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
     ctx
   );
-  // The app's units (app.js fishBuild: fishGen over fishPhotos, then fishGenera), and the sheet's table from the same files.
-  const X = ctx.fishGenera(
-      C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, C.fishGameRead(Fs[2]).photos, C.treeCur(S, Fs[3])), Fs[1].sheet, C.unitRankOf(S)),
-      Fs[0]
-    ),
-    T = S.replayed.vars(Fs[0], Fs, S);
-  let n = 0;
+  // The app's units (app.js fishBuild: fishGen over fishPhotos with the held-out set, then fishGenera), and the sheet's
+  // table from the same files, made without the set (the sheet never reads it): its photos withheld from the views, the
+  // app's exam photos (views and held) are the sheet's.
+  const cur = C.treeCur(S, Fs[3]),
+    gm = C.fishGameRead(Fs[2]).photos,
+    held = C.fishHeld(json('fish-holdout.json'), gm, cur),
+    X = ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur, held), Fs[1].sheet, C.unitRankOf(S)), Fs[0]),
+    T = S.replayed.vars(Fs[0], Fs, S),
+    // the same table whatever the order its photos come in (the app's views, then its held-out photos)
+    canon = U => U && {n: U.n, at: U.at, v: U.v.map(([f, k, i]) => [f, k, i < 0]).sort((a, b) => (a[0] < b[0] ? -1 : 1))};
+  assert.ok(held.size > 1000, 'the set is read: ' + held.size);
+  let n = 0,
+    nh = 0;
   Object.values(X.gen).forEach(g => {
     if (g.wink || g.noex) return; // a wink family is never asked; a species unit has no exam
+    if (g.held) nh++;
     const home = g.rank ? X.gen[g.parent] : g,
-      E = engine('fish', g.views.wide, {juv: home.juv || null, varAt: home.varAt || null, score: 1}),
+      E = engine('fish', g.views.wide, {juv: home.juv || null, varAt: home.varAt || null, score: 1, held: g.held || null}),
       U = E.varUnitOf('u');
-    assert.deepStrictEqual(T[g.id] || null, U, g.id);
+    assert.deepStrictEqual(canon(T[g.id] || null), canon(U), g.id);
     if (!U) return;
     n++;
     // The groups left at a learned unit's full bar, with no right answer, then one right per group: the same both ways.
@@ -387,6 +394,7 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
     });
   });
   assert.ok(n >= 50 && Object.keys(T).some(k => k.startsWith('g:')), 'families and genera with variants: ' + n);
+  assert.ok(nh >= 50, 'units with held-out photos: ' + nh);
   assert.ok(JSON.stringify(T).length < 600000, 'kept in the script cache in parts (Code.gs cacheBigPut_)');
 });
 

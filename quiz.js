@@ -727,6 +727,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
+    // |h: a held-out photo shown (core.js fishHeld: only the mastery exam asks them, so …|h|x; Q385, Pierre 2026-11-18),
+    // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
+    // any answer.
+    (ph.some(p => p && p.ho) ? '|h' : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
     // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
