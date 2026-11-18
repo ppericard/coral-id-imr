@@ -9,9 +9,14 @@ const test = require('node:test'),
   crypto = require('crypto');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+// The specification files ARCHITECTURE.md's map sections point to (docs restructuring of 2026-11-18, PR 4).
+const SPECS = fs
+  .readdirSync(path.join(ROOT, 'docs', 'spec'))
+  .filter(f => /\.md$/.test(f))
+  .map(f => 'docs/spec/' + f);
 
 test('no running "done" list in the living docs', () => {
-  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md'])
+  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', ...SPECS])
     assert.ok(!/^#+ .*\b(Done|Shipped|Changelog)\b/im.test(read(f)), f + ': a done / shipped / changelog section');
 });
 
@@ -30,7 +35,7 @@ test('the archived done list stays frozen', () => {
 // The deploy stamps the version numbers: no doc may tell a PR to bump them by hand or to run the retired
 // check_versions.py flags (--fix, --base, --no-base).
 test('the docs never tell a PR to bump version numbers by hand', () => {
-  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
+  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md', ...SPECS])
     assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
 });
 
@@ -351,6 +356,17 @@ test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in o
   assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
 });
 
+// ARCHITECTURE.md is a map: each docs/spec/ file is reached from it, so no specification is orphaned.
+test('every docs/spec/ file is linked from docs/ARCHITECTURE.md', () => {
+  const arch = read('docs/ARCHITECTURE.md');
+  assert.ok(SPECS.length > 0, 'docs/spec/ holds no specification');
+  assert.deepStrictEqual(
+    SPECS.filter(f => !arch.includes('](' + f.replace(/^docs\//, ''))),
+    [],
+    'docs/spec/ files no ARCHITECTURE.md section links to'
+  );
+});
+
 test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {
   const dir = path.join(ROOT, '.github', 'workflows'),
     files = fs.readdirSync(dir).filter(f => /\.ya?ml$/.test(f)),
@@ -370,7 +386,7 @@ test('docs/PAGES.md lists every workflow, and only workflows that exist', () => 
 });
 
 // The identifier-existence check: the code identifiers the governing docs cite in
-// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
+// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE and its docs/spec/ files, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
 // follows or takes over from. ROADMAP and STATUS name work to come and are overwritten daily, README / PAGES / FORMATS / DESIGN
 // have no habit of naming code, and the archive and the copied reviews are history. Offline: files only. Two forms count:
 //   - a backticked path (`tools/x.py`, `tests/y.test.js`, `admin.js`, `tools/` ...) exists: from the root, from the doc's own
@@ -386,6 +402,7 @@ const ID_DOCS = [
     .filter(f => /\.md$/.test(f))
     .map(f => 'docs/rules/' + f),
   'docs/ARCHITECTURE.md',
+  ...SPECS,
   'docs/HANDOVER.md',
   'docs/INTEGRATOR.md',
   'docs/LEARNING.md'
@@ -395,15 +412,10 @@ const ID_ALLOW = [
   {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
   {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
-  {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, tools/sync/HISTORY.md)'},
-  {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
-  {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
-  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
@@ -471,6 +483,33 @@ test('the code identifiers the docs cite in backticks still exist', () => {
     ID_ALLOW.filter(a => !used.has(a.key)).map(a => a.key),
     [],
     'ID_ALLOW entries no doc needs any more: delete them'
+  );
+});
+
+// LEARNING.md describes the learning rules in force; the studies behind them live in docs/archive/learning-notebook.md.
+// Every LEARNING.md "X" cited in the repo names a heading, or the start of a bullet, a paragraph or a bold lead-in, of
+// LEARNING.md (as ARCHITECTURE.md's citations above); a citation of a study names the notebook instead. The archive and
+// this file's own examples are left out.
+test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
+  const doc = read('docs/LEARNING.md'),
+    flat = s => s.replace(/[*"`“”]/g, '').trim(),
+    starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, ''))),
+    bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+  const found = x => {
+    const t = flat(x);
+    return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
+  };
+  const cite = /LEARNING(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const bad = [];
+  for (const f of TEXT_FILES) {
+    if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue;
+    for (const m of read(f).matchAll(cite))
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': LEARNING "' + q[1] + '"');
+  }
+  assert.deepStrictEqual(
+    bad,
+    [],
+    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
   );
 });
 

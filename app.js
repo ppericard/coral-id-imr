@@ -51,12 +51,9 @@ const hashNow = () => {
   const r = routeNow();
   return r.key != null ? r.key : r.fall;
 };
-// The link of page key k, '#' and its address, for the subject on screen (or S), or for the first subject that has the
-// page when that one does not (a genus sheet linked from the Tools with Fish chosen: the corals'); Home is '#' (the
-// clean URL: hrFull).
-// A sheet is the subject's only when its id names one of its sheets (core.js sheetIdOf: a fish sheet's id carries its
-// rank's prefix, f:Damselfishes; a coral genus sheet any name), so a coral genus sheet linked with Fish chosen stays the
-// corals'. Its link is built from the sheet's id in its one spelling (an old fish unit id, t01, renamed since).
+// The link of page key k ('#' and its address; Home '#', hrFull its clean URL) for subject S, or for the first subject
+// that has the page (a genus sheet from the Tools with Fish chosen: the corals'). A sheet is S's only when its id names
+// one of S's sheets (core.js sheetIdOf: f:Damselfishes), its link built from that id's one spelling (t01 renamed).
 const subjHas = (S, k) => {
   const t = sectionOf(k),
     m = k.startsWith('g-') ? 'sheet' : modeOf(k);
@@ -78,10 +75,8 @@ const shuffle = a => {
   }
   return a;
 };
-// Pierre-only controls (Lab keep/trim, Coral ID Key start-screen switch, ⚑ flag) show only in the browser where the
-// admin page holds his token, the same test flag.js uses. RAs never see them.
-// Pierre's browser holds the admin token (reefid-admin-vault). ⚙ View: Admin | User (reefid-admin-view) hides every
-// admin-only control without touching the token, so he sees the site exactly as RAs do.
+// Admin-only controls (Lab keep/trim, the Key's start switch, ⚑ flag) show only where the admin page holds its token
+// (reefid-admin-vault), the test flag.js uses; ⚙ View: User (reefid-admin-view) hides them, the token kept.
 const HAS_ADMIN_TOKEN = (() => {
   try {
     return !!localStorage.getItem('reefid-admin-vault');
@@ -123,13 +118,9 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
 // service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
-// The site's photos come from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers. Once an R2 photo failed on a page no
-// service worker controls (photoFail below), R2 is false and AWAY true for the rest of the visit: a photo with an online
-// original (iNaturalist, FishBase: core.js photoAway) is read from there at a light size, the others (IMR lecture photos,
-// page art) from the site's img/. Under a service worker both stay as they are: the worker keeps photos offline under
-// their R2 address and fails at once while R2 is out (sw.js photo), and each photo that fails falls back on its own. With
-// PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an online original live on R2 only, so they come
-// from that original.
+// The site's photos come from Cloudflare R2 (core.js PHOTO_BASE). Once one failed on a page no service worker controls
+// (photoFail), AWAY for the visit: a photo with an online original is read from it (core.js photoAway), the others from
+// the site's img/; under a worker each failing photo falls back on its own (sw.js photo). PHOTO_BASE '': AWAY at once.
 let R2 = !!PHOTO_BASE,
   AWAY = !PHOTO_BASE;
 const swOn = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
@@ -154,24 +145,16 @@ const loc = (p, s) => {
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
-// A fish photo's tile (Find the X; tools/fish_game.py): {f}-x.webp on R2, a 360 px square cut around the fish, its
-// square (xc) and its rewrite count (iv: a rotation corrected leaves xc as it was) in the address, so a new tile is a new
-// file for the caches (sw.js serves photos cache-first). A photo with none, or
-// once R2 has failed (a tile has no online original), its 480 px file instead, the fish whole in its photo.
+// A fish photo's tile (Find the X; tools/fish_game.py): {f}-x.webp, a 360 px square around the fish, its square (xc) and
+// rewrite count (iv) in the address so a new tile is a new file for the caches; without one, or once R2 failed, the 480 px file.
 const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}${p.iv ? '.' + p.iv : ''}`) : img(p, 's'));
-// Photo quality (slow, unstable connections in the field; docs/ARCHITECTURE.md "Overview"): a big photo (game, sheet
-// cover) gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no
-// difference). Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the
-// 1600 px file. Auto is Saver when the browser reports the data saver or a slow connection (Network Information API:
-// Chrome on Android), or when the app measures a slow line itself (linkBps). The enlarged view always loads the 1600 px
-// file (Saver: on a click).
+// Photo quality (docs/ARCHITECTURE.md "Overview"): the smallest file covering the box at up to 2x density (fit); Saver
+// the 480 px file whatever the box, Full the 1600 px one; Auto is Saver on the browser's data saver or slow connection,
+// or a slow line measured (linkBps). The enlarged view loads the 1600 px file (Saver: on a click).
 let PQ = store.get('reefid-photo-q', 'auto');
-// The line as measured by the app (the browsers' estimate misses a field link of ~86 kbit/s, and Safari and Firefox have
-// no Network Information API): the bytes this page got from the network over the time spent receiving them (Resource
-// Timing; overlapping downloads count once, files from a cache count nothing), once LINK.MIN bytes are in. Under
-// LINK.SLOW bit/s, Auto works as Saver. The last measure is kept (reefid-link): a launch served from the cache measures
-// nothing and starts from it. LINK.SLOW 500 kbit/s: 480 px photos on a big desktop screen are a real loss, so only a line
-// where the 960 px pair of a question (~170 KB) takes over ~3 s gets them; to recalibrate on the players' logged links.
+// The line as the app measures it (the browsers' estimate misses a ~86 kbit/s field link): network bytes over receiving
+// time (Resource Timing, overlaps once, caches nothing) from LINK.MIN bytes, kept (LINK.KEY) for a launch from cache.
+// LINK.SLOW 500 kbit/s: a question's 960 px pair (~170 KB) then takes over ~3 s; to recalibrate on the logged links.
 const LINK = {SLOW: 5e5, MIN: 40000, KEY: 'reefid-link'};
 let linkBps = store.get(LINK.KEY, 0),
   linkAt = 0;
@@ -193,15 +176,10 @@ const linkMeasure = () => {
   if (bytes >= LINK.MIN && time > 0) store.set(LINK.KEY, (linkBps = Math.round((bytes * 8000) / time)));
   return linkBps;
 };
-// Load times (event 'load'): one event a visit, so the loading order and LINK.SLOW can be set from the players' real
-// lines rather than from lab profiles. Times
-// in seconds from the start of the navigation: p0 / t0 the first page drawn and when, qo the quiz opened, q1 its first
-// photo shown, nx the first other page opened. Sent when the first quiz photo shows, when the app is hidden, or 3 min
-// after the first page, with the line measured (bps, kbit/s), the bytes downloaded so far (kb), whether a service worker
-// served the page (sw: the offline copy), Saver on or off (sv), the theme (th), the window width (w), installed as an app or
-// in a browser tab (st) and the CDN server
-// that sent data.json (pop: GitHub Pages' x-served-by, e.g. "cache-mnl…": Manila). Here, not in sync.js: data.json
-// can arrive before sync.js has run.
+// Load times (event 'load', one a visit: the loading order and LINK.SLOW set from real lines), seconds from navigation:
+// p0 / t0 the first page and when, qo the quiz opened, q1 its first photo, nx the first other page; pop: the CDN server
+// of data.json (x-served-by); the rest at sending (sync.js loadSend). Sent at q1, when hidden, or 3 min after the first
+// page. Here, not in sync.js: data.json can arrive before sync.js has run.
 const LOADM = {},
   // Served by the offline copy at start-up (read now: the service worker registered later takes the page over).
   SW0 = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
@@ -242,11 +220,8 @@ const resized = (u, size) => {
 };
 const PXR = {s: 0, m: 1, '': 2}; // rank of each file size
 const tierOf = u => (/-[ts]\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
-// A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
-// smaller one stays shown until the bigger is in. Not after the fallback to 480 px (data-low). Pages with big photos
-// (data-fit) call upsize after their layout.
-// Saver never moves a shown photo to a bigger file (the 480 px one would be cancelled for it); only the enlarged view
-// does, on the player's tap.
+// A photo shown bigger than its file was chosen for gets the bigger file (pages with data-fit call upsize after their
+// layout); never after the 480 px fallback (data-low), nor under Saver (only the enlarged view, on a tap).
 const upsizeImg = (i, px) => {
   if (saver()) return;
   const u = i.getAttribute('src') || '',
@@ -258,12 +233,9 @@ const upsize = (root = $v) =>
     const r = i.getBoundingClientRect();
     upsizeImg(i, Math.max(r.width, r.height));
   });
-// A photo that fails on R2 (core.js PHOTO_BASE) is asked from R2 once more (core.js photoRetry, PHOTO_RETRY ms later: a
-// passing error; under a service worker the worker has done so already), then moves to its online original at a light
-// size, or to the site's file for a photo with none (core.js photoFallback: src, srcset, its 480 px fallback and the game
-// backdrop), before the retries below. Without a service worker the next photos of this page go there straight away
-// (R2 false, AWAY true): R2 out of reach (a network that blocks it, an outage) costs one failed request, not a missing
-// photo. Before every other error listener.
+// A photo failing on R2: asked once more (core.js photoRetry; a service worker did so already), then its online original
+// or the site's file (photoFallback); with no worker the page's next photos go there at once (r2Out), so R2 out of reach
+// costs one failed request. Before every other error listener.
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
@@ -296,16 +268,11 @@ const cropSet = i => {
   if (c) (i.style.setProperty('object-view-box', c), (i.dataset.vb = 1));
   else if (i.dataset.vb) (i.style.removeProperty('object-view-box'), delete i.dataset.vb);
 };
-// A turned photo shown from its online original: the site's files have Pierre's rotation baked in
-// (curation.json rot, data.json / fish-game.json ro, degrees clockwise, after the crop: tools/photos.py turn), the
-// original has not. Its crop and turn are made in a canvas (turnPlan: the crop cut from the original, then turned, as the
-// workflow does) and the element is given that picture (a blob: address) wherever it uses the original: an <img>'s src
-// (its srcset dropped: one size is enough here), its 480 px step (data-lo), and an inline style's url() (the game's
-// backdrop --qbg, the lightbox's placeholder). So every page shows it as its file would be, at its shape (the quiz's
-// fit, the lightbox's actual size and its labels, the sheet tiles), with no layout of its own. Until the picture is made
-// the element shows none of the original (src and data-lo out, url() none); a picture that cannot be made (a host
-// without CORS, FishBase; a failed download) ends as the "photo missing" tile and the quiz's usual way out, never a
-// photo the wrong way up. Only from the first fallback on, as the crops (cropWatch).
+// A turned photo shown from its online original: the site's files have Pierre's rotation baked in (ro, degrees
+// clockwise after the crop: tools/photos.py turn), the original not. A canvas makes crop then turn (turnPlan), given as a
+// blob: wherever the element uses the original (src, data-lo, an inline url()); nothing shown before, and one that cannot
+// be made (no CORS, a failed download) ends as "photo missing", never upside down. From the first fallback on
+// (docs/ARCHITECTURE.md "Served from Cloudflare R2").
 const TURN_FAIL = 'data:image/gif;base64,'; // an image that never decodes: the page's usual "did not load"
 const TURN_URL = /url\((['"]?)([^'")]+)\1\)/g;
 const turnRec = u => {
@@ -420,10 +387,8 @@ function cropWatch() {
   });
   under(document.documentElement);
 }
-// A photo that never loaded: a light "photo missing" tile, an inline SVG drawn with the theme's tokens (app.css .nophoto:
-// light, dark, colour-blind), no request: a camera struck through, which says "no photo" plainly (an empty frame could
-// read as a photo still loading). Shown over a quiz photo
-// (.qph) and a card's photo band (.ulphoto); gone if the photo comes after all.
+// A photo that never loaded: a "photo missing" tile (a camera struck through, inline SVG in the theme's tokens: an empty
+// frame reads as still loading) over a quiz photo or a card's band; gone if the photo comes after all.
 const NOPHOTO =
   '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>';
 const noPhoto = i => {
@@ -435,11 +400,9 @@ const noPhotoGone = i => {
   const n = i.closest('.qph, .ulphoto, .fxt');
   if (n) n.querySelectorAll('.nophoto').forEach(x => x.remove());
 };
-// Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
-// then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
-// question offers another one instead of a blank frame (nothing is counted). With none of its photos shown, its answers
-// are closed: a guess at a blank frame is no answer. The note is brought into the question's one screen, and the frame
-// left shows the "photo missing" tile (noPhoto), never a broken-image icon (as a card's, quiz.js).
+// Unstable connection (Pierre, 2026-11-01): a failing photo is tried twice more (1 s, 4 s), a game photo then its 480 px
+// placeholder (data-lo); then the question offers another (nothing counted), its frame the "photo missing" tile, and
+// with none of its photos shown its answers close (a guess at a blank frame is no answer).
 $v.addEventListener(
   'error',
   e => {
@@ -516,18 +479,14 @@ $v.addEventListener(
   },
   true
 );
-// Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral ID Key): the
-// files are 480 (-s), 960 (-m) and 1600 px (iNat: 500 and 1024) on their LONG side (Saver: no 1600 px), so a portrait or
-// panoramic photo has fewer useful pixels than that. Declared as the long side, the browser would pick the 480 px file
-// and blow it up 1.3-1.9x in a 400-470 px box.
+// Each file's width as a 4:3 object-fit: cover box sees it: the sizes are the LONG side, so a portrait or panoramic photo
+// has fewer useful pixels (declared as the long side, the 480 px file got blown up 1.3-1.9x in a 400-470 px box).
 const coverW = (p, long) => {
   const a = p.ar || 4 / 3;
   return Math.round(Math.min(long * Math.min(1, a), (long * Math.min(1, 1 / a) * 4) / 3));
 };
-// Thumbnails (home band, progress tiles, look-alike pairs, tips): the 240 or 480 px file, picked by the browser from the
-// width the photo is drawn at (sizes, CSS px; with object-fit: cover a tall box draws it wider than the box) and the
-// screen density: the home photos need no big files for how they are shown.
-// A remote photo's name rides on its <img> (data-f): its URL is not one flag.js can name it by.
+// Thumbnails: the 240 or 480 px file, the browser picking from the drawn width (sizes, CSS px) and the density. A remote
+// photo's name rides on its <img> (data-f): its URL is not one flag.js can name it by.
 const thumb = (p, sizes) => {
   if (p.r && p.src) return `src="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''}`;
   if (saver()) return `src="${loc(p, 't')}"`; // Saver: a thumbnail is at most ~240 px (Home's band on a desktop)
@@ -538,11 +497,10 @@ const srcset = p =>
   p.r && p.src
     ? `${inat(p, 'medium')} ${coverW(p, 500)}w, ${inat(p, 'large')} ${coverW(p, 1024)}w`
     : `${loc(p, 's')} ${coverW(p, 480)}w, ${loc(p, 'm')} ${coverW(p, 960)}w${saver() ? '' : `, ${loc(p)} ${coverW(p, 1600)}w`}`;
-// Small source label on a game photo (docs/decisions/2026-11-18-decisions-from-app-comments.md), one shared component for
-// every game. Shown only once the answer is out: an iNat link names the taxon and an IMR slide number points to a genus.
-// iNat photos link to the observation; an IMR lecture photo traced to its original source (data.json course a and pg,
-// tools/apply_imr_sources.py) links to the page that credits it, with its photographer; one not traced gets a plain
-// label. Hidden on phones (no room): there the enlarged view's caption carries the clickable source.
+// Small source label on a game photo (decision: docs/decisions/2026-11-18-decisions-from-app-comments.md), every game's,
+// shown once the answer is out (an iNat link or a slide number would give the unit away): the observation, the page
+// crediting a traced IMR lecture photo (pg: tools/apply_imr_sources.py), else a plain label. Hidden on phones: the
+// enlarged view's caption has it.
 const author = p =>
   (p.a || '')
     .replace(/^\(c\)\s*/i, '')
@@ -587,43 +545,30 @@ const cover = g =>
   allPhotos(g).find(p => p.f === g.cover) ||
   (g.views.medium || [])[0] ||
   allPhotos(g)[0];
-// A juvenile photo is never a cover, at any rank, picked or not (docs/ARCHITECTURE.md "Fish content"): a photo whose
-// phase is the juvenile one (its record's ph, the judged phase word tools/fish_game.py writes as autosort.js fishPhase
-// reads it) or whose tags carry the juvenile flag (judging/FISH.md). adultFirst(L): the first of L that is not one, else
-// L's first (a unit with juvenile photos only keeps one). One exception: Pierre's ★ cover on a juvenile once he confirmed
-// it in the admin (curation.json fish genera {id: {cover, coverJ}}, autosort.js fishCoverJ): coverOk(k, p), photo p may
-// be node k's cover (k: its curation record). The defaults never take a juvenile.
+// A juvenile photo (its phase ph, or the j flag of its tags: judging/FISH.md) is never a cover (docs/ARCHITECTURE.md
+// "Fish content"), but Pierre's ★ cover he confirmed on one (coverJ, autosort.js fishCoverJ): coverOk(k, p), photo p may
+// be node k's cover (k: its curation record). adultFirst(L): L's first adult photo, else its first.
 const JUV_PH = 'juvenile';
 const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
 const coverOk = (k, p) =>
   !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(p.f) === fishPid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
-// A photo with a visible watermark or text (its judged flag w: judging/FISH.md "Watermark") is never a default cover, at
-// any level (docs/ARCHITECTURE.md "Fish content"): the defaults take one only when the node has no other adult photo.
-// Pierre's ★ cover on one stays his choice (rule A1: the admin
-// asks him whether to keep it, autosort.js fishCoverW); Home skips it all the same (home.js homeOk). The games keep it.
+// A watermarked photo (flag w: judging/FISH.md "Watermark") is a default cover only when the node has no other adult one;
+// Pierre's ★ cover on one stays his (rule A1, autosort.js fishCoverW; Home skips it: home.js homeOk).
 // coverFirst(L): the first of L that is neither a juvenile nor watermarked, else adultFirst(L).
 const wmP = p => !!p && /w/.test(String(p.jt || '').slice(7));
 const coverFirst = L => (L || []).find(p => !juvP(p) && !wmP(p)) || adultFirst(L);
-// A leaf's presence around the instance's centre (docs/ARCHITECTURE.md "The instance's centre"; tools/instance.json,
-// fish.json centre): [its distinct Research Grade observers,
-// its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
-// (dauinU and dauin, which tools/build_fish.py still writes). [0, 0] with none.
+// A leaf's presence around the instance's centre (docs/ARCHITECTURE.md "The instance's centre"): [distinct Research
+// Grade observers, observations] in its radius (present nearU, nearN, or the old dauinU, dauin), [0, 0] with none.
 const nearSeen = r => {
   const p = (r && r.present) || {};
   return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
 };
-// The default cover of a node with leaves when Pierre has picked none (docs/ARCHITECTURE.md "Fish content"): among its
-// leaves with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the instance's
-// centre by distinct observers (ties: observations, then the easy order), then his ★ cover of that leaf when he picked
-// one in play, else that leaf's easiest such reference photo (easyRank: the licence breaking ties). With no reference
-// photo under the node: the most seen leaf among those with an adult photo, then his ★ cover of it, else its easiest
-// adult photo. Never a juvenile while the node has another photo (juvP); never a watermarked photo while it has another
-// adult one (wmP: the leaves then
-// compete on their adult photos without one, and his ★ cover of the leaf chosen is taken only without one, kept or not);
-// a node with no presence keeps the easy order's first. L: the node's photos in play
-// (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
-// cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
+// The default cover of a node with leaves (docs/ARCHITECTURE.md "The default cover of a node with leaves"): the leaf
+// most seen (seen, nearSeen; ties: observations, the easy order) among those with an adult reference photo (refLevel),
+// else an adult one, never watermarked while another exists; then his ★ cover of that leaf, else its easiest. L: the
+// photos in play (p.sp: the leaf), d: easyRank's difficulty, pick(leaf): his cover or null. autosort.js fishCoverOf is
+// the admin's copy (tests/fishcovers.test.js).
 function seenCover(L, seen, d, pick = () => null) {
   const R = easyRank(L, d),
     A0 = R.filter(p => !juvP(p)),
@@ -658,9 +603,8 @@ let RAW,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('reefid-idkey-x', true);
 // data.json with the content editor's edits laid over it (core.js contentApply; docs/ARCHITECTURE.md "The content
-// editor's edits"): the text slots always; his look-alike pairs only once the sync script replays the progress under them
-// (rule D4: structOn, core.js SUBJECTS structure sheet), before which the base's pairs. DATAST: the structure
-// stamp of the units made (core.js structStamp, '' without the structure), DATAON: whether they were made under it.
+// editor's edits"): the text slots always, his pairs once the sheet replays under them (structOn, rule D4). DATAST: the
+// units' structure stamp ('' without), DATAON: whether they were made under it.
 let DATAST = '',
   DATAON = false;
 function build() {
@@ -689,10 +633,8 @@ function build() {
   DATA = d;
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
-// The content version of subject S's answers (core.js contentVersion): from the files, the curation and the structure
-// stamp its units in force were made from (cvIn, kept on them: DATA by build for the corals, a tree subject's FISH by
-// fishBuild), made once per build, at its first answer (a hash of the subject's part of the curation, a few
-// milliseconds; never at start-up). '' before its units are made, or if it fails: the answer is logged without one.
+// The content version of subject S's answers (core.js contentVersion) from what its units were made from (cvIn: DATA's,
+// a tree's FISH), once per build at its first answer (a hash: never at start-up); '' before, or on failure.
 function contentVer(S) {
   try {
     const U = !S || !UNITS[S.id] ? null : !UNITS[S.id].get ? DATA : S.id === TREE_AT ? FISH : (TREE_OF[S.id] || {}).FISH,
@@ -702,20 +644,11 @@ function contentVer(S) {
     return '';
   }
 }
-// The scientific genera of the fish (docs/FISH_PATH.md "Levels": the path is a tree; branch B starts with the scientific
-// genus names): one unit per genus of fish.json genera holding species of a family in play, in every circle (core.js
-// fishGenSets), the genus being the first word of the PDF name (no grouping invented, rule C2), inside its family
-// (fish.json families: the book's), in its family's circle. Its record, beside the families in FISH.gen under its id
-// 'g:' + genus (ids and names never meet): rank 'genus' (its questions and typed answers stay among genera: model.js
-// sameRank), its family (parent: it opens once the family is at Advanced, or Open Water for an IMR genus of an IMR
-// player: sciOpen, below), its family's group as its form (easy wrong choices from other groups first), its sibling
-// genera as look-alikes, the IMR tag (imr: the IMR sub-entry naming it, Chromis, Anemonefish, Bannerfish...) with its
-// cues and slides when IMR has them, imrg when that sub-entry names this genus alone (Chromis, Anemonefish for
-// Amphiprion, Unicornfish for Naso; not Surgeonfish, which names three genera), its species in the game (scientific and
-// common names, commonness order) and its family's photos of those species. FISH.sci: every genus, in the families' order.
-// A subject played at the genus from the start (X.unit 'genus': core.js fishGen, SUBJECTS unitRank; the sea slugs): its
-// genera are already the units of its circles (core.js fishGenUnits), each completed here the same way, in its own circle
-// and with every species of the circles; no opt-in set (FISH.sci empty).
+// The scientific genera of the fish (docs/ARCHITECTURE.md "Fish scientific genera"; docs/FISH_PATH.md "Levels"): one
+// unit per fish.json genus holding species of a family in play (core.js fishGenSets; the PDF name's first word, rule C2),
+// 'g:' + genus in FISH.gen beside the families (its record below; opening: sciOpen); FISH.sci: every genus, in the
+// families' order. A subject played at the genus from the start (X.unit 'genus': the sea slugs) has its circles' units
+// completed the same way (core.js fishGenUnits), with no opt-in set (FISH.sci empty).
 function fishGenera(X, F) {
   const gens = new Map((F.genera || []).map(g => [g.id, g])),
     atGenus = X.unit === 'genus',
@@ -798,6 +731,7 @@ function fishGenera(X, F) {
         fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
         wfam: [],
         imrName: G.imr || '', // the IMR tag
+        // that IMR sub-entry names this genus alone (Chromis; not Surgeonfish, which names three)
         imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
         fish: 1,
         circle: atGenus ? X.gen[id].circle : E.circle, // its family's (circles 2 and 3 open after circle 1: fishGate)
@@ -876,18 +810,11 @@ function fishGenera(X, F) {
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   // Their records by id, for the photo's species said under the verdict (UNITS taxon, fishTaxon).
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
-  // The fish species level, step 1 (docs/FISH_PATH.md "Unlock rules"; docs/reviews/2026-11-14-species-step1.md): one
-  // unit per species with a listed common name (core.js fishSpUnits: s:s091), asked as a photo then four common names,
-  // its scientific name in small type under each (so the two get associated). Its record, beside the families and genera in X.gen: rank 'species'
-  // (its choices and typed answers stay among species: model.js distractors, quiz.js typeMatch), its family (parent: its
-  // species open once the family is at Advanced, in the family's commonness order, at the rank share: spPlay; from: a species
-  // never answered starts from its family's ability, core.js abilityOf), the family's group and forms (easy wrong choices
-  // from other groups first), the other species of its family as look-alikes (the traps once it is answered right, rule
-  // L7) but no declared group (decl: no confusion group, model.js groupsOfRank; the pairs come from the players'
-  // mix-ups), its family's photos of that species, no mastery exam yet (noex: its bar tops out at 95%). Its label (name)
-  // is the player's first common name (cnFirst: the IMR name for a player at IMR, read when shown); sci, its scientific name; also, every listed name with its
-  // spellings (a wrong choice never carries one: model.js choiceKeys). X.spl: every species unit, in the families' order.
-  // (typeof: the tools and tests that run fishGenera alone read the main name, fish.json cn's first, as outside IMR.)
+  // The fish species level, step 1 (docs/ARCHITECTURE.md "Fish species, step 1: by common name"): one unit per species
+  // with a listed common name (core.js fishSpUnits: s:s091), its scientific name in small type under each choice. In its
+  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl empty (its pairs
+  // come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
+  // (cnFirst, read when shown); also, every listed name (model.js choiceKeys). X.spl: every species unit, families' order.
   const imr = () => typeof imrNow === 'function' && imrNow(),
     first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
   X.spl = fishSpUnits(F, X).map(u => {
@@ -945,11 +872,9 @@ function fishGenera(X, F) {
   X.treeSp = fishScoreTree(X, F, true);
   return X;
 }
-// The species units in play (the sp set, UNITS fish sets): from L (FISH.spl), for each family at Advanced (score:
-// genScore, LV_AT[1]), its species met (met: introduced; a species met stays in) and the next one not met in the family's
-// order, the most met around Dauin first (core.js fishSpUnits, fish.json cmi): the order they open in. How often they
-// open and are asked is the rank share's (model.js SHARE: a share of the questions set by the families' mastery),
-// through the opening's usual pace (model.js openPick, shareRoom). on: the species level is on (spOn); off, none.
+// The species units in play (the sp set): from L (FISH.spl), for each family at Advanced (score, LV_AT[1]), its species
+// met and the next in its commonness order (fish.json cmi); how often is the rank share's (model.js SHARE, shareRoom).
+// on: the species level is on (spOn); off, none.
 function spPlay(L, score, met, on) {
   if (!on) return [];
   const by = new Map();
@@ -963,24 +888,17 @@ function spPlay(L, score, met, on) {
     return [...U.filter(met), ...(next ? [next] : [])];
   });
 }
-// The scientific genera in play (the sci set, UNITS fish sets), from L (FISH.sci) by their family's score (score: genScore)
-// and whether met (met: introduced; a genus met stays in): units, offered to everyone, each genus once its family is at
-// Advanced (LV_AT[1]); auto, for a player at IMR (imr: model.js imrSaid), the IMR genera (imrg) without the offer, each
-// once its family is at Open Water (LV_AT[0]), its card then, at the opening's usual pace (model.js openPick, openPace).
-// An IMR player's IMR genera are never in units: they come by themselves, whatever the offer's answer.
-// hand: the set turned on by hand before any family was at Advanced (Q.sciH, bonusSet): the units from their family's
-// Open Water.
+// The scientific genera in play (the sci set), from L (FISH.sci), a genus met staying in: units, offered to everyone,
+// from its family's Advanced (LV_AT[1]; Open Water with hand: turned on by hand before, Q.sciH); auto, for an IMR player
+// (imr), the IMR genera (imrg) from Open Water without the offer, never in units.
 function sciOpen(L, score, met, imr, hand) {
   const at = (n, x) => met(n) || score(GX(n).parent) >= x,
     auto = imr ? L.filter(n => GX(n).imrg && at(n, LV_AT[0])) : [];
   return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
 }
-// The curated common names of a fish species (fish.json species cn, from tools/fish_common.py; docs/FISH_PATH.md "Common
-// names"): 1 to 3 names, the main name first (iNaturalist's default, else FishBase's main name), each [the name shown,
-// its other spellings]; cni, the place of the IMR name in cn; cnr, the regional standard names, accepted when typed,
-// never shown; none for a species no reference names. The main name fills the species' one unit, any other listed name
-// credits it too, so a multiple-choice question shows the player's first name (cnShow) and a typed answer is right as
-// any listed or regional name (cnTypeNames).
+// The curated common names of a fish species (docs/ARCHITECTURE.md "Curated common names"): cn, 1 to 3 names, the main
+// first (iNaturalist's default, else FishBase's), each [the name shown, its other spellings]; cni, the IMR name's place
+// in cn; cnr, regional names, typed only. Any listed name credits the species' one unit.
 const cnList = s => ((s && s.cn) || []).map(n => n[0]);
 // The name a player sees first for species s: the IMR name for a player at IMR (imr: model.js imrSaid, read
 // by the caller), the main name for everyone else; '' for a species with none. Every page that names a species shows it.
@@ -991,13 +909,9 @@ const cnFirst = (s, imr) => {
 };
 // The name a multiple-choice question on species s shows: the player's first name (cnFirst), always the same one.
 const cnShow = (s, imr) => cnFirst(s, imr);
-// The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
-// typeNormAll: [{k, g: the species id, old, alt}], each listed name and regional name with their recorded spellings
-// (old: the spelling typed, alt: 1), nothing else: no other name the references give, no short form without "fish"
-// (fishTypeNames' drop is the families'). A name two species list names both (typeMatchIn shared: right for the species
-// asked when it is one of its listed names, either of them).
-// vn (fish.json vn, the name index's kind words: razorfish, toby): known names that are no species' own, read as such
-// ({known}: "a name some fish species go by", the nudge), never as a slip of a species' name.
+// The names a player may type for the species L, for core.js typeMatchIn: [{k, g: the species id, old, alt}], each
+// listed and regional name with its recorded spellings, nothing else (a name two species list: typeMatchIn shared).
+// vn (the name index's kind words: razorfish, toby): {known} names no species owns, never read as a slip.
 function cnTypeNames(L, vn) {
   const out = [];
   (L || []).forEach(s =>
@@ -1014,11 +928,9 @@ function cnTypeNames(L, vn) {
   });
   return out;
 }
-// Two species may carry the same common name (nothing is blocked; tools/fish_common.json shared lists them). cnAlso(s, R): for the species sheet's "Also
-// used for …", the other species of R (fish.json species) that list one of the names s lists, any spelling read as typed
-// (typeNormAll: Yellowtail / Yellow-tail wrasse): [[the name as s shows it, [the other species]]], [] when none. A
-// multiple-choice question never shows two of one label (model.js choiceApart); typed, the name is right for the species
-// asked (cnTypeNames, typeMatchIn shared).
+// Two species may share a common name (tools/fish_common.json shared). cnAlso(s, R), the sheet's "Also used for …": the
+// other species of R listing a name of s, any spelling (typeNormAll): [[the name as s shows it, [the others]]], [] when
+// none. A question never shows two of one label (model.js choiceApart).
 function cnAlso(s, R) {
   const keys = n => n.map(typeNormAll).filter(Boolean),
     mine = n => new Set(keys(n));
@@ -1029,10 +941,8 @@ function cnAlso(s, R) {
     })
     .filter(([, L]) => L.length);
 }
-// A unit's rank inside its subject: '' for the rank its game units are at (core.js unitRankOf: the corals' genera, the
-// fish families, the sea slugs' genera), else its own ('genus' for a fish scientific genus; 'family' for a sea slugs'
-// family, a record with no rank of its own read at its subject's rank). A question's choices and its typed answers stay
-// within the rank of the unit asked (model.js distractors).
+// A unit's rank inside its subject: '' at its game units' rank (core.js unitRankOf), else its own ('genus' for a fish
+// scientific genus); a record with none reads as its subject's. A question's choices and typed answers stay in it.
 const rankOf = n => {
   const r = (GX(n) || {}).rank || SUBJ.rank;
   return r === unitRankOf(SUBJ) ? '' : r;
@@ -1046,12 +956,10 @@ const unitName = n => {
 // The species of the photos a question showed (UNITS species), each once, joined by ', ': '' when the subject's photos
 // name none (the corals' genus photos). Logged with each answer (the sheet's Species shown).
 const speciesShown = L => [...new Set((L || []).map(p => UNITS[SUBJ.id].species(p)).filter(Boolean))].join(', ');
-// The photo's own taxon, said in one short line under the verdict after every answer, right or wrong: its common name
-// and its scientific name, so players meet the species names before the species level asks them. Nothing before the answer: only the feedback
-// (quiz.js fbBody) says it. UNITS taxon(p, n): the taxon photo p is identified to, finer than the unit n asked, as
-// {id, sci (scientific name), common ('' if none), now (the WoRMS accepted name when the name shown is another, rule S2),
-// rank}, or null when not known for sure (never a name that could be wrong). photoTaxon: the one taxon of the photos L
-// shown (one observation, rule P4), null when one of them gives none or two differ.
+// The photo's own taxon, said in one short line under the verdict after every answer (players meet the species names
+// before the species level asks them). UNITS taxon(p, n): the taxon photo p is identified to, finer than the unit n
+// asked, {id, sci, common ('' if none), now (the WoRMS name when another, rule S2), rank}, or null when not sure.
+// photoTaxon: the one taxon of the photos L (one observation, rule P4), null when one gives none or two differ.
 const photoTaxon = (L, n) => {
   const T = (L || []).map(p => UNITS[SUBJ.id].taxon(p, n));
   return T.length && T.every(t => t && t.sci === T[0].sci) && T[0].id !== n ? T[0] : null;
@@ -1067,11 +975,8 @@ const taxonLine = t => {
       : it(t.sci);
   return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${sci}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
 };
-// A tree subject's English names given as information (UNITS vern; the sea slugs: their common names and nicknames
-// wherever names are shown, never an answer choice nor a branch of their own): the
-// names of the family, genus or species with tree id id ([{n, src [the sources], nick: 1 for a nickname, web [{t, u}]}],
-// the first the one shown first), [] for a subject without them (the fish: their genera's common, their species' cn).
-// vernFirst, its first name as shown, its first letter in capitals ("polyceras": Polyceras), '' when none.
+// A tree subject's English names, information only, never a choice (UNITS vern: the sea slugs'): record id's
+// [{n, src, nick: 1 for a nickname, web [{t, u}]}], the first shown first; [] without. vernFirst: the first, capitalised.
 const vernOf = id => (id && UNITS[SUBJ.id] && UNITS[SUBJ.id].vern ? UNITS[SUBJ.id].vern(id) || [] : []);
 const vernFirst = id => {
   const n = (vernOf(id)[0] || {}).n || '';
@@ -1105,11 +1010,8 @@ function vernSrcs(id, x) {
   (x.web || []).forEach(w => L.push(a(w.u, String(w.t || '').split(/,| \(/)[0], w.t)));
   return L.join(', ');
 }
-// A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
-// by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), the player's first
-// common name (cnFirst: the IMR name for a player at IMR, imr; the main name for the others). Every fish game
-// photo is named to the species (Research Grade, or Pierre's own named to the species: rule S2); a photo without one says
-// nothing.
+// A fish photo's taxon: the species it is in play for (sp), from R (FISH.sps): its PDF name, the WoRMS name beside it
+// (rule S2) and the player's first common name (cnFirst); a photo without one says nothing.
 const fishTaxon = (R, p, imr) => {
   const s = p && p.sp && R && R[p.sp];
   return s && s.name
@@ -1132,10 +1034,8 @@ const spOn = () => typeof speciesOn === 'function' && !!speciesOn();
 // generaOn, rule D4), circle 1's alone before; every one where sync.js is not loaded (the
 // tools that run the app's units alone).
 const sciNow = () => (FISH ? (FISH.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : []);
-// A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
-// (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
-// (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
-// than the verdict. The corals have no common names.
+// A coral photo's taxon: its iNaturalist species (t), only within the genus asked n (a photo moved keeps its old name)
+// and when sure: Research Grade (no gid) or Pierre's own (rule S2). The corals have no common names.
 const coralTaxon = (p, n) => {
   const t = String((p && p.t) || '').trim(),
     w = t.split(/\s+/);
@@ -1147,21 +1047,11 @@ const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.uni
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
-// Fish (core.js fishGen over fish.json and the photos): fetched the first time the fish subject is needed. The photos:
-// fish-game.json, the ones in play, hosted on R2 (tools/fish_game.py), and fish-photos.json, its first
-// photos per entry (the same records, read until fish-game.json is in) and the sheet-only photos, on R2 too; core.js
-// fishPhotos keeps those in play under Pierre's curation (CUR), so FISH is made again whenever the curation is (build,
-// fishBuild).
-// FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; docs/ARCHITECTURE.md "The content
-// editor's edits"): what the units and the sheets read (learn.js ftree), made again with the units whenever the curation
-// is; fish.json itself (FISHRAW.f) when nothing is edited.
-// The editor's circles and pairs (core.js structApply) only once the sync script replays the progress under them (rule
-// D4: structOn, core.js STRUCT_SHEET); before, the text slots alone. FISHST: the structure
-// stamp of the units made (core.js structStamp, '' without the structure), FISHON: whether they were made under it.
-// Every subject read through this fish engine (a tree subject: UNITS get, its files; the fish, the sea slugs) has its own
-// copy of them (TREE_OF, treeOf); these globals are the copy of the tree subject in force (TREE_AT: the subject on screen's,
-// subjectLoad and inSubject bring it, treeAt), so everything that reads FISH reads the subject on screen. The corals have
-// none: on them the globals stay the last tree subject's.
+// Fish (core.js fishGen over fish.json and the photos), fetched when first needed: fish-game.json (the photos in play)
+// and fish-photos.json (the first photos, the sheet-only ones), kept under the curation (core.js fishPhotos), so FISH
+// is made again with it (fishBuild). FISHF: fish.json with the editor's edits (contentApply; his circles and pairs from
+// structOn, rule D4); FISHST, FISHON as DATAST, DATAON. Every tree subject (UNITS get: the fish, the sea slugs) has its
+// own copy (TREE_OF); these globals are the one in force (TREE_AT, treeAt), the last tree subject's on the corals.
 let FISH = null,
   FISHP = null,
   FISHH = null,
@@ -1282,20 +1172,12 @@ function structSeen() {
     F = SUBJECTS.find(x => x.id === TREE_AT);
   if ((RAW && DATAON !== structOn(K) && structFp(K, CUR)) || (F && FISHRAW && FISHON !== structOn(F) && structFp(F, CUR))) CUR_NEW = CUR;
 }
-// Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
-// autosort.js fishPick), on the built units X. ★ Cover: the
-// card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
-// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its
-// reference copy) counting; else the default (seenCover: the most seen species' easiest).
-// Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
-// species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
-// Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
-// A genus's or a species' cover (the same map, under its fish.json id: 'g:Chromis', 's091'): a genus
-// unit (fishGenera) takes it as its coverP like a family; a genus with no unit (a surprise card's) and a species, which
-// have no record in X.gen, get it in X.covers {id: photo} while it is in play as a photo of that genus or species (the
-// family's views.wide, every photo of its species in play): the genus rows and cards and the species' first photo on
-// the sheets (learn.js genCover, fishSpPhotos). F: fish.json. cur: the curation as the engine reads it (core.js treeCur:
-// the subject's own part under the fish's key).
+// Pierre's choices per fish unit (docs/ARCHITECTURE.md "Pierre's choices per family in the app"; curation.json fish
+// genera {id: {cover, feat, ok}}) on the built units X: ★ Cover, the card's photo (coverP) while in play (by fishPid),
+// else seenCover's; featP {species id: [photo]} (up to autosort.js FISHFEAT, his order), the sheets' first photos;
+// neither changes the games (ok, ✓ Validated, is the admin's own). A genus with no
+// unit or a species gets its cover in X.covers {id: photo} while in play (learn.js genCover, fishSpPhotos).
+// F: fish.json; cur: the subject's part of the curation (core.js treeCur).
 function fishCurate(X, cur, F) {
   const G = (cur && cur.fish && cur.fish.genera) || {},
     sps = new Map(((F && F.species) || []).map(s => [s.id, [s.id]])),
@@ -1337,14 +1219,10 @@ function fishCurate(X, cur, F) {
   });
   return X;
 }
-// In two steps (Home comes before fish-game.json; the photos first shown on Home may then change): treeHome, fish.json
-// and fish-photos.json (the families and their first photos), enough for Home, which start-up waits for; then treeLoad,
-// fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier 2:
-// need). Until it is in, the units play on the first photos only, as when it cannot come; then they are built again
-// with it. A launch that finds it in the service worker's cache waits for it at start-up (fishCached).
-// Per tree subject id, its files (UNITS get: f its tree, ph its first photos, none for a subject whose game file is small,
-// gm its game photos), its state written into its own copy (treeOf) and into the globals only while it is in force
-// (TREE_AT): a subject's files may come while another is on screen (setSubject loads before it switches).
+// In two steps: treeHome (fish.json, fish-photos.json: enough for Home), then treeLoad (fish-game.json too, the biggest,
+// which the games wait for: tier 2); the units play on the first photos until it is in (fishCached: from the worker's
+// cache, start-up waits for it). Per tree subject id (UNITS get: f, ph, gm, ho), its state in its own copy (treeOf), in
+// the globals only while in force: its files may come while another subject is on screen.
 const treeSet = (id, k, v) => {
   treeOf(id)[k] = v;
   if (id === TREE_AT) treePull();
@@ -1402,10 +1280,8 @@ const treeLoad = id => {
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
           // game: whether fish-game.json came (without it the units play on their first photos: UNITS fish vars waits).
           treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true, game: !!(gm && gm.photos)});
-          // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
-          // built here too, they would be thrown away unused a moment later (a third of a second of a mid phone's start).
-          // Until then FISH stays null, as while the fish files are on their way. A subject not in force makes its units
-          // again, on its whole data, when it comes back in force (treeAt: stale), never kept from its first photos alone.
+          // At start-up the first build() makes the units (built here too, a third of a second thrown away on a mid phone);
+          // a subject not in force makes them when back in force (treeAt: stale), never from its first photos alone.
           if (id !== TREE_AT) T.stale = true;
           if (!DATA || id !== TREE_AT) return T.FISH;
           T.stale = false;
@@ -1425,12 +1301,9 @@ const treeLoad = id => {
     )
   );
 };
-// The fish units' photos in easyRank order on their difficulty as the game sees it (model.js photoDiff: the judged ease,
-// then the players' answers once fish answers are logged and rated), so the card's photo and each list's first photo stay
-// the easiest, most reference-like ones as the ratings come. Run when the fish data or the photo
-// stats arrive (sync.js loadStats). With no rating it keeps fishGen's order. The fish data can come at start-up before
-// model.js (a later script tier): then fishGen's order stands until the stats reply. Pierre's cover (coverP, fishCurate)
-// stays the card's photo whatever the order.
+// The fish units' photos in easyRank order on their difficulty as the game sees it (model.js photoDiff), so the card's
+// and each list's first photo stay the easiest as ratings come: run when the fish data or the stats arrive (before
+// model.js, fishGen's order stands). Pierre's cover (coverP) stays the card's photo.
 function rankPhotos() {
   if (!FISH || typeof photoDiff !== 'function') return;
   Object.entries(FISH.gen).forEach(([n, g]) => {
@@ -1474,12 +1347,9 @@ function inSubject(id, fn) {
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
-// The subject switch (docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
-// at the top of Home (home.js) and the subject switch next to the logo in the header on every other page (#subjc,
-// showSubj; hidden on Home, route), shown only while
-// the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
-// first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
-// subject the player may not have (subjAt) brings the corals.
+// The subject switch (docs/DESIGN.md "Subject switch"): Home's row and the header's control (#subjc, not on Home), only
+// with two subjects or more (subjMine). The subject's data first, then everything reloads for it; synced (SUBJECT_KEY).
+// A subject the player may not have (subjAt) brings the corals.
 function setSubject(id) {
   const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
@@ -1512,12 +1382,9 @@ const subjBtns = () =>
         `<button type="button" data-subj="${S.id}" aria-pressed="${S === SUBJ}">${subjIcon(S)}<span>${esc(S.name)}</span>${S.beta ? '<small class="beta">beta</small>' : ''}</button>`
     )
     .join('');
-// The header's subject control for n subjects (one click to change:
-// docs/decisions/2026-11-18-decisions-from-app-comments.md): two subjects, a one-click switch (a [data-subj] button
-// each, as Home's row); three or more, the chip and its menu (a switch of three or more would not fit the header on
-// phones); fewer than two, nothing. Where the two sides do not fit
-// (under 380 px while the Sign in pill shows, app.css), the switch shows as one chip with the subject on screen, and one
-// click on it brings the other ([data-flip]).
+// The header's subject control for n subjects (one click to change; decision:
+// docs/decisions/2026-11-18-decisions-from-app-comments.md): two, a switch (one chip flipping, [data-flip], where it
+// does not fit: app.css); three or more, the chip and its menu (a switch would not fit phones); fewer, nothing.
 const subjCtl = n => (n === 2 ? 'switch' : n > 2 ? 'menu' : '');
 // Everything that names the subject on screen: the switches ([data-subj] buttons: Home's row, the header's switch or its
 // chip's menu), the header chip itself (the subject on screen, its icon and name; the name steps aside on phones while the
@@ -1578,10 +1445,8 @@ document.addEventListener('keydown', e => {
   subjMenu(false);
   document.getElementById('subjb').focus();
 });
-// A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
-// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead; Identify opens
-// the subject's own tool (UNITS identify: the Coral ID Key, the Fish ID Key), never the other subject's. The Tools are
-// the corals' whatever the subject.
+// A Learn or Practice page the subject lacks (SUBJECTS pages) opens its section's first page for it; Identify opens the
+// subject's own tool (UNITS identify); the Tools are the corals' whatever the subject.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
@@ -1617,11 +1482,9 @@ const gamePics = (n, v) => {
   const s = (GX(n).sl || {})[v];
   return s ? s.game : GX(n).views[v] || [];
 };
-// Growth form of each photo: one of the 7 IMR growth forms (forms.json "forms"; x = form not visible) as p.form, and
-// p.polyps when polyps or vesicles are extended. Pierre's choice in curation.json "gf" wins over the first guess in
-// forms.json "gf", form and polyps flag each on their own ("p" yes, "n" no). Photos not classified yet keep their old
-// Coral Finder letter (forms.json / curation.json "form") as p.cf. p.formUnsure: the form is a guess still to double-check
-// (forms.json "gunsure"), not Pierre's (imrFormsOf counts such a form only when two photos have it).
+// Growth form of each photo: p.form, one of the 7 IMR forms (x: not visible), p.polyps when extended; curation.json
+// "gf" wins over forms.json's guess, form and polyps flag each on their own ("p" yes, "n" no). Unclassified: the old
+// Coral Finder letter as p.cf. p.formUnsure: a guess to double-check (gunsure; imrFormsOf wants two such photos).
 let CFMAP = {};
 function applyForms(d, c) {
   const mine = (c && c.gf) || {},
@@ -2100,17 +1963,10 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or in the header (setSubject),
-// remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is
-// the current subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's
-// summary and the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
-// A subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; its "beta" tag, SUBJECTS beta, is the label
-// only) is the admin's (docs/decisions/2026-11-18-decisions-from-app-comments.md) and its group's: the players the admin
-// put in the subject's group (Players; Code.gs groupSet_), which the sheet's replies to a load or a save name (sync.js
-// groupsSeen), kept on this device under the account's name (GROUPS_KEY): another account, or none, is in no group.
-// Anyone else opens on the corals whatever this device or the account saved, and nothing switches them to it
-// (setSubject, a link to a sheet: subjAt). The saved choice and that subject's progress stay as they are (synced, merged:
-// inSubject), back on screen if the subject opens to them.
+// The subject on screen (SUBJ; synced, SUBJECT_KEY): everything below (P, Q, the slate, the cards…) is its; another's
+// state is read inside inSubject(), setSubject() switches. A subject open to a group (SUBJECTS open 'group'; decision:
+// docs/decisions/2026-11-18-decisions-from-app-comments.md) is the admin's and its group's (GROUPS_KEY, from sync.js
+// groupsSeen, under the account's name); anyone else gets the corals (subjAt), their saved choice and progress kept.
 const GROUPS_KEY = 'reefid-groups';
 const subjGroups = () => {
   const o = store.get(GROUPS_KEY, null),
@@ -2159,48 +2015,32 @@ const saveQ = () => store.set(sKey('quiz'), Q);
 let session = {ok: 0, n: 0, h: []},
   last = null,
   duelPair = null;
-// Millepora (fire coral): not a hard coral (a hydrozoan), so not on the IMR coral list, but on the
-// IMR benthic slate (taught in the benthos lecture) and everywhere at Dauin and in ReefCloud photos. A game genus like
-// those of the coral slate (the draw, the opening of genera, progress, My progress, the sync summary, achievements); its
-// data stays in data.json "x" (Coral Finder ID tips, with their pages; Research Grade game photos, as the bonus genera).
-// BENTHIC and BONUS (below) are defined once in core.js, with slateOf / gameOf, which the admin and tools share.
+// Millepora (fire coral, a hydrozoan): not on the IMR coral list but on its benthic slate, so a slate genus like the
+// others, its data in data.json "x" (Coral Finder tips, Research Grade photos). BENTHIC and BONUS: core.js (slateOf).
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
-// What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
-//   load(S)  its data, before its pages open (corals: data.json, always loaded; a tree subject, the fish and the sea
-//            slugs: treeLoad over its files, get)
-//   get      a tree subject's files ({f, ph, gm}: treeHome, treeLoad), read through the fish engine (FISH in force: treeAt)
-//   doorsFirst  Home's doors may be drawn before data.json, their band empty until it comes (beforeData): the doors' words
-//            are the corals' (home.js viewHome without DATA)
-//   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
-//   tour     the welcome tour's words for its steps on this subject, where they differ from the steps' own (tour.js words)
-//   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
-//            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish every family of every circle
-//   core()   the part of the slate the lecture teaches, which "Open all" opens (model.js introLeft); the slate if absent
-//   gate(n)  whether slate unit n may open now (the opening, model.js mayOpen); always if absent
-//   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
-//            switched in ⚙ ([data-optin] rows): units() once on, the card's words, tag (cards, My progress)
-//   opens    the parts of the slate that open only once the player says yes (core.js SUBJECTS optin; no ⚙ row): their
-//            units count in the progress all the same, whether open or not. Offered by a card (quiz.js openOfferShow) when
-//            due(), again once OPEN_AGAIN answers after a "Not now" (core.js openState), then never; My progress opens them any time
-//            once due (progress.js). k, units(), due(), the card's words (kick, title, body, yes, note), row (My progress)
-//   done()   once every unit in play is met and none may open now (quiz.js allMetDue): {k, kick, title, lines}, the card that
-//            says so and what comes next, once per reason k; absent (the corals): no card
-//   listBy   a tree subject without a key: the rank its units are grouped by on its Learn list (learn.js viewFishList, one
-//            block per unit of that rank, its parent): the sea slugs' 'family'; absent, one block (the fish: the key's groups)
+// What each subject's units are, UNITS[id] (core.js SUBJECTS holds the rest of the taxon model):
+//   load(S)     its data before its pages open (the corals: data.json; a tree subject: treeLoad)
+//   get         a tree subject's files ({f, ph, gm}), read through the fish engine (treeAt)
+//   doorsFirst  Home's doors drawn before data.json, in the corals' words (beforeData)
+//   pick        its line in the welcome tour's subject pick (tour.js)
+//   tour        the tour's words where they differ for it (tour.js words)
+//   slate()     the units the games teach and progress counts (corals: core.js slateOf, starred last; fish: every family)
+//   core()      the part "Open all" opens (model.js introLeft); the slate if absent
+//   gate(n)     whether slate unit n may open now (model.js mayOpen); always if absent
+//   sets        opt-in sets, offered once by a card when due() (quiz.js bonusOfferShow), ⚙ rows: units(), words, tag
+//   opens       slate parts opened on a yes (quiz.js openOfferShow, My progress any time once due), counted either way
+//   done()      the card once every unit is met and none may open (quiz.js allMetDue): {k, kick, title, lines}
+//   listBy      a keyless tree subject's grouping rank on its Learn list (the sea slugs: 'family'); absent, one block
 
-// Bonus genera (opt-in; the list: core.js BONUS; docs/LEARNING.md "Millepora and the bonus genera"): Coral Finder genera
-// common at Dauin (data.json "x", tools/build_extra.py) with a look-alike on the slate, or no hard coral at all. Offered
-// once, by a card, when every slate genus has been asked (quiz.js bonusOfferShow); ⚙ Bonus genera turns them on or off
-// any time (Q.bon; off keeps their progress). Once on, they open like the others (model.js weighted, OPEN), never count in
-// the progress, and their ID tips are the Coral Finder's, labelled as such. Game photos: Research Grade or Pierre's own,
-// never multi-coral (tools/apply_bonus.py).
+// Bonus genera (core.js BONUS; docs/ARCHITECTURE.md "Bonus genera"): Coral Finder genera common at Dauin with a
+// look-alike on the slate, or no hard coral; opt-in (Q.bon, ⚙ any time, off keeps their progress), then open like the
+// others but never count in the progress, tips labelled the Coral Finder's, photos Research Grade or Pierre's own, never
+// multi-coral (tools/apply_bonus.py).
 
-// Fish circles (fish.json, per family: its best species' circle; docs/FISH_PATH.md): 1, the families the IMR course
-// teaches; 2, seen now and then on the SVS videos; 3, the families divers look for around Dauin. All count in the progress,
-// open or not. Circles 2 and 3 open after circle 1 (fishGate): circle 2 once every circle-1 family has been asked, circle
-// 3 once circle 1 reaches FISH_C3 and the player said yes (UNITS fish opens). FISH_C3 reads the fish score's circle-1
-// Entries component (core.js treeScore by[1].entries): 55%, which simulated players reach when the plain mean reaches 50%
-// (docs/LEARNING.md "Fish: the global score, built"); without that score, the plain mean at 50%.
+// Fish circles (docs/FISH_PATH.md): 1, the IMR course's families; 2, now and then on the SVS videos; 3, what divers look
+// for around Dauin; all count, open or not. fishGate: circle 2 once every circle-1 family was asked, circle 3 at FISH_C3
+// and a yes (UNITS fish opens). FISH_C3: circle 1's Entries component (treeScore by[1].entries) at 55%, which simulated
+// players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without that score, the mean.
 const FISH_C3 = {entries: 0.55, mean: 0.5};
 const fishC3 = () => {
   const h = headScore();
@@ -2212,20 +2052,12 @@ const fishGate = n => {
   const c1 = FISH ? FISH.c1 : [];
   return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!FISH && fishC3();
 };
-// Every family in play met and none may open now (quiz.js allMetDue; else a player can go 100+ answers with nothing new
-// and nothing said): the card says so once, with what comes next, for one reason of three, read from the state (UNITS
-// fish done):
-//   c3      circle 3 not reached (its offer waits for FISH_C3): what it takes, in plain words (no screen shows the
-//           circle-1 Entries component, so "about Open Water on average", its plain-mean equivalent);
-//   beyond  circle 3 declined ("Not now", openOf row): My progress opens it any time; only once its offer will not come
-//           back (after a first "Not now" its card comes again OPEN_AGAIN answers later and says "Also in My progress,
-//           any time" itself): none until then (null);
-//   all     nothing held back: the families still without a game photo, the scientific genus names' state, else the
-//           exams that are left.
-// o: {c3 (circle-3 families with a photo not met), c3due (fishC3), c3row (offered in My progress: off, due), c3back (its
-// offer comes back once more: core.js openState, a first "Not now"), wait (families with no game photo yet), sci
-// (Scientific names on), sciDue (its offer's moment reached), sciLeft (a genus with a photo not met yet)}. Pure on its
-// inputs: tests call it. Returns {k, kick, title, lines}, or null: no card now.
+// Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
+// c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3
+// declined (My progress), only once its offer will not come back (c3back: null); all, else (photos, names, exams left).
+// o: c3 circle-3 families not met, c3due fishC3, c3row offered in My progress, c3back the offer comes once more, wait
+// families with no photo yet, sci names on, sciDue their offer due, sciLeft a genus not met. Pure (tests call it):
+// {k, kick, title, lines}, or null (no card now).
 const fishNextOf = o => {
   const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
     L = [];
@@ -2276,12 +2108,9 @@ function treePhoto(f) {
     }
   return null;
 }
-// A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; UNITS typeOther): the
-// scientific names at that rank (every genus of the tree and of its species' names, in the game or not) and the common
-// names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn, and the regional
-// ones, cnr; the English names a tree gives as information, en: the sea slugs' families, genera and species), from the
-// tree in force alone. Nothing for another rank. An English name typed on a genus
-// question is told so, never read as a genus, as a fish genus's common name (app.js fishGenera names).
+// The names a genus question's typed text may hit that are no genus of the game (UNITS typeOther; core.js typeElse):
+// every scientific genus name of the tree in force, and its common names (cn, cnr, IMR tags, en), so an English name is
+// told so, never read as a genus. Nothing for another rank.
 function treeTypeOther(rk) {
   const F = rk === 'genus' && FISHRAW && FISHRAW.f;
   if (!F) return null;
@@ -2502,11 +2331,8 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
-    // Its variant table as the sheet's replay reads it (core.js SUBJECTS replayed vars: fishVarTable on its pool files,
-    // the units with the content in force, FISHF, as the sheet reads them), for this device’s answers replayed on top of
-    // the sheet’s (sync.js rpVars). Null until the whole game pool is in (FISHRAW game: fish-game.json): a table made on
-    // the first photos alone lacks variant photos, so a queued right answer would clear a group the sheet left; the
-    // adoption waits for it instead (sync.js replayAdoptS).
+    // Its variant table as the sheet's replay reads it (SUBJECTS replayed vars, on FISHF), for the answers replayed here
+    // (sync.js rpVars). Null until fish-game.json is in: made on the first photos it would clear groups the sheet left.
     vars: S =>
       FISHRAW && FISHRAW.game && S && S.replayed && S.replayed.vars
         ? S.replayed.vars(FISHF || FISHRAW.f, [FISHRAW.f, FISHRAW.ph, FISHRAW.gm, CUR], S)
@@ -2557,18 +2383,11 @@ const UNITS = {
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
     // The photo's species, said under the verdict (photoTaxon): fishTaxon, by the player's first name.
     taxon: p => fishTaxon(FISH && FISH.sps, p, imrNow()),
-    // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
-    // fishPid: one photo under its candidate and reference names), and what the flag records: file (its name),
-    // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
+    // A photo by its name, for the admin's "Bad photo" flag (flag.js; treePhoto).
     photo: f => treePhoto(f),
-    // The typed names: the entries' (core.js fishTypeNames) and the name index (fishNameIndex: the names of their genera
-    // and species and the kind words, fish.json vn, with Pierre's exceptions, curation.json fish.names), each read as
-    // the family it lifts to, a known word as such, never as a slip of another name. The species units (fishSpUnitsUnits)
-    // are read apart: their listed and regional names with their spellings only (cnTypeNames: no short form, no other
-    // number), each its species unit's; a name two species list is right for the one asked (typeMatchIn shared). A typed
-    // answer is read among the names of the rank asked (quiz.js typeMatch), so a family question never meets them.
-    // The genera among them are those in the game now (sciNow: circles 2 and 3's from GENERA_SHEET, rule D4), so a typed
-    // name never answers a genus the sheet cannot replay yet; namesKey tells quiz.js typeNames when that set changes.
+    // The typed names: the units' (core.js fishTypeNames) and the name index (fishNameIndex, with Pierre's exceptions:
+    // curation.json fish.names), each read as the family it lifts to; the species units' apart (cnTypeNames). The genera
+    // are those in the game now (sciNow, rule D4); namesKey tells quiz.js typeNames when that set changes.
     names: () => {
       const G = FISH ? FISH.gen : {},
         sci = new Set(sciNow()),
@@ -2581,10 +2400,7 @@ const UNITS = {
     },
     namesKey: () => sciNow().length,
     norm: typeNormAll,
-    // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind): the
-    // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
-    // common names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn, and
-    // the regional ones, cnr), from fish.json alone. Nothing for another rank.
+    // A genus question's typed text that names no genus of the game (treeTypeOther).
     typeOther: rk => treeTypeOther(rk),
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
@@ -2612,11 +2428,9 @@ const UNITS = {
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
-      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
-      // Advanced; on, a family's genera join the game when the family reaches Advanced, then open one at a time like any
-      // unit (a genus met stays in). auto: a player at IMR meets the IMR genera without the offer, from their family's
-      // Open Water (sciOpen), whatever the set's state. all: every genus in the game now, every circle's (sciNow: from the sheet that replays
-      // them, rule D4), for setOf. They count in the fish % (the genus credit, core.js treeScore).
+      // The scientific genera (fishGenera, sciOpen): offered once a family is at Advanced, each family's joining from its
+      // Advanced; auto: an IMR player's IMR genera; all: every genus in the game now (sciNow), for setOf. They count in
+      // the fish % (the genus credit, core.js treeScore).
       {
         k: 'sci',
         all: () => sciNow(),
@@ -2626,10 +2440,8 @@ const UNITS = {
         // auto units, the set turned on by hand early and Open all are exempt.
         after: 1,
         due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
-        // rv: the rules a choice is made under (Q.sciV, synced with the choice): 1 since the offer is at Advanced. A player
-        // who turned them on before (Q.sci true, no sciV) gets the back card once (quiz.js bonusBackShow): close them, the
-        // IMR genera kept for an IMR player, or keep them; either answer is a choice made under rv 1, so it is never asked
-        // again, on any device.
+        // rv: the rules a choice is made under (Q.sciV, synced): 1 since the offer is at Advanced; one turned on before
+        // gets the back card once (quiz.js bonusBackShow), either answer recorded under rv 1.
         rv: 1,
         back: {
           title: 'Keep the scientific genus names?',
@@ -2657,12 +2469,9 @@ const UNITS = {
         onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
       },
-      // The species by their common names (fishSpUnitsUnits, above; docs/FISH_PATH.md "Unlock rules": branch A of the
-      // tree): no offer and no switch, every player meets them, family by family from its Advanced, never all at once,
-      // once the species level is on (spOn, rule D4). auto: a family's species from its Advanced, in its commonness order
-      // (spPlay), their share of the questions set by the families' mastery (model.js SHARE). all: every
-      // species unit, for setOf and the choices (rankUnits). They count in the fish % (the common names, core.js
-      // treeScore C).
+      // The species by their common names (docs/FISH_PATH.md "Unlock rules", branch A): no offer, no switch; auto: spPlay,
+      // once the species level is on (spOn, rule D4); all: every species unit (setOf, rankUnits). They count in the
+      // fish % (the common names, core.js treeScore C).
       {
         k: 'sp',
         all: () => (FISH ? FISH.spl || [] : []),
@@ -2959,10 +2768,8 @@ const sheetFetch = (url, o) =>
 let SYNC = store.get('reefid-account', null),
   syncTimer = null;
 
-// The basics module of a subject finished (Coral basics, Fish basics: proto/basics.js, proto/fishbasics.js; every step
-// seen), on this device or on another one (the done feat in the synced achievements record, progress.js achBasics). Its
-// record (subjDev 'basics': reefid-basics, reefid-fish-basics) and feat (SUBJECTS basics.feat) are the subject's own, so
-// finishing one never hides the other's offers. The Home line and the first-launch offers read it.
+// A subject's basics module finished (every step seen) here or on another device (progress.js achBasics), each subject's
+// own (subjDev 'basics', SUBJECTS basics.feat): read by the Home line and the first-launch offers.
 // Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
@@ -3251,22 +3058,13 @@ addEventListener('hashchange', () => {
   if (typeof s.d === 'number') pageDepth = s.d;
   else history.replaceState({...s, d: ++pageDepth}, '');
 });
-// Cards (docs/DESIGN.md "Cards": the Medallion design for the whole family).
-// Every card over the page comes from cardShow: a round medallion over the card's top edge holds the kind's emoji
-// (CARD_KINDS) or a visual (cardRing, the progress ring), then a kicker, the title, the text and the buttons stacked full
-// width, the main one on top, centred on a pale tint of the kind's hue (the accent; the warm --warn for an apology). The
-// first meeting with a genus keeps its photo as a full-width band instead (its photo is there to be learned), the emoji
-// on a chip at the band's edge. One overlay at a time stays the callers' job (they wait while '#tour, .unlock' is up);
-// cardShow owns the rest: the .unlock overlay (hidden under the tour, closed by route() through ulClose when its page is
-// left), role dialog, aria-modal, labelled by its kicker and title, the focus (main button, or o.focus, kept inside on
-// Tab, given back on close), the keys (Escape / Enter outside a button or field / a tap outside: o.esc / o.enter / o.tap,
-// 1 or 2 = as that button, or a function; the quiz's answer keys never reach the page behind; the tour's pass while the
-// card waits under it), and on close the question's clock (quiz.js qclockAgain: reading a card is not looking at the
-// photo). o: {kind, cls (classes the callers' code and tests look for), kick, title (HTML; none: the first h3 of the body
-// labels it, else o.label), body, photo (genus band URL), visual (medallion HTML), primary / secondary ({text, attr, on,
-// stay}: on runs after the card closes, or instead of closing with stay), note, after, bind(d) after each render,
-// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route', or what the caller gave d.close)}. Returns the overlay: d.close(how),
-// d.set(changes) redraws it.
+// Cards (docs/DESIGN.md "Cards", the Medallion design; docs/ARCHITECTURE.md "Welcome tour"): every card over the page
+// comes from cardShow, which owns the .unlock overlay (a labelled dialog, the focus kept inside and given back, closed by
+// route() through ulClose), its keys and, on close, the question's clock (qclockAgain); one at a time stays the callers'.
+// o: kind (CARD_KINDS), cls, kick, title (HTML; else the body's first h3, else label), body, photo (a genus band),
+//   visual (medallion HTML), primary / secondary {text, attr, on (after the close), stay}, note, after, bind(d),
+//   focus, esc / enter / tap (1 or 2: as that button, or a function), onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route'
+//   or d.close's). Returns the overlay: d.close(how), d.set(changes) redraws it.
 const CARD_KINDS = {
   apology: '🙏',
   step: '🧗', // a big step the player chooses (fish circle 3, quiz.js openOfferShow): the warm --warn hue, "Not now" on top
@@ -3426,12 +3224,9 @@ function cardRing(pct, was) {
       `<circle class="${c}" cx="32" cy="32" r="26" stroke-dasharray="${((C * Math.max(0, Math.min(100, p))) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)"/>`;
   return `<svg class="ulring" viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>${was != null && was !== pct ? arc(was, 'gh') : ''}${pct > 0 ? arc(pct, 'ar') : ''}<text x="32" y="38.5" text-anchor="middle">${pct}%</text></svg>`;
 }
-// The first page opened from Home in a visit (ROADMAP "Load order, further steps" (c)): which page players go to first,
-// so the tiers can follow real use (index.html). One 'fromhome' event a visit (the Events tab, its page in the message
-// column), the first time route() leaves a Home it drew for another
-// page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
-// the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
-// those taken while it is on screen are not counted).
+// The first page opened from Home in a visit (docs/ARCHITECTURE.md "First page from Home"), so the tiers follow real
+// use: one 'fromhome' event, to (core.js pageName), s since Home was drawn, w the loading bar seen, tr the tour ran this
+// visit (pages its steps open do not count).
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
@@ -3550,11 +3345,8 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
-  // Home has its own Corals | Fish row (home.js): the header's subject control steps aside there, every width, so Home
-  // never shows the switch twice (docs/DESIGN.md "Subject switch").
-  // Hidden but keeping its room (app.css .subjc[data-home]), so the header keeps its size and every item its place from
-  // page to page; its menu closes. A subject switch with the focus (the header's, or Home's row, drawn again on a switch)
-  // gives it to the same subject's button in Home's row once drawn.
+  // On Home (its own subject row) the header's control steps aside, keeping its room (app.css .subjc[data-home];
+  // docs/DESIGN.md "Subject switch"); a switch with the focus hands it to the same subject's button in Home's row.
   const home = !h || h === 'home',
     fa = document.activeElement,
     fsj = home && fa && fa.closest && fa.closest('#view .hsubj, #subjc') ? fa.dataset.subj || SUBJ.id : '';
@@ -3620,12 +3412,9 @@ addEventListener('hashchange', route);
 // (section tab, page bar or Lab crumbs), and the intro text moves behind the ? button.
 const $help = document.getElementById('help'),
   $helpbox = document.getElementById('helpbox');
-// One rule for every page and every render path (route, tabs, toggles, Lab tools): whenever the view gets a
-// top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
-// The last line of the ? help on every page (no page footer): About and credits, the privacy notice and Send feedback
-// (rule U14), two taps from anywhere. So the ? shows on every page.
-// Send feedback with a game question on screen carries that question's unit and photos (quiz.js qNow), read when it is
-// sent.
+// One rule for every render path: a top-level title is dropped and the intro moves behind ? (route() only resets it).
+// Every ? help ends with About, Privacy and Send feedback (rule U14; no page footer), so the ? shows on every page.
+// Send feedback with a game question on screen carries its unit and photos (quiz.js qNow), read when sent.
 const fbCtx = () => {
   const q = () => (typeof qNow === 'function' && qNow()) || {};
   return {
@@ -3766,17 +3555,9 @@ document.addEventListener('keydown', e => {
     hdrMetrics();
   }
 });
-// Install the app (docs/ARCHITECTURE.md "Install the app": an icon on the home screen, instead of a link in the browser
-// that has to be found again each time). The standard pattern: where the browser has an install
-// prompt (Android Chrome and its family: beforeinstallprompt), our own "Install the app" button calls it; iPhone and iPad
-// Safari have none, so the card shows the steps (Share, Add to Home Screen) with their icons. Offered once, on a touch
-// screen (pointer: coarse, rule U4), from the INSTALL.VISITS-th visit or once INSTALL.ANSWERS answers are played (a full
-// session trail), whichever comes first; on Home at a calm moment, as progress.js subjHello (never during a question,
-// after the visit's first sync when signed in: sync.js noticeLater; spaced from the other prompts and never with another
-// card: quiz.js promptOk). Never again once closed or installed, never in the installed app. ⚙ Settings keeps an "Install
-// the app" row for anyone, any time (hidden in the installed app). Nothing new is logged: the load event already says
-// installed or not (sync.js loadSend st). An iPhone's home-screen app keeps its own storage, apart from Safari's: Safari
-// cannot know the app was installed, so its card is closed for good by its button.
+// Install the app (docs/ARCHITECTURE.md "Install the app"): our button calls the browser's prompt (beforeinstallprompt)
+// or, on iPhone and iPad Safari, the card shows the steps. Offered once on a touch screen (rule U4), from INSTALL.VISITS visits or
+// INSTALL.ANSWERS answers, on Home at a calm moment (a prompt: promptOk, noticeLater); ⚙ keeps a row any time.
 // reefid-install (this device): {n: visits, t: the last load, x: the card closed (time), in: installed (time)}.
 const INSTALL = {KEY: 'reefid-install', VISITS: 3, ANSWERS: 10, GAP: 30 * 60000, WAIT: 1500};
 // The record after a load at time now: a new visit when the last load was INSTALL.GAP or more before (a reload is none).
@@ -4036,20 +3817,10 @@ const draftCand = () =>
         .then(j => j.cand || {})
         .catch(() => ({}))
     : Promise.resolve({});
-// Load order (for a field line of ~86 kbit/s: Home, then the photo quiz and its photos, then My progress, then the
-// rest, each tier after the other so they never share the line with what the player waits for).
-// The files of each tier are listed in index.html (loadTier); here each tier is also set up once its files are in:
-//   1 Home: data.json, curation (the first page waits for these and for BOOT);
-//   2 the quiz: model.js, quiz.js, learn.js (the quiz uses its look-alike pairs and montages) and progress.js (13 KB:
-//     each answer updates the achievements, and My progress then opens at once), with forms.json,
-//     quality.json and picks.json (growth forms and photo ratings: the draw and the photo slots use them), then the
-//     data is rebuilt with them, the achievements counted and the sheet's photo statistics asked for;
-//   3 the photos of the next quiz questions (planNext, prefetched in quiz.js): no files of its own;
-//   4 the sheet calls (sync, anonymous answers, leaderboard and achievement shares): no files of their own;
-//   5 the rest (Tools, ⚑), then the service worker, whose install caches every other file of the shell for the next
-//     visit (registered earlier, its install would fetch the whole shell alongside the start-up files).
-// need(N) brings tiers 2..N (files and set-up); a page opened early calls it for its own tier (route), a link straight to
-// a page at start-up too (below), so its files come with Home's.
+// Load order in tiers (docs/ARCHITECTURE.md "Load order in tiers"; files in index.html, loadTier), each set up once in
+// (SETUP): 1 Home (data.json, curation, BOOT); 2 the quiz (with forms, quality, picks: the data rebuilt); 3 its next
+// photos (planNext); 4 the sheet's reads; 5 the rest, then the service worker (earlier, its install would share the
+// line). need(N) brings tiers 2..N; a page opened early asks for its own (route), a link at start-up too.
 let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
@@ -4120,13 +3891,9 @@ function need(n) {
       .then(() => (HAVE = Math.max(HAVE, n)));
   return TIERP[n];
 }
-// Home's doors before the data (ROADMAP "Load order, further steps" (a)): on a
-// first visit data.json and the curation come after Home's scripts, so the doors are drawn as soon as those have run
-// (BOOT), the Learn door's band dark (home.js viewHome without DATA, as while its lazy photos load); the start-up's
-// route() draws Home again with the band's photos once the data is in (homeAgain). Only for a subject whose doors need
-// none of its own files (UNITS doorsFirst: the corals; the fish Home waits for its families). Any other page asked for
-// before the data shows the loading bar and asks for its tier at once (as route() for a page before its tier); the
-// welcome tour, the cards and the notices wait for the data.
+// Home's doors before the data (docs/ARCHITECTURE.md "Load order in tiers"): drawn once the scripts ran (BOOT), the
+// Learn band dark, then again with it (homeAgain), for a subject whose doors need no files of its own (UNITS
+// doorsFirst); any other page shows the loading bar and asks for its tier. Tour, cards and notices wait for the data.
 let EARLY = false,
   dataFailed = false;
 const atHome = h => !h || h === 'home';
@@ -4224,12 +3991,9 @@ Promise.all([
       '<p class="warn">Could not load the data. Check your connection. <button type="button" class="linkish" id="reload">Try again</button></p>';
     document.getElementById('reload').onclick = () => location.reload();
   });
-// A tab left open for days still follows Pierre's published curation (e.g. a new cover): when the tab comes back
-// into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
-// never in the middle of a game.
-// A photo Pierre adds from the candidates waiting (cand.json) reaches data.json only when the Candidate photos Action has
-// run after his Publish: an open tab whose curation adds a photo its data.json lacks fetches data.json again (now, or at
-// a later refresh if the Action has not finished), so the photo shows without a reload.
+// A tab left open for days follows the published curation: read again back in view or every 30 min, applied at the
+// next screen (route), never mid-game. A curation adding a photo its data.json lacks (the Candidate photos Action still
+// running after Publish) fetches data.json again, now or at a later refresh.
 const rawFs = () => {
   const s = new Set(),
     add = L => (L || []).forEach(p => p && s.add(p.f));
@@ -4265,21 +4029,14 @@ function curRefresh() {
     })
     .catch(() => {});
 }
-// New versions (Pierre, 2026-11-02: players will not know to reload). Each
-// deploy changes sw.js (its cache name V). The browser checks it at each launch, and the app asks again when it comes
-// back into view and every 30 min (swCheck). The new version installs in the background and takes over (skipWaiting,
-// clients.claim): this page then reloads itself at the next calm moment, at the next page change (route: Next in a game
-// is one, between two questions), or when it comes back into view unless a question is waiting for its answer (QOPEN,
-// quiz.js question: never in the middle of a question), so the player is on the new version without
-// doing anything. Progress is saved at every answer.
+// New versions (Pierre, 2026-11-02: players will not know to reload; docs/ARCHITECTURE.md "Overview"). Each
+// deploy changes sw.js, checked at launch, back in view and every 30 min (swCheck); once a new one takes over, this page
+// reloads at the next page change or back in view, never with a question waiting for its answer (UPDATED, QOPEN).
 let UPDATED = false,
   QOPEN = false,
   swAt = Date.now();
-// A page no service worker controls (a browser without one, such as a chat app's built-in browser or some private
-// windows, or one that blocks it) never sees a takeover: at the same moments, it reads the deployed page's build number
-// (<meta name="build">, the deploy's run number: tools/stamp_versions.py) and a newer one counts as a takeover (UPDATED,
-// the same calm reload). Newer, not different: a host's cache still serving the older page must not reload it in a loop.
-// A copy never deployed has no build: nothing to compare.
+// A page no service worker controls never sees a takeover: at the same moments, a newer deployed build number (<meta
+// name="build">) counts as one (UPDATED). Newer, not different: a cache serving the older page must not loop it.
 const newBuild = (mine, page) => {
   const m = /<meta name="build" content="(\d+)">/.exec(page || '');
   return !!m && /^\d+$/.test(mine || '') && +m[1] > +mine;

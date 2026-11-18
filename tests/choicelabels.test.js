@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// A multiple-choice question never shows two choices of one label (Pierre, 2026-11-15, Q381: two fish species may carry
-// the same common name; nothing is blocked, but the game avoids the ambiguity): model.js distractors and customChoices
+// A multiple-choice question never shows two choices of one label (two fish species may carry the same common name;
+// nothing is blocked, but the game avoids the ambiguity): model.js distractors and customChoices
 // keep the first of each label (choiceKey, choiceApart) and take the next distractor in place of the other. model.js's
 // own code runs in Node; the units are real fish species labelled as a multiple-choice question would show them
 // (app.js cnShow: the IMR name for a player at IMR, the main name for the others), on the real fish.json pairs.
@@ -65,7 +65,7 @@ const id = n => byName(n).id,
   all = () => true;
 
 test('the real pairs: a choice of the target’s label never shows; the next distractor takes its place', () => {
-  // Outside IMR, Pomacentrus armillatus and P. opisthostigma both show "Brown damsel" (Q381: iNaturalist's default and the
+  // Outside IMR, Pomacentrus armillatus and P. opisthostigma both show "Brown damsel" (iNaturalist's default and the
   // IMR name); at IMR, P. armillatus shows its own IMR name, Borneo damsel, so both may be choices.
   const t = id('Pomacentrus armillatus'),
     o = id('Pomacentrus opisthostigma'),
@@ -127,7 +127,7 @@ test('two distractors of one label: one only, whichever rule ranks it first (tra
   }
 });
 
-// The gap #969 left for the species level: a wrong choice whose label is another listed name of the target (outside IMR,
+// The species level: a wrong choice whose label is another listed name of the target (outside IMR,
 // on a photo of Forcipiger flavissimus, "Longnose butterflyfish", the main name of F. longirostris and a listed name of
 // F. flavissimus, typed right). model.js choiceKeys: never a choice of any listed name of the target. The pairs on the real
 // fish.json, as each player type reads the labels: 5 outside IMR, 9 at IMR; none of them is ever offered.
@@ -196,7 +196,7 @@ test('no two units of one rank in today’s game share a label: the draw is unch
   const byRank = {};
   Object.entries(X.gen).forEach(([n, g]) => (byRank[g.rank || ''] = byRank[g.rank || ''] || []).push([M.choiceKey(n), n]));
   assert.ok(Object.keys(byRank).length >= 3, Object.keys(byRank).join(','));
-  // The species units (app.js fishGenera) may share a label (Q381): only the shared first names this player type
+  // The species units (app.js fishGenera) may share a label: only the shared first names this player type
   // reads (here outside IMR: imrNow not loaded), each on two species, kept apart by choiceApart (tests below).
   const shared = {};
   Object.entries(byRank).forEach(([rk, L]) => {
@@ -216,7 +216,7 @@ test('no two units of one rank in today’s game share a label: the draw is unch
   assert.strictEqual(new Set(coral).size, coral.length, 'two coral genera of one label');
 });
 
-// Codex review #975 (P2): an "Again" after a mix-up (quiz.js planPhoto) shows the two units of the mix-up, so it never asks
+// An "Again" after a mix-up (quiz.js planPhoto) shows the two units of the mix-up, so it never asks
 // a unit the other one names (model.js choiceNames). Outside IMR a photo of F. longirostris ("Longnose butterflyfish")
 // answered "Forceps butterflyfish" queues the pair: its Again asks F. longirostris only, never F. flavissimus between
 // "Longnose butterflyfish" (one of its listed names, typed right) and "Forceps butterflyfish". At IMR the labels turn
@@ -291,7 +291,7 @@ test('an Again never asks a unit the other choice names: the Forcipiger pair, ou
     assert.deepStrictEqual([...asked(imr, [lo, fl])], [only], imr ? 'IMR' : 'other');
     assert.deepStrictEqual([...asked(imr, [fl, lo])], [only], imr ? 'IMR' : 'other');
   });
-  // A pair whose names are apart: either unit, as before.
+  // A pair whose names are apart: either unit.
   const [a, b] = ['Pomacentrus moluccensis', 'Pomacentrus pavo'].map(id);
   assert.deepStrictEqual([...asked(false, [a, b])].sort(), [a, b].sort());
   // Each named by the other: no Again.
@@ -299,8 +299,8 @@ test('an Again never asks a unit the other choice names: the Forcipiger pair, ou
   assert.strictEqual(run(['A', 'B']), null);
 });
 // A duel never pairs two units one label names (quiz.js duelPick and planDuel's link, model.js choiceNames): outside IMR,
-// Pomacentrus armillatus and P. opisthostigma both show "Brown damsel" (Q381), a duel "Brown damsel or Brown damsel?"
-// either answer of which is right (Q319). quiz.js's own duelPick and planDuel run here on the real fish species.
+// Pomacentrus armillatus and P. opisthostigma both show "Brown damsel", a duel "Brown damsel or Brown damsel?"
+// either answer of which is right. quiz.js's own duelPick and planDuel run here on the real fish species.
 function duelOf(GEN, pairs) {
   const src = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
     ctx = {

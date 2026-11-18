@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The rights tie-break (Pierre, 2026-11-08, Q270: "à qualité égale", CC0 / CC BY and his own photos before CC BY-NC, so
-// the stock a later commercial app could use grows; the CC BY-NC photos stay fully usable): core.js licOf, rightsClass,
+// The rights tie-break (at equal quality, CC0 / CC BY and the admin's own photos before CC BY-NC, so the stock a later
+// commercial app could use grows; the CC BY-NC photos stay fully usable): core.js licOf, rightsClass,
 // rightsRank and their Python copy tools/rights.py, and every order that takes them as its last key before the fixed
 // order (docs/rules/photos.md P1, docs/ARCHITECTURE.md "Photo rights"). A tie-break only: never above quality, ease,
 // reference look or variety, never a photo left out.
@@ -26,7 +26,7 @@ const py = (code, input) =>
 test('rightsClass: IMR lecture, Coral Finder book, his own (whatever its licence), open (CC0, CC BY), the rest NC', () => {
   const ex = [
     [{imr: true, f: 'imr-p1_i1'}, 'imr', 1],
-    // traced to its original source (#925: pg, the page that credits it): its site's terms, non-commercial
+    // traced to its original source (pg, the page that credits it): its site's terms, non-commercial
     [{imr: true, f: 'imr-p1_i2', a: 'X / Corals of the World', pg: 'https://www.coralsoftheworld.org/x/'}, 'nc', 1],
     [{cf: 1, f: 'acropora-cf-2-00'}, 'book', 1],
     [{own: true, lic: 'cc-by-nc'}, 'own', 0],
@@ -159,7 +159,7 @@ test('fishGen: a family cover between equal photos is an open one; an easier NC 
   });
   const G = C.fishGen(T, {t: [ph('nc', 5, 'cc-by-nc'), ph('open', 4, 'cc0')]});
   assert.strictEqual(G.gen['f:X'].cover, 'nc');
-  // The list the draw reads keeps no licence (model.js photoSet's ties follow it, Codex review #742): the hash order.
+  // The list the draw reads keeps no licence (model.js photoSet's ties follow it): the hash order.
   const L = ['a', 'b', 'c', 'd', 'e', 'f'].map((x, i) => ph(x, 4, i % 2 ? 'cc-by' : 'cc-by-nc'));
   const W = C.fishGen(T, {t: L}).gen['f:X'];
   assert.deepStrictEqual(
@@ -199,8 +199,8 @@ test('applySlots: equal quality, an open photo is featured before an NC one; qua
     d.gen.G.sl.wide.more.map(x => x.f),
     ['nc1', 'nc2']
   );
-  // Every photo stays in the games, in the order without the rights (the draw's ties follow it, Codex review #742):
-  // the featured of the quality order (own, ncgood, nc1) lead, then the rest by source and quality.
+  // Every photo stays in the games, in the order without the rights (the draw's ties follow it): the
+  // featured of the quality order (own, ncgood, nc1) lead, then the rest by source and quality.
   assert.deepStrictEqual(
     d.gen.G.sl.wide.game.map(x => x.f),
     ['own', 'ncgood', 'nc1', 'nc2', 'open']
@@ -266,7 +266,7 @@ print(json.dumps([lic_class(l, o) for l, o in [('cc-by-nc', True), ('cc-by', Tru
   assert.deepStrictEqual(R, [0, 0, 0, 1, 1, 2, 2]);
 });
 
-// The rights facet (docs/ROADMAP.md "Rights tagged for a later split", licence study 2026-11-08): presence.js rightsTally,
+// The rights facet (docs/ROADMAP.md "Rights tagged for a later split"): presence.js rightsTally,
 // rightsBy and speciesOf, which admin.js renderRights (Inbox › Coverage › Rights) and Coverage › Games' summary line read.
 // Read-only counts: commercial-ready = own + open.
 test('rightsTally: the photos by rights class, each photo once, commercial-ready = own + open', () => {

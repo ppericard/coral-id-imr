@@ -568,7 +568,7 @@ const shareRoom = n => {
     t = Object.values(S.w).reduce((a, x) => a + x, 0);
   return c >= 1 || (c > 0 && (t > 0 ? g / t : 0) < c);
 };
-// The opening's pace (docs/LEARNING.md "After the collapsed runs of 2026-11-03", item 1): the genera opened on a card
+// The opening's pace (docs/LEARNING.md "One opening rule", "Opening pace"): the genera opened on a card
 // (the first cards, or one of their own) in the last OPEN.WIN answers, as at `at` (the answers count at which the
 // question will show).
 const openRecent = (at = answersSoFar()) =>
@@ -1628,14 +1628,14 @@ function confOf(t, n) {
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
-// Known mix-ups (docs/LEARNING.md "After the collapsed runs of 2026-11-03", 3a): a question on t among choices that hold a
+// Known mix-ups (docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a
 // genus this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits:
 // the player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
 // step, the progress and the photo's aim all take it. Only with 3 or more plausible choices (k): on 2-choice contrast
 // questions it made the prediction worse.
 const confTerm = (t, chs, k) =>
   k >= 3 ? Math.max(0, ...chs.filter(n => n !== t && GX(n)).map(n => confGap(pairConf(P, t, n), pooledConf(t, n)))) : 0;
-// Look-alikes from the data (core.js dataLook; docs/LEARNING.md "After the collapsed runs of 2026-11-03"): a pair no
+// Look-alikes from the data (core.js dataLook; docs/LEARNING.md "Look-alikes from the data"): a pair no
 // source declares, offered together CONF.N times or more and mixed up so often that its pooled score (pooledConf)
 // reaches CONF.TRAP. Such pairs join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus
 // sheet's "Don't confuse with" (learn.js lookHub). A seeded pair (dataSeed: one iNaturalist's identifications show) is

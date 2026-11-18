@@ -225,7 +225,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 | Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" |
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
-| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
+| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
 | Why something was decided (a decision, Pierre's words) | [docs/decisions/](docs/decisions/README.md): the index; a PR that carries out a decision adds a record (rule W19) |
 
