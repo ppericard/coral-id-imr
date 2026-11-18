@@ -860,9 +860,9 @@ A photo's difficulty is its unit's offset G, shared by every photo of the unit, 
 - P down by 0.8 / (1 + n_photo / 10) / (photos shown) × d × w;
 - G down by `GENUS_K` / (1 + n_unit / 10) × d × w, `GENUS_K` 0.4 (`Code.gs` and `core.js` in step);
 
-n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start at 0, so a photo nobody has answered sits at its unit's offset. A photo's
-unit is the unit shown (every photo of a question is of one colony, rule P4), so no data file or per-unit code is
-needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
+n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start
+at 0, so a photo nobody has answered sits at its unit's offset. A photo's unit is the unit shown (every photo of a
+question is of one colony, rule P4), so no data file or per-unit code is needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
 answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
 time.
 
@@ -984,8 +984,8 @@ replay".
   either.
 - **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
   rule appends `{v, at, why, msg}`; a change to how `Code.gs` `stats_` computes what the corals' replay reads from it
-  (`mem`, `conf`, `fmt`, `gd`) is one. A version is not a frozen engine: the sheet always replays with the code's current rules, and a new version
-  only makes every device take the replay once. The latest version of each list has no card (`msg` null; the cards of
+  (`mem`, `conf`, `fmt`, `gd`) is one. A version is not a frozen engine: the sheet always replays with the code's
+  current rules, and a new version only makes every device take the replay once. The latest version of each list has no card (`msg` null; the cards of
   the earlier versions stay for the record, and `core.js` `rvMsgs` shows none for a jump that ends on a version without
   one), and a learned mark the replay takes away is not told (rule D6).
 - **The device's own recalculations** (`memRecalc`, above; `model.js` `domRecalcAll`, a unit record of a subject other
