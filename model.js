@@ -1497,7 +1497,7 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
 // photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
 // A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
-// rated it, which the sheet names (o[4], from vNEXT): its offset is swapped for the offset of the unit asked, so the rating
+// rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
 // keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
 // has since left (moved or renamed): it then takes its current genus's offset.
 const PDIFF = {W: 5, MID: 3};

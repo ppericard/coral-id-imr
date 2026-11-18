@@ -421,7 +421,7 @@
   // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
   // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
   // version or later, so one it has not seen answer, or an older one, changes nothing.
-  const FISHST_SHEET = 188;
+  const FISHST_SHEET = 189;
   const SUBJECTS = [
     {
       id: 'coral',

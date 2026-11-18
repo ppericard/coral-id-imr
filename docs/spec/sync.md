@@ -611,11 +611,11 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   data look-alikes follow their players' answers; their photo memory and format offsets stay the prior and none
   (`pmem`, `pfmt`), as the sheet's replay of them reads none.
 - The fish's rows are rated at the rank each question asked (a family or a species unit as the "genus" of the
-  hierarchical photo Elo, its pairs among the choices offered). **The app reads the fish's own** from vNEXT, the same
+  hierarchical photo Elo, its pairs among the choices offered). **The app reads the fish's own** from v189, the same
   way (`SUBJECTS` `fish` `stats`, `core.js` `FISHST_SHEET`; stored as `reefid-photo-stats-fish`): their photo ratings,
   unit offsets and pairs join the corals' in `PSTAT`, `PGD`, `PCONF` under keys of their own (photo ids, `f:`, `g:`, `s:`
   unit ids), so the fish draw, traps and look-alikes follow their players' answers. A photo shown at several ranks is
-  rated under the last unit that rated it, which every reply names as each photo's 5th element from vNEXT (`statsOut_`,
+  rated under the last unit that rated it, which every reply names as each photo's 5th element from v189 (`statsOut_`,
   `core.js` `eloOf`); `model.js` `photoDiff` swaps that unit's offset for the one of the unit asked (LEARNING.md
   "Hierarchical photo Elo"). The reply also carries `mem`, `memn`
   and `fmt`, which the app ignores for the fish (`model.js` `pmem`, `pfmt`: the prior and none), as the sheet's replay of
@@ -626,7 +626,7 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   whole Answers tab 2,000 rows at a time, 60 s at most a run), one `pool3` entry per subject in the script cache (the
   corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, each in parts under 100 KB), and one more
   `?stats=1` request every 10 minutes per device playing the sea slugs or the fish (served from the snapshot's cache; the
-  fish's reply is about 125 KB on 2026-11-18, about 40 KB more with each photo's unit from vNEXT, growing with the
+  fish's reply is about 125 KB on 2026-11-18, about 40 KB more with each photo's unit from v189, growing with the
   photos rated and the pairs offered; the served reply is cached in parts, `cacheBigPut_`).
 
 **The other readers** use the numbers over all the data, stored, never simplified. The admin's `readStats`
