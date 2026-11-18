@@ -56,11 +56,6 @@ jobs:
       - name: Python tools compile
         run: |
           python3 -m py_compile tools/*.py
-      # The fish held-out set is what tools/holdout.py writes from fish-game.json and fish.json (the photo workflow
-      # rewrites it with fish-game.json; a PR that changes either runs the tool).
-      - name: Fish held-out set up to date (tools/holdout.py --check)
-        run: |
-          python3 tools/holdout.py --check
       - name: Photo sizes (every photo in 1600, 960, 480 and 240 px, tools/photos.py)
         run: |
           python3 tools/photos.py --check

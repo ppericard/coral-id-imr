@@ -682,6 +682,7 @@ function build() {
   applyCuration(d, CUR);
   applyForms(d, CUR);
   applySlots(d, CUR, {picks: PICKS, autoq: AUTOQ});
+  reserveOn(d); // this player's reserve out of the units' views and game lists (the key-only genera, d.x, have no exam)
   if (d.x) {
     const x = {gen: d.x.gen, course: {}, cand: d.cand};
     applyCuration(x, CUR);
@@ -768,9 +769,7 @@ function fishGenera(X, F) {
         ].join(', '),
         sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
         // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
-        wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
-        // its held-out photos the same way (core.js fishGen held; model.js examSet): never in its views
-        held = (E.held || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
+        wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
       X.gen[id] = {
         id,
         name: g,
@@ -834,7 +833,6 @@ function fishGenera(X, F) {
         cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
         levels: 1,
         views: {wide},
-        ...(held.length ? {held} : {}),
         // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
         // never its IMR name (Anemonefish): a common name never advances a scientific name (docs/FISH_PATH.md; Codex
         // review #656), it is the family's
@@ -870,8 +868,7 @@ function fishGenera(X, F) {
   X.spl = fishSpUnits(F, X).map(u => {
     const E = X.gen[u.family],
       s = u.s,
-      wide = E.views.wide.filter(p => p.sp === s.id),
-      held = (E.held || []).filter(p => p.sp === s.id);
+      wide = E.views.wide.filter(p => p.sp === s.id);
     X.gen[u.id] = {
       id: u.id,
       get name() {
@@ -911,7 +908,6 @@ function fishGenera(X, F) {
       levels: 1,
       noex: 1,
       views: {wide},
-      ...(held.length ? {held} : {}),
       names: []
     };
     if (wide.length) X.gen[u.id].cover = easyCover(wide).f;
@@ -1156,18 +1152,36 @@ const TREE_OF = {};
 const fishBuild = () => {
   // the tree subject in force (TREE_AT): its content slots apply to it, and its part of the curation (core.js treeCur)
   const S = SUBJECTS.find(x => x.id === TREE_AT),
-    {ph, gm, ho} = FISHRAW,
+    {ph, gm} = FISHRAW,
     on = structOn(S),
     C = treeCur(S, CUR),
-    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on})),
-    // the held-out set (fish-holdout.json, the fish only: UNITS get ho; core.js fishHeld), out of every unit's views
-    held = fishHeld(ho, gm.photos && Object.keys(gm.photos).length ? gm.photos : ph.photos, C);
+    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
+  // this player's reserve out of every unit's views, once the cards are chosen (reserveOn)
+  FISH = reserveOn(fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet, unitRankOf(S)), f), C, f));
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+// This player's reserve (core.js reserveOf, reserveSplit; Pierre, 2026-11-18 ~12:05 Manila: "la réserve elle doit être
+// définie par joueur"): a few observations per unit they never see in practice, which their mastery exam asks first, the
+// same rule for every subject (the corals' build, every tree subject's fishBuild). resId: the player's stable id, the
+// account's name (the same on all their devices), else this device's anonymous id as the sheet logs its answers
+// (sync.js anonId: "~anon <id>"); '' where neither exists (no reserve). RESID: the id the units were last split for
+// (resSeen).
+const resId = () =>
+  typeof SYNC !== 'undefined' && SYNC && SYNC.name && SYNC.pin
+    ? reserveId(SYNC.name)
+    : typeof anonId === 'function'
+      ? reserveId('~anon ' + anonId())
+      : '';
+let RESID = null;
+const reserveOn = X => reserveSplit(X, reserveOf(X, (RESID = resId())));
+// Another player on this device without a reload (a new account named at sign-in: sync.js signIn): the units are made
+// again for them at the next page change, as for a new curation (CUR_NEW).
+function resSeen() {
+  if (RESID !== null && RESID !== resId() && !CUR_NEW) CUR_NEW = CUR;
+}
 // A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
 const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, FISH: null, FISHP: null, FISHH: null, FISHRAW: null, FISHF: null, FISHST: '', FISHON: false});
@@ -1300,14 +1314,13 @@ const treeHome = id => {
     treeSet(
       id,
       'FISHH',
-      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}, G.ho ? G.ho() : {}])
-        .then(([f, ph, ho]) => {
+      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}])
+        .then(([f, ph]) => {
           // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
           // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
           // whole list is not required: without it every family plays on its first photos.
           if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-          // ho: the held-out set (UNITS get ho, the fish only), {} when it cannot come (every photo then plays as practice)
-          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, ho: ho || {}, gm: {photos: {}}});
+          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, gm: {photos: {}}});
           return T.FISHRAW;
         })
         .catch(e => {
@@ -2222,8 +2235,8 @@ function treePhoto(f) {
   const id = fishPid(f),
     G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
   for (const g of G)
-    // its held-out photos too (shown by the mastery exam, model.js examSet: flagged like any other)
-    for (const [v, L] of [...Object.entries(g.views || {}), ['wide', g.held]]) {
+    // its reserved photos too (shown by the mastery exam, model.js examSet: flagged like any other)
+    for (const [v, L] of [...Object.entries(g.views || {}), ...Object.entries(g.held || {})]) {
       const p = (L || []).find(x => x && fishPid(x.f) === id);
       if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
     }
@@ -2355,13 +2368,7 @@ const UNITS = {
     land: true,
     // Its files (a tree subject, read through the fish engine: treeHome, treeLoad): f its tree, ph its first photos
     // (Home before the biggest file), gm its game photos.
-    // ho: the held-out set (core.js fishHeld; ROADMAP "A held-out photo set"), with Home's files: never shown in practice.
-    get: {
-      f: () => json('fish.json?v=6'),
-      ph: () => json('fish-photos.json?v=6'),
-      ho: () => json('fish-holdout.json?v=1'),
-      gm: () => json('fish-game.json?v=1')
-    },
+    get: {f: () => json('fish.json?v=6'), ph: () => json('fish-photos.json?v=6'), gm: () => json('fish-game.json?v=1')},
     load: S => treeLoad(S.id),
     // What start-up waits for: the files of Home (treeHome), and the curated photos too when this device holds them.
     home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),

@@ -43,7 +43,6 @@ const SHELL = [
   'fish.json?v=6',
   'fish-photos.json?v=6',
   'fish-game.json?v=1',
-  'fish-holdout.json?v=1',
   'forms.json?v=7',
   'icon.svg',
   'fonts/source-sans-3-normal.woff2',

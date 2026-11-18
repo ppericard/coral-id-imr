@@ -371,17 +371,18 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
     require('./block.js')(app, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
     ctx
   );
-  // The app's units (app.js fishBuild: fishGen over fishPhotos with the held-out set, then fishGenera), and the sheet's
-  // table from the same files, made without the set (the sheet never reads it): its photos withheld from the views, the
-  // app's exam photos (views and held) are the sheet's.
+  // The app's units (app.js fishBuild: fishGen over fishPhotos, then fishGenera, then a player's reserve split out:
+  // core.js reserveSplit), and the sheet's table from the same files, made without any reserve (the sheet never reads
+  // one): its photos withheld from the views, the app's exam photos (views and held) are the sheet's.
   const cur = C.treeCur(S, Fs[3]),
     gm = C.fishGameRead(Fs[2]).photos,
-    held = C.fishHeld(json('fish-holdout.json'), gm, cur),
-    X = ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur, held), Fs[1].sheet, C.unitRankOf(S)), Fs[0]),
+    X = ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur), Fs[1].sheet, C.unitRankOf(S)), Fs[0]),
+    held = C.reserveOf(X, 'player one'),
     T = S.replayed.vars(Fs[0], Fs, S),
-    // the same table whatever the order its photos come in (the app's views, then its held-out photos)
+    // the same table whatever the order its photos come in (the app's views, then its reserved photos)
     canon = U => U && {n: U.n, at: U.at, v: U.v.map(([f, k, i]) => [f, k, i < 0]).sort((a, b) => (a[0] < b[0] ? -1 : 1))};
-  assert.ok(held.size > 1000, 'the set is read: ' + held.size);
+  C.reserveSplit(X, held);
+  assert.ok(held.size > 1000, 'a reserve is made: ' + held.size);
   let n = 0,
     nh = 0;
   Object.values(X.gen).forEach(g => {

@@ -1209,9 +1209,9 @@
         if (U) out[id] = U;
       };
     Object.values(X.gen).forEach(g => {
-      // the unit's photos whole, its held-out ones too (g.held: only when fishPhotos had the set; the sheet never has it),
-      // so the app's table is the sheet's (model.js examPics, varUnitOf)
-      if (!g.wink && !g.rank && !g.parent) put(g.id, [...((g.views || {}).wide || []), ...(g.held || [])], g, g);
+      // the unit's photos whole (a player's reserve is split from the units only after this table's build: app.js
+      // fishBuild, core.js reserveSplit), so the app's table is the sheet's (model.js examPics, varUnitOf)
+      if (!g.wink && !g.rank && !g.parent) put(g.id, (g.views || {}).wide || [], g, g);
     });
     fishGenSets(F, X).forEach(({E, by}) =>
       by.forEach((L, id) => {
@@ -1219,7 +1219,7 @@
         const set = new Set(L.map(s => s.id));
         put(
           id,
-          [...((E.views || {}).wide || []), ...(E.held || [])].filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
+          ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
           E
         );
       })
@@ -1295,7 +1295,6 @@
     return L.map(([G, E, S]) => {
       const set = new Set(S),
         wide = E.views.wide.filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
-        held = (E.held || []).filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
         g = {
           id: G.id,
           name: G.name,
@@ -1306,8 +1305,7 @@
           circle: Math.min(...S.map(id => sp.get(id).circle)),
           species: S,
           look: L.filter(([o, X]) => X === E && o !== G).map(([o]) => o.id),
-          views: {wide},
-          ...(held.length ? {held} : {})
+          views: {wide}
         };
       if (wide.length) g.cover = easyCover(wide).f;
       return g;
@@ -1416,22 +1414,12 @@
         views: {
           wide: easyRank(
             (byFam[t.id] || [])
-              .filter(p => p && p.f && p.src && !sheetOnly(p) && !p.ho)
+              .filter(p => p && p.f && p.src && !sheetOnly(p))
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p)),
             undefined,
             false
           )
         },
-        // its held-out photos (fishPhotos held: ho), never in its views; only the mastery exam asks them
-        ...((byFam[t.id] || []).some(p => p && p.ho)
-          ? {
-              held: easyRank(
-                (byFam[t.id] || []).filter(p => p && p.ho && p.f && p.src && !sheetOnly(p)),
-                undefined,
-                false
-              )
-            }
-          : {}),
         ...(start.has(t.id) ? {first: 1} : {}),
         // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
         // heading above its block (learn.js viewFishList); display only
@@ -1860,55 +1848,192 @@
     const k = S && S.admin && S.admin.cur;
     return cur && k ? {...cur, fish: cur[k]} : cur;
   };
-  // held (the app's fishBuild, the rated world): the held-out set (fishHeld), whose photos come marked ho, a copy, which
-  // fishGen keeps out of every unit's views (its held list). Without it (the sheet's pools and replay, the admin, the
-  // tools) every photo as before.
-  function fishPhotos(first, game, cur, held) {
+  function fishPhotos(first, game, cur) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
       gone = F ? fishGone(cur) : xid,
       G = game && Object.keys(game).length ? game : first || {},
-      H = held && held.size ? held : null,
       out = {};
     Object.entries(G).forEach(([t, L]) => {
-      out[t] = (L || [])
-        .filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)))
-        .map(p => (H && H.has(p.sp + ' ' + fishObs(p)) ? {...p, ho: 1} : p));
+      out[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
     });
     return out;
   }
-  // The held-out set (fish-holdout.json, tools/holdout.py; ROADMAP "A held-out photo set", Pierre, 2026-11-04 and
-  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only by the mastery
-  // exam, unannounced (model.js examSet; Pierre, 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"). fishObs(p): a game record's observation as the file
-  // names it (tools/holdout.py obs_of: fish-game.json's short o, an iNaturalist id or a FishBase page; else the file).
-  // fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists (H), less the observations of a photo
-  // Pierre picked as a ★ cover or a featured photo (cur: curation.json fish genera cover, feat; matched by fishPid, as
-  // fishCurate reads them), which count as practice (#1023: the tool does not read the curation, so a Publish never makes
-  // the file stale). An empty set without the file.
+  // fishObs(p): a photo's observation (a fish, a colony: rule P4, one question, one observation), an iNaturalist
+  // observation by its id alone (fish-game.json's short o or a whole address), else its o as it is (a FishBase page),
+  // else the photo's own name.
   const fishObs = p => {
     const o = p && p.o;
     if (!o) return String((p && p.f) || '');
     const s = String(o);
     return s.startsWith(FISH_OBS) ? s.slice(FISH_OBS.length) : s;
   };
-  function fishHeld(H, game, cur) {
-    const out = new Set();
-    Object.entries((H && H.held) || {}).forEach(([sp, L]) => (Array.isArray(L) ? L : []).forEach(o => out.add(sp + ' ' + o)));
-    const picks = new Set(
-      Object.values((cur && cur.fish && cur.fish.genera) || {})
-        .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
-        .filter(Boolean)
-        .map(fishPid)
-    );
-    if (out.size && picks.size)
-      Object.values(game || {}).forEach(L =>
-        (L || []).forEach(p => {
-          if (p && p.f && picks.has(fishPid(p.f))) out.delete(p.sp + ' ' + fishObs(p));
-        })
+  // The per-player reserve (Pierre, 2026-11-18 ~12:05 Manila: "En fait la réserve elle doit être définie par joueur. Il
+  // n'y a pas d'intérêt d'avoir une réserve globale"; it replaced #1057's one held-out set for every player,
+  // fish-holdout.json; ROADMAP "A held-out photo set", Q385): per player and unit, a few observations that player never
+  // sees in practice, which their mastery exam asks first (model.js examSet), unannounced, counted like any answer and
+  // logged |h (quiz.js answer). One rule for every subject (rule S1), on the units as built (reserveOf, reserveSplit):
+  // - Which: in each species (a unit with no species, a coral genus: the unit), its eligible observations in the order of
+  //   a hash of the player's id and the observation (resHash), first ones first: the same on all of a player's devices
+  //   for the same photos, another order for another player, so every photo is practised and rated by others.
+  // - Eligible: an observation none of whose photos is Pierre's own (rule P1, never left out), an IMR lecture photo, a
+  //   reference source's (rep) or of reference level (refLevel), nor a card's (a unit's cover, a featured photo, Pierre's
+  //   ★ picks: cards).
+  // - How many (#1057's rule, Pierre, 2026-11-18: "Il en faut suffisament pour refaire l'examen plusieurs fois, si et
+  //   seulement si on a assez de photos par ailleurs"; "Si on n'a pas assez de photos, ben on privilégie
+  //   l'apprentissage"): up to RESERVE.target (15, three exams of model.js EXAM.n) per unit with a mastery exam (not noex),
+  //   across its species in turn, only from a real surplus: never leaving a species fewer than RESERVE.keep (8) in practice
+  //   nor a unit with an exam fewer than RESERVE.floor (30) (each such unit's floor bounds what the others take from its
+  //   species: a thin genus inside a rich family keeps its photos). The units with the most observations first (a family
+  //   before its genera), each topped up to the target. A thinner unit reserves little or nothing (the corals: a few
+  //   colonies per genus, none), and its exam asks the photos this player has not seen.
+  // - Stateless: a function of the player's id and the photos in play, so a photo added or gone moves the reserve at its
+  //   margin only; the exam asks first the reserved observations this player was never shown (model.js examSet), so an
+  //   observation that comes into the reserve after it was seen waits behind the fresh ones.
+  // The sheet can compute a player's reserve the same way (the answer log's player, reserveId); it never needs it: the
+  // tag |h logged with the answer is the record (no replay branch, no rules version: rules D8, D9).
+  const RESERVE = {target: 15, keep: 8, floor: 30};
+  // A player's stable id for the reserve: an account's name (the sheet's Answers player, any case), else "~anon <id>",
+  // the device's anonymous id as the sheet logs its answers (sync.js anonId).
+  const reserveId = w =>
+    String(w || '')
+      .trim()
+      .toLowerCase();
+  // A 32-bit hash of a string (FNV-1a, then murmur3's finaliser so ids that share a prefix or a suffix spread), as a
+  // fixed-width hex string: the same on every device and in the sheet.
+  const resHash = s => {
+    let h = 2166136261;
+    for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x85ebca6b) >>> 0;
+    h ^= h >>> 13;
+    h = Math.imul(h, 0xc2b2ae35) >>> 0;
+    h ^= h >>> 16;
+    return (h >>> 0).toString(16).padStart(8, '0');
+  };
+  // Every photo of unit g in play, every view: its views and its game lists (applySlots sl: the corals' IMR lecture photos).
+  const unitPics = g => [
+    ...new Set(Object.entries((g && g.views) || {}).flatMap(([v, L]) => [...(L || []), ...(((g.sl || {})[v] || {}).game || [])]))
+  ];
+  // A photo that a card shows, or one the reserve never takes on its own (Pierre's own, IMR's, a reference one).
+  const resOut = (p, cards) => !!(p.own || p.imr || p.rep || refLevel(p) || (cards && (cards.has(p.f) || cards.has(fishPid(p.f)))));
+  // The files shown on the cards of the units X ({gen, covers}): each unit's cover and ★ pick (coverP), its featured photos
+  // (featP, sl feat), and the covers of a species or genus with no unit (X.covers); by name and by fishPid.
+  const resCards = X => {
+    const out = new Set(),
+      add = f => f && (out.add(f), out.add(fishPid(f)));
+    Object.values((X && X.gen) || {}).forEach(g => {
+      if (!g) return;
+      add(g.cover);
+      add(g.coverP && g.coverP.f);
+      Object.values(g.featP || {}).forEach(L => (L || []).forEach(p => add(p && p.f)));
+      Object.values(g.sl || {}).forEach(s => ((s && s.feat) || []).forEach(p => add(p && p.f)));
+    });
+    Object.values((X && X.covers) || {}).forEach(p => add(p && p.f));
+    return out;
+  };
+  // reserveOf(X, id): the reserve of player id (reserveId) over the units X ({gen, covers}, as built: app.js build,
+  // fishBuild), a Set of species + ' ' + observation. Empty without an id.
+  function reserveOf(X, id) {
+    const out = new Set(),
+      who = reserveId(id);
+    if (!who || !X || !X.gen) return out;
+    const cards = resCards(X),
+      P = new Map(), // species: Map(observation: eligible)
+      U = []; // the units with an exam: [id, Set of species, observations in play]
+    // a unit by its key in X.gen (a coral genus has no id field), a photo's species (none: the unit's)
+    Object.entries(X.gen).forEach(([id, g]) => {
+      if (!g || g.wink) return;
+      const keys = new Set(),
+        S = new Set();
+      unitPics(g).forEach(p => {
+        if (!p || !p.f) return;
+        const s = String(p.sp || id),
+          o = fishObs(p),
+          M = P.get(s) || P.set(s, new Map()).get(s);
+        M.set(o, (M.has(o) ? M.get(o) : true) && !resOut(p, cards));
+        keys.add(s + ' ' + o);
+        S.add(s);
+      });
+      if (!g.noex && keys.size) U.push([id, S, keys.size]);
+    });
+    const E = new Map(), // species: its eligible observations in the player's order
+      cap = new Map(), // species: the most it may reserve (RESERVE.keep left in practice)
+      held = new Map(); // species: its reserved observations
+    P.forEach((M, s) => {
+      const L = [...M].filter(([, ok]) => ok).map(([o]) => [resHash(who + ' ' + s + ' ' + o), o]);
+      L.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : 1));
+      E.set(
+        s,
+        L.map(x => x[1])
       );
+      cap.set(s, Math.max(0, Math.min(L.length, M.size - RESERVE.keep)));
+      held.set(s, []);
+    });
+    // The most observations first (a family before its genera), then by id: one order everywhere.
+    U.sort((a, b) => b[2] - a[2] || (a[0] < b[0] ? -1 : 1));
+    const room = U.map(([, , n]) => Math.max(0, n - RESERVE.floor)),
+      has = U.map(() => 0), // each unit's reserved observations
+      of = new Map(); // species: the indexes of its units
+    U.forEach(([, S], i) => S.forEach(s => (of.get(s) || of.set(s, []).get(s)).push(i)));
+    // Every unit holding species s stays under its floor (room) after one more.
+    const fits = s => (of.get(s) || []).every(i => has[i] < room[i]);
+    U.forEach(([, S], i) => {
+      // its species, the most observations first, then by id
+      const L = [...S].sort((a, b) => P.get(b).size - P.get(a).size || (a < b ? -1 : 1));
+      let need = Math.min(RESERVE.target, room[i]) - has[i];
+      while (need > 0) {
+        let took = false;
+        for (const s of L) {
+          const H = held.get(s);
+          if (need <= 0 || H.length >= cap.get(s) || !fits(s)) continue;
+          H.push(E.get(s)[H.length]);
+          (of.get(s) || []).forEach(j => has[j]++);
+          need--;
+          took = true;
+        }
+        if (!took) break;
+      }
+    });
+    held.forEach((L, s) => L.forEach(o => out.add(s + ' ' + o)));
     return out;
   }
+  // reserveSplit(X, R): the reserve R (reserveOf) out of every unit's views and game lists, into its held lists by view
+  // (g.held {view: [photo]}, each a copy marked ho, one copy per photo across the units): no game, card, sheet or list
+  // shows them (they read the views), the mastery exam asks them (model.js examPics). Each unit's views and game lists
+  // that change are new objects (never a list another copy of the units shares: the rated world's); returns X.
+  function reserveSplit(X, R) {
+    if (!X || !X.gen) return X;
+    const copy = new Map(),
+      ho = p => copy.get(p) || copy.set(p, {...p, ho: 1}).get(p);
+    Object.entries(X.gen).forEach(([id, g]) => {
+      if (!g) return;
+      delete g.held;
+      if (!R || !R.size || !g.views) return;
+      const out = p => !!p && !!p.f && R.has(String(p.sp || id) + ' ' + fishObs(p)),
+        keep = L => L.filter(p => !out(p)),
+        held = {},
+        put = (v, L) => (held[v] = [...new Set([...(held[v] || []), ...L.filter(out).map(ho)])]);
+      if (Object.values(g.views).some(L => Array.isArray(L) && L.some(out)))
+        g.views = Object.fromEntries(
+          Object.entries(g.views).map(([v, L]) => [v, Array.isArray(L) && L.some(out) ? (put(v, L), keep(L)) : L])
+        );
+      if (Object.values(g.sl || {}).some(s => Object.values(s || {}).some(L => Array.isArray(L) && L.some(out))))
+        g.sl = Object.fromEntries(
+          Object.entries(g.sl).map(([v, s]) => [
+            v,
+            Object.fromEntries(
+              Object.entries(s || {}).map(([k, L]) => [k, Array.isArray(L) && L.some(out) ? (k === 'game' && put(v, L), keep(L)) : L])
+            )
+          ])
+        );
+      if (Object.keys(held).length) g.held = held;
+    });
+    return X;
+  }
+  // A unit's reserved photos (reserveSplit): view v's, or every view's.
+  const heldOf = (g, v) => (v ? ((g && g.held) || {})[v] || [] : Object.values((g && g.held) || {}).flat());
   // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
   // double one ("Surgeonfish & Unicornfish"), its scientific names, the names IMR uses inside it with their genera
   // (Chromis, Anemonefish, Amphiprion: a finer name, still right), and the other common names curated for the IMR entries
@@ -7295,8 +7420,13 @@
     subjDev,
     fishGen,
     fishGenSets,
-    fishHeld,
     fishObs,
+    RESERVE,
+    reserveId,
+    resHash,
+    reserveOf,
+    reserveSplit,
+    heldOf,
     fishGlOf,
     fishReplayGen,
     SEASLUG_RVS,

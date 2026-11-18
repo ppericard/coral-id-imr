@@ -26,7 +26,10 @@ const inPlay = P => Object.fromEntries(Object.entries(P || {}).map(([t, L]) => [
 function app(photoDiff) {
   const ctx = {
     fishGen: C.fishGen,
-    fishHeld: C.fishHeld,
+    // no player id here (no SYNC, no anonId): no reserve, every photo in its unit's views
+    reserveId: C.reserveId,
+    reserveOf: C.reserveOf,
+    reserveSplit: C.reserveSplit,
     fishPhotos: (first, game, cur) => C.fishPhotos(game && Object.keys(game).length ? first : inPlay(first), game, cur),
     easyRank: C.easyRank,
     easyCover: C.easyCover,

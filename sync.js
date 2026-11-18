@@ -1729,7 +1729,10 @@ function signIn(name, pin, j) {
     try {
       localStorage.removeItem(ANONB);
     } catch (e) {}
-    return store.set('reefid-account', SYNC);
+    store.set('reefid-account', SYNC);
+    // no reload: the units are made again for the account's reserve at the next page change (app.js resSeen)
+    if (typeof resSeen === 'function') resSeen();
+    return;
   }
   // Each subject on its own (core.js SUBJECTS). The subject the sheet replays (SUBJECTS replay: the corals): only what was
   // played while signed out counts, the delta from ANONB (the progress before its first anonymous answer) added to the

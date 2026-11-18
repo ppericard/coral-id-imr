@@ -42,7 +42,7 @@ function engine(
     juv = null, // the unit's juvenile classes (fish.json juv: model.js varKind)
     varAt = null, // its variant thresholds' overrides (fish.json varAt: model.js varAtOf)
     ex = null, // its mastery exam under way (s.ex: model.js examSet)
-    held = null, // its held-out photos (g.held: model.js HELD, examSet, heldSet)
+    held = null, // the player's reserved photos of the unit (g.held {view: [photo]}, core.js reserveSplit; an array: wide)
     others = {} // the player's records of other units (P: model.js shownAll)
   } = {}
 ) {
@@ -67,6 +67,7 @@ function engine(
     varGroup: C.varGroup,
     varUnit: C.varUnit,
     varLeftOf: C.varLeftOf,
+    heldOf: C.heldOf,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,
@@ -82,7 +83,13 @@ function engine(
     fmtOff,
     GX: n =>
       n === 'u' || !(n in others)
-        ? {levels: 3, views: {wide: L}, ...(juv ? {juv} : {}), ...(varAt ? {varAt} : {}), ...(held ? {held} : {})}
+        ? {
+            levels: 3,
+            views: {wide: L},
+            ...(juv ? {juv} : {}),
+            ...(varAt ? {varAt} : {}),
+            ...(held ? {held: Array.isArray(held) ? {wide: held} : held} : {})
+          }
         : others[n].gx || {views: {wide: []}},
     imrFormsOf: () => ['a'],
     gamePics: (n, v) => (v === 'wide' ? L : []),

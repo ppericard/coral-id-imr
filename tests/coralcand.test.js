@@ -205,7 +205,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
   assert.match(
     job,
-    /git add data\.json cand\.json excluded\.json fish-game\.json fish-holdout\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json seaslug-cand\.json seaslug\.json seaslug-game\.json img/
+    /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json seaslug-cand\.json seaslug\.json seaslug-game\.json img/
   );
   // The licence refresh (tools/licences.py): weekly and by hand, never at a Publish; before tools/fish_game.py builds
   // fish-game.json from the sources it refreshed.
