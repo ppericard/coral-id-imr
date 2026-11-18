@@ -18,7 +18,8 @@ checks; PRs merged since the inventory) between 06:30 and 07:00 Manila, and the 
   prints it for the type and size band I read from the files the item touches (my reading); the PRs cited are the
   comparable ones it lists. For a series (engine L) it is one PR of the series. Bulk work run by a light model, a
   question, Pierre's hands and the integrator's own routine get none.
-- Items done since the inventory are left out; section 5 lists the records that still call them open.
+- Items done since the inventory are left out (the PR description names them); section 5 lists the records that
+  still call some of them open.
 
 ## 1. Summary
 
@@ -27,11 +28,11 @@ checks; PRs merged since the inventory) between 06:30 and 07:00 Manila, and the 
 | Horizon | A | P | H | All |
 | --- | --- | --- | --- | --- |
 | Short (today, the next few days) | 14 | 3 | 0 | 17 |
-| Medium (the next weeks) | 18 | 9 | 0 | 27 |
+| Medium (the next weeks) | 19 | 9 | 0 | 28 |
 | Long (later, ROADMAP's far rows) | 5 | 7 | 0 | 12 |
-| **All** | **37** | **19** | **0** | **56** |
+| **All** | **38** | **19** | **0** | **57** |
 
-Rows marked "A, then P" count as A (ST8, ST11) and "P, then A" as P (ST15).
+Rows marked "A, then P" count as A (ST8, ST11, MT8) and "P, then A" as P (ST15).
 
 Pierre's hands are counted apart (section 4: 8 items). The questions (section 3): 9 numbered and open, 6 unnumbered in
 STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradictions and stale records: 11 (section 5).
@@ -91,7 +92,7 @@ STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradic
 | MT5 | Species step 2, scientific names, fish and sea slugs (F3); the sea slug species units follow (S5) | [plan](2026-11-18-species-step2-plan.md) §5 (Q394-Q398 answered, #1041) | its PR order | A | about 2.6 h per PR, engine L (#957, #1047, #1075) |
 | MT6 | After #1148: the fish judged-ease prior and `calib` refit, the class-C juvenile cap (F2); fish Photo stats › Difficulty; the fish memory and format offsets (a rules version) | #1148 "Choices"; ROADMAP "Fish admin at parity" | once #1148 is merged and the answers are enough | A | about 1 h, engine M (#873, #938, #951) |
 | MT7 | Fish leftovers: F5 species pairs in family questions and the admin's species pairs; F6 confusion views; F7 Fish ID Key; F8 welcome values from fish learnsim profiles; F11 marks as an editor slot; F12 genus and species marks, phase model, writing; F13 names editor and index; F14 fish `rp` and a never-signed-in device | [re-check](2026-11-19-backlog-recheck.md) F5-F14 | one PR each, ROADMAP order | A | about 1 h per PR, feature S (#909, #917, #1161) |
-| MT8 | Fish basics, the rest: the fish glossary; the `fbasics` achievement's name and tier (Pierre's) | ROADMAP "Fish basics, the rest" (the module is #1108) | the glossary PR; the name in the next batch | A | about 1 h, feature S (#909, #917, #1161) |
+| MT8 | Fish basics, the rest: the fish glossary; the `fbasics` achievement's name and tier (Pierre's) | ROADMAP "Fish basics, the rest" (the module is #1108) | the glossary PR; the name in the next batch | A, then P | about 1 h, feature S (#909, #917, #1161) |
 | MT9 | Re-measures past their thresholds: F19 fish photo exposure, L9 photo memory lag table at the next milestones, L16 comeback, L22 the quiz pressing on one pair | ROADMAP; re-check | read-only studies | A | about 0.7 h each, study S (#979, #1064, #1097) |
 | MT10 | L13 `CAL.U`; L24 (a, c) re-test and (h); L27 "Did you know?" tips one at a time | re-check | each with its rule L11 check | A | about 0.5 h each, engine S (#873, #896, #938) |
 | MT11 | Sourced marks and lines: S6 *Caloria*, *Ardeadoris*, then circles 2-3 (#1176 is part one); the coral and sea slug pairs still in `none` / `apartNone` | ROADMAP "The feedback sheet's decisive lines"; `tools/seaslug_cues.json` | a source per pair (rule C2) | A | about 0.1 h per PR, content S (#1164, #1178, #1179) |
@@ -111,6 +112,7 @@ STATUS, and 8 more recorded open in other docs but absent from STATUS. Contradic
 | MT25 | The app gaps' questions: fish pairs and juvenile classes beyond circle 1, 5 very easy photos per family, practice games for fish and sea slugs, a sea slug glossary and Find the X, a sea slug held-out set, offline photos, mushroom coral close-ups, the starred genera's tips | [review](2026-11-18-app-gaps-review.md) §3 (a)-(j) | after the answers (3.3); its decided gaps (§1.1) are A | P | about 1 h per PR, feature S (#909, #917, #1161) |
 | MT26 | Typed answers after #1116: `TYPED` tuned on the `\|t` answers, the typed near-miss re-test, rejected tries served | #1116 "For Pierre" (decided 2026-11-03) | when the typed answers suffice | A | about 0.5 h, engine S (#873, #896, #938) |
 | MT27 | The mimicry pairs' follow-ups: sourced marks after a mix-up, a reverse trap, Find the X on the pair | Q416 | after Q416 | P (Q416) | about 0.5 h, engine S (#873, #896, #938) |
+| MT28 | The placement test: the opt-in adaptive test of 20-25 questions, setting only the starting variables (rules L4, L10) | ROADMAP "Placement test" (decided by Pierre 2026-11-18, #1080); its step 1, the coral calibration set, is #1130 (ST2) | once #1130 is merged and its 50 photos have their answers | A | about 1 h, engine M (#873, #938, #951) |
 
 ### 2.3 Long term (later; ROADMAP's far rows, grouped)
 
@@ -121,7 +123,7 @@ figures are there.
 | --- | --- | --- | --- | --- |
 | LT1 | Learning engine, waiting for data: L7 slope and per-format guess rates, L10 time in the photo rating, L11 response time and enlargement, L12 photo features, L15 level-dependent target, L17 first-launch recalibration, L20 fitted profiles, L21 lecture position | inventory 4.1 | re-measure at each row's threshold | A |
 | LT2 | Q351 (a) hold the uncertainty model, re-run at about 20 players; (b) the fish ease weight | ROADMAP "The expectation's slope" | Pierre's answer (3.3) | P |
-| LT3 | New modes and ideas: the seven modes of 2026-11-08 (L31, Pierre sets the order), L32-L35, L5 coral held-out set, L18, L23, L25, L26, L28, L36, L38, L40 | inventory 4.1; ROADMAP "Game modes" | Pierre picks | P |
+| LT3 | New modes and ideas: the seven modes of 2026-11-08 (L31, Pierre sets the order), L32-L35, L5 coral held-out set, L18, L23, L25, L26, L28, L36 (its placement phase is decided: MT28), L38, L40 | inventory 4.1; ROADMAP "Game modes" | Pierre picks | P |
 | LT4 | Fish: F10 achievements after the species level, F25 the families left out, F26 Reef Life Survey counts, F27 more photos, F28 a juveniles card per species | inventory 4.2 | on their trigger | A |
 | LT5 | Corals: C3 Key photos as they come, C6 glossary, C7-C10, C12 small lecture photos, C13 *Astrea* in ReefCloud | inventory 4.3 | mostly an IMR trainer's or Pierre's input | P |
 | LT6 | Sea slugs: S8 look-alikes' rest, S10 achievements beyond the ladder (#1112), S11 an ID key | inventory 4.4 | after species step 2 | A |
@@ -144,7 +146,7 @@ figures are there.
 | Q410 | The five new sea slug achievement names (#1112) | information: rename freely |
 | Q411 | #1116: the simulated expert −3.0 points on answers 200-300, unclear | level 2 first |
 | Q414 | Architecture step 4: a `slow` tag takes the slow statistical tests out of the pre-push tier; rule W14's wording changes | yes |
-| Q415 | Rule L11 and LEARNING's method differ on five points (#1163's description) | per point, as #1163 lists them |
+| Q415 | Rule L11 and LEARNING's method differ on five points (#1163's description) | none yet: the integrator forms one per point before asking |
 | Q416 | The mimicry pairs: reverse trap, marks after a mix-up, Find the X on the pair, duels ×2 | later; yes next; after species units; keep |
 | Q417 | The "Pikachu" nickname to *Thecacera pikachu*, moving the star from *T. pacifica* (literature scan §6) | yes (Pola et al. 2026) |
 
@@ -169,7 +171,7 @@ No answer found in `docs/decisions/` nor in the merged PRs' bodies I read; the i
 | Professionalise (c)-(e) | the sheet on an IMR Workspace; a data agreement with IMR; a second person with recovery | ask IMR; yes; yes | yes |
 | [Architecture review](2026-11-18-architecture-code-review.md) (a)-(g), (i) | data formats and the engine's structure ((h) is done: #1102) | yes to each, (a) with (f), (d) with (g) | yes for (d), (e), (f), (g): stored formats |
 | [App gaps](2026-11-18-app-gaps-review.md) (a)-(j) | scope extended beyond circle 1, subjects' practice games | yes to (a)-(c), (e), (j); Compare and Duels first (d); later (f); not now (g), (h); ask a trainer (i) | no: content, easy to correct |
-| [Live prep](2026-11-18-live-prep-study.md) (a)-(e) | a difficulty band for trainers, saved sets, a deleted trainer's sets (rule D7) | A for (a)-(c) | yes for (b), (c): a stored format, deletion |
+| [Live prep](2026-11-18-live-prep-study.md) (a)-(e) | a difficulty band for trainers, saved sets, a deleted trainer's sets (rule D7) | option A for (a) and (b), option B for (c); (d), (e) as the study recommends | yes for (b), (c): a stored format, deletion |
 | #1071 (a)-(e) | the "What I learn" card: where, levels on early, off, juveniles, names rows | as the study recommends | yes for (b), (c): they move progress |
 | Q351 (a), (b), AVIF (a), fish key and fish mode points | ROADMAP rows "The expectation's slope", "Photos out of the repo", "Fish identification key", "Fish mode" | hold and re-run; measure; leave AVIF parked; the points in his admin | already numbered (Q351); the rest no |
 | D7 | the morning-report scheduled task, disabled by Q202; the quota is fresh | re-enable | no: Q202 exists |
@@ -191,9 +193,9 @@ No answer found in `docs/decisions/` nor in the merged PRs' bodies I read; the i
 
 | # | Where | What it says | What is true |
 | --- | --- | --- | --- |
-| X1 | The integrator's state at 06:30 | `stoic-ritchie-fp1ipu` is a W6 slip | Superseded: its `Code.gs` regex change is what #1053 shipped as v170 (`Code.gs` line 500, the "v170" comment); the re-check's I15 says the same. |
+| X1 | The integrator's state at 06:30 | `stoic-ritchie-fp1ipu` is a W6 slip | Superseded, my reading: #1053 shipped the same case (*Goniobranchus* sp. 5) as v170 with a narrower rule (`Code.gs` `SP`: a digit only in "sp. N"); the branch's broader `SP` (any digit) and its `tests/specieslog.test.js` exist only on the branch. The re-check's I15 says "can go". |
 | X2 | INTEGRATOR "Branches without a PR"; `tests/docs.test.js` `ID_ALLOW` | the seal note and the level-count note live only on their branches | Both are on `main` (`docs/reviews/2026-11-09-*`); ROADMAP's seal row says so. |
-| X3 | `clean.yml` `KEEP` | keeps `admin-signout-seal` and `fish-todo-wip` | The seal is built (#1078); STATUS and ROADMAP call `fish-todo-wip` superseded. |
+| X3 | `clean.yml` `KEEP` | keeps `admin-signout-seal` and `fish-todo-wip` | The seal is built (#1078). `fish-todo-wip` was called superseded by STATUS and ROADMAP as of 2026-11-18 (inventory X14); today's STATUS, ROADMAP and INTEGRATOR do not name it. |
 | X4 | origin | `optimistic-newton-b82nxm` | Its tip is an ancestor of `main` (#1109): nothing on it. |
 | X5 | Re-check C4 | blocked on Q294's wording | Decided in #1086 ([record](../decisions/2026-11-18-rules-wordings.md) "The book (Q294)"). |
 | X6 | Re-check F1 | blocked on Q413 | Q413 answered at 05:13: merge #1148. |
@@ -203,15 +205,13 @@ No answer found in `docs/decisions/` nor in the merged PRs' bodies I read; the i
 | X10 | Inventory D8 | splitting LEARNING and ARCHITECTURE is an idea | Done as maps and specs by the docs restructuring (#1123 to #1163). |
 | X11 | Inventory 1.3 "Basics" | Fish basics waits for the IMR presentation | #1108 built it from that presentation. |
 
-Done since the inventory, so out of these tables: S1-S4 (#1061, #1062, #1053, the judging pass), S7 (#1164), S9
-(#1075), A1 (#1078), B4 (#1083), T1 (#1050), T2 (#1049), L3, C4 and D6 (#1086), L4 (#1057), D1-D3 (#1165, #1140),
-most of F15 (#1159, #1161, #1166, #1169), architecture (h) (#1102), I5 (the pCloud backup in use, docs/BACKUP.md).
+The inventory rows done since are named in this study's PR description, not here (rule W19).
 
 ## 6. What I checked and what I did not (rule W11)
 
 Checked:
 - The 19 open PRs: their bodies' "Choices", "For Pierre" and questions, labels, and their checks on the current head.
-- The PRs merged since the inventory, from two pages of the API (by update time): 87 PRs.
+- The PRs merged since the inventory: 113, from pages 1-2 of the closed PRs by update time (pages 3-4 held none).
 - `docs/decisions/` of 11-18 and 11-19.
 - The 11-18 and 11-19 studies' question sections and the reviews README's "Open items".
 - ROADMAP's rows by status.
