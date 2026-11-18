@@ -401,9 +401,8 @@ function renderJourney(name, anonId = '') {
   const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name, ASUBJ),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
-    // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
     PG = full ? progOf(anonId ? {id: anonId, anon: 1} : u, true, ASUBJ) : null,
-    RP = full && replayOn(),
+    RP = full,
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -999,7 +998,7 @@ function sessionSummary(id, L, name, o = {}) {
     B = all.filter(r => r[1] < L[0][1]),
     S = name && full ? savedFor(name, ASUBJ) : {P: {}},
     PG = full ? progOf(o.user || (name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}), true, ASUBJ) : null,
-    RP = full && replayOn(),
+    RP = full,
     sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
     PS = photoStats() || {},
     F = sessionFacts(L, B, {

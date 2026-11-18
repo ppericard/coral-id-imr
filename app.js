@@ -693,8 +693,9 @@ function build() {
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of fish.json genera holding
-// circle-1 species, the genus being the first word of the PDF name (no grouping invented, rule C2), inside its family
-// (fish.json families: the book's; Pierre, 2026-11-06). Its record, beside the families in FISH.gen under its id
+// species of a family in play, in every circle (core.js fishGenSets; Pierre, 2026-11-18: circles 2 and 3 too, "lance";
+// circle 1 alone until then), the genus being the first word of the PDF name (no grouping invented, rule C2), inside its
+// family (fish.json families: the book's; Pierre, 2026-11-06), in its family's circle. Its record, beside the families in FISH.gen under its id
 // 'g:' + genus (ids and names never meet): rank 'genus' (its questions and typed answers stay among genera: model.js
 // sameRank), its family (parent: it opens once the family is at Advanced, or Open Water for an IMR genus of an IMR player:
 // sciOpen, below), its family's group as its form (easy wrong choices from other groups first), its sibling genera as
@@ -707,8 +708,7 @@ function build() {
 // genera are already the units of its circles (core.js fishGenUnits), each completed here the same way, in its own circle
 // and with every species of the circles; no opt-in set (FISH.sci empty).
 function fishGenera(X, F) {
-  const sp = new Map((F.species || []).map(s => [s.id, s])),
-    gens = new Map((F.genera || []).map(g => [g.id, g])),
+  const gens = new Map((F.genera || []).map(g => [g.id, g])),
     atGenus = X.unit === 'genus',
     sci = [];
   // A family IMR gives no cue for (circles 2-3, the Soapfishes): its ID marks (fish.json marks, our own words from the
@@ -740,122 +740,112 @@ function fishGenera(X, F) {
     if (f.esrc && f.esrc.marks) E.qsrc = f.esrc.marks;
     E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
   });
-  (F.families || [])
-    .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
-    .forEach(f => {
-      const E = X.gen[f.id],
-        own = (f.genera || []).map(id => gens.get(id)).filter(Boolean),
-        // its genera in the game: those holding circle-1 species, or, played from the start, the units fishGen made
-        by = atGenus
-          ? new Map(
-              own
-                .filter(G => X.gen[G.id] && X.gen[G.id].parent === f.id)
-                .map(G => [G.id, X.gen[G.id].species.map(id => sp.get(id)).filter(Boolean)])
-            )
-          : new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
-        ids = [...by.keys()];
-      by.forEach((L, id) => {
-        const G = gens.get(id),
-          g = G.name,
-          set = new Set(L.map(s => s.id)),
-          cues = G.cues && G.cues.length ? G.cues : null,
-          // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
-          // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
-          // their source per line is on the sheet (genMarks).
-          marks = !cues && G.marks && G.marks.length ? G.marks : null,
-          mby = [
-            ...new Set(
-              ((G.mby || {}).marks || [])
-                .flat()
-                .map(i => (G.msrc || [])[i] || {})
-                .map(s =>
-                  String(s.t || '')
-                    .split(',')[0]
-                    .trim()
-                )
-                .filter(Boolean)
-            )
-          ].join(', '),
-          sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
-          // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
-          wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
-          // its held-out photos the same way (core.js fishGen held; model.js examSet): never in its views
-          held = (E.held || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
-        X.gen[id] = {
-          id,
-          name: g,
-          rank: 'genus',
-          one: 'genus',
-          parent: f.id,
-          fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
-          wfam: [],
-          imrName: G.imr || '', // the IMR tag
-          imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
-          fish: 1,
-          circle: atGenus ? X.gen[id].circle : 1,
-          group: E.group,
-          ig: E.ig,
-          forms: E.forms,
-          // Its sibling genera, and the genera a specialist source names as its look-alikes (the tree's genus look: the sea
-          // slugs', tools/seaslug_game.py genus_looks; Pierre, 2026-11-17, Q390 D), across families too.
-          look: [...new Set([...ids.filter(o => o !== id), ...(G.look || []).filter(o => X.gen[o])])],
-          // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
-          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling;
-          // and those a specialist source names (Q390 D: they stay look-alikes whatever the players answer).
-          decl: [...(G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : []), ...(G.look || []).filter(o => X.gen[o])],
-          lk: [],
-          // each look-alike's sources in a line (the tree's genus lsrc: [{t, u}] by the other genus's id)
-          lsrc: Object.fromEntries(Object.entries(G.lsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')])),
-          // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
-          // look-alikes the players' answers can drop (model.js dataSeed).
-          ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
-          qt: cues || marks,
-          // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
-          ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
-          tl: cues
-            ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
-            : marks
-              ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
-              : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
-          // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
-          ...(G.plain ? {plain: G.plain} : {}),
-          // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
-          // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
-          // then the count.
-          // (typeof: the tools and tests that run fishGenera alone, tools/ratedworld.js, read the IMR name as before)
-          get sum() {
-            const imr = typeof imrNow === 'function' && imrNow(),
-              first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr) : '');
-            return (
-              (L.length > 3 ? 'Most met here: ' : '') +
-              L.slice(0, 3)
-                .map(s => {
-                  const c = first(s) || s.common;
-                  return s.name.replace(/^\S+/, g[0] + '.') + (c ? ' (' + c + ')' : '');
-                })
-                .join(', ') +
-              (L.length > 3 ? `; ${L.length} species in the game.` : '')
-            );
-          },
-          species: L.map(s => s.id),
-          phase: [],
-          sub: [],
-          // how common near Dauin, or over the subject's area where its tree gives one (core.js fishGen)
-          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
-          levels: 1,
-          views: {wide},
-          ...(held.length ? {held} : {}),
-          // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
-          // never its IMR name (Anemonefish): a common name never advances a scientific name (docs/FISH_PATH.md; Codex
-          // review #656), it is the family's
-          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
-        };
-        // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
-        // whoever took it (Pierre, 2026-11-06).
-        if (wide.length) X.gen[id].cover = easyCover(wide).f;
-        if (!atGenus) sci.push(id);
-      });
+  // each family in play with its genera in the game: those holding species, or, played from the start, the units fishGen
+  // made (core.js fishGenSets, which the sheet's replay and variant table read too)
+  fishGenSets(F, X).forEach(({f, E, by}) => {
+    const ids = [...by.keys()];
+    by.forEach((L, id) => {
+      const G = gens.get(id),
+        g = G.name,
+        set = new Set(L.map(s => s.id)),
+        cues = G.cues && G.cues.length ? G.cues : null,
+        // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
+        // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
+        // their source per line is on the sheet (genMarks).
+        marks = !cues && G.marks && G.marks.length ? G.marks : null,
+        mby = [
+          ...new Set(
+            ((G.mby || {}).marks || [])
+              .flat()
+              .map(i => (G.msrc || [])[i] || {})
+              .map(s =>
+                String(s.t || '')
+                  .split(',')[0]
+                  .trim()
+              )
+              .filter(Boolean)
+          )
+        ].join(', '),
+        sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
+        // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
+        wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
+        // its held-out photos the same way (core.js fishGen held; model.js examSet): never in its views
+        held = (E.held || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
+      X.gen[id] = {
+        id,
+        name: g,
+        rank: 'genus',
+        one: 'genus',
+        parent: f.id,
+        fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
+        wfam: [],
+        imrName: G.imr || '', // the IMR tag
+        imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
+        fish: 1,
+        circle: atGenus ? X.gen[id].circle : E.circle, // its family's (circles 2 and 3 open after circle 1: fishGate)
+        group: E.group,
+        ig: E.ig,
+        forms: E.forms,
+        // Its sibling genera, and the genera a specialist source names as its look-alikes (the tree's genus look: the sea
+        // slugs', tools/seaslug_game.py genus_looks; Pierre, 2026-11-17, Q390 D), across families too.
+        look: [...new Set([...ids.filter(o => o !== id), ...(G.look || []).filter(o => X.gen[o])])],
+        // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
+        // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling;
+        // and those a specialist source names (Q390 D: they stay look-alikes whatever the players answer).
+        decl: [...(G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : []), ...(G.look || []).filter(o => X.gen[o])],
+        lk: [],
+        // each look-alike's sources in a line (the tree's genus lsrc: [{t, u}] by the other genus's id)
+        lsrc: Object.fromEntries(Object.entries(G.lsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')])),
+        // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
+        // look-alikes the players' answers can drop (model.js dataSeed).
+        ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
+        qt: cues || marks,
+        // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
+        ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
+        tl: cues
+          ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+          : marks
+            ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
+            : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+        // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
+        ...(G.plain ? {plain: G.plain} : {}),
+        // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
+        // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
+        // then the count.
+        // (typeof: the tools and tests that run fishGenera alone, tools/ratedworld.js, read the IMR name as before)
+        get sum() {
+          const imr = typeof imrNow === 'function' && imrNow(),
+            first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr) : '');
+          return (
+            (L.length > 3 ? 'Most met here: ' : '') +
+            L.slice(0, 3)
+              .map(s => {
+                const c = first(s) || s.common;
+                return s.name.replace(/^\S+/, g[0] + '.') + (c ? ' (' + c + ')' : '');
+              })
+              .join(', ') +
+            (L.length > 3 ? `; ${L.length} species in the game.` : '')
+          );
+        },
+        species: L.map(s => s.id),
+        phase: [],
+        sub: [],
+        // how common near Dauin, or over the subject's area where its tree gives one (core.js fishGen)
+        cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
+        levels: 1,
+        views: {wide},
+        ...(held.length ? {held} : {}),
+        // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
+        // never its IMR name (Anemonefish): a common name never advances a scientific name (docs/FISH_PATH.md; Codex
+        // review #656), it is the family's
+        names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
+      };
+      // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
+      // whoever took it (Pierre, 2026-11-06).
+      if (wide.length) X.gen[id].cover = easyCover(wide).f;
+      if (!atGenus) sci.push(id);
     });
+  });
   X.sci = sci;
   // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
@@ -1120,6 +1110,10 @@ const fishTaxon = (R, p, imr) => {
 const imrNow = () => typeof imrSaid === 'function' && !!imrSaid();
 // The fish species level on (sync.js speciesOn, rule D4); false where sync.js is not loaded.
 const spOn = () => typeof speciesOn === 'function' && !!speciesOn();
+// The scientific genera in the game now (FISH.sci, the sci set): every circle's once the sheet replays them (sync.js
+// generaOn, rule D4; Pierre, 2026-11-18), circle 1's alone before, as before; every one where sync.js is not loaded (the
+// tools that run the app's units alone).
+const sciNow = () => (FISH ? (FISH.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : []);
 // A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
 // (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
 // (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
@@ -1239,7 +1233,7 @@ function structSeen() {
 // species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
 // Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
 // A genus's or a species' cover (the same map, under its fish.json id: 'g:Chromis', 's091'; Pierre, 2026-11-13): a genus
-// unit (fishGenera) takes it as its coverP like a family; a genus with no unit (not in circle 1) and a species, which
+// unit (fishGenera) takes it as its coverP like a family; a genus with no unit (a surprise card's) and a species, which
 // have no record in X.gen, get it in X.covers {id: photo} while it is in play as a photo of that genus or species (the
 // family's views.wide, every photo of its species in play): the genus rows and cards and the species' first photo on
 // the sheets (learn.js genCover, fishSpPhotos). F: fish.json. cur: the curation as the engine reads it (core.js treeCur:
@@ -2499,15 +2493,20 @@ const UNITS = {
     // form, no other number), each its species unit's; a name two species list is right for the one asked (typeMatchIn
     // shared, Q381). A typed answer is read among the names of the rank asked (quiz.js typeMatch), so a family question
     // never meets them.
+    // The genera among them are those in the game now (sciNow: circles 2 and 3's from GENERA_SHEET, rule D4; Codex
+    // review #1067), so a typed name never answers a genus the sheet cannot replay yet; namesKey tells quiz.js typeNames
+    // when that set changes.
     names: () => {
       const G = FISH ? FISH.gen : {},
-        own = Object.fromEntries(Object.entries(G).filter(([, g]) => g.rank !== 'species')),
+        sci = new Set(sciNow()),
+        own = Object.fromEntries(Object.entries(G).filter(([n, g]) => g.rank !== 'species' && (g.rank !== 'genus' || sci.has(n)))),
         sp = (FISH ? FISH.spl || [] : []).map(n => FISH.sps[G[n].sp]);
       return [
         ...fishTypeNames(own, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []),
         ...cnTypeNames(sp).map(o => ({...o, g: 's:' + o.g}))
       ];
     },
+    namesKey: () => sciNow().length,
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
@@ -2545,14 +2544,13 @@ const UNITS = {
       // Advanced (Pierre, 2026-11-08, back from Q205's Open Water: "too early, too strong"); on, a family's genera join the
       // game when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). auto: a
       // player at IMR meets the IMR genera without the offer, from their family's Open Water (sciOpen; Q219, Q220),
-      // whatever the set's state. all: every genus, for setOf. Not in the progress yet (the global fish score, FISH_PATH
-      // "My progress (fish)", is not built).
+      // whatever the set's state. all: every genus in the game now, every circle's (sciNow: from the sheet that replays
+      // them, rule D4), for setOf. They count in the fish % (the genus credit, core.js treeScore).
       {
         k: 'sci',
-        all: () => (FISH ? FISH.sci || [] : []),
-        units: () =>
-          FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid(), !!Q.sciH).units : [],
-        auto: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).auto : []),
+        all: () => sciNow(),
+        units: () => (FISH && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid(), !!Q.sciH).units : []),
+        auto: () => (FISH && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid()).auto : []),
         // Families met first (Pierre, 2026-11-09, Q208 A): no genus card while a family in play is still not met (setLater,
         // model.js openPick); its auto units, the set turned on by hand early (Q240) and Open all are exempt.
         after: 1,
@@ -3361,9 +3359,7 @@ function cardRing(pct, was) {
 // (sheet v124: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
 // page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
-// those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
-const FROMHOME_SHEET = 124;
-const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
+// those taken while it is on screen are not counted).
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
@@ -3371,7 +3367,6 @@ function fromHome(h, nt) {
   if (document.getElementById('tour')) return void (toured = true);
   if (homeLeft || !HOME_AT || (routeFrom !== '' && routeFrom !== 'home') || !h || h === 'home') return;
   homeLeft = true;
-  if (!fromHomeOn()) return;
   ev('fromhome', {
     to: pageName(h, SUBJ.pv),
     s: Math.round((performance.now() - HOME_AT) / 100) / 10,

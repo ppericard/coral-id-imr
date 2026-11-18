@@ -115,6 +115,7 @@ test('in no circle: the family and its genera left out, its species out, look-al
     easyCover: C.easyCover,
     fishScoreTree: C.fishScoreTree,
     fishSpUnits: C.fishSpUnits,
+    fishGenSets: C.fishGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
@@ -267,7 +268,8 @@ test('the stamp: one per structure in force, the same from the players copy, emp
 
 // ---- The check plan (rule L11): the real structure replayed with no edit gives the same progress ----
 
-// A made-up fish log over every circle-1 family and its scientific genera, mix-ups with their look-alikes among them.
+// A made-up fish log over every unit the replay reads (families, scientific genera, species), mix-ups with their
+// look-alikes among them.
 function fixtureLog(R) {
   const G = C.fishReplayGen(R),
     U = Object.keys(G).sort(),
@@ -313,12 +315,14 @@ test('L11: the fixture log replayed under the real structure with no edit gives 
     assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, c))), base)
   );
   // Pairs alone move no record today: every fish answer carries its scoring record (quiz.js, Q132), which the replay
-  // scores as the game did (core.js replayProgress sc), look-alike flag included. A circle edit does: a unit that leaves
-  // the units (a family in no circle, the genera of a family out of circle 1) is no longer counted as the unit wrongly
-  // given (rule L2's second unit). Its undo gives the same progress back.
+  // scores as the game did (core.js replayProgress sc), look-alike flag included. Nor does a family moved between circles:
+  // it keeps its genera, every circle has them (Pierre, 2026-11-18). A family in no circle does: its units leave the
+  // units, and are no longer counted as the unit wrongly given (rule L2's second unit). Its undo gives the same progress
+  // back.
   const P = cur({pairs: {'f:Parrotfishes|f:Wrasses': {v: null, was: 1}, 'f:Emperors|f:Snappers': {v: null, was: 1}}});
   assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, P))), base);
-  assert.notDeepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur(MOVES)))), base);
+  assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(3), [IN]: circ(1, 3)}})))), base);
+  assert.notDeepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {'f:Wrasses': circ(null)}})))), base);
   assert.deepStrictEqual(replayOf(L, C.fishReplayGen(C.contentApply(S, F, cur({nodes: {[C3]: {}, [OUT]: {}, [IN]: {}}})))), base);
 });
 
@@ -525,6 +529,7 @@ test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and wi
     easyCover: C.easyCover,
     fishScoreTree: C.fishScoreTree,
     fishSpUnits: C.fishSpUnits,
+    fishGenSets: C.fishGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
@@ -583,7 +588,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   assert.strictEqual(board(), p0);
   // The sheet's tree not cached (evicted): the apps' tree, as before; made again at the next read.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree2:'))
+    .filter(k => k.startsWith('stree3:'))
     .forEach(k => delete s.cache[k]);
   save(T1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
@@ -594,7 +599,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   // A tree the sheet could not make or refused is kept as 0: no tree of its own (the apps'), and fish.json is not read
   // again at every call for it.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree2:'))
+    .filter(k => k.startsWith('stree3:'))
     .forEach(k => (s.cache[k] = '0'));
   s.ctx.subjStRefresh_();
   s.ctx.subjStRefresh_();
@@ -610,7 +615,7 @@ test('the sheet: the replay units over one cache value are kept in parts; the st
     s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
     st1 = C.structStamp(S, F, PAIRS),
     gen1 = C.fishReplayGen(C.contentApply(S, F, PAIRS)),
-    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen3:fish:') && !k.includes('#'));
+    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen4:fish:') && !k.includes('#'));
   assert.ok(JSON.stringify({gen: gen1, st: st1}).length > 100 * 1024, 'over one cache value');
   assert.strictEqual(s.ctx.subjStKept_('fish'), null, 'nothing cached yet: no stamp, nothing fetched');
   assert.strictEqual(m.n.fish, 0);

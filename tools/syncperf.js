@@ -1,5 +1,5 @@
-// Bytes and round trips per answer of the progress sync, before and after the lighter saves (sync.js LIGHT_SHEET;
-// docs/ROADMAP.md "Lighter saves on slow lines"), and what that costs on the slow lines of tools/perf.js. Not run by CI;
+// Bytes and round trips per answer of the progress sync with the lighter saves (sheet v116; docs/ROADMAP.md "Lighter
+// saves on slow lines"), and what that costs on the slow lines of tools/perf.js. Not run by CI;
 // the numbers are for reading (the PR quotes them). Locally: node tools/syncperf.js [answers]
 // The app's own sync.js runs in Node against the sync script on an in-memory sheet (tests/syncpage.js), so every request
 // is the one the app sends and every reply the one the script gives; nothing leaves this process (rule D1). A signed-in
@@ -7,15 +7,15 @@
 // rows in the Answers tab) answers question after question, one save after each (syncPush, as 3 s after an answer):
 // - one device: the RA alone on their phone;
 // - two devices: every save comes after the other device's (the worst case: each one stale).
-// Before = the replies say the script version before LIGHT_SHEET (the classic sync: a load, then the whole data), after =
-// from it. Per answer: requests, HTTP round trips (an Apps Script call is two: the request to script.google.com, then
+// The classic sync before them (a load, then the whole data) is gone with its gate (core.js SHEET_FLOOR); ARCHITECTURE.md
+// keeps its numbers. Per answer: requests, HTTP round trips (an Apps Script call is two: the request to script.google.com, then
 // its 302 to script.googleusercontent.com, where the reply is read; connections kept open), bytes up (URL and body, plus
 // HDR for each HTTP request's headers: an estimate) and down (the reply's JSON, raw and gzipped: Google's front end
 // gzips text replies to a browser that asks, which it does; not measured here), and the time on each line: round trips x
-// latency + bytes / bandwidth, the Apps Script's own time left out (the same before and after, seconds per call).
+// latency + bytes / bandwidth, the Apps Script's own time left out (seconds per call).
 const zlib = require('zlib');
 const C = require('../core.js');
-const {page, LIGHT, DATA, withData, loadCodeGs} = require('../tests/syncpage.js');
+const {page, SV, DATA, withData, loadCodeGs} = require('../tests/syncpage.js');
 
 const N = Number(process.argv[2]) || 30,
   HDR = {up: 500, down: 400}, // an HTTP request's and reply's headers, bytes (estimate)
@@ -107,20 +107,13 @@ const secs = (m, L, z) => (m.rt * L.l) / 1000 + (8 * m.up) / L.u + (8 * (z ? m.d
   const kb = x => (x / 1000).toFixed(1).padStart(6) + ' KB';
   console.log(`A record of ${HIST.length} answers: progress ${(JSON.stringify(P0).length / 1000).toFixed(1)} KB, ${Object.keys(P0).length} records; ${N} answers each run.\n`);
   for (const devices of [1, 2]) {
-    const before = await run(devices, LIGHT - 1),
-      after = await run(devices, LIGHT);
+    const m = await run(devices, SV);
     console.log(devices === 1 ? 'One device' : 'Two devices, each save after the other’s (all stale)');
     console.log('                         requests  round trips       up    down raw   down gzip');
-    for (const [k, m] of [
-      ['before', before],
-      ['after', after]
-    ])
-      console.log(`  ${k.padEnd(22)}${m.req.toFixed(2).padStart(8)}${m.rt.toFixed(1).padStart(13)}${kb(m.up)}${kb(m.down)}${kb(m.downz)}`);
+    console.log(`  ${'per answer'.padEnd(22)}${m.req.toFixed(2).padStart(8)}${m.rt.toFixed(1).padStart(13)}${kb(m.up)}${kb(m.down)}${kb(m.downz)}`);
     console.log('  seconds on the line per answer (round trips x latency + bytes / bandwidth; replies gzipped, raw):');
     for (const [name, L] of Object.entries(LINES))
-      console.log(
-        `    ${name.padEnd(46)} before ${secs(before, L, true).toFixed(1).padStart(5)} (${secs(before, L, false).toFixed(1)})   after ${secs(after, L, true).toFixed(1).padStart(5)} (${secs(after, L, false).toFixed(1)})`
-      );
+      console.log(`    ${name.padEnd(46)} ${secs(m, L, true).toFixed(1).padStart(5)} (${secs(m, L, false).toFixed(1)})`);
     console.log('');
   }
 })();

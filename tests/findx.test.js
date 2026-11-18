@@ -262,12 +262,10 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       pgLook: (t, L) => L.some(x => GEN[t].look.includes(x)),
       recallAt: () => 1,
       startP: () => 0,
-      rtOn: () => true,
       mq: mode,
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => ({}), // model.js pfmt: no offsets for the fish
-      domRules: () => true,
       genusDiff: () => 0
     };
     vm.createContext(env);

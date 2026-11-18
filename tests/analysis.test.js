@@ -313,9 +313,6 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.ok(/\(0 reused\)/.test(logs[logs.length - 1]), logs[logs.length - 1]);
   stale = false;
   assert.ok(!logs.join(' ').match(/id\d|Demo/), 'the log has counts only');
-  // an older sync script answers 'input': nothing done, no error
-  const old = {post: async () => ({ok: false, error: 'input', v: 29}), log: t => logs.push(t)};
-  assert.strictEqual(await sheetRun(old, 'tok', {B: 0}), 'old');
   // the sheet's head counts more rows than the log read holds (rows without a player): judged again on the log, nothing stored
   const st = {answers: rows.length, av: A.AV},
     puts = [],
@@ -500,7 +497,10 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
   const stored = {},
     puts = [],
     logs = [];
-  let v = A.AN_SUBJ_SHEET;
+  // PER: a script that stores one report per subject (v113); one before it, simulated, answers with the corals' report
+  // and names the corals whatever the subject asked: the reply not naming the subject asked, nothing stored for it.
+  const PER = 113;
+  let v = PER;
   const io = {
     post: async b => {
       if (b.analysesGet) {
@@ -508,35 +508,35 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
           t = stored[sj],
           meta = t && {answers: JSON.parse(t).answers, av: JSON.parse(t).AV, subject: sj};
         // an older script knows one report: the corals', whatever the subject asked
-        const st = v >= A.AN_SUBJ_SHEET ? meta : stored.coral && {answers: JSON.parse(stored.coral).answers, av: A.AV, subject: 'coral'};
+        const st = v >= PER ? meta : stored.coral && {answers: JSON.parse(stored.coral).answers, av: A.AV, subject: 'coral'};
         return {
           ok: true,
           v,
-          subject: v >= A.AN_SUBJ_SHEET ? sj : 'coral',
+          subject: v >= PER ? sj : 'coral',
           answers: counts[sj],
           counts,
           stored: st,
-          ...(b.head ? {} : {report: v >= A.AN_SUBJ_SHEET ? t : stored.coral})
+          ...(b.head ? {} : {report: v >= PER ? t : stored.coral})
         };
       }
       if (b.readAnswers) return {ok: true, rows: rows.map(r => r.slice())};
       if (b.analysesPut) {
         const r = JSON.parse(b.report);
         puts.push(r.subject);
-        stored[v >= A.AN_SUBJ_SHEET ? r.subject : 'coral'] = b.report;
+        stored[v >= PER ? r.subject : 'coral'] = b.report;
         return {ok: true, stored: {}};
       }
       return {ok: false, error: 'input'};
     },
     log: t => logs.push(t)
   };
-  // an older script: the corals' report only, the fish one neither stored nor read in its place
-  v = A.AN_SUBJ_SHEET - 1;
+  // a reply naming the corals whatever was asked: the corals' report only, the fish one neither stored nor read in its place
+  v = PER - 1;
   assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'stored', fish: 'old', seaslug: 'old'});
   assert.deepStrictEqual(puts, ['coral']);
-  assert.ok(/^Sea slugs: the sync script answers as v\d+: one report per subject needs v\d+\. Nothing done\.$/.test(logs.pop()));
-  assert.ok(/^Fish: the sync script answers as v\d+: one report per subject needs v\d+\. Nothing done\.$/.test(logs.pop()));
-  v = A.AN_SUBJ_SHEET;
+  assert.ok(/^Sea slugs: the sync script's reply names another subject \(v\d+\)\. Nothing done\.$/.test(logs.pop()));
+  assert.ok(/^Fish: the sync script's reply names another subject \(v\d+\)\. Nothing done\.$/.test(logs.pop()));
+  v = PER;
   // the sea slugs: no answer in this log, no milestone yet (nothing stored)
   assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'stored', seaslug: 'wait'});
   assert.deepStrictEqual(puts, ['coral', 'fish']);
