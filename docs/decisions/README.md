@@ -59,6 +59,7 @@ Newest first.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-19 | [Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file](2026-11-19-autosort-followup.md) | #1182 |
+| 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
