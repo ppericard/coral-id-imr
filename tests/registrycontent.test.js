@@ -52,4 +52,7 @@ test('a circle the editor changed moves the unit on the slate', () => {
   // the species of a family in no circle are not asked either
   assert.ok(Object.keys(R.spu).every(id => R.spu[id].family !== OUT));
   assert.ok(Object.keys(base.spu).some(id => base.spu[id].family === OUT));
+  // what reports name stays: the family's photos and its page are still there (Codex review #1161)
+  assert.deepStrictEqual(Object.keys(R.ph).sort(), Object.keys(base.ph).sort());
+  assert.strictEqual(R.fam[OUT], OUT);
 });

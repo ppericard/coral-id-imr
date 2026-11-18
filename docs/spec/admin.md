@@ -123,8 +123,9 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   `UNITA`), so its reported photo shows on its Reports side from its game file's source, with its unit, the species it is
   identified as and its credits. The registry reads the tree with the content editor's structure and text in force
   (`core.js` `contentApply` under the published curation, `SAVED`: `admin.js` `unitBuild`), as the app does, so a
-  look-alike pair or a circle edited there shows on Pairs, the Heatmap and the Journey; a Publish builds it again
-  (`rebase`);
+  look-alike pair or a circle edited there shows on Pairs, the Heatmap and the Journey (its photos and family pages stay
+  those of the file as built, so a report on a photo of a family taken out of every circle still shows it); a Publish, a
+  rebase or another tab's Publish builds it again (`unitRefresh`);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort));
 - `origins` and `csrc`, its photo origins (the filter bar's chips) and its candidate sources; `obs`, its word for

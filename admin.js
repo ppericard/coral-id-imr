@@ -214,12 +214,7 @@ function rebase(next) {
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next);
   SAVED.genera = SAVED.genera || {};
-  // the registries read the published curation: built again under the new one (unitBuild)
-  SUBJECTS.forEach(S => {
-    const R = UNITA[S.id];
-    if (R && R.raw && R.cur !== SAVED) UNITA[S.id] = unitBuild(S, R.raw);
-    if (S === FISHS && UNITA[S.id]) FISHA = UNITA[S.id];
-  });
+  unitRefresh();
   snap = JSON.stringify(DRAFT);
   memoReset();
   if (TOKEN) {
@@ -5541,6 +5536,15 @@ const unitBuild = (S, J) => {
   if (R) Object.assign(R, {raw: J, cur: SAVED});
   return R;
 };
+// The registries read again under the published curation after it changed (a Publish, the base another tab's Publish or a
+// rebase put in): each built again from its files as read; FISHA is the tree subject in force's.
+function unitRefresh() {
+  SUBJECTS.forEach(S => {
+    const R = UNITA[S.id];
+    if (R && R.raw && R.cur !== SAVED) UNITA[S.id] = unitBuild(S, R.raw);
+    if (S === FISHS && UNITA[S.id]) FISHA = UNITA[S.id];
+  });
+}
 // The tree subject in force's (FISHS: FISHA is its registry in UNITA).
 const fishAdmin = () => unitAdmin(FISHS);
 // A family's page (Photos › Tree) under the prefix of the tree subject in force (FISHS, above), or of another subject S.
@@ -7888,6 +7892,7 @@ async function save() {
     SHA = r.content.sha;
     SAVED = clone(out);
     DRAFT = clone(out);
+    unitRefresh();
     if (DW) DW.base();
     saveDraft();
     toast('Published. The public site shows it within a minute or two.' + confNote(conf));
@@ -8305,6 +8310,7 @@ async function draftOpen() {
     adoptBase: c => {
       SAVED = c;
       SAVED.genera = SAVED.genera || {};
+      unitRefresh();
       memoReset();
       setTimeout(render, 0);
     },
