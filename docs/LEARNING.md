@@ -4213,6 +4213,80 @@ question's choices genera and every entry question's entries. Not measured: what
 how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
 take many questions). To check with learnsim fish profiles once they exist.
 
+**Every circle's genera** (2026-11-18; Pierre, ~06:32 Manila: "lance"). The genera were built for circle 1 alone (130), when
+circle 1 alone was on the path; every circle has been since Q175 (2026-11-06), so the 107 genera of the families of circles
+2 and 3 (5 and 102; a surprise card's genus none) are units as circle 1's are: `core.js` `fishGenSets`, the one list the app
+(`app.js` `fishGenera`), the sheet's replay (`fishReplayGen`), the variant table (`fishVarTable`) and the score's tree read.
+Each opens at its family's Advanced as circle 1's do (no IMR genus outside circle 1), in its family's circle (so `fishGate`
+holds it with its family). No rule moves: what changes is which units exist. Fish rules version 4 (no card), the sheet's
+cache keys `sgen4`, `stree3`, `svar2`; the app opens them from `sync.js` `GENERA_SHEET` (rule D4).
+
+**The check, declared before running** (rule L11, level 2 by nature: it changes the path's units; capped at about 40
+minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arriver"):
+- **Worlds and runs.** Rated world: the lecture RA, the strong RA and the expert (the profiles that accept the scientific
+  names and reach Advanced soonest; the casual diver declines them, the beginner is left out for the cap) × 5 seeds ×
+  3,000 answers, normal photos, `--beyond yes` (circle 3 closed, only circle 2's 5 genera could come). App world: the same
+  three profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`. Both arms on the same seeds: `main` (b6e0d263)
+  against this branch, through `node tests/slot.js`, then `tools/learncmp.js` of this branch, one look.
+- **Primary** (non-inferiority, rated world): the families at Advanced at 3,000 answers (`famAdv@3000`), its one-sided 90%
+  bound not below the guardrail's margin (−2 families or −5%, the larger). Why: more genera in play compete with the
+  families for questions, the cost Q208's study measured; the gain itself (more genera to learn) needs no test.
+- **Watched, no margin**: the share of answers on genera (`genShare`) and on species, the global score at 1,000 and 3,000.
+- **Every guardrail** of the table, both worlds.
+- **Power given up**: 5 seeds, not 10, and no heavy-tailed variant, no 10,000-answer horizon (where circle 3's genera
+  would weigh most): a guardrail result near its margin reads as unclear and is reported, not chased with more seeds
+  within the cap. The app world at 600 questions barely reaches a circle-2 or 3 family at Advanced, so it is a guardrail
+  check only. The real log (rule L12): no player has answered these units (they did not exist), so a replay cannot judge
+  the change; nothing is measured there.
+
+**What the check found** (2026-11-18; `main` b6e0d263 against the branch; tables in the PR, #1067):
+- **A first rated run, not judged: the tool broke the pairing.** The rated world drew each genus's μ on the seed's one
+  stream before the photos, so the 107 new genera moved every photo's ε (24,376 of 24,376 on seed 1) and every species'
+  μ: the two arms played different worlds. It showed differences where nothing could act yet (the lecture RA's first
+  Open Water 126 → 95 answers; the expert's families at Advanced at 1,000 answers −2.6 with genera at 1% of its
+  answers). `tools/ratedworld.js` now draws each genus's and species' μ on a stream of its own, keyed by its id
+  (`tests/ratedworld.test.js`: units added move no other draw), and both arms were run again with that one tool (the
+  base worktree given the branch's file, uncommitted). This repairs the pairing; it does not aim at the outcome.
+- **Rated world, paired** (3 profiles × 5 seeds × 3,000 answers, `--beyond yes`):
+  - **Primary, families at Advanced at 3,000**: the strong RA 45.0 → 45.0 and the expert 55.6 → 55.6, held (bounds
+    −1.7); the lecture RA 38.8 → 37.8, unclear (bound −4.6 against −2): reported, not chased (declared).
+  - **Every guardrail held or unclear, none breached.** Unclear: the lecture RA's D\* at 1,000 (−0.009, bound −0.023),
+    the shown score (lecture RA at 1,000 and 3,000, strong RA at 3,000: −0.8 at most, bounds −1.1), units at Open
+    Water (expert at 300, lecture RA at 1,000), the strong RA's longest plateau (+11, bound +61), the lecture RA's units
+    met at 100.
+  - **Watched**: the expert's share of answers on genera at 3,000 rises 0.158 → 0.222 and on species falls 0.157 →
+    0.094 (bounds exclude 0). By design: the genera and the species share one rank share (Q382), so the expert, the
+    first with circle-3 families at Advanced, now spends part of it on their genera. The other two profiles move
+    little (±0.01).
+- **App world** (3 profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`): the strong RA and the expert
+  play the same 600 questions in both arms (no genus question before 600), every guardrail held. **The lecture RA
+  breaches true knowledge at 600** (knowSlate 0.708 → 0.658 on every seed, bound −0.054 against −0.02), with E unclear
+  at 600, units at Open Water at 300 and units met at 100 unclear. What it rests on: circle 3 is offered later (answers
+  351-378 → 403-438), so fewer families are met by 600 (65 → 60-61), and a family not met lowers knowSlate; two seeds
+  reach 2 families at Advanced by 600 (none before). The arms part at its 82nd answer, an IMR genus question
+  (Amphiprion) showing another photo: the lecture RA meets the IMR genera from Open Water, whose wrong choices are now
+  drawn among 237 genera, so the game's random draws differ from there on. Whether the later circle-3 offer is caused by
+  the change or by that divergence is not measured (a guess: the offer needs the circle-1 Entries at 55%, which no
+  genus moves). The rated world, paired, shows no such loss (D\* at 1,000 −0.009, at 3,000 +0.000). A breach goes to
+  Pierre (rule L11).
+- **Rechecked after the content** (Pierre, 2026-11-18 ~08:56 Manila, option C: the circle 2-3 genera's presentations and
+  ID marks first, #1074, then the lecture RA's app-world check again, capped at 40 minutes): the same 3 seeds × 600
+  questions, `main` 191dfa27 against the branch, 158 s of runs on 2 workers. The same numbers to the digit (knowSlate at
+  600 0.708 → 0.658, bound −0.054: breached; circle 3 offered at 351-378 → 403-438; the arms part at answer 82): the
+  simulated learner learns by its answers and never reads a card's text, so the content cannot move it.
+- **What the breach measured, and 20 seeds** (2026-11-18): knowSlate averages the learner's know over the slate, the
+  65 families in both arms (`slateGenera()`: no genus is in it), so the genera do not dilute it; it fell because 4-5
+  circle-3 families met just before 600 in the base were not met yet in the branch, and count at their starting know.
+  Over the families met in both arms (the judge's D\*, `f.ds`), the 3 seeds give −0.018 (bound −0.022): unclear, so one
+  step up (rule L11, a second look, bounds at 95%): the same check with 20 seeds per arm (`main` af0bee85 against the
+  branch, 431 + 515 s of runs on 2 workers). **True knowledge holds**: knowSlate at 600 0.697 → 0.700, +0.004 (bound
+  −0.012); D\* on the common families 0.610 → 0.609 (bound −0.006); knowMet 0.713 → 0.710 (bound −0.008); every
+  guardrail held. Circle 3 is offered at 370 answers on average before, 373 after (later in 13 pairs of 20): the 3
+  seeds of the first look were all later by chance. No cost for Pierre.
+- **Machine time**: about 2 hours of worker time against the 40 minutes declared (rated 12-18 minutes an arm on 2
+  workers, four arms with the rerun; app 4-6 minutes an arm), mostly the rerun the broken pairing forced; the machine
+  was shared with other agents (waits for a slot of up to 21 minutes not counted).
+
 ### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
 
 One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
@@ -4754,7 +4828,8 @@ progress (fish)"):
 - Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
   species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
 - Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
-  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
+  genus credit alone, for the genera a player has (circle 1 only then: families and every genus of the game reached 67%;
+  every circle since 2026-11-18: 74%, the anchor).
 
 **Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool, since retired, kept the formula of 2026-11-04,
 unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
@@ -6387,8 +6462,10 @@ expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
-cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
-A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
+cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
+A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π
+(each genus's and species' μ on a stream of its own, keyed by its id, since 2026-11-18: a version with more or fewer
+units plays the same photos and the same other units, so the arms stay paired);
 the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the
