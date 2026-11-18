@@ -314,13 +314,14 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {})
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
-  // judged-ease prior of its photos) gives the unit's mu.
+  // judged-ease prior of its photos, its held-out ones included as model.js genusDiff counts them since #1057) gives the
+  // unit's mu.
   if (app === 'truth') {
     ctx.photoDiff = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0);
     const ez = C.calibOf(SUBJ).ease || 0,
       pgd = {};
     Object.keys(G).forEach(n => {
-      const L = [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))].filter(p => p.e),
+      const L = [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => p.e),
         pr = L.length ? L.reduce((t, p) => t + (M.PDIFF.MID - p.e) * ez, 0) / L.length : 0;
       pgd[n] = [(W.mu[n] || 0) - pr];
     });
