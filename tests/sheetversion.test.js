@@ -17,15 +17,25 @@ const ROOT = path.join(__dirname, '..'),
 const HEADER =
   '// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-08: v7: seven; v6: six; 2026-11-07: v5: five)';
 const HISTORY = '- Version history: v2 Answers/Activity tabs; v7 (2026-11-08) seven; v6 (2026-11-08) six';
-const FILES = {
-  'tools/sync/Code.gs': HEADER + '\n// Setup: paste this file.\nconst VERSION = 7;  // assigned at merge\nfunction doGet(){ return 1; }\n',
+// Since 2026-11-18 (Pierre: "Pourquoi? Juste pourquoi?") line 1 is short and the history lives in tools/sync/HISTORY.md.
+const line1 = (n, date) =>
+  `// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION ${n} (${date}). History: tools/sync/HISTORY.md in the repository.`;
+const HIST_TOP = '# Sheet script history\n\nOne entry per version, newest first.\n\n';
+const HIST_MD = HIST_TOP + '## v7 (2026-11-08)\n\nseven\n\n## v6 (2026-11-08)\n\nsix\n\n## v5 (2026-11-07)\n\nfive\n';
+const BODY = '\n// Setup: paste this file.\nconst VERSION = 7;  // assigned at merge\nfunction doGet(){ return 1; }\n';
+const OTHER = {
   'docs/ARCHITECTURE.md': '# Architecture\n\n' + HISTORY + '\n- Endpoints: GET.\n',
   'core.js': 'const OLD_SHEET = 5;\nconst x = 1;\n',
   'tools/sync/changes/README.md': '# Changes\n\nWrite `' + NEXT + '` in a PR.\n'
 };
+// Main as it is today: the long header of the transition (main's own tool refuses the short one) and HISTORY.md holding
+// exactly its entries.
+const FILES = {'tools/sync/Code.gs': HEADER + BODY, 'tools/sync/HISTORY.md': HIST_MD, ...OTHER};
+// Main once line 1 is short.
+const SHORT = {'tools/sync/Code.gs': line1(7, '2026-11-08') + BODY, 'tools/sync/HISTORY.md': HIST_MD, ...OTHER};
 
 // A repository with main as FILES and a branch pr checked out; returns helpers on it.
-const repo = () => {
+const repo = (files = FILES) => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sheetv-'));
   const git = (...a) => execFileSync('git', ['-C', d, ...a], {encoding: 'utf-8'});
   const write = (f, s) => {
@@ -36,7 +46,7 @@ const repo = () => {
   git('init', '-q', '-b', 'main');
   git('config', 'user.email', 't@example.com');
   git('config', 'user.name', 'T');
-  for (const [f, s] of Object.entries(FILES)) write(f, s);
+  for (const [f, s] of Object.entries(files)) write(f, s);
   git('add', '-A');
   git('commit', '-q', '-m', 'main');
   git('checkout', '-q', '-b', 'pr');
@@ -52,6 +62,13 @@ const repo = () => {
     git('commit', '-q', '-m', 'pr');
   };
   return {d, git, write, read, run, check, edit, commit, done: () => fs.rmSync(d, {recursive: true, force: true})};
+};
+// Another PR took v8 on main (the long header and HISTORY.md kept in step, as the transition has them); to run on main.
+const mainTakesV8 = r => {
+  r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
+  r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
+  r.edit('tools/sync/HISTORY.md', '## v7 (', '## v8 (2026-11-08)\n\nother\n\n## v7 (');
+  r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
 };
 const ok = (r, state) => {
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
@@ -131,7 +148,7 @@ test('a changes file holds one entry with no version number', () => {
   }
 });
 
-test('--assign: the next VERSION, the entry in the header (new day) and ARCHITECTURE, the gates and placeholders set, the file gone', () => {
+test('--assign: the next VERSION, the short line 1, the entry in HISTORY.md and ARCHITECTURE, the gates and placeholders set, the file gone', () => {
   const r = repo();
   try {
     r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
@@ -146,9 +163,11 @@ test('--assign: the next VERSION, the entry in the header (new day) and ARCHITEC
     const a = r.run('--assign', '--base', 'main', '--date', '2026-11-09');
     ok(a, /core\.js: NEW_SHEET 8 -> 8[\s\S]*tools\/sync\/changes\/claude-x\.md: removed/);
     const gs = r.read('tools/sync/Code.gs');
+    // The long header of the transition becomes the short line; the entry goes on top of HISTORY.md, code marks kept.
+    assert.strictEqual(gs.split('\n')[0], line1(8, '2026-11-09'));
     assert.strictEqual(
-      gs.split('\n')[0],
-      '// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 8 (2026-11-09: v8: doGet answers 2 (doGet, Pierre, 2026-11-09); 2026-11-08: v7: seven; v6: six; 2026-11-07: v5: five)'
+      r.read('tools/sync/HISTORY.md'),
+      HIST_TOP + '## v8 (2026-11-09)\n\ndoGet answers 2 (`doGet`, Pierre, 2026-11-09)\n\n' + HIST_MD.slice(HIST_TOP.length)
     );
     assert.match(gs, /^const VERSION = 8; {2}\/\/ assigned at merge$/m);
     assert.match(gs, /\/\/ Answers 2 \(v8, Pierre\)\./);
@@ -193,11 +212,8 @@ test('--assign then --check agree on an entry with a double space or with spaces
       r.commit();
       ok(r.check(), /waiting/);
       ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
-      assert.strictEqual(
-        r.read('tools/sync/Code.gs').split('\n')[0],
-        HEADER.replace('VERSION 7 (2026-11-08: v7:', `VERSION 8 (2026-11-09: v8: ${head}; 2026-11-08: v7:`),
-        entry
-      );
+      assert.strictEqual(r.read('tools/sync/Code.gs').split('\n')[0], line1(8, '2026-11-09'), entry);
+      assert.ok(r.read('tools/sync/HISTORY.md').includes(`## v8 (2026-11-09)\n\n${arch}\n\n## v7 (`), entry);
       assert.ok(r.read('docs/ARCHITECTURE.md').includes(`tabs; v8 (2026-11-09) ${arch}; v7 (`), entry);
       ok(r.check(), /assigned: v8/);
       r.commit();
@@ -236,14 +252,11 @@ test('--assign on the same day goes under that day; it needs exactly one changes
     for (const bad of ['2026-13-01', '8 Nov']) assert.strictEqual(r.run('--assign', '--base', 'main', '--date', bad).status, 2, bad);
     assert.ok(fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')));
     ok(r.run('--assign', '--base', 'main', '--date', '2026-11-08'));
-    assert.ok(
-      r
-        .read('tools/sync/Code.gs')
-        .startsWith(HEADER.replace('VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: doGet answers 2; v7:'))
-    );
+    assert.ok(r.read('tools/sync/Code.gs').startsWith(line1(8, '2026-11-08') + '\n'));
+    assert.ok(r.read('tools/sync/HISTORY.md').includes('## v8 (2026-11-08)\n\ndoGet answers 2\n\n## v7 (2026-11-08)'));
     ok(r.check(), /assigned: v8/);
     // Two versions at once is not an assign.
-    r.edit('tools/sync/Code.gs', 'VERSION 8 (2026-11-08: v8:', 'VERSION 9 (2026-11-08: v9: more; v8:');
+    r.edit('tools/sync/Code.gs', 'VERSION 8 (2026-11-08)', 'VERSION 9 (2026-11-08)');
     r.edit('tools/sync/Code.gs', 'const VERSION = 8;', 'const VERSION = 9;');
     fails(r.check(), /VERSION went from 7 to 9: only --assign changes it, by one/);
   } finally {
@@ -261,9 +274,7 @@ test('a gate the PR adds gets the assigned version even after main reached its p
     ok(r.check(), /waiting/);
     // Meanwhile another PR took v8 on main.
     r.git('checkout', '-q', 'main');
-    r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
-    r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
-    r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
+    mainTakesV8(r);
     r.commit();
     r.git('checkout', '-q', 'pr');
     r.git('merge', '-q', '--no-edit', 'main');
@@ -288,9 +299,7 @@ const behind = () => {
   r.write('tools/sync/changes/claude-x.md', 'more answers 3\n');
   r.commit();
   r.git('checkout', '-q', 'main');
-  r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
-  r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
-  r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
+  mainTakesV8(r);
   r.write('app.js', 'const PA_SHEET = 8;\n');
   r.commit();
   r.git('checkout', '-q', 'pr');
@@ -397,9 +406,7 @@ test('--assign: a gate named with several words, and the copy of core.js embedde
     r.git('checkout', '-q', '--', '.');
     r.git('clean', '-fdq');
     r.git('checkout', '-q', 'main');
-    r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
-    r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
-    r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
+    mainTakesV8(r);
     r.commit();
     r.git('checkout', '-q', 'pr');
     r.git('merge', '-q', '--no-edit', 'main');
@@ -433,7 +440,7 @@ test('the real Code.gs header and ARCHITECTURE.md history take an --assign, whic
   try {
     // As main holds them: a PR branch's own placeholders (its sheet change waiting for its version) are not main's.
     const mark = new RegExp('\\b' + NEXT + '\\b', 'g');
-    for (const f of ['tools/sync/Code.gs', 'docs/ARCHITECTURE.md'])
+    for (const f of ['tools/sync/Code.gs', 'tools/sync/HISTORY.md', 'docs/ARCHITECTURE.md'])
       r.write(f, fs.readFileSync(path.join(ROOT, f), 'utf-8').replace(mark, 'the next version'));
     r.git('add', '-A');
     r.git('commit', '-q', '-m', 'real files');
@@ -444,8 +451,10 @@ test('the real Code.gs header and ARCHITECTURE.md history take an --assign, whic
     r.write('tools/sync/changes/claude-x.md', 'a comment, nothing it computes changes\n');
     ok(r.check(), /waiting/);
     ok(r.run('--assign', '--base', 'main', '--date', '2099-01-01'));
-    const line = r.read('tools/sync/Code.gs').split('\n')[0];
-    assert.ok(line.includes(`VERSION ${v + 1} (2099-01-01: v${v + 1}: a comment, nothing it computes changes; 20`), line.slice(0, 200));
+    // Whatever shape line 1 has on main (the long header of the transition, then the short line), the assign leaves the short one.
+    assert.strictEqual(r.read('tools/sync/Code.gs').split('\n')[0], line1(v + 1, '2099-01-01'));
+    const hist = r.read('tools/sync/HISTORY.md');
+    assert.ok(hist.includes(`\n## v${v + 1} (2099-01-01)\n\na comment, nothing it computes changes\n\n## v${v} (`), hist.slice(0, 600));
     ok(r.check(), new RegExp('assigned: v' + (v + 1)));
   } finally {
     r.done();
@@ -493,4 +502,151 @@ test('SHEET_FLOOR is not a gate: --check accepts it, --assign leaves it alone', 
   } finally {
     r.done();
   }
+});
+
+// Line 1 short, the history in tools/sync/HISTORY.md (Pierre, 2026-11-18: "Pourquoi? Juste pourquoi?").
+test('short line 1: an assign puts the entry on top of HISTORY.md and the next version in line 1; --check accepts it', () => {
+  const r = repo(SHORT);
+  try {
+    ok(r.check(), /no sheet change/);
+    ok(r.check('--main'));
+    r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+    r.write('tools/sync/changes/claude-x.md', 'doGet answers 2 (`doGet`).\n');
+    r.commit();
+    ok(r.check(), /waiting/);
+    ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
+    assert.strictEqual(r.read('tools/sync/Code.gs').split('\n')[0], line1(8, '2026-11-09'));
+    assert.strictEqual(
+      r.read('tools/sync/HISTORY.md'),
+      HIST_TOP + '## v8 (2026-11-09)\n\ndoGet answers 2 (`doGet`)\n\n' + HIST_MD.slice(HIST_TOP.length)
+    );
+    ok(r.check(), /assigned: v8/);
+    r.commit();
+    ok(r.check('--main'));
+    // Nothing but --assign writes an entry: a PR waiting for its version leaves HISTORY.md alone.
+    r.git('checkout', '-q', '-b', 'pr2');
+    r.edit('tools/sync/Code.gs', 'return 2;', 'return 3;');
+    r.write('tools/sync/changes/claude-y.md', 'doGet answers 3\n');
+    r.edit('tools/sync/HISTORY.md', '## v8 (', '## v9 (2026-11-09)\n\nmine\n\n## v8 (');
+    fails(r.run('--check', '--base', 'pr'), /HISTORY\.md: its entry for the PR is written at merge by --assign/);
+  } finally {
+    r.done();
+  }
+});
+
+test('--check refuses a line 1 or a HISTORY.md that is not the short shape: top entry, date, gap, duplicate, wording, missing file', () => {
+  const cases = [
+    [
+      'line 1 with two spaces',
+      r => r.edit('tools/sync/Code.gs', 'Google Sheet. VERSION', 'Google Sheet.  VERSION'),
+      /line 1 is not "\/\/ IMR Reef ID/
+    ],
+    ['line 1 without its date', r => r.edit('tools/sync/Code.gs', ' (2026-11-08)', ''), /line 1 is not/],
+    ['a top entry that is not VERSION', r => r.edit('tools/sync/HISTORY.md', '## v7 (', '## v8 ('), /its top entry is v8, VERSION is 7/],
+    [
+      "a date that is not line 1's",
+      r => r.edit('tools/sync/HISTORY.md', '## v7 (2026-11-08)', '## v7 (2026-11-09)'),
+      /v7 is dated 2026-11-09, line 1 says 2026-11-08/
+    ],
+    ['a duplicate', r => r.edit('tools/sync/HISTORY.md', '## v6 (', '## v7 ('), /v7 twice/],
+    ['a gap', r => r.edit('tools/sync/HISTORY.md', '## v6 (2026-11-08)\n\nsix\n\n', ''), /no entry for v6 between v7 and v5/],
+    ['an entry out of order', r => r.edit('tools/sync/HISTORY.md', '## v5 (', '## v8 ('), /v8 above v6: newest first/],
+    [
+      'an unreadable heading',
+      r => r.edit('tools/sync/HISTORY.md', '## v6 (2026-11-08)', '## version 6'),
+      /unreadable heading "## version 6"/
+    ],
+    ['an entry with no text', r => r.edit('tools/sync/HISTORY.md', 'six\n\n', ''), /v6 has no text/],
+    ['no HISTORY.md', r => fs.rmSync(path.join(r.d, 'tools/sync/HISTORY.md')), /tools\/sync\/HISTORY\.md is missing/]
+  ];
+  for (const [what, change, why] of cases) {
+    const r = repo(SHORT);
+    try {
+      ok(r.check());
+      change(r);
+      fails(r.check(), why);
+      fails(r.check('--main'), why);
+    } finally {
+      r.done();
+    }
+  }
+});
+
+test('the transition: the long header is accepted while HISTORY.md holds exactly its entries; the short line comes with --assign', () => {
+  const {'tools/sync/HISTORY.md': _gone, ...before} = FILES; // main before HISTORY.md: line 1 holds the history
+  // This PR: HISTORY.md added, Code.gs untouched (main's own tool, which the train runs, refuses a short line 1).
+  let r = repo(before);
+  try {
+    fails(r.check(), /tools\/sync\/HISTORY\.md is missing/);
+    r.write('tools/sync/HISTORY.md', HIST_MD);
+    ok(r.check(), /no sheet change/);
+    ok(r.check('--main'));
+    r.edit('tools/sync/HISTORY.md', '## v5 (2026-11-07)\n\nfive\n', '');
+    fails(r.check(), /does not hold exactly the entries of line 1/);
+    r.write('tools/sync/HISTORY.md', HIST_MD.replace('six', 'sixth'));
+    fails(r.check(), /does not hold exactly the entries of line 1/);
+  } finally {
+    r.done();
+  }
+  // After it: line 1 still long, HISTORY.md in step. Changing line 1 to the short form without a version is not allowed
+  // (it rides the next assign); a version assigned by hand with the long header is refused too.
+  r = repo();
+  try {
+    r.write('tools/sync/Code.gs', r.read('tools/sync/Code.gs').replace(HEADER, line1(7, '2026-11-08')));
+    fails(r.check(), /the header's history line changed: leave it to --assign/);
+    r.git('checkout', '-q', '--', '.');
+    mainTakesV8(r);
+    fails(r.check(), /VERSION 8 with the long header: line 1 is the short form once a version is assigned/);
+    // An entry added by hand with no new VERSION.
+    r.git('checkout', '-q', '--', '.');
+    r.edit('tools/sync/HISTORY.md', '## v7 (', '## v8 (2026-11-08)\n\nother\n\n## v7 (');
+    fails(r.check(), /an entry added or dropped without a new VERSION/);
+  } finally {
+    r.done();
+  }
+  // And a short line 1 back to the long one is refused.
+  r = repo(SHORT);
+  try {
+    r.write('tools/sync/Code.gs', r.read('tools/sync/Code.gs').replace(line1(7, '2026-11-08'), HEADER));
+    fails(r.check(), /the header's history line changed/);
+  } finally {
+    r.done();
+  }
+});
+
+// Pierre, 2026-11-18: line 1 held the whole history. Everything it held is in HISTORY.md: the old line, frozen as a fixture
+// (its length and checksum below), is walked entry by entry, in order, separator by separator, up to its last character.
+test('every entry of the old line 1 (v176 and below) is in HISTORY.md, word for word, in order, and nothing else was on that line', () => {
+  const old = fs.readFileSync(path.join(__dirname, 'sheet-header-v176.txt'), 'utf-8').replace(/\n$/, '');
+  assert.strictEqual(Buffer.byteLength(old), 98093);
+  assert.strictEqual(
+    require('crypto').createHash('sha256').update(old).digest('hex'),
+    'f4dedb54a7a7b70bb01cbd1fb5241c500136baa1fc3d573a95706e601c2a05df'
+  );
+  const parts = fs.readFileSync(path.join(ROOT, 'tools/sync/HISTORY.md'), 'utf-8').split(/^## (v\d+ \(\d{4}-\d\d-\d\d\)|earlier)$/m);
+  const entries = [];
+  for (let i = 1; i < parts.length; i += 2)
+    entries.push({v: parts[i] === 'earlier' ? null : Number(/^v(\d+)/.exec(parts[i])[1]), text: parts[i + 1].trim()});
+  const mig = entries.filter(e => e.v === null || e.v <= 176); // the entries from the old line; newer ones were assigned after it
+  assert.strictEqual(mig.length, 165);
+  assert.deepStrictEqual([mig[0].v, mig[mig.length - 2].v, mig[mig.length - 1].v], [176, 6, null]);
+  const prefix = '// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 176 (2026-11-18: v176: ';
+  assert.ok(old.startsWith(prefix));
+  let pos = prefix.length;
+  const eat = s => {
+    assert.ok(old.startsWith(s, pos), `at ${pos}: ${s.slice(0, 80)}`);
+    pos += s.length;
+  };
+  const sep = /^(?:; |\. )(?:\d{4}-\d\d-\d\d: )?v(\d+)(?: \(\d{4}-\d\d-\d\d\))?: /; // "; v7: ", "; 2026-11-17: v166: ", "; v49 (2026-11-05): ", ". v37: "
+  mig.forEach((e, i) => {
+    assert.ok(!/\n/.test(e.text), 'one line per entry');
+    eat(e.text);
+    const next = mig[i + 1];
+    if (!next) return;
+    if (next.v === null) return eat('; earlier: ');
+    const m = sep.exec(old.slice(pos));
+    assert.ok(m && Number(m[1]) === next.v, `v${e.v} is followed by v${next.v}: ${old.slice(pos, pos + 40)}`);
+    pos += m[0].length;
+  });
+  assert.strictEqual(old.slice(pos), ')', 'the old line ends with its last entry');
 });
