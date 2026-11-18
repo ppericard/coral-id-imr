@@ -1,6 +1,6 @@
 # Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file
 
-Date: 2026-11-19. PR: #1182. Rules or docs touched: A1; ROADMAP "Auto-sort follow-ups"; docs/spec/loading.md.
+Date: 2026-11-19. PR: #1183. Rules or docs touched: A1; ROADMAP "Auto-sort follow-ups"; docs/spec/loading.md.
 
 ## Context
 
