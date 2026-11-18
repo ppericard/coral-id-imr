@@ -2337,8 +2337,16 @@ function anWords(root, S) {
   const W = S.analyses || {},
     pre = Object.values(S.sheets || {});
   if (!W.one && !pre.length) return;
-  const rx = pre.length ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):[A-Z][A-Za-z]*(?: [a-z]+)?`, 'g') : null,
-    name = id => (typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id] ? FISHA.gen[id].name : id.replace(/^[a-z]+:/, '')),
+  const rx = pre.length
+      ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):(?:[A-Z][A-Za-z]*(?: [a-z]+)?|s\\d+)`, 'g')
+      : null,
+    // a fish species unit (s:s091) by its scientific name (the registry's spu), as admin.js repUnit names it
+    name = id =>
+      typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id]
+        ? FISHA.gen[id].name
+        : typeof FISHA !== 'undefined' && FISHA && FISHA.spu && FISHA.spu[id]
+          ? FISHA.spu[id].name
+          : id.replace(/^[a-z]+:/, ''),
     say = t => {
       let o = rx ? t.replace(rx, name) : t;
       if (W.one)
