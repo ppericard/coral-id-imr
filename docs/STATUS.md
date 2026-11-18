@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-19, about 04:50 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 05:20 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
 Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since the 11/17 report, already handled).
@@ -19,15 +19,20 @@ Main: sheet script **v187** (#1146); the script updates from `release`, which on
 - **Merged since 03:35**: #1167, #1164, #1159, #1161, #1166, #1173 (admin smoke waits 60 s on Analyses: the cause of
   #1168's red train), #1168 (taxonomy refresh), #1172 (inventory recheck: `docs/reviews/2026-11-19-backlog-recheck.md`,
   pick work from it, not the 11-18 snapshot), #1174 (watermark pass 4), #1169 (admin Taxa view).
-- **Train chain (scratchpad queue files q91-q93)**: #1178 (A. wallaceae presence) → #1180 (coral near-dups) → #1175
-  (load order (b)+(d), already brought up to date). Then, each brought up to date first (`scratchpad/bring.sh WT BRANCH`,
-  then `@codex review`, then queue): #1170 (coral pairs split, wt-c2), #1176 (sea slug marks, wt-s6), #1179 (after
-  #1176, wt-s6b). Held: **#1171** (Q418).
-- **Agents running (4)**: CI speed (I7, wt-ci); tricky pairs on My progress (L24 f, wt-tricky); circle-1 genera with no
-  name root, a build report (wt-tree); auto-sort follow-up (A7, wt-autosort). Each reports a PR; queue it the same way.
-- **Waiting**: #1121 core.js + Code.gs comments: two CodeQL false positives (Pierre's hands), then re-assign v188.
-  #1117 (hooks, analysis session): its 6 Codex threads. #1116, #1130, #1148: Pierre's answers (Q411-Q413).
-- Two PRs adding a decision index row conflict: bring each up to date just before its train (`bring.sh`).
+  Then #1178 (A. wallaceae presence), #1180 (coral near-dup suggestions), #1182 (this STATUS's previous version).
+- **No agent running** (stopped at 04:52 to save quota). Their work, each with a commit "WIP, not reviewed, not tested"
+  to finish (docs, record, Codex) before any merge: #1177 (CI speed, I7), #1181 (circle-1 genera with no name root),
+  #1183 (auto-sort A7), branch `claude/tricky-pairs` (L24 f, no PR).
+- **To merge, each brought up to date with main first** (merge origin/main, keep both decision index rows, docs test,
+  CI Prettier set, `@codex review`, then `tools/train.py`, one at a time; the old session's helper scripts are gone):
+  #1130 (Q412 answered: merge; conflicts with main), #1148 (Q413 answered: merge; 2 Codex threads open), #1170, #1176,
+  then #1179. #1175 (load order): its train failed on `smoke (net)` after the merge with main: find the cause.
+- **To redo**: #1171 to option (b) (Q418). **#1121**: no dismissal; fix `photoFallback`/`photoRetry` with
+  `new URL(u).hostname` in a small PR first (next sheet version), then #1121 (comment on #1121). Waiting: #1117 (6
+  Codex threads), #1116 (Q411).
+- **Pierre, 05:15: the app's engine is one engine for every subject**, with only small per-subject parameters. Next:
+  audit where the fish or sea slug path differs from the corals', make each shared code or a stated parameter, propose
+  the rule's wording to Pierre (comment on #1148).
 - Slips tonight: agents' force-pushes (one `--force-with-lease`, #1164), `sed -i`, `&`, heredocs; the integrator
   committed conflict markers once (fixed next commit) and chained a queue on a waiter that did not wait (train refused).
 
@@ -59,10 +64,6 @@ dropped (the docs describe a coherent model in our words; no new manual step for
 - **Q410** The five new sea slug achievement names (#1112): rename freely.
 - **Q411** #1116 typed answers: simulated expert −3.0 points on answers 200-300 ("unclear"). Level-2 first
   (recommended), merge, or drop that part?
-- **Q412** #1130 coral calibration set: simulated beginner −0.013 at question 300, caught up by 600. Merge
-  (recommended) or no boost for beginners?
-- **Q413** #1148 fish read their own pooled stats: level 1 only (the rated world cannot model L12); the strong RA's bar
-  error +0.034 (margin +0.030), closer to true knowledge. Merge (recommended), or level 2 first?
 - **Q414** Architecture step 4: a `slow` tag takes the slow statistical tests out of the pre-push tier (CI and the
   train keep them); it changes rule W14's wording. Recommended: yes.
 - **Q415** Rule L11 and LEARNING's method differ on five points (#1163's description: level 2's worlds and length, the
@@ -71,8 +72,9 @@ dropped (the docs describe a coherent model in our words; no new manual step for
   mix-up between the two (yes, next, recommended); Find the X on the pair (after species units); duels kept at ×2.
 - **Q417** The "Pikachu" nickname: to *Thecacera pikachu* (the species named for it), moving the star from
   *T. pacifica*? (the sea slug literature scan §6, #1164)
-- **Q418** #1171 fish genus page "Don't confuse with": every sibling genus of the family with our marks (92 of 99
-  pages, up to 23 cards, 4 then More). Merge as is, or only sourced look-alike pairs? (held until you answer)
+
+Answered 05:13: Q412 merge #1130 as is; Q413 merge #1148, no simulation; Q418 (b): sourced pairs only, others later
+from the players' data.
 
 Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points; #1098 (a)-(f); #1041 §6.
 
@@ -80,9 +82,7 @@ Last question number: Q418
 
 ## Pierre's hands
 
-- **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`); Security › Code scanning:
-  dismiss as false positives the two "Incomplete URL substring sanitization" alerts of #1121 (core.js `photoFallback`
-  and `photoRetry`, lines identical to main, moved up by the shorter comments; agents get 403 there).
+- **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game (the lobby now shows a QR code: scan it once).
 - **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages); the 8 unsure
   fish candidates; the 16 non-Philippine *A. pyroferus* juvenile photos and `fbAcpyr_j0` (yellow form, tagged `ph`).
