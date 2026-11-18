@@ -1578,8 +1578,9 @@ bar is judged by it in several learner worlds.
   after the GCM (Nosofsky 1986), with a background (guessing) term. Every photo shown is stored as an exemplar of the
   genus shown, a miss's montage stores a typical photo of the genus given, and prior know counts as know / (1 − know)
   typical exemplars (50 at most). A photo of difficulty d sits at atypicality R σ(d) (plus the single view's offset);
-  its similarity to an exemplar of c is exp(−K √(D_tc² + r² + r_e²)), the very same photo exp(−K D_tc), with D_tc = D
-  (1.1 − s(t, c)); P(t) = S_t / (Σ_V S_c + B), S_c the summed similarity to c's exemplars. It is the third world,
+  its similarity to an exemplar of c is exp(−K √(D_tc² + r² + r_e²)), with D_tc = 0 for c the genus shown and
+  D (1.1 − s(t, c)) for another genus; the very same photo, stored as an exemplar of the genus shown, has similarity 1.
+  P(t) = S_t / (Σ_V S_c + B), S_c the summed similarity to c's exemplars. It is the third world,
   beside item and field: a genus never stored does not compete, so a drilled genus is truly named right.
 - **The spotty profile** (`spotty`): knows the genera of IMR lecture groups 1-5 as an expert (0.93) and the rest
   hardly (0.05), learning rate 0.08: a rule that borrows from the global level is checked on the genera it does not
