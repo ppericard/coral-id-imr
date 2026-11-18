@@ -1385,7 +1385,225 @@ the learner learns by the number of answers, so its unchanged knowledge says not
 
 ## Simulation (`tests/profiles.smoke.js`, `tools/learnsim.js`)
 
-SPEC-PLACEHOLDER
+Simulated players driven through the real app, as the code runs them today: a pacing test in CI and a learning-outcome
+simulation for reading. Every value is the code's, and the code wins where this text and it differ. The calibrations,
+baselines and studies made with them, with their dates, are in the notebook:
+[docs/archive/learning-notebook.md](archive/learning-notebook.md). How a learning change is validated with them (the
+app world and the rated world, the profiles, the measures and their guardrails, `tools/learncmp.js`, the workflow):
+"Validating a learning change" above.
+
+In both, the app runs untouched and only the player is simulated, by a learner of ours: a few round numbers, neither
+the app's model nor fitted to real answers. Their numbers show trends and compare two versions of the app on the same
+seeds; they say nothing of a real player's level.
+
+### The pacing test (CI)
+
+`tests/profiles.smoke.js`, run by the smokes workflow (`.github/workflows/smokes.yml`, job `profiles`; locally
+`node tests/profiles.smoke.js`).
+
+- **Three players** through the real photo quiz, 300 questions each, from a fresh start (no opening hold, no comeback,
+  no Open all), the first-meeting cards read through: a beginner (every slate genus known at 0.02), an RA after one
+  lecture (0.55 on 2 slate genera in 5, in data order, and 0.1 on the others) and an expert (0.93). Nothing in the app
+  is set per profile. The app's `Math.random` and the player's own generator are seeded, so a run repeats.
+- **The player** (the test's own): it recognises the genus shown with σ(logit know − d − 0.5 for a photo shown alone),
+  d the mean `photoDiff` of the photos shown. Not recognised, it is still right 1 time in k on a question with k
+  plausible choices, and never on a typed one, where it answers "I don't know" half the time and else one of the
+  draw's wrong choices. Each answer teaches rate × (1 − know), rate 0.12 (the expert 0.05).
+- **What it checks** (any failure fails the run):
+  - a focused beginner: over 8 seeds (the run's and 7 more), at most 17 genera met on average by question 100;
+  - the beginner and the RA still open genera between questions 100 and 300; the expert meets more genera than the
+    beginner at 100 and at 300, gets look-alike traps (on the 4-choice questions: more than the beginner at 100, at
+    least 1 a question at 300), has 10 genera or more at 50% after 300 questions and a % more than 10 points above the
+    beginner's;
+  - no genus at its exam's entry before it was offered beside a look-alike (or answered right typed);
+  - every genus answered is under the domain-score bar;
+  - easiest first: with made-up ratings (one genus easy, one hard), `openPick` draws the easy one more than 3 times as
+    often as the hard one; with no ratings and their commonness made equal, no order (neither drawn more than twice as
+    often as the other);
+  - the bonus genera: with every slate genus half way and nothing shaky, the opening chance is 1 and the opening picks a
+    bonus genus; switched off, none is in the pool;
+  - online calibration: on a genus the player holds, a photo nobody has answered comes up more than 1.3 times as often
+    as with the calibration off (and more than 13 times in 3,000 draws);
+  - no page error.
+
+### Learning-outcome simulation (`tools/learnsim.js`)
+
+What the simulated players really learn in the real quiz, and how far the app's estimates are from that truth, as a
+mean ± sd over many seeds; not in CI (minutes to hours). The app's draw, photos, traps, duels, Again, exam, Elo,
+progress and cards run untouched. How a comparison is read (a primary measure declared in advance, an exact stratified
+sign-flip test pooled over the profiles, Holm, the guardrails): rule L11 and
+docs/reviews/2026-11-05-stats-methods-study.md. The same tool runs the rated world (`--world rated`): "Validating a
+learning change".
+
+- **Run**: `node tools/learnsim.js` with the options its header lists: `--seeds` (5), `--questions` (300), `--profiles`
+  (the subject's default list), `--workers` (up to 4), `--subject coral|fish`, `--out` (every run and the summary as
+  JSON) and those below. Each run (profile × seed) gets a fresh browser context; seeds are 1..N (`--seed0` shifts them,
+  for fresh seeds), and the app's `Math.random` and the learner's own generator are both seeded from the seed, so a run
+  repeats and two versions of the app compare on paired seeds. The fish's surprise questions are left out of the path.
+- **Photo ratings**: `--stats` loads a `?stats=1` reply of the sync sheet, a file (fetched with an `av`, or the sheet
+  logs the read as an old app) or `live` (read at start with `av=learnsim`); without it every photo's difficulty is 0,
+  as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file
+  (`{photos: {file: d}, gd: {genus: d}}`), or `gen[:SD[:NOISE]]`, each photo's true difficulty drawn from N(μ_g, SD²) by
+  a hash of its file name (μ_g the sheet's genus offset, SD by default `JUDGE.SD` 0.8), the app told the truth plus
+  N(0, NOISE²) (by default `JUDGE.NOISE` 0.3), as if 20 trusted answers had rated each photo.
+- **Long runs**: a run is one synchronous `page.evaluate`, so the page's `localStorage` lives in its own memory
+  (`tools/memstorage.js`, installed before anything writes: the browser's behaviour and its quota of 5,242,880
+  characters, checked by `tests/memstorage.test.js`); the browser's storage traffic would otherwise queue in the
+  renderer until it crashed. Each run reports the most characters its storage held.
+- **Profiles**: `tools/learnprof.js`, one list for both subjects and both worlds ("Profiles" in "Validating a learning
+  change"); `strongBack` and `spotty` run by name only.
+- **Learner** (the item learner, the default; its constants in `LEARNER`): `know[g]` is its chance to recognise genus g
+  on an average photo with all its views. It recognises the genus shown with σ(logit know − d − 0.5 if one photo
+  alone, plus its photo memory), d the photos' mean difficulty. Not recognised, it picks a choice with weight (1 + 3 s),
+  times (1 − 0.5 × its know) for a wrong one (`LEARNER.LOOK`, `ELIM`), s = 1 for the genus shown and
+  min(1, `pooledConf` / `CONF.LOOK`) for another: about 1 for a declared look-alike, 0.4 within a family, 0.1
+  otherwise. A typed question has no guess: "I don't know" half the time, else a genus by the same weights. After each
+  answer the genus shown gains rate × (1 − know), `LEARNER.MISS` 1.5 times that after a miss (the side-by-side
+  montage), the genus wrongly picked `LEARNER.PICKED` 0.5 times that; a first-meeting card teaches like one right
+  answer. No forgetting, but across `--breaks`.
+- **Photo memory** (`LEARNER.MEM` [0, 0.4, 1.5, 2], `--mem`; `--mem 0` turns it off): each photo the learner was shown
+  when answering keeps [shown, right], and recognising gains the mean, over the photos shown, of their bucket's logits:
+  new, shown never right, right once, right twice or more. It helps on that photo only: it teaches nothing more about
+  the genus, and the hard reference question ignores it, so what memory adds to the answers is what the app must not
+  count as knowledge.
+- **Response time**: the learner takes log t = log 7 − 0.15 × right − 0.3 × logit(its true chance) + 0.6 × N(0, 1)
+  seconds (`LEARNER.RT`), from a generator of its own, between 0.1 and 600 s, handed to the app's question clock; the
+  app weighs its steps by it ("Response time"). `--rt off`: no seconds; `--rtlog`: the app's answer log of every run,
+  with the learner's chance and time noise, for `tools/abilityeval.js`.
+- **Breaks** (`--breaks 10m,30m,1h,3h,8h,3d,1w,1mo`, `--after` 20): the app runs on a virtual clock, 10 s an answer.
+  After the first session the player leaves for each break in turn, each from the same state with the generators
+  seeded again, forgets, and comes back: it plays until the comeback is over (the questions flagged warm), then
+  `--after` questions more (200 at most in all). It forgets on the FSRS curve towards its starting knowledge:
+  know′ = k0 + (know − k0)(1 + 19/81 · t / S)^−0.5, S = `LEARNER.S0` 2 days × `LEARNER.G` 2.5 for each further day
+  the genus was answered right (the learner's own stability, not the app's). Its photo memory and pair skills do not
+  fade. Per break: the comeback's length and success, the questions that held the openings on coming back, the success
+  and the hold in the `--after` questions and the genera opened there, the app's rust at the first question back and
+  the learner's true loss.
+- **Openings**: per run, the questions that opened a genus on its own card (`opens`; `open/15`, the most in any 15
+  consecutive questions), those right after a miss (`afterMiss`), and the questions where the rule "an opening only
+  after a right answer" (`model.js` `openRight`) alone held it, with the opening chance it held back (`blocked`).
+- **The first-launch answer** (`--choice new|imr|know|auto`, default `new`; `auto`: the beginner and the casual diver
+  new, the lecture RA imr, the others know; `--fallback keep|accept`, the answer to the card that comes when the
+  answers do not fit the choice; `--vars`, for calibration only, other values of its variables): per run the first 20
+  answers' mean surprise (right − e), their right % and the global level then, and the fallback card; the first 80
+  answers are kept as a trace for `tools/fallbackeval.js`.
+- **Open all** (`--openall N`): every genus opens at question N, as My progress's button; the back card that may follow
+  is answered `--back keep|one` (default `keep`). Per run: when all opened, when the back card showed, and after it each
+  answer's expected success e against the learner's true chance and its answer, for the genera opened at once and
+  those met before.
+- **Measures** at questions 50, 100, 200 and 300, then every 300 and at the last: true mean know over the slate
+  (`knowSlate`) and over the genera met; the Elo against the truth over the genera met, |θ − logit know| and θ − logit
+  know; the bar against the truth, `genScore` − know over the genera met (below 0: it under-claims), and the subject's
+  %; genera met and learned; right % since the previous checkpoint; the most openings in 15 questions; the true chance
+  to tell each declared look-alike pair apart (2 choices, average photo, both ways); the genera whose true success on a
+  **hard reference question** (one photo alone, difficulty + 1 plus the single view's 0.5, 4 choices: the genus and its
+  3 most confusable slate genera; `LEARNER.REF_D`) is `LEARNER.REF_OK` 0.9 or more; the genera that entered the exam,
+  and their true reference success then and when learned; the exam, held-out, duel, Find the X and Again questions and
+  the cards so far; the field row ("Field learner and the Custom-8 scenario") and rule L11's levels, score and plateau
+  ("Validating a learning change"). Per run: the question at which each genus was first met (`metAt`, printed as the
+  median per profile for the genera of `--met`, by default Acropora, Porites, Pocillopora, Montipora and Millepora; a
+  run where one was not met counts as later than the last question), the time to credit, and with `--ach` the answer at
+  which each achievement first came.
+- **By photo count**: the slate genera with at most `LEARNER.FEW` 14 game photos against those with at least
+  `LEARNER.MANY` 20, at each checkpoint: the share of questions showing a photo the learner had already been shown, the
+  right % on all and on those repeats, bar − know and θ − logit know over the genera met, genera learned; and, pooled
+  over the runs, the genera that entered the exam or were learned, their true reference success then and the median
+  question.
+- **Photo exposure** (in `--out` only): each question's unit, colony and photos (`expo`), each unit's game photos with
+  their colony (`pool`, in seed 1's run) and, for each question, whether its unit was under Open Water, the lowest
+  judged ease, a phase and the variant kind shown (`preOW`): the repeat rates, the photos never shown and the answers
+  per photo ("Photo exposure").
+- **Limits**: the learner is ours (above); the photo difficulty it meets is the app's own estimate, so photo
+  calibration cannot be judged, unless `--truth` fixes the world; the item learner learns per genus only (a duel or a
+  montage teaches the two genera, not the pair as such; the field learner below adds pairs and the size of the set); no
+  forgetting but across `--breaks`, no fatigue, and a learner that never quits; each profile is one fixed player, so the
+  spread over the seeds is the draws', not who knows what. θ is clamped to `ELO.lo`..`hi` (−1.5..3), so a genus known
+  at 2% always shows an error of about 2.4 there. Since the learner's guesses beat 1 in k (it rules out the choices it
+  knows), a θ that fits its answers sits a little above logit know: a negative θ − logit know is an under-estimate, not
+  an artefact.
+
+### Field learner and the Custom-8 scenario
+
+A second learner and a scenario, for what a bar at 100% asks: telling a photo of the genus from any slate genus,
+whatever the player has unlocked. The item learner recognises a genus whatever the competitors, so drilling 8 genera
+raises its knowledge exactly as drilling 40 would.
+
+- **Field learner** (`--learner field --tau T`, τ 0.5 by default; `LEARNER.FIELD`): it keeps `know[g]` and its
+  teaching, and adds a contrast skill x per pair of genera, starting at the lower starting know of the two and learned
+  only when the pair is contrasted: each other wrong choice shown beside the genus asked gains rate ×
+  `LEARNER.FIELD.PAIR` 1, the genus wrongly given rate × 1.5 (the montage). A question on t among the set V (its
+  choices; on a typed question the genera met, the names it holds in mind) is right with the Luce choice
+  P = 1 / (1 + e^(d + 0.5·single − memory) · Σ_{c∈V, c≠t} r(t, c)),
+  r(t, c) = (1 + 3 s(t, c))(1 − 0.5 know[c] g)/4 · (1 − know[t])^(A g), g = τ + (1 − τ) x(t, c), s as for the item
+  learner, A = `LEARNER.FIELD.A` 1.6. Every genus held in mind adds its own odds of a mix-up,
+  look-alikes most (set size, and pooled confusion); τ (transfer) is the share of what the learner knows of t, in log
+  odds, that works against a genus it was never contrasted with. A is set so that, with every pair contrasted at know
+  0.5 and 4 easy choices, it answers 0.75 as the item learner. Wrong, it names c in proportion to r(t, c) (typed: "I
+  don't know" half the time). The item learner stays the default and its runs are unchanged.
+- **Custom-N scenario** (`--custom N --drill D`, D 200 by default): the player plays the Quiz until N genera are
+  unlocked, picks the first N it met in the custom quiz, plays D questions there (the real custom quiz: its draw,
+  choices, typed questions, Again, duels; no exam), then goes back to the Quiz. A row at the end of the drill gives the
+  selection's own bar, truth and overclaim.
+- **Measures** (`tools/fieldeval.js`, declared before the runs; rule L11 tier 2; checkpoints `--at` 300, 600 and 1000
+  by default). The truth is pOpen(t), each learner's own success on an average photo of t with every slate genus a
+  possible answer.
+  - **Primary 1, overclaim** (`over`): per run, the mean over the genera met of (bar shown, `genScore`) − pOpen, at
+    question 600. Above 0: the bar claims more than the player can do against the whole slate.
+  - **Primary 2, precision of Learned** (`precL`): per run, the share of Learned genera with pOpen ≥ `LEARNER.PREC`
+    0.8, at question 1000 (a run with no Learned genus has none: their number is given).
+  - Secondary, descriptive: over+ = mean of max(0, bar − pOpen), pOpen over the genera met, the bar, the genera
+    learned, and with `--custom` the selection's own bar, pOpen and overclaim at the end of the drill.
+  - Inference: mean and 95% t interval over the seeds; each file against the first on the same seeds (paired), the
+    sign-flip p over the seeds and Holm over the profiles for each primary. Everything else is exploratory.
+- **Real answer log** (`node tools/fieldeval.js --log answers.json`; tier 3, rule L12, read-only): does the number of
+  genera a player had been asked so far (x = log2 of it, this one included; the log records no cards, so a genus opened
+  but not yet asked is left out) predict right or wrong beyond the app's logged expectation e? M1 = logit e + a + b x
+  against M0 = logit e + a, each fitted on the other players and scored on the player left out; players are the unit
+  (each one vote), sign-flip over players, declared direction M1 lower with b < 0. Descriptive: b on every player, the
+  players' own b (those with `--min` 30 answers or more), typed answers apart.
+
+### The judge: the domain score D\*
+
+The yardstick a progress bar is judged by (docs/reviews/2026-11-06-progress-metric-research.md): 100% means naming
+right every photo of the unit, alone, without choices, over the unit's photo distribution, easy to hard. Every candidate
+bar is judged by it in several learner worlds.
+
+- **D\*(g)** (`tools/learnsim.js` `JUDGE`): the learner's true success naming a photo of g alone (one view, so the
+  single-view offset), with no choices, averaged over N(μ_g, SD²) by Gauss-Hermite with 7 points. Item learner: its
+  recognition, no guess. Field and exemplar learners: every slate genus is a possible answer (for a unit outside the
+  slate, the units of its own kind). μ_g and SD: with `--truth gen`, the sheet's genus offset and `JUDGE.SD` 0.8 (an
+  assumption); with a truth file, its `gd` and its `sd` (else 0.8); otherwise the mean and the spread of the app's own
+  difficulties of g's photos, its held-out ones included. learnsim keeps D\* and the bar shown per genus met.
+- **The exemplar learner** (`--learner exemplar`, `LEARNER.EX`: K 8, R 0.6, D 8, B 0.03): a summed-similarity model
+  after the GCM (Nosofsky 1986), with a background (guessing) term. Every photo shown is stored as an exemplar of the
+  genus shown, a miss's montage stores a typical photo of the genus given, and prior know counts as know / (1 − know)
+  typical exemplars (50 at most). A photo of difficulty d sits at atypicality R σ(d) (plus the single view's offset);
+  its similarity to an exemplar of c is exp(−K √(D_tc² + r² + r_e²)), the very same photo exp(−K D_tc), with D_tc = D
+  (1.1 − s(t, c)); P(t) = S_t / (Σ_V S_c + B), S_c the summed similarity to c's exemplars. It is the third world,
+  beside item and field: a genus never stored does not compete, so a drilled genus is truly named right.
+- **The spotty profile** (`spotty`): knows the genera of IMR lecture groups 1-5 as an expert (0.93) and the rest
+  hardly (0.05), learning rate 0.08: a rule that borrows from the global level is checked on the genera it does not
+  know.
+- **`tools/barjudge.js`** (offline, reads learnsim's `--out` files) reports:
+  - the error E(g) = bar − D\*(g), signed, per profile at questions 100, 300, 600 and 1000, over the genera met, and
+    mean |E|;
+  - E split into the genera the profile knows and the others, and at the end of a Custom-N drill into the drilled
+    genera and the others;
+  - the time to credit (the questions from a genus's first answer until its bar reaches 50% and 80%, median over the
+    genera the profile knows, and the question at which their mean bar does);
+  - with `--bar field|scoreOf --core <core.js>`, another rule's bar replayed on the same answers (an approximation: the
+    run's own answers, its own learned marks);
+  - with `--log`, the real log's calibration of the app's predicted success by tercile of ability − photo difficulty
+    (players as the unit, leaving one player out).
+
+### What was measured with them
+
+In the notebook, with their dates: the calibration of the opening's pace (`OPEN.K` and `OPEN.P`, the slope that
+replaced the switch, the first-meeting cards) and its first exploration; the learning-outcome baseline of 2026-11-02;
+the long runs' memory; **Open all: the app's expectation against the truth** (the starting ability of the genera opened
+at once over-estimates them for a beginner or a lecture-level RA; measured, not changed); the field learner's results
+and Pierre's Custom-8 scenario; the real-log test of the set size; and the judge's first design (the primaries
+declared in #624).
 
 ## Decision log
 
