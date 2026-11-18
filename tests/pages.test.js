@@ -139,7 +139,7 @@ test('pagesClean (the sheet side): known shapes only, numbers clamped, no free t
 
 // The summary the app sends (sync.js pagesSend): the screen, rounded, inside it once the sheet keeps it (VIEWPORT_SHEET,
 // rule D4); before, the summary as it always was. No other field is added.
-test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, nothing before', () => {
+test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summary without it before', () => {
   const fs = require('fs'),
     path = require('path'),
     vm = require('vm'),
@@ -153,9 +153,6 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, nothing 
           viewportOf: C.viewportOf,
           pagesTake: () => ({r: {'practice.quiz': [1, 30]}, g: {}}),
           PV: {},
-          PAGES: C.PAGES,
-          SHEETV: 'sv',
-          store: {get: () => v},
           PVI: 'visit0001',
           answersSoFar: () => 12,
           pvOwner: () => 'a:dev0000001',
@@ -177,7 +174,10 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, nothing 
   assert.deepStrictEqual(plain(run(N)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N + 3)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N - 1)), [['pages', base]], 'an older script: the summary as before');
-  assert.deepStrictEqual(plain(run(C.PAGES.SHEET - 1)), [], 'before the Pages tab: nothing');
+  // No Pages-tab gate any more (the floor of #1076): a summary is always sent, without the screen below VIEWPORT_SHEET,
+  // also before any reply (no version known yet).
+  assert.deepStrictEqual(plain(run(1)), [['pages', base]], 'an old script: the summary, no screen');
+  assert.deepStrictEqual(plain(run(undefined)), [['pages', base]], 'no version yet: the summary, no screen');
   // What the sheet keeps of it is what was sent (pagesClean takes the app's rounded values as they are).
   const [[, sent]] = run(N);
   assert.deepStrictEqual(plain(C.pagesClean(sent)).vp, sent.vp);
