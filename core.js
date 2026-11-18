@@ -1092,8 +1092,7 @@
   const REF_LOOK = /^p1g0s[lm][1s]$/;
   // The look's last letter is the count: one kind of fish (1 or s), never a photo with other species in view (o, k, the
   // legacy m) or an unclear subject (x), rule P3 (Codex review #660; o is in play, not a reference: Q323).
-  const refLevel = p =>
-    !!p && (p.e || 0) >= 4 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7));
+  const refLevel = p => !!p && (p.e || 0) >= 4 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7));
   const refFirst = p => (refLevel(p) ? 0 : 1);
   // A photo's judged phase (Pierre, 2026-11-07: a progressive path that presents juveniles, colour phases and sexual
   // dimorphism; docs/LEARNING.md "Juveniles and colour phases in stages"): its record's phase word ph (juvenile, male,
