@@ -38,7 +38,7 @@ that source, for example "Randall (2005) describes it as a mimic".
 
 ### 1.1 Data from the repository [measured]
 
-All counts are from `main` at 00f82557.
+All counts are from `main` at 00f82557, and were run twice with the same result; no data file read here changed up to 6fe951a3.
 
 **Fish: who sees each species near Dauin.**
 
