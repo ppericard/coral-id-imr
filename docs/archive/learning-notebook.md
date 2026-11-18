@@ -4,7 +4,7 @@ The studies, measurements, options weighed and not adopted, and first versions o
 [`docs/LEARNING.md`](../LEARNING.md) so that file can describe the algorithms in force. Each part below is a section of
 LEARNING.md copied word for word, with its dates, question numbers, PR numbers and Pierre's words, as it stood when it
 moved: "The player's own model (app)" at `origin/main` `2b4277ac`, "Pooled statistics: photo difficulty and
-confusions" at `8f3752bb` (both 2026-11-18). Its relative links were given `../` so they still resolve from this
+confusions" at `7d57ce92` (both 2026-11-18). Its relative links were given `../` so they still resolve from this
 folder; the section names it cites are those of LEARNING.md then and are not kept up to date.
 
 Where this notebook and LEARNING.md or the code differ, LEARNING.md and the code say what runs now: a value or a rule
