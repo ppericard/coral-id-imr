@@ -5910,6 +5910,67 @@ targeting removes it. So this goes in after #678. Today's pool (1,935 photos, 5 
 37.2% → 35.7%, repeats 8.7% → 8.0%. With pools this big the fish repeats are low already; the re-measure at about 500
 fish answers is in ROADMAP (Q193).
 
+### No photo twice in a few questions (2026-11-18)
+
+A player's report (2026-11-17, corals, Practice › Quiz): "Same picture twice in a row". The answer log confirms it: near
+the start of a session her 8th and 10th answers, a minute apart, showed the same Porites photo, a Lobophyllia question
+between them, all three answered right in the plain 4-choice quiz.
+
+- **The cause: the questions planned ahead.** The photo quiz chooses up to `AHEAD` (3) questions ahead (`quiz.js`
+  `planNext`, "Questions planned ahead"): while her 7th question was on screen it chose the 8th, 9th and 10th, so the
+  10th was drawn while the 8th was only planned. The draw's two memories of what was shown, the photo memory (`s.ps`)
+  and the colonies held back (`s.ro`, the last 2 questions on the unit), are both written when a question is answered,
+  so neither held the 8th's colony back; with every answer right nothing dropped the queue. A beginner's Porites draw
+  leans on the few colonies near the aim, so two draws made blind to each other often met on the same one. Not the
+  other causes considered: the opening's hold and a comeback only aim the photo lower (`holdEase`, ln R), whatever
+  pool they draw from the two draws stayed blind to each other; and the memory is keyed by the photo's file as the log
+  names it (one entry, one observation in `data.json`), which the log's "New photos" (1 at the 8th, 0 at the 10th)
+  confirms once the 8th was answered. Reproduced in `tests/nophototwice.test.js` with `quiz.js`'s own `planNext` and `planPhoto` and
+  `model.js`'s own `photoSet` on stubs: on `main` 10 of 40 seeded sessions planned one Porites colony twice, one
+  question apart (and the Duel tab's next duel repeated the one on screen in 9 of 40).
+- **The fix, in the shared draw** (`model.js` `SEENQ`, `seenAges`, `leastRecent`): the draw also reads the session's
+  own window, the photos of the last `RECENT` questions shown (`seenAdd`, from `quiz.js` `question`, every game that
+  shows a photo question: the quiz, the custom quiz, the Duel tab; and `live.js` `liveBuild`, the live game the host
+  shows to the class) and of the questions planned (the `NEXTQ` queue, read when drawing, so a plan dropped leaves
+  nothing behind). In `photoSet` a colony (an observation: a fish's other photos too) shown or planned there is not
+  drawn while the unit has another one it can show, right after the exploration share's filter and before the variety,
+  the floor and the cap under ease 4, which then work on the others; with every colony of the unit in the window, the
+  one shown longest ago. It never leaves only the colonies the draw holds back: before Open Water the hard ones
+  (`RARE`: with every easy colony in the window, `rareCap` would have nothing easy to cap against and a hard photo would
+  come at full weight) and the variants not released yet (`varOf`); with every colony at full weight in the window, the
+  one of them shown longest ago stays, as the exploration share keeps the seen easy ones (Codex review #729). The corals
+  have neither, so their draw takes the window alone. `examSet` takes the same filter on its photos. A photo counts by its file and by its
+  observation; a Find the X counts its four tiles.
+- **N = `RECENT` (10)**: the game's own "recent" (a unit's recent results and the global record's `h` are its last 10
+  answers), wider than `AHEAD` so the questions planned and the last ones shown both fit. In memory only (a session),
+  nothing synced or replayed: the persistent memories (`s.ps`, `s.ro`) and the photo memory's effect on the expectation
+  are unchanged.
+
+**The check (rule L11, level 1)**: small and local, the draw changes only where a colony shown or planned in the
+last 10 questions would come again (on `main` 0.2-0.8% of the coral questions and about 0.1% of the fish ones repeat
+one within 10, `near` below); the aim, the bar, the opening and the scoring are untouched. Declared before running: the
+app world (`tools/learnsim.js`, item learner, 300 questions, `main` 405fdbc7 against the change on the same seeds), the
+corals then the fish, their profiles, 5 seeds; primary `near@300:down` (`tools/learncmp.js` `near`: the share of
+questions showing a colony, or a photo, shown in the 9 questions before), pooled over the profiles; the guardrails of
+the table above. The paired runs part within their first 5-20 questions (the window changes which colony a random
+draw lands on, not only the repeats), so the pairs are close to unpaired and 5 seeds read wide. Each subject's first
+look had one guardrail cell not held, so a second look was declared before it ran (seeds 1-30 for the corals, 1-20 for
+the fish, `--looks 2`; still not held: to the integrator, no third look). 34 minutes of compute in all.
+
+| | Corals, look 1 (5 seeds) | Corals, look 2 (30 seeds) | Fish, look 1 (5 seeds) | Fish, look 2 (20 seeds) |
+| --- | --- | --- | --- | --- |
+| **near@300** (primary), by profile | 0.3-0.8% → 0 | 0.2-0.5% → 0 | 0-0.1% → 0 | 0.1% → 0 |
+| pooled sign-flip | p 3e-5, clear | p 1e-5, clear | p 0.06, not clear | p 1e-5, clear |
+| guardrails not held | beginner plateau +18 [+36] breached; 9 cells unclear | beginner plateau +4 [+12] unclear (margin +11) | beginner E +0.041 [+0.086] breached | none |
+
+True knowledge at 300 within ±0.005 for every profile in both looks (bounds within −0.003 of 0); the fish share under
+ease 4 before Open Water +0.001 to −0.003 (bounds ≤ +0.007, margin +0.05); right % within ±1.5 points. The corals'
+beginner plateau (the longest stretch without a new high of the shown score, 56 → 60 answers at 30 seeds) stays unclear
+by a point of its bound: the integrator's call under rule L11 (a step up, or to Pierre). The sea slugs have no learnsim
+mode: not simulated (the draw is the same code; the unit tests are subject-neutral). **Real log** (rule L12): a replay
+cannot judge a draw change (the change asks other photos); what was read instead is the report's own rows (the 8th
+answer right, the 10th a plain 4-choice question, so the queue planned at the 7th was kept), on the sheet, read-only.
+
 ### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
 Pierre asked whether part of a photo's difficulty can be shared, so that a new photo starts from what similar photos
@@ -6475,7 +6536,7 @@ exam are the app's own. Only the planner is written there, as `quiz.js` `planPho
 the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
 `distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
 every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
-`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+`confTerm`), the last two observations held back (`s.ro`), the session's window of photos shown (`seenAdd`; one question at a time there, no queue), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
 photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
@@ -7063,6 +7124,10 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-18, a player's report (2026-11-17, "Same picture twice in a row"; "No photo twice in a few questions"): the
+  draw reads the session's last `RECENT` questions shown and those planned ahead, and a colony there is not drawn while
+  the unit has another (never leaving only the colonies held back before Open Water or as variants). Level 1; the
+  corals' beginner plateau unclear at the second look, the integrator's call.
 - 2026-11-17, Q391 (Pierre, 10:52 Manila: "Q391 a oui, b oui"), #953 rebuilt ("Juveniles and colour phases on their
   unit's mastery"): the fixed stage of 2026-11-15 replaced by a ramp of each unit's own bar per variant kind (`core.js`
   `VAR_AT`: early-class juveniles from the start, the other juveniles and the sexes and colour phases from Open Water to

@@ -328,9 +328,14 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     keys.forEach(k => mem[k] && !(keep && hs[k] < 1) && (sc[k] = 0));
   }
   // No photo twice in a few questions (SEENQ, above): a colony shown or planned in the session's last RECENT questions
-  // waits while another can be drawn, before the variety, the floor and the cap, which then work on the others.
+  // waits while another can be drawn, before the variety, the floor and the cap, which then work on the others. It never
+  // leaves only colonies the draw holds back (before Open Water the hard ones, RARE; the variants not released yet, V):
+  // with every colony at full weight in the window, the one of them shown longest ago stays, as the exploration keeps
+  // the seen easy ones above.
   const live = keys.filter(k => sc[k] > 0),
-    fresh = new Set(leastRecent(live, k => phs[k]));
+    fresh = new Set(leastRecent(live, k => phs[k])),
+    whole = k => !(rare && hs[k] >= 1) && phMul(k) >= 1;
+  if (live.some(whole) && ![...fresh].some(whole)) leastRecent(live.filter(whole), k => phs[k]).forEach(k => fresh.add(k));
   live.forEach(k => fresh.has(k) || (sc[k] = 0));
   const top = Math.max(0, ...Object.values(sc));
   keys

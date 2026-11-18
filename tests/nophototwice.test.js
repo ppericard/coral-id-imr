@@ -244,3 +244,41 @@ test('the mastery exam never asks a photo shown or planned in the window while a
   G.seenAdd(['quiz', 'Porites', [], '', {shown: [G.L.Porites[2]]}]);
   for (let i = 0; i < 10; i++) assert.notStrictEqual(G.examSet('Porites').shown[0].f, 'Porites2');
 });
+
+// The window never leaves only the colonies the draw holds back (model.js photoSet, whole): before Open Water the hard
+// ones (RARE), the variants not released yet (V). tests/rareease.js's harness: one fish family, one photo an observation.
+const RE = require('./rareease.js');
+const shownQ = f => ['quiz', 'u', [], '', {shown: [{f, o: f}]}];
+test('before Open Water: every easy photo in the window, the one shown longest ago, never a hard one for it', () => {
+  const L = [
+    {f: 'e0', o: 'e0', e: 4},
+    {f: 'e1', o: 'e1', e: 5},
+    {f: 'e2', o: 'e2', e: 4}
+  ];
+  for (let i = 0; i < 60; i++) L.push({f: `h${i}`, o: `h${i}`, e: 1 + (i % 3)});
+  const E = RE.engine('fish', L, {score: 0.2});
+  ['e1', 'e0', 'e2'].forEach(f => E.seenAdd(shownQ(f)));
+  let hard = 0,
+    e1 = 0;
+  const N = 600;
+  for (let i = 0; i < N; i++) {
+    const f = E.photoSet('u', null, 0, 4, 'k4').shown[0].f;
+    if (f[0] === 'h') hard++;
+    if (f === 'e1') e1++;
+  }
+  assert.ok(hard / N <= E.RARE.SHARE + 0.03, `under ease 4: ${hard} of ${N}`);
+  assert.strictEqual(e1 + hard, N, 'the easy photo shown longest ago, the others in the window wait');
+});
+test('the variants on their ramp: every adult photo in the window, the one shown longest ago stays beside them', () => {
+  // Between Open Water and Advanced (score 0.65) a class C juvenile weighs part of an adult photo (model.js varOf): with
+  // every adult in the window and none kept, only juveniles would be left to draw.
+  const L = [0, 1, 2].map(i => ({f: `a${i}`, o: `a${i}`, e: 4, t: 'Xus a'}));
+  for (let i = 0; i < 20; i++) L.push({f: `j${i}`, o: `j${i}`, e: 4, t: 'Xus a', ph: 'juvenile'});
+  const E = RE.engine('fish', L, {score: 0.65, juv: {cls: 'C'}});
+  ['a2', 'a0', 'a1'].forEach(f => E.seenAdd(shownQ(f)));
+  const D = Array.from({length: 600}, () => E.photoSet('u', null, 0, 4, 'k4').shown[0].f),
+    adult = D.filter(f => f[0] === 'a');
+  assert.ok(adult.length > 0 && adult.every(f => f === 'a2'), 'the adult shown longest ago, the two others wait');
+  // One adult of three left: about a third of the adults' share with no window (158 of 600 measured); none without it.
+  assert.ok(adult.length > 30, `the juveniles stay on their ramp: the adult ${adult.length} of 600`);
+});

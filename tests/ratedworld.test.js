@@ -272,7 +272,8 @@ test('the question: every choice counts from 2 traps, the hold and the mix-ups a
       confTerm: () => 0.2,
       introduced: () => true,
       TYPED: {k: Infinity},
-      photoSet: (t, skip, shift, k, f) => ((calls.photo = {skip, shift, k, f}), {shown: [{f: 'p'}]})
+      photoSet: (t, skip, shift, k, f) => ((calls.photo = {skip, shift, k, f}), {shown: [{f: 'p'}]}),
+      seenAdd: q => (calls.seen = q[4].shown[0].f) // shown: the session's window (model.js SEENQ)
     },
     ctx = {shuffle: a => a, Math: {random: () => 0.5}},
     G = {a: {cover: 'cov.webp'}};
@@ -280,6 +281,7 @@ test('the question: every choice counts from 2 traps, the hold and the mix-ups a
   let q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd'], cards: ['a'], start: true});
   assert.strictEqual(q.k, 4);
   assert.deepStrictEqual(calls.photo, {skip: 'cov.webp', shift: -0.7, k: 4, f: 'k4'});
+  assert.strictEqual(calls.seen, 'p');
   assert.strictEqual(calls.trapsEase, -0.5);
   calls.traps = 1;
   q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd']});
