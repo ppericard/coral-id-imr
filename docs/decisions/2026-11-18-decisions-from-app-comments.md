@@ -1,7 +1,8 @@
 # Decisions from the app's code comments: kept here when the comments were cleaned
 
-Date: 2026-11-18. PR: #1124, the comment clean-up of `model.js`, `app.js`, `quiz.js` and `sync.js`. Rules or docs touched: none
-(rule W19: history stays in git and the PRs, decisions in `docs/decisions/`).
+Date: 2026-11-18. PR: #1124, the comment clean-up of `model.js`, `app.js`, `quiz.js` and `sync.js`. Rules touched: none (rule W19:
+history stays in git and the PRs, decisions in `docs/decisions/`). Docs touched: a stale `model.js` `easyFirst` citation
+in docs/ARCHITECTURE.md and docs/HANDOVER.md.
 
 ## Context
 
@@ -64,6 +65,13 @@ Each line: the date, Pierre's words as written (French where he spoke French), w
   now" the card comes back at most once, OPEN_AGAIN answers later. `app.js` `openOfferDue`; `core.js` `openState`.
 - 2026-11-08: "on the home page on desktop we have the Corals | Fish switch twice". On Home the header's subject control
   steps aside (kept invisible, so the header keeps its size), Home's own row being the switch there. `app.js` `route`.
+- 2026-11-04: "one path for the quiz, the duels, Memory and any future game or mode, no exceptions". Every game draws
+  from the units the photo quiz has unlocked and opens none (rule L4). `model.js` `unlocked`; docs/LEARNING.md "One
+  progression path for every game".
+- 2026-11-02, "a little duel back in the quiz, automatically": look-alike duels slipped into the photo quiz. `quiz.js`
+  `planPhoto`, `CONTRAST`; docs/LEARNING.md "Look-alike duels slipped into the photo quiz".
+- 2026-11-02, an RA tester's words, taken up: "after all IMR ones have been introduced/reviewed". The bonus genera are
+  offered once every slate genus has been asked, not just met. `quiz.js` `bonusOfferShow`; `app.js` `UNITS` coral sets.
 - 2026-11-02, on asking players for feedback: people answer a tap, not "any comments?". The one-tap question between an
   answer and the next question. `quiz.js` `PULSE`, `pulseAsk`; docs/LEARNING.md "What the players say about the
   difficulty".
