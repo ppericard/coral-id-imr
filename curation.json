@@ -3417,18 +3417,6 @@
       "view": "wide",
       "where": "quiz · level auto",
       "at": "2026-11-05T12:04:12.981Z"
-    },
-    "hydnophora-cand-245794783": {
-      "genus": "Hydnophora",
-      "view": "medium",
-      "where": "quiz · level auto · lightbox",
-      "at": "2026-11-05T12:01:06.081Z"
-    },
-    "lithophyllon-cand-358993100": {
-      "genus": "Lithophyllon",
-      "view": "wide",
-      "where": "quiz · level auto",
-      "at": "2026-11-05T12:05:24.666Z"
     }
   },
   "seen": {
@@ -3935,7 +3923,12 @@
     "cand:turbinaria-cand-611606954": 1,
     "cand:turbinaria-cand-675778278": 1,
     "rep:mvxhsphed2y4": 1,
-    "rep:mw1ae2fhxeyx": 1
+    "rep:mw1ae2fhxeyx": 1,
+    "rep:mw5oqkyvzgr1": 1,
+    "rep:mw5owi758ad3": 1,
+    "rep:mw5ox7en7h4m": 1,
+    "rep:mwkhig87tpxy": 1,
+    "rep:mwki67ewldww": 1
   },
   "mont": {
     "Acropora|Cyphastrea": {
@@ -9552,7 +9545,6 @@
       "fish-s117-cand-360975247": "s117",
       "fish-s117-cand-435188446": "s117",
       "fish-s117-cand-530163513": "s117",
-      "fish-s117-cand-537385099": "s117",
       "fish-s117-cand-542195139": "s117",
       "fish-s117-cand-573564918": "s117",
       "fish-s117-cand-576051666": "s117",
@@ -10984,7 +10976,6 @@
       "fish-s276-cand-3007908": "s276",
       "fish-s276-cand-312623051": "s276",
       "fish-s276-cand-555050792": "s276",
-      "fish-s276-cand-580253880": "s276",
       "fish-s276-cand-709576844": "s276",
       "fish-s277-cand-485352776": "s277",
       "fish-s277-cand-501522413": "s277",
@@ -11615,7 +11606,6 @@
       "fish-s344-cand-605724991": "s344",
       "fish-s344-cand-641685432": "s344",
       "fish-s344-cand-641685437": "s344",
-      "fish-s344-cand-688399674": "s344",
       "fish-s344-cand-688440944": "s344",
       "fish-s344-cand-757038030": "s344",
       "fish-s345-cand-428322475": "s345",
@@ -16253,7 +16243,7 @@
         "fish-s117-cand-435188446": "ate",
         "fish-s117-cand-530163513": "ate",
         "fish-s117-cand-537385079": "r",
-        "fish-s117-cand-537385099": "ate",
+        "fish-s117-cand-537385099": "ate@tooirr",
         "fish-s117-cand-537385113": "r",
         "fish-s117-cand-542195139": "ate",
         "fish-s117-cand-573564918": "ate",
@@ -18840,7 +18830,7 @@
         "fish-s276-cand-312623048": "r",
         "fish-s276-cand-312623051": "ate",
         "fish-s276-cand-555050792": "ate",
-        "fish-s276-cand-580253880": "ate",
+        "fish-s276-cand-580253880": "ae@tooiqf",
         "fish-s276-cand-580253911": "r",
         "fish-s276-cand-580253927": "r",
         "fish-s276-cand-709576844": "ate",
@@ -19716,7 +19706,7 @@
         "fish-s344-cand-664956062": "?r",
         "fish-s344-cand-664956079": "r",
         "fish-s344-cand-674392902": "r",
-        "fish-s344-cand-688399674": "ate",
+        "fish-s344-cand-688399674": "ae@toois5",
         "fish-s344-cand-688440944": "ate",
         "fish-s344-cand-726145254": "r",
         "fish-s344-cand-730592943": "?a",
@@ -52103,119 +52093,11 @@
       "fish-s683-cand-61443860": 3,
       "fish-s683-cand-690940792": 4
     },
-    "flag": {
-      "i283973888": {
-        "file": "fish-s371-cand-283973888",
-        "unit": "f:Scorpionfishes",
-        "sp": "s371",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto · lightbox",
-        "at": "2026-11-07T10:06:06.110Z"
-      },
-      "i537385099": {
-        "file": "fish-s117-cand-537385099",
-        "unit": "f:Damselfishes",
-        "sp": "s117",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:54:28.758Z"
-      },
-      "i580253880": {
-        "file": "fish-s276-cand-580253880",
-        "unit": "f:Soldierfishes",
-        "sp": "s276",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:46:13.124Z"
-      },
-      "i592234291": {
-        "file": "fish-s183-cand-592234291",
-        "unit": "f:Sweetlips",
-        "sp": "s183",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-08T11:43:48.118Z"
-      },
-      "i614420723": {
-        "file": "fish-s057-cand-614420723",
-        "unit": "f:MoorishIdol",
-        "sp": "s057",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-09T03:45:01.198Z"
-      },
-      "i617805777": {
-        "file": "fish-s350-cand-617805777",
-        "unit": "f:Filefishes",
-        "sp": "s350",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-08T11:47:01.609Z"
-      },
-      "i617818832": {
-        "file": "fish-s351-cand-617818832",
-        "unit": "f:Filefishes",
-        "sp": "s351",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-06T10:58:16.776Z"
-      },
-      "i624479889": {
-        "file": "fish-s506-cand-624479889",
-        "unit": "f:Angelfishes",
-        "sp": "s506",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-08T12:04:10.505Z"
-      },
-      "i625984460": {
-        "file": "fish-s164-cand-625984460",
-        "unit": "f:Anthias",
-        "sp": "s164",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:45:51.629Z"
-      },
-      "i680457203": {
-        "file": "fish-s008-cand-680457203",
-        "unit": "f:Butterflyfishes",
-        "sp": "s008",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:32:25.010Z"
-      },
-      "i688399674": {
-        "file": "fish-s344-cand-688399674",
-        "unit": "f:Triggerfishes",
-        "sp": "s344",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto · lightbox",
-        "at": "2026-11-07T00:32:13.919Z"
-      },
-      "i697077919": {
-        "file": "fish-s113-cand-697077919",
-        "unit": "f:Damselfishes",
-        "sp": "s113",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto · lightbox",
-        "at": "2026-11-06T10:57:53.657Z"
-      },
-      "i697735290": {
-        "file": "fish-s187-cand-697735290",
-        "unit": "f:Parrotfishes",
-        "sp": "s187",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-08T11:45:35.178Z"
-      },
-      "i728743801": {
-        "file": "fish-s357-cand-728743801",
-        "unit": "f:Puffers",
-        "sp": "s357",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T09:03:34.972Z"
-      }
+    "exclude": {
+      "fish-s113-cand-697077919": "excluded",
+      "fish-s117-cand-537385099": "excluded",
+      "fish-s356-cand-238271011": "excluded",
+      "fish-s357-cand-728743801": "excluded"
     },
     "genera": {
       "f:Angelfishes": {
@@ -52531,6 +52413,7 @@
       "fish-s008-cand-631371637": 1,
       "fish-s008-cand-655259376": 1,
       "fish-s008-cand-655259413": 1,
+      "fish-s008-cand-680457203": 1,
       "fish-s008-cand-681595125": 1,
       "fish-s008-cand-724524505": 1,
       "fish-s008-cand-753075935": 1,
@@ -53101,6 +52984,7 @@
       "fish-s057-cand-557992890": 1,
       "fish-s057-cand-604828157": 1,
       "fish-s057-cand-605661612": 1,
+      "fish-s057-cand-614420723": 1,
       "fish-s057-cand-691327940": 1,
       "fish-s057-cand-691327942": 1,
       "fish-s057-cand-696138439": 1,
@@ -54819,6 +54703,7 @@
       "fish-s183-cand-587679376": 1,
       "fish-s183-cand-590667426": 1,
       "fish-s183-cand-590667464": 1,
+      "fish-s183-cand-592234291": 1,
       "fish-s183-cand-598784435": 1,
       "fish-s183-cand-614714129": 1,
       "fish-s183-cand-615116008": 1,
@@ -54912,6 +54797,7 @@
       "fish-s187-cand-689546021": 1,
       "fish-s187-cand-697734123": 1,
       "fish-s187-cand-697734154": 1,
+      "fish-s187-cand-697735290": 1,
       "fish-s187-cand-727600180": 1,
       "fish-s187-cand-727600188": 1,
       "fish-s187-cand-727978363": 1,
@@ -56404,6 +56290,7 @@
       "fish-s275-cand-708761879": 1,
       "fish-s275-cand-708761896": 1,
       "fish-s276-cand-312623048": 1,
+      "fish-s276-cand-580253880": 1,
       "fish-s276-cand-580253911": 1,
       "fish-s276-cand-580253927": 1,
       "fish-s277-cand-485347339": 1,
@@ -57278,6 +57165,7 @@
       "fish-s344-cand-664979944": 1,
       "fish-s344-cand-664979949": 1,
       "fish-s344-cand-674392902": 1,
+      "fish-s344-cand-688399674": 1,
       "fish-s344-cand-726145254": 1,
       "fish-s344-cand-760915476": 1,
       "fish-s345-cand-484828375": 1,
@@ -57350,6 +57238,7 @@
       "fish-s350-cand-469859298": 1,
       "fish-s350-cand-469859299": 1,
       "fish-s350-cand-605093200": 1,
+      "fish-s350-cand-617805777": 1,
       "fish-s350-cand-624730270": 1,
       "fish-s350-cand-659432545": 1,
       "fish-s350-cand-669986138": 1,
@@ -57366,6 +57255,7 @@
       "fish-s351-cand-590680664": 1,
       "fish-s351-cand-590680692": 1,
       "fish-s351-cand-590680700": 1,
+      "fish-s351-cand-617818832": 1,
       "fish-s351-cand-635571332": 1,
       "fish-s351-cand-635571371": 1,
       "fish-s351-cand-757063930": 1,
@@ -60364,6 +60254,7 @@
       "fish-s506-cand-601114304": 1,
       "fish-s506-cand-601114307": 1,
       "fish-s506-cand-617950396": 1,
+      "fish-s506-cand-624479889": 1,
       "fish-s506-cand-683157691": 1,
       "fish-s506-cand-756041374": 1,
       "fish-s507-cand-232706035": 1,
@@ -63061,6 +62952,7 @@
       "fish-s008-cand-550884632": "p1g1sm1",
       "fish-s008-cand-596711071": "p1d0sl1",
       "fish-s008-cand-630806619": "p1d1sm1",
+      "fish-s008-cand-680457203": "p1g1sskc",
       "fish-s008-cand-681595071": "o1g1sl1",
       "fish-s008-cand-689970155": "p1d0sl1",
       "fish-s008-cand-710254686": "o1g1sm1",
@@ -63511,6 +63403,7 @@
       "fish-s057-cand-467755839": "p1g1sm1",
       "fish-s057-cand-513265974": "p1g1sl1",
       "fish-s057-cand-513267172": "o1g1sm1",
+      "fish-s057-cand-614420723": "p1g2ssk",
       "fish-s057-cand-748261558": "p1g1sm1",
       "fish-s057-cand-751536596": "p1g1slm",
       "fish-s057-cand-755349154": "p1g1sm1",
@@ -64629,6 +64522,7 @@
       "fish-s183-cand-590667477": "p1g1sm1j",
       "fish-s183-cand-591238635": "d1g1sm1",
       "fish-s183-cand-591238691": "p1g1sm1",
+      "fish-s183-cand-592234291": "d1g1sskj",
       "fish-s183-cand-594815165": "p1g1sm1",
       "fish-s183-cand-594823430": "p1g1sm1",
       "fish-s183-cand-605424807": "p1g1sm1",
@@ -64667,6 +64561,7 @@
       "fish-s187-cand-591498829": "p1g1smmp",
       "fish-s187-cand-683161007": "p1g2sm1p",
       "fish-s187-cand-692682929": "p1g2sl1p",
+      "fish-s187-cand-697735290": "p1g2bskp",
       "fish-s187-cand-743595721": "p1g1sl1p",
       "fish-s188-cand-171204445": "p0g1sl1p",
       "fish-s188-cand-171205210": "o1g1sl1p",
@@ -65468,7 +65363,7 @@
       "fish-s276-cand-3007908": "p1d1sl1",
       "fish-s276-cand-312623051": "o1g1sl1",
       "fish-s276-cand-555050792": "p1g1ssm",
-      "fish-s276-cand-580253880": "o1g2sl1",
+      "fish-s276-cand-580253880": "o1g2slk",
       "fish-s276-cand-709576844": "p1d1sm1",
       "fish-s277-cand-485352776": "p1g1sm1",
       "fish-s277-cand-501522413": "o1g1sm1",
@@ -66099,7 +65994,7 @@
       "fish-s344-cand-605724991": "p1g1sl1",
       "fish-s344-cand-641685432": "p1g1sm1",
       "fish-s344-cand-641685437": "p1g1sm1",
-      "fish-s344-cand-688399674": "p1g2sm1",
+      "fish-s344-cand-688399674": "p1g2smk",
       "fish-s344-cand-688440944": "p1g1sm1",
       "fish-s344-cand-757038030": "p1g1sm1",
       "fish-s345-cand-428322475": "p1g2sm1",
@@ -66153,6 +66048,7 @@
       "fish-s350-cand-527402690": "p1g2ss1",
       "fish-s350-cand-540088103": "p1g2ss1",
       "fish-s350-cand-605118873": "p1g1sl1",
+      "fish-s350-cand-617805777": "o0d1smx",
       "fish-s350-cand-716934326": "p1g1sl1",
       "fish-s350-cand-737458338": "p1g1sm1j",
       "fish-s351-cand-162711391": "p1g1sm1",
@@ -66166,6 +66062,7 @@
       "fish-s351-cand-542673158": "h1g1sl1",
       "fish-s351-cand-542673214": "p1g1sm1",
       "fish-s351-cand-590680645": "p1g1sm1",
+      "fish-s351-cand-617818832": "p1g1slk",
       "fish-s352-cand-244409421": "p1g1slm",
       "fish-s352-cand-244409438": "p1g1sl1",
       "fish-s352-cand-251332363": "p1g1sm1",
@@ -67339,6 +67236,7 @@
       "fish-s506-cand-557431554": "o1g0sl1",
       "fish-s506-cand-595664505": "o1g1sl1",
       "fish-s506-cand-617001840": "p1g0sl1",
+      "fish-s506-cand-624479889": "p1g1ssk",
       "fish-s507-cand-467756524": "p1g0sl1j",
       "fish-s507-cand-617001809": "p1g1sm1j",
       "fish-s507-cand-618351307": "p1g0sl1",
@@ -68849,5 +68747,8 @@
       "fish-s683-cand-61443860": "p1g1sl1",
       "fish-s683-cand-690940792": "p1g1sl1"
     }
+  },
+  "reps": {
+    "mw5oze0ikpnw": "drop"
   }
 }
