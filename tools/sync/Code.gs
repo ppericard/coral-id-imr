@@ -505,11 +505,12 @@ function logAnswers_(name, answers, seen0, dev){
   const rank = (a, sj) => word_(a.rk, W, 20) || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '';
   // v69: a fish answer from an app before the switch to the book's families names an old entry (t01): renamed here to
   // its family (core.js renameLogEntry, the row's species shown deciding a split entry), so the log holds family ids only.
-  // CV (vNEXT): a content version as core.js contentVersion makes it ('c' and a hash53), else blank.
+  // CV (vNEXT): a content version as core.js contentVersion makes it ('c' and a hash53, 16 characters at most), else
+  // blank: a longer text or anything but a text is never cut or read into one.
   const CV = /^c[a-z0-9]{1,15}$/;
   const rows = newIds_(answers.filter(a => a && a.id && ID.test(String(a.id))), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), word_(a.cv, CV, 16)]; });  // v141: Photo answered, as Photos
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // v141: Photo answered, as Photos
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid

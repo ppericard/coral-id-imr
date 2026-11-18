@@ -28,7 +28,8 @@ const ID = /^[a-z0-9]{1,20}$/,
 test('core.js answerId: 16 characters of a-z and 0-9, a letter first, the time then 8 random ones; under the sheet’s 20', () => {
   const now = Date.parse('2026-11-18T02:00:00Z'),
     id = C.answerId(now, [0, 1, 35, 36, 71, 255, 100, 200]);
-  assert.strictEqual(id, now.toString(36) + 'abz' + 'az' + 'v' + 's' + 'k');
+  // byte % 36 into a-z then 0-9: 0 a, 1 b, 35 9, 36 a, 71 9, 255 d, 100 2, 200 u
+  assert.strictEqual(id, now.toString(36) + 'ab9a9d2u');
   assert.strictEqual(id.length, 16);
   assert.match(id, /^[a-z][a-z0-9]{15}$/);
   // The device's crypto: never twice in many answers of the same millisecond, always the sheet's form.

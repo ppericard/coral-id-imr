@@ -657,8 +657,7 @@ let RAW,
   CUR,
   FORMS = {gf: {}, form: {}, cf: {}, gunsure: {}},
   AUTOQ = {},
-  PICKS = {},
-  QUALF = {}; // quality.json as read (AUTOQ is its q): one of the files of the corals' content version (contentVer)
+  PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
 // Identify > Coral ID Key only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
@@ -689,20 +688,21 @@ function build() {
     applyForms(x, CUR);
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
+  // What the corals' units were made from, for the content version of their answers (contentVer), kept out of sight on
+  // the data made (not enumerable: nothing that reads or copies DATA meets it).
+  Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}});
   DATA = d;
-  // What the corals' units were made from, for the content version of their answers (contentVer): made when first asked.
-  DATACV = {S, cur: CUR, st: DATAST, files: [RAW, FORMS, QUALF, PICKS], v: ''};
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The content version of subject S's answers (core.js contentVersion; ROADMAP "Content versions and duplicate-safe
 // answers", Pierre 2026-11-18): from the files, the curation and the structure stamp its units in force were made from
-// (build: DATACV for the corals; fishBuild: cvIn of each tree subject), made once per build, at its first answer (a
-// hash of the subject's part of the curation, a few milliseconds; never at start-up). '' before its units are made, or if
-// it fails: the answer is logged without one, as the rows before it.
-let DATACV = null;
+// (cvIn, kept on them: DATA by build for the corals, a tree subject's FISH by fishBuild), made once per build, at its
+// first answer (a hash of the subject's part of the curation, a few milliseconds; never at start-up). '' before its
+// units are made, or if it fails: the answer is logged without one, as the rows before it.
 function contentVer(S) {
   try {
-    const I = S && UNITS[S.id] && (UNITS[S.id].get ? (TREE_OF[S.id] || {}).cvIn : DATACV);
+    const U = !S || !UNITS[S.id] ? null : !UNITS[S.id].get ? DATA : S.id === TREE_AT ? FISH : (TREE_OF[S.id] || {}).FISH,
+      I = U && U.cvIn;
     return I ? I.v || (I.v = contentVersion(I.S, I.cur, I.files.map(fileVer), I.st)) : '';
   } catch (e) {
     return '';
@@ -1187,10 +1187,10 @@ const fishBuild = () => {
     held = fishHeld(ho, gm.photos && Object.keys(gm.photos).length ? gm.photos : ph.photos, C);
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  // what its units are made from, for the content version of its answers (contentVer): gm '-' or a hash of {photos: {}}
-  // while its game photos have not come (dataPartial)
-  treeOf(S.id).cvIn = {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''};
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
+  // What its units were made from, for the content version of their answers (contentVer), kept out of sight on them (not
+  // enumerable). gm: a hash of {photos: {}} while the game photos have not come (dataPartial), another content.
+  Object.defineProperty(FISH, 'cvIn', {value: {S, cur: CUR, st: FISHST, files: [FISHRAW.f, FISHRAW.ph, FISHRAW.ho, FISHRAW.gm], v: ''}});
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -1369,13 +1369,7 @@ const treeLoad = id => {
           if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
           // game: whether fish-game.json came (without it the units play on their first photos: UNITS fish vars waits).
-          // (fileAs: the game file's ?v= kept on what fishGameRead made of it, for the content version)
-          treeSet(id, 'FISHRAW', {
-            ...raw,
-            gm: gm && gm.photos ? fileAs(gm, fishGameRead(gm)) : {photos: {}},
-            full: true,
-            game: !!(gm && gm.photos)
-          });
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true, game: !!(gm && gm.photos)});
           // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
           // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
           // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
@@ -3889,24 +3883,25 @@ function hdrMetrics() {
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr);
 else addEventListener('resize', hdrMetrics);
 // A missing side file (404) counts as a failure, not as an empty file: softFail says so. A file fetched with a ?v= (the
-// deploy's hash of it, tools/stamp_versions.py; a frozen number on a copy never deployed) keeps it beside what it read
-// (FILEV), the version the answers' content version is made of (fileVer, contentVer).
-const FILEV = new WeakMap(),
+// deploy's hash of it, tools/stamp_versions.py; a frozen number on a copy never deployed) keeps it on what it read,
+// under a symbol (FILEV: never in a JSON, a key list or a structured clone; a copy by spread keeps it, as fishGameRead's
+// of fish-game.json): the version the answers' content version is made of (fileVer, contentVer).
+const FILEV = Symbol('file version'),
   FILEH = new WeakMap();
 const okJson = r =>
   r.ok
     ? r.json().then(j => {
         const m = /\?v=([0-9a-z]+)$/.exec(String(r.url || ''));
-        if (m && j && typeof j === 'object') FILEV.set(j, m[1]);
+        if (m && j && typeof j === 'object') j[FILEV] = m[1];
         return j;
       })
     : Promise.reject(new Error(`HTTP ${r.status}`));
-// The version of a data file as read (o: what okJson gave, or what was made from it, fileAs): its ?v=, else (a file
-// fetched without one: the sea slugs') a hash of its content, made once per copy read; '-' when there is none.
-const fileAs = (from, to) => (FILEV.has(from) && to && typeof to === 'object' && FILEV.set(to, FILEV.get(from)), to);
+// The version of a data file as read (o: what okJson gave, or a copy of it by spread): its ?v=, else (a file fetched
+// without one, the sea slugs'; or what the app made from one, FORMS, AUTOQ) a hash of its content, made once per object;
+// '-' when there is none.
 const fileVer = o => {
   if (!o || typeof o !== 'object') return '-';
-  if (FILEV.has(o)) return FILEV.get(o);
+  if (o[FILEV]) return o[FILEV];
   if (!FILEH.has(o)) FILEH.set(o, 'h' + hash53(JSON.stringify(o)));
   return FILEH.get(o);
 };
@@ -3955,15 +3950,13 @@ const forms = () =>
     .then(okJson)
     .catch(softFail('forms.json', {}))
     // gunsure is a list in the file, a {photo: 1} lookup here (read as an object, every unsure guess counted as sure: PR #577)
-    .then(j =>
-      fileAs(j, {
-        gf: j.gf || {},
-        form: j.form || {},
-        cf: j.cf || {},
-        forms: j.forms || [],
-        gunsure: Object.fromEntries((Array.isArray(j.gunsure) ? j.gunsure : []).map(f => [f, 1]))
-      })
-    )
+    .then(j => ({
+      gf: j.gf || {},
+      form: j.form || {},
+      cf: j.cf || {},
+      forms: j.forms || [],
+      gunsure: Object.fromEntries((Array.isArray(j.gunsure) ? j.gunsure : []).map(f => [f, 1]))
+    }))
     .catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u =>
   getR(u)
@@ -4019,7 +4012,6 @@ const SETUP = {
     FORMS = f;
     CFMAP = f.cf;
     AUTOQ = q.q || {};
-    QUALF = q;
     PICKS = k;
     build();
     loadStats();
