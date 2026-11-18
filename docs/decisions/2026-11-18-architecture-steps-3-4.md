@@ -1,6 +1,6 @@
 # Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits
 
-Date: 2026-11-18. PR: #1143. Rules or docs touched: ARCHITECTURE "Subjects" (tree engine names and the flat subject),
+Date: 2026-11-18. PR: #1146. Rules or docs touched: ARCHITECTURE "Subjects" (tree engine names and the flat subject),
 ROADMAP "Architecture review, steps 3 and 4: what is left", `tests/treenames.test.js`.
 
 ## Context
