@@ -16,15 +16,16 @@ const ROOT = path.join(__dirname, '..'),
 
 const HEADER =
   '// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-08: v7: seven; v6: six; 2026-11-07: v5: five)';
-const HISTORY = '- Version history: v2 Answers/Activity tabs; v7 (2026-11-08) seven; v6 (2026-11-08) six';
 // Since 2026-11-18 (Pierre: "Pourquoi? Juste pourquoi?") line 1 is short and the history lives in tools/sync/HISTORY.md.
 const line1 = (n, date) =>
   `// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION ${n} (${date}). History: tools/sync/HISTORY.md in the repository.`;
 const HIST_TOP = '# Sheet script history\n\nOne entry per version, newest first.\n\n';
 const HIST_MD = HIST_TOP + '## v7 (2026-11-08)\n\nseven\n\n## v6 (2026-11-08)\n\nsix\n\n## v5 (2026-11-07)\n\nfive\n';
 const BODY = '\n// Setup: paste this file.\nconst VERSION = 7;  // assigned at merge\nfunction doGet(){ return 1; }\n';
+// The history is written to HISTORY.md only: --assign never touches ARCHITECTURE.md.
+const ARCH_MD = '# Architecture\n\n- Version history: tools/sync/HISTORY.md.\n- Endpoints: GET.\n';
 const OTHER = {
-  'docs/ARCHITECTURE.md': '# Architecture\n\n' + HISTORY + '\n- Endpoints: GET.\n',
+  'docs/ARCHITECTURE.md': ARCH_MD,
   'core.js': 'const OLD_SHEET = 5;\nconst x = 1;\n',
   'tools/sync/changes/README.md': '# Changes\n\nWrite `' + NEXT + '` in a PR.\n'
 };
@@ -68,7 +69,6 @@ const mainTakesV8 = r => {
   r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
   r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
   r.edit('tools/sync/HISTORY.md', '## v7 (', '## v8 (2026-11-08)\n\nother\n\n## v7 (');
-  r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
 };
 const ok = (r, state) => {
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
@@ -123,8 +123,8 @@ test('a PR that edits VERSION or the header line itself, or carries two changes 
     r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: mine; v7:');
     fails(r.check(), /VERSION 8 and the header line are assigned at merge: keep the base's \(VERSION 7\)/);
     fs.rmSync(path.join(r.d, 'tools/sync/changes/claude-x.md'));
-    // Bumped by hand with no changes file: the header has its entry, but ARCHITECTURE.md was not folded by --assign.
-    fails(r.check(), /docs\/ARCHITECTURE\.md: its version history does not name v8: use --assign/);
+    // Bumped by hand with no changes file: the header has its entry, but HISTORY.md was not written by --assign.
+    fails(r.check(), /HISTORY\.md: VERSION 8, but it is not the base's history with one entry for v8 on top: use --assign/);
     r.edit('tools/sync/Code.gs', 'const VERSION = 8;', 'const VERSION = 9;');
     fails(r.check(), /the header says VERSION 8, its first entry v8, the constant 9/);
   } finally {
@@ -148,7 +148,7 @@ test('a changes file holds one entry with no version number', () => {
   }
 });
 
-test('--assign: the next VERSION, the short line 1, the entry in HISTORY.md and ARCHITECTURE, the gates and placeholders set, the file gone', () => {
+test('--assign: the next VERSION, the short line 1, the entry in HISTORY.md only, the gates and placeholders set, the file gone', () => {
   const r = repo();
   try {
     r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
@@ -171,11 +171,8 @@ test('--assign: the next VERSION, the short line 1, the entry in HISTORY.md and 
     );
     assert.match(gs, /^const VERSION = 8; {2}\/\/ assigned at merge$/m);
     assert.match(gs, /\/\/ Answers 2 \(v8, Pierre\)\./);
-    assert.ok(
-      r
-        .read('docs/ARCHITECTURE.md')
-        .includes('Answers/Activity tabs; v8 (2026-11-09) doGet answers 2 (`doGet`, Pierre, 2026-11-09); v7 (2026-11-08) seven')
-    );
+    assert.strictEqual(r.read('docs/ARCHITECTURE.md'), ARCH_MD, 'ARCHITECTURE.md is left alone');
+    assert.doesNotMatch(a.stdout, /ARCHITECTURE/);
     assert.match(r.read('core.js'), /const OLD_SHEET = 5;\nconst NEW_SHEET = 8;/);
     assert.strictEqual(r.read('docs/notes.md'), `Since v8 the reply is 2; the token \`${NEXT}\` is kept in a code span.\n`);
     assert.ok(!fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')));
@@ -214,7 +211,7 @@ test('--assign then --check agree on an entry with a double space or with spaces
       ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
       assert.strictEqual(r.read('tools/sync/Code.gs').split('\n')[0], line1(8, '2026-11-09'), entry);
       assert.ok(r.read('tools/sync/HISTORY.md').includes(`## v8 (2026-11-09)\n\n${arch}\n\n## v7 (`), entry);
-      assert.ok(r.read('docs/ARCHITECTURE.md').includes(`tabs; v8 (2026-11-09) ${arch}; v7 (`), entry);
+      assert.strictEqual(r.read('docs/ARCHITECTURE.md'), ARCH_MD, entry);
       ok(r.check(), /assigned: v8/);
       r.commit();
       ok(r.check(), /assigned: v8/);
@@ -435,12 +432,12 @@ test('a gate above VERSION or a placeholder with no sheet change fails', () => {
   }
 });
 
-test('the real Code.gs header and ARCHITECTURE.md history take an --assign, which --check then accepts', () => {
+test('the real Code.gs header and HISTORY.md take an --assign, which --check then accepts', () => {
   const r = repo();
   try {
     // As main holds them: a PR branch's own placeholders (its sheet change waiting for its version) are not main's.
     const mark = new RegExp('\\b' + NEXT + '\\b', 'g');
-    for (const f of ['tools/sync/Code.gs', 'tools/sync/HISTORY.md', 'docs/ARCHITECTURE.md'])
+    for (const f of ['tools/sync/Code.gs', 'tools/sync/HISTORY.md'])
       r.write(f, fs.readFileSync(path.join(ROOT, f), 'utf-8').replace(mark, 'the next version'));
     r.git('add', '-A');
     r.git('commit', '-q', '-m', 'real files');
@@ -506,8 +503,8 @@ test('SHEET_FLOOR is not a gate: --check accepts it, --assign leaves it alone', 
 
 // #1083: an entry that names the new version with the placeholder was written into HISTORY.md with the
 // placeholder left in, and --check then refused the assigned tree. Every bare placeholder of the entry becomes vN, in
-// HISTORY.md and ARCHITECTURE.md; one in a code span stays as written, as in the code files.
-test('--assign sets every bare placeholder in the entry it writes to HISTORY.md and ARCHITECTURE.md (#1083)', () => {
+// HISTORY.md; one in a code span stays as written, as in the code files.
+test('--assign sets every bare placeholder in the entry it writes to HISTORY.md (#1083)', () => {
   for (const files of [FILES, SHORT]) {
     const r = repo(files);
     try {
@@ -526,7 +523,6 @@ test('--assign sets every bare placeholder in the entry it writes to HISTORY.md 
         ),
         hist.slice(0, 400)
       );
-      assert.ok(r.read('docs/ARCHITECTURE.md').includes('v8 (2026-11-09) The app sends it only from v8 (`CV_SHEET`); v8 also reads'));
       ok(r.check(), /assigned: v8/);
       r.commit();
       ok(r.check('--main'));

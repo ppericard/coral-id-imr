@@ -1,6 +1,6 @@
 # The short feedback sheet: the verdict, one line, the rest behind More
 
-Date: 2026-11-18. PR: this one (the build); the study, #1097. Rules or docs touched: C3 (reworded in #1097),
+Date: 2026-11-18. PR: #1110 (the build); the study, #1097. Rules or docs touched: C3 (reworded in #1097),
 ARCHITECTURE "The short feedback sheet" and "The More counter", DESIGN "The short feedback sheet", ROADMAP "The feedback
 sheet's decisive lines", `privacy.html`, SECURITY "Pages opened".
 
