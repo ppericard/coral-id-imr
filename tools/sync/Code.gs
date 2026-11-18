@@ -3698,7 +3698,7 @@ function over_(key, limit, n){
 // logged, stored or returned. PCLOUD_HOST (api.pcloud.com, US accounts, or eapi.pcloud.com, EU accounts) is optional:
 // without it the first call tries both. No token, a refused token or a missing authorisation only writes one line to the
 // Deploy log and returns: nothing here runs in a request, under the script lock or in autoUpdate's path.
-// v144: without PCLOUD_TOKEN, the Script Property PCLOUD_UPLOAD_CODE (the code of a pCloud upload link) sends the file
+// Without PCLOUD_TOKEN, the Script Property PCLOUD_UPLOAD_CODE (the code of a pCloud upload link) sends the file
 // through that link instead (backupLink_: no folder made, no retention); with both set, the token path runs and says so.
 const BACKUP = {HOSTS: ['api.pcloud.com', 'eapi.pcloud.com'], PARENT: 'IMR', FOLDER: 'reef-id-sheet-backups', KEEP: 12,
   NAME: /^reef-id-sheet-\d{4}-\d{2}-\d{2}\.xlsx$/, HANDLER: 'backupWeekly', LINK_HOST: 'eapi.pcloud.com', UPLOADER: 'Reef ID backup'};
@@ -3806,7 +3806,7 @@ function backupCode_(v){
   if (m) v = m[1];
   return /^[A-Za-z0-9_-]{4,200}$/.test(v) ? v : '';
 }
-// The upload-link path (v144; Pierre, 2026-11-15: no pCloud OAuth app, an upload link instead, docs/BACKUP.md): one
+// The upload-link path (no pCloud OAuth app, an upload link instead: docs/BACKUP.md): one
 // uploadtolink call (pCloud: "Auth no", required code; nopartial optional) with the .xlsx as multipart/form-data, as
 // uploadfile takes it, to the host PCLOUD_HOST or eapi.pcloud.com (Pierre's account is on pCloud's EU servers). The
 // code is a write-only credential: an upload link can neither list nor delete, so this path keeps every backup (Pierre
