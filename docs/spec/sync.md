@@ -74,7 +74,8 @@ version (`Code.gs` `LOG`). Every reader takes them by position (`answers_`, `sta
 QUERY on A:E): new columns only ever go at the end. A tab with fewer columns reads the missing ones blank (`logRows_`)
 until the next answer adds them (`logAnswers_` inserts the columns before its header check). A row logged before a
 column existed has it blank, and an app that sends no value for a field leaves it blank: the script ignores the fields
-it does not know, so a field that an older script would drop needs no gate unless the app must know it was kept.
+it does not know, so a field that an older script would drop needs no gate (no `*_SHEET`) unless the app must know it
+was kept.
 
 - **Seconds** and **Enlarged**: the answer's time and whether a photo was enlarged (below, "Answer time and
   enlargement"). `readAnswers` rows carry them at indexes 12 and 13 (null when blank), after the anonymous flag (11).
