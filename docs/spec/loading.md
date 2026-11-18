@@ -23,9 +23,9 @@ The files come one tier after the other, so what the player waits for never shar
 2. **The photo quiz**: `model.js` (with the look-alike pairs and their sources the quiz shares with the Learn pages:
    `pairs`, `isClassic`, `mixedUp`, `photoPair`, `shownGroup`, `starNote`), `tips.js` (the "Did you know?" tips'
    registry and rules), `quiz.js`, `progress.js` (each answer updates the achievements, and it opens My progress at
-   once; a sign-in from the tour waits for it), `live.js` (the live mode), with `forms.json`, `quality.json` and
-   `picks.json`, which the draw and the photo slots use: the data is rebuilt with them, then the achievements are
-   counted and the sheet's photo statistics asked for.
+   once; a sign-in from the tour waits for it), `live.js` (the live mode), with `forms.json`, `quality.json`,
+   `picks.json` and `calibration-set.json`, which the draw and the photo slots use: the data is rebuilt with them, then
+   the achievements are counted and the sheet's photo statistics asked for.
 3. **The photos of the next quiz questions** (below), then `learn.js` (the Learn pages).
 4. **The sheet's reads**: the sync, the anonymous answers, the leaderboard, the achievement shares.
 5. **The rest**: `flag.js`, `proto/lab.js` and `proto/lab.css` with the Lab; then the service worker is registered,

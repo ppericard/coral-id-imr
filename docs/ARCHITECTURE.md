@@ -189,6 +189,7 @@ to game.
   [data.md › `data.json`](spec/data.md#datajson-the-served-source-of-truth).
 - **`curation.json` (Pierre-owned; never overwrite in a PR)**: [data.md](spec/data.md#curationjson-pierres-choices).
 - **Suggestion files** and their precedence: [data.md](spec/data.md#suggestion-files).
+- **The calibration set** (`calibration-set.json`): [data.md](spec/data.md#the-calibration-set-calibration-setjson).
 - **Presence of coral species**, **Share-alike coral photos**:
   [data.md](spec/data.md#presence-of-coral-species-presencejson), [share-alike](spec/data.md#share-alike-coral-photos).
 - **Photo rights tie-break**, the rights facet, **The licence refresh**: [data.md › Photo rights](spec/data.md#photo-rights).
