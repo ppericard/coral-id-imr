@@ -225,6 +225,16 @@ def case_commonness():
     return out
 
 
+def case_stubusers():
+    """The made-up world gives each login its own user id, the same on every run (never two logins on one id)."""
+    ids = {}
+    for o in fish_world().obs:
+        ids.setdefault(o["user"]["login"], set()).add(o["user"]["id"])
+    flat = [i for s in ids.values() for i in s]
+    return {"logins": len(ids), "ids": len(set(flat)), "one_each": all(len(s) == 1 for s in ids.values()),
+            "first": sorted(flat)[:3]}
+
+
 if __name__ == "__main__":
     os.chdir(ROOT)
     print(json.dumps(globals()["case_" + sys.argv[1]](), sort_keys=True, default=str))

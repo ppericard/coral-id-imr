@@ -1,6 +1,7 @@
 # Pierre's standing rules
 
-One file per theme; the index of every rule, with its ID, is in [AGENTS.md](../../AGENTS.md#the-rules).
+One file per theme; the index of every rule, with its ID, is in [AGENTS.md](../../AGENTS.md#the-rules). A rule says what holds now; why it
+was decided, and in whose words, is in a record under [docs/decisions/](../decisions/README.md) (rule W19).
 
 ## Words the rules use
 

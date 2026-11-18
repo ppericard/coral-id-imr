@@ -110,8 +110,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line, as cand.json
-from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank (Q270)
-from fish_inforce import in_force  # noqa: E402  the circles in force (the content editor's: design note v2, step 3)
+from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank
+from fish_inforce import in_force  # noqa: E402  the circles in force (the content editor's)
 
 API = "https://api.inaturalist.org/v2/observations?"
 TAXA = "https://api.inaturalist.org/v2/taxa/"
@@ -123,15 +123,14 @@ DAUIN = (9.19, 123.26)
 DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
 PIERRE = "ppericard"
-# How an observation's photos count against the cap (Pierre, 2026-11-08: every photo of an observation is taken, "weight
-# the choice so one observation does not bring too many, never blocking"; Q226, option b: the first photo 1, each further
-# photo half, "better for learning on the species already full"): obs_cost.
+# How an observation's photos count against the cap (obs_cost): every photo of an observation is taken, the first
+# counting 1 and each further one EXTRA_W, so one observation does not bring too many without blocking it.
 EXTRA_W = 0.5
-OLD_LIMIT = 4  # photos per observation at most until 2026-11-08: the observations --topup completes
-# The cap per species (Pierre, 2026-11-05, Q36; before: 20 observations per species, 2026-11-04): 30 photos for a stable
-# species, +10 per extra phase, at most 60; each extra phase aims at PER_PHASE photos of its own, the rest is free.
+OLD_LIMIT = 4  # the former limit of photos per observation: --topup completes the observations fetched under it
+# The cap per species: 30 photos for a stable species, +10 per extra phase, at most 60; each extra phase aims at
+# PER_PHASE photos of its own, the rest is free.
 BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
-# The cap of a species met only on the surprise cards (fish.json teach wink; Pierre, 2026-11-15, Q372): 5 photos, the
+# The cap of a species met only on the surprise cards (fish.json teach wink): 5 photos, the
 # 5 tools/fish_game.py keeps in play for it (WINK_KEEP) and the admin's target (autosort.js FISHT.wink).
 WINK_CAP = 5
 
@@ -153,12 +152,11 @@ INAT_PHASE = {"juvenile": (1, 8), "male": (9, 11), "female": (9, 10)}
 MIN_ANNOT = 2
 PHASE_BATCH, PHASE_PAGES = 20, 5  # taxa per phase search, pages of 200 read per batch (id_above) at most
 # The searches ask for these (unchanged so the cache stays valid); an observation can mix licences, so each photo is then
-# checked against OK: never share-alike, never ND (Pierre, 2026-11-03).
+# checked against OK: never share-alike, never ND.
 LICENCES = "cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"
 OK = ("cc0", "cc-by", "cc-by-nc")
 TIERS = ("dauin", "region", "ph")  # the Philippines, nearest first; then "world" (abroad, Indo-West Pacific only)
-# Abroad = the Indo-West Pacific around the Coral Triangle only (Pierre, 2026-11-03: the region of the ID books IMR uses;
-# the Red Sea, western Indian Ocean and central-eastern Pacific have other colour forms). A bounding box rather than
+# Abroad = the Indo-West Pacific around the Coral Triangle only (the region of the ID books IMR uses; the Red Sea, western Indian Ocean and central-eastern Pacific have other colour forms). A bounding box rather than
 # iNaturalist places: one generic rule, no country list to keep, and iNaturalist's swlat/swlng/nelat/nelng search takes
 # it as is. 30 S - 30 N, 90 E - 170 E: from the Andaman Sea and Sumatra to Vanuatu and New Caledonia, from Taiwan and the
 # Ryukyus to the southern Great Barrier Reef and Western Australia's reefs; it leaves out the Maldives, Sri Lanka, the
@@ -168,7 +166,7 @@ LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
 DEAD = (17, 19)
-# The automatic refill (Pierre, 2026-11-06, Q171; --refill). A species short of easy photos has fewer than EASY_NEED
+# The automatic refill (--refill; rule W20). A species short of easy photos has fewer than EASY_NEED
 # observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
 # easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
 EASY_E, EASY_NEED = 4, 3
@@ -308,8 +306,8 @@ def pages(net, q, enough, n=GEN_PAGES):
     return {"total": len(res) + max(0, last["total"] - len(last["results"])), "results": res}
 
 
-# The general searches of several species asked together (rule C7; #784): the
-# species with at most BATCH_SOLO observations in a search (species_counts says) share one search, read to its end
+# The general searches of several species asked together (rule C7): the species with at most BATCH_SOLO observations
+# in a search (species_counts says) share one search, read to its end
 # (BATCH_PAGES pages of 200 at most, BATCH_TAXA taxa a search), and each one's share answers its own search (Net.virtual):
 # the same observations, newest first, as iNaturalist answers the one-species search. The others keep their own search.
 BATCH_TAXA, BATCH_PAGES, BATCH_SOLO = 50, 5, 150
@@ -509,7 +507,7 @@ def topup(args):
     want = {}
     for s, t in species_list(fish, set(args.circle), only):
         if is_wink(t):
-            continue  # a few very good photos, not a stock (Q372)
+            continue  # a few very good photos, not a stock
         L = have.get(s["id"], [])
         recs = Counter(p["o"] for p in L)
         bad = {p["o"] for p in L if p["f"] in moved}
@@ -522,12 +520,12 @@ def topup(args):
     ids = sorted(want)
     try:
         for i in range(0, len(ids), 200):
-            # Never captive, as every search (Codex review #715).
+            # Never captive, as every search.
             d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&captive=false&per_page=200", FIELDS + ",taxon.ancestor_ids")
             for o in (d or {}).get("results", []):
                 s = want.get(o["id"])
                 # Still identified as that species (its taxon or an ancestor, as phase_obs): one re-identified since
-                # brings nothing (Codex review #715).
+                # brings nothing.
                 it = usable_obs(o, used, excl) if s and photo_taxon(s) in (o.get("tx") or []) else None
                 if not it:
                     continue
@@ -899,13 +897,13 @@ def run(args):
     plan, report = {}, {}
     deep = getattr(args, "deep", False)
     if args.rep:
-        # Reference photos (Pierre, 2026-11-05): tag the candidates that are their taxon's iNaturalist cover, no refill.
+        # Reference photos: tag the candidates that are their taxon's iNaturalist cover, no refill.
         S = species_list(fish, set(args.circle), only)
         try:
             cov = covers(net, [photo_taxon(s) for s, _ in S])
         finally:
             net.save()
-        # Only the species whose cover is known: an unknown one keeps its tags (Codex review #562).
+        # Only the species whose cover is known: an unknown one keeps its tags.
         n = sum(tag_rep(have.get(s["id"], []), cov[photo_taxon(s)]) for s, _ in S if photo_taxon(s) in cov)
         if args.plan:
             print(json.dumps({"missing": net.missing, "covers": len(cov), "tagged": n}))
@@ -931,14 +929,14 @@ def run(args):
             if R["room"] <= 0:
                 plan[sid]["add"] = {}
                 continue
-            # Every photo of an observation (Pierre, 2026-11-08): one already among the candidates brings its other photos
-            # (usable_obs leaves out those taken), unless Pierre sent one of its photos to another species or out of the
-            # fish (its identification is in doubt: as before, nothing more of it).
+            # Every photo of an observation: one already among the candidates brings its other photos (usable_obs leaves
+            # out those taken), unless Pierre sent one of its photos to another species or out of the fish (its
+            # identification is in doubt: nothing more of it).
             known = {p["o"] for p in L if p["f"] in moved}
             Q = queries(photo_taxon(s))
             got, more, pools = {}, {}, {}
-            # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
-            # build, so a species he identified since would otherwise never get his photos.
+            # Pierre's own, asked for every species: fish.json present.own is a count from the last build, so a species
+            # he identified since would otherwise never get his photos.
             names = ["own", *TIERS]
             # A refill reads on (pages) while a search brings fewer usable photos than the room, so a species whose
             # newest observations are all known still finds the older ones, and the end of a search is known.
@@ -981,12 +979,12 @@ def run(args):
                 return [{**x, "tier": "world"} for x in out if x]
 
             # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from
-            # anywhere, by licence (Pierre, 2026-11-03).
+            # anywhere, by licence.
             ctx.append({"s": s, "t": t, "R": R, "n": n, "held": held, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
                         "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {},
                         "omore": omore, "wm": wm, "pwmore": {}})
 
-        # 2. The phase searches (Q36), one phase at a time for every species with room in it, batched (rule C7): the
+        # 2. The phase searches, one phase at a time for every species with room in it, batched (rule C7): the
         # Philippines first, then abroad (Indo-West Pacific) for a species confirmed in the Philippines, when it is
         # confirmed near Dauin (photos from anywhere) or the Philippines are exhausted for that phase and short of its room.
         def items(c, obs, tier=None):
@@ -1013,7 +1011,7 @@ def run(args):
             for c in C:
                 items(c, got[photo_taxon(c["s"])])
                 c["pmore"][ph] = more[photo_taxon(c["s"])]
-            # What the Philippines bring to the phase, counted as the room is (obs_cost; Codex review #715).
+            # What the Philippines bring to the phase, counted as the room is (obs_cost).
             have_ph = lambda c: sum(obs_cost(c["held"].get(obs_url(it["id"]), 0), len(it["P"])) for it in c["all"].values()
                                     if ph in item_phases(it) and it["tier"] != "world")
             W = [c for c in C if (c["s"].get("present") or {}).get("ph")

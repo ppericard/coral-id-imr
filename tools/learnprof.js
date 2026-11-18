@@ -1,7 +1,7 @@
-// The simulated players' profiles (2026-11-08, rule L11; docs/LEARNING.md "Validating a learning change", "Profiles"),
-// one list for both subjects and both worlds: tools/learnsim.js loads this file in Node (the list) and in the page (an
-// init script: LEARNPROF.knownUnits on the app's own units); the rated world reads the same list. Knowledge goes by
-// lecture group, family, circle or commonness, never by data order (except strongBack, kept as it was).
+// The simulated players' profiles (rule L11; docs/LEARNING.md "Validating a learning change", "Profiles"), one list for
+// both subjects and both worlds: tools/learnsim.js loads this file in Node (the list) and in the page (an init script:
+// LEARNPROF.knownUnits on the app's own units); the rated world reads the same list. Knowledge goes by lecture group,
+// family, circle or commonness, never by data order (except strongBack).
 //
 // Each profile has a part per subject it plays (a profile with none for a subject is refused there) and rate, the
 // learner's learning rate (learnsim LEARNER). A part: hi, the know of the units it knows, lo of the others; by, which
@@ -11,7 +11,7 @@
 //   its look-alikes) until share of the slate is covered (0.6: groups 1 to 7, 26 genera of the 40 with their starred look-alikes);
 // - circle1 (fish): the IMR course's families (circle 1); common (fish): the most common families near Dauin (their
 //   weights in the global score's tree, core.js fishScoreTree) until they carry half of the weight;
-// - grp: the lecture groups listed (spotty); m: slate unit i when i % 5 < m (data order: strongBack, as before).
+// - grp: the lecture groups listed (spotty); m: slate unit i when i % 5 < m (data order: strongBack).
 // gen, the units of the subject's opt-in sets (the fish scientific genera), by their family: lo (default); imr, the IMR
 // genera (app.js imrg) of the families it knows; known, every genus of a family it knows; all. names: common declines
 // the scientific names (the set's offer card, Not now: a diver who wants the common names only), else both (accepted).
@@ -27,13 +27,12 @@
     // Knows nearly everything.
     expert: {rate: 0.05, coral: {by: 'all', hi: 0.93, lo: 0.93}, fish: {by: 'all', hi: 0.93, lo: 0.93, gen: 'all'}},
     // A strong player who knows 80% of the genera well and the rest hardly: few genera stay shaky, so the opening runs at
-    // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
-    // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: learnsim --profiles
-    // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
+    // full speed, and a genus never answered starts from their high global level (a pace that can open 7 genera in 16
+    // answers). Not in the default list: learnsim --profiles strongBack --questions 60 --breaks 8h --after 40.
     strongBack: {rate: 0.12, coral: {by: 'm', m: 4, hi: 0.9, lo: 0.1}},
-    // A spotty player (2026-11-06, Pierre on #611: "a trainer who knows the Acroporidae but not the Merulinidae"): knows
-    // the genera of some IMR lecture groups as an expert does and the others hardly, so a rule that borrows from the
-    // global level is checked on the genera it does not know. Not in the default list.
+    // A spotty player (a trainer who knows some coral families but not others): knows the genera of some IMR lecture
+    // groups as an expert does and the others hardly, so a rule that borrows from the global level is checked on the
+    // genera it does not know. Not in the default list.
     spotty: {rate: 0.08, coral: {by: 'grp', grp: [1, 2, 3, 4, 5], hi: 0.93, lo: 0.05}}
   };
   const EXTRA = ['strongBack', 'spotty'];
