@@ -279,6 +279,16 @@ choices per family in the app" has the details.
     No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
 - **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
   pools, or new code that lets Home show other photos.
+- **The fourth pass, 2026-11-19** took the photos the refills brought into `fish-game.json` since the 2026-11-16 reference
+  batch: 57 new (5 already looked at by that batch), so 52 looked at. Each R2 file (`-m`) was seen on a contact sheet of
+  6 at 560 px, then its top 12% and bottom 25% at 700 px with the contrast equalised; the 3 photos by authors tagged
+  before whose sheet showed nothing were seen again at their bottom corners at 2x. **1 new tag** (a faint "(c)2012 David
+  Rolla" at bottom left of a Plotosus photo by that account), and 7 photos carried a mark their judged code already
+  flagged `w` (Nigel Marsh Photography, The Wet Lens, Karen Willshaw, Johan Bas, 2 faint "(c) 20xx" at bottom left): all
+  8 are now in the list. In the games, `fish-game.json` and `fish-photos.json` changed by that one flag only. The set was
+  every new photo whatever its Home eligibility (a superset of what Home can show; the pools' reach does not depend on the
+  order, so a photo already in the file cannot newly enter it), and no photo already in the file had changed its
+  tags, shape or place (R2 or remote). `judging_fish.py --check` still fails on 9 species with candidates not judged yet (not from this pass).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
