@@ -18,7 +18,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 |---|---|
 | The rules you must not break | [`AGENTS.md`](../AGENTS.md): Rule 0 (Pierre's hours, Manila time), the merge contract, the index of the rules (IDs C, P, L, U, A, S, D, W); each rule in full in [`rules/`](rules/) |
 | The app's code | `index.html` + `app.js` (start-up, routing, shared helpers), `quiz.js` (screens), `model.js` (what to ask next), `learn.js`, `progress.js`, `home.js`, `tour.js`, `tips.js`, `sync.js` (the sheet), `core.js` (pure functions shared with the admin and the sheet), `sw.js` (offline cache); "Repository map" below |
-| How the learning works, and why | [`LEARNING.md`](LEARNING.md) (each rule with its measurements; `tools/learnsim.js` simulates, `tools/abilityeval.js` replays the real answers) |
+| How the learning works, and why | [`LEARNING.md`](LEARNING.md) (the rules in force; the studies and measurements behind the player's model in [`archive/learning-notebook.md`](archive/learning-notebook.md); `tools/learnsim.js` simulates, `tools/abilityeval.js` replays the real answers) |
 | The subjects (corals, fish) | `core.js` `SUBJECTS`, `app.js` `UNITS`; fish content `fish.json` (built by `tools/build_fish.py`), the fish path spec [`FISH_PATH.md`](FISH_PATH.md), ARCHITECTURE.md "Subjects" and "Fish content" |
 | The admin | `admin.html`, `admin*.js`, `autosort.js`, `analysis.js`; try it with `admin.html?demo`; ARCHITECTURE.md "Admin" and ROADMAP "Admin for every subject" |
 | The progress sheet | `tools/sync/Code.gs` (self-updating Apps Script; "Code.gs" below), its tests `tests/sync.test.js` on an in-memory sheet (`tests/gas.js`) |

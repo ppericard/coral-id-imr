@@ -996,7 +996,7 @@
       return a;
     });
   }
-  // The fish photos' own features in What makes a photo hard (docs/LEARNING.md "Analyses for the fish"): judged ease,
+  // The fish photos' own features in What makes a photo hard (docs/LEARNING.md "Multifactor analyses"): judged ease,
   // phase and framing. meta.fph {file: [ease 1-5, phase word ('' none,
   // 'juvenile', 'male'...), view letter (p profile, o oblique, h head-on, t tail, d from above), whole ('1' the whole fish,
   // '0' part of it)]} (photoMetaFish). The same model as the corals' (LLTM with player, unit and photo random effects):
