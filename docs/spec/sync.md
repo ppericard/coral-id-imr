@@ -614,7 +614,10 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   hierarchical photo Elo, its pairs among the choices offered). **The app reads the fish's own** from vNEXT, the same
   way (`SUBJECTS` `fish` `stats`, `core.js` `FISHST_SHEET`; stored as `reefid-photo-stats-fish`): their photo ratings,
   unit offsets and pairs join the corals' in `PSTAT`, `PGD`, `PCONF` under keys of their own (photo ids, `f:`, `g:`, `s:`
-  unit ids), so the fish draw, traps and look-alikes follow their players' answers. The reply also carries `mem`, `memn`
+  unit ids), so the fish draw, traps and look-alikes follow their players' answers. A photo shown at several ranks is
+  rated under the last unit that rated it, which every reply names as each photo's 5th element from vNEXT (`statsOut_`,
+  `core.js` `eloOf`); `model.js` `photoDiff` swaps that unit's offset for the one of the unit asked (LEARNING.md
+  "Hierarchical photo Elo"). The reply also carries `mem`, `memn`
   and `fmt`, which the app ignores for the fish (`model.js` `pmem`, `pfmt`: the prior and none), as the sheet's replay of
   the fish reads no pooled number: each answer carries the scoring record it was scored with (`core.js` `scoreRec`), so
   the device's record and the sheet's replay stay equal (`tests/fishstats.test.js`). FISH_PATH.md's confusion views

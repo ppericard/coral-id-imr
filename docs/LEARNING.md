@@ -879,8 +879,11 @@ A photo's difficulty is its unit's offset G, shared by every photo of the unit, 
 n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start
 at 0, so a photo nobody has answered sits at its unit's offset. A photo's unit is the unit shown (every photo of a
 question is of one colony, rule P4), so no data file or per-unit code is needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
-answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
-time.
+answers, unit]}`, the unit whose offset G is in that total: the last that rated it, from vNEXT) and the offsets in `gd`
+(`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first time. A fish photo is shown at several
+ranks (a genus or species question shows its family's photos), so the last unit that rated it may not be the one asked:
+the app then swaps that unit's offset for the offset of the unit asked (`model.js` `photoDiff`), keeping the photo's
+own residual P. A coral photo has one genus, so its total is read as served.
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
@@ -965,8 +968,15 @@ without `s`). The app reads:
   follow their players' answers: a pair seeded from iNaturalist's identifications (`model.js` `dataSeed`) that is offered
   together often and seldom mixed up falls under `CONF.TRAP` and stops being a look-alike. Their memory and format
   offsets stay the prior and none (`pmem`, `pfmt`), as the sheet's replay of them reads none.
-- **Not the fish's**: the sheet rates them (each question at the rank it asked), but the app does not read them (no
-  `SUBJECTS` `stats`), so a fish photo's difficulty is its judged-ease prior and every fish pair keeps its prior.
+- **The fish's** (`SUBJECTS` `fish` `stats`, from sheet vNEXT: `core.js` `FISHST_SHEET`), the same way, on a subject
+  with real answers. Their rows are rated at the rank each question asked, so a family, a genus or a species unit is the
+  "genus" of the hierarchical photo Elo and `PGD` holds one offset per unit id (`f:`, `g:`, `s:`); a photo shared by
+  units of different ranks takes the offset of the unit asked ("Hierarchical photo Elo"). Their photo memory and format
+  offsets stay the prior and none (`pmem`, `pfmt`): using them would move the progress the sheet replays (rule D5, a
+  rules version of their own). The progress itself does not depend on the pooled numbers: the sheet replays a fish
+  answer from the scoring record it logged (`core.js` `scoreRec`), whatever statistics it holds
+  (`tests/fishstats.test.js`). What the first real reply moved and the level-1 check: the notebook, "The fish's own
+  pooled statistics".
 
 ### Photo exposure
 

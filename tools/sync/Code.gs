@@ -1225,14 +1225,17 @@ function statsStep_(S, m, tr, ex, idx){
   // [shown, right] as its bucket: new 0, shown never right 1, right once 2, right twice or more 3 (each photo shown, in turn).
   fs.forEach(f => { const k = Hw[f] || 0; Hw[f] = ok ? (k >= 2 ? 3 : 2) : k || 1; });
 }
-// What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers]}, conf, mem, memn, gd,
+// What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers, unit]}, conf, mem, memn, gd,
 // fmt}, the public ?stats=1 reply (stats_ adds ras and skip for the admin).
 // [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
 // photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
 // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
+// vNEXT: a 5th element, the unit whose offset is in that total (PG): a photo shared by units of different ranks (a fish
+// family and its scientific genus, core.js fishSciGen) is rated under the last unit that rated it, so the app swaps that
+// unit's offset for the one of the unit it asks (model.js photoDiff). The corals' photos have one genus: no change.
 function statsOut_(S){
   const out = {ok: true, photos: nul_(), conf: S.conf, mem: S.mem.map(x => Math.round(x * 100) / 100), memn: S.N.map(x => Math.round(x * 10) / 10), gd: nul_(), fmt: CORE_.fmtFit(S.L)};
-  Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3]]; });
+  Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3], S.PG[f]]; });
   Object.keys(S.G).forEach(n => out.gd[n] = [Math.round(S.G[n][0] * 100) / 100, Math.round(S.G[n][1] * 10) / 10]);
   return out;
 }
@@ -4410,7 +4413,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
   // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
   // version or later, so one it has not seen answer, or an older one, changes nothing.
-  const FISHST_SHEET = 187;
+  const FISHST_SHEET = 188;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -7360,13 +7363,19 @@ const CORE_ = (function () { const module = {exports: {}};
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers].
+  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)].
   function eloOf(rows) {
     const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f =>
-        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+        (out[f] = [
+          Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100,
+          Math.round(P[f][2] * 10) / 10,
+          Math.round(P[f][1] * 10) / 10,
+          P[f][3],
+          PG[f]
+        ])
     );
     return out;
   }

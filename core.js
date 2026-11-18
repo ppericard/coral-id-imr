@@ -421,7 +421,7 @@
   // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
   // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
   // version or later, so one it has not seen answer, or an older one, changes nothing.
-  const FISHST_SHEET = 187;
+  const FISHST_SHEET = 188;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -3371,13 +3371,19 @@
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers].
+  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)].
   function eloOf(rows) {
     const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f =>
-        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+        (out[f] = [
+          Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100,
+          Math.round(P[f][2] * 10) / 10,
+          Math.round(P[f][1] * 10) / 10,
+          P[f][3],
+          PG[f]
+        ])
     );
     return out;
   }

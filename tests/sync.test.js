@@ -552,7 +552,7 @@ test('v18: a device that never signed in rates the photos once its answers are c
     at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString(),
     L = Array.from({length: 12}, (_, i) => ans('w' + i, {ph: 'pic-' + i, t: at(i)}));
   s.post({anon: 'device0001', anonAnswers: L.slice(0, 9)});
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
+  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0, 'Acropora'], 'fewer than TRUST.N answers: no photo moved');
   s.post({anon: 'device0001', anonAnswers: L.slice(9)});
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
   const p = s.get({stats: '1'}).photos['pic-11'];
@@ -564,7 +564,7 @@ test('v18: a device that never signed in rates the photos once its answers are c
   for (const k of Object.keys(s.cache)) delete s.cache[k];
   // A photo nobody rated sits at its genus offset (moved by the real player's answers on the genus above).
   const st = s.get({stats: '1'});
-  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0], 'answers at chance move nothing');
+  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0, 'Acropora'], 'answers at chance move nothing');
 });
 
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {

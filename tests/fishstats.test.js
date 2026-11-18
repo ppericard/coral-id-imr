@@ -129,6 +129,49 @@ test('the app reads the fish’s own statistics from the script that serves this
   }
 });
 
+// A photo shared by a family unit and one of its genera (a genus question shows its family's photos) is rated under the
+// last unit that rated it: the sheet names that unit beside the photo's total (Code.gs statsOut_, core.js eloOf), and
+// model.js photoDiff swaps its offset for the one of the unit asked, so a genus answer never sets a family question's
+// difficulty (Codex review #1148).
+test('a photo rated last at the genus rank keeps the family’s own offset in a family question', () => {
+  const s = sheet(),
+    P = FP[CH[0]][0][0],
+    G = 'g:Dascyllus',
+    GCH = [G, 'g:Pomacentrus', 'g:Chromis', 'g:Abudefduf'],
+    // missed at the genus rank, on the same photo, after the right family answers
+    genus = k =>
+      Array.from({length: 8}, (_, i) => ({
+        id: (k + 'g' + i).toLowerCase(),
+        t: at(1000 + i * 40),
+        ok: 0,
+        m: 'quiz',
+        g: G,
+        a: GCH[1 + (i % 3)],
+        ph: P,
+        ch: GCH.join(' '),
+        s: 'fish',
+        rk: 'genus'
+      }));
+  ['Ana', 'Ben', 'Cy'].forEach((n, j) =>
+    s.post({name: n, pin: '123' + j, data: {}, summary: {}, answers: [...fish(n + 'f'), ...genus(n)]})
+  );
+  const reply = s.get({stats: '1', s: 'fish', av: '1'}),
+    o = reply.photos[P];
+  assert.ok(reply.gd[CH[0]] && reply.gd[G], 'both units rated');
+  assert.strictEqual(o[4], G, 'the photo is rated last under the genus');
+  assert.ok(reply.gd[G][0] - reply.gd[CH[0]][0] > 0.3, 'the genus offset is clearly the higher');
+  const c = vm.createContext({SUBJ: FISH, calibOf: C.calibOf, PGD: reply.gd, PSTAT: reply.photos});
+  vm.runInContext(block(src('model.js'), 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.photoDiff = photoDiff;', c);
+  const own = o[0] - reply.gd[G][0] + reply.gd[CH[0]][0],
+    blend = (d, prior) => (o[1] * d + 5 * prior) / (o[1] + 5);
+  assert.ok(Math.abs(c.photoDiff(CH[0], {f: P}) - blend(own, reply.gd[CH[0]][0])) < 1e-9, 'the family question: its own offset');
+  assert.ok(Math.abs(c.photoDiff(G, {f: P}) - blend(o[0], reply.gd[G][0])) < 1e-9, 'the genus question: the total as served');
+  // a reply from a script before the unit was served (four elements): the total as before
+  c.PSTAT = {[P]: o.slice(0, 4)};
+  assert.ok(Math.abs(c.photoDiff(CH[0], {f: P}) - blend(o[0], reply.gd[CH[0]][0])) < 1e-9);
+  // the app's copy of the replay serves the same fifth element (core.js eloOf against Code.gs stats_: tests/core.test.js)
+});
+
 // The sheet replays a fish answer from the scoring record it carries (core.js replayProgress, Q132), whatever pooled
 // statistics it is given, so the statistics the app now scores with never part the device's record from the sheet's.
 test('a fish answer with its scoring record replays the same under any pooled statistics', () => {
