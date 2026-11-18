@@ -259,19 +259,23 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 
 ### W19
 
-**Keep the docs current in the same PR**: a change is not done until the docs say what the code now does. Before
-merging, check and update as needed: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow),
-`docs/ARCHITECTURE.md` (a new page, hash, setting, data key, `curation.json` key, admin mode, sync endpoint or Code.gs
-version, model constant), `docs/ROADMAP.md` (ship = delete the row it ships, or update its status; deferred = add a row
-inside its section, next to related rows; new "don't do X" = Declined), `README.md` (anything a newcomer sees), the
-admin help. Say "Docs: none needed" in the PR description when nothing applies. **No "done" list in any doc**: the squash
-title ` (#N)` and the PR description are the record of what shipped, the docs say what the code does now; a shared list
+**A PR updates the docs that describe what it changes (the map or the spec it touches) and, when it carries out a
+decision, adds a short decision record in `docs/decisions/`, named YYYY-MM-DD-topic.md (context, the decision with Pierre's words,
+consequences). History stays in git and the PRs, never in the docs.** A change is not done until the docs say what the
+code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
+change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
+its status; deferred = add a row inside its section; new "don't do X" = Declined), `README.md` (anything a newcomer
+sees), the admin help. Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
+[docs/decisions/README.md](../decisions/README.md). **No "done" list or changelog in any doc**: the squash title
+` (#N)`, the PR description and git are the record of what shipped, the docs say what the code does now; a shared list
 that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
 `docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
 rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
 ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow, and the identifiers the governing docs (AGENTS.md, `docs/rules/`, ARCHITECTURE, HANDOVER, INTEGRATOR, LEARNING) cite in backticks still existing: a path, or a file followed by a name it holds (`core.js` `faOf`); the test's `ID_ALLOW` lists, with a reason each, the few a doc names on purpose though they are gone (a retired tool, a branch's note): fix the doc first.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
-chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05.
+chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
+#1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
+history in the docs, 2026-11-18.
 
 ### W20
 

@@ -210,6 +210,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
+- **W19** A PR updates the docs that describe what it changes and, when it carries out a decision, adds a short decision record in `docs/decisions/`; history stays in git and the PRs, never in the docs.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
 - **W27** Bounded cost: at most four agents that write code or run tests (read-only studies on top), PRs from `main` only, two Codex rounds then cut the scope.
