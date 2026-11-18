@@ -1,4 +1,4 @@
-// Page smoke test (code re-review 2026-11-01, M5): serves the site locally, opens the main routes in Chromium at phone
+// Page smoke test: serves the site locally, opens the main routes in Chromium at phone
 // and desktop widths, and fails on any page error. Not a node --test file: it needs Playwright, which CI installs with
 // npm into a temporary folder (no package.json in this repo). Locally: node tests/pages.smoke.js (Playwright installed).
 // A page key's address (core.js routeOut; the test names pages by key where a list reads better).
@@ -20,7 +20,7 @@ const TYPES = {
   '.webp': 'image/webp',
   '.webmanifest': 'application/manifest+json'
 };
-// Every address (URL refonte, Q53-Q56: #section/page/thing in the words on screen).
+// Every address (#section/page/thing in the words on screen).
 const ROUTES = [
   'learn/genera',
   'learn/genus/Acropora',
@@ -64,7 +64,7 @@ const server = http.createServer((req, res) => {
 
 // "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
 // cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
-// The names of the conditions that do not hold (test-suite review, 2026-11-04): a check with many conditions says which
+// The names of the conditions that do not hold: a check with many conditions says which
 // one broke, not only the record. why({dialog: x.dialog, kind: x.kind === 'feedback'}) -> ['kind'] when the kind is wrong.
 const why = rules =>
   Object.entries(rules)
@@ -73,8 +73,8 @@ const why = rules =>
 // Waits until the app has drawn the page at the current address (app.js route() sets window.ROUTED once done; a link
 // that sends on routes again), no fetch is in flight (counted in every context of the main browser, below) and no Lab
 // module is still loading (proto/lab.js LAB.pending: its <script>s are no fetch, and a Lab page or tool drawn before
-// they are in is a "Loading…" placeholder, redrawn by route() once they are; Codex review #454), all for three frames in
-// a row: instead of a fixed sleep after each navigation (test-suite review, 2026-11-04). Resolves false when that never
+// they are in is a "Loading…" placeholder, redrawn by route() once they are), all for three frames in
+// a row: instead of a fixed sleep after each navigation. Resolves false when that never
 // happens within the timeout; the caller says what it then fails.
 const drawn = (p, timeout = 15000) =>
   p
@@ -103,7 +103,7 @@ const left = (p, from, timeout = 10000) =>
     .then(() => drawn(p))
     .catch(() => false);
 const TIPS_OFF = () => localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
-// One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
+// One overlay at a time, and each one closable. Returns the failures.
 async function overlays(b, base) {
   const fails = [];
   const open = async (o, init, arg) => {
@@ -204,11 +204,11 @@ async function overlays(b, base) {
     }
     await c.close();
   }
-  // Cards (2026-11-03, app.js cardShow): every kind comes from the one builder, through its real caller where it has one
+  // Cards (app.js cardShow): every kind comes from the one builder, through its real caller where it has one
   // (the apology and the update card with a former %, which wait on other branches, through cardShow itself): one
   // overlay, role dialog, aria-modal, labelled by its title (an h3), the kind's medallion (or the genus photo band), the
   // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was. Every kind fits the screen
-  // at both widths; the rest is not layout and runs once, on the phone (test-suite review D4, 2026-11-04).
+  // at both widths; the rest is not layout and runs once, on the phone.
   for (const w of [390, 1280]) {
     const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
       localStorage.setItem('reefid-tour', '"done"');
@@ -223,7 +223,7 @@ async function overlays(b, base) {
     await qa.ready(p);
     const CASES = [
       ['genus', () => introShow([slateGenera()[1]], false)],
-      // A big step (quiz.js openOfferShow, the fish circle 3's card; the coral open-all offer went, Q337), on a made-up set.
+      // A big step (quiz.js openOfferShow, the fish circle 3's card), on a made-up set.
       [
         'step',
         () =>
@@ -244,8 +244,8 @@ async function overlays(b, base) {
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD: rules
-      // version 8's; from rules version 10 a recalculation has no card, Q330) and the apology of rules version 9 (core.js
-      // RV_SORRY), through their real caller (the learned mark's card is silent for now: model.js MXL.QUIET, Q332).
+      // version 8's; a later recalculation has no card) and the apology of rules version 9 (core.js RV_SORRY), through
+      // their real caller (the learned mark's card is silent: model.js MXL.QUIET).
       ['update', () => (store.set('reefid-rv-msg', {due: [8], told: [], pct: {8: [50, 42]}}), rvNotice())],
       [
         'apology',
@@ -295,11 +295,11 @@ async function overlays(b, base) {
         continue;
       }
       // The event log names every card (cardShow's dataset.info, read by "left with a card open"): a card without a title
-      // (the sign-in card) by its label, so its row never looks like an empty card (2026-11-09).
+      // (the sign-in card) by its label, so its row never looks like an empty card.
       const info = await p.evaluate(() => document.querySelector('.unlock')?.dataset.info || '');
       if (!(info.split(' | ')[2] || '').trim()) fails.push(`card ${i} (${kind}): no name in the event log's info: "${info}"`);
-      // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
-      // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
+      // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page runs the
+      // timer late).
       await p
         .waitForFunction(() => !!document.querySelector('.unlock')?.contains(document.activeElement), null, {timeout: 15000})
         .catch(() => fails.push(`${w}px card ${i} (${kind}): the focus never moved into the card (15 s)`));
@@ -345,7 +345,7 @@ async function overlays(b, base) {
     }
     await c.close();
   }
-  // Millepora a slate genus (Pierre, 2026-11-02): a returning player who saw the earlier recalculation pop-up gets the
+  // Millepora a slate genus: a returning player who saw the earlier recalculation pop-up gets the
   // Millepora one, once (rule D6); one who missed both gets both on one card. Bonus genera unlocked by the
   // former thresholds (Q.bu 2+) stay on; Millepora alone (Q.bu 1) is no opt-in. Millepora's first card and sheet warn.
   for (const [recalc, bu] of [
@@ -378,7 +378,7 @@ async function overlays(b, base) {
       n: slateGenera().length,
       mill: genScore('Millepora') > 0
     }));
-    // Latest first: the typed-questions announcement (2026-11-03), then Millepora, then the moving average if missed.
+    // Latest first: the typed-questions announcement, then Millepora, then the moving average if missed.
     const want = recalc ? 2 : 3;
     if (
       r.h.length !== want ||
@@ -447,7 +447,7 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
-    // Fish open to every player (Q158): the subject to pick first (tour.js pick), and where to switch after the question.
+    // Fish open to every player: the subject to pick first (tour.js pick), and where to switch after the question.
     const two = !!(await p.$('#tour [data-pick="coral"]'));
     if (two) {
       await p.click('#tour [data-pick="coral"]');
@@ -466,15 +466,13 @@ async function overlays(b, base) {
     if (sign !== !!at || r.tour || r.card !== !at) fails.push(`Escape on tour step ${at + 1}: ${JSON.stringify({sign, ...r})}`);
     await c.close();
   }
-  // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
-  // one-tap question first at 35 (a card at Next since 2026-11-03, never inline in the feedback), at least 10 answers
-  // between two of them, never with an achievement toast or another card on screen. A new player, mostly right, 60
-  // answers; toasts closed by a tap as they come. The one-tap question comes at exactly 35, or later only while an
-  // achievement toast that came with an answer holds it. Then the queued events: the one-tap question's (the first ever
-  // is the plain one, core.js PULSE0, logged with its item id), an error from one of the app's files, and no noise.
-  // (Test-suite review D2, 2026-11-04: a second new player played to 40 answers in the main loop only for the exact 35
-  // and the queue; both are checked here now.) A genus can pass TYPED.from within these 60 answers, so a typed question
-  // may come (#855's first head hung 30 s waiting for choice buttons): the questions after answers 5, 19 and 34 (a miss,
+  // Out-of-game prompts take turns, counted in answers: the sign-in card at 20 answers (not before), the one-tap
+  // question first at 35 (a card at Next, never inline in the feedback), at least 10 answers between two of them, never
+  // with an achievement toast or another card on screen. A new player, mostly right, 60 answers; toasts closed by a tap
+  // as they come. The one-tap question comes at exactly 35, or later only while an achievement toast that came with an
+  // answer holds it. Then the queued events: the one-tap question's (the first ever is the plain one, core.js PULSE0,
+  // logged with its item id), an error from one of the app's files, and no noise. A genus can pass TYPED.from within
+  // these 60 answers, so a typed question may come: the questions after answers 5, 19 and 34 (a miss,
   // the sign-in card's answer, the one-tap question's) are made typed (model.js TYPED forced from the answer before, as
   // the next question is planned then, until a typed one is on screen), so typed answers meet the prompts every run.
   {
@@ -563,7 +561,7 @@ async function overlays(b, base) {
       if (free.length) fails.push(`one-tap question: shown at answer ${pulse.a}, expected 35 (no toast held it at ${free.join(', ')})`);
     }
     // An error from one of the app's script files is reported; one injected into the page by a browser or an extension
-    // (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
+    // (no file, or the page itself), and the harmless ResizeObserver warning, are not.
     await p.evaluate(() => {
       const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
         err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
@@ -581,8 +579,8 @@ async function overlays(b, base) {
     if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`noise errors queued: ${q.join(' | ')}`);
     await c.close();
   }
-  // The one-tap question's bank (core.js PULSEQ, 2026-11-03) as a card at Next (Pierre, 2026-11-03: inline in the
-  // feedback, a reflex Next skipped it), on a phone (390 px) and a desktop: never inline in the feedback; after Next a
+  // The one-tap question's bank (core.js PULSEQ) as a card at Next (inline in the feedback, a reflex Next would skip
+  // it), on a phone (390 px) and a desktop: never inline in the feedback; after Next a
   // dialog (role, kicker "Quick question", the item's question as its title, its answers on one row of equal widths, a
   // "Not now"), on screen, nothing wider than the screen, the next question not drawn yet; it logs its showing (shown)
   // with its item (src). Its buttons stay disabled at least PULSE.WAIT ms (timed in the page); on the first prompt, its
@@ -795,8 +793,8 @@ async function overlays(b, base) {
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off); IMR groups
-  // by default (Pierre: "nobody picks genera alphabetically"), also on a device that had kept the old A-Z view; My mix-ups
+  // Custom quiz (quiz.js viewCustom, quizCustom), on a phone: nothing picked at first (Start off); IMR groups by default,
+  // also on a device that had kept the old A-Z view; My mix-ups
   // with the declared look-alikes and a note before any mix-up, then the player's own clusters with their counts; the
   // Progress view; photos picked and Clear all, a quick pick (a genus and its look-alikes), the search, the choice and
   // the view kept after a reload, then a dozen questions all on the genera picked, logged quiz|s…; nothing wider than
@@ -808,7 +806,7 @@ async function overlays(b, base) {
       localStorage.setItem('reefid-nudge', '1');
       if (!sessionStorage.getItem('cq-old')) {
         sessionStorage.setItem('cq-old', '1');
-        localStorage.setItem('reefid-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+        localStorage.setItem('reefid-custom-view', '"az"'); // the A-Z view an older device kept
       }
     });
     await p.goto(base + '#practice/custom');
@@ -924,7 +922,7 @@ async function overlays(b, base) {
       fails.push(`custom quiz play: asked ${asked.join(', ')} (picked ${looks.join(', ')}); logged ${modes.join(', ')}`);
     await c.close();
   }
-  // The Practice tabs (app.js MODES; Pierre, 2026-11-03: "Photo → genus" became Quiz, "Custom" Custom quiz): their names
+  // The Practice tabs (app.js MODES: Quiz, Custom quiz...): their names
   // at each size class, all four in the bar without scrolling it at 360 and 390 px, the tab of the page
   // marked, and the old addresses (#quiz, #quiz-custom|play) still landing on their tab.
   for (const [w, want] of [
@@ -954,8 +952,8 @@ async function overlays(b, base) {
     }
     await c.close();
   }
-  // The apology card (core.js SORRY, sorryOf, sorryFelt; progress.js sorryNotice; 2026-11-04): once, at app open, to a
-  // player who felt the broken opening (20 answers or more between #408's merge and the first run of this version, the
+  // The apology card (core.js SORRY, sorryOf, sorryFelt; progress.js sorryNotice): once, at app open, to a
+  // player who felt the broken opening (20 answers or more between its release and the first run of this version, the
   // opening hold's sum at 3 or more then); "Hi!" signed out (the sign-in name: signin(), below); its button or Escape
   // close it for good; never to a player of a single answer or whose answers are all from before. The clock is fixed on
   // the morning after (Manila), so the test does not expire with the card.
@@ -1025,7 +1023,7 @@ async function overlays(b, base) {
       );
     await c.close();
   }
-  // Q309: Send feedback (the ? help's last line) with a game question on screen carries that question's unit and photos, as
+  // Send feedback (the ? help's last line) with a game question on screen carries that question's unit and photos, as
   // a report does (app.js fbCtx, quiz.js qNow); sent from a page with no question, neither.
   {
     const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
@@ -1048,7 +1046,7 @@ async function overlays(b, base) {
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await qa.ready(p);
-    // The corallites hint, when the question has one: its photo is one of those shown, so it goes too (Codex review #785).
+    // The corallites hint, when the question has one: its photo is one of those shown, so it goes too.
     const hint = await p.evaluate(() => !!document.getElementById('hintb'));
     if (hint) await p.click('#hintb');
     const q = await p.evaluate(() => ({
@@ -1064,7 +1062,7 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
-  // Q65: the Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
+  // The Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {
     const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
@@ -1157,7 +1155,7 @@ async function overlays(b, base) {
     await c.close();
   }
   // Feedback sent from About before the achievements' tier has come (progress.js, tier 2): counted once it comes, its
-  // pop-up then (Codex review #579).
+  // pop-up then.
   {
     const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
     let go;
@@ -1183,9 +1181,9 @@ async function overlays(b, base) {
     if (before !== 'undefined' || t !== 'First feedback') fails.push(`Contributions before tier 2: ${JSON.stringify({before, t})}`);
     await c.close();
   }
-  // Q66: "Your feedback helped". A report of this device's that the admin marked done (curation.json seen 'rep:<id>') is
+  // "Your feedback helped". A report of this device's that the admin marked done (curation.json seen 'rep:<id>') is
   // told by a card that stays until closed (its OK deaf for a moment), at a calm moment; then everything handled since in
-  // one card, at most once per 7 days (anti-spam, Pierre 2026-11-05); the sheet's list counts only from v57; signed in,
+  // one card, at most once per 7 days (anti-spam); the sheet's list counts only from the version that keeps it; signed in,
   // nothing before the load reply; never for an account the admin deleted.
   const helpedCtx = async (acct, rec) => {
     const [c, p] = await open(
@@ -1276,7 +1274,7 @@ async function overlays(b, base) {
       fails.push(`Your feedback helped, handled in a PR: ${JSON.stringify(t)}`);
     await c.close();
   }
-  // Never over an enlarged photo (Codex review #581): a thanks due while the lightbox is open waits for it to close.
+  // Never over an enlarged photo: a thanks due while the lightbox is open waits for it to close.
   {
     const [c, p] = await helpedCtx(null, {_v: 2});
     const card = cardOf(p);
@@ -1306,13 +1304,13 @@ async function overlays(b, base) {
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await qa.ready(p, {timeout: 15000});
     // The thanks is due once curation.json is in (Pierre's Done): on a slow runner it can come after the first answer,
-    // and the card then waits for a later break, so the check waits for it (a flake on CI, #603).
+    // and the card then waits for a later break, so the check waits for it.
     await p.waitForFunction(() => helpedIds().length > 0, null, {timeout: 10000}).catch(() => {});
     const q1 = await card(2000); // the question waits for its answer: no card
     // A wrong answer, never a right one: a right answer can earn an achievement (Look-alike slayer on a duel, Corallite
     // reader on corallites alone, Sharp eye), whose toast is up when the answer arms the break, and the thanks then waits
     // for a later break (never over a toast); which question comes first is drawn at random, so a right answer made this
-    // check fail now and then on CI, never on a re-run (#603, #652). A wrong answer earns none.
+    // check fail now and then on CI, never on a re-run. A wrong answer earns none.
     await p.evaluate(() => smokeAnswer(false));
     await p.waitForSelector('#next', {timeout: 5000});
     const toast = await p.evaluate(() => document.querySelector('.achpop b')?.textContent || null); // none: else no break
@@ -1326,7 +1324,7 @@ async function overlays(b, base) {
     await c.close();
   }
   // Signed in: nothing before the sheet's load reply, whose saved record may say the report was thanked on another
-  // device (Codex review #581); after it, only what is still not thanked.
+  // device; after it, only what is still not thanked.
   {
     const [c, p] = await helpedCtx({name: 'Testa', pin: '1234'}, {_v: 2, _rep: ['smk1', 'smk2']});
     const card = cardOf(p);
@@ -1357,8 +1355,8 @@ async function overlays(b, base) {
   return fails;
 }
 
-// Signing in to an existing account (Pierre, 2026-11-03: players type only their first name, so two of them can pick the
-// same name, even the same simple code). The sheet is never reached (rule D1): every request to the sync
+// Signing in to an existing account (players type only their first name, so two of them can pick the same name, even
+// the same simple code). The sheet is never reached (rule D1): every request to the sync
 // script is answered inside the page by a wrapped fetch (SHEET below), a route answers the same way, and the script's
 // hosts are mapped to this computer. Checks: a name taken with another code says so and suggests the initial; an
 // existing account asks "Is it you?" with its answers and last play, on a device with progress of its own and on a fresh
@@ -1381,7 +1379,7 @@ const SHEET = () => {
       account = localStorage.getItem('test-sheet-old')
         ? {'imr-coral-progress': prog, 'imr-coral-quiz': '{"bon":false}'} // rename-app: keep
         : {'reefid-sync-coral-progress': prog, 'reefid-sync-coral-quiz': '{"bon":false}'};
-    // sheet v58: a player deletes their own account (sync.js viewDeleteAccount): Anna's code only.
+    // A player deletes their own account (sync.js viewDeleteAccount): Anna's code only.
     if (body && body.selfDelete)
       return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 58} : {ok: false, error: 'pin', v: 58};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
@@ -1397,7 +1395,7 @@ const SHEET = () => {
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
-    // test-sheet-acct: the account's generation (sheet v58 _acct), as a name taken again after an archive has another
+    // test-sheet-acct: the account's generation (the sheet's _acct), as a name taken again after an archive has another
     const acct = localStorage.getItem('test-sheet-acct');
     return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account, ...(acct ? {acct} : {})};
   };
@@ -1483,11 +1481,10 @@ async function signin(base) {
       await p.waitForSelector('.signnudge form.sform', {timeout: 5000});
     }
   );
-  // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
-  // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
-  // answers queued for the sheet, which took no fish answers then, so it never came). Fish is opened to this player in the
+  // The sign-in card is the app's, not a subject's: a player who plays only fish meets it at their 20th answer, as a coral
+  // player does (the fish answers count among those queued for the sheet). Fish is opened to this player in the
   // page, as the admin's group will (core.js SUBJECTS beta).
-  // Fish opens to all since 2026-11-06 (Q158): the page starts on the corals (no saved choice), so Fish is switched on
+  // Fish opens to all: the page starts on the corals (no saved choice), so Fish is switched on
   // Tools below.
   await run(
     () => (
@@ -1495,8 +1492,8 @@ async function signin(base) {
       localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}') // the fish welcome question answered
     ),
     async p => {
-      // The visit log on the way (Codex review #466): Fish switched on the same page (Tools) closes the coral page and opens
-      // the fish one, fish.tools (it kept counting the coral one: the tally knew the hash only).
+      // The visit log on the way: Fish switched on the same page (Tools) closes the coral page and opens the fish one,
+      // fish.tools (the tally keys on the subject too, not on the hash alone).
       await p.evaluate(() => go('lab'));
       await p.waitForFunction(() => hashNow() === 'lab' && PV.cur && PV.cur.n === 'tools', null, {timeout: 15000});
       await p.evaluate(() => {
@@ -1545,7 +1542,7 @@ async function signin(base) {
         }
         return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
       }, qa.SEL);
-      // Its fish answers wait on the device for the sheet like coral ones (LOG0; sheet v60 logs every subject's).
+      // Its fish answers wait on the device for the sheet like coral ones (LOG0; the sheet logs every subject's).
       if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0 !== r.n)
         fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
     }
@@ -1596,7 +1593,7 @@ async function signin(base) {
       await card(p);
       const ph = await p.getAttribute('.signnudge input[name=n]', 'placeholder');
       if (!/initial/i.test(ph || '')) fails.push(`sign-in: the name field does not ask for the initial (placeholder "${ph}")`);
-      // A nickname or alias is just as welcome (Pierre, 2026-11-04), said in the field's label, not only in the note below.
+      // A nickname or alias is just as welcome, said in the field's label, not only in the note below.
       const lb = await p.evaluate(() => document.querySelector('.signnudge input[name=n]').closest('label').textContent);
       if (!/nickname/i.test(lb)) fails.push(`sign-in: the name field's label does not offer a nickname ("${lb.trim()}")`);
       // A name taken with another code.
@@ -1609,7 +1606,7 @@ async function signin(base) {
       const pin = await p.textContent('.signnudge [role=status]');
       if (!/Someone already uses the name Anna\. If it isn't you, add your surname's initial \(Anna B\.\)/.test(pin))
         fails.push(`sign-in: name taken with another code says "${pin}"`);
-      // A new account under a reserved name (core.js reservedName; Pierre, 2026-11-09): said on the form, nothing signed in
+      // A new account under a reserved name (core.js reservedName): said on the form, nothing signed in
       // or saved.
       for (const nm of ['Constructor', '__proto__']) {
         await submit(p, nm, '1234');
@@ -1662,7 +1659,7 @@ async function signin(base) {
         );
     }
   );
-  // A fresh device: the question too (Pierre, 2026-11-03: everyone confirms the account), with no "this device" line.
+  // A fresh device: the question too (everyone confirms the account), with no "this device" line.
   await run(seen, async p => {
     await card(p);
     await submit(p, 'anna', '1234');
@@ -1681,7 +1678,7 @@ async function signin(base) {
     if (!n.sync || JSON.parse(n.sync).name !== 'Anna B.' || (await p.$('.signnudge .sconfirm')))
       fails.push('sign-in: a new name did not sign in at once');
   });
-  // A device from before the rename to IMR Reef ID (2026-11-03), signed in as Anna, with only the old key names, and an
+  // A device from before the rename to IMR Reef ID, signed in as Anna, with only the old key names, and an
   // account the sheet holds under the old names (an app from before the rename saved it last): the app starts signed in,
   // with this device's progress and theme, merges the account's, and sends the new names plus the old-name copies.
   // rename-app: keep-begin
@@ -1723,13 +1720,13 @@ async function signin(base) {
         fails.push("rename: this device's progress was not kept: " + JSON.stringify(s.prog).slice(0, 120));
       if ((s.prog.Acropora || {}).ok !== 30) fails.push("rename: the account's progress saved under the old names was not read");
       if (s.theme !== 'dark') fails.push(`rename: the theme saved under the old name is not applied (${s.theme})`);
-      // The save is a light one (sheet v116): the new names only, the sheet adds the old-name copies (Code.gs lightData_).
+      // The save is a light one: the new names only, the sheet adds the old-name copies (Code.gs lightData_).
       if (!s.sent.includes('reefid-sync-coral-progress') || s.sent.some(k => k.startsWith('imr-')) || s.sent.includes('reefid-account'))
         fails.push('rename: the sync does not send the new names only: ' + s.sent.join(', '));
     }
   );
   // rename-app: keep-end
-  // An archived record (sheet v58, Q88; the audit's G4): the sheet no longer finds the name a device saved under (found
+  // An archived record: the sheet no longer finds the name a device saved under (found
   // false with a revision on the device). The device pushes nothing (the record is not re-created) and says it was archived.
   await run(
     () => {
@@ -1755,7 +1752,7 @@ async function signin(base) {
         fails.push('archived record: the device does not stop and say so: ' + JSON.stringify(s).slice(0, 200));
     }
   );
-  // The same name taken again after an archive (sheet v58 _acct, Codex review #603): the sheet finds an account of another
+  // The same name taken again after an archive (the sheet's _acct): the sheet finds an account of another
   // generation than the one this device saved under: archived too, nothing pushed.
   await run(
     () => {
@@ -1778,7 +1775,7 @@ async function signin(base) {
       if (s.err !== 'archived' || s.pushed) fails.push('name taken again after an archive: the device does not stop: ' + JSON.stringify(s));
     }
   );
-  // Deleting one's own account (Pierre, 2026-11-05; sheet v58 selfDelete): #about/delete-account, the code, a second step, then
+  // Deleting one's own account (the sheet's selfDelete): #about/delete-account, the code, a second step, then
   // the device signed out and cleared; the request carries dname / dpin (never name / pin), and a wrong code never leaves.
   await run(
     () => {
@@ -1831,7 +1828,7 @@ async function signin(base) {
       if (s.posts.length !== 1 || s.posts[0].name) fails.push('delete account: the request: ' + JSON.stringify(s.posts));
     }
   );
-  // One player level everywhere (Pierre, 2026-11-06, Q134): My progress shows the device's own level (P['~level'], Elo
+  // One player level everywhere: My progress shows the device's own level (P['~level'], Elo
   // 1000 + 200 × th) before and after the leaderboard arrives, whatever level the board holds for the player (the kept
   // copy and the fresh one both disagree here on purpose); the board's own row shows that same level, the others theirs.
   await run(
@@ -1882,7 +1879,7 @@ async function signin(base) {
       if (rows.join('|') !== 'Elo 1300|Elo 1080') fails.push('one level: the board shows ' + rows.join(' | '));
     }
   );
-  // Staff and cohort boards (sheet SCOPES_SHEET; Pierre, 2026-11-17): Anna's cohort's board first (its name as its
+  // Staff and cohort boards (sheet SCOPES_SHEET): Anna's cohort's board first (its name as its
   // heading, her row marked there and on the general board), then the staff's, then all players'; the other cohorts in
   // the "Other cohorts" fold, closed; My progress ranks her on her cohort's board. A reply from the version before: the
   // one board, untitled, as before.
@@ -1957,7 +1954,7 @@ async function signin(base) {
           fails.push(`scoped boards (${v} v${N}): ${JSON.stringify({rank, ...B})}`);
       }
     );
-  // Player groups' boards (sheet GROUPS_SHEET; Pierre, 2026-11-18): the boards of Anna's own groups first (by the ids her
+  // Player groups' boards (sheet GROUPS_SHEET): the boards of Anna's own groups first (by the ids her
   // account's last load named: reefid-groups ids), each under its name, then All players; every other group's behind the
   // closed "Other groups", an empty one left out; My progress ranks her on the first board that lists her. A reply from the
   // version before carries no groups: the one board, untitled, as before.
@@ -2043,7 +2040,7 @@ async function signin(base) {
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
     async p => {
-      // Fish open to all (Q158): the tour starts with the subject to play (#629); the corals.
+      // Fish open to all: the tour starts with the subject to play; the corals.
       await p.waitForSelector('#tour [data-pick], #tour [data-start]', {timeout: 10000}).catch(() => {});
       if (await p.$('#tour [data-pick="coral"]')) await p.click('#tour [data-pick="coral"]');
       await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
@@ -2063,8 +2060,8 @@ async function signin(base) {
   return fails;
 }
 
-// The sheet's full replay adopted by the app (sync.js replayAdopt; Pierre, 2026-11-03: progress recalculated from the
-// whole answer log, automatically). Nothing reaches the sheet (rule D1): every sync request is answered in the
+// The sheet's full replay adopted by the app (sync.js replayAdopt: progress recalculated from the whole answer
+// log, automatically). Nothing reaches the sheet (rule D1): every sync request is answered in the
 // page (a wrapped fetch and SHEET_STUB), a route answers any that escapes, and the script's hosts are mapped to this
 // computer. A stale signed-in device (its copy saved under older rules, one answer of its own not sent yet) loads:
 // it adopts the replay the sheet sends (the replayed record, its own answer replayed on top), saves and sends it, with
@@ -2120,7 +2117,7 @@ async function replayAdoptCheck(base) {
         localStorage.setItem('test-sheet-log', JSON.stringify(log));
         // The replay comes with every reply, whatever rv the app sends: the app must not adopt it twice. A test can
         // change it (test-rec) to see whether it is adopted again. The sheet keeps what was last sent.
-        // fp: the first-launch history it was made with (Code.gs v36), this device's here (core.js startFp).
+        // fp: the first-launch history it was made with (Code.gs), this device's here (core.js startFp).
         const replay = {
             rv,
             n: 3,
@@ -2345,8 +2342,8 @@ async function replayAdoptCheck(base) {
   return fails;
 }
 
-// The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
-// account showed him again the cards and toasts he had seen on another; sync.js noticeLater, noticesGo, core.js TOLD). A
+// The one-time notices wait for the visit's first sync, so a device holding an old copy of the account never shows again
+// the cards and toasts seen on another (sync.js noticeLater, noticesGo, core.js TOLD). A
 // signed-in device whose copy is older than the account's (the last update note not seen here, a learned mark taken
 // away not told here, a run of 12 right answers without its achievement): the sheet's copy says the note and the mark
 // were told on another device and holds the achievement, so nothing shows, before or after the sync. The same device
@@ -2362,7 +2359,7 @@ async function noticesAfterSync(base) {
   const last = 'typed-questions-2026-11',
     t0 = Date.parse('2026-11-03T05:00:00Z'),
     prog = {Acropora: {ok: 1, ko: 0, streak: 1, h: '1', at: t0}, '~level': {ok: 1, ko: 0, th: 0.1, at: t0}},
-    mine = {_v: 3, _best: 12}, // the run's feat here, its achievement (run10) not counted yet; a record of today's version (progress.js ACH_V), so no silent recount (#734) counts it first
+    mine = {_v: 3, _best: 12}, // the run's feat here, its achievement (run10) not counted yet; a record of today's version (progress.js ACH_V), so no silent recount counts it first
     acct = {...mine, run10: t0},
     // The sheet's copy: what the device has, plus what another device told and earned (told: core.js TOLD tokens).
     data = told => ({
@@ -2478,7 +2475,7 @@ async function noticesAfterSync(base) {
     if (await p.evaluate(() => window.CARDS_SAID)) fails.push('notices: start-up said its cards were settled before the sync');
     await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
     await p.click('.unlock.recalc .next').catch(() => {});
-    // The learned mark's card due from before: dropped unseen (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332).
+    // The learned mark's card due from before: dropped unseen (model.js MXL.QUIET).
     await p.waitForSelector('.achpop', {timeout: 8000}).catch(() => fails.push("notices: the run's achievement never popped up"));
     await p
       .waitForFunction(
@@ -2520,16 +2517,16 @@ async function noticesAfterSync(base) {
   return fails;
 }
 
-// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
+// The first-launch question (core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
 // Coral basics in Learn: forced in the tour (no Skip, no Next, no arrow key until answered), stored with how it was
 // given; a skipped tour asks it on a card before the quiz (Escape goes Home, the quiz asks again); "new" offers Coral
 // basics first; an existing player with CHOICE.ASK answers or more is never asked (inferred); the fallback card shows
 // once over a new question when the first answers do not fit, never twice; Coral basics is the first Learn tab and the
 // "0" block of Genera, out of the Lab list with a link kept there; the Home line until it is done; a glossary term
 // links to its step; done = every step seen, with its achievement. Returns the failures.
-// Fish opens to all since 2026-11-06 (Q158): a check about the corals-only onboarding (one subject: the start question
-// first, no subject pick) serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
-// The corals alone: every other subject back to a group (fish and, since 2026-11-17, the sea slugs open to all).
+// Fish opens to all: a check about the corals-only onboarding (one subject: the start question first, no subject pick)
+// serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
+// The corals alone: every other subject back to a group (fish and the sea slugs open to all).
 const oneSubject = c =>
   c.route(
     u => new URL(u).pathname === '/core.js',
@@ -2664,7 +2661,7 @@ async function startSmoke(b, base) {
       });
       await p.waitForTimeout(300);
     }
-    // A gentle offer, never a verdict (Pierre, 2026-11-04): Coral basics and "No thanks, I know the basics" as two equal
+    // A gentle offer, never a verdict: Coral basics and "No thanks, I know the basics" as two equal
     // buttons, no word that labels the player or says the level changed.
     const fb = await p.evaluate(() => {
       const d = document.querySelector('.unlock.startfb'),
@@ -2677,7 +2674,7 @@ async function startSmoke(b, base) {
           keep: (d.querySelector('[data-keep]') || {}).textContent,
           equal: bs.length === 2 && getComputedStyle(bs[0]).backgroundColor === getComputedStyle(bs[1]).backgroundColor,
           judged: /beginner|below what|you are new|level|gently/i.test(d.textContent),
-          // No count on the card (Pierre, 2026-11-04); "5 minutes" is the length of Coral basics.
+          // No count on the card; "5 minutes" is the length of Coral basics.
           digits: /\d/.test(d.textContent.replace(/5 minutes/g, ''))
         }
       );
@@ -2729,14 +2726,13 @@ async function startSmoke(b, base) {
     if (!home) fails.push('Home: no "New to corals?" line for a new player');
     if (g.tabs[0] !== '#learn/basics' || !/^0\s*Coral basics/.test(g.first || '') || !g.link)
       fails.push(`Learn path: ${JSON.stringify(g)}`);
-    // The Genera card always opens step 1, in both views (Pierre, 2026-11-04: it resumed at the last step seen); the
-    // Basics tab still resumes there.
+    // The Genera card always opens step 1, in both views; the Basics tab resumes at the last step seen.
     for (const v of ['photos', 'tips']) {
       if (v === 'tips') {
         await p.evaluate(() => (location.hash = 'learn/genera'));
         await drawn(p);
       }
-      // No step seen yet: Colony is the next stop, worded "Start: Colony" (Pierre, 2026-11-04), the others not reached.
+      // No step seen yet: Colony is the next stop, worded "Start: Colony", the others not reached.
       await p.evaluate(v => {
         localStorage.removeItem('reefid-basics');
         document.querySelector(`[data-gv="${v}"]`).click();
@@ -2837,7 +2833,7 @@ async function startSmoke(b, base) {
     if (allSeen !== 7) fails.push(`Genera: Coral basics done but ${allSeen} of 7 trail stops seen`);
     await c.close();
   }
-  // What the start answer changes on screen (Pierre, 2026-11-04): "new" gets no "Open all" box on the first cards (My
+  // What the start answer changes on screen: "new" gets no "Open all" box on the first cards (My
   // progress keeps it); "imr" and "know" get no Home line to Coral basics; the "lower" card of a player who opened all
   // the genera speaks of all of them, with no number.
   for (const c0 of ['new', 'imr', 'know']) {
@@ -2871,14 +2867,14 @@ async function startSmoke(b, base) {
   return fails;
 }
 
-// Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
+// Coral basics on a phone and a tablet: the teaching photo leaves room on screen (at most 45% of its
 // height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule U2), and
 // every photo of a check gets the games' clickable source once answered (rule P5, photoSrc). Returns the failures.
-// Credits and Home's fit (Pierre, 2026-11-03): no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
+// Credits and Home's fit: no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
 // link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
 // feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
 // phones, signed out, without a sideways scroll.
-// "Did you know?" tips (tips.js, quiz.js tipAfter / tipShow; the owner, 2026-11-04), the zoom tip on a phone and a
+// "Did you know?" tips (tips.js, quiz.js tipAfter / tipShow), the zoom tip on a phone and a
 // desktop. The device's counters (reefid-tips) are set as a player's would be: q questions answered here, z photos
 // enlarged, a visit of 12 answers going on. Checks: a targeted player (25 questions, nothing enlarged) gets it at the Next
 // right after a miss on a photo they did not enlarge, never with the answer itself; one card on screen; its buttons take
@@ -3019,7 +3015,7 @@ async function tipsCheck(b, base) {
       await c.close();
     }
     // The rules below (when a tip takes a break, which players never get it, the duel's cards) do not depend on the width:
-    // they run once, on the phone (test-suite review D3, 2026-11-04). The card itself, its fit, Show me and "once a visit"
+    // they run once, on the phone. The card itself, its fit, Show me and "once a visit"
     // are checked above at both widths; the rules' logic also has tests/tips.test.js.
     if (w !== 390) continue;
     // "Got it" goes on to the next question.
@@ -3073,9 +3069,8 @@ async function tipsCheck(b, base) {
       if (early || !(r.inline || r.card) || r.tip) fails.push(`${W} with the one-tap question due: ${JSON.stringify({early, ...r})}`);
       await c.close();
     }
-    // The Duel tab (one progression path since 2026-11-04, Pierre: its duels draw only genera unlocked and bring no
-    // card; until then a duel of genera not met brought their cards and the tip had to wait for a later break, Codex
-    // review of PR #440, checked here until this change): at an armed break the tip comes, and no card after it.
+    // The Duel tab (one progression path, rule L4: its duels draw only genera unlocked and bring no card): at an armed
+    // break the tip comes, and no card after it.
     {
       const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#practice/duels'); // q 60: any break will do; every genus met
       // The hold already on: these misses never take it across INTRO.HOLD, so the Duel tab's relief card (checked in
@@ -3117,8 +3112,8 @@ async function tipsCheck(b, base) {
   }
   return fails;
 }
-// The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftNote, leftArm, leftShow; Pierre,
-// 2026-11-12), on a phone and a desktop, in the tips part. A player with 6 genera met and picked, the device's count set
+// The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftNote, leftArm, leftShow), on a
+// phone and a desktop, in the tips part. A player with 6 genera met and picked, the device's count set
 // 2 answers under LEFTN.AT. Checks: the answer that brings the count to LEFTN.AT - 1 gets no card; the next one gets it
 // at Next, never with the answer itself; one card on screen, its kind, words (the units that may still open, counted as
 // the photo quiz's opening reads them) and buttons, faded at first, nothing wider than the screen; marked shown and
@@ -3270,7 +3265,7 @@ async function customLeftCheck(b, base) {
     if (errs.length) fails.push(`390px custom quiz reminder, nothing to open: page errors ${errs.slice(0, 3).join(' | ')}`);
     await c.close();
   }
-  // The opening hold on (model.js introHold; Pierre, 2026-11-12, on #850): no card while it is on, past LEFTN.AT; it comes
+  // The opening hold on (model.js introHold): no card while it is on, past LEFTN.AT; it comes
   // at the first break once the hold is off.
   {
     const W = '390px custom quiz reminder, opening hold:';
@@ -3288,7 +3283,7 @@ async function customLeftCheck(b, base) {
   }
   return fails;
 }
-// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), at 390, 1024 and 1280 px,
+// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow), at 390, 1024 and 1280 px,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
 // on screen, its kind, words (no number) and buttons (Mix in other genera first), faded at first; Keep drilling goes on to
@@ -3610,7 +3605,7 @@ async function duelReliefCheck(b, base) {
       await c.close();
     }
   }
-  // A short phone screen (Codex review #460): the settings pop-up, opened over the comparison, reaches down to the
+  // A short phone screen: the settings pop-up, opened over the comparison, reaches down to the
   // floating Back to the duel; a tap there is the setting's, not the button's (the page stays, the way back is kept).
   {
     const W = '390x640 duel relief:',
@@ -3705,8 +3700,8 @@ async function credits(b, base) {
         text: cr ? cr.textContent : '',
         link: !!(cr && cr.querySelector('a[href="#about"]')),
         bottom: cr ? Math.round(cr.getBoundingClientRect().bottom) : 0,
-        // Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03).
-        // Phones (Pierre, 2026-11-03, second look): the Learn and Practice buttons carry the door, its photos only illustrate.
+        // Learn & practise is the primary door, Identify the secondary one.
+        // Phones: the Learn and Practice buttons carry the door, its photos only illustrate.
         doors: ['.hdoor.learn', '.hdoor.identify', '.hdoor.learn .hdart', '.hdoor.learn .hdbtn', '.hdoor.identify .hdbtn'].map(s => {
           const b = document.querySelector(s)?.getBoundingClientRect();
           return b ? [Math.round(b.width), Math.round(b.height)] : [0, 0];
@@ -3725,9 +3720,9 @@ async function credits(b, base) {
     if (w < 600 ? !(ld[1] > id[1] && lb[1] > ib[1] && la[1] <= 0.28 * h + 1) : !(ld[0] > id[0]))
       fails.push(`${w}x${h} Home: Learn & practise is not the main door: ${JSON.stringify(r.doors)}`);
     // Tablet and desktop: the Learn door's photo band keeps its height with the subject switch above the doors (the phone
-    // rule that shortens it on the shortest screens never applies there; Codex review #650).
+    // rule that shortens it on the shortest screens never applies there).
     if (w >= 600 && la[1] < 120) fails.push(`${w}x${h} Home: the Learn photo band collapsed to ${la[1]} px`);
-    // The corals keep their close-up mosaic (Pierre, 2026-11-08: only the fish tiles turn landscape): 4 columns on phones
+    // The corals keep their close-up mosaic (only the fish tiles turn landscape): 4 columns on phones
     // (one row, two once the band is 150 px tall), 6 x 2 from tablets up.
     const ct = await tiles(p);
     if (ct.land || ct.cols !== (w >= 600 ? 6 : 4) || ct.boxes.length !== (w >= 600 ? 12 : la[1] >= 150 ? 8 : 4))
@@ -3736,11 +3731,11 @@ async function credits(b, base) {
       fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Fish Home (Pierre, 2026-11-08: most fish are horizontal, square tiles cut them): fewer, landscape tiles (home.css
+  // Fish Home (most fish are horizontal: square tiles cut them): fewer, landscape tiles (home.css
   // .hdtiles.land), every one between 1.3 and 2 wide for 1 tall at every size (U4's widths, phones in portrait and in
   // landscape, the short phone whose band is one row), at most the count given (the corals show 12 from tablets up, 4 or 8
   // on phones); nothing wider than the screen. The Identify door's photo too (home.css .hdart.rc.land): a box between 1.3
-  // and 1.8 wide for 1 tall (#740's screenshots: a 96 px box cut the fish at 390 px), or, narrower on a 320 px phone, the
+  // and 1.8 wide for 1 tall (a 96 px box cuts the fish at 390 px), or, narrower on a 320 px phone, the
   // photo shown whole (object-fit: contain).
   for (const [w, h, most] of [
     [320, 568, 4],
@@ -3805,7 +3800,7 @@ async function credits(b, base) {
         privacy: !!(a && a.querySelector('a[href="privacy.html"]')),
         feedback: !!(a && a.querySelector('[data-rep]')),
         licences: !!a && /CC BY/.test(a.textContent),
-        // the lecture photos traced to Corals of the World (Pierre, 2026-11-15, #925): the site and its terms named
+        // the lecture photos traced to Corals of the World: the site and its terms named
         cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
@@ -3854,10 +3849,10 @@ async function credits(b, base) {
   return fails;
 }
 
-// Pages opened in a visit (sync.js pagesRoute / pagesSend, core.js PAGES, sheet v30 'pages'): a visit opens the quiz,
+// Pages opened in a visit (sync.js pagesRoute / pagesSend, core.js PAGES, the sheet's 'pages'): a visit opens the quiz,
 // the genus sheet from the answer's feedback, then another sheet from Genera; leaving the app (hidden) queues one
 // summary with the pages, the seconds, the two sheets and how each was reached. Queued only, never sent: a local copy
-// sends nothing to the sheet (app.js LOCAL), and every request off this site is cut. Before the sheet says v30, none.
+// sends nothing to the sheet (app.js LOCAL), and every request off this site is cut. Before the sheet reports the version that stores them, none.
 async function pagesVisit(b, base) {
   const fails = [],
     hide = p =>
@@ -3962,7 +3957,7 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary, sheet in a new tab: ${JSON.stringify({Q, target, posts})}`);
     await c.close();
   }
-  // From the sheet version that keeps it (sync.js VIEWPORT_SHEET; Pierre, 2026-11-18), the summary carries the screen,
+  // From the sheet version that keeps it (sync.js VIEWPORT_SHEET), the summary carries the screen,
   // rounded (core.js viewportOf): this 390 x 800 window at pixel ratio 1, portrait, band 361-390. Queued, never sent.
   {
     const N = Number(/const VIEWPORT_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1]),
@@ -3974,7 +3969,7 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary, the screen from v${N}: ${JSON.stringify({vp: e.vp, posts})}`);
     await c.close();
   }
-  // A summary queued for one player is sent only under that player (Codex review #423): queued signed out, it becomes
+  // A summary queued for one player is sent only under that player: queued signed out, it becomes
   // the account's at sign-in (as the answers do); queued for Ana and still waiting after she signed out, it is dropped,
   // never sent under the next player's anonymous id.
   {
@@ -4014,7 +4009,7 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Before any reply too: the app reads the script as the gate floor (core.js SHEET_FLOOR), which stores them (sheet v30).
+  // Before any reply too: the app reads the script as the gate floor (core.js SHEET_FLOOR), which stores them.
   {
     const [c, p] = await open(390, 0);
     await answer(p);
@@ -4085,9 +4080,8 @@ async function basicsFit(b, base) {
         fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
-      // Every kind of check offers the app's report once answered (rule U14; Codex on PR #405), and a classified photo
-      // opens the enlarged view with its report. (Checked here since 2026-11-04, test-suite review D1: the main route loop
-      // navigated to and answered the same steps at 390 and 1280 px only for these two checks, which are not layout.)
+      // Every kind of check offers the app's report once answered (rule U14), and a classified photo opens the enlarged
+      // view with its report. Checked once here: they are not layout.
       if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}x${h} Coral basics ${st}: no report button after the answer`);
       if (st === 'walls') {
         await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
@@ -4102,7 +4096,7 @@ async function basicsFit(b, base) {
   return fails;
 }
 
-// Fish basics (Pierre, 2026-11-04; proto/fishbasics.js), the fish twin of Coral basics on the same engine: the first Learn
+// Fish basics (proto/fishbasics.js), the fish twin of Coral basics on the same engine: the first Learn
 // tab on the fish, the "0" block of the families page with its six-stop trail, the Home line and the first-launch offer for
 // "new", every step and view drawn and fitting the screen (rule U2: the drawing at most 45% of the height, nothing wider
 // than the screen), the groups from the key with photos that enlarge, the checks, done = every step seen in its own record
@@ -4338,7 +4332,7 @@ async function fishBasicsCheck(b, base) {
   return fails;
 }
 
-// Coral basics, Pierre's feedback of 2026-11-03: step 4 defines costae beside septa (a term of its own, a label in its own
+// Coral basics: step 4 defines costae beside septa (a term of its own, a label in its own
 // colour outside the cup's rim, the septa label inside it, the centre on the cup's centre); step 6 shows the four wall
 // types one after the other, "Next: Growth forms" only after the fourth, the check opening then; step 7 picks a form on a
 // drawn icon and shows 2-3 large photos of it, each enlarged with its genus; every teaching photo opens the enlarged
@@ -4397,7 +4391,7 @@ async function basicsTeach(b, base) {
     if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
     else {
       if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
-      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      // Costae are immediately outside the wall: past the rim, by less than a quarter of its radius.
       if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
       if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
     }
@@ -4433,7 +4427,7 @@ async function basicsTeach(b, base) {
     });
     if (!lb || lb.d > 2 || lb.labs < 3)
       fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
-    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels: its box is the layer's and
     // each dot sits at its photo coordinates, at fit and at actual size.
     const marks = () =>
       p.evaluate(() => {
@@ -4554,8 +4548,8 @@ async function basicsTeach(b, base) {
   return fails;
 }
 
-// A brand-new player end to end (rule W17; test-suite review, 2026-11-04: every other check
-// pre-sets "tour seen" or "cards seen", so none met them together, as an RA did). A phone, an empty browser: the welcome
+// A brand-new player end to end (rule W17: every other check pre-sets "tour seen" or "cards seen", so none meets them
+// together as a new player does). A phone, an empty browser: the welcome
 // tour step by step, the first genus cards, 30 answers with whatever card or prompt comes (each closed as a player would,
 // with Escape, or its first button), then My progress and Genera. At every step: at most one card, tour or enlarged photo
 // on screen, every card closable, no page error. Returns the failures.
@@ -4592,7 +4586,7 @@ async function newPlayer(b, base) {
   await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000}).catch(() => {});
   if (!(await p.$('#tour'))) fails.push('new player: no welcome tour on the first visit');
   // The tour, step by step, to its end; its first-launch question (forced, no Next) answered "I'm new to corals".
-  // Fish open to all (Q158): the tour's first step asks which subject to start with (#629); this player picks the corals.
+  // Fish open to all: the tour's first step asks which subject to start with; this player picks the corals.
   for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start], #tour [data-pick]')); k++) {
     const o = await over();
     alone(o, `tour step ${k + 1}`);
@@ -4647,8 +4641,8 @@ async function newPlayer(b, base) {
       .catch(() => false);
     if (!nx) fails.push(`new player: no Next after answer ${i}`);
     // A card that came with the answer (the sign-in card at 20 answers) is answered first: a player cannot reach Next
-    // behind it (the card is modal, the quiz's keys wait for it). Clicking Next through it in the page, as this did
-    // until 2026-11-04, drew the next question and its genus card under it: two cards at once that no player can get.
+    // behind it (the card is modal, the quiz's keys wait for it). Clicking Next through it in the page would draw the
+    // next question and its genus card under it: two cards at once that no player can get.
     if (!(await close(`after answer ${i}`))) break;
     await p.evaluate(() => document.getElementById('next')?.click());
   }
@@ -4666,7 +4660,7 @@ async function newPlayer(b, base) {
   return fails;
 }
 
-// One progression path for every game (Pierre, 2026-11-04): a beginner who met 4 genera on the path (Pocillopora,
+// One progression path for every game (rule L4): a beginner who met 4 genera on the path (Pocillopora,
 // Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
 // genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
 // to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them; the Tools' games ask about
@@ -4842,14 +4836,14 @@ async function onePath(b, base) {
         .then(() => true)
         .catch(() => false);
       if (!ok) none.push(h + (start ? ' ' + start : ''));
-      // The tool's own controls stay (Codex review #491: the Zoom ladder's note replaced its Explore switch).
+      // The tool's own controls stay.
       else if (start && !(await p0.$(start))) none.push(h + ' (its controls gone)');
     }
     if (none.length) fails.push(`one path, Tools games with no genus unlocked: no line to the quiz in ${none.join(', ')}`);
     await c0.close();
   }
   // Genera unlocked but none with a ringed photo (Pocillopora alone): the anatomy drill says so instead of an empty
-  // question (Codex review #491).
+  // question.
   {
     const c1 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
     await c1.route(
@@ -4878,7 +4872,7 @@ async function onePath(b, base) {
   return fails;
 }
 
-// Similar names after a mix-up (the name study's question b; Pierre, 2026-11-14, Q124; quiz.js namesLine): a player who
+// Similar names after a mix-up (quiz.js namesLine): a player who
 // met 4 genera drills two of their pairs in the Duel tab and misses each. Pocillopora / Stylophora (Dice 0.48): the
 // feedback says "Similar names:", the genus shown first, then the answer, each in italics with the letters that differ
 // in bold, and the "Your answer" line after it; Favites / Pocillopora (no first letter, Dice under 0.4): the "Your
@@ -4944,7 +4938,7 @@ async function namesCheck(b, base) {
         fails.push(`similar names ${w}: the names not in italics with bold letters, or not first ${JSON.stringify(r)}`);
       else if (!r.vs.length) fails.push(`similar names ${w}, ${pair.join('/')}: no "Your answer" line ${JSON.stringify(r)}`);
       if (!r.next) fails.push(`similar names ${w}, ${pair.join('/')}: Next out of view after the answer`);
-      // The short sheet (Pierre, 2026-11-18, rule C3): the verdict, the species line and one line; More and Next on one row;
+      // The short sheet (rule C3): the verdict, the species line and one line; More and Next on one row;
       // everything else (the ID tips, the names, "Your answer") hidden until More is opened, counted once (core.js PAGES.FB).
       const m = await p.evaluate(() => {
         const q = s => document.querySelector(s),
@@ -4994,8 +4988,7 @@ async function namesCheck(b, base) {
   return fails;
 }
 
-// The subject to start with (Pierre, 2026-11-06; tour.js pick, plan): a player with one subject gets the six steps as
-// before, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
+// The subject to start with (tour.js pick, plan): a player with one subject gets the six steps, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
 // subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
 // gets the choice right after the sign-in step; with fish open to all (core.js open: 'all'), a signed-out new player
 // gets it too. Fish photos are not fetched (every other host is aborted). Returns the failures.
@@ -5010,7 +5003,7 @@ async function subjTour(b, base) {
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    // Fish opens to all since 2026-11-06 (Q158): 'all' serves core.js as it is; the group cases serve it with fish back to
+    // Fish opens to all: 'all' serves core.js as it is; the group cases serve it with fish back to
     // open: 'group'.
     await c.route(
       u => u.href.startsWith(base) && u.pathname === '/core.js',
@@ -5018,7 +5011,7 @@ async function subjTour(b, base) {
         const res = await r.fetch(),
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
-        // every subject but the corals back to a group (fish and, since 2026-11-17, the sea slugs open to all)
+        // every subject but the corals back to a group (fish and the sea slugs open to all)
         await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
@@ -5115,7 +5108,7 @@ async function subjTour(b, base) {
       fails.push(`subject tour, no group: ${JSON.stringify(all.map(s => [s.n, s.h, s.subj]))}`);
     await c.close();
   }
-  // 2. In the fish group: the choice first, forced, both subjects (fish out of beta since 2026-11-17); Fish picked: saved, the fish
+  // 2. In the fish group: the choice first, forced, both subjects (fish out of beta); Fish picked: saved, the fish
   // question, then where to switch (the Home row spotlit), the rest in fish words; Back shows the pick kept.
   {
     const [c, p] = await open('group');
@@ -5140,7 +5133,7 @@ async function subjTour(b, base) {
     );
     if (!back) fails.push('subject tour, group: Back to the choice does not show Fish picked with Next');
     // Picked again: Next, Back and the arrow keys wait while the subject loads, so the question that follows is the picked
-    // subject's (Codex review #629); then the tour goes on by itself, as from Next.
+    // subject's; then the tour goes on by itself, as from Next.
     const held = await p.evaluate(() => {
       document.querySelector('#tour [data-pick="fish"]').click();
       const n = document.querySelector('#tour .tnext'),
@@ -5205,7 +5198,7 @@ async function subjTour(b, base) {
   {
     const [c, p] = await open('all');
     const s0 = await bub(p);
-    // the three subjects, the sea slugs with their beta tag, fish out of beta (Pierre, 2026-11-17)
+    // the three subjects, the sea slugs with their beta tag, fish out of beta
     if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish,seaslug+beta')
       fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
     await tap(p, '#tour [data-pick="coral"]', 'step');
@@ -5220,7 +5213,7 @@ async function subjTour(b, base) {
   return fails;
 }
 
-// The offer to install the app (app.js installNudge, installCard; Pierre, 2026-11-08), at 390 px on a touch screen: an
+// The offer to install the app (app.js installNudge, installCard), at 390 px on a touch screen: an
 // Android-like browser (a beforeinstallprompt event, made here: headless Chromium sends none), iPhone Safari (the steps),
 // the installed app (standalone), the 2nd visit, a quiz question, and ⚙ Settings › Install the app. The decision itself is
 // in tests/install.test.js.
@@ -5474,7 +5467,7 @@ const PARTS = [
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
-    // The plain sentence (Pierre, 2026-11-03): on a genus sheet, right after the photo and before the ID tips, with no label.
+    // The plain sentence: on a genus sheet, right after the photo and before the ID tips, with no label.
     await p.evaluate(() => (location.hash = 'learn/genus/Goniastrea'));
     await drawn(p);
     const pl = await p.evaluate(() => {
@@ -5492,7 +5485,7 @@ const PARTS = [
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
-    // The roots of the name (Q124 d, learn.js rootLine): on the same sheet, after the ID tips box and outside it, with
+    // The roots of the name (learn.js rootLine): on the same sheet, after the ID tips box and outside it, with
     // its dictionary links.
     const rt = await p.evaluate(() => {
       const e = document.querySelector('#view .sheet .nameroot'),
@@ -5514,7 +5507,7 @@ const PARTS = [
       !rt.links.every(u => /^https:\/\//.test(u))
     )
       fails.push(`${w}px genus sheet name roots: ${JSON.stringify(rt)}`);
-    // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
+    // The tool is the Coral ID Key: "Coral Finder" on a page (help, folds and pop-ups included)
     // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
     // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).
     const notBook = () =>
@@ -5527,7 +5520,7 @@ const PARTS = [
         location.hash = h;
       }, h);
       if (!(await drawn(p))) fails.push(`${w}px #${h}: the page was not drawn within 15 s`);
-      // Drawn means the page itself, not a placeholder waiting for its files (a Lab page before its modules, Codex #454).
+      // Drawn means the page itself, not a placeholder waiting for its files (a Lab page before its modules).
       else if (await p.evaluate(() => /^\s*Loading/.test(document.querySelector('#view .note')?.textContent || '')))
         fails.push(`${w}px #${h}: still a "Loading…" placeholder once drawn`);
       // A short window for errors a page throws just after it is drawn (a timer, a late photo).
@@ -5535,12 +5528,12 @@ const PARTS = [
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
       const cf = await p.evaluate(notBook);
       if (cf.length) fails.push(`${w}px #${h}: "Coral Finder" for something other than the book: ${cf.slice(0, 2).join(' | ')}`);
-      // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
+      // No credits block on any page but Home: no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
-    // Old and unknown addresses (URL refonte, Pierre 2026-11-05, Q53-Q56: old links are not translated): the section's
-    // page when the first segment is a section, else Home, the address replaced; a fish address opens Fish (open to every
-    // player since 2026-11-06, Q158; a subject a player may not open gives the corals' page: tests/fish.smoke.js).
+    // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
+    // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open
+    // gives the corals' page: tests/fish.smoke.js).
     for (const [from, to] of [
       ['g-Acropora', ''],
       ['quiz', ''],
@@ -5594,7 +5587,7 @@ const PARTS = [
     await p.waitForSelector('.ikstart', {timeout: 15000}).catch(() => {});
     const kt = await p.evaluate(() => (document.querySelector('#view h2') || {}).textContent || '');
     if (kt !== 'Coral ID Key') fails.push(`${w}px #idkey: its title is "${kt}"`);
-    // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
+    // Glossary words: the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'learn/genera'));
     await drawn(p);
@@ -5616,7 +5609,7 @@ const PARTS = [
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
     if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral ID Key slate count: "${fd[0]}", expected ${fd[1]}`);
     // Traits of some species only (data.json `trs`, lab.js trHas): never eliminated on, a row and a ring of their own.
-    // The genus and trait come from the data, the first `trs` found (2026-11-04: paliform lobes in some Favites).
+    // The genus and trait come from the data, the first `trs` found (paliform lobes in some Favites).
     const SOME = await p.evaluate(() => {
       const n = Object.keys(DATA.gen).find(k => (DATA.gen[k].trs || []).length);
       return n && [n, DATA.gen[n].trs[0]];
@@ -5662,9 +5655,9 @@ const PARTS = [
       await q2.goto(base + '#practice/quiz');
       await q2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
       // A player starting from zero first meets INTRO.START genera on cards, one after the other ("1 of 4"), and the
-      // first question is about one of them, its choices among them (Pierre, 2026-11-02).
+      // first question is about one of them, its choices among them.
       await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
-      // The quiz's keys never answer the question behind a card (Codex review #350).
+      // The quiz's keys never answer the question behind a card.
       // answer.js: the key behind a card answers nothing
       await q2.keyboard.press('1');
       if (await q2.evaluate(() => !!document.getElementById('next') || !!P[LEVEL])) fails.push(`${w}px key 1 answered behind a card`);
@@ -5678,7 +5671,7 @@ const PARTS = [
             all: !!document.querySelector('.unlock.intro .ulall [data-all]'),
             gt: !!document.querySelector('.unlock.intro .ultips .gt'),
             hint: !!document.querySelector('.unlock.intro .gthint'),
-            // The plain sentence: after the photo, before the tips, no label (Pierre, 2026-11-03).
+            // The plain sentence: after the photo, before the tips, no label.
             plain: (() => {
               const c = document.querySelector('.unlock.intro'),
                 e = c.querySelector('.plainw'),
@@ -5687,12 +5680,12 @@ const PARTS = [
             })()
           }))
         );
-        // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
+        // A glossary term on a card opens its definition on top of the card.
         const gt = await q2.$('.unlock.intro .gt');
         if (gt) {
           // Which event hid the definition, if one did (app.js: a click elsewhere, Escape, or a scroll once the term has
-          // moved, glossMoved), and where the term was when shown (glossAt) and is now: a failure then says why
-          // (test-suite review, 2026-11-04: seen failing under load, cause not established).
+          // moved, glossMoved), and where the term was when shown (glossAt) and is now: a failure then says why (seen
+          // failing under load, cause not established).
           await q2.evaluate(() => {
             const g = document.querySelector('.gpop'),
               d = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'hidden');
@@ -5737,7 +5730,7 @@ const PARTS = [
       await q2.evaluate(() => (location.hash = 'progress'));
       await q2.waitForSelector('#openall', {timeout: 5000}).catch(() => {});
       if (!(await q2.$('#openall'))) fails.push(`${w}px My progress: no button to open all genera`);
-      // My progress (Pierre, 2026-11-02): the player's card (ring + badge) above the board on phones, Slate by default,
+      // My progress: the player's card (ring + badge) above the board on phones, Slate by default,
       // the view switch last on the page.
       const pg = await q2.evaluate(() => {
         const c = document.querySelector('#view .pbadge'),
@@ -5750,8 +5743,8 @@ const PARTS = [
           last: !!sw && !sw.nextElementSibling && sw.getBoundingClientRect().top >= b.getBoundingClientRect().bottom
         };
       });
-      // The genus name is a tile's key information, never cut (design review 2026-11-01; new-player walkthrough 2026-11-04:
-      // "Duncanopsa…" on the phone's Slate view, once its % shows beside it): every slate genus played, in a page of its own.
+      // The genus name is a tile's key information, never cut (not "Duncanopsa…" on the phone's Slate view once its %
+      // shows beside it): every slate genus played, in a page of its own.
       {
         for (const vw of w === 390 ? [360, 390] : [w]) {
           const cx = await b.newContext({viewport: {width: vw, height: 800}, serviceWorkers: 'block'});
@@ -5776,7 +5769,7 @@ const PARTS = [
           const cut = await px.evaluate(() =>
             [...document.querySelectorAll('#view .pslate .ps i')].filter(i => i.scrollWidth > i.clientWidth + 1).map(i => i.textContent)
           );
-          // Every tile keeps its ring, drawn (Codex review #486: a % hidden with font-size 0 took its em-sized ring along).
+          // Every tile keeps its ring, drawn (a % hidden with font-size 0 would take its em-sized ring along).
           const rings = await px.evaluate(() =>
             [...document.querySelectorAll('#view .pslate .ps .pct')].map(e => {
               const b = getComputedStyle(e, '::before');
@@ -5790,9 +5783,8 @@ const PARTS = [
         }
       }
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
-      // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
-      // met" beside "12 not open yet" after 28 cards): the card says the 4 first cards' genera are unlocked (Pierre,
-      // 2026-11-05: "30/40 genera unlocked", on its own line under the name), the genera not open yet are the others, and a
+      // One count of the genera met (a card or an answer) everywhere on the page: the card says the 4 first cards' genera
+      // are unlocked ("30/40 genera unlocked", on its own line under the name), the genera not open yet are the others, and a
       // genus met on a card but never asked does not read "Not seen".
       const mc = await q2.evaluate(() => {
         const n = slateGenera().length,
@@ -5806,7 +5798,7 @@ const PARTS = [
           tip: tile ? tile.title : null
         };
       });
-      // "Mystery" tiles (Pierre, 2026-11-04; progress.js mysteryOf, app.js UNITS mystery): this player said "I'm new to
+      // "Mystery" tiles (progress.js mysteryOf, app.js UNITS mystery): this player said "I'm new to
       // corals", so every genus not met yet is a "?" on each view, with no link, no name and no tooltip naming it; a player
       // who had the IMR course sees every genus as before.
       const myst = await q2.evaluate(() => {
@@ -5863,19 +5855,19 @@ const PARTS = [
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'practice/quiz'));
       await drawn(q2);
-      // The Open all box: on the first cards, except for a player who answered "I'm new to corals" (Pierre, 2026-11-04).
+      // The Open all box: on the first cards, except for a player who answered "I'm new to corals".
       const boxWanted = await q2.evaluate(() => (startOf() || {}).c !== 'new');
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all === boxWanted && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
-      // Not vacuous (test-suite review, 2026-11-04): the first cards (fixed by INTRO.START and the data) carry a glossary
+      // Not vacuous: the first cards (fixed by INTRO.START and the data) carry a glossary
       // term, or the definition check above and the tap-a-word line below were never checked.
       else if (!seen.some(c => c.gt)) fails.push(`${w}px first cards: no glossary term on any, so the definition was never checked`);
-      // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
+      // "Tap an underlined word" is said once, on the first card with one.
       else if (seen.filter(c => c.hint).length !== +seen.some(c => c.gt) || seen.findIndex(c => c.hint) !== seen.findIndex(c => c.gt))
         fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
-      // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
+      // Back closes an enlarged photo and stays on the page.
       await q2.evaluate(() => (location.hash = 'learn/genus/Porites'));
       await drawn(q2);
       await q2.evaluate(() => document.querySelector('#view .zoom').click());
@@ -5885,7 +5877,7 @@ const PARTS = [
       const lbb = await q2.evaluate(() => ({open: !document.getElementById('lightbox').hidden, h: location.hash}));
       if (lbb.open || lbb.h !== '#learn/genus/Porites') fails.push(`${w}px Back with an enlarged photo: ${JSON.stringify(lbb)}`);
       // A sheet opened by a link in a fresh tab: after a photo was enlarged and closed, its Back button still leads to
-      // Genera (Codex review #344: history.length counted the photo's entry, and Back did nothing).
+      // Genera (history.length counts the photo's entry too).
       const q3 = await c2.newPage();
       await q3.goto(base + '#learn/genus/Porites');
       await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -5956,7 +5948,7 @@ const PARTS = [
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
       // The guided tour on a first visit reaches the quiz (step 3) while the first genus cards are due: the cards wait
-      // under it, out of sight, its keys still work, and they show once it closes (an RA, 2026-11-02).
+      // under it, out of sight, its keys still work, and they show once it closes.
       const ct = await b.newContext({viewport: {width: 1280, height: 860}, serviceWorkers: 'block', intro: true});
       await ct.route(
         u => !u.href.startsWith(base),
@@ -5966,7 +5958,7 @@ const PARTS = [
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
-      // Fish open to every player (Q158): the tour starts with the subject to pick (tour.js pick), then the question.
+      // Fish open to every player: the tour starts with the subject to pick (tour.js pick), then the question.
       if (await qt.$('#tour [data-pick="coral"]')) {
         await qt.click('#tour [data-pick="coral"]');
         await qt.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
@@ -5988,7 +5980,7 @@ const PARTS = [
         };
       });
       if (under.hash !== '#practice/quiz' || !under.card || under.shown) fails.push(`tour over the first cards: ${JSON.stringify(under)}`);
-      // The quiz's answer keys never answer the question under the tour (Codex review #353).
+      // The quiz's answer keys never answer the question under the tour.
       // answer.js: the key under the tour answers nothing
       await qt.keyboard.press('1');
       await qt.waitForTimeout(200);
@@ -6006,7 +5998,7 @@ const PARTS = [
         await qt.waitForTimeout(400);
         said.push(await qt.textContent('#tour').catch(() => ''));
       }
-      // A desktop with a mouse: "Click", never "Tap" (new-player walkthrough 2026-11-04: "Tap ?" on a desktop).
+      // A desktop with a mouse: "Click", never "Tap".
       if (said.some(t => /\bTap\b/.test(t)) || !said.some(t => /Click \?/.test(t)))
         fails.push(`tour on a desktop with a mouse: ${JSON.stringify(said.filter(t => /Tap|Click/.test(t)))}`);
       await qt.click('#tour .tnext');
@@ -6023,8 +6015,8 @@ const PARTS = [
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
-      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule P5;
-      // Pierre, 2026-11-03: a photo with no credit at all).
+      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule P5),
+      // never a photo with no credit at all.
       const cb = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
       await cb.route(
         u => !u.href.startsWith(base),
@@ -6056,7 +6048,7 @@ const PARTS = [
       if (bc.err || !/·/.test(bc.text) || bc.links || bc.it || (gname && bc.text.includes(gname)))
         fails.push(`enlarged quiz photo before the answer: ${JSON.stringify({...bc, gname})}`);
       await cb.close();
-      // Enlarged photo at actual size: a mouse drags it around (an RA, 2026-11-02), a click without moving goes back to fit.
+      // Enlarged photo at actual size: a mouse drags it around, a click without moving goes back to fit.
       const cz = await b.newContext({viewport: {width: 1024, height: 600}, serviceWorkers: 'block'});
       await cz.route(
         u => !u.href.startsWith(base),
@@ -6109,7 +6101,7 @@ const PARTS = [
       if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
         fails.push(`enlarged photo drag: ${JSON.stringify({z0, z1, z2})}`);
       await cz.close();
-      // The enlarge mark and the one-time hint (Pierre, 2026-11-03: players almost never enlarged a quiz photo). Every quiz
+      // The enlarge mark and the one-time hint (players rarely enlarge a quiz photo). Every quiz
       // and genus sheet photo shows the mark, its button labelled "Enlarge photo"; a new player gets "… a photo to see it
       // bigger" on their 2nd question, once (not on the 1st, not again after a reload), and never once a photo was enlarged.
       {
@@ -6141,8 +6133,8 @@ const PARTS = [
             () => p.evaluate(() => document.querySelector('#view .zhint')?.textContent || null),
             () => 'undecided'
           );
-        // toast: an achievement toast is up when the next question shows (as after a duel won as the first question, which
-        // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
+        // toast: an achievement toast is up when the next question shows (as after a duel won as the first question: the
+        // hint is tried once and skipped under the toast); clicked in the page,
         // so Playwright does not wait for the toast to leave first.
         const nextQ = async (p, toast) => {
           await qa.ready(p);
@@ -6221,7 +6213,7 @@ const PARTS = [
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     await p.waitForTimeout(500);
     if (errs.length) fails.push(`${w}px admin.html?readonly: ${errs.slice(0, 3).join(' | ')}`);
-    // One count of a Key-only genus's colonies (Codex review #390, found apart five times): the refill
+    // One count of a Key-only genus's colonies: the refill
     // (tools/fetch_local.py colonies) and the admin (covOf, which the Candidates swiper's full test reads) agree on the
     // real data and curation, view by view.
     if (w === 390) {

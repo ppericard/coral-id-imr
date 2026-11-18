@@ -1,36 +1,26 @@
-# Fetches candidate photos (iNaturalist, open licence) that the site doesn't use yet: taken near Dauin (40 km), plus
-# elsewhere in the Philippines for genera with few Dauin photos, nearest first: within REGION_KM of Dauin (Negros, Cebu,
-# Bohol, Siquijor, northern Mindanao), then the rest of the country. Never outside the Philippines (Pierre, 2026-11-03:
-# a species never seen in the Philippines must not come in through a wider search).
-# Captive observations (aquariums) are left out at the source (captive=false).
-# Last resort (Pierre, 2026-11-03: "si vraiment on est en galère … seulement si l'espèce est confirmée aux Philippines"):
-# when the Philippines tiers leave room (nothing more there), Research Grade photos taken elsewhere, but only of species
-# confirmed in the Philippines by the presence rule (tools/presence.py, rule C8, 2026-11-04: Research Grade
-# there by 3+ distinct observers, or 1+ Research Grade there and listed by Corals of the World for a Philippine ecoregion,
-# or confirmed near Dauin by 2+ Research Grade observers), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
-# ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon), or, in
-# the Philippines only, a trusted expert's identification (EXPERTS) at the genus or below that no other current
-# identification disagrees with (expert_ok). Abroad: Research Grade only.
-# Licences (Pierre, 2026-11-05, aligned with the fish rules): CC0, CC BY, CC BY-NC; never share-alike (it would block a
-# later commercial reuse), checked photo by photo (an observation may mix licences). drop_share_alike takes the waiting
-# share-alike candidates out of cand.json at each run (never one curation.json names, e.g. one Pierre added); the
-# share-alike photos already on the site are his to keep or remove (admin To do › Share-alike), never removed here.
-# Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
-# Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
-# ALL its photos (PER_OBS only guards against an odd one with dozens; Pierre, 2026-11-01: "on my observations I take at
-# least three: the colony, closer, a macro"; a game question shows the views of ONE colony). No order is assumed: an
-# observer may take five photos at one zoom; sorting by view, quality and near-duplicates is for the judging pass
-# afterwards (judging/BRIEF.md), so that what Pierre sees keeps a real variety. Until then it was 2 photos per
-# observation (its first and last) and the caps counted photos.
-# Key-only genera (Pierre, 2026-11-03: "quiz first"; data.json "x" genera no game asks, tools/genera.py): a sheet and
-# the Coral ID Key show at most CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter ("nobody uses
-# the [Coral ID Key] on a corallite close-up"). So such a genus keeps at most as many observations waiting, over all
-# sources, as the colonies it still lacks (key_need: 6 per Colony and Close-up view, minus the colonies it already has
-# there), and a genus that lacks none gets no new candidates. Game genera keep the caps above.
-# Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them in data.json "cand".
-# The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
-# New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
-# by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
+# Fetches candidate photos (iNaturalist, open licence) the site doesn't use yet: taken near Dauin (40 km), plus elsewhere
+# in the Philippines for genera with few Dauin photos, nearest first: within REGION_KM of Dauin (Negros, Cebu, Bohol,
+# Siquijor, northern Mindanao), then the rest of the country, so a species never seen in the Philippines does not come
+# in through a wider search. Captive observations (aquariums) are left out at the source (captive=false).
+# Last resort, when the Philippines tiers have nothing more: Research Grade photos taken elsewhere, only of species
+# confirmed in the Philippines by the presence rule (tools/presence.py, rule C8), at most WORLD_CAP waiting (loc world).
+# Accepted IDs: Research Grade, or a genus-level community ID (Needs ID, 2+ identifications agreeing on the genus or
+# below), or, in the Philippines only, a trusted expert's identification (EXPERTS) at the genus or below that no other
+# current identification disagrees with (expert_ok). Abroad: Research Grade only.
+# Licences: CC0, CC BY, CC BY-NC, never share-alike (it would block a later commercial reuse), checked photo by photo.
+# drop_share_alike takes the waiting share-alike candidates out of cand.json at each run (never one curation.json names);
+# the share-alike photos already on the site are Pierre's to keep or remove (admin To do › Share-alike), never here.
+# Caps, so the pile to sort stays small: at most DAUIN_CAP Dauin observations waiting per genus, Philippines ones only
+# while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings all its photos
+# (PER_OBS guards against an odd one with dozens; a game question shows the views of one colony); sorting by view,
+# quality and near-duplicates is the judging pass's (judging/BRIEF.md).
+# Key-only genera (data.json "x" genera no game asks, tools/genera.py): a sheet and the Coral ID Key show at most
+# CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter, so such a genus keeps at most as many
+# observations waiting, over all sources, as the colonies it still lacks (key_need); one that lacks none gets nothing.
+# Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them
+# in data.json "cand"; the app ignores it, Pierre approves candidates in admin.html. Run from the repo root.
+# New candidates are not downloaded (r: 1 = shown straight from iNaturalist): only those Pierre adds are, by
+# tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
 # --tidy: offline, refills nothing: only puts back the photos Pierre restored, drops the excluded photos and the waiting
@@ -44,23 +34,22 @@ from excluded import excluded, drop_excluded, restore_unexcluded, load_gone, sav
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
 from taxonomy import inat_taxon  # the iNaturalist taxon of each genus, from tools/taxonomy.json
-from rights import licence, rights_rank  # a photo's licence and its rights tie-break (Q270), as core.js licOf / rightsRank
+from rights import licence, rights_rank  # a photo's licence and its rights tie-break, as core.js licOf / rightsRank
 UA = {'User-Agent': inat.UA}
-LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
+LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike: cc-by-sa and cc-by-nc-sa left out
 LICS = set(LIC.split(','))
-# Trusted identifiers (Pierre, 2026-11-05): `thamnasteroid` is by far the top identifier of stony corals in the
+# Trusted identifiers: `thamnasteroid` is by far the top identifier of stony corals in the
 # Philippines; an observation whose identification by them is at the genus searched or below, with no other current
 # identification disagreeing, is accepted in the Philippines tiers, as a genus-level community taxon is (gid).
 EXPERTS = {'thamnasteroid'}
-# The iNaturalist taxon searched for a genus is the one tools/taxonomy.json gives it (gen.<genus>.inat.id; ROADMAP
-# "Taxonomy reference", Pierre 2026-11-05, Q49): no search by name, so no homonym guard (the Astrea snail and plant, the
+# The iNaturalist taxon searched for a genus is the one tools/taxonomy.json gives it (gen.<genus>.inat.id): no search by name, so no homonym guard (the Astrea snail and plant, the
 # fire, blue and organ pipe corals off Scleractinia). A genus the file does not hold (new in data.json: run
 # tools/taxonomy.py) or whose taxon is inactive is skipped and said so. Another taxon only by Pierre's decision.
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
-REGION_KM = 250  # Pierre, 2026-11-03: "un rayon de 200 km autour de Dauin ou 300 km", then all the Philippines
+REGION_KM = 250  # the second ring around Dauin, then all the Philippines
 REGION = f'lat=9.19&lng=123.26&radius={REGION_KM}'
 DAUIN_CAP, PH_CAP, WORLD_CAP, PER_OBS = 15, 6, 6, 12
-# One-off backlog runs (Pierre, 2026-11-01: "fetch a good backlog quickly, mainly for the genera that lack photos"):
+# One-off backlog runs, mainly for the genera that lack photos:
 #   python3 tools/fetch_local.py --dauin 30 --ph 20 --ph-all [Genus...]
 # --dauin / --ph raise the caps (observations waiting), --ph-all fetches Philippines candidates whatever the Dauin count.
 def flag(name, default):
@@ -68,13 +57,12 @@ def flag(name, default):
     return int(a[a.index(name) + 1]) if name in a else default
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
-# iNaturalist slows clients down with HTTP 429 ("normal_throttling"): the Candidate photos Action of 2026-11-04 died on
-# one after a curation publish, so Pierre's added photos were not downloaded. Every request goes through tools/inat.py
+# iNaturalist slows clients down with HTTP 429 ("normal_throttling"). Every request goes through tools/inat.py
 # (rule C7, shared by every iNaturalist tool): it waits PACE (1 s) after the last one and, on 429, 5xx or a network
 # error, waits (Retry-After when given, else WAITS: 5, 15, 30, 60, 120 s) and tries again, failing only after the last.
 # The searches below are one per genus and source on purpose: they are in votes order, and iNaturalist orders the
 # observations of equal votes in no fixed way, so a search over several genera at once would not give each genus the
-# same 200 (measured 2026-11-08, #784). The presence rule's counts are batched.
+# same 200. The presence rule's counts are batched.
 
 
 def get(u):
@@ -253,7 +241,7 @@ def main():
     d = load_all()
     if '--tidy' in sys.argv:
         # Offline, no iNaturalist: the Candidate photos workflow runs it last, before its commit, so a Publish with
-        # exclusions or un-added candidates leaves data.json and cand.json consistent (2026-11-06).
+        # exclusions or un-added candidates leaves data.json and cand.json consistent.
         dump_all(tidy(d))
         print('photo lists tidied')
         return
@@ -278,8 +266,8 @@ def main():
         return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))
     # Observations waiting for genus g: from one source (loc) or all.
     # A Key-only genus's candidates guessed to be in a view it does not keep (Corallites) are not shown (admin.js
-    # candQueue, capViews): they do not count as waiting either (Codex review #390), or they would hold the room.
-    # Nor do those of a view that already has its colonies (Codex review #390): admin.js candQueue marks them full and
+    # candQueue, capViews): they do not count as waiting either, or they would hold the room.
+    # Nor do those of a view that already has its colonies: admin.js candQueue marks them full and
     # hides them, and they would hold the room another view lacks.
     HAVE, CAPS = {}, cap_sheet()
     def shown(g, p):
@@ -331,8 +319,8 @@ def main():
             obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, tid)]
             # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
             # so far (votes order breaks ties), and take all its photos. Between observations of as many votes, one with an
-            # open licence (CC0, CC BY) or Pierre's own before CC BY-NC (tie_key: rights_rank of its best photo; Pierre,
-            # 2026-11-08, Q270: a tie-break only), then the votes order.
+            # open licence (CC0, CC BY) or Pierre's own before CC BY-NC (tie_key: rights_rank of its best photo, a
+            # tie-break only), then the votes order.
             pool = []
             for rank, o in enumerate(obs):
                 P = [ph for ph in o['photos'] if photo_ok(ph) and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
@@ -350,7 +338,7 @@ def main():
                     usedp.add(str(ph['id']))
                     out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
             # Room the whole country could not fill, from ALL its observations: when the one page read is not all of them,
-            # later pages may still hold some, so nothing from abroad (Codex review #388).
+            # later pages may still hold some, so nothing from abroad.
             if where == PHILIPPINES: ph_room = 0 if more else r
         if g in cand and not cand[g]: del cand[g]
         print(g, len(cand.get(g, [])))

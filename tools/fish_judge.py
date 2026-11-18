@@ -34,14 +34,14 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
 REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
 # The count (7th letter): 1, s, o (other species, no risk of confusion), k (other species one could take for the subject),
-# x; m, the code for other species before Pierre's split (2026-11-09, Q323), stays readable as "not sorted yet" (core.js
-# FISH_COUNT), never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
-# The typed flags: j juvenile, c camouflage, a out of the water, w a visible watermark or text (Pierre, 2026-11-15, Q373:
-# Home skips it; it caps nothing), in that order.
+# x; m, the older code for other species before the split into o and k, reads as "not sorted yet" (core.js FISH_COUNT),
+# never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
+# The typed flags: j juvenile, c camouflage, a out of the water, w a visible watermark or text (Home skips it; it caps
+# nothing), in that order.
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$")
 FLAGS = "jcaw"
 NEW_COUNT = "1sokx"
-# The sea slugs' rubric (judging/SEASLUG.md, Pierre, 2026-11-15, Q369, Q377): the fish's seven positions, flags and ease, so
+# The sea slugs' rubric (judging/SEASLUG.md): the fish's seven positions, flags and ease, so
 # a code reads the same way wherever the fish's is read (core.js refScore, autosort.js), with these differences: a dorsal
 # view (d) is a good view, never capped, and a ventral one (v, the foot) is theirs, capped like head-on and rear; light g
 # or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
@@ -63,10 +63,10 @@ def with_flag(code, x, subject="fish"):
     return code[:7] + "".join(c for c in R["flags"] if c in fl) + m.group(9)
 EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
-WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
+WANT = 5  # at least 5 very easy photos per circle-1 entry
 # A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
-# iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
-# for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a fish in its
+# iNaturalist's taxon photo: easy to identify, so it comes early for a beginner) is one ease point easier than its
+# visual code says, the caps applied after (a juvenile or a fish in its
 # night livery stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
 REP_BONUS = 1
 
@@ -86,10 +86,9 @@ def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     e = min(5, int(e) + (REP_BONUS if rep else 0))
     if ("j" in fl and not juv_ok) or n == "x" or loss == "3":
         e = min(e, 2)
-    # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
-    # or a parrotfish is easy to call one at the family level), kept for the species questions and explanation cards.
-    # light n is the night livery only (rubric 6, Pierre, 2026-11-08, Q308: a night or resting colour pattern unlike the
-    # day one); a fish lit by a flash or a lamp on a dark background is good light (g) and caps nothing.
+    # The phase flag p caps nothing (a sex or colour phase is a species-level difficulty; an Anthias or a parrotfish is
+    # easy to call one at the family level), kept for the species questions and explanation cards.
+    # light n is the night livery only (rubric 6: a night or resting colour pattern unlike the day one); a fish lit by a flash or a lamp on a dark background is good light (g) and caps nothing.
     if set(fl) & set("ca") or light == "n" or loss == "2" or v in R["views3"] or w == "0":
         e = min(e, 3)
     return e, code[:7] + fl
@@ -111,7 +110,7 @@ def load_src():
     return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
 
 
-# One judgement per photo (Pierre, 2026-11-15). A photo can be met twice:
+# One judgement per photo. A photo can be met twice:
 # as a reference photo (tools/fish_refs.json fi<id> / fb<stem>, its code here in tools/fish_judge.json photos and keep)
 # and as a candidate (fish-cand.json fish-<species>-cand-<id>, judged in judging/fish/<species>.json). They are one
 # photo (tools/fish_game.py pid), so they get one judgement: the candidate's judging file is its single source (it holds
