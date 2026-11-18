@@ -401,9 +401,8 @@ function renderJourney(name, anonId = '') {
   const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name, ASUBJ),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
-    // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
     PG = full ? progOf(anonId ? {id: anonId, anon: 1} : u, true, ASUBJ) : null,
-    RP = full && replayOn(),
+    RP = full,
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -958,8 +957,9 @@ function sessProg(id, all, L, S, PG) {
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
     M = unitsOf(ASUBJ),
     o = {
-      gen: M.gen,
+      gen: M.rgen || M.gen,
       ...statsFor(ASUBJ),
+      ...(M.vars ? {vars: M.vars} : {}),
       since: reset ? {[id]: reset} : {},
       starts: ok && S.start ? {[id]: S.start} : {}
     },
@@ -978,12 +978,12 @@ function sessProg(id, all, L, S, PG) {
     },
     Pa = marked(A.P, t0 - 1),
     Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
-    slate = M.slate,
     prog = {};
   new Set(L.flatMap(r => [r[2], r[3]])).forEach(
     g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g], Pa, g), scoreOf(Pb[g], Pb, g)])
   );
-  const v = {prog, pct: [pctOf(Pa, slate), pctOf(Pb, slate)]};
+  // the % before and after as the player's app shows it (admin.js unitPct: the fish % over its tree)
+  const v = {prog, pct: [unitPct(ASUBJ, M, Pa), unitPct(ASUBJ, M, Pb)]};
   SPROG.set(key, {ans: ANS, S, PG, mem: SMEM, n: L.length, v});
   return v;
 }
@@ -998,7 +998,7 @@ function sessionSummary(id, L, name, o = {}) {
     B = all.filter(r => r[1] < L[0][1]),
     S = name && full ? savedFor(name, ASUBJ) : {P: {}},
     PG = full ? progOf(o.user || (name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}), true, ASUBJ) : null,
-    RP = full && replayOn(),
+    RP = full,
     sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
     PS = photoStats() || {},
     F = sessionFacts(L, B, {

@@ -65,6 +65,15 @@ is the design's shorthand, and internal identifiers may keep it.
   its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
+- **Every circle's genera** (Pierre, 2026-11-18 ~06:32 Manila: "lance"): built for circle 1 alone (130 genera) when only
+  circle 1 was on the path, the genera of the families of circles 2 and 3 (107 more, 237 in all; a surprise card's genus
+  none) are units as circle 1's: the same opening (the family's Advanced, the offer or the switch), sibling genera as
+  look-alikes, the family's line and circle, the genus credit in the score, the replay, the board and the achievements that
+  count genera (`core.js` `fishGenSets`, read by `app.js` `fishGenera`, `fishReplayGen`, `fishVarTable`; fish rules
+  version 4; opened from the sheet that replays them, `sync.js` `GENERA_SHEET`). No IMR genus outside circle 1 (the IMR
+  sub-entries are circle 1's); each has its sourced presentation and most their ID marks since #1074 (Pierre's option C:
+  the content before the merge; ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
+  name comes after its genus, in every circle (Q397). docs/LEARNING.md "Fish: scientific genera".
 - **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase
   sur les familles, il faut déjà inclure, sans avoir besoin de leur demander, les genres ... qui sont dans la liste du cours d'IMR"):
   for a player who answered "I'm at IMR", each genus an IMR sub-entry names alone (Chromis, Dascyllus, Pomacentrus, Amphiprion,
@@ -473,7 +482,16 @@ Decided from the admin pooling study:
   before Open Water (`model.js` `easyFirst`); since then (Pierre: "NO WALL", #660) the judged ease is only the photo's prior and the
   draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
   photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
-  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw; the staged path for juveniles, colour phases and dimorphism is a ROADMAP row (Pierre, 2026-11-07).
+  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw.
+- **On the unit's own mastery** (Pierre, 2026-11-07: "we must put back a progressive path that presents juveniles and
+  sexual dimorphism"; 2026-11-17, Q391 a: one rule for every level): each juvenile, sex or colour phase photo comes into
+  its unit's draw on a ramp of that unit's bar, by the juvenile classes below (`core.js` `varKindOf`, `VAR_AT`;
+  `model.js` `photoSet`): class A and the early genera and species from the unit's first question, class B and the late
+  ones at Advanced, every other juvenile and every sex or colour phase from Open Water to Advanced; a family may set its
+  own thresholds (`fish.json` `varAt`). Never a wall: nothing held back on a unit with too few other photos. "Learned"
+  asks a right answer on each group a unit has, its juveniles and its sexes and colour phases (Q391 b). The first build
+  (2026-11-15, a stage of 10 answers for every phase photo) is in docs/LEARNING.md "Juveniles and colour phases in
+  stages".
 - **Juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `fish.json` `juv`, from
   `tools/fish_source.json`, per entry and per genus or species for mixed entries; judging/FISH.md):
   - **Class A** (juveniles distinctive and recognisable: they help learn the family early): Spadefish (very tall fins:
@@ -499,6 +517,9 @@ Decided from the admin pooling study:
 - **Introduced with an explanation** (Pierre, 2026-11-04): when a juvenile, a colour phase or a strongly dimorphic species first comes in,
   a card explains it, with photos side by side (adult and juvenile; male and female, or the phases), e.g. "Careful: this is the juvenile
   of X, it looks very different", or "this species' males and females can look very different". Possibly one per species.
+  Built 2026-11-15 (`quiz.js` `phaseShow`): two cards per subject, the first juvenile and the first sex or colour phase a
+  player meets, at the break at Next, the photo beside one of its species in another phase, with the unit's IMR phase
+  lines; one per species stays a ROADMAP row.
 
 ## Look-alikes at any rank (design, Pierre, 2026-11-04; not built)
 
@@ -595,7 +616,8 @@ on families only to an IMR RA with every species open:
       its species' weights. The Entries part and the species credit are these weighted means.
     - **Square-root display (B)**: the % shown is 100 × √raw. Anchors: families only **50%**, families and every genus
       **74%**, every common name **89%**, every scientific name **92%**, every common name and every genus **95%**,
-      everything **100%**. Today the genera exist for circle 1 only, so families and every genus of the game reach 67% (after #727).
+      everything **100%**. The genera exist in every circle since 2026-11-18, so families and every genus reach that anchor,
+      74% (67% while they existed for circle 1 only, after #727).
     - Not C (circle weights).
     - **A species with no common name at all** (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la branche nom
       commun"; 5 since #727, more with the nudibranchs): no common-name unit, out of the
@@ -717,7 +739,8 @@ on families only to an IMR RA with every species open:
   - Calm path: species open only after Advanced; Latin-only and typed Latin follow the schedule.
 - **Held-out photos**: a fixed set per species and per entry never shown in practice, for a transfer check (recognition of unseen photos at
   the start and later) and to keep the exam honest. Pierre, 2026-11-04: fish first (many photos), corals later (few photos per genus);
-  ROADMAP "A held-out photo set".
+  ROADMAP "A held-out photo set". Built: per species (`fish-holdout.json`, #1023), wired on 2026-11-18 (the mastery exam's photos
+  only, logged `|h|x`; Pierre: "Je pensais qu'on gardait des photos pour la fin"; docs/LEARNING.md "The held-out photos in the game").
 - **Real-log replay** once fish answers reach the sheet (rule L12); until then, say what was measured instead.
 - Tests: `tests/draw.smoke.js` for the species draw (choices, display, the welcome answers and the open-all card), `tests/fish.test.js` for the data (no duplicate name
   among the choices of one question).

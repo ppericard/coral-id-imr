@@ -268,9 +268,11 @@ function quizBoard() {
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
+  // v171: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one).
   const rank = B => {
     const a = document.getElementById('pbrank'),
-      i = B && B.rows ? boardMe(B.rows) : -1;
+      L = B && B.rows ? boardScopes(B).top.find(x => boardMe(x.rows) >= 0) : null,
+      i = L ? boardMe(L.rows) : -1;
     if (!a || i < 0) return;
     const elo = eloLine(P[LEVEL]);
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
@@ -456,18 +458,21 @@ const eloLine = G => {
 // after start-up, so the first visit to the page is usually instant too.
 // One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
 // page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
-// GET ?board=1 as before; another's adds &s=<id>, served from sheet v95 (BOARD_SHEET): an older script answers with the
-// first one's, which is never shown as another subject's (rule D4: "not available yet" until the script has it).
+// GET ?board=1 as before; another's adds &s=<id> (sheet v95). A subject whose board came with a later script (SUBJECTS
+// boardSheet) waits for it: an older script answers with the first one's, which is never shown as another subject's
+// (rule D4: "not available yet" until the script has it).
 // Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
 const BOARD_C = 'board-cache';
-const BOARD_SHEET = 95;
 const board0 = () => SUBJECTS.find(x => x.board);
-// A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
-const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
+// The script version that serves subject S's board: its own when it names one (core.js SUBJECTS boardSheet: the sea slugs',
+// SEASLUGRP_SHEET), else any.
+const boardV = S => Number(S && S.boardSheet) || 0;
+// A board reply to show: the first subject's from any script, another's only from its version (boardV; tests/gates.test.js).
+const boardOk = (j, first, S) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= boardV(S));
 // A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
-// BOARD_SHEET (sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one: the
-// page shows the first subject's board, no rank on My progress, no announcement.
-const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= BOARD_SHEET));
+// its version (boardV; sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one:
+// the page shows the first subject's board, no rank on My progress, no announcement.
+const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= boardV(S)));
 const boardSubj = () => (boardLive(SUBJ) ? SUBJ : board0());
 const boardAt = {},
   boardP = {};
@@ -486,10 +491,10 @@ const loadBoard = (S = boardSubj()) => {
     boardAt[k] = Date.now();
     boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
-      .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
+      .then(j => (boardOk(j, first, S) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now(), v: j.v});
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, staff: j.staff, cohorts: j.cohorts, t: Date.now(), v: j.v});
         else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
@@ -497,9 +502,37 @@ const loadBoard = (S = boardSubj()) => {
   return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
+// Staff and cohort boards (sheet v171; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle
+// cohorte aurait un leaderboard indépendant"; "ça serait rigolo que les étudiants voient le leaderboard du staff et
+// inversement"): a reply from SCOPES_SHEET splits the one ranking (Code.gs board_): rows, the general board without the
+// staff; staff, the trainers'; cohorts, [{n, rows}] each cohort's, its members but the staff. The page shows the
+// player's own cohort's first, then the staff's, then the general one; the other cohorts behind a discreet "Other
+// cohorts" (Pierre: "éventuellement mais pas forcément en priorité ou mis en avant"). An older reply: one board, as before.
+const SCOPES_SHEET = 171;
+// The player's cohort: its display name, '' for none, null when this account was never told (sync.js groupsSeen).
+const myCohort = () => {
+  const o = store.get(COHORT_KEY, null);
+  return SYNC && o && typeof o.c === 'string' && String(o.n).toLowerCase() === SYNC.name.trim().toLowerCase() ? o.c : null;
+};
+// The boards of a reply, in the page's order: {top: [{k, t, rows}], others: [{k, t, rows}]}; one untitled board before
+// SCOPES_SHEET, or when there is neither a staff nor a cohort board to show.
+function boardScopes(B) {
+  const one = {top: [{k: 'all', t: '', rows: B.rows}], others: []};
+  if (!(Number(B.v) >= SCOPES_SHEET) || !Array.isArray(B.staff)) return one;
+  const C = (Array.isArray(B.cohorts) ? B.cohorts : []).filter(c => c && typeof c.n === 'string' && Array.isArray(c.rows)),
+    m = myCohort(),
+    // Never told (a reply before the account's first load): the cohort whose board lists the player.
+    own = m ? C.find(c => c.n === m) : m === null ? C.find(c => boardMe(c.rows) >= 0) : null,
+    top = [
+      ...(own ? [{k: 'cohort', t: own.n, rows: own.rows}] : []),
+      ...(B.staff.length ? [{k: 'staff', t: 'Staff', rows: B.staff}] : []),
+      {k: 'all', t: 'All players', rows: B.rows}
+    ];
+  return top.length < 2 && !C.length ? one : {top, others: C.filter(c => c !== own).map(c => ({k: 'other', t: c.n, rows: c.rows}))};
+}
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
-  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your cohort has its own leaderboard, shown first, and the staff theirs; the staff are not on the others. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
   const S = boardSubj(),
     C = boardCached(S);
@@ -519,12 +552,27 @@ function viewBoard() {
 function paintBoard(B, S = boardSubj()) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
-  const me = boardMe(B.rows),
+  const sc = boardScopes(B),
+    me = [...sc.top, ...sc.others].some(x => boardMe(x.rows) >= 0) ? 0 : -1,
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
     // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
     // progress). Other rows: the level the sheet read from their saved progress.
-    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '',
-    eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
+    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '';
+  // One board's list, the player's row marked; a titled board (staff and cohorts) under its heading.
+  const list = rows => {
+    const at = boardMe(rows),
+      eloOf = (r, i) => (i === at && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
+    return rows.length
+      ? `<ol class="blist">${rows
+          .map(
+            (r, i) =>
+              `<li${i === at ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+          )
+          .join('')}</ol>`
+      : '<p class="note">Nobody yet: be the first.</p>';
+  };
+  const part = x =>
+    x.t ? `<section class="bscope" data-scope="${x.k}"><h3 class="bhead">${esc(x.t)}</h3>${list(x.rows)}</section>` : list(x.rows);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
@@ -537,14 +585,8 @@ function paintBoard(B, S = boardSubj()) {
   box.innerHTML =
     when +
     note +
-    (B.rows.length
-      ? `<ol class="blist">${B.rows
-          .map(
-            (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r, B.v) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
-          )
-          .join('')}</ol>`
-      : '<p class="note">Nobody yet: be the first.</p>');
+    sc.top.map(part).join('') +
+    (sc.others.length ? `<details class="bmore"><summary>Other cohorts</summary>${sc.others.map(part).join('')}</details>` : '');
   const bs = box.querySelector('#bsign');
   if (bs) bs.onclick = e => document.getElementById('signb').onclick(e);
   const m = box.querySelector('.me');
@@ -630,8 +672,14 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     C = U.core ? U.core() : [],
     T = SUBJ.score && U.tree ? U.tree() : null,
     at = (list, k) => list.filter(n => lvStep(n) >= k).length;
-  const groups = {};
+  const groups = {},
+    byUp = {},
+    byTax = {},
+    gx = n => (typeof GX === 'function' && GX(n)) || {},
+    tgOf = n => gx(n).tg || (gx(n).parent && gx(gx(n).parent).tg) || 0;
   L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
+  L.forEach(n => gx(n).parent && (byUp[gx(n).parent] = byUp[gx(n).parent] || []).push(n));
+  L.forEach(n => tgOf(n) && (byTax[tgOf(n)] = byTax[tgOf(n)] || []).push(n));
   return {
     total: L.length,
     met: st.filter(x => x >= 1).length,
@@ -648,6 +696,15 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     bonus: bonusList().filter(introduced).length,
     core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
     circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
+    // Its units grouped by the unit above them (GX parent: a sea slug genus's family), those with every unit at Advanced
+    // or above (core.js SEASLUG_ACH); 0 for a subject whose units have none (the corals, the fish families).
+    fam: Object.values(byUp).filter(g => g.every(n => lvStep(n) >= 3)).length,
+    // Each taxonomic group of the subject's tree (GX tg of a unit's parent, or its own: the sea slugs' taxa), in its
+    // number's order: {n, total, met, adv}; [] for a subject without.
+    tax: Object.keys(byTax)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(n => ({n, total: byTax[n].length, met: at(byTax[n], 1), adv: at(byTax[n], 3)})),
     sets: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 2)])),
     setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
     basics: !!A._basics,
@@ -820,7 +877,7 @@ const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
   ACH_C = () => ACH_CONTRIB,
   achTests = () => [...ACH_L(), ...ACH_C()];
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
-const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '👑': '🎓', '🌟': '⭐'},
+const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '🐌': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
 // Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
 // player's card. Kept on this

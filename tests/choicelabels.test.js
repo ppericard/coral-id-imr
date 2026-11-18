@@ -183,6 +183,7 @@ test('no two units of one rank in today’s game share a label: the draw is unch
       easyCover: core.easyCover,
       fishScoreTree: core.fishScoreTree,
       fishSpUnits: core.fishSpUnits,
+      fishGenSets: core.fishGenSets,
       rankWeights: core.rankWeights
     };
   vm.createContext(ctx);

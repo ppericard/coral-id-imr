@@ -70,9 +70,9 @@ Every workflow in `.github/workflows/` (`tests/docs.test.js` checks that this ta
 | Workflow | Trigger / commits | Publishes Pages? |
 |---|---|---|
 | `checks.yml` — Checks | Pull requests, pushes to a merge train's branch `train/*` (`tools/train.py`, rule W26) and manual dispatch (not pushes to `main`). The fast checks, `tests/docs.test.js` among the unit tests, and the sheet's `VERSION` rules (rule D3). Commits nothing. | No |
-| `smokes.yml` — Smokes | Pull requests that change more than docs (`paths-ignore`: `docs/**`, `*.md`, the PR template, `LICENSE`; Pierre, 2026-11-08, Q305), every push to `train/*`, and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, pages in four groups, fish in two, admin whole at 390 px and in three groups at 1280 (`tests/smokeparts.test.js` checks every group has a job here). Commits nothing. | No |
+| `smokes.yml` — Smokes | Pull requests that change more than docs (`paths-ignore`: `docs/**`, `*.md`, the PR template, `LICENSE`; Pierre, 2026-11-08, Q305), every push to `train/*`, and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, pages in four groups, fish in two, admin whole at 390 px and in three groups at 1280, and `staged`, the copy as the deploy builds it (`tests/smokeparts.test.js` checks every group has a job here). Commits nothing. | No |
 | `approved-photos.yml` — Candidate photos | Push to `main` changing `curation.json` (admin Publish or a PR merge touching it), `suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or `fish-photos.json` (a sheet-only fish photo to download); also manual dispatch, and weekly (Wednesday 03:47 Manila) for the licence refresh (`tools/licences.py`, which runs on the schedule and by hand only). Its `photos` job (read-only) makes the commit `Candidate photos: download added ones, refill the lists` (`data.json`, `cand.json`, `excluded.json`, `fish-game.json`, `fish-photos.json`, `fish-cand.json` and `tools/fish_refs.json` (the licence refresh), `img/`) and hands it as a patch to `photos-push`, which checks it touches only those files and pushes it; its `fish` job (read-only) does the same for `Candidate photos: refill the short fish species` (`fish-cand.json`, `tools/fish_refill.json`), pushed by `fish-push`; its `r2` job copies `img/` to R2. Read-only token but for the two push jobs, which run no repository code and hold it in their `Commit` step only; no checkout keeps credentials; Pillow installed by hash (docs/SECURITY.md). | No (its completion starts Deploy Pages) |
-| `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Commits nothing. | **Yes, the only deployer** |
+| `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Stages the commit (`git archive`), builds the copy (`tools/build_site.py`: the players' curation, the stamps, the scripts minified; "The build at deploy" below), plays it (`tests/staged.smoke.js`), then publishes it. Commits nothing. | **Yes, the only deployer** |
 | `photos-r2.yml` — Photos to R2 | Push to `main` changing `img/**`, and manual dispatch. Copies `img/` to the Cloudflare R2 bucket and checks it (`tools/r2_sync.sh`); commits nothing. | No |
 | `analyses.yml` — Analyses report | Hourly schedule and manual dispatch (`force`). Reads the answer log and stores the report in the sync sheet (`tools/analyses.js`); skipped without `ANALYSES_ADMIN_TOKEN`; commits nothing. | No |
 | `learncheck.yml` — Learning check (tier 2) | Manual dispatch only: two versions (`before`, `after`), a subject, the app world, the rated world or both, seeds, questions or answers, the primary declared and its world, the looks, more learnsim options. Runs `tools/learnsim.js` on both versions with the same seeds and `tools/learncmp.js` on them; the report goes to the run's summary (rule L11, docs/LEARNING.md "Validating a learning change"). Commits nothing, no artifact. | No |
@@ -101,6 +101,36 @@ The action's 10-minute timeout leaves room inside the 15-minute job timeout for
 cleanup. `deploy-pages` also handles cancellation signals. This prevents ordinary
 Actions queue blockage; **it cannot guarantee that GitHub's Pages backend will
 release an orphan lock**. That is a different state, with its own cancellation API.
+
+## The build at deploy
+
+Development has no build step: the repository's files are what a local server shows. The deploy builds its staged copy
+only, with `tools/build_site.py` (the staged smoke runs the same script, so a PR's CI checks what goes live):
+
+1. `tools/curplay.py`: `curation-play.json`, the players' copy of the curation.
+2. `tools/stamp_versions.py`: every `?v=N` becomes a 10-hex content hash (rule W15).
+3. `tools/minify.js`: every script at the root and in `proto/` minified by terser (pinned in `tools/minify.js` `TERSER`
+   and `tools/stack.json`, installed in a temporary folder), with a source map beside it (`<file>.map`, the original
+   inside). Left as they are: `sw.js` and `proto/lab.js` (the version tools read them by shape), the HTML pages (their
+   inline scripts are hashed in the CSP), the CSS. A file whose `?v=` references differ after minifying fails the build.
+4. `tools/stamp_versions.py` again, on the minified bytes, with the build number: each `?v=` and `sw.js` `V` follow what
+   is served, so a new terser reaches the phones' caches; 10 hex replace 10 hex, so the source maps stay exact.
+5. `tools/check_versions.py --dir`.
+
+Then `tests/staged.smoke.js` plays the copy (each subject's Home and one question, the Lab, the admin demo, the service
+worker's shell), every other host refused, before `upload-pages-artifact`. It adds about a minute to a deploy. Locally:
+`npm install --no-save --prefix <folder> terser@<version>`, then
+`NODE_PATH=<folder>/node_modules node tests/slot.js -- node tests/staged.smoke.js` (it builds a copy of `HEAD`).
+
+Sizes (2026-11-18, gzip -9): the player's scripts, tiers 1 and 2, 464 KB → 177 KB (tier 1, what Home waits for,
+288 → 106 KB; tier 2, the quiz, 176 → 71 KB); every script 1,027 → 501 KB.
+
+An error report's `src` (`sync.js`, `file:line:column`) then points into a minified file; the build number it carries
+(`appVer`) names the deploy, whose `<file>.map` maps it back (rebuild that commit with the same terser for an older one).
+
+**Rolling back the minification**: revert the PR that added it (the "Build the site" step back to the stamps alone), or,
+at once, change `tools/build_site.py` to skip step 3; the next deploy serves the source files, and since the stamps
+hash what is served, every changed `?v=` and `sw.js` `V` move, so the phones fetch the unminified files.
 
 ## Manual recovery
 

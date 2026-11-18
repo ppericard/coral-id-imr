@@ -71,6 +71,12 @@ const gen = a => () => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
 const normal = r => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+// A unit id's 32-bit FNV-1a hash: the key of its own stream in a seed's world (world).
+const idHash = id => {
+  let h = 0x811c9dc5;
+  for (const c of String(id)) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+  return h >>> 0;
+};
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
@@ -83,10 +89,14 @@ function fishUnits() {
     ph = J('fish-photos.json'),
     gm = C.fishGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
+    // the held-out set, out of the views (core.js fishHeld; model.js examSet), when the file exists (a version before it: none)
+    HO = fs.existsSync(path.join(ROOT, 'fish-holdout.json')) ? J('fish-holdout.json') : {},
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
     fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  return (XCACHE = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), F));
+  const held = C.fishHeld ? C.fishHeld(HO, gm.photos, CUR) : undefined,
+    X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
+  return (XCACHE = X);
 }
 
 // The coral units as the app builds them (app.js build: core.js applyCuration and applySlots, app.js applyForms; the
@@ -142,6 +152,9 @@ function unitsOf(subject) {
       sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
+      // its held-out photos (model.js examSet), drawn into the world with the others so a world is the same with or without
+      // the set withheld
+      held: n => X.gen[n].held || [],
       core: X.c1,
       c3: X.c3,
       tree: X.treeSp || X.tree,
@@ -176,11 +189,17 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     mu = {},
     eps = {},
     ease = {};
-  if (U.subject === 'fish') {
-    U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
-    U.extra.forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
-  } else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
-  const files = [...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flatMap(L => L.map(p => p.f))))].sort();
+  // A unit below the families (a fish genus or species): its family's mu plus its own offset, drawn on a stream of its
+  // own (seed, its id), so units added or taken away never move another draw: two versions of the app with other units
+  // play the same photos and the same other units (2026-11-18: the genera of circles 2 and 3, 107 more, had moved every
+  // photo's eps and every species' mu, so the arms played different worlds).
+  const below = n =>
+    (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(gen((seed * 2654435761) ^ idHash(n))) + ((U.rec(n).look || []).length ? RATED.SIB : 0));
+  if (U.subject === 'fish') U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
+  else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
+  const files = [
+    ...new Set([...U.slate, ...U.extra].flatMap(n => [...Object.values(U.views(n)).flat(), ...(U.held ? U.held(n) : [])].map(p => p.f)))
+  ].sort();
   files.forEach(f => {
     let e = RATED.EPS * normal(r);
     if (photos === 'tail' && r() < RATED.TAIL.SHARE) e += RATED.TAIL.ADD;
@@ -192,8 +211,9 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     eps[f] = e;
     ease[f] = Math.max(1, Math.min(5, Math.round(RATED.EASE.MID - (e + RATED.EASE.NOISE * normal(r)) / RATED.EASE.STEP)));
   });
-  // The species units after everything else (their photos are their family's), so a world without them is drawn as before.
-  (U.sp || []).forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
+  // The genera and the species (their photos are their family's), each on its own stream (below).
+  if (U.subject === 'fish') U.extra.forEach(below);
+  (U.sp || []).forEach(below);
   return {mu, eps, ease, pi: piOf(seed)};
 }
 // The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
@@ -202,9 +222,9 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
-function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
+function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
   const subject = U.subject,
     all = [...U.slate, ...U.extra, ...(U.sp || [])],
@@ -214,10 +234,13 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   all.forEach(n => {
     const v = U.views(n);
     G[n] = {...U.rec(n), views: Object.fromEntries(Object.entries(v).map(([k, L]) => [k, subject === 'fish' ? L.map(p => ({...p, e: W.ease[p.f]})) : L]))};
+    if (G[n].held) G[n].held = G[n].held.map(p => ({...p, e: W.ease[p.f]}));
   });
   const mem = new Map(),
     store = {get: (k, d) => (mem.has(k) ? JSON.parse(mem.get(k)) : d), set: (k, v) => mem.set(k, JSON.stringify(v))},
-    SUBJ = C.subjectOf(subject),
+    S0 = C.subjectOf(subject),
+    // --calib (learnsim): fields merged over the subject's draw calibration, as the app world does (an arm with a change off).
+    SUBJ = calib && Object.keys(calib).length ? {...S0, calib: {...(S0.calib || {}), ...calib}} : S0,
     slate = U.slate,
     ctx = {...C, console, Math: Object.create(Math), store, SUBJ, DATA: U.DATA, P: {}, Q: {}, PMEM: [0, -0.45, -1.1, -1.7], PFMT: {}, last: null};
   ctx.Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
@@ -333,7 +356,8 @@ const noteRecent = (s, ph) => {
 
 // The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
 // an extra genus's only Pierre's own or Research Grade; Codex review #789).
-const judgePhotos = (ctx, G, n) => [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))].filter(p => ctx.gamePhotoOk(n, p));
+// Its held-out photos too (model.js examSet): the population is the unit's whole set, withheld or not.
+const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
 // a slate genus alike; Codex review #789), not of its reporting kind.
 const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
@@ -341,11 +365,11 @@ const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
 const ITEM = {MISS: 1.5, PICKED: 0.5};
-function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false}) {
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
-    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep});
+    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib});
   for (let i = 0; i < N; i++) pl.step(i);
   return pl.result();
 }
@@ -353,8 +377,8 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
 // ok, k, typed, chs, ph: the files shown}); result() the run as runOne returns it. rseed seeds the app's and the learner's
 // generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
 // (runPop serves it the sheet's statistics).
-function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi}) {
-  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond}),
+function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null}) {
+  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib}),
     prof = LP.profOf(profile, U.subject),
     r = gen((rseed * 2654435761) ^ 0x9e3779b9),
     slate = U.slate,
@@ -394,6 +418,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
+  // the questions of the exam, and those that showed a held-out photo (model.js examSet: an exam question on one)
+  const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
     const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n)),
@@ -442,6 +468,9 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       same = typedOthers(G, list, t, M.introduced),
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
+    const ho = ph.some(p => p && p.ho);
+    if (exam) qs.exam++;
+    if (ho) qs.held++;
     const d = mean(ph.map(p => trueD(t, p))),
       rec = r() < pRec(t, d, ph.length === 1),
       // The learner's true logit on this question (ability - difficulty, recognition), before it learns from it: the
@@ -453,8 +482,17 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       else c = chs[Math.floor(r() * chs.length)];
     }
     const ok = c === t;
+    if (ho && ok) qs.heldOk++;
     expo.push([t, ph[0].o || ph[0].f, ...ph.map(p => p.f)]);
-    preOW.push([M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0, Math.min(...ph.map(p => p.e || 0))]);
+    preOW.push([
+      M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0,
+      Math.min(...ph.map(p => p.e || 0)),
+      ph.some(p => C.phaseOf(p)) ? 1 : 0,
+      ((P()[t] || {}).ok || 0) + ((P()[t] || {}).ko || 0),
+      // the variant kind shown (core.js VAR_KINDS: 0 none, 1 an early-class juvenile, 2 another, 3 a late-class one, 4 a
+      // sex or colour phase; model.js varKind), for learncmp's phEasy and phOther
+      Math.max(0, ...ph.map(p => C.VAR_KINDS.indexOf(M.varKind(t, p))))
+    ]);
     const q = C.scoreIn({
       t,
       c,
@@ -482,7 +520,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     });
     const res = C.scoreAnswer(P(), q);
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)
-    // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed passes it.
+    // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed, and each variant group right
+    // (model.js examPassed, Q391 b), passes it.
     const s = P()[t];
     noteRecent(s, ph);
     if (!ok) delete s.ex;
@@ -492,7 +531,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       ex.t = (ex.t || 0) + (typed ? 1 : 0);
       ex.v = [...new Set([...(ex.v || []), ph[0].view].filter(Boolean))]; // the views the exam showed (examSet)
       ex.at = M.answersSoFar();
-      if (ex.k >= M.EXAM.n && ex.t >= M.TYPED.exam) ((s.mx = 1), delete s.ex);
+      if (M.examPassed(t, ex)) ((s.mx = 1), delete s.ex);
       else s.ex = ex;
     }
     if (!ok && G[c] && P()[c]) delete P()[c].ex;
@@ -527,6 +566,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
         dStar: mean(slate.map(dStar)),
         knowSlate: mean(slate.map(n => know[n])),
         met: metU.length,
+        // the units learned (s.mx: the mastery exam passed), as the app world's rows count them
+        learned: Object.values(P()).filter(s => s && s.mx).length,
         right: (100 * blk.ok) / blk.n,
         prog: M.progPct(slate),
         f: {gs: Object.fromEntries(metU.map(n => [n, r4(M.genScore(n))])), ds: Object.fromEntries(metU.map(n => [n, r4(ds[n])]))},
@@ -570,6 +611,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     knows: [...knows],
     right: rights / Math.max(1, N),
     lv,
+    qs,
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   });
   return {step, result, ctx, M, G, trueD};
@@ -665,7 +707,7 @@ function rateErr(st, TW, W) {
 // seconds, gap their knowledge-gap term (secOf), every the rounds between two refreshes of the ratings served. Returns
 // {runs: one per player (runOne's), pop: {seed, times, gap, rho (beta against d), at: [{q, err, errW, corr, gdErr,
 // photos}]}}; keep: also the log, the world W and its seconds TW (an app world's stats and truth from a population).
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0}) {
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0, calib = null}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   // The corals only (Codex review #844): the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
@@ -675,7 +717,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     TW = timeWorld(U, W, seed, times, {gap}),
     pls = profiles.map((profile, j) =>
-      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
+      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, calib, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
     ),
     log = [],
     at = [];
@@ -718,8 +760,8 @@ async function main(o) {
     POP = [];
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
-    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0});
-    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null});
+    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -794,6 +836,7 @@ async function main(o) {
           coralSd: o.subject === 'coral' ? o.coralSd || RATED.CORAL_GD : null,
           app: o.app,
           beyond: o.beyond || null,
+          calib: o.calib || {},
           ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
           runs

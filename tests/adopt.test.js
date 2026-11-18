@@ -14,10 +14,17 @@ const {loadCodeGs, bodyOf} = require('./gas.js');
 
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
-  DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8');
-// data.json from GitHub, as the script reads it (Code.gs gen_).
+  DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
+  CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8');
+// data.json from GitHub, as the script reads it (Code.gs gen_), and curation.json, whose look-alike pairs the coral
+// replay lays over it (Code.gs subjRpl_; design note v2, step 8).
 const withData = () => ({
-  fetch: url => (/\/main\/data\.json$/.test(url) ? {getResponseCode: () => 200, getContentText: () => DJSON} : null)
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? {getResponseCode: () => 200, getContentText: () => DJSON}
+      : /\/main\/curation\.json$/.test(url)
+        ? {getResponseCode: () => 200, getContentText: () => CJSON}
+        : null
 });
 
 function storage(init = {}) {
@@ -45,7 +52,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     got = [];
   const answer = (u, o) => {
     const url = new URL(String(u)),
-      body = o && o.body ? bodyOf(o.body) : null; // a light save unwrapped (LIGHT_SHEET)
+      body = o && o.body ? bodyOf(o.body) : null; // a light save unwrapped
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
     got.push(j);
@@ -328,7 +335,7 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
   }
   const savedRv = () => JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv'] || '0');
   assert.strictEqual(savedRv(), C.RV, 'the saved copy stayed at rules version 0');
-  // Each sync a load then a save, or from LIGHT_SHEET the save alone (sync.js skipPull).
+  // Each sync a load then a save, or the save alone (the lighter saves, sync.js skipPull).
   assert.ok(A.got.length - from >= 4, 'four syncs');
   assert.deepStrictEqual(
     A.got.slice(from).filter(j => j.replay),
@@ -633,7 +640,7 @@ test("an answer logged by a refused save, then saved in another device's replay,
   // A plays and saves two answers (rules version applied), then a third whose save is refused (logged, not saved).
   const s = loadCodeGs(withData());
   let refuse = false;
-  // Refused: the sheet logs the answers, then the progress write fails (a light save's stale logs nothing: LIGHT_SHEET).
+  // Refused: the sheet logs the answers, then the progress write fails (a light save's stale logs nothing).
   const refused = b => ({...s.post({name: b.name, pin: b.pin, summary: {}, answers: b.answers, at: -1}), error: 'save'}),
     sheetA = {get: q => s.get(q), post: b => (refuse && b.name ? refused(b) : s.post(b))},
     A = app({sheet: sheetA, SYNC: {name: 'Ana', pin: '1234', log: [qa('a0', 0), qa('a1', 1)], base: {}, dirty: true}});
@@ -973,9 +980,11 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
     // Levels (lvStep): corals 12 genera met, 6 at Open Water; fish 30 families met, 8 at Advanced, 2 learned.
     lv = {
       coral: Object.fromEntries(Array.from({length: 40}, (_, i) => ['G' + i, i < 6 ? 2 : i < 12 ? 1 : 0])),
-      fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0]))
+      fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0])),
+      // the sea slugs (their own achievements, core.js SEASLUG_ACH): in, nothing played
+      seaslug: Object.fromEntries(Array.from({length: 78}, (_, i) => ['g' + i, 0]))
     },
-    S = {coral: C.SUBJECTS[0], fish: C.SUBJECTS[1]},
+    S = {coral: C.SUBJECTS[0], fish: C.SUBJECTS[1], seaslug: C.subjectOf('seaslug')},
     ctx = {
       ...C,
       SYNC: {name: 'Ana'},
@@ -1000,7 +1009,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
     bonusList: () => [],
     introduced: () => false,
     eloScore: () => 0,
-    headPct: () => coralPct,
+    headPct: () => (ctx.cur === 'seaslug' ? 0 : coralPct),
     treeScore: () => ({pct: fishPct}),
     UNITS: {
       coral: {},
@@ -1009,7 +1018,8 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
         circles: () => (ctx.fishIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
         tree: () => (ctx.fishIn ? {f: [], s: []} : null),
         sets: [{k: 'sci', all: () => []}]
-      }
+      },
+      seaslug: {circles: () => [ids('seaslug').slice(0, 24), ids('seaslug').slice(24, 46), ids('seaslug').slice(46)]}
     },
     inSubject: (id, fn) => {
       const was = ctx.cur;
@@ -1126,9 +1136,8 @@ test('achievement recount: a stale device (record version 2) never brings back w
 });
 
 // Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
-// it. Before sheet v32 (core.js RT_SHEET) the answer time weighs nothing, as in the live game (model.js rtOn): the
-// replay on top must not weigh it either (rule D4); from v32, it does, as the sheet's own replay would.
-test('a replay adopted from a script before v32 replays the pending answers without the answer time (Codex review #444)', () => {
+// it: the answer time weighs them (sheet v32, below the gate floor core.js SHEET_FLOOR), as the sheet's own replay does.
+test('a replay adopted replays the pending answers with the answer time, as the sheet (Codex review #444)', () => {
   // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
   const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
   const rows = pending.map(a => C.logRow(a, '~me')),
@@ -1136,20 +1145,14 @@ test('a replay adopted from a script before v32 replays the pending answers with
     gen = {...DATA.x.gen, ...DATA.gen},
     th = time => C.replayProgress(rows, {gen, conf: {}, start, time})['~me'].P.Acropora.th;
   assert.notStrictEqual(th(true), th(false), 'the time changes the ability on these answers');
-  for (const [v, time] of [
-    [C.RT_SHEET - 1, false],
-    [C.RT_SHEET, true]
-  ]) {
-    const a = app();
-    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, v), true);
-    assert.strictEqual(a.ctx.P.Acropora.th, th(time), `script v${v}: ability ${a.ctx.P.Acropora.th}`);
-  }
+  const a = app();
+  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.SHEET_FLOOR), true);
+  assert.strictEqual(a.ctx.P.Acropora.th, th(true), `ability ${a.ctx.P.Acropora.th}`);
 });
 
-// Codex review #428 (P1): the first-launch prior follows the script that replays it. Before sheet v36 (core.js
-// START_SHEET) the sheet's replay has no prior, so this device's answers replayed on top of its replay must not apply
-// one either (rule D4); from v36 they do, as the sheet's own replay would.
-test('a replay adopted from a script before v36 replays the pending answers without the first-launch prior (Codex review #428)', () => {
+// Codex review #428 (P1): the first-launch prior follows the script that replays it (sheet v36, below the gate floor
+// core.js SHEET_FLOOR): this device's answers replayed on top of its replay apply it, as the sheet's own replay does.
+test('a replay adopted replays the pending answers with the first-launch prior, as the sheet (Codex review #428)', () => {
   // The first answers on a genus never answered: their ability starts from the prior.
   const pending = Array.from({length: 6}, (_, i) => ({...qa('s' + i, i), g: 'Pocillopora', a: 'Pocillopora', ok: 1}));
   const rows = pending.map(a => C.logRow(a, '~me')),
@@ -1159,15 +1162,13 @@ test('a replay adopted from a script before v36 replays the pending answers with
       C.replayProgress(rows, {gen, conf: {}, start: {'~me': {P: {}, n: 0, used: 0, rep: 0}}, starts: on ? {'~me': start} : {}})['~me'].P
         .Pocillopora.th;
   assert.notStrictEqual(th(true), th(false), 'the prior changes the ability on these answers');
-  for (const [v, on] of [
-    [C.START_SHEET - 1, false],
-    [C.START_SHEET, true]
-  ]) {
-    const a = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
-    // From v36 the replay says which history it applied (the same as this device's here).
-    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], ...(on ? {fp: C.startFp(start)} : {})}, pending, v), true);
-    assert.strictEqual(a.ctx.P.Pocillopora.th, th(on), `script v${v}: ability ${a.ctx.P.Pocillopora.th}`);
-  }
+  const a = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
+  // The replay says which history it applied (the same as this device's here).
+  assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], fp: C.startFp(start)}, pending, C.SHEET_FLOOR), true);
+  assert.strictEqual(a.ctx.P.Pocillopora.th, th(true), `ability ${a.ctx.P.Pocillopora.th}`);
+  // Another history than this device's: not adopted, a save to follow (Code.gs v36 sends the fingerprint it used).
+  const b = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
+  assert.strictEqual(b.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, C.SHEET_FLOOR), false);
 });
 
 // Codex review #428 (P2): signing in merges the first-launch record made here before (a newer answer and its history)
@@ -1237,7 +1238,7 @@ test('a replay made with another first-launch history is not adopted; the next s
 test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async t => {
   const s = loadCodeGs(withData()),
     TOK = 'ghp_write000000000000000000',
-    fish = C.SUBJECTS.find(S => S.beta);
+    fish = C.subjectOf('fish');
   // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
   // back to 'group' here, in the app (it shares core.js's objects) and in the sheet.
   fish.open = 'group';
@@ -1283,9 +1284,9 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   assert.strictEqual(c.subjOpen(fish), true);
 });
 
-// Fish answers logged (Pierre, 2026-11-06; sheet v60): queued with the corals', sent only to a script that files them
-// under their subject (core.js logOk, LOG_SHEET; rule D4), and never replayed into the corals' progress.
-test('fish answers: kept queued for an older script, sent from v60 under their subject, out of the coral replay', async () => {
+// Fish answers logged (Pierre, 2026-11-06; sheet v60): queued with the corals', sent with them, filed under their subject
+// by the sheet, and never replayed into the corals' progress.
+test('fish answers: sent with the corals, filed under their subject, out of the coral replay', async () => {
   const s = loadCodeGs(withData()),
     id = 'fishdevice',
     fa = (k, i) => ({
@@ -1301,31 +1302,16 @@ test('fish answers: kept queued for an older script, sent from v60 under their s
       ta: 'Damselfish',
       sp: 'Chromis viridis'
     }),
-    q = [qa('c1', 1), fa('f1', 2), qa('c2', 3), fa('f2', 4)],
-    old = {get: s.get, post: b => ({...s.post(b), v: C.LOG_SHEET - 1})};
-  const a = app({sheet: old, ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify(q)}});
-  a.sendAnon();
-  await settle();
-  assert.deepStrictEqual(copy(a.sent[0].anonAnswers.map(x => x.id)), ['c1', 'c2'], 'an older script gets the coral answers only');
-  assert.deepStrictEqual(copy(a.store.get('reefid-anonq', []).map(x => x.id)), ['f1', 'f2'], 'the fish answers wait in the queue');
-  assert.strictEqual(a.count('Acropora'), 2);
-  assert.ok(!a.ctx.P.t01, 'no fish entry in the coral progress');
-  // The script reports v60: the fish answers go, filed as fish; the coral replay still counts the coral rows only.
-  const b = app({
-    sheet: s,
-    ls: {
-      'reefid-anon-id': JSON.stringify(id),
-      'reefid-anonq': JSON.stringify(a.store.get('reefid-anonq', [])),
-      'reefid-sheet-v': String(C.LOG_SHEET)
-    }
-  });
+    q = [qa('c1', 1), fa('f1', 2), qa('c2', 3), fa('f2', 4)];
+  const b = app({sheet: s, ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify(q)}});
   b.sendAnon();
   await settle();
-  assert.deepStrictEqual(copy(b.sent[0].anonAnswers.map(x => x.id)), ['f1', 'f2']);
+  assert.deepStrictEqual(copy(b.sent[0].anonAnswers.map(x => x.id)), ['c1', 'f1', 'c2', 'f2'], 'every answer, the fish ones too');
   assert.deepStrictEqual(copy(b.store.get('reefid-anonq', [])), []);
+  assert.ok(!b.ctx.P.t01, 'no fish entry in the coral progress');
   const A = s.sheets.Answers.rows.slice(1);
   assert.deepStrictEqual(
-    A.map(r => [r[7], r[17], r[18], r[19]]),
+    A.map(r => [r[7], r[17], r[18], r[19]]).sort((x, y) => (x[0] < y[0] ? -1 : 1)),
     [
       ['c1', 'coral', 'genus', ''],
       ['c2', 'coral', 'genus', ''],
@@ -1355,58 +1341,41 @@ test('a recheck that waits for the first sync runs as the subject it was asked f
   assert.strictEqual(a.rec().learn1, undefined, "taken back on the corals' own snapshot");
 });
 
-// The device on every answer (Pierre, 2026-11-08, Q312; sync.js devField, Code.gs Device): a save and an anonymous send
-// carry this device's id, the one its events carry (reefid-dev-id), only once the sheet's replies say v >= DEV_SHEET
-// (rule D4); below it, the requests are as before. The sheet here answers as the version given.
-const DEV_SHEET = +/const DEV_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1];
+// The device on every answer (Pierre, 2026-11-08, Q312; sheet v109, Code.gs Device): a save and an anonymous send carry
+// this device's id, the one its events carry (reefid-dev-id). The sheet here answers as the gate floor's version.
 const asV = (s, v) => ({get: q => ({...s.get(q), v}), post: b => ({...s.post(b), v})});
 const devCol = s => s.sheets.Answers.rows.slice(1).map(r => [r[7], r[s.sheets.Answers.rows[0].indexOf('Device')] ?? '']);
 
-test('a signed-in save carries the device id from DEV_SHEET, written in each of its answers; before it, none', async () => {
-  for (const v of [DEV_SHEET - 1, DEV_SHEET]) {
-    const s = loadCodeGs(withData()),
-      a = app({
-        sheet: asV(s, v),
-        ls: {'reefid-dev-id': JSON.stringify('k3v9q0x7mz'), 'reefid-sheet-v': String(v)},
-        SYNC: {name: 'Ana', pin: '1234', dirty: true, log: [qa('d1', 1), qa('d2', 2)]}
-      });
-    await a.syncPush();
-    const sv = a.sent.find(b => b.answers);
-    assert.ok(sv && sv.answers.length === 2, 'the save went out');
-    if (v < DEV_SHEET) {
-      assert.ok(!('dev' in sv), `v${v}: no device id`);
-      assert.deepStrictEqual(devCol(s), [
-        ['d1', ''],
-        ['d2', '']
-      ]);
-    } else {
-      assert.strictEqual(sv.dev, 'k3v9q0x7mz', 'the id its events carry');
-      assert.deepStrictEqual(devCol(s), [
-        ['d1', 'k3v9q0x7mz'],
-        ['d2', 'k3v9q0x7mz']
-      ]);
-    }
-  }
+test('a signed-in save carries the device id, written in each of its answers', async () => {
+  const s = loadCodeGs(withData()),
+    a = app({
+      sheet: asV(s, C.SHEET_FLOOR),
+      ls: {'reefid-dev-id': JSON.stringify('k3v9q0x7mz')},
+      SYNC: {name: 'Ana', pin: '1234', dirty: true, log: [qa('d1', 1), qa('d2', 2)]}
+    });
+  await a.syncPush();
+  const sv = a.sent.find(b => b.answers);
+  assert.ok(sv && sv.answers.length === 2, 'the save went out');
+  assert.strictEqual(sv.dev, 'k3v9q0x7mz', 'the id its events carry');
+  assert.deepStrictEqual(devCol(s), [
+    ['d1', 'k3v9q0x7mz'],
+    ['d2', 'k3v9q0x7mz']
+  ]);
 });
 
-test('an anonymous send carries the device id from DEV_SHEET, made once and kept (never the anonymous answer id)', async () => {
-  for (const v of [0, DEV_SHEET - 1, DEV_SHEET]) {
-    const s = loadCodeGs(withData()),
-      a = app({
-        sheet: asV(s, v),
-        ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify([qa('n1', 1)]), 'reefid-sheet-v': String(v)}
-      });
-    a.sendAnon();
-    await settle();
-    const b = a.sent[0];
-    assert.deepStrictEqual(copy(b.anonAnswers.map(x => x.id)), ['n1']);
-    if (v < DEV_SHEET) assert.ok(!('dev' in b), `v${v}: no device id`);
-    else {
-      const id = a.store.get('reefid-dev-id', '');
-      assert.match(b.dev, /^[a-z0-9]{10}$/);
-      assert.strictEqual(b.dev, id, 'the device id, kept for its events');
-      assert.notStrictEqual(b.dev, 'abcdefghij');
-      assert.deepStrictEqual(devCol(s), [['n1', id]]);
-    }
-  }
+test('an anonymous send carries the device id, made once and kept (never the anonymous answer id), also before any reply', async () => {
+  const s = loadCodeGs(withData()),
+    a = app({
+      sheet: asV(s, C.SHEET_FLOOR),
+      ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify([qa('n1', 1)])}
+    });
+  a.sendAnon();
+  await settle();
+  const b = a.sent[0];
+  assert.deepStrictEqual(copy(b.anonAnswers.map(x => x.id)), ['n1']);
+  const id = a.store.get('reefid-dev-id', '');
+  assert.match(b.dev, /^[a-z0-9]{10}$/);
+  assert.strictEqual(b.dev, id, 'the device id, kept for its events');
+  assert.notStrictEqual(b.dev, 'abcdefghij');
+  assert.deepStrictEqual(devCol(s), [['n1', id]]);
 });

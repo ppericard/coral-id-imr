@@ -16,6 +16,7 @@ const ROOT = path.join(__dirname, '..'),
   CODE = fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
+  SJSON = fs.readFileSync(path.join(ROOT, 'seaslug.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
   TOK = 'ghp_write000000000000000000';
 const resp = (code, body) => ({
@@ -25,20 +26,22 @@ const resp = (code, body) => ({
 // data.json and fish.json from GitHub (counted), and the script itself at the same version: autoUpdate finds itself up
 // to date and runs the leaderboard's replays (boardWarm_).
 // hook.data: run at the first fetch of data.json (inside the first coral replay the trigger makes, outside the lock).
-const withAll = (n = {data: 0, fish: 0}, hook = {}) => ({
+const withAll = (n = {data: 0, fish: 0, seaslug: 0}, hook = {}) => ({
   n,
   fetch: url =>
     /\/main\/data\.json$/.test(url)
       ? (n.data++ || !hook.data || hook.data(), resp(200, DJSON))
       : /\/main\/fish\.json$/.test(url)
         ? (n.fish++, resp(200, FJSON))
-        : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
-          ? resp(200, CJSON)
-          : /\/main\/tools\/sync\/Code\.gs/.test(url)
-            ? resp(200, CODE)
-            : /\/main\/tools\/sync\/appsscript\.json/.test(url)
-              ? resp(200, '{}')
-              : null
+        : /\/main\/seaslug\.json$/.test(url) // the sea slugs' replay units (core.js SUBJECTS seaslug replayed file)
+          ? ((n.seaslug = (n.seaslug || 0) + 1), resp(200, SJSON))
+          : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
+            ? resp(200, CJSON)
+            : /\/main\/tools\/sync\/Code\.gs/.test(url)
+              ? resp(200, CODE)
+              : /\/main\/tools\/sync\/appsscript\.json/.test(url)
+                ? resp(200, '{}')
+                : null
 });
 const ans = (id, x) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-1', ...x});
 // Coral answers, 1 in 4 a mix-up with Montipora.
@@ -68,9 +71,26 @@ const fa = (id, i) =>
     th: 1,
     sc: {d: 0, r: 1}
   });
+// Sea slug answers as the app logs them (its genera from the start: rk genus), 1 in 3 a mix-up with a sibling genus.
+const sa = (id, i) =>
+  ans(id, {
+    t: new Date(Date.UTC(2026, 10, 17, 6, 0, i)).toISOString(),
+    s: 'seaslug',
+    rk: 'genus',
+    g: 'g:Chromodoris',
+    a: i % 3 === 2 ? 'g:Hypselodoris' : 'g:Chromodoris',
+    ok: i % 3 === 2 ? 0 : 1,
+    m: 'quiz|c',
+    ph: 'seaslug-' + (100 + (i % 4)),
+    ch: 'g:Chromodoris g:Hypselodoris g:Goniobranchus g:Glossodoris',
+    e: 0.8,
+    th: 1,
+    sc: {d: 0, r: 1}
+  });
 const GENERA = {Acropora: 'mid', Montipora: 'new', Porites: 'new', Pocillopora: 'new'},
   CLIST = Object.keys(GENERA),
-  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses'];
+  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses'],
+  SUNITS = ['g:Chromodoris', 'g:Hypselodoris', 'g:Goniobranchus', 'g:Glossodoris'];
 // Each subject with a leaderboard and rules versions, its fixtures: its saved progress key, a saved copy whose bars the
 // replay of its answers moves, those answers, the summary that sends its board's units, the units its % is over.
 const FIX = {
@@ -85,6 +105,12 @@ const FIX = {
     answers: n => Array.from({length: 9}, (_, i) => fa(n + i, i)),
     summary: {board: 1, boards: {fish: FUNITS}},
     units: FUNITS
+  },
+  seaslug: {
+    saved: {'g:Chromodoris': {ok: 1, ko: 0, h: '1', pg: 0.1}, 'g:Glossodoris': {ok: 1, ko: 0, h: '1', pg: 0.2}},
+    answers: n => Array.from({length: 9}, (_, i) => sa(n + i, i)),
+    summary: {board: 1, boards: {seaslug: SUNITS}},
+    units: SUNITS
   }
 };
 const BOARDED = C.SUBJECTS.filter(S => S.board && C.rvsOf(S.id).length);
@@ -103,7 +129,10 @@ function play(s, name, pin, rv, extra = {}) {
   // the log is the only reference (rule D9), so such a player would have no answer at all.
   const id = [...name.toLowerCase()].map(c => c.charCodeAt(0).toString(36)).join(''),
     answers = BOARDED.flatMap(S => FIX[S.id].answers('p' + id + S.id));
-  const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra);
+  // each subject's board units joined (boards: {subject: units})
+  const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra, {
+    boards: Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary.boards || {}))
+  });
   const r = s.post({name, pin, data: dataOf(allSaved(), rv), summary, answers});
   assert.ok(r.ok && !r.replay && !r.replays, JSON.stringify(r).slice(0, 200));
 }
@@ -192,13 +221,72 @@ test('the fish board: the replay of the log as the app adopts it, no floor (Q330
   const high = FIX.fish.saved,
     rec = C.replayProgress(
       FIX.fish.answers('anafish').map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(JSON.parse(FJSON))}
+      // the variant table the sheet made and keeps (Code.gs subjVar_, from the cache: nothing fetched again)
+      {gen: C.fishReplayGen(JSON.parse(FJSON)), vars: s.ctx.subjVar_('fish')}
     ).ana.P,
     M = C.replayAdopted(rec, high, C.rvOf('fish'));
   assert.deepStrictEqual(keptOf(s, 'fish', 'Ana'), rec, "the sheet's replay, not floored");
   assert.deepStrictEqual(board(s, S), [['Ana', C.pctOf(M, FUNITS), null]]);
   // A unit the log has no answer on, with answers saved (the Angelfishes): its answers go (rule D9).
   FUNITS.filter(u => high[u] && !rec[u] && (high[u].ok || high[u].ko)).forEach(u => assert.ok(!M[u], u));
+});
+
+// "Learned" asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b; fish rules version 3): the sheet's replay
+// decides from the answer log (rule D9) with the variant table it makes (Code.gs subjVar_, core.js fishVarTable), so the
+// fish board follows for every player at once (rule D8), whoever never reconnects.
+test('Learned and the variant groups on the fish board: a mark without each group right in the log goes, for every player at once', () => {
+  const S = C.subjectOf('fish'),
+    f = withAll(),
+    s = loadCodeGs({fetch: f.fetch}),
+    T = s.ctx.subjVar_('fish'),
+    U = T['f:Damselfishes'],
+    juv = U.v.find(x => x[1] !== 'ph')[0],
+    phs = U.v.find(x => x[1] === 'ph')[0],
+    at = Date.UTC(2026, 10, 8), // learned after every answer of the log: no miss after it takes the mark (replayedOf lm)
+    learned = {...FIX.fish.saved, 'f:Damselfishes': {...FIX.fish.saved['f:Damselfishes'], mx: at}},
+    // Ana's answers on photos with no variant; Ben's the same, his first two right ones on a juvenile and a male photo.
+    send = (name, pin, A) => {
+      const r = s.post({
+        name,
+        pin,
+        data: dataOf({...allSaved(), fish: learned}, {fish: C.rvOf('fish') - 1}),
+        summary: FIX.fish.summary,
+        answers: A
+      });
+      assert.ok(r.ok, JSON.stringify(r).slice(0, 200));
+    };
+  assert.deepStrictEqual(C.varLeftOf(U, 1, {}), ['juv', 'ph'], 'the Damselfishes have both groups');
+  send('Ana', '1234', FIX.fish.answers('anafish'));
+  send(
+    'Ben',
+    '1111',
+    FIX.fish.answers('benfish').map((a, i) => (i < 2 ? {...a, ph: i ? phs : juv} : a))
+  );
+  // Before the trigger: both learned on the board, as their saved copies (behind fish rules version 3) say.
+  const pct = P => C.pctOf(P, FUNITS);
+  assert.deepStrictEqual(
+    board(s, S).map(r => r[1]),
+    [pct(learned), pct(learned)]
+  );
+  // The trigger makes the replays: neither player reconnects.
+  s.ctx.autoUpdate();
+  clearBoards(s);
+  const M = name => C.replayAdopted(keptOf(s, 'fish', name), learned, C.rvOf('fish')),
+    rows = Object.fromEntries(board(s, S).map(r => [r[0], r[1]]));
+  assert.deepStrictEqual(keptOf(s, 'fish', 'Ana')['f:Damselfishes'].vl, ['juv', 'ph'], 'no group right in her log');
+  assert.ok(!M('Ana')['f:Damselfishes'].mx, 'Ana: the mark taken away by the replay');
+  assert.deepStrictEqual(
+    M('Ana')['f:Damselfishes'].ex,
+    {k: C.MX_EXAM.n, t: C.MX_EXAM.typed, v: [], ts: at, at: 0},
+    'her exam kept as passed but for the groups'
+  );
+  assert.strictEqual(rows.Ana, pct(M('Ana')), 'her board follows without her reconnecting');
+  assert.ok(!('vl' in keptOf(s, 'fish', 'Ben')['f:Damselfishes']), 'each group right in his log');
+  assert.strictEqual(M('Ben')['f:Damselfishes'].mx, at, 'Ben keeps his mark');
+  assert.strictEqual(rows.Ben, pct(M('Ben')));
+  // The same answers but for the photos: only her learned mark makes the difference.
+  assert.strictEqual(M('Ben')['f:Damselfishes'].ok, M('Ana')['f:Damselfishes'].ok);
+  assert.ok(rows.Ana < rows.Ben, `Ana ${rows.Ana} under Ben ${rows.Ben}`);
 });
 
 test('the opt-out, an admin hide and an archive hold on every board; such a player gets no replay made', () => {
@@ -329,9 +417,20 @@ test('answers logged while the trigger replays: that replay dropped, made again 
     s = loadCodeGs({fetch: f.fetch}),
     S = C.subjectOf(C.replaySubject());
   play(s, 'Ana', '1234', {});
-  hook.data = () =>
-    assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+  // The answer comes in while the trigger makes the first coral replay, outside the lock: from step 8 of the design note
+  // the coral units are made before the replays (subjStRefresh_ reads data.json under the content editor's pairs), so the
+  // replay itself is where it comes, not data.json's fetch.
+  const mk = s.ctx.rplMake_;
+  let late = false;
+  s.ctx.rplMake_ = (...a) => {
+    if (!late && !a[4]) {
+      late = true;
+      assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+    }
+    return mk(...a);
+  };
   s.ctx.autoUpdate();
+  assert.ok(late, 'the answer came in during the replay');
   assert.ok(!s.sheets.Replayed || !s.sheets.Replayed.rows.slice(1).some(r => r[0] === 'Ana'), 'made over 12 rows, 13 now: not written');
   s.ctx.autoUpdate();
   assert.deepStrictEqual(

@@ -397,3 +397,205 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// Q377's "30 at most" for the very variable genera (photoTarget.maxGenera: Chromodoris, Phyllidia), a photo target per
+// species (docs/reviews/2026-11-15-seaslug-list.md 5.3): their species have the ceiling as their target, never above it.
+test('the photo target: 30 for a species of a very variable genus (maxGenera), 20 for the others, never above max', () => {
+  const out = J(`
+T = json.load(open('tools/seaslugs.json'))['photoTarget']
+J = {**T, 'juvenile': {'Chromodoris juvenilis': 'a source', 'Slugus juvenilis': 'a source'}}
+print(json.dumps([T['maxGenera'], target({'name': 'Chromodoris annae', 'genus': 'Chromodoris'}, T),
+                  target({'name': 'Phyllidia ocellata', 'genus': 'Phyllidia'}, T),
+                  target({'name': 'Nembrotha kubaryana', 'genus': 'Nembrotha'}, T),
+                  target({'name': 'Chromodoris juvenilis', 'genus': 'Chromodoris'}, J),
+                  target({'name': 'Slugus juvenilis', 'genus': 'Slugus'}, J),
+                  target({'name': 'Phyllidiella pustulosa', 'genus': 'Phyllidiella'}, T),
+                  target({'name': 'No genus'}, T),
+                  [gl_target(g, T) for g in ('Chromodoris', 'Phyllidia', 'Phyllidiella')],
+                  # the egg refill's genus-level jobs take the same target (Codex review #1048)
+                  'gl_target(g, T), "gl"' in __import__('inspect').getsource(run)]))`);
+  assert.deepStrictEqual(out, [
+    ['Chromodoris', 'Phyllidia'],
+    [30, 0],
+    [30, 0],
+    [20, 0],
+    [30, 5], // the ceiling holds; its 5 juvenile places inside it
+    [25, 5],
+    [20, 0], // a genus of the same family, not listed
+    [20, 0],
+    [30, 30, 20], // a genus's genus-level list: the ceiling for a very variable genus too (gl_target)
+    true
+  ]);
+});
+
+// The egg rule's filter 2 with rule P4: a candidate judged an egg mass frees its place, and its observation brings its
+// next usable photo, asked again by id (eggs_back), as it is now.
+test('egg masses: the observation of an egg-only candidate brings its next usable photo, within the target; the egg one counts nothing', () => {
+  const out = J(`${OBS}
+from collections import Counter
+from fetch_fish import Net
+import tempfile, os
+d = tempfile.mkdtemp()
+def sp(i, tid=601, **k):  # as trim_id keeps it: the taxon's line in tx, the agreement
+    o = ob(i, n=3, tx=[tid, 60, 1], **k)
+    o.update({'tid': tid, 'ag': 1, 'dg': 0})
+    return o
+def gen(i, **k):
+    o = ob(i, n=2, rk='genus', g='research', **k)
+    o.update({'t': 'Slugus', 'tid': 60, 'ag': 0, 'dg': 0})
+    return o
+rec = lambda key, i, k=0, **x: {'f': f'seaslug-{key}-cand-{i * 10 + k}', 'o': obs_url(i), **x}
+# species 601: 1 an egg mass (its next photo 11), 2 an egg mass whose other photos are share-alike, 3 an egg mass
+# re-identified since as another species, 4 a normal candidate, 5 an egg mass whose observation already has another
+# candidate (not egg-only); genus Slugus: 7 an egg mass (next photo 71); species 602 full without its egg mass
+# (target 1): its 8 never asked
+L601 = [rec(601, 1), rec(601, 2), rec(601, 3), rec(601, 4), rec(601, 5), rec(601, 5, 1)]
+LG = [rec('Slugus', 7, gl=1)]
+L602 = [rec(602, 8), rec(602, 9)]
+egg = {'seaslug-601-cand-10', 'seaslug-601-cand-20', 'seaslug-601-cand-30', 'seaslug-601-cand-50', 'seaslug-Slugus-cand-70',
+       'seaslug-602-cand-80'}
+used = {p['f'].rsplit('-', 1)[-1] for L in (L601, LG, L602) for p in L}
+taken = {p['o'] for L in (L601, LG, L602) for p in L}
+# never captive, as every search (Codex review #1046)
+assert 'captive=false' in egg_query([1])
+# asked once, every observation with an egg-mass candidate in these lists (5 and 8 included: the same set on a rerun)
+c = {egg_query([1, 2, 3, 5, 7, 8]): {'results': [sp(1), sp(2, lic=['cc-by', 'cc-by-sa', 'cc-by-nc-sa']), sp(3, tid=699), sp(5),
+                                              gen(7), sp(8, tid=602)]}}
+json.dump(c, open(d + '/c.json', 'w'))
+net = Net(d + '/c.json', offline=True)
+jobs = [('601', L601, 5, 'sp', 'Slugus', None), ('Slugus', LG, 20, 'gl', 'Slugus', None), ('602', L602, 1, 'sp', 'Slugus', None)]
+got = eggs_back(net, jobs, egg, EGG, used, taken)
+again = eggs_back(net, jobs, egg, EGG, used, taken)
+print(json.dumps([{k: [[r['f'], r['o'].rsplit('/', 1)[-1], r.get('gl')] for r in v] for k, v in got.items()}, again,
+                  [held(L601, egg), held(LG, egg), held(L602, egg)], egg_only(L601, egg), sorted(egg_set(
+                  {'seaslug': {'a': {'egg': 1}, 'b': {'jt': 'x', 'e': 3}, 'c': 'bad'}, 'fish': {'d': {'egg': 1}}}))]))`);
+  assert.deepStrictEqual(out[0], {
+    601: [['seaslug-601-cand-11', '1', null]], // its next usable photo; 2 (share-alike only) and 3 (another species) none
+    Slugus: [['seaslug-Slugus-cand-71', '7', 1]]
+  });
+  assert.deepStrictEqual(out[1], {}, 'a rerun brings nothing: the observation has its photo now');
+  assert.deepStrictEqual(out[2], [3, 1, 1], 'the egg masses count against nothing (601: 4, 5, the new 11)');
+  assert.deepStrictEqual(
+    out[3],
+    ['https://www.inaturalist.org/observations/2', 'https://www.inaturalist.org/observations/3'],
+    'after the run: 2 and 3 still egg-only'
+  );
+  assert.deepStrictEqual(out[4], ['a'], 'the sea slugs’ egg judgements only');
+});
+
+test('fetch_seaslugs.py --genus-level offline: an egg-only candidate’s observation keeps its place with its next photo, first; the target counts the rest', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slugegg-'));
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({
+      photoTarget: {...T, candidates: 2, max: 30, perJuvenileForm: 0, juvenile: {}},
+      species: [{name: 'Slugus slugii', genus: 'Slugus', inat: 601, circle: 1}]
+    })
+  );
+  fs.writeFileSync(at('inf.json'), JSON.stringify({species: []}));
+  const old = [
+    {
+      f: 'seaslug-Slugus-cand-100',
+      a: '(c) u10',
+      lic: 'cc-by',
+      o: 'https://www.inaturalist.org/observations/10',
+      t: 'Slugus',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1,
+      gl: 1
+    },
+    {
+      f: 'seaslug-Slugus-cand-110',
+      a: '(c) u11',
+      lic: 'cc-by',
+      o: 'https://www.inaturalist.org/observations/11',
+      t: 'Slugus',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1,
+      gl: 1
+    }
+  ];
+  fs.writeFileSync(at('cand.json'), JSON.stringify({v: 1, cand: {Slugus: old}}));
+  fs.writeFileSync(at('sug.json'), JSON.stringify({seaslug: {'seaslug-Slugus-cand-100': {egg: 1, n: 'an egg rosette'}}}));
+  py(
+    `${OBS}
+from fetch_fish import API, TAXA
+d = sys.argv[1]
+def gl(i, n=1):
+    o = ob(i, g='research', rk='genus', n=n)
+    o.update({'t': 'Slugus', 'tid': 60, 'ag': 0, 'dg': 0})
+    return o
+anc = [[1, 'Animalia', 'kingdom'], [60, 'Slugus', 'genus']]
+c = {TAXA + '601?fields=id,ancestors.id,ancestors.name,ancestors.rank': {'results': [{'id': 601, 'anc': anc}]},
+     egg_query([10]): {'results': [gl(10, n=3)]},
+     API + gl_query([60]) + '&fields=' + GL_FIELDS: {'total': 4, 'results': [gl(10, n=3), gl(11), gl(12), gl(13)]}}
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const args = ['tools/fetch_seaslugs.py', '--offline', '--genus-level', '--src', at('src.json'), '--informal-src', at('inf.json')];
+  const run = () =>
+    execFileSync('python3', [...args, '--cand', at('cand.json'), '--cache', at('cache.json'), '--suggest', at('sug.json')], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    });
+  const log = run();
+  const L = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand.Slugus;
+  // 100 (the egg mass) stays, 110 stays, 101 (observation 10's next photo) takes the freed place: the target of 2 is
+  // full again without a new observation; 12 and 13 wait.
+  assert.deepStrictEqual(
+    L.map(p => p.f),
+    ['seaslug-Slugus-cand-100', 'seaslug-Slugus-cand-110', 'seaslug-Slugus-cand-101']
+  );
+  assert.deepStrictEqual([L[2].o, L[2].gl], ['https://www.inaturalist.org/observations/10', 1]);
+  assert.match(log, /egg masses: 1 observations brought their next photo \(Slugus 1\)/);
+  assert.match(log, /Slugus\s+2 \/ 2 \(\+0;/);
+  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  run();
+  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before, 'a rerun changes nothing');
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+// A species with no name (tools/seaslug_informal.json) is its label (Q389 (2)): an egg-only observation of its list
+// brings its next photo only while it still carries that label as label_query asks it (Codex review #1046).
+test('egg masses of a species with no name: the next photo only while its observation still carries the label', () => {
+  const out = J(`${OBS}
+from fetch_fish import Net
+import tempfile
+d = tempfile.mkdtemp()
+F = {'id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes'}
+def gen(i, of):
+    o = ob(i, n=2, rk='genus', g='research')
+    o.update({'t': 'Slugus', 'tid': 60, 'ag': 0, 'dg': 0, 'of': of})
+    return o
+rec = lambda i: {'f': f'seaslug-slugus-sp1-cand-{i * 10}', 'o': obs_url(i)}
+# 1 still labelled (by its field id, the value's case aside), 2 labelled by the name alone, 3 its label changed to
+# another species with no name, 4 its label removed, 5 the same field set to No
+L = [rec(i) for i in (1, 2, 3, 4, 5)]
+egg = {p['f'] for p in L}
+c = {egg_query([1, 2, 3, 4, 5]): {'results': [gen(1, [[5, 'Slugus sp. 1?', 'yes']]), gen(2, [[None, 'Slugus sp. 1?', 'Yes']]),
+                                             gen(3, [[6, 'Slugus sp. 2?', 'Yes']]), gen(4, []), gen(5, [[5, 'Slugus sp. 1?', 'No']])]}}
+json.dump(c, open(d + '/c.json', 'w'))
+used, taken = {p['f'].rsplit('-', 1)[-1] for p in L}, {p['o'] for p in L}
+got = eggs_back(Net(d + '/c.json', offline=True), [('slugus-sp1', L, 20, 'inf', 'Slugus', F)], egg, EGG, used, taken)
+print(json.dumps([[r['f'], 'gl' in r] for r in got.get('slugus-sp1', [])]))`);
+  assert.deepStrictEqual(out, [
+    ['seaslug-slugus-sp1-cand-11', false],
+    ['seaslug-slugus-sp1-cand-21', false]
+  ]);
+});
+
+test('trim_id keeps the observation fields; labelled reads them; egg_query asks for them', () => {
+  const out = J(`
+o = trim_id({'id': 9, 'quality_grade': 'research', 'taxon': {'id': 60, 'name': 'Slugus', 'rank': 'genus'},
+             'ofvs': [{'field_id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes', 'datatype': 'text'}]})
+F = {'id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes'}
+print(json.dumps([o['of'], labelled(o, F), labelled(o, {**F, 'value': 'No'}), labelled({**o, 'of': []}, F),
+                  'ofvs.value' in egg_query([9]) and 'ofvs.field_id' in egg_query([9])]))`);
+  assert.deepStrictEqual(out, [[[5, 'Slugus sp. 1?', 'Yes']], true, false, false, true]);
+});

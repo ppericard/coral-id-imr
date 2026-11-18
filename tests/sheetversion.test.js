@@ -173,6 +173,57 @@ test('--assign: the next VERSION, the entry in the header (new day) and ARCHITEC
   }
 });
 
+// #1053 (v170): its entry held `sp. `, whose backticks the header drops; the space they kept doubled one in the header
+// line, which --check then refused ("not the base's with one entry"). --assign and --check now read the entry alike.
+test('--assign then --check agree on an entry with a double space or with spaces at the edge of a code span (#1053)', () => {
+  const cases = [
+    ['digits  after sp. only\n', 'digits after sp. only', 'digits after sp. only'],
+    [
+      'allowed only after `sp. ` that ends a name\n',
+      'allowed only after sp. that ends a name',
+      'allowed only after `sp. ` that ends a name'
+    ],
+    ['` logAnswers_` keeps it;\nas `sp. 5 `.\n', 'logAnswers_ keeps it; as sp. 5', '` logAnswers_` keeps it; as `sp. 5 `']
+  ];
+  for (const [entry, head, arch] of cases) {
+    const r = repo();
+    try {
+      r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+      r.write('tools/sync/changes/claude-x.md', entry);
+      r.commit();
+      ok(r.check(), /waiting/);
+      ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
+      assert.strictEqual(
+        r.read('tools/sync/Code.gs').split('\n')[0],
+        HEADER.replace('VERSION 7 (2026-11-08: v7:', `VERSION 8 (2026-11-09: v8: ${head}; 2026-11-08: v7:`),
+        entry
+      );
+      assert.ok(r.read('docs/ARCHITECTURE.md').includes(`tabs; v8 (2026-11-09) ${arch}; v7 (`), entry);
+      ok(r.check(), /assigned: v8/);
+      r.commit();
+      ok(r.check(), /assigned: v8/);
+      ok(r.check('--main'));
+    } finally {
+      r.done();
+    }
+  }
+});
+
+test('an entry that is only code marks and separators is empty, for --check and --assign', () => {
+  const r = repo();
+  try {
+    r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+    r.write('tools/sync/changes/claude-x.md', '` . `;\n');
+    fails(r.check(), /claude-x\.md: empty/);
+    const a = r.run('--assign', '--base', 'main', '--date', '2026-11-09');
+    assert.strictEqual(a.status, 1, a.stdout + a.stderr);
+    assert.match(a.stderr, /claude-x\.md is empty/);
+    assert.ok(fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')), 'refused before anything is written');
+  } finally {
+    r.done();
+  }
+});
+
 test('--assign on the same day goes under that day; it needs exactly one changes file', () => {
   const r = repo();
   try {
@@ -415,5 +466,31 @@ test('check_versions.py runs the sheet check on the source, never on a stamped c
     assert.ok(!/Sheet script/.test(s.stdout), s.stdout);
   } finally {
     fs.rmSync(d, {recursive: true, force: true});
+  }
+});
+
+// The gate floor (core.js SHEET_FLOOR; architecture review 2026-11-18, R3): a version already live, set by hand, never a
+// gate. A PR that adds or raises it with a Code.gs change is not a gate added at or below main's VERSION, and --assign
+// leaves it as written (were it a gate, it would be set to the new VERSION: the build's, not a live one).
+test('SHEET_FLOOR is not a gate: --check accepts it, --assign leaves it alone', () => {
+  const r = repo();
+  try {
+    r.edit('core.js', 'const x = 1;', 'const SHEET_FLOOR = 5;\nconst x = 1;');
+    r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+    r.write('tools/sync/changes/claude-x.md', 'doGet answers 2 (Pierre, 2026-11-09).\n');
+    r.commit();
+    ok(r.check());
+    ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
+    assert.match(r.read('core.js'), /^const SHEET_FLOOR = 5;$/m, 'the floor as written');
+    assert.match(r.read('tools/sync/Code.gs'), /^const VERSION = 8;/m);
+    r.commit();
+    ok(r.check('--main'));
+    // raised later by a PR of its own, still not a main gate changed
+    r.git('checkout', '-q', '-b', 'pr2');
+    r.edit('core.js', 'const SHEET_FLOOR = 5;', 'const SHEET_FLOOR = 7;');
+    r.commit();
+    ok(r.run('--check', '--base', 'pr'));
+  } finally {
+    r.done();
   }
 });

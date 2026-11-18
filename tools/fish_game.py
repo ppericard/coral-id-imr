@@ -126,11 +126,12 @@ def fish_on(F, f, sid):
 UNDONE_ADD = re.compile(r'^-a')  # autosort.js fish log code: an auto add Pierre undid (fishUndo writes '-' + the code)
 
 
-def gone_ids(cur):
+def gone_ids(cur, key='fish'):
     """The photo ids (pid) Pierre decided against: rejected (seen), excluded or moved with Not this (out) in his fish
     curation, an automatic add of the auto-sort he undid (its log code '-a...': autosort.js fishUndo, "the photo waits
-    for his decision"; Codex review #674), and the top-level exclude (core.js fishGone)."""
-    F = (cur or {}).get('fish') or {}
+    for his decision"; Codex review #674), and the top-level exclude (core.js fishGone). key: the tree subject's part of
+    the curation (core.js SUBJECTS admin.cur: tools/seaslug_game.py passes the sea slugs')."""
+    F = (cur or {}).get(key) or {}
     undone = {f for day in (F.get('auto') or {}).values() for f, c in (day or {}).items() if UNDONE_ADD.match(str(c))}
     return ({pid(f) for k in ('seen', 'exclude', 'out') for f in (F.get(k) or {})} | {pid(f) for f in undone}
             | {pid(f) for f in (cur or {}).get('exclude') or {}})
@@ -292,7 +293,7 @@ def refined(mine, passed):
 
 # autosort.js fishParse: a fish log code; its fields (t tags, e ease, p phase, c crop) are the ones the auto-sort wrote.
 LOG = re.compile(r'^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$')
-FLAGORD = 'jcawpr'  # autosort.js FFLAGORD: the flags in the rubric's order
+FLAGORD = 'jcawfpr'  # autosort.js FFLAGORD: the flags in the rubrics' order (the sea slugs' f too)
 
 
 def tags_auto(F):

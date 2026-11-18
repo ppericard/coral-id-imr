@@ -14,8 +14,9 @@ const F = read('fish.json'),
 test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys unchanged for the corals', () => {
   const ids = C.SUBJECTS.map(s => s.id);
   assert.deepStrictEqual(ids, ['coral', 'fish', 'seaslug']);
-  // the sea slugs (study §9 step 5): a beta subject that opens to its group, on the sheet version that knows it (rule D4)
-  assert.ok(C.subjGroup(C.subjectOf('seaslug')) && C.subjectOf('seaslug').beta);
+  // the sea slugs (study §9 step 5): a beta subject, open to every player since 2026-11-17 (its group from 2026-11-16),
+  // on the sheet version that knows it (rule D4)
+  assert.ok(!C.subjGroup(C.subjectOf('seaslug')) && C.subjectOf('seaslug').beta);
   assert.ok(C.subjectOf('seaslug').sheet > C.STRUCT_SHEET);
   assert.strictEqual(C.subjKey('seaslug', 'progress'), 'reefid-sync-seaslug-progress');
   assert.strictEqual(C.subjDev('seaslug', 'comeback'), 'reefid-seaslug-comeback');
@@ -95,11 +96,15 @@ test('admin descriptor: origins and Candidates sources for the one filter bar', 
   assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr'));
 });
 
-test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to all, its beta label kept (Q158)', () => {
+test('opening (subjGroup): the beta label and who sees a subject are two fields; fish out of beta, sea slugs open to all in beta', () => {
   const fish = C.subjectOf('fish'),
-    coral = C.subjectOf('coral');
-  assert.ok(fish.beta && fish.beta.kick && fish.beta.line, 'fish keeps its beta label');
+    coral = C.subjectOf('coral'),
+    slug = C.subjectOf('seaslug');
+  assert.ok(!fish.beta, 'fish out of beta (Pierre, 2026-11-17)');
   assert.strictEqual(fish.open, 'all', 'fish opens to every player (Pierre, 2026-11-06, Q158)');
+  assert.ok(slug.beta && slug.beta.kick && slug.beta.line, 'the sea slugs keep their beta label (Pierre, 2026-11-17)');
+  assert.strictEqual(slug.open, 'all', 'the sea slugs open to every player (Pierre, 2026-11-17)');
+  assert.strictEqual(C.subjGroup(slug), false);
   assert.strictEqual(C.subjGroup(fish), false);
   assert.strictEqual(C.subjGroup({...fish, open: 'group'}), true, "'group': the admin and its group only");
   assert.strictEqual(C.subjGroup(coral), false, 'the corals open to all (no field)');
@@ -614,7 +619,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
 
 // Every subject's answers logged (Pierre, 2026-11-06; sheet v60): each subject says its rank and whether the sheet replays
 // it; the answer log's readers keep one subject's rows (subjRows, index LOG_SUBJ in readAnswers rows and tab rows alike).
-test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, logOk', () => {
+test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', () => {
   assert.deepStrictEqual(
     C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
     [
@@ -653,12 +658,9 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
     C.subjEntries(log, 'fish').map(a => a.id),
     [2]
   );
-  // A fish answer waits for the script that files it under its subject (rule D4); a coral one never waits.
-  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET - 1), false);
-  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET), true);
-  assert.strictEqual(C.logOk({s: 'fish'}, undefined), false);
-  assert.strictEqual(C.logOk({}, 0), true);
-  assert.strictEqual(C.logOk({s: 'coral'}, 0), true);
+  // Every answer is sent as it comes: the gate that held a fish answer for the script that files it under its subject
+  // (v60) went with the gate floor (core.js SHEET_FLOOR).
+  assert.strictEqual(C.logOk, undefined);
 });
 
 // One engine, a calibration per subject (Pierre, 2026-11-06 14:18; SUBJECTS calib): the corals keep the defaults (no

@@ -806,6 +806,163 @@
         {"t": "WoRMS, Aplysia", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=137654"},
         {"t": "tools/seaslug_names.json (2026-11-17)"}
       ]
+    },
+    {
+      "id": "seaslug-named-labels",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Seven \"sp. N\" of the 2018 guide now have names",
+      "q": "Papers since 2020 name seven \"sp. N\" of the 2018 guide (Gosliner, Valdés & Behrens, 2nd edition): Thecacera sp. 8 is T. pikachu, Tenellia sp. 20 T. nakapila, Phyllidia sp. 10 P. ovata, Goniobranchus sp. 43 Chromodoris kalawakan, Chromodoris sp. 11 C. quagga, Chromodoris sp. 12 C. balat, Nembrotha sp. 5 N. lorosae. Five are already in the species list under their names; C. quagga and P. ovata are not confirmed in the Philippines (rule C8). Nothing to rename. Anything you want done with them, such as a line on their species sheets giving the guide's old label?",
+      "ctx": [
+        "Found by the literature watch (tools/seaslug_lit.py; the scan's note §3.2). Nothing settled (rule C5); the game's units are genera (Pierre, 2026-11-16), so players meet no change.",
+        "How each link is known: Thecacera sp. 8 and Nembrotha sp. 5, SEASLUG.WORLD's species pages, whose references cite the 2018 guide; Tenellia sp. 20, 8 of the 9 iNaturalist observations whose description says \"Tenellia sp. 20\" are identified T. nakapila now; Phyllidia sp. 10 (sp. 9 in the 2015 edition), the paper's synonymy; the three Chromodoris, the paper's treatments (\"sp. 11 — Gosliner et al. 2018: 139\").",
+        "Distinct Research Grade observers in the Philippines: T. pikachu 31, T. nakapila 27, C. kalawakan 16, C. balat 3, N. lorosae 3 (all confirmed); C. quagga 2 (one short, see the point on new species); P. ovata none at species level (the paper's Philippine record is a Dauin photo on Nudi Pixel, which rule C8 does not count).",
+        "Also named before 2018: Doriprismatica balut (13 observers, in the list) was Glossodoris sp. 1 of the 2008 guide and Doriprismatica sp. 1 of 2015 (Matsuda & Gosliner 2018). None of the 31 labels with 4 or more observers, Goniobranchus sp. 5 included, has a published name yet."
+      ],
+      "src": [
+        {"t": "Pola, Paz-Sedano, Martín, Warren, Noble & Martín-Hervás (2026), Zootaxa 5793(1): 193-217 (abstract)", "u": "https://www.mapress.com/zt/article/view/57331"},
+        {"t": "SEASLUG.WORLD, Thecacera pikachu", "u": "https://en.seaslug.world/species/thecacera_pikachu"},
+        {"t": "SEASLUG.WORLD, Nembrotha lorosae", "u": "https://en.seaslug.world/species/nembrotha_lorosae"},
+        {"t": "Kim, Donohoo & Gosliner (2024), Stirring up the muck: the systematics of soft-sediment Fionidae from the tropical Indo-Pacific, PeerJ 12: e18517", "u": "https://doi.org/10.7717/peerj.18517"},
+        {"t": "Wägele, Raubold, Papu, Undap & Yonow (2025), On two new Phyllidia species and some histology from the Coral Triangle, ZooKeys 1245: 1-18", "u": "https://zookeys.pensoft.net/article/153046/"},
+        {"t": "Bonomo & Gosliner (2020), Adding stars to the Chromodoris galaxy with the description of four new species, Zootaxa 4819(3): 401-435 (abstract and Plazi treatments)", "u": "https://www.mapress.com/zt/article/view/39300"},
+        {"t": "Matsuda & Gosliner (2018), Zootaxa 4444(5): 501-529", "u": "https://doi.org/10.11646/zootaxa.4444.5.1"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §3.2"}
+      ]
+    },
+    {
+      "id": "seaslug-complexes",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "One name, several species: eight of our sea slugs are species complexes",
+      "q": "Papers show eight species of our list to be complexes of several species, the others not named yet: Pteraeolidia semperi, Coryphellina exoptata, Samla bicolor, Phyllidiella pustulosa, Thuridilla gracilis, Costasiella kuroshimae, Jorunna funebris and Plakobranchus ocellatus. WoRMS and iNaturalist keep each as one species, and so does the app. A photo of one is sure at the genus (today's units), less so at the species. Keep them as single species, or mark them as complexes on their species sheets and for the species level later?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4 and §5.3). Nothing settled (rule C5); no name to add or change. Observers: distinct Research Grade observers in the Philippines (tools/seaslugs.json, 2026-11-15).",
+        "Pteraeolidia semperi (162 observers, circle 1): Meshik et al. 2026, two clades living together in Vietnam, \"at least two species within a broader and highly diverse species complex\", species delimitation giving \"about six and 20 units\"; the clades differ mainly in colour, which depends on light and symbionts; no Philippine specimen.",
+        "Coryphellina exoptata (92, circle 1): Ekimova et al. 2026, \"the Coryphellina exoptata species complex, represented by two species\". Samla bicolor (49): the same paper, specimens \"split into five monophyletic groups\".",
+        "Phyllidiella pustulosa (61): Papu et al. 2022 (its Plazi treatment), still a species complex to solve, the name kept for one clade; the lectotype is \"completely white\", so no photo cue for the true form.",
+        "Thuridilla gracilis (31): Martín-Hervás et al. 2021, a complex of 13 species, T. gracilis, T. splendens, T. bayeri, T. ratna \"plus nine undescribed species\" (abstract summaries only). T. bayeri (3) and T. ratna (4) are in our list too.",
+        "Costasiella kuroshimae (53, circle 1, the \"leaf sheep\"): Jensen et al. 2014, \"numerous distinct species that currently await description\" (a search summary only); C. fridae was described from the Maldives in 2023 (Cunha et al.). See also the \"Leaf sheep\" point.",
+        "Jorunna funebris (153, circle 1): Tibiriçá, Strömvoll & Cervera 2023, \"retrieved as a species complex in all possible partitions\" (a search summary only).",
+        "Plakobranchus ocellatus (30): Meyers-Muñoz et al. 2016, 10 candidate species, P. papua (39, in our list) named that year; a \"Plakobranchus sp. 6\" of the 2018 guide (Philippines) still unnamed (search summaries only)."
+      ],
+      "src": [
+        {"t": "Meshik, Antokhina, Deart, Chichvarkhina & Ekimova (2026), Dragons guard secrets: integrative systematics of Pteraeolidia semperi species complex, ZooKeys 1293: 347-376", "u": "https://zookeys.pensoft.net/article/195366/"},
+        {"t": "Ekimova et al. (2026), Neither 'lumpers' nor 'splitters': A global revision of Flabellinidae s.l. nudibranchs, PLOS One 21(5): e0347759", "u": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0347759"},
+        {"t": "Papu et al. (2022), Phyllidiidae: an integrative taxonomic approach including chemical analyses, Organisms Diversity & Evolution 22: 585-629 (Plazi treatment of Phyllidiella pustulosa)", "u": "https://tb.plazi.org/GgServer/xhtml/E60487942A01FFCDFCBEFC81685B522C"},
+        {"t": "Martín-Hervás, Carmona, Malaquias, Krug, Gosliner & Cervera (2021), Cladistics 37(6): 647-676", "u": "https://doi.org/10.1111/cla.12465"},
+        {"t": "Jensen et al. (2014), Journal of Molluscan Studies (Costasiella; search summary)"},
+        {"t": "Cunha, Fernández-Simón, Petrula, Giribet & Moles (2023), Diversity 15(2): 219", "u": "https://doi.org/10.3390/d15020219"},
+        {"t": "Tibiriçá, Strömvoll & Cervera (2023), Jorunna liviae (search summary)"},
+        {"t": "Meyers-Muñoz et al. (2016), Plakobranchus (search summary)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.2, §4.7, §4.9, §4.10, §4.12"}
+      ]
+    },
+    {
+      "id": "seaslug-ovata-in-picta",
+      "kind": "content",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Phyllidia ovata among the P. picta and P. coelestis photos?",
+      "q": "Wägele et al. 2025 described Phyllidia ovata (the 2018 guide's Phyllidia sp. 10) and found photos of it \"in files of P. picta Pruvot-Fol, 1957 and P. coelestis in both iNaturalist and NudiPixel\", with a Philippine record from Dauin. Our list holds P. picta (96 observers) and P. coelestis (154), both in circle 1, not P. ovata, which has no Philippine observation at species level on iNaturalist (rule C8). Should the photo judging check the P. picta and P. coelestis photos against P. ovata's description, and leave out those that match?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4.2). Nothing settled (rule C5).",
+        "The paper's diagnosis of P. ovata: a white mantle \"rarely with a tinge of blue\", a black area on the central notum, \"Large white conical tubercles have yellow apices\", yellow rhinophores, a black line on the foot sole. Its range: \"a narrow band in the Western Pacific from Japan south to Taiwan, Indonesia, and the Philippines\".",
+        "P. ovata cannot serve as a look-alike cue yet: a species not confirmed in the Philippines stays out of the cues (rule C6). Its companion P. fontjei is not recorded from the Philippines."
+      ],
+      "src": [
+        {"t": "Wägele, Raubold, Papu, Undap & Yonow (2025), On two new Phyllidia species and some histology from the Coral Triangle, ZooKeys 1245: 1-18", "u": "https://zookeys.pensoft.net/article/153046/"},
+        {"t": "SEASLUG.WORLD, Phyllidia ovata and P. fontjei, new species (2025)", "u": "https://en.seaslug.world/blog/phyllidia-ovata-fontjei-new-species-2025"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.2"}
+      ]
+    },
+    {
+      "id": "seaslug-alcalai-dianae",
+      "kind": "content",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Chromodoris dianae photos from before 2021: some may be C. alcalai",
+      "q": "Chromodoris alcalai (Gosliner 2021) \"had been confused\" with C. dianae before its description; the two are \"separated by molecular evidence, external morphology, colour pattern, and internal anatomy\" (SEASLUG.WORLD, on the paper). Both are in our list (C. alcalai 66 observers, C. dianae 52). A C. dianae photo taken before 2021 may show C. alcalai. Should the photo judging check older C. dianae photos, or prefer recent ones?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4.3). Nothing settled (rule C5). The paper itself was not read (its DOI answered 503 on 2026-11-15); the cue between the two is in it.",
+        "The pair now has a written source for the look-alikes: the look-alike survey (docs/reviews/2026-11-17-seaslug-lookalikes-survey.md) found it the strongest Chromodoris pair on iNaturalist (12 confusions in the Philippines), with no source then.",
+        "Layton, Gosliner & Wilson 2018: \"only five of 39\" Chromodoris taxa have stable colour patterns."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Chromodoris alcalai", "u": "https://en.seaslug.world/species/chromodoris_alcalai"},
+        {"t": "Gosliner (2021), Sleuthing cryptic chromodorids: adding to Philippine marine biodiversity, Philippine Journal of Systematic Biology 14(2)", "u": "https://doi.org/10.26757/pjsb2020b14014"},
+        {"t": "Layton, Gosliner & Wilson (2018), Molecular Phylogenetics and Evolution 124: 27-36", "u": "https://doi.org/10.1016/j.ympev.2018.02.008"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.3"}
+      ]
+    },
+    {
+      "id": "seaslug-tenellia-genera",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Tenellia, Phestilla or Trinchesia?",
+      "q": "iNaturalist names Tenellia viei and T. goniophaga, which WoRMS gives as Phestilla viei and P. goniophaga (\"alternative representation\", for a \"controversed genus allocation\"); Korshunova, Fletcher & Martynov 2025 move T. nakapila to \"Trinchesia\", while WoRMS keeps Tenellia nakapila. The app follows iNaturalist's genera, with WoRMS's name beside. The units are genera, so a species' genus decides which unit its photos teach. Keep iNaturalist's genera, or follow WoRMS (Phestilla) for the two?",
+      "ctx": [
+        "Found by the literature watch (`rename`; the scan's note §4.11) and the mode study (docs/reviews/2026-11-15-nudibranch-mode-study.md: 450 of our 452 names are WoRMS's accepted name, these 2 differ). Nothing settled (rule C5).",
+        "In the game today: the Tenellia unit holds T. bughaw, T. nakapila and T. puti; the Phestilla unit P. melanobrachia and P. sibogae. T. viei (9 observers) and T. goniophaga (5) are in the species list, not in the game.",
+        "The Trinchesia recombination is from a Plazi treatment's summary of the 2025 paper (not read); WoRMS cites the paper as the status source of Phestilla sibogae, P. melanobrachia and P. lugubris."
+      ],
+      "src": [
+        {"t": "WoRMS, Tenellia viei", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783808"},
+        {"t": "WoRMS, Tenellia goniophaga", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783820"},
+        {"t": "WoRMS, Tenellia nakapila", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783802"},
+        {"t": "Korshunova, Fletcher & Martynov (2025), Zoological Journal of the Linnean Society 204(4): zlaf057", "u": "https://doi.org/10.1093/zoolinnean/zlaf057"},
+        {"t": "Kim, Donohoo & Gosliner (2024), Stirring up the muck: the systematics of soft-sediment Fionidae from the tropical Indo-Pacific, PeerJ 12: e18517", "u": "https://doi.org/10.7717/peerj.18517"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.11"}
+      ]
+    },
+    {
+      "id": "seaslug-new-species-watch",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "256 species described since 2018 in our genera: two one observer short",
+      "q": "WoRMS accepts 256 species described since 2018 in our 146 genera and 3 watched ones. 59 are already in our list; none is confirmed in the Philippines (rule C8) without being in it; 27 are observed there but not confirmed. Chromodoris quagga (6 Research Grade observations, 2 observers; holotype from Tingloy, Batangas) and Trapania tigger (3, 2 observers) each need one more observer, Sacoproteus nishae (4, 1 observer) two more. tools/build_seaslugs.py takes a species in on its next pull once it passes the rule, and tools/seaslug_lit.py reruns the watch. Keep it so, or do you want to hear when one comes in?",
+      "ctx": [
+        "Found by the literature watch (tools/seaslug_lit.py; the scan's note §3 and §5.1). Nothing to add today.",
+        "By year: 67 of 2018, 9 of 2019, 23 of 2020, 13 of 2021, 29 of 2022, 48 of 2023, 14 of 2024, 35 of 2025, 15 of 2026; most in Halgerda (20), Hypselodoris (17), Trapania (17), Cyerce (14), Gymnodoris (13). 170 have no observation in the Philippines at species level.",
+        "Next with 2 Research Grade observations each: Coryphellina pannae, Halgerda mango, Hypselodoris rositoi, Naisdoris aurornata, Phanerophthalmus albotriangulatus, Polybranchia jensenae, Trapania stegodon.",
+        "Phyllidia ovata (2025) cannot come in this way yet: no Philippine observation at species level (see the P. ovata point)."
+      ],
+      "src": [
+        {"t": "Bonomo & Gosliner (2020), Adding stars to the Chromodoris galaxy with the description of four new species, Zootaxa 4819(3): 401-435 (abstract and Plazi treatments)", "u": "https://www.mapress.com/zt/article/view/39300"},
+        {"t": "iNaturalist, Chromodoris quagga, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=1115868&place_id=6873&quality_grade=research"},
+        {"t": "Smirnoff, Donohoo & Gosliner (2022), Zoological Journal of the Linnean Society 196(1): 270-313", "u": "https://doi.org/10.1093/zoolinnean/zlac009"},
+        {"t": "iNaturalist, Trapania tigger, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=1392151&place_id=6873&quality_grade=research"},
+        {"t": "Krug, Wong, Medina, Gosliner & Valdés (2018), Zoologica Scripta 47(6): 699-713 (Sacoproteus nishae)"},
+        {"t": "iNaturalist, Sacoproteus nishae, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=787078&place_id=6873&quality_grade=research"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §3, §5.1"}
+      ]
+    },
+    {
+      "id": "seaslug-guide-3rd-edition",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Watch: the guide's 3rd edition renumbers the \"sp. N\"",
+      "q": "A 3rd edition of Nudibranch & Sea Slug Identification – Indo-Pacific (Gosliner, Valdés & Behrens, New World Publications; ISBN 978-1-878348-73-9) is announced for November 2026. The guides renumber their \"sp. N\" from one edition to the next, and the labels our tools keep and the iNaturalist notes they read mostly cite the 2018 edition (\"Stiliger sp. 1 in NSSI2\"). When it is out: use it as a source (the 2018 edition is not used: dated and DRM-protected), and map the labels to its numbers, each label keeping its edition?",
+      "ctx": [
+        "A watch, nothing to decide before the book is out. The ISBN and the November 2026 date come from the publisher's announcement Pierre shared on 2026-11-17 (a screenshot of its post; not committed); a web search that day found no listing of the ISBN, only a search engine's summary of the publisher's page listing a 3rd edition, \"updated and reorganized\", with 500 new species and taxonomic changes (the page answered 503 and was not read). The undescribed study (2026-11-17, §3.2) had found no 3rd edition; 4 iNaturalist observations already write \"NSSI3\".",
+        "How the books renumber: Doriprismatica balut was \"Glossodoris sp. 1\" (2008), then \"Doriprismatica sp. 1\" (2015); one Gymnodoris is sp. 51 in 2018 and sp. 12 in 2008. Our labels name their edition (tools/seaslug_lit_source.json, \"(NSSI2)\"), and the papers' synonymies cite edition and page (\"Gosliner et al. 2018: 139\"), so a new edition breaks none of them.",
+        "Pierre, 2026-11-17 (Q389): the guide's \"sp. N\" other than Goniobranchus sp. 5 wait for a published name; the literature watch brings them in as papers name them."
+      ],
+      "src": [
+        {"t": "New World Publications, Nudibranch & Sea Slug Identification – Indo-Pacific (publisher's page; search summary, not read)", "u": "https://fishid.com/nudiindo.html"},
+        {"t": "Gosliner, Valdés & Behrens (2018), Nudibranch & Sea Slug Identification – Indo-Pacific, 2nd ed., New World Publications, ISBN 978-1-878348-67-8"},
+        {"t": "docs/reviews/2026-11-17-seaslug-undescribed-species-study.md §3.2, §6"},
+        {"t": "tools/seaslug_lit_source.json (labels)"}
+      ]
     }
   ]
 }

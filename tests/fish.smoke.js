@@ -466,9 +466,99 @@ async function freshPlayers(b, base, errs) {
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
         P[n] = s0;
       });
+      // Juveniles and colour phases on their unit's mastery (Pierre, 2026-11-07; 2026-11-17, Q391 a; docs/LEARNING.md
+      // "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
+      // early-class juveniles (model.js varKind, core.js VAR_AT), which do come; past Advanced they all come (no wall),
+      // checked on the entries with 20 easy phase photos or more.
+      let easyJ = 0;
+      FISH.c1.forEach(n => {
+        const L = GX(n).views.wide,
+          s0 = JSON.parse(JSON.stringify(st(n)));
+        if (!L.some(p => phaseOf(p))) return;
+        P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+        let early = 0;
+        for (let k = 0; k < 60; k++)
+          photoSet(n).shown.forEach(x => {
+            const v = varKind(n, x);
+            early += v && v !== 'jE' ? 1 : 0;
+            easyJ += v === 'jE' ? 1 : 0;
+          });
+        ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
+        if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
+          P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+          let late = 0;
+          for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
+          ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
+        }
+        P[n] = s0;
+      });
+      ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
+      // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
+      const nJ = FISH.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
+        pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
+      ok(!!pJ, 'a juvenile with an adult of its species in play');
+      if (pJ) {
+        ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
+        const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+        ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
+        ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
+        ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+        const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
+        ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
+        d.close(1);
+        ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
+        ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      }
       return {fails, gated};
     }, 15);
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
+    // The card through the game's own path, once (quiz.js phaseArm): an answer whose photo has a sex or colour phase
+    // (core.js phaseKind) arms the break; Next shows the card over the question answered; Got it marks it shown and goes on
+    // to the next question. Every unit opened first, so the next question brings no unit's card (which the break waits for).
+    if (seed === 11) {
+      const a = await q.evaluate(() => {
+        document.querySelectorAll('.unlock, .achpop').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        if (typeof achQ !== 'undefined') achQ.length = 0;
+        if (typeof achBusy !== 'undefined') achBusy = false;
+        introAll('progress');
+        dropPlans();
+        NEXTQ = null;
+        route();
+        const n = FISH.c1.find(n => GX(n).views.wide.some(p => phaseKind(p) === 'phase')),
+          p = n && GX(n).views.wide.find(x => phaseKind(x) === 'phase');
+        if (!p || !document.querySelector('#view .q')) return {why: `no question or no phase photo (${n})`};
+        smokeAnswer();
+        const nb = document.getElementById('next');
+        nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
+        return {armed: phaseArm(nb, 'quiz', [{n, p}], false), seen: phaseSeen('phase')};
+      });
+      if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
+      else {
+        // An achievement toast the answer brought would hold the card back (overlayBusy): gone, as a player waits it out.
+        await q.evaluate(() => {
+          document.querySelectorAll('.achpop').forEach(d => d.remove());
+          if (typeof achQ !== 'undefined') achQ.length = 0;
+          if (typeof achBusy !== 'undefined') achBusy = false;
+        });
+        await q.click('#next');
+        const shown = await q.waitForSelector('.unlock.phasecard', {timeout: 5000}).catch(() => null);
+        if (!shown)
+          fresh.push(
+            `new player ${seed}: Next showed no phase card (${await q.evaluate(() => [...document.querySelectorAll('.unlock, .achpop, #tour')].map(d => d.className).join() || 'nothing over the page')})`
+          );
+        else {
+          await q.click('.unlock.phasecard [data-b]');
+          const on = await q
+            .waitForFunction(() => !document.querySelector('.unlock.phasecard') && document.querySelector('#view .q:not(.done)'), null, {
+              timeout: 5000
+            })
+            .then(() => true)
+            .catch(() => false);
+          if (!on) fresh.push(`new player ${seed}: Got it did not go on to the next question`);
+          if (!(await q.evaluate(() => phaseSeen('phase')))) fresh.push(`new player ${seed}: the phase card not marked shown`);
+        }
+      }
+    }
     await c6.close();
   }
   return fresh;
@@ -728,7 +818,7 @@ async function freshPlayers(b, base, errs) {
       picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
     ok(!bonusOfferDue(), 'no circle offer card');
     // A unit's bar set through the former moving average (s.pg), whatever rule its record is under: a unit answered above
-    // took the domain-score bar (core.js DOM; the fish are not replayed, model.js domRules), which s.pg alone would not move.
+    // took the domain-score bar (core.js DOM), which s.pg alone would not move.
     const pgAt = (n, x) => {
       const s = st(n);
       delete s.dp;
@@ -746,11 +836,8 @@ async function freshPlayers(b, base, errs) {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
-    // The global score from the sheet script that ranks by it (core.js SCORE_SHEET, rule D4): before, the families' mean.
-    store.set(SHEETV, SCORE_SHEET - 1);
-    ok(headScore() === null && headPct() === progPct(), 'before SCORE_SHEET: the families mean, as before');
-    store.set(SHEETV, SCORE_SHEET);
-    ok(headScore() && headPct() === headScore().pct, 'from SCORE_SHEET: the global score');
+    // The global score, which the sheet ranks by (v101, below the gate floor core.js SHEET_FLOOR), also before any reply.
+    ok(headScore() && headPct() === headScore().pct, 'the global score');
     ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
@@ -968,21 +1055,36 @@ async function freshPlayers(b, base, errs) {
     if (s0 === null) localStorage.removeItem(sk);
     else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
-    // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
-    // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
-    // counted in the progress, never a duel pair.
+    // species of each family in play, in every circle (Pierre, 2026-11-18), never two families; offered once a family is
+    // at Advanced, a family's genera in play only from its Advanced; their questions and typed answers among genera only,
+    // a family's among families; never a duel pair. Circles 2 and 3's from GENERA_SHEET (rule D4), circle 1's before.
     const sci = SETS().find(S => S.k === 'sci'),
-      G = FISH.sci;
-    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the circle-1 families');
+      G = FISH.sci,
+      slate = [...FISH.c1, ...FISH.c2, ...FISH.c3],
+      gv0 = store.get(SHEETV, 0);
+    ok(G.length > 200 && G.every(n => GX(n).rank === 'genus' && slate.includes(GX(n).parent)), 'sci: genera of the families in play');
+    ok(
+      [1, 2, 3].every(c => G.some(n => GX(n).circle === c && GX(GX(n).parent).circle === c)),
+      'sci: every circle, its family’s'
+    );
     ok(
       G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
         new Set(G.map(n => GX(n).name)).size === G.length,
-      'sci: a genus in one entry only'
+      'sci: a genus in one family only'
     );
+    store.set(SHEETV, GENERA_SHEET - 1);
+    ok(
+      !generaOn() && sci.all().length === G.filter(n => GX(n).circle === 1).length && !setOf('g:Aeoliscus'),
+      'sci: circle 1’s alone below GENERA_SHEET'
+    );
+    ok(!typeMatch('Aeoliscus', 'genus'), 'sci: no typed name of theirs below GENERA_SHEET (Codex review #1067)');
+    store.set(SHEETV, GENERA_SHEET);
+    ok((typeMatch('Aeoliscus', 'genus') || {}).g === 'g:Aeoliscus', 'sci: typed, from GENERA_SHEET');
     ok(
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
+    store.set(SHEETV, gv0); // the version the smoke runs at (no species unit in the draw below)
     FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
     // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
@@ -1076,7 +1178,7 @@ async function freshPlayers(b, base, errs) {
     pgAt('f:Butterflyfishes', 0.2);
     pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play: ' + pl);
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -1134,7 +1236,7 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
     // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
     ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
-    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw: ' + pool().filter(n => GX(n).rank));
     // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
     quizBoard();
     const so = document.querySelector('#view [data-seton="sci"]');
@@ -1778,7 +1880,8 @@ async function freshPlayers(b, base, errs) {
     const spq = await q.evaluate(() => {
       const t = SHOWNQ[1],
         f = ((SHOWNQ[4] || {}).shown || [])[0],
-        p = GX(t).views.wide.find(x => f && x.f === f.f) || {},
+        // a held-out photo too (model.js examSet: an exam question on one)
+        p = [...GX(t).views.wide, ...(GX(t).held || [])].find(x => f && x.f === f.f) || {},
         s = FISH.sps[p.sp] || {};
       return {
         sci: s.name || '',
@@ -1923,12 +2026,11 @@ async function freshPlayers(b, base, errs) {
     });
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (Pierre, 2026-11-04: separate per subject): #leaderboard on Fish asks the sheet for the fish
-    // board (&s=fish), shown only from a script that serves it (sheet v95, rule D4), kept apart from the corals' copy.
+    // board (&s=fish, sheet v95, below the gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
     // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
     const fb = await q.evaluate(async () => {
       const f0 = window.fetch,
         asked = [];
-      let v = BOARD_SHEET - 1;
       window.fetch = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=fish/.test(u)
@@ -1937,25 +2039,13 @@ async function freshPlayers(b, base, errs) {
               ['Other P', 20, null]
             ]
           : [['Coral P', 90, 1.1]];
-        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v})));
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: SHEET_FLOOR})));
       };
       const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
-      const sv0 = store.get(SHEETV, 0);
       try {
         localStorage.removeItem('reefid-fish-board-cache');
-        // The sheet's last reply before BOARD_SHEET (rule D4; Codex review #694): Fish behaves as before it had a board, the
-        // page shows the corals' board, and nothing announces one.
-        store.set(SHEETV, BOARD_SHEET - 1);
         go('board');
-        const before = await shown(),
-          live0 = boardLive(SUBJ),
-          asked0 = asked.splice(0);
-        // The sheet at BOARD_SHEET, a reply still from an older script (the update under way): the corals' rows are never
-        // shown as the fish board.
-        store.set(SHEETV, BOARD_SHEET);
-        viewBoard();
-        const old = await shown();
-        v = BOARD_SHEET;
+        const live0 = boardLive(SUBJ);
         boardAt.fish = 0;
         viewBoard();
         const fresh = await shown();
@@ -1963,30 +2053,23 @@ async function freshPlayers(b, base, errs) {
         document.querySelector('#boardset button[data-board="1"]').click();
         const dropped = !Object.keys(boardP).length;
         return {
-          before,
           live0,
-          asked0,
           dropped,
           asked,
-          old,
           fresh,
           kept: localStorage.getItem('reefid-fish-board-cache'),
           coral: localStorage.getItem('reefid-board-cache')
         };
       } finally {
         window.fetch = f0;
-        store.set(SHEETV, sv0);
       }
     });
     if (
-      fb.live0 ||
-      !/Coral P/.test(fb.before) ||
-      !fb.asked0.every(a => a === 'board=1') ||
+      !fb.live0 ||
       !fb.dropped ||
       !fb.asked.length ||
       !fb.asked.every(a => a === 'board=1&s=fish') ||
-      !/not available yet/.test(fb.old) ||
-      /Coral P/.test(fb.old) ||
+      /Coral P/.test(fb.fresh) ||
       !/Fish P/.test(fb.fresh) ||
       !/63%/.test(fb.fresh) ||
       !/Fish P/.test(fb.kept || '') ||
@@ -2505,7 +2588,7 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
     const t1 = await q.evaluate(() => {
       const t = document.querySelector('#view .hsubj');
-      return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(SUBJECTS.find(S => S.beta))};
+      return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(subjectOf('fish'))};
     });
     if (old) {
       if (t1.tile || t1.open) grp.push(`an older script (no groups): fish opened ${JSON.stringify(t1)}`);
@@ -2533,7 +2616,7 @@ async function freshPlayers(b, base, errs) {
     const other = await q.evaluate(() => {
       const a = store.get('reefid-account', null);
       store.set('reefid-account', {...a, name: 'Ben'});
-      const o = subjOpen(SUBJECTS.find(S => S.beta));
+      const o = subjOpen(subjectOf('fish'));
       store.set('reefid-account', a);
       return o;
     });
@@ -2606,7 +2689,8 @@ async function freshPlayers(b, base, errs) {
       const f = document.querySelector('#view .hsubj [data-subj="fish"]');
       return {admin: IS_ADMIN, open: subjOpen(subjectOf('fish')), btn: !!f, tag: !!(f && f.querySelector('.beta'))};
     });
-    if (h0.admin || !h0.open || !h0.btn || !h0.tag) all.push(`signed out, Home: ${JSON.stringify(h0)}`);
+    // fish out of beta (Pierre, 2026-11-17): no beta tag on its button
+    if (h0.admin || !h0.open || !h0.btn || h0.tag) all.push(`signed out, Home: ${JSON.stringify(h0)}`);
     await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
     await q.evaluate(() => go('quiz'));
@@ -3034,6 +3118,13 @@ async function freshPlayers(b, base, errs) {
       if (shown) hello.push(`${who}: the card showed`);
       const s = await seen();
       if (who === 'met' ? !s : s) hello.push(`${who}: seen mark ${s}`);
+      await c9.close();
+      continue;
+    }
+    // Fish out of beta (Pierre, 2026-11-17): open to all, no fish invitation any more (another subject's may come).
+    if (who === 'all') {
+      const t = await q.evaluate(() => (document.querySelector('.unlock.hello h3') || {}).textContent || '');
+      if (t === 'Test the fish beta') hello.push('all: the fish invitation showed, fish out of beta');
       await c9.close();
       continue;
     }

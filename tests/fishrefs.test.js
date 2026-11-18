@@ -182,3 +182,75 @@ test('tools/fish_refs.json: no ND licence in play or listed; a photo left out pe
     })
   );
 });
+
+// The genera the game has (Pierre, 2026-11-18: the scientific genera of circles 2 and 3 are units too; core.js
+// fishGenSets): every genus of a family in play with species of a circle, whatever its circle, never a surprise card's
+// (wink) family's, read under the content editor's circles in force.
+const FISH = `
+F = {"families": [{"id": "f:A", "circle": 1, "genera": ["g:Alpha"]}, {"id": "f:B", "circle": 3, "genera": ["g:Beta", "g:Gamma"]},
+                  {"id": "f:W", "circle": 1, "wink": {"right": "!"}, "genera": ["g:Wi"]}, {"id": "f:Z", "circle": 2, "genera": ["g:Zeta"]}],
+     "genera": [{"id": "g:Alpha", "name": "Alpha", "family": "f:A", "species": ["s1"]},
+                {"id": "g:Beta", "name": "Beta", "family": "f:B", "species": ["s2", "s3"]},
+                {"id": "g:Gamma", "name": "Gamma", "family": "f:B", "species": ["s4"]},
+                {"id": "g:Wi", "name": "Wi", "family": "f:W", "species": ["s5"]},
+                {"id": "g:Zeta", "name": "Zeta", "family": "f:Z", "species": ["s6"]}],
+     "species": [{"id": "s1", "name": "Alpha one", "inat": 101, "circle": 1, "family": "f:A"},
+                 {"id": "s2", "name": "Beta two", "inat": 102, "circle": 3, "family": "f:B"},
+                 {"id": "s3", "name": "Beta three", "inat": 103, "family": "f:B"},
+                 {"id": "s4", "name": "Gamma four", "inat": 104, "family": "f:B"},
+                 {"id": "s5", "name": "Wi five", "inat": 105, "circle": 1, "family": "f:W"},
+                 {"id": "s6", "name": "Zeta six", "inat": 106, "circle": 2, "family": "f:Z"}],
+     "teach": [{"id": "t1", "level": 1, "fam": "Alphidae", "species": ["s1"]}, {"id": "t2", "level": 1, "fam": "Betidae", "species": ["s2", "s3", "s4"]},
+               {"id": "t3", "level": 1, "species": ["s5"]}, {"id": "t4", "level": 1, "species": ["s6"]}]}
+from fish_inforce import in_force
+L = in_force(F, {"fish": {"content": {"nodes": {"f:Z": {"circle": {"v": None}}}}}})  # the editor takes f:Z out of the game
+`;
+
+test('the genera the game has: every circle, never a surprise card family, a family out of the game none', () => {
+  const out = py(`${FISH}
+print(json.dumps({"base": FR.game_genera(F), "live": FR.game_genera(L)}))`);
+  // Beta (circle 3) with its species of a circle only (s3 has none), Gamma none (no species of a circle), Wi never (wink).
+  assert.deepStrictEqual(out.base, {s1: 'Alpha', s2: 'Beta', s6: 'Zeta'});
+  assert.deepStrictEqual(out.live, {s1: 'Alpha', s2: 'Beta'});
+});
+
+test('--genera: only the genera with no reference photo yet, of one of their species of a circle; nothing else asked', () => {
+  const out = py(`${NET}${FISH}
+def tx(i, photos):
+    return {"id": i, "name": "Beta", "rank": "genus", "default_photo": photos[0],
+            "taxon_photos": [{"photo": p} for p in photos[1:]]}
+def tph(i):
+    return {"id": i, "url": f"{HOST}{i}/square.jpg", "license_code": "cc-by", "attribution": "(c) Someone, some rights reserved (CC BY)",
+            "original_dimensions": {"width": 3, "height": 2}}
+# Beta's cover is a photo of s3 (no circle: not a unit's species), its next taxon photo one of s2 (circle 3).
+held = {"results": [obs(5000, [700000], taxon=103), obs(5001, [710000], taxon=102)]}
+net = Net([("taxa?q=Beta&rank=genus", {"results": [{"id": 900, "name": "Beta", "rank": "genus"}]}),
+           ("taxa/", {"results": [tx(900, [tph(700000), tph(710000)])]}), ("swlat=", held)])
+photos, away, st = FR.build(net, F, (), L, done={"Alpha"})
+print(json.dumps({"photos": {k: [[p["f"], p["for"], p["sp"]] for p in v] for k, v in photos.items()}, "genus": st["genus"],
+                  "asked": [u.split("?")[0].rsplit("/", 1)[-1] + "?" + u.split("?")[1][:22] for u in net.urls]}))`);
+  assert.deepStrictEqual(out.photos, {s2: [['fi710000', ['g:Beta'], 's2']]});
+  assert.deepStrictEqual(out.genus, [1, 1]);
+  // Alpha already has its photo, Zeta's family is out of the game, Wi is a surprise card's: none asked; no family or
+  // species taxon either.
+  assert.ok(!out.asked.some(u => /q=(Alpha|Zeta|Wi)|rank=family/.test(u)), out.asked.join(' '));
+  assert.ok(out.asked.includes('900?per_page=30'), out.asked.join(' '));
+});
+
+test('--genera: the new genus photos join the file, the rest untouched, where a full run puts them', () => {
+  const out = py(`
+old = {"s1": [{"f": "fi1", "for": ["fam:Alphidae"]}, {"f": "fi2", "for": ["s1"]}], "s2": [{"f": "fi3", "for": ["s2"]}]}
+new = {"s1": [{"f": "fi9", "for": ["g:Alpha"]}], "s2": [{"f": "fi3", "for": ["g:Beta"]}], "s7": [{"f": "fi7", "for": ["g:Eta"]}]}
+out = FR.add_genera(old, new)
+print(json.dumps({"out": {k: [[p["f"], p["for"]] for p in v] for k, v in out.items()}, "old": old["s2"][0]["for"]}))`);
+  assert.deepStrictEqual(out.out, {
+    s1: [
+      ['fi1', ['fam:Alphidae']],
+      ['fi9', ['g:Alpha']],
+      ['fi2', ['s1']]
+    ],
+    s2: [['fi3', ['g:Beta', 's2']]],
+    s7: [['fi7', ['g:Eta']]]
+  });
+  assert.deepStrictEqual(out.old, ['s2'], 'the file read is not changed in place');
+});

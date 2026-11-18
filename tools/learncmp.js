@@ -31,6 +31,7 @@
 const fs = require('fs');
 const {signFlip, tQuantile, tCdf} = require('./abilityeval.js');
 const {holm} = require('./fieldeval.js');
+const C = require('../core.js');
 
 const num = x => typeof x === 'number' && isFinite(x),
   mean = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
@@ -79,6 +80,32 @@ const genShare = (run, cp) => {
     E = (run.expo || []).slice(0, cp);
   return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'genus').length / E.length : null;
 };
+// The photo variants on their unit's mastery (Q391 a, 2026-11-17; model.js varKind, varF): learnsim preOW's third,
+// fourth and fifth fields, 1 if a photo shown had a judged phase, the answers its unit had before the question, and the
+// variant kind shown (0 none, 1 an early-class juvenile, 2 another juvenile, 3 a late-class one, 4 a sex or colour phase;
+// model.js VAR_KINDS). phEarly: the share of questions with a phase photo among those asked in a unit's first PHN
+// answers; phLate: the same once the unit had 2 PHN answers or more; phAns: the questions that showed one, 1..cp;
+// phEasy and phOther: phEarly for the early-class juveniles, and for every other variant (the levels study's criteria 2
+// and 3, docs/reviews/2026-11-17-levels-and-shares-study.md §6). None for a file written before these fields or with no
+// phase photo anywhere in the run.
+const PHN = 10;
+const phRows = (run, cp, n = 4) => {
+  const P = (run.preOW || []).slice(0, cp);
+  return P.length && P.every(x => x.length >= n) ? P : null;
+};
+const phShare = (run, cp, inWin, has = x => x[2], n = 4) => {
+  const P = phRows(run, cp, n),
+    W = P ? P.filter(x => inWin(x[3])) : [];
+  return W.length ? W.filter(has).length / W.length : null;
+};
+const phEarly = (run, cp) => phShare(run, cp, m => m < PHN),
+  phLate = (run, cp) => phShare(run, cp, m => m >= 2 * PHN),
+  phEasy = (run, cp) => phShare(run, cp, m => m < PHN, x => x[4] === 1, 5),
+  phOther = (run, cp) => phShare(run, cp, m => m < PHN, x => x[4] > 1, 5),
+  phAns = (run, cp) => {
+    const P = phRows(run, cp);
+    return P ? P.filter(x => x[2]).length : null;
+  };
 // The fish species level (2026-11-15, #892): the families at Advanced (kind family: the slate's), the measure of "the
 // families' pace not slowed" while species share the draw; the share of answers 1..cp on the species units. None for the
 // corals (no unit of either kind).
@@ -123,6 +150,8 @@ const MEASURES = {
   },
   over: {label: 'E = bar - D*, units met', kind: 'row', dg: 3, get: (r, cp) => overOf((rowAt(r, cp) || {}).f)},
   met: {label: 'Units met', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).met ?? null},
+  // Units learned (s.mx: the mastery exam passed; learnsim and the rated world's rows), 2026-11-18 (the held-out exam).
+  learned: {label: 'Units learned (exam passed)', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).learned ?? null},
   hard: {label: 'Share under ease 4 before Open Water', kind: 'window', dg: 3, get: hardShare},
   right: {label: 'Right % since the previous checkpoint', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).right ?? null},
   prog: {label: "The app's progress %", kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).prog ?? null},
@@ -142,6 +171,12 @@ const MEASURES = {
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
   famAdv: {label: 'Families at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => famAdv(r, cp)},
   spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
+  // The photo variants on their unit's mastery (phEarly, phLate, phEasy, phOther, phAns above).
+  phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
+  phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
+  phEasy: {label: `Share of early-class juveniles in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEasy},
+  phOther: {label: `Share of other variants in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phOther},
+  phAns: {label: 'Answers on phase photos', kind: 'window', dg: 1, get: phAns},
   // After a break (learnsim --breaks, --after N): the comeback and the N questions after it.
   cbLen: {label: 'Comeback questions after the break', kind: 'break', dg: 1, get: brkGet(x => x.cbLen)},
   cbLong: {label: 'Comebacks of 40 questions or more (a whole visit)', kind: 'break', dg: 2, get: brkGet(x => (x.cbLen >= 40 ? 1 : 0))},
@@ -528,7 +563,13 @@ module.exports = {
   perPhoto,
   genShare,
   famAdv,
-  spShare
+  spShare,
+  PHN,
+  phEarly,
+  phLate,
+  phEasy,
+  phOther,
+  phAns
 };
 
 if (require.main === module) {
