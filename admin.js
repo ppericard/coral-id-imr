@@ -71,15 +71,6 @@ const store = {
     } catch (e) {
       return false;
     }
-  },
-  // A value already in JSON (putDraft: the draft's text, joined once).
-  put(k, text) {
-    try {
-      localStorage.setItem(SK(k), text);
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 };
 // Colour-blind mode as set in the app's ⚙ (app.js, reefid-sync-cvd; the theme comes the same way, admin.html): the admin
@@ -229,8 +220,8 @@ function rebase(next) {
   snap = JSON.stringify(DRAFT);
   memoReset();
   if (TOKEN) {
+    if (DW) DW.base();
     putDraft();
-    store.set('reefid-curation-base', SAVED);
     keepHist();
   }
   return conf;
@@ -370,7 +361,7 @@ function saveDraft() {
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
   if (!TOKEN) return;
-  draftLost = !putDraft();
+  putDraft();
   draftAt = new Date();
   keepHist();
 }
@@ -387,49 +378,30 @@ if ('serviceWorker' in navigator) {
     had = true;
   });
 }
-// The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
-// Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this
-// tab's revision and the revision it had last seen (takeTab in core.js), and a draft another tab stored is merged in, against
-// the draft that tab started from, before every write and on every storage event. Neither tab erases the other's clicks,
-// even when both click before hearing of each other.
-const TAB = Math.random().toString(36).slice(2, 8),
-  REVS = {};
-let REV = 0,
-  SEEN = null;
-function takeOther() {
-  const v = store.get('reefid-curation-draft', null);
-  if (!v || !v.genera) return null;
-  const shared = (v._tab && REVS[v._tab.seen]) || SAVED, // the draft both tabs last agreed on (core.js takeTab)
-    m = takeTab(REVS, DRAFT, SAVED, v);
-  if (!m) return null;
-  if (v._tab) SEEN = v._tab.rev;
-  if (!m.changed) return null;
-  const merged = repsReconcile(shared, DRAFT, m.draft);
-  DRAFT = typeof contentShells === 'function' ? contentShells(DRAFT, merged) : merged; // a Restore's {} kept (mergeCur)
-  snap = JSON.stringify(DRAFT);
-  memoReset();
-  return m;
-}
-// The draft's text with its _tab after its other keys, from the draft's own text s: JSON.stringify of
-// Object.assign({}, draft, {_tab}) for a draft with no _tab of its own.
-const draftJson = (s, tab) => (s === '{}' ? '{' : s.slice(0, -1) + ',') + '"_tab":' + JSON.stringify(tab) + '}';
+// The draft lives in IndexedDB (admin-draft.js; model B of the sign-out seal, Pierre, 2026-11-18): DW is this tab's side
+// of the store, opened at the start (draftOpen). Two admin tabs in one browser share the draft (code re-review 2026-11-01,
+// M4): each write takes in the draft another tab stored since, merged onto this one against the draft both started from
+// (core.js mergeTabs), in the same transaction as the write, so neither tab erases the other's clicks, even when both
+// click before hearing of each other. A BroadcastChannel tells the other tabs a write happened, so they take it in at once
+// (a hint only: the next write takes it in anyway). One Undo step brings back this tab's draft as it was before.
+const TAB = Math.random().toString(36).slice(2, 8);
+let DW = null,
+  DCH = null;
+// The draft written (a click, Undo, a rebase): in the background, one write at a time, the clicks made meanwhile in the
+// next. A write that failed (storage full) sets draftLost; leaving the page then warns, and so it does while one is on
+// its way (draftBusy).
 function putDraft() {
-  if (takeOther()) setTimeout(() => toast('Clicks made in another admin tab are in.'), 0);
-  const rev = `${TAB}.${++REV}`,
-    keys = Object.keys(REVS);
-  if (keys.length > 200) keys.slice(0, 50).forEach(k => delete REVS[k]);
-  // snap is the draft's JSON at every call (saveDraft, step, rebase, the start and takeOther set it with DRAFT), so the
-  // copy and the stored text come from it: the same as clone(DRAFT) and JSON.stringify of the draft with its _tab
-  // (draftJson; performance pass, 2026-11-09: two encodings of the whole draft less per click).
-  const fast = typeof snap === 'string' && !('_tab' in DRAFT);
-  REVS[rev] = fast ? JSON.parse(snap) : clone(DRAFT);
-  const tab = {_tab: {rev, seen: SEEN}},
-    ok = fast
-      ? store.put('reefid-curation-draft', draftJson(snap, tab._tab))
-      : store.set('reefid-curation-draft', Object.assign({}, DRAFT, tab));
-  SEEN = rev;
-  return ok;
+  if (!DW) return;
+  DW.sync().then(r => {
+    if (r.refused) return;
+    draftLost = !!r.err;
+    if (r.took && r.took.changed) {
+      render();
+      toast('Clicks made in another admin tab are in.');
+    }
+  });
 }
+const draftBusy = () => draftLost || !!(DW && DW.busy);
 function step(from, to, msg) {
   if (!from.length) return toast(msg[0]);
   to.push(snap);
@@ -4115,7 +4087,7 @@ function zoomSet(L, i0, cap) {
   show();
 }
 let toastT;
-function toast(msg) {
+function toast(msg, ms = 3500) {
   let t = document.querySelector('.adm-toast');
   if (!t) {
     t = document.createElement('p');
@@ -4128,7 +4100,7 @@ function toast(msg) {
   clearTimeout(toastT);
   toastT = setTimeout(() => {
     t.hidden = true;
-  }, 3500);
+  }, ms);
 }
 
 /* ---------- Choices that point to a photo no longer in data.json ---------- */
@@ -4420,7 +4392,7 @@ const HELP = {
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups, Time), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Difficulty › Heatmap (every genus against every genus), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
-    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality and forms all change what the RAs see.</p>
+    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. <b>Sign out</b> (⋯) seals the draft with your token, in every admin tab of it: the next person on this browser, another token or Preview draft sees none of it, and unlocking again with your token brings it back. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality and forms all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
@@ -7797,8 +7769,8 @@ async function save() {
     SHA = r.content.sha;
     SAVED = clone(out);
     DRAFT = clone(out);
+    if (DW) DW.base();
     saveDraft();
-    store.set('reefid-curation-base', SAVED);
     toast('Published. The public site shows it within a minute or two.' + confNote(conf));
   } catch (x) {
     toast(
@@ -7957,14 +7929,29 @@ async function start() {
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   // The draft only carries the changes made since its base: everything published since then (from another
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
-  const old = store.get('reefid-curation-draft', null),
-    base = store.get('reefid-curation-base', null);
-  if (old && old._tab) {
-    SEEN = old._tab.rev;
-    delete old._tab;
-    REVS[SEEN] = clone(old);
-  } // the draft another open tab started from
-  DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
+  // It lives in IndexedDB (admin-draft.js, draftOpen), where the draft the admin kept in localStorage before moves once
+  // (draftMove); this token's draft sealed at its last Sign out is opened into it, under a newer plain draft left in
+  // this browser (that one wins where both changed), in the transaction that writes them (admin-draft.js load).
+  let L = {old: null, base: null};
+  try {
+    await draftOpen();
+  } catch (e) {
+    DW = null;
+    if (TOKEN) {
+      draftLost = true; // nothing is kept: leaving the page warns
+      setTimeout(() => toast('This browser cannot keep a draft: Publish before you leave the page.', 8000), 0);
+    }
+  }
+  if (DW) {
+    await draftMove();
+    const rb = x => (x.b ? mergeCur(x.b, x.d, SAVED) : mergeOld(x.d, SAVED));
+    L = await DW.load((plain, sealed) => (plain ? mergeCur(SAVED, rb(plain), rb(sealed)) : rb(sealed))).catch(() => L);
+    if (L.failed)
+      setTimeout(() => toast('Your draft sealed at your last sign out could not be opened (storage full): it is kept.', 8000), 0);
+  }
+  const old = L.old,
+    base = L.base;
+  DRAFT = L.draft || (old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED));
   DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => {
@@ -7981,8 +7968,8 @@ async function start() {
   }
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
+    if (DW) DW.base();
     putDraft();
-    store.set('reefid-curation-base', SAVED);
     keepHist();
   }
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
@@ -7991,34 +7978,6 @@ async function start() {
   if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see To do.`), 50);
   addEventListener('storage', e => {
     if (e.key === 'reefid-photo-flags' && e.newValue && importFlags()) render();
-  });
-  // Another admin tab in this browser clicked: merge its draft onto this one instead of overwriting it at the next click,
-  // and take the base it published (code re-review 2026-11-01, M4). One Undo step brings back this tab's draft as it was.
-  addEventListener('storage', e => {
-    if (!TOKEN || !e.newValue) return;
-    let v;
-    try {
-      v = JSON.parse(e.newValue);
-    } catch (x) {
-      return;
-    }
-    if (e.key === 'reefid-curation-base' && v) {
-      SAVED = v;
-      SAVED.genera = SAVED.genera || {};
-      memoReset();
-      render();
-      return;
-    }
-    if (e.key !== 'reefid-curation-draft') return;
-    const was = snap,
-      m = takeOther();
-    if (!m) return;
-    if (was !== null) HIST.push(was);
-    FUT = [];
-    if (m.share) putDraft();
-    keepHist();
-    render();
-    toast('Clicks made in another admin tab are in.');
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
@@ -8095,7 +8054,7 @@ async function start() {
     true
   );
   window.onhashchange = () => {
-    if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
+    if (UPDATED && !draftBusy()) return location.reload(); // a new version took over: loaded on the way to the next page
     readHash();
     const h = $('admhelp');
     if (h) h.remove();
@@ -8117,19 +8076,19 @@ async function start() {
     };
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') return;
-      if (UPDATED && !draftLost) return location.reload();
+      if (UPDATED && !draftBusy()) return location.reload();
       if (Date.now() - swAt > 300000) swCheck();
     });
     setInterval(() => document.visibilityState === 'visible' && swCheck(), 1800000);
   }
-  // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
-  // A note or answer typed on a point's page in the last 0.8 s reaches the draft when the page is left or hidden (a reload,
+  // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed, or
+  // is still on its way (draftBusy: a reload in the few milliseconds after a click). A note or answer typed on a point's page in the last 0.8 s reaches the draft when the page is left or hidden (a reload,
   // a closed tab, a phone sending the browser to the background: Codex review #571).
   addEventListener('pagehide', () => ptFlush());
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && ptFlush());
   window.onbeforeunload = e => {
     ptFlush();
-    if (draftLost) {
+    if (TOKEN && draftBusy()) {
       e.preventDefault();
       e.returnValue = '';
     }
@@ -8167,13 +8126,170 @@ const sess = {
   }
 };
 store.set(SESSION, null); // drop the plain copy older versions kept in localStorage
-function signOut() {
+// The draft store (admin-draft.js), opened at the start: this tab's side of it (DW), the token's key and mark once
+// unlocked, and the channel that tells the other admin tabs of a write or a sign-out. The demo has a store of its own.
+async function draftOpen() {
+  if (!window.indexedDB) throw new Error('no IndexedDB');
+  const db = await ddbOpen(indexedDB, SK('reefid-admin-draft'));
+  DW = ddbTab({
+    db,
+    tab: TAB,
+    subtle: crypto.subtle,
+    snap: () => snap,
+    draft: () => DRAFT,
+    saved: () => SAVED,
+    // Another tab's clicks came in: one Undo step brings this tab's draft back as it was.
+    adopt: d => {
+      if (snap !== null) HIST.push(snap);
+      FUT = [];
+      DRAFT = d;
+      DRAFT.genera = DRAFT.genera || {};
+      snap = JSON.stringify(DRAFT);
+      memoReset();
+      keepHist();
+    },
+    // Another tab published: its curation is the base.
+    adoptBase: c => {
+      SAVED = c;
+      SAVED.genera = SAVED.genera || {};
+      memoReset();
+      setTimeout(render, 0);
+    },
+    // As core.js mergeTabs, then each report's status kept whole and a Restore's {} kept (mergeCur).
+    merge: (shared, mine, other) => {
+      const m = mergeTabs(shared, mine, other),
+        r = repsReconcile(shared, mine, m.draft);
+      return {...m, draft: typeof contentShells === 'function' ? contentShells(mine, r) : r};
+    },
+    clean: (d, b) => canon(merge3(b, d, b)) === canon(merge3(b, b, b)),
+    post: m => {
+      try {
+        if (DCH) DCH.postMessage(m);
+      } catch (e) {}
+    },
+    gone: S => {
+      if (!TOKEN || signingOut) return;
+      if (DW.mine(S)) lockOther();
+      else
+        DW.carryOn(S).then(r => {
+          draftLost = !!r.err;
+        });
+    }
+  });
+  if (TOKEN)
+    try {
+      DW.unlock(await ddbKeys(TOKEN, crypto.subtle));
+    } catch (e) {} // no Web Crypto: Sign out cannot seal, and says so
+  try {
+    DCH = new BroadcastChannel(SK('reefid-admin-draft'));
+    DCH.onmessage = () => TOKEN && !signingOut && putDraft();
+  } catch (e) {}
+  // A tab coming back into view checks the store at once (a phone's frozen tab may have missed a sign-out's message).
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && TOKEN && !signingOut && putDraft());
+}
+// The draft kept in localStorage by the admin before IndexedDB (reefid-curation-draft and -base, until 2026-11-18): moved
+// into the store once, merged under a draft already there, then its keys removed, under their names from before the
+// rename too (core.js keyBefore); a move that fails keeps them for the next start (rule W3: migrated once, in the data).
+// Remove draftMove (and admin-draft.js migrate) once each browser Pierre opens the admin in has loaded this version,
+// which the admin does by itself at its next page change: from 2026-12-18 at the latest (docs/ROADMAP.md).
+async function draftMove() {
+  const d = store.get('reefid-curation-draft', null),
+    b = store.get('reefid-curation-base', null);
+  if (!d && !b) return;
+  try {
+    if (d && d.genera) {
+      delete d._tab;
+      await DW.migrate({d, b: b && b.genera ? b : null});
+    }
+  } catch (e) {
+    return;
+  }
+  ['reefid-curation-draft', 'reefid-curation-base'].forEach(k => {
+    store.set(k, null);
+    try {
+      if (!DEMO && keyBefore(k)) localStorage.removeItem(keyBefore(k));
+    } catch (e) {}
+  });
+}
+// Sign out leaves no draft to the next person on this browser (second admin review, 2026-11-01: on a shared device the
+// next admin inherited it and could publish it). The unpublished draft is sealed with this admin's token (AES-GCM, the
+// key a SHA-256 of the token) and the plain draft and its base are taken off, in one transaction (admin-draft.js seal),
+// so another admin's token, a read-only visit and the site's ?draft preview see none of it; unlocking again with the
+// same token opens it (start). A draft with nothing unpublished is only taken off; nothing unpublished is ever cleared
+// (rule A1). Every other admin tab of the token locks (it finds its next write refused, or hears it at once), sealing
+// first what it held that never reached the store; a tab of another token carries on, its draft written back.
+// While it seals, the page is read-only (sealing). If it cannot seal (storage full, no Web Crypto), Sign out says so and
+// stays; a second click within 15 s signs out with the draft left in plain.
+let soWarned = 0,
+  signingOut = false;
+// A "Sealing…" layer over the page, every editor out of reach (inert), the field being typed in left first so what it
+// holds reaches the draft (Codex review #798: a note typed while it sealed was lost).
+function sealing(on) {
+  let o = document.querySelector('.adm-sealing');
+  if (on) {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    [...document.body.children].forEach(x => x !== o && (x.inert = true));
+    if (!o) {
+      o = document.createElement('div');
+      o.className = 'adm-sealing';
+      o.setAttribute('role', 'status');
+      o.innerHTML = '<span>Sealing…</span>';
+      document.body.append(o);
+    }
+  } else {
+    [...document.body.children].forEach(x => (x.inert = false));
+    if (o) o.remove();
+  }
+}
+function lockNow() {
   sess.set(null);
   try {
     sessionStorage.removeItem(HKEY);
   } catch (e) {}
   TOKEN = null;
+  draftLost = false;
   location.reload();
+}
+async function signOut() {
+  if (signingOut) return;
+  signingOut = true;
+  const btn = $('signout');
+  if (btn) ((btn.disabled = true), (btn.textContent = 'Sealing…'));
+  sealing(true);
+  ptFlush(); // a note being typed reaches the draft first
+  let ok = !DW;
+  try {
+    if (DW) ok = !!(await DW.seal());
+  } catch (e) {}
+  if (!ok && Date.now() - soWarned > 15000) {
+    sealing(false);
+    if (btn) ((btn.disabled = false), (btn.textContent = 'Sign out'));
+    signingOut = false;
+    soWarned = Date.now();
+    toast(
+      'Your unpublished draft could not be sealed in this browser: Publish it, or click Sign out again to leave it here in plain.',
+      15000
+    );
+    return;
+  }
+  lockNow();
+}
+// This token signed out in another tab: what this tab holds that never reached the store goes into the token's seal,
+// then it locks. If that cannot be sealed, it stays unlocked, its draft written back in plain, and says so.
+async function lockOther() {
+  if (signingOut) return;
+  signingOut = true;
+  sealing(true);
+  ptFlush();
+  let ok = false;
+  try {
+    ok = !!(await DW.intoSeal());
+  } catch (e) {}
+  if (ok) return lockNow();
+  sealing(false);
+  signingOut = false;
+  DW.carryOn(DW.out);
+  toast('Signed out in another tab, but the last changes of this one could not be sealed: Publish them, or Sign out here.', 15000);
 }
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
