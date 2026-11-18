@@ -6697,7 +6697,7 @@
     S.g = Object.create(null);
     return out;
   }
-  // Whose summary it is (Codex review #423): set when it is queued, so a summary left in the queue (offline, a failed
+  // Whose summary it is: set when it is queued, so a summary left in the queue (offline, a failed
   // send) is never sent under whoever is active later. 'n:<name, lower case>' signed in, 'a:<anonymous answer id>' else.
   // It stays on the device (pagesBatch strips it).
   const pagesOwner = (sync, anon) => (sync && sync.name && sync.pin ? 'n:' + String(sync.name).trim().toLowerCase() : 'a:' + anon);
@@ -6741,7 +6741,7 @@
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
-    // The screen (VIEWPORT, sheet v177): rounded and clamped again, whatever the device sent; its band kept when it is
+    // The screen (VIEWPORT): rounded and clamped again, whatever the device sent; its band kept when it is
     // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
     const V = obj(o.vp),
       vp = V.w !== undefined ? viewportOf(V.w, V.h, V.d) : null;
@@ -6755,15 +6755,15 @@
     return out;
   }
 
-  // The one-tap question's bank (Pierre, 2026-11-03: "ask slightly different questions about roughly the same
-  // concept", so the players say as they go whether the difficulty suits their level; quiz.js pulseAsk, admin Errors).
+  // The one-tap question's bank: slightly different questions about roughly the same concept, so the players say as
+  // they go whether the difficulty suits their level (quiz.js pulseAsk, admin Errors).
   // Each item is answered in one tap; each answer sits on one or two common scales: d, felt difficulty (−1 too easy,
   // 0 right, +1 too hard) and f, how the play feels (−1 bad, 0 neutral, +1 good); null = says nothing on that scale.
   // A "no" to a one-sided item (frustrating? boring?) is 0 on both: not too hard, not too easy; asked as often as each
-  // other, the two one-sided items shrink a mean towards 0 without tilting it. Codes easy / ok / hard keep their v19
+  // other, the two one-sided items shrink a mean towards 0 without tilting it. Codes easy / ok / hard keep their
   // meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's other codes ride as they
-  // come (Message column) and its id in the Where column: no new sheet version (v19 stores both as text).
-  // Sources (docs/LEARNING.md "What the players say about the difficulty"): are, the app's question since v19 (the
+  // come (Message column) and its id in the Where column, both stored as text.
+  // Sources (docs/LEARNING.md "What the players say about the difficulty"): are, the first item (the
   // Too Easy / Appropriate / Too Difficult rating of Papoušek, Stanislav & Pelánek 2016); zone, flow's three channels
   // (boredom, flow, anxiety: Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too
   // little / just right / too high (Rheinberg, Vollmeyer & Engeser 2003); more, the same balance asked as a wish; fun,
@@ -6783,8 +6783,8 @@
         ['hard', 'Too hard', 1, null]
       ]
     },
-    // The challenge-skill balance as the flow channels, said as states (Pierre, 2026-11-03: "the challenge is too low /
-    // too high" left non-native speakers unsure whether low meant easy or hard).
+    // The challenge-skill balance as the flow channels, said as states: "the challenge is too low / too high" leaves
+    // non-native speakers unsure whether low means easy or hard.
     {
       id: 'zone',
       q: 'Right now I feel',
@@ -6831,8 +6831,7 @@
       ]
     }
   ];
-  // The first item ever asked, and the item of every answer logged before the bank (no item id: sheet rows until
-  // 2026-11-03).
+  // The first item ever asked, and the item of every answer logged without an item id (the oldest sheet rows).
   const PULSE0 = 'are';
   const pulseItem = id => PULSEQ.find(x => x.id === (id || PULSE0)) || null;
   // An answer on the common scales: {d, f}, null where it says nothing (an unknown item or code: both null).
@@ -6873,8 +6872,8 @@
       k = Math.floor(i);
     return a[k] + (a[Math.min(k + 1, a.length - 1)] - a[k]) * (i - k);
   }
-  // How a list of numbers spreads (admin Photo stats › Overview, Pierre 2026-11-03: "a median and a spread, not a box
-  // plot"): count, sum, mean, min, max, the median and the middle half (p25 to p75). The list is not changed.
+  // How a list of numbers spreads (admin Photo stats › Overview: a median and a spread, not a box plot): count, sum,
+  // mean, min, max, the median and the middle half (p25 to p75). The list is not changed.
   function distOf(L) {
     const a = L.filter(x => typeof x === 'number' && isFinite(x)).sort((x, y) => x - y),
       sum = a.reduce((t, x) => t + x, 0);

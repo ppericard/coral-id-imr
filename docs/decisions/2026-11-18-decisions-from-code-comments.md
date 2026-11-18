@@ -23,6 +23,9 @@ code. Quotes in French are his; the others were already in English in the commen
 - 2026-11-03: "I find it hard to believe that the two genera marked as learned really are": a learned mark passed under
   the former BKT model (a record without `s.pg`) is dropped and the genus takes the exam again; silent since
   2026-11-09 (Q332). `core.js` `memRecalc`, `afterBkt`.
+- 2026-11-03: "the challenge is too low / too high" (the wording he dropped): the one-tap question about the
+  challenge is asked as states (Bored, In the zone, Struggling), since non-native speakers could not tell whether low
+  meant easy or hard. `core.js` `PULSEQ` item `zone`.
 - 2026-11-04: "a player who answered a single question then must not get it": the apology for the too-fast opening
   goes only to the players who really felt it (enough answers in the window and a high opening hold). `core.js`
   `SORRY`, `sorryFelt`, `sorryOf`; `progress.js` `sorryNotice`.
