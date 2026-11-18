@@ -134,6 +134,12 @@ const treeOn = () => sheetV() >= TREE_SHEET;
 // The one predicate every species rule reads.
 const SPECIES_SHEET = 161;
 const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
+// The scientific genera of circles 2 and 3 (Pierre, 2026-11-18, "lance"; core.js fishGenSets): they open, and count among
+// the genera a question offers, only once the sheet replays them as the game scores them and its board tree holds them
+// (GENERA_SHEET: core.js fishReplayGen, fishBoardTree, fishVarTable with every circle's genera); before, circle 1's alone,
+// as before (rule D4). The one predicate (app.js sciNow).
+const GENERA_SHEET = 176;
+const generaOn = () => sheetV() >= GENERA_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();
 const treeSum = T => {

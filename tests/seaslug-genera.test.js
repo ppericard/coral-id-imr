@@ -23,7 +23,13 @@ const SEA = C.subjectOf('seaslug'),
   photos = () => C.fishPhotos({}, GM.photos, C.treeCur(SEA, json('curation.json')));
 
 // fishGenera as app.js has it (its core.js helpers, as the app has them).
-const ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+const ctx = {
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  fishGenSets: C.fishGenSets,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;', ctx);
 
@@ -109,10 +115,12 @@ test('app.js fishGenera on genera from the start: each completed in its own circ
     assert.ok(!g.views.wide.length || g.cover === C.easyCover(g.views.wide).f, G.id);
   });
   assert.ok(X.c2.some(n => X.gen[n].circle === 2) && X.c3.every(n => X.gen[n].circle === 3));
-  // the fish: their scientific genera stay the circle-1 opt-in set (FISH.sci), each in circle 1
+  // the fish: their scientific genera stay an opt-in set (FISH.sci), in every circle (Pierre, 2026-11-18), each in its
+  // family's circle
   const FJ = json('fish.json'),
     Y = ctx.fishGenera(C.fishGen(FJ, {}), FJ);
-  assert.ok(Y.sci.length > 50 && Y.sci.every(n => Y.gen[n].circle === 1 && Y.gen[n].rank === 'genus'));
+  assert.ok(Y.sci.length > 200 && Y.sci.every(n => Y.gen[n].circle === Y.gen[Y.gen[n].parent].circle && Y.gen[n].rank === 'genus'));
+  assert.ok([1, 2, 3].every(c => Y.sci.some(n => Y.gen[n].circle === c)));
   assert.ok(Y.c1.every(n => n.startsWith('f:')));
 });
 
