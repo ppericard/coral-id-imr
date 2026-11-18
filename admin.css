@@ -3506,6 +3506,11 @@ td.cov-c .cov-off {
   display: grid;
   gap: 10px;
 }
+/* a change sent, the sheet not answered yet (admin.js bindGroups gpost) */
+.adm-gcard[aria-busy='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
 .adm-ghead,
 .adm-gset {
   display: flex;
