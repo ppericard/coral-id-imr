@@ -15,8 +15,9 @@ Written only by `tools/datajson.py` `dump()` (rule W16): one top-level key per l
 `gen`, `course`, `cand`, `x` and `x.gen` (compact JSON within a line, key order kept, a trailing newline), so edits to
 different genera merge cleanly. `python3 tools/datajson.py` rewrites the file in that layout and `--check` (the PR
 check, run in CI) fails when it is not; the app only parses the file, so the layout does not matter to it. The IMR
-instance's fields (`imrg`, and each genus's `ig`, `imr` and `mn`) are a copy of its coral layer, laid on by `dump()` and
-by the rewrite; `--check` also fails when `data.json` is not as its layers give it ("The instance's layer", below).
+instance's fields (`imrg`, and each genus's `ig`, `imr` and `mn`) and its lecture's look-alike pairs (in `look` and
+`lsrc`) are a copy of its coral layer, laid on by `dump()` and by the rewrite; `--check` also fails when `data.json`
+is not as its layers give it ("The instance's layer", below).
 
 ### A genus record (`gen{Genus}`)
 
@@ -29,7 +30,8 @@ The short names are glossed in [DATA.md › Formats that matter](../DATA.md#form
   `trFits`, never by genus name: a trait of some species is half a match in the Coral ID Key, never eliminated on in the
   Elimination board, an "In some species" row in the Feature gallery and a ring in the Feature matrix
   (`tools/apply_some_species.py`, `tests/traits.test.js`).
-- `look` the look-alikes and `lsrc` the source of each pair; `pages` the Coral Finder pages; `sl` and `rsl` slide
+- `look` the look-alikes and `lsrc` the source of each pair (the IMR lecture's pairs are the instance's layer, the Coral
+  Finder's the sources'; below); `pages` the Coral Finder pages; `sl` and `rsl` slide
   numbers; `info` dated "Other sources" notes; `check` the points to check with a trainer; `levels` (2 or 3 views);
   `views{wide,medium,macro}` the photo lists, `more` extra photos, `cover`.
 - `cm`: how common the genus is near Dauin, a small integer, the geometric mean of its iNaturalist observations and
@@ -390,18 +392,26 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   is (`relay`: cues, look and phase taken off and put back where the build writes them, `start`, then the families), so
   an edit of those needs no WoRMS call; a changed circle stops them (the species' circles and their presence test follow
   it: the full build).
-- **`coral.json`**: `imrg` (the 11 IMR lecture groups) and `gen` {genus: `ig`, `imr`, `mn`}. `data.json` is both the
-  corals' source and their built file, so it keeps a copy where it always had them: `tools/datajson.py` `dump()` lays
-  the layer on and refuses data whose fields differ from it (an edit made in `data.json` would otherwise be lost);
-  `python3 tools/datajson.py` lays it on after an edit of the layer file. The scripts that edit those fields
-  (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`) write the layer file.
+- **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `ig`, `imr`, `mn`} and `pairs`, the IMR
+  lecture's look-alike pairs {`"A|B"` (sorted): {`src`, `look`}}: `src` the pair's `lsrc` line, the same on both genera
+  (`IMR Lecture 6: …`, the lecture's words, 6 pairs; `Same IMR lecture group: …`, its groups, 7 pairs), `look` {genus:
+  the other genus's place in that genus's `look`}, a genus whose `look` does not list the other left out (a pair can be
+  one-way in `look`, its `lsrc` line on both sides). The 71 Coral Finder pairs stay in `data.json` alone, the one cited
+  as `IMR Lecture 6 and Coral Finder p. 18` included (the book names it too). `data.json` is both the corals' source and
+  their built file, so it keeps a copy where it always had them: `tools/instance.py` `coral_compose` puts each pair at
+  its stored place in `look` and its lines in `lsrc` in `gen` order (the order the lines follow), so `look`, whose order
+  the game reads (the traps, `core.js` `lectureGroup`'s ties), stays as it was. `tools/datajson.py` `dump()` lays the
+  layer on and refuses data whose fields, or a lecture pair's line or direction, differ from it (an edit made in
+  `data.json` would otherwise be lost); a pair's place is the layer's. `python3 tools/datajson.py` lays it on after an
+  edit of the layer file. A pair taken out of the layer stays in `data.json` until it is taken out there too
+  (`data.json` alone cannot tell it from a Coral Finder pair); `tests/instance.test.js` fails on a lecture line left in
+  the sources. An edition without the layer (`coral_compose` of the sources with no layer) plays the Coral Finder's
+  pairs alone. The scripts that edit those fields (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`)
+  write the layer file.
 - **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the two layers give them:
   `build_fish.py --regroup --check` (the layer's fish fields taken off `fish.json` and laid again), and `data.json` with
   the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the coral look-alike pairs from the IMR lecture, mixed with the Coral
-  Finder's in `data.json` `look` and `lsrc` (no order of composition gives `data.json` back byte for byte, so the split
-  needs a layer format of its own, and the "Same IMR lecture group" and "IMR Lecture 6 and Coral Finder" lines need a
-  call on whose they are); the slide references (`sl`, `rsl`; fish `sl`); the IMR tag (`src: imr`, `sign`, the teaching
-  nodes' IMR names); the coral slate (`n`); and `deploy` (the key in force).
+- **Not in the layer yet** (easy to move later): the slide references (`sl`, `rsl`; fish `sl`); the IMR tag
+  (`src: imr`, `sign`, the teaching nodes' IMR names); the coral slate (`n`); and `deploy` (the key in force).

@@ -7,7 +7,7 @@
 // learner's learning rate (learnsim LEARNER). A part: hi, the know of the units it knows, lo of the others; by, which
 // slate units it knows:
 // - all: every one; lecture (corals): the genera numbered on the IMR slate (data.json n, the lecture's 34);
-// - groups (corals): the IMR lecture groups in the course's order (learn.js shownGroup: a starred genus in the group of
+// - groups (corals): the IMR lecture groups in the course's order (model.js shownGroup: a starred genus in the group of
 //   its look-alikes) until share of the slate is covered (0.6: groups 1 to 7, 26 genera of the 40 with their starred look-alikes);
 // - circle1 (fish): the IMR course's families (circle 1); common (fish): the most common families near Dauin (their
 //   weights in the global score's tree, core.js treeScoreTree) until they carry half of the weight;

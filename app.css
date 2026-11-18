@@ -8280,3 +8280,120 @@ a.ftile:hover {
     font-size: var(--fs-l);
   }
 }
+
+/* ---------- From the Lab's stylesheet: the rules the main pages take ---------- */
+/* proto/lab.css waits for the last tier (docs/spec/loading.md); these rules, which the pages before it use, are here, at
+   the end, in their old order: proto/lab.css came right after this file, so the cascade is the same. The tile grid
+   (Memory, My progress's photo wall), the Genera page's filter count and "Not on IMR list" tag, the game layout with its
+   side column (Practice games, My progress). */
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-width: 720px;
+}
+.gside .seg small {
+  font-size: var(--fs-xs);
+}
+/* Phone base (mobile-first); larger screens restore below. */
+:root[data-size] .pgrid {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 600px) {
+  :root[data-size] .pgrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  :root[data-size] .pgrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+/* full width (Pierre: use the whole page) */
+.pgrid {
+  max-width: none;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 600px) {
+  .pgrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .pgrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+:root[data-size='s'] .pgrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 600px) {
+  :root[data-size='s'] .pgrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+:root[data-size='l'] .pgrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.ikn {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  font-family: var(--body);
+  font-size: var(--fs-xs);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--pill);
+  padding: 0 6px;
+  vertical-align: 2px;
+}
+/* Game layout shared by Practice games and My progress: play area left, controls in a side column (like the quiz). */
+.pgame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 12px;
+}
+@media (min-width: 1024px) {
+  .pgame {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  }
+}
+.gside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gside .chips {
+  margin: 0;
+}
+.gside .note,
+.gside p {
+  margin: 0;
+}
+.gside .seg {
+  display: flex;
+  align-self: stretch;
+}
+.gside .seg button {
+  flex: 1;
+  padding-inline: 8px;
+}
+/* Phone base (mobile-first); larger screens restore below. */
+.pgame .gside {
+  order: -1;
+}
+@media (min-width: 1024px) {
+  .pgame .gside {
+    order: revert;
+  }
+}
+.ikxtag {
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--other);
+  border-radius: var(--pill);
+  padding: 0 6px;
+}

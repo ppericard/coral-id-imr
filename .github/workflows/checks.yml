@@ -1,7 +1,8 @@
-# Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests (tests/docs.test.js among
-# them), JSON files (and the data.json layout, M5), Python tools, cache-busting versions and the sheet script's VERSION.
-# Node and Python only: the Playwright smoke tests are their own workflow, .github/workflows/smokes.yml, which a docs-only
-# PR skips (Pierre, 2026-11-08, Q305 d). Both also run on a merge train's push (train/*, tools/train.py; Q305 b).
+# Fast checks on every pull request: formatting, JS syntax, JSON files (and the data.json layout), Python tools,
+# cache-busting versions and the sheet script's VERSION in the checks job; the unit tests (tests/docs.test.js among them)
+# in the unit job, two shards on two runners side by side. Node and Python only: the Playwright smoke tests are their own
+# workflow, .github/workflows/smokes.yml, which a docs-only PR skips. Both also run on a merge train's push (train/*,
+# tools/train.py), which waits for this workflow by its name, Checks.
 name: Checks
 on:
   pull_request:
@@ -40,12 +41,6 @@ jobs:
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js tools/*.js tools/og/*.js; do node --check "$f" || exit 1; done
-      # Pillow (tools/requirements.txt, by hash): tests/fishgame.test.js runs the fish photo download on a fixture.
-      - name: Python packages
-        run: pip install --require-hashes -r tools/requirements.txt
-      - name: Unit tests
-        run: |
-          node --test tests/*.test.js
       # Every JSON file git tracks: the root's, tools/ and judging/ (tools/check_json.py; Deploy Pages runs it too).
       - name: JSON files parse
         run: |
@@ -87,3 +82,33 @@ jobs:
       - name: Stack pins consistent with tools/stack.json (tools/stack_check.py; --latest, run by hand or by the brief, says what is behind)
         run: |
           python3 tools/stack_check.py --check
+  # The unit tests, every tests/*.test.js, in shards on runners of their own: node --test sorts the files and deals them
+  # out in turn (--test-shard=k/n), so the shards cover every file between them, and each runner runs its files a few at
+  # once. tests/smokeparts.test.js fails when the shard list and n disagree.
+  unit:
+    name: unit tests (${{ matrix.shard }}/2)
+    runs-on: ubuntu-26.04
+    strategy:
+      # Every shard reports: one failing shard never hides the other.
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      # The checks job's setup: some tests run git and the Python tools on this checkout.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      # Pillow (tools/requirements.txt, by hash): tests/fishgame.test.js runs the fish photo download on a fixture.
+      - name: Python packages
+        run: pip install --require-hashes -r tools/requirements.txt
+      - name: Unit tests
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          node --test --test-shard="$SHARD/2" tests/*.test.js

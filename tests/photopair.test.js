@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// learn.js photoPair: the photo of the other genus shown side by side (the quiz's mix-up montage "Your answer, same view",
-// quiz.js; the Look-alikes montages). Same growth form first, then nearest the front, then nearest zoom level. A player's
-// report (2026-11-04): a plate Turbinaria answered Echinopora was shown a branching Echinopora, because only the first 6
-// Echinopora photos were searched. The function runs in Node, as tests/pairs.test.js does.
+// model.js photoPair: the photo of the other genus shown side by side (the quiz's mix-up montage "Your answer, same view",
+// quiz.js; the Look-alikes montages, learn.js). Same growth form first, then nearest the front, then nearest zoom level. A
+// player's report (2026-11-04): a plate Turbinaria answered Echinopora was shown a branching Echinopora, because only the
+// first 6 Echinopora photos were searched. The function runs in Node, as tests/pairs.test.js does.
 const test = require('node:test');
 const assert = require('node:assert');
 const block = require('./block.js');
@@ -10,10 +10,10 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'learn.js'), 'utf8'),
+const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
   ctx = {};
 vm.createContext(ctx);
-vm.runInContext(block(src, 'const ZOOM = {', '\n}\n', {through: 1, file: 'learn.js'}) + '\nthis.f = photoPair;', ctx);
+vm.runInContext(block(src, 'const ZOOM = {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.f = photoPair;', ctx);
 // [...]: a list made in the vm's realm is copied into this one, so deepStrictEqual compares values only.
 const photoPair = (...a) => [...ctx.f(...a)];
 const ph = (f, form, view) => ({f, form, view});
