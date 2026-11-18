@@ -793,7 +793,9 @@ const server = http.createServer((req, res) => {
     const held = new Promise(ok => (free = ok));
     await ctx.route(/\/learn\.js\?v=/, async r => (await held, r.fallback()));
     const go = h => p.evaluate(x => (location.hash = routeOut(x)), h);
-    await p.goto(base + '#' + require('../core.js').routeOut('quiz'));
+    // 'commit': the load event waits for a script the tier loader has already inserted, so while learn.js is held it
+    // does not come (CI, 2026-11-18: goto timed out at 30 s); the quiz is waited for below, not the load event.
+    await p.goto(base + '#' + require('../core.js').routeOut('quiz'), {waitUntil: 'commit'});
     if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no quiz question');
     else {
       const r = await p.evaluate(() => smokeAnswer(false));
