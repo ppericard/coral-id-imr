@@ -11,7 +11,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js');
-const {page, LIGHT, withData, loadCodeGs} = require('./syncpage.js');
+const {page, SV, withData, loadCodeGs} = require('./syncpage.js');
 
 const DATA = require('../data.json'),
   GEN = {...((DATA.x && DATA.x.gen) || {}), ...DATA.gen},
@@ -239,7 +239,7 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
 // holds a whole record twice under rules version 9: once the script replays rules version 10, the device's own progress
 // takes the log's counts on every unit, its unsent answer on top, its next save puts them on the sheet, and no card.
 test('a device holding its record twice under the rules before: the next sync takes the log, its unsent answer on top, no card', async () => {
-  for (const v of [LIGHT - 1, LIGHT]) {
+  for (const v of [SV]) {
     const s = loadCodeGs(withData()),
       A = Array.from({length: 12}, (_, i) => ans('d' + v + 'x' + i, G[i % 4], i % 3 !== 2, CORAL + 48 * H + i * 60000)),
       rep = replay(A, GEN),

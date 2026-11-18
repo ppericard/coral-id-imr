@@ -755,8 +755,8 @@ the genus ability (Q136: "Photos rated against the genus ability").
 P(right) = 1/k + (1 − 1/k) σ(θ − d + d_f), the guess rate kept at 1/k. `core.js` `fmtOffsetsOf` fits it (Newton's
 method on d_f with a prior N(0, `FMT.SD`² = 1), from `FMT.N` = 20 trusted answers with their logged expectation;
 `fmtOf`, the formats of `analysis.js`); the sheet serves it in `?stats=1` `fmt` (`Code.gs` `stats_`, v77), the app
-reads it from a sheet that reports v ≥ 68 (`model.js` `PFMT`, `core.js` `FMT_SHEET`, `fmtsOf`; rule D4: before, every
-offset is 0). Where it acts:
+reads it with the photo statistics (`model.js` `PFMT`, `core.js` `fmtsOf`; before the first reply, every offset is 0).
+Where it acts:
 - **the expectation of the ability steps**, the genus's and the global level's, in the one scorer (`core.js`
   `scoreAnswer`'s `df`, from `quiz.js` `answer`: the question's difficulty taken d_f easier), so a right 2-choice
   answer the format explains no longer raises the ability as a surprise. **Logged with the answer**: the scoring
@@ -1646,7 +1646,7 @@ stay) and the card never comes back in that direction for that answer. **Coral b
 moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
 prior p, and until 2026-11-12 the open-all offer's `at`), kept apart from the answer given (an ease event in the record's history, `reefid-sync-coral-start` h, applied from its time to that
 answer only; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
-from its time, `startPriorAt`; the live game applies the prior, eased or not, only once the sheet runs v36, `START_SHEET`, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
+from its time, `startPriorAt`; the live game applies the prior, eased or not, as the sheet's replay does from v36, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
 
 **The honest size of the silent move**: p only sets the starting ability of a genus never answered (`playerStart`:
 W (m t + N p) / (m + N), W 0.8, N 10, m the answers in the global level). The prior's weight N / (m + N) is 0.20 at 40
@@ -3299,8 +3299,9 @@ the sheet's leaderboard (Code.gs `pctOf_` now calls `core.js` `pctOf`, no copy) 
 
 **The transition (rule D4).** The moving average `s.pg` is no longer the bar. A record the new rules have not rebuilt
 (saved with `s.pg`) keeps it, and the former rule with it, until the sheet's full replay under rules version 9 reaches
-the device; a genus first answered in the app takes the new bar only once the sheet replies v ≥ 87 (`DOM_SHEET`,
-model.js `domRules`), and the app's own replay of its queued answers follows the same version. The fish are not
+the device; a genus first answered in the app takes the new bar (the sheet replays it from v87; until the gate floor of
+2026-11-18, `core.js` `SHEET_FLOOR`, a device with no reply yet still gave it the moving average), and so does the app's own
+replay of its queued answers. The fish are not
 replayed: a fish unit first answered takes the new bar at once, and one answered before is rebuilt on the device, silently
 (Pierre, 2026-11-06, Q200; no card, the apology is the corals' only). The device keeps no log of the answers the sheet has
 confirmed, and players cannot read the sheet's log, so the rebuild works from what every copy of the record holds
@@ -4212,6 +4213,80 @@ question's choices genera and every entry question's entries. Not measured: what
 how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
 take many questions). To check with learnsim fish profiles once they exist.
 
+**Every circle's genera** (2026-11-18; Pierre, ~06:32 Manila: "lance"). The genera were built for circle 1 alone (130), when
+circle 1 alone was on the path; every circle has been since Q175 (2026-11-06), so the 107 genera of the families of circles
+2 and 3 (5 and 102; a surprise card's genus none) are units as circle 1's are: `core.js` `fishGenSets`, the one list the app
+(`app.js` `fishGenera`), the sheet's replay (`fishReplayGen`), the variant table (`fishVarTable`) and the score's tree read.
+Each opens at its family's Advanced as circle 1's do (no IMR genus outside circle 1), in its family's circle (so `fishGate`
+holds it with its family). No rule moves: what changes is which units exist. Fish rules version 4 (no card), the sheet's
+cache keys `sgen4`, `stree3`, `svar2`; the app opens them from `sync.js` `GENERA_SHEET` (rule D4).
+
+**The check, declared before running** (rule L11, level 2 by nature: it changes the path's units; capped at about 40
+minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arriver"):
+- **Worlds and runs.** Rated world: the lecture RA, the strong RA and the expert (the profiles that accept the scientific
+  names and reach Advanced soonest; the casual diver declines them, the beginner is left out for the cap) × 5 seeds ×
+  3,000 answers, normal photos, `--beyond yes` (circle 3 closed, only circle 2's 5 genera could come). App world: the same
+  three profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`. Both arms on the same seeds: `main` (b6e0d263)
+  against this branch, through `node tests/slot.js`, then `tools/learncmp.js` of this branch, one look.
+- **Primary** (non-inferiority, rated world): the families at Advanced at 3,000 answers (`famAdv@3000`), its one-sided 90%
+  bound not below the guardrail's margin (−2 families or −5%, the larger). Why: more genera in play compete with the
+  families for questions, the cost Q208's study measured; the gain itself (more genera to learn) needs no test.
+- **Watched, no margin**: the share of answers on genera (`genShare`) and on species, the global score at 1,000 and 3,000.
+- **Every guardrail** of the table, both worlds.
+- **Power given up**: 5 seeds, not 10, and no heavy-tailed variant, no 10,000-answer horizon (where circle 3's genera
+  would weigh most): a guardrail result near its margin reads as unclear and is reported, not chased with more seeds
+  within the cap. The app world at 600 questions barely reaches a circle-2 or 3 family at Advanced, so it is a guardrail
+  check only. The real log (rule L12): no player has answered these units (they did not exist), so a replay cannot judge
+  the change; nothing is measured there.
+
+**What the check found** (2026-11-18; `main` b6e0d263 against the branch; tables in the PR, #1067):
+- **A first rated run, not judged: the tool broke the pairing.** The rated world drew each genus's μ on the seed's one
+  stream before the photos, so the 107 new genera moved every photo's ε (24,376 of 24,376 on seed 1) and every species'
+  μ: the two arms played different worlds. It showed differences where nothing could act yet (the lecture RA's first
+  Open Water 126 → 95 answers; the expert's families at Advanced at 1,000 answers −2.6 with genera at 1% of its
+  answers). `tools/ratedworld.js` now draws each genus's and species' μ on a stream of its own, keyed by its id
+  (`tests/ratedworld.test.js`: units added move no other draw), and both arms were run again with that one tool (the
+  base worktree given the branch's file, uncommitted). This repairs the pairing; it does not aim at the outcome.
+- **Rated world, paired** (3 profiles × 5 seeds × 3,000 answers, `--beyond yes`):
+  - **Primary, families at Advanced at 3,000**: the strong RA 45.0 → 45.0 and the expert 55.6 → 55.6, held (bounds
+    −1.7); the lecture RA 38.8 → 37.8, unclear (bound −4.6 against −2): reported, not chased (declared).
+  - **Every guardrail held or unclear, none breached.** Unclear: the lecture RA's D\* at 1,000 (−0.009, bound −0.023),
+    the shown score (lecture RA at 1,000 and 3,000, strong RA at 3,000: −0.8 at most, bounds −1.1), units at Open
+    Water (expert at 300, lecture RA at 1,000), the strong RA's longest plateau (+11, bound +61), the lecture RA's units
+    met at 100.
+  - **Watched**: the expert's share of answers on genera at 3,000 rises 0.158 → 0.222 and on species falls 0.157 →
+    0.094 (bounds exclude 0). By design: the genera and the species share one rank share (Q382), so the expert, the
+    first with circle-3 families at Advanced, now spends part of it on their genera. The other two profiles move
+    little (±0.01).
+- **App world** (3 profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`): the strong RA and the expert
+  play the same 600 questions in both arms (no genus question before 600), every guardrail held. **The lecture RA
+  breaches true knowledge at 600** (knowSlate 0.708 → 0.658 on every seed, bound −0.054 against −0.02), with E unclear
+  at 600, units at Open Water at 300 and units met at 100 unclear. What it rests on: circle 3 is offered later (answers
+  351-378 → 403-438), so fewer families are met by 600 (65 → 60-61), and a family not met lowers knowSlate; two seeds
+  reach 2 families at Advanced by 600 (none before). The arms part at its 82nd answer, an IMR genus question
+  (Amphiprion) showing another photo: the lecture RA meets the IMR genera from Open Water, whose wrong choices are now
+  drawn among 237 genera, so the game's random draws differ from there on. Whether the later circle-3 offer is caused by
+  the change or by that divergence is not measured (a guess: the offer needs the circle-1 Entries at 55%, which no
+  genus moves). The rated world, paired, shows no such loss (D\* at 1,000 −0.009, at 3,000 +0.000). A breach goes to
+  Pierre (rule L11).
+- **Rechecked after the content** (Pierre, 2026-11-18 ~08:56 Manila, option C: the circle 2-3 genera's presentations and
+  ID marks first, #1074, then the lecture RA's app-world check again, capped at 40 minutes): the same 3 seeds × 600
+  questions, `main` 191dfa27 against the branch, 158 s of runs on 2 workers. The same numbers to the digit (knowSlate at
+  600 0.708 → 0.658, bound −0.054: breached; circle 3 offered at 351-378 → 403-438; the arms part at answer 82): the
+  simulated learner learns by its answers and never reads a card's text, so the content cannot move it.
+- **What the breach measured, and 20 seeds** (2026-11-18): knowSlate averages the learner's know over the slate, the
+  65 families in both arms (`slateGenera()`: no genus is in it), so the genera do not dilute it; it fell because 4-5
+  circle-3 families met just before 600 in the base were not met yet in the branch, and count at their starting know.
+  Over the families met in both arms (the judge's D\*, `f.ds`), the 3 seeds give −0.018 (bound −0.022): unclear, so one
+  step up (rule L11, a second look, bounds at 95%): the same check with 20 seeds per arm (`main` af0bee85 against the
+  branch, 431 + 515 s of runs on 2 workers). **True knowledge holds**: knowSlate at 600 0.697 → 0.700, +0.004 (bound
+  −0.012); D\* on the common families 0.610 → 0.609 (bound −0.006); knowMet 0.713 → 0.710 (bound −0.008); every
+  guardrail held. Circle 3 is offered at 370 answers on average before, 373 after (later in 13 pairs of 20): the 3
+  seeds of the first look were all later by chance. No cost for Pierre.
+- **Machine time**: about 2 hours of worker time against the 40 minutes declared (rated 12-18 minutes an arm on 2
+  workers, four arms with the rerun; app 4-6 minutes an arm), mostly the rerun the broken pairing forced; the machine
+  was shared with other agents (waits for a slot of up to 21 minutes not counted).
+
 ### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
 
 One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
@@ -4741,8 +4816,8 @@ nouvelles manières de calculer les progrès et les scores"); a species with no 
 progress (fish)"):
 
 - Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
-  exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
-  (101; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+  exam as before. The app shows the score, and sends its tree to the sheet, which ranks the leaderboard by it (v101):
+  the leaderboard and My progress on one scale. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
 - Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
   not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
   sum of its species' weights, a genus too.
@@ -4753,7 +4828,8 @@ progress (fish)"):
 - Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
   species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
 - Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
-  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
+  genus credit alone, for the genera a player has (circle 1 only then: families and every genus of the game reached 67%;
+  every circle since 2026-11-18: 74%, the anchor).
 
 **Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool, since retired, kept the formula of 2026-11-04,
 unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
@@ -4889,7 +4965,7 @@ answers than the log.
 `fish.json`, `core.js` `fishReplayGen`; none of `stats_`'s photo numbers, which are the corals'), under the fish rules
 versions of their own (`core.js` `FISH_RVS`, `rvOf`; the integrator, 2026-11-08: a fish replay must never replay the
 corals again, so no coral player gets a card for it), asked by the app with the fish rules version it applied
-(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet v112 (`core.js` `REPLAYS_SHEET`, rule D4).
+(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` (sheet v112).
 **The floor** (until fish rules version 2: removed on 2026-11-09, Q330, the log the only reference, "The log, the only reference for progress" below; `core.js` `replayFloor`), applied by the sheet to the replay itself (`Code.gs` `replay_`), so every
 device of the account adopts the same record and keeps it as their shared merge baseline (Codex review #779: floored on
 each device, two devices disagreed and a recovered refused save counted its answers twice): against the account's saved
@@ -4906,7 +4982,7 @@ more; none on this data), told under the subject's id (`progress.js` `rvId`, `fi
 What was checked (rule L11): the engine is unchanged (no learning rule moves), so no `tools/learnsim.js` run; the change is
 where a fish bar is computed, checked on the real log as above and by `tests/fishreplay.test.js` (the replay's units are
 the app's; the floor on fixed and random records, no unit or headline down) and `tests/fishadopt.test.js` (the app
-adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no coral replay asked for, the reset cutoff
+adopts it, with the floor, its own rules version, no coral replay asked for, the reset cutoff
 and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
 `sstart`; ROADMAP).
 
@@ -5130,11 +5206,10 @@ may weigh how much it moves the ability, never a decay nor a penalty for being s
   stepped live). Two devices' records add up (`mergeProgress`, like the mix-ups), two accounts merged too
   (`mergeUsers`), and the replay's record goes with the level's answer count (`replayedOf`, `replayBase`). The times
   are recorded whatever the sheet's version.
-- **The app never gets ahead of the sheet** (rule D4): the weight is on only once the sync script's replies say
-  v ≥ `RT_SHEET` (32; `sync.js` `sheetV`, the last reply's `v` kept on the device as `reefid-sheet-v`; `model.js`
-  `rtOn`); before it every weight is 1, exactly as before, and so in the device's own answers replayed on top of an
-  adopted replay (`sync.js` `replayAdopt` passes `time` from the reply's `v`; Codex review #444). A device then adopts the v32 replay of its whole log under
-  rules version 4 (standard card `RV_CARD`).
+- **The app never gets ahead of the sheet** (rule D4): the weight was on only once the sync script's replies said
+  v ≥ 32 (Codex review #444), a gate deleted with the gate floor (`core.js` `SHEET_FLOOR`, 2026-11-18): the weight is on in
+  the live game and in the device's own answers replayed on top of an adopted replay. A device then adopts the v32 replay
+  of its whole log under rules version 4 (standard card `RV_CARD`).
 
 **Real answers, the app's implementation against main** (`tools/abilityeval.js`, `e+X+M` on main's `core.js` through
 `--model` against `e+X+M+A` on this one: `+A` replays `core.js` `rtWeight` / `rtAdd` as the app runs them, and gives
@@ -5548,9 +5623,8 @@ minutes, 58%), so no lag term is added and step 2 waits; proposed: the same tabl
     replayed rows' answer ids from the time of the oldest answer the device still queues (the request's `pt`; at least
     the last 500), so a lost reply that left up to 2,000 answers already logged in its queue never counts them twice
     (Codex review #399).
-  - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
-    (`core.js` `RV_SHEET`; rule D4: the app never gets ahead of the sheet script; before, it does exactly what it did,
-    and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
+  - **The app adopts it** (`sync.js` `replayAdopt`), once per version (sheet v28): when a reply carries a replay newer
+    than the one
     this device applied (`reefid-sync-coral-rv`, in the progress data: a device that signs in to the account takes it with
     the account, whose progress is the adopted one, and 0 when the account's data has none, never the version of an
     anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
@@ -5862,8 +5936,8 @@ already show. A read-only study of the answer log (1,262 trusted answers, 9 play
   [offset, weighed answers]}`; `core.js` `genusOffsetsOf`). The genus of a photo is the genus shown (one colony a
   question, rule P4), so no data file and no per-genus code.
 - **The app** (`model.js` `photoDiff`): (n × rating + 5 × gd[genus]) / (n + 5), and gd[genus] for a photo nobody has
-  answered; `gd` is read only from a sheet that reports v ≥ 31 (`PGD_SHEET`, rule D4, stored with the stats and
-  their `v`). With an older sheet, or for a genus with no offset, the prior is 0, which the replay below shows is
+  answered; `gd` comes with the photo statistics (sheet v31, stored with them). Before the first reply, or for a genus
+  with no offset, the prior is 0, which the replay below shows is
   already better than the sets. The genus difficulty that orders the opening (`genusDiff`, the mean `photoDiff` of a
   genus's photos) becomes data-driven through it with no code of its own.
 - **`GENUS_K` 0.4**: on the real log, 0.2 and 0.4 score alike and both beat the photo-only Elo; 0.8 moves too fast
@@ -6388,8 +6462,10 @@ expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
-cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
-A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
+cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
+A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π
+(each genus's and species' μ on a stream of its own, keyed by its id, since 2026-11-18: a version with more or fewer
+units plays the same photos and the same other units, so the arms stay paired);
 the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the
@@ -6709,7 +6785,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
+  [--openall N] [--back keep|one] [--rt off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
   [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]` (the learner and the Custom-N scenario: "Field learner and
   the Custom-8 scenario" below; the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
@@ -6746,8 +6822,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   situation of the run that collapsed on 2026-11-03.
 - **Response time** (2026-11-04, "Response time" section 5): the learner takes log t = log 7 − 0.15 × right − 0.3 ×
   logit(its true chance) + 0.6 × N(0, 1) seconds (`LEARNER.RT`, calibrated so that its logs give back the two real
-  measures), handed to the app's question clock; the app weighs its steps by it (the sheet version it sees is set to
-  one that replays the time). `--rtapp off`: the app as with an older script (weights 1); `--rt off`: no seconds;
+  measures), handed to the app's question clock; the app weighs its steps by it. `--rt off`: no seconds;
   `--rtlog`: the app's answer log of every run, with the learner's chance and time noise, for `tools/abilityeval.js`.
 - **Openings after a miss** (2026-11-03): per profile, the genera opened on their own cards, those on the question
   right after a miss (0 with `openRight`), the questions where that rule alone held the opening and the openings they
