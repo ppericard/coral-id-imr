@@ -570,6 +570,7 @@ const DOC_BUDGET = {
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],
+  'docs/ANSWERS.md': [200, 200], // append-only ledger: it grows by an entry per answer, never cut
   'docs/BACKUP.md': [13, 150],
   'docs/DATA.md': [10, 410],
   'docs/DESIGN.md': [45, 4030],

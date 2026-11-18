@@ -9,6 +9,7 @@
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
+//                          [--set calibration-set.json|none]
 //                          [--beyond yes|no]
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
@@ -169,6 +170,9 @@ const SEEDS = Number(arg('seeds', 5)),
   DRILL = Number(arg('drill', 200)),
   SUBJECT = arg('subject', 'coral'),
   PHOTOS = arg('photos', null),
+  // --set FILE serves that file as calibration-set.json (model.js CALSET, setBonus), none an empty set: the draw as
+  // without the calibration set, for a paired comparison on the same tree (docs/LEARNING.md "The calibration set").
+  CSETF = arg('set', null),
   CALIBX = JSON.parse(arg('calib', '{}')),
   // --world rated (rule L11): the rated world in Node (tools/ratedworld.js) instead of the app in Chromium;
   // --dist its photo distribution (normal, tail: 15% of the photos 1.5 harder, t3), --app what the app knows (truth: every
@@ -250,8 +254,13 @@ const TYPES = {
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     own = PHOTOS && u === '/fish-photos.json',
-    f = own ? path.resolve(PHOTOS) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!own && !f.startsWith(ROOT)) {
+    cset = CSETF && u === '/calibration-set.json';
+  if (cset && CSETF === 'none') {
+    res.writeHead(200, {'Content-Type': TYPES['.json']});
+    return res.end('{}');
+  }
+  const f = own ? path.resolve(PHOTOS) : cset ? path.resolve(CSETF) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (!own && !cset && !f.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end();
   }

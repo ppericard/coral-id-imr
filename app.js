@@ -3842,13 +3842,16 @@ const STARTED = new Promise(r => (started = r)),
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
-const tier2json = () => J2 || (J2 = Promise.all([forms(), json('quality.json?v=3'), json('picks.json?v=1')]));
+// calibration-set.json: the photos the draw shows a little more often until each is rated (model.js CALSET, setBonus).
+const tier2json = () =>
+  J2 || (J2 = Promise.all([forms(), json('quality.json?v=3'), json('picks.json?v=1'), json('calibration-set.json?v=1')]));
 const SETUP = {
-  2: ([f, q, k]) => {
+  2: ([f, q, k, cs]) => {
     FORMS = f;
     CFMAP = f.cf;
     AUTOQ = q.q || {};
     PICKS = k;
+    CALSET = cs || {};
     build();
     loadStats();
     // progress.js comes with the quiz (answers given before it would lose their achievement bookkeeping): the achievement
