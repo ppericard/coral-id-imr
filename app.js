@@ -826,6 +826,16 @@ function fishGenera(X, F) {
         // The genera only iNaturalist's identifications show as its look-alikes (the tree's genus dlook; Q390 D): data
         // look-alikes the players' answers can drop (model.js dataSeed).
         ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
+        // Its declared look-alikes' tell-apart lines (the tree's genus apart and apsrc: the sea slugs', tools/seaslug_cues.py
+        // apart_of; Pierre, 2026-11-18, the feedback sheet study's question (d)), by the other genus's id, each naming and
+        // describing that genus, with its sources in a line: said by the quiz feedback after a mix-up of the two
+        // (quiz.js pairLine), never a look-alike themselves.
+        ...(G.apart
+          ? {
+              ap: Object.fromEntries(Object.entries(G.apart).filter(([o, t]) => t && X.gen[o])),
+              apsrc: Object.fromEntries(Object.entries(G.apsrc || {}).map(([o, L]) => [o, L.map(x => x.t).join('; ')]))
+            }
+          : {}),
         qt: cues || marks,
         // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
         ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),

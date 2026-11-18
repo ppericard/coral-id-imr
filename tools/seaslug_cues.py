@@ -3,7 +3,9 @@
 complete what is missing for the nudibranchs): checks tools/seaslug_cues.json and lays its marks on the tree that
 tools/seaslug_game.py builds, as fish.json's genus marks (tools/build_fish.py genus_marks) so the fish engine shows them
 unchanged: on a genus or a family, marks (1 to 3 visible features), msrc (each source once, {t, u}: the source's t, then
-where in it) and mby ({marks: [[msrc indexes] per mark]}).
+where in it) and mby ({marks: [[msrc indexes] per mark]}). It also lays the declared genus pairs' tell-apart lines
+(the key apart, apart_of; Pierre, 2026-11-18, the feedback sheet study's question (d)) as apart and apsrc on the genera,
+and checks the reasons of the pairs left without one (apartNone).
 
 The build stops on anything else (rules C2, C3, C6): a line without a source or with a source not in src, a source not
 https, a mark with a number (a count is never a photo cue), a line too long for a tip, a species named that is not one
@@ -19,7 +21,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CUES = os.path.join(ROOT, 'tools', 'seaslug_cues.json')
-KEYS = {'about', 'src', 'families', 'genera', 'none'}
+KEYS = {'about', 'src', 'families', 'genera', 'none', 'apart', 'apartNone'}
 LONGEST = 80  # a mark's length at most, as a fish genus mark's (rule C3: short and simple)
 
 
@@ -31,43 +33,79 @@ def bad(why):
     raise CueError('tools/seaslug_cues.json: ' + why)
 
 
+def line_of(name, m, src, used, species=None, genus=None):
+    """(words, [{t, u}] its sources) of one line m = [words, refs], checked. species: the game species' names of a genus
+    (rule C6: a species named in a line, as "G. kuniei", is one of them), None for a family (no species may be named)."""
+    if not (isinstance(m, list) and len(m) == 2):
+        bad(f'{name}: a line is [words, sources]')
+    text, rr = m
+    if not isinstance(text, str) or not text.strip() or len(text) > LONGEST or text != ' '.join(text.split()):
+        bad(f"{name}: '{text}': a line of at most {LONGEST} characters")
+    if re.search(r'\d', text):
+        bad(f"{name}: '{text}': a line with a number (a count is never a photo cue)")
+    eps = {s.split()[1] for s in species or [] if len(s.split()) > 1}
+    for ini, ep in re.findall(r'\b([A-Z])\. ([a-z]+)', text):
+        if genus is None or ini != genus[0] or ep not in eps:
+            bad(f"{name}: '{ini}. {ep}' is not one of its game species (rule C6)")
+    if not rr:
+        bad(f"{name}: '{text}' has no source")
+    out = []
+    for q in rr:
+        if not (isinstance(q, list) and len(q) == 2 and q[0] in src and isinstance(q[1], str) and q[1].strip()):
+            bad(f"{name}: '{text}': a source is [a key of src, where in it]")
+        s = src[q[0]]
+        if not s.get('t') or not str(s.get('u', '')).startswith('https://'):
+            bad(f'src {q[0]}: t and an https u')
+        used.add(q[0])
+        e = {'t': f"{s['t']}, {q[1]}", 'u': s['u']}
+        if e not in out:
+            out.append(e)
+    return text, out
+
+
 def marks_of(name, x, src, used, species=None, genus=None):
-    """{marks, msrc, mby} of one genus or family entry x. species: the game species' names of a genus (rule C6: a species
-    named in a mark, as "G. kuniei", is one of them), None for a family (no species may be named there)."""
+    """{marks, msrc, mby} of one genus or family entry x (line_of checks each mark)."""
     if not isinstance(x, dict) or set(x) - {'marks'}:
         bad(f'{name}: the key marks only')
     marks = x.get('marks') or []
     if not marks or len(marks) > 3:
         bad(f'{name}: 1 to 3 marks')
-    eps = {s.split()[1] for s in species or [] if len(s.split()) > 1}
     msrc, by = [], []
     for m in marks:
-        if not (isinstance(m, list) and len(m) == 2):
-            bad(f'{name}: a mark is [words, sources]')
-        text, rr = m
-        if not isinstance(text, str) or not text.strip() or len(text) > LONGEST or text != ' '.join(text.split()):
-            bad(f"{name}: '{text}': a line of at most {LONGEST} characters")
-        if re.search(r'\d', text):
-            bad(f"{name}: '{text}': a mark with a number (a count is never a photo cue)")
-        for ini, ep in re.findall(r'\b([A-Z])\. ([a-z]+)', text):
-            if genus is None or ini != genus[0] or ep not in eps:
-                bad(f"{name}: '{ini}. {ep}' is not one of its game species (rule C6)")
-        if not rr:
-            bad(f"{name}: '{text}' has no source")
-        ix = []
-        for q in rr:
-            if not (isinstance(q, list) and len(q) == 2 and q[0] in src and isinstance(q[1], str) and q[1].strip()):
-                bad(f"{name}: '{text}': a source is [a key of src, where in it]")
-            s = src[q[0]]
-            if not s.get('t') or not str(s.get('u', '')).startswith('https://'):
-                bad(f'src {q[0]}: t and an https u')
-            used.add(q[0])
-            e = {'t': f"{s['t']}, {q[1]}", 'u': s['u']}
+        _, S = line_of(name, m, src, used, species, genus)
+        for e in S:
             if e not in msrc:
                 msrc.append(e)
-            ix.append(msrc.index(e))
-        by.append(ix)
+        by.append([msrc.index(e) for e in S])
     return {'marks': [m[0] for m in marks], 'msrc': msrc, 'mby': {'marks': by}}
+
+
+def apart_of(apart, gens, src, used, names):
+    """Lays the genus pairs' tell-apart lines (the key apart: {"A|B": {A: line, B: line}}, one side or both; Pierre,
+    2026-11-18, the feedback sheet study's question (d)) on gens: each side's words describe its own genus and go on the
+    OTHER genus's record, as the fish's apart, apart {other id: "A: words"} and apsrc {other id: [{t, u}]}, which the quiz
+    feedback's decisive line reads (app.js fishGenera ap, apsrc; quiz.js pairText). Only for a declared pair (each genus
+    in the other's look: tools/seaslug_game.py genus_looks). Returns the pairs laid."""
+    done = []
+    for key, P in (apart or {}).items():
+        ab = key.split('|')
+        if len(ab) != 2 or ab != sorted(ab):
+            bad(f'apart {key}: "A|B" in A-Z order')
+        ga, gb = ('g:' + n for n in ab)
+        if ga not in gens or gb not in gens:
+            bad(f'apart {key}: a genus not in the tree')
+        if gb not in (gens[ga].get('look') or []) or ga not in (gens[gb].get('look') or []):
+            bad(f'apart {key}: not a declared genus pair (look)')
+        if not isinstance(P, dict) or not P or set(P) - set(ab):
+            bad(f'apart {key}: a line for one or both of its genera')
+        for x, m in P.items():
+            gx = 'g:' + x
+            gy = gb if gx == ga else ga
+            text, S = line_of(f'apart {key} {x}', m, src, used, names.get(gx, []), x)
+            gens[gy].setdefault('apart', {})[gx] = f'{x}: {text}'
+            gens[gy].setdefault('apsrc', {})[gx] = S
+        done.append(key)
+    return done
 
 
 def apply(cues, fams, gens, species):
@@ -105,6 +143,19 @@ def apply(cues, fams, gens, species):
     miss = [g['name'] for g in gens.values() if g['circle'] == 1 and g['name'] not in done and g['name'] not in none]
     if miss:
         bad('circle-1 genera with neither marks nor a reason in none: ' + ', '.join(miss))
+    apart_of(cues.get('apart'), gens, src, used, names)
+    for key, why in (cues.get('apartNone') or {}).items():
+        ab = key.split('|')
+        if key in (cues.get('apart') or {}) or len(ab) != 2 or any('g:' + n not in gens for n in ab):
+            bad(f'apartNone {key}: a genus pair of the tree with no line in apart')
+        if not str(why).strip():
+            bad(f'apartNone {key}: a reason')
+    if cues.get('apart') is not None or cues.get('apartNone') is not None:
+        decl = {'|'.join(sorted((g['name'], gens[o]['name']))) for g in gens.values() for o in g.get('look') or []
+                if o in gens}
+        left = sorted(decl - set(cues.get('apart') or {}) - set(cues.get('apartNone') or {}))
+        if left:
+            bad('declared genus pairs in neither apart nor apartNone: ' + ', '.join(left))
     if set(src) - used:
         bad('sources never used: ' + ', '.join(sorted(set(src) - used)))
     return done, list(none)
@@ -124,7 +175,8 @@ def main():
         if g['name'] in done:
             by[g['circle']][0] += 1
     print(f"genera with marks: {len(done)} ({', '.join(f'circle {c}: {a} of {b}' for c, (a, b) in sorted(by.items()))}); "
-          f"in none: {len(none)}; families with marks: {len(cues.get('families') or {})}; sources: {len(cues['src'])}")
+          f"in none: {len(none)}; families with marks: {len(cues.get('families') or {})}; sources: {len(cues['src'])}; "
+          f"genus pairs with a tell-apart line: {len(cues.get('apart') or {})}, without: {len(cues.get('apartNone') or {})}")
 
 
 if __name__ == '__main__':
