@@ -61,6 +61,9 @@ test('the sheet script check: the public read-only request, its version, behind 
   assert.strictEqual(S.sheet_down.calls.filter(c => c.url.includes('?stats=1')).length, 2, 'one retry');
   assert.strictEqual(level('sheet_down', 'sheet script: answers'), 'fail');
   assert.strictEqual(level('sheet_notok', 'sheet script: answers'), 'fail');
+  assert.strictEqual(level('sheet_html', 'sheet script: answers'), 'fail', 'an HTML page served with a 200 is no answer');
+  assert.strictEqual(S.sheet_html.calls.filter(c => c.url.includes('?stats=1')).length, 2, 'and is tried twice');
+  assert.strictEqual(level('sheet_flaky', 'sheet script: answers'), 'ok', 'one bad reply, then a good one: not an outage');
   assert.strictEqual(level('behind_recent', 'sheet script: answers'), 'notice', 'inside the self-update window: a note');
   assert.strictEqual(S.behind_recent.ok, true);
   assert.strictEqual(level('behind_stuck', 'sheet script: answers'), 'fail', 'an hour behind: autoUpdate is stuck');
@@ -121,7 +124,10 @@ test("the brief's line: one compact line, a warning past 70%, the failed check s
   assert.match(F.B.failed[0], /Health check FAILED/);
   assert.strictEqual(F.B.failed[1], true, 'a failed check asks for a look');
   assert.strictEqual(F.B.exactly_70[1], false);
+  assert.match(F.B.truncated[0], /Pages site not read/, 'a tree cut short is "not read", not "by hand"');
+  assert.match(F.B.truncated[0], /R2 storage 6\.30 GB/);
   assert.strictEqual(F.B.unread[1], false);
+  assert.match(F.B.no_r2[0], /R2 storage to measure by hand \(tools\/infra\.json\)/);
   for (const [k, v] of Object.entries(F.B)) assert.ok(!v[0].includes('\n'), k + ': one line');
 });
 
@@ -225,7 +231,8 @@ test("the admin card's rows: the same 70% rule, the backup flagged past 8 days",
   const ctx = {};
   vm.createContext(ctx);
   vm.runInContext(
-    block(read('admin.js'), 'const INFRA_SHEET = ', '\nlet INF = null;', {file: 'admin.js'}) + '\nthis.f = infraRows; this.on = infraOn;',
+    block(read('admin.js'), 'const INFRA_SHEET = ', '\nlet INF = null;', {file: 'admin.js'}) +
+      '\nthis.f = infraRows; this.on = infraOn; this.pz = infraPagesSize; this.rr = infraRepoRows;',
     ctx
   );
   const NOW = Date.parse('2026-11-18T05:00:00Z'),
@@ -252,6 +259,34 @@ test("the admin card's rows: the same 70% rule, the backup flagged past 8 days",
   const none = ctx.f(reply(1e6, null, {at: 1, ok: false, text: 'not configured'}), NOW).at(-1);
   assert.deepStrictEqual([none.text, none.warn], ['not configured', true]);
   assert.strictEqual(ctx.f(reply(1e6, null, null), NOW).at(-1).text, 'none logged');
+  // The two rows from GitHub: the tree summed as tools/health.py does (the same fixture tree), R2 from the hand figure.
+  const tree = {
+    truncated: false,
+    tree: [
+      {path: 'index.html', type: 'blob', size: 1000},
+      {path: 'img/a.webp', type: 'blob', size: 300000000},
+      {path: 'img', type: 'tree'},
+      {path: 'docs/x.md', type: 'blob', size: 9000000000},
+      {path: 'tools/health.py', type: 'blob', size: 20000}
+    ]
+  };
+  const attrs = '* text=auto\n/docs/ export-ignore\n/tools/ export-ignore\n/tests/ export-ignore\n';
+  assert.strictEqual(ctx.pz(tree, attrs), S.ok.items.pages.used, 'the same sum as tools/health.py');
+  assert.strictEqual(ctx.pz({...tree, truncated: true}, attrs), null);
+  assert.strictEqual(ctx.pz(null, attrs), null);
+  const rr = (p, h) => JSON.parse(JSON.stringify(ctx.rr(p, h, NOW).map(r => [r.label, r.text, r.share, r.warn])));
+  assert.deepStrictEqual(rr(300001000, {r2: {bytes: 6.3e9, at: '2026-11-15'}}), [
+    ['Pages site', '0.30 GB of 1.00 GB', 0.300001, false],
+    ['R2 storage', '6.30 GB of 10.00 GB · by hand 2026-11-15', 0.63, false]
+  ]);
+  assert.strictEqual(rr(null, null)[0][1], 'not read');
+  assert.strictEqual(rr(null, null)[1][1], 'to measure by hand (tools/infra.json)');
+  assert.strictEqual(rr(8e8, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[0][3], true, '80% of Pages');
+  assert.deepStrictEqual(rr(0, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[1].slice(1), [
+    '7.50 GB of 10.00 GB · by hand 2026-10-01, 48 days old: measure again',
+    0.75,
+    true
+  ]);
   const N = vm.runInContext('INFRA_SHEET', ctx); // main's VERSION + 1 (tools/check_versions.py checks it, rule D3)
   assert.strictEqual(ctx.on({v: N}), true);
   assert.strictEqual(ctx.on({v: N - 1}), false);

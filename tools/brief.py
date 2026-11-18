@@ -328,7 +328,10 @@ def infra_line(snap, ago=None):
     for i in (snap or {}).get('items') or []:
         used, limit = i.get('used'), i.get('limit')
         if not isinstance(used, (int, float)) or not limit:
-            parts.append('%s to measure by hand%s' % (i.get('label', '?'), ' (%s)' % i['note'] if i.get('note') else ''))
+            if i.get('k') == 'r2':
+                parts.append('%s to measure by hand (tools/infra.json)' % i.get('label', '?'))
+            else:
+                parts.append('%s not read' % i.get('label', '?'))
             continue
         share = used / limit
         warn = share > INFRA_WARN

@@ -1477,6 +1477,22 @@
       }
       return ok({sha: 'demo' + SHA, content: b64(CUR), ...((opts.method || 'GET') === 'PUT' ? {content: {sha: 'demo' + SHA}} : {})});
     }
+    // The infrastructure card's two repository numbers (admin.js infraRepo): main's tree with made-up sizes (a 42% site) and
+    // R2's figure measured by hand (51%, five days ago).
+    if (/^\/git\/trees\/main\?recursive=1$/.test(path))
+      return ok({
+        truncated: false,
+        tree: [
+          {path: 'index.html', type: 'blob', size: 1000},
+          {path: 'img/a.webp', type: 'blob', size: 420000000},
+          {path: 'img', type: 'tree'}
+        ]
+      });
+    if (/^\/contents\/tools\/infra\.json/.test(path))
+      return ok({
+        sha: 'demo',
+        content: b64(JSON.stringify({r2: {bytes: 5100000000, at: new Date(NOW - 5 * DAY).toISOString().slice(0, 10)}}))
+      });
     // Another repository file, read only (the judging package's proposals: admin-light.js): the local copy.
     const fp = /^\/contents\/([\w./-]+?)(\?|$)/.exec(path);
     if (fp && (opts.method || 'GET') === 'GET' && !fp[1].includes('..')) {

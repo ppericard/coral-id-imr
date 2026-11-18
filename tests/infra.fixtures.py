@@ -6,6 +6,7 @@ network: every request goes through a fake `get` or `post`, rule D1). Prints one
 
 import json
 import os
+import shutil
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -34,8 +35,12 @@ TREE = {
 }
 
 
+TMP = []
+
+
 def root(r2_at='2026-11-15', r2_bytes=6_300_000_000, version=176):
     d = tempfile.mkdtemp()
+    TMP.append(d)
     os.makedirs(os.path.join(d, 'tools/sync'))
     open(os.path.join(d, 'app.js'), 'w').write("const SYNC_URL = '%s';\n" % SYNC)
     open(os.path.join(d, 'tools/sync/Code.gs'), 'w').write('const VERSION = %d;\n' % version)
@@ -107,6 +112,10 @@ def main():
     S['index_down'] = go(routes(**{health.SITE + 'index.html': (503, b'')}))
     S['data_bad'] = go(routes(**{health.SITE + 'data.json?v=0123abcdef': (200, b'<html>')}))
     S['sheet_down'] = go(routes(**{SYNC + '?stats=1&av=health': (0, b'URLError')}))
+    S['sheet_html'] = go(routes(**{SYNC + '?stats=1&av=health': (200, b'<html>Sign in</html>')}))
+    tries = []
+    flaky = lambda url, data: (tries.append(1), (200, b'<html>busy</html>') if len(tries) == 1 else (200, b'{"ok": true, "v": 176}'))[1]  # noqa: E731
+    S['sheet_flaky'] = go(routes(**{SYNC + '?stats=1&av=health': flaky}))
     S['sheet_notok'] = go(routes(**{SYNC + '?stats=1&av=health': (200, b'{"ok": false, "error": "server"}')}))
     behind = routes(**{SYNC + '?stats=1&av=health': (200, b'{"ok": true, "v": 175}')})
     commits = 'https://api.github.com/repos/%s/commits?path=tools/sync/Code.gs&per_page=1' % health.REPO
@@ -135,6 +144,8 @@ def main():
         'failed': line(S['sheet_down']['snap'], '0m'),
         'unread': line({'ok': True, 'items': []}),
         'exactly_70': line(S['r2_exactly_70']['snap']),
+        'truncated': line(S['tree_truncated']['snap']),
+        'no_r2': line({'ok': True, 'items': [{'k': 'r2', 'label': 'R2 storage', 'unit': 'bytes', 'limit': 10**10, 'used': None}]}),
     }
 
     # infra_read: the latest completed run, its first job, the annotation titled infra.
@@ -159,6 +170,8 @@ def main():
         R['empty'] = 'no error'
     except brief.Soft as e:
         R['empty'] = str(e)
+    for d in TMP:
+        shutil.rmtree(d, ignore_errors=True)
     S2 = {k: {kk: vv for kk, vv in v.items() if kk not in ('snap',)} for k, v in S.items()}
     print(json.dumps({'S': S2, 'B': B, 'R': R, 'consts': {'health_warn': health.WARN, 'brief_warn': brief.INFRA_WARN, 'limits': health.LIMITS}}))
 

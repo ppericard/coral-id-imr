@@ -41,7 +41,8 @@ REPO = 'ppericard/coral-id-imr'
 SITE = 'https://ppericard.github.io/coral-id-imr/'
 WARN = 0.70  # a warning past 70 % of a limit (the same in tools/brief.py and admin.js)
 # The limits: GitHub Pages' published site 1 GB, Cloudflare R2's free tier 10 GB (both taken as 10^9 bytes a GB, the less
-# generous reading), Google Sheets' 10 million cells a spreadsheet (Pierre, 2026-11-18), and the Timings tab's 5 s (Code.gs
+# generous reading), Google Sheets' 10 million cells a spreadsheet (the figure of the infrastructure request, 2026-11-18;
+# docs/SECURITY.md said 20 million before: to confirm against Google's current limits page), and the Timings tab's 5 s (Code.gs
 # TIM.SLOW: an operation the script keeps whole whenever it is that slow; our own budget, not a platform quota).
 LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 10 * 10**9, 'slow': 5000}
 BACKUP_DAYS = 8  # the backup is weekly (Sundays about 02:00 Manila)
@@ -80,13 +81,31 @@ def http(url, data=None, headers=None, timeout=15):
         return 0, type(e).__name__.encode()
 
 
-def twice(get, url, pause=3, **kw):
-    """One more try after a pause when the first did not answer 200 (a hiccup is not an outage)."""
+def twice(get, url, pause=3, good=None, **kw):
+    """One more try after a pause when the first reply is not `good(status, body)` (default: HTTP 200): a hiccup, or an HTML
+    error page Apps Script serves with a 200, is not an outage."""
+    good = good or (lambda s, b: s == 200)
     s, b = get(url, **kw)
-    if s != 200:
+    if not good(s, b):
         time.sleep(pause)
         s, b = get(url, **kw)
     return s, b
+
+
+def json_ok(s, b):
+    try:
+        return s == 200 and bool(json.loads(b))
+    except ValueError:
+        return False
+
+
+def sheet_ok(s, b):
+    """The script's reply is JSON with ok (a login or error page served with a 200 is not)."""
+    try:
+        j = json.loads(b) if s == 200 else None
+    except ValueError:
+        return False
+    return isinstance(j, dict) and bool(j.get('ok'))
 
 
 def res(name, ok, note, level_='ok'):
@@ -98,7 +117,7 @@ def res(name, ok, note, level_='ok'):
 
 def check_site(get, base=SITE, pause=3):
     out = []
-    s, b = twice(get, base + 'index.html', pause)
+    s, b = twice(get, base + 'index.html', pause, lambda s, b: s == 200 and b'?v=' in b)
     if s != 200:
         return [res('site: index.html', False, 'HTTP %s' % s if s else 'no answer (%s)' % b.decode('ascii', 'replace')[:40])]
     html = b.decode('utf8', 'replace')
@@ -114,7 +133,7 @@ def check_site(get, base=SITE, pause=3):
     if not data:
         out.append(res('site: data.json', False, 'index.html no longer names data.json'))
         return out
-    s, b = twice(get, '%sdata.json?v=%s' % (base, data[0][1]), pause)
+    s, b = twice(get, '%sdata.json?v=%s' % (base, data[0][1]), pause, json_ok)
     try:
         j = json.loads(b) if s == 200 else None
     except ValueError:
@@ -149,7 +168,7 @@ def check_sheet(get, url, v_main, age_of, pause=3):
     if not url:
         return res('sheet script: answers', False, 'SYNC_URL not found in app.js'), None
     t0 = time.monotonic()
-    s, b = twice(get, url + '?stats=1&av=health', pause, timeout=20)
+    s, b = twice(get, url + '?stats=1&av=health', pause, sheet_ok, timeout=20)
     ms = round((time.monotonic() - t0) * 1000)
     try:
         j = json.loads(b) if s == 200 else None

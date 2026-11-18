@@ -4660,7 +4660,8 @@ const darkCards = (p, sel) =>
         }
         // The infrastructure card above the Alerts list (Code.gs readInfra_ from admin.js INFRA_SHEET; docs/PAGES.md
         // "Infrastructure health"): before its version, a line naming it (rule D4); from it the demo's made-up numbers, the
-        // cells (74% of 10 million) flagged and the Answers tab (39%) not, no horizontal scroll on a phone.
+        // cells (74% of 10 million) flagged and the Answers tab (39%) not, then Pages (42%) and R2 (51%) from GitHub, no
+        // horizontal scroll (this block runs once, at 1280; the 390 px look is checked by eye: rule W17).
         {
           const IV = await p.evaluate(() => INFRA_SHEET);
           const q = await p.context().newPage();
@@ -4681,7 +4682,9 @@ const darkCards = (p, sel) =>
             wide: document.documentElement.scrollWidth > innerWidth + 1
           }));
           if (
-            i1.rows.length !== 5 ||
+            i1.rows.length !== 7 ||
+            !/^Pages site \| 0\.42 GB of 1\.00 GB \| 42%$/.test(i1.rows[5]) ||
+            !/^R2 storage \| 5\.10 GB of 10\.00 GB · by hand \d{4}-\d{2}-\d{2} \| 51%$/.test(i1.rows[6]) ||
             !/^p90 save \| 0\.9 s · 9800 calls, 7 days \| 18%$/.test(i1.rows[3]) ||
             !/^Sheet cells \| 7\.40 M of 10\.00 M · 31 tabs \| 74% ! \[adm-warn\]$/.test(i1.rows[0]) ||
             !/^Answers tab \| 41000 rows × 18 columns · 3\.90 M cells \| 39%$/.test(i1.rows[1]) ||

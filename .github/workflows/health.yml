@@ -2,7 +2,8 @@
 # site answers (index.html and data.json with their stamps), the sync sheet script answers its public read-only request
 # and reports its VERSION, and the infrastructure numbers are measured (tools/health.py). A failed check fails the job, which
 # GitHub e-mails (to the account that last changed this schedule); the job then opens an issue labelled `health` unless
-# one is already open. A run takes about 20 seconds. Read-only: the token below reads the repository and writes issues only;
+# one is already open. The script takes a few seconds (2.4 s by hand against the live site, 2026-11-18); with the runner's
+# checkout and Python setup a run is well under a minute. Read-only: the token below reads the repository and writes issues only;
 # no secret is given to the job (INFRA_TOKEN, which would add the sheet's cells, timings and the backup's age, is not
 # passed: an access decision for Pierre, docs/PAGES.md). The log of a public repository is public: tools/health.py prints
 # statuses, versions and sizes only.
@@ -57,5 +58,5 @@ jobs:
             exit 0
           fi
           gh label create health --color D93F0B --description "The hourly health check failed" 2>/dev/null || true
-          { echo "The hourly health check failed: $RUN_URL"; echo; cat "$RUNNER_TEMP/health.md"; } > "$RUNNER_TEMP/issue.md"
+          { echo "The hourly health check failed: $RUN_URL"; echo; cat "$RUNNER_TEMP/health.md" 2>/dev/null || echo "(no report: the script stopped before writing one; see the run)"; } > "$RUNNER_TEMP/issue.md"
           gh issue create --label health --title "Health check failed" --body-file "$RUNNER_TEMP/issue.md"
