@@ -1,6 +1,6 @@
-// The points to handle (Pierre, 2026-11-05: he settles most open points himself and never reads a text list): pure
+// The points to handle, settled in the admin rather than read as a text list (rule C5; docs/rules/content.md): pure
 // functions, no DOM, for the admin's Inbox › To do › Points (admin.js renderPoints) and the tests (tests/points.test.js).
-// Loaded by admin.html only. The points are points.json (written by agents); Pierre's state per point is his curation,
+// Loaded by admin.html only. The points are points.json (written by agents); the admin's state per point is his curation,
 // curation.json "points" {id: {s, n, a}}: s 'wait' (stand-by), 'done' (resolved) or 'drop' (dismissed), absent = open;
 // n his notes; a the trainer's answers, one per photo (by photo id).
 (function (root) {

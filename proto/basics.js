@@ -1,12 +1,12 @@
 // Coral basics: a short guided path for complete beginners (no coral lecture), from the colony down to the corallite and
-// back out to the growth forms. One step = one labelled photo (Pierre's own or an IMR lecture photo; another observer's
-// only where none shows the point) or a drawing of ours, one plain sentence and an optional one-question check. Nothing
-// is forced: every step can be skipped, the checks are optional, and nothing here is shown to a player who did not
-// open it (IMR RAs stay the main audience, Pierre 2026-11-03).
-// Routes: #learn/basics (resume), #learn/basics/<step id>, #learn/basics/<glossary term> (e.g. /Septa), #learn/basics/words. Graduated from the
-// Lab into Learn (Pierre, 2026-11-03): the first step of the Learn path ("0 · Coral basics" before the genus sheets, the
-// first Learn tab); the Tools page keeps a link (proto/lab.js GRADUATED).
-// Done (Pierre, 2026-11-03: completion recognised): every step seen (the walls step: its four wall types), the checks
+// back out to the growth forms. One step = one labelled photo (the owner's own or an IMR lecture photo; another
+// observer's only where none shows the point) or a drawing of ours, one plain sentence and an optional one-question
+// check. Nothing is forced: every step can be skipped, the checks are optional, and nothing here is shown to a player who
+// did not open it (IMR RAs stay the main audience).
+// Routes: #learn/basics (resume), #learn/basics/<step id>, #learn/basics/<glossary term> (e.g. /Septa), #learn/basics/words.
+// The first step of the Learn path ("0 · Coral basics" before the genus sheets, the first Learn tab); the Tools page
+// keeps a link (proto/lab.js GRADUATED).
+// Done (completion is recognised): every step seen (the walls step: its four wall types), the checks
 // stay optional; kept in reefid-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
 // achievements record, progress.js), which the Home line and the first-launch offers read (app.js basicsDone).
 // Add ?edit=1 to print photo coordinates on a tap and show the tap targets (for placing labels).
@@ -14,17 +14,17 @@
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
   const PH = {
     colony: {g: 'Diploastrea', f: 'diploastrea-wide-746238202', h: 768},
-    // Day-extended polyps: only an aside on the polyp step now (Pierre, 2026-11-03: too special to explain a polyp).
+    // Day-extended polyps: only an aside on the polyp step (too special to explain a polyp).
     polypsDay: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
-    // One polyp, wide open (Pierre, 2026-11-03: the Galaxea photo was too busy for a beginner): an IMR lecture photo.
+    // One polyp, wide open (a busier colony is too much for a beginner): an IMR lecture photo.
     polyp: {g: 'Tubastraea', f: 'imrl-p19_g64', h: 720},
     nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
     cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
-    // Septa inside the rim, costae just outside it, the mouth in the centre, on one corallite seen from above (Pierre,
-    // 2026-11-03: "if you define septa, you must define costae"; then, on an Astrea photo first used here: costae are
-    // immediately outside the wall, the septa carried on past the rim, not the skeleton between the cups). An IMR lecture
-    // photo of Diploastrea, whose corallites are low cones: a small cup in the middle, its rim sharp, short beaded septa
-    // inside it and the same ridges running on down the cone outside it. No photo of Pierre's shows that as sharply.
+    // Septa inside the rim, costae just outside it, the mouth in the centre, on one corallite seen from above (septa and
+    // costae are defined together: docs/ARCHITECTURE.md; costae are immediately outside the wall, the septa carried on
+    // past the rim, not the skeleton between the cups). An IMR lecture photo of Diploastrea, whose corallites are low
+    // cones: a small cup in the middle, its rim sharp, short beaded septa inside it and the same ridges running on down
+    // the cone outside it; no other photo shows that as sharply.
     septa: {g: 'Diploastrea', f: 'imrl-p57_g172', h: 639},
     cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
     bigTeeth: {g: 'Danafungia', f: 'danafungia-macro-746236636', h: 720},
@@ -66,7 +66,7 @@
   // The labels of each teaching photo, kept for its enlarged view: the whole photo, labels on (app.js zoom opts.over).
   const ANN = {};
   const over = p => (ANN[p.f] ? layer([0, 0, 960, ANN[p.f].h], ANN[p.f].marks, ANN[p.f].labels, 'lb') : '');
-  // zoom: the photo itself opens the enlarged view (Pierre, 2026-11-03: the small "Enlarge" link went unnoticed), with
+  // zoom: the photo itself opens the enlarged view (a small "Enlarge" link goes unnoticed), with
   // the app's enlarge mark (ZOOMI) in its corner, like the quiz and genus sheet photos.
   const photo = (s, {box, marks = [], labels = [], cls = '', k = 0, edit = false, hits = [], zoom: z = false} = {}) => {
     const b = box || [0, 0, 960, s.h];
@@ -211,8 +211,8 @@
     return `<svg viewBox="0 0 140 140" class="bxd" role="img" aria-label="${{separate: 'Cups with their own walls and a gap between them', shared: 'Cups sharing their walls, like a honeycomb', valleys: 'Walls as ridges between valleys with several mouths', nowall: 'No walls: lines run from one centre to the next'}[kind]}"><rect class="bg" width="140" height="140"/>${s}</svg>`;
   };
 
-  // The 7 IMR growth forms as simple silhouettes of ours (Pierre, 2026-11-03: the photo thumbnails were too small to
-  // read the forms; drawn from the IMR definitions, forms.json "forms", never copied from the lecture slides). 64 x 48,
+  // The 7 IMR growth forms as simple silhouettes of ours (photo thumbnails are too small to read the forms; drawn from
+  // the IMR definitions, forms.json "forms", never copied from the lecture slides). 64 x 48,
   // seabed at y 44, in the app's icon style (round strokes, currentColor); the coral is filled with a soft tint.
   const FORM_ICON = {
     // Secondary branches off the first branches.
@@ -275,7 +275,7 @@
         ['wall (ridge)', 300, 104]
       ]
     },
-    // IMR's third wall type (Pierre, 2026-11-03): Pavona, whose IMR tip is "smooth, star-like septo-costae between corallites".
+    // IMR's third wall type: Pavona, whose IMR tip is "smooth, star-like septo-costae between corallites".
     nowall: {
       t: 'Indistinguishable walls',
       b: 'No wall',
@@ -293,9 +293,9 @@
       term: 'Septo-costae'
     }
   };
-  // The polyp step's photo. Pierre (2026-11-03) first chose Galaxea, a standard coral with its polyps out of their cups,
-  // then found it too busy for someone who knows nothing about corals: one large open polyp (Tubastraea, IMR Lecture 6)
-  // now shows the mouth and the ring of tentacles at a glance, with no dimming; the cup is in the drawing beside it.
+  // The polyp step's photo: one large open polyp (Tubastraea, IMR Lecture 6) shows the mouth and the ring of tentacles at
+  // a glance, with no dimming (a colony with its polyps out is too busy for someone who knows nothing about corals); the
+  // cup is in the drawing beside it.
   const POLYP = {
     s: PH.polyp,
     box: [90, 30, 720, 600],
@@ -311,11 +311,12 @@
     ],
     note: 'One polyp, wide open: its mouth in the middle of a ring of tentacles.'
   };
-  // The 7 IMR forms (id, name) and 2-3 example photos of each, larger (Pierre, 2026-11-03: "give 2-3 examples on real
-  // photos, larger, beautiful photos"). Picked by eye among the game photos of that form (forms.json / curation.json
-  // "gf"), different genera when the form has several. Shown in rule P1's order whatever the order here: IMR lecture
-  // photos first, then Pierre's own, then other observers' (provOrder; Codex on PR #424), the first one largest. Tabulate has two: only Acropora is tabulate on the slate. A photo Pierre later
-  // hides or excludes drops out (only photos still in data.json are shown). Never one of the check's photos (FORM_CHECK).
+  // The 7 IMR forms (id, name) and 2-3 example photos of each, large and beautiful
+  // (docs/decisions/2026-11-18-decisions-from-comments-3.md). Picked by eye among the game photos of that form (forms.json / curation.json "gf"), different
+  // genera when the form has several. Shown in rule P1's order whatever the order here: IMR lecture photos first, then the
+  // owner's own, then other observers' (provOrder), the first one largest. Tabulate has two: only Acropora is tabulate on
+  // the slate. A photo hidden or excluded later drops out (only photos still in data.json are shown). Never one of the
+  // check's photos (FORM_CHECK).
   const FORMS7 = [
     [
       'B',
@@ -380,7 +381,7 @@
       ]
     ]
   ];
-  // Rule P1: IMR lecture photos, then Pierre's own, then other observers' (a stable sort keeps the order within each).
+  // Rule P1: IMR lecture photos, then the owner's own, then other observers' (a stable sort keeps the order within each).
   const provRank = ([g, f]) => {
     const p = pobj({g, f});
     return p.imr ? 0 : p.own ? 1 : 2;
@@ -486,7 +487,7 @@
       id: 'septa',
       t: 'Septa and costae: blades inside and outside the cup',
       term: 'Septa',
-      // Pierre (2026-11-03): the centre label on the centre, the septa label clearly inside the cup, the costae label on
+      // The centre label on the centre, the septa label clearly inside the cup, the costae label on
       // costae, immediately outside the wall. Every point was placed on 5-8x crops of the photo (rule W11): the dashed
       // ring on the edge of the cup, the centre on the mouth, the septa point on a beaded septum inside the cup, the costae
       // point on the same blade where it carries on as a ridge just past the rim (both on one line from the centre).
@@ -511,7 +512,7 @@
         }) + cap(PH.septa, 'the dashed ring is the rim of one cup: septa inside it, costae just past it'),
       draw: () => cupTop('both') + sepKey(),
       say: 'Inside each cup, thin upright blades run from the rim to the centre, like the spokes of a wheel: the septa.',
-      // Costae as a term of its own (Pierre, 2026-11-03: "if you define septa, you must define costae").
+      // Costae as a term of its own, defined with septa (docs/ARCHITECTURE.md).
       more: [
         [
           'Costae',
@@ -584,7 +585,7 @@
     }
   ];
   // The words, their step and their plain line: app.js BASICS_WORDS (one table, read by the glossary popups before this
-  // file is in too); the route of a term: app.js basicsRoute (Codex review #428).
+  // file is in too); the route of a term: app.js basicsRoute.
   const WORDS = BASICS_WORDS,
     routeOf = basicsRoute;
   const official = term => (DATA.terms || []).find(x => x[0] === term);
@@ -702,9 +703,9 @@
           };
         });
       };
-      // Walls (Pierre, 2026-11-03: "many will look at Separate and move on to step 7 without seeing the other wall
-      // types"): the four types one after the other, one photo at a time (a phone keeps the photo, its pointer and the
-      // drawing on one screen). Until all four are seen, the step's main button is "Next wall type: …", in the place of
+      // Walls, so nobody stops at the first type (docs/decisions/2026-11-18-decisions-from-comments-3.md): the four
+      // types one after the other, one photo at a time (a phone keeps the photo, its pointer and the drawing on one
+      // screen). Until all four are seen, the step's main button is "Next wall type: …", in the place of
       // "Next: Growth forms", which comes after the fourth; the numbered tabs above the photo show where the player is
       // and which types are seen (✓). Nothing is forced: the step numbers at the top still jump anywhere.
       if (s.walls) {
@@ -752,7 +753,7 @@
         };
         show(WALLS[sub] ? sub : 'separate');
       } else if (s.views) {
-        // A step of views (Fish basics, as the walls: Pierre, 2026-11-03): drawn icons to pick a view, its figure, one
+        // A step of views (Fish basics, as the walls): drawn icons to pick a view, its figure, one
         // plain sentence under the title. all (default): the step counts as seen once every view has been; the step's
         // main button reads "Next: <view>" until then. all: false: the step is seen on opening it (a long list of views,
         // such as the identification groups). A view: {id, name, icon (SVG), fig() (HTML), say, eg (examples), src, bind(fig)
@@ -805,7 +806,7 @@
         };
         show(sub);
       } else if (s.forms) {
-        // Growth forms (Pierre, 2026-11-03: the photo thumbnails were too small): drawn icons to pick a form, then 2-3
+        // Growth forms (photo thumbnails are too small to read them): drawn icons to pick a form, then 2-3
         // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule P5).
         const show = k => {
           const [fid, name, ex] = FORMS7[k],

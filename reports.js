@@ -1,8 +1,8 @@
-// The players' reports in the admin (Inbox › To do › Reports; Pierre, 2026-11-08, Q309: one action bar on every report):
+// The players' reports in the admin (Inbox › To do › Reports; docs/ARCHITECTURE.md "Players' reports": one action bar on every report):
 // pure functions, no DOM, for admin.js (renderTriage) and the tests (tests/reports.test.js). Loaded by admin.html only,
 // after core.js (SUBJECTS, routeIn, renamedId). A report is a row of the sheet's Reports tab (Code.gs reports_):
 // [id, time ms, reporter, verified, reason, expected, answered, suggested, note, mode, photos, where].
-// Pierre's status per report is his curation: Done = curation.json seen 'rep:<id>' (the player who sent it is thanked, Q66);
+// The admin's status per report is his curation: Done = curation.json seen 'rep:<id>' (the player who sent it is thanked);
 // Stand-by and Dismissed = curation.json reps {id: 'wait'|'drop'} (never thanked); no mark = open.
 (function (root) {
   const C = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
@@ -35,7 +35,7 @@
   }
   // After a three-way merge (core.js merge3 of the draft onto a newer published curation, or of another tab's draft): a
   // report whose status the draft changed since base keeps the draft's status whole, never Done from one side and Stand-by
-  // or Dismissed from the other (its two places merge key by key; Codex review #785). Returns merged, or a copy.
+  // or Dismissed from the other (its two places merge key by key). Returns merged, or a copy.
   function repsReconcile(base, mine, merged) {
     const ids = c => [
       ...Object.keys((c && c.reps) || {}),
@@ -79,7 +79,7 @@
     const S = unitSubj(id);
     return S ? C.renamedId(S, String(id)) : '';
   };
-  // What a report is about and where it was sent from (Q309): its source (game, photo, sheet, marks or page), the unit
+  // What a report is about and where it was sent from: its source (game, photo, sheet, marks or page), the unit
   // (the expected one; else the unit whose sheet the page shows: a sheet id the script did not keep, a feedback sent from a
   // sheet), the answer given, its photos, the page (its address in the app), and its subject: the unit's, else its photos'
   // (photoSubj(f): a subject id or ''), else its page's (an address with a subject's prefix, or a section that follows the
@@ -98,7 +98,7 @@
         .filter(Boolean),
       byPhoto = photoSubj ? photos.map(f => photoSubj(f) || '').find(Boolean) : '',
       // a unit id two subjects' sheet prefixes fit (the fish's and the sea slugs' f:, g:, s:) belongs to the page's subject
-      // when the page's subject is one of them (Codex review #987), else to the first that fits (unitSubj)
+      // when the page's subject is one of them, else to the first that fits (unitSubj)
       own = S => !!S && !!S.sheets && Object.values(S.sheets).some(p => unit.startsWith(p) && unit.length > p.length),
       subj = (unit && (inSubj && own(R.S) ? R.S.id : unitSubj(unit).id)) || byPhoto || (inSubj ? R.S.id : '');
     return {
@@ -135,13 +135,13 @@
   };
   const repWhyText = (ctx, S) =>
     ctx.why === 'wrong' && !ctx.game ? 'Wrong ' + S.one : own(REP_WHY, ctx.why) ? REP_WHY[ctx.why].replace('{things}', S.several) : ctx.why;
-  // A subject's units and photos as the admin reads them for its reports (admin.js unitRead; Codex review #987), from the
+  // A subject's units and photos as the admin reads them for its reports (admin.js unitRead), from the
   // files its SUBJECTS admin files name: f, its tree (fish.json's form); first, its first photos' file (none for a subject
   // without); gm, its game photos' file (core.js fishGameRead: the short form read whole). Every photo either list holds (a
   // report may name a photo shown before a Publish), with the unit showing it (entry) and its source as the file has it (a
   // remote original stays remote: src, r). {gen: unit id -> record (core.js fishGen), ph: photo id -> its record, slate (the
   // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
-  // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
+  // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach),
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
   // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
   // where its tree has them, the taxonomic groups its families sit in (core.js fishGen taxa, each family's tg; the
