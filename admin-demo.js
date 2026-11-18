@@ -1484,8 +1484,8 @@
         truncated: false,
         tree: [
           {path: 'index.html', type: 'blob', size: 1000},
-          {path: 'img/a.webp', type: 'blob', size: 420000000},
-          {path: 'img', type: 'tree'}
+          {path: 'made-up/big.bin', type: 'blob', size: 420000000},
+          {path: 'made-up', type: 'tree'}
         ]
       });
     if (/^\/contents\/tools\/infra\.json/.test(path))
