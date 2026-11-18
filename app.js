@@ -3926,26 +3926,35 @@ const curFetch = (o, get = getR) => get('curation-play.json', o).then(r => (r.st
 // before every first screen, up to the service worker's timeout): the kept copy is used, and curRefresh reads the
 // published one right after; a change applies at the next screen, as for a tab left open.
 let CUR_KEPT = false;
-const curation = () => {
-  const dr = /[?&]draft\b/.test(location.search) && store.get('reefid-curation-draft', null),
-    kept = !dr && store.get(CUR_LAST, null);
+const curPublished = () => {
+  const kept = store.get(CUR_LAST, null);
   if (kept && kept.genera) {
     CUR_KEPT = true;
     return Promise.resolve(kept);
   }
-  return dr
-    ? Promise.resolve(dr)
-    : curFetch({cache: 'no-cache'})
-        .then(okJson)
-        .then(c => {
-          store.set(CUR_LAST, c);
-          return c;
-        })
-        .catch(e => {
-          const last = store.get(CUR_LAST, null);
-          return last ? last : softFail("curation.json (Pierre's photo choices)", {})(e);
-        });
+  return curFetch({cache: 'no-cache'})
+    .then(okJson)
+    .then(c => {
+      store.set(CUR_LAST, c);
+      return c;
+    })
+    .catch(e => {
+      const last = store.get(CUR_LAST, null);
+      return last ? last : softFail("curation.json (Pierre's photo choices)", {})(e);
+    });
 };
+// The admin's draft for ?draft: read from the admin's store in this browser (IndexedDB, admin-draft.js ddbPeek), that
+// script loaded for this preview only; none when there is no draft or it was sealed at a sign out.
+const draftPeek = () =>
+  new Promise(ok => {
+    const sc = document.createElement('script');
+    sc.src = 'admin-draft.js?v=1';
+    sc.onload = () => ddbPeek(window.indexedDB, 'reefid-admin-draft').then(ok, () => ok(null));
+    sc.onerror = () => ok(null);
+    document.head.append(sc);
+  });
+const curation = () =>
+  /[?&]draft\b/.test(location.search) ? draftPeek().then(dr => (dr && dr.genera ? dr : curPublished())) : curPublished();
 const forms = () =>
   getR('forms.json?v=7')
     .then(okJson)

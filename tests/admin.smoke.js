@@ -52,9 +52,10 @@ const server = http.createServer((req, res) => {
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
 // Hidden, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
-// 1280); main, everything else. SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players and
-// photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
-const PARTS = ['main', 'actions', 'players', 'photos'];
+// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
+// SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job
+// runs them all); SMOKE_ONLY=players runs one part.
+const PARTS = ['main', 'actions', 'players', 'photos', 'seal'];
 const WIDTHS = [390, 1280];
 // Dark theme as the app sets it: the ⚙ Theme (reefid-sync-theme) puts data-theme on <html> (admin.html's inline script).
 // The app and the admin never follow the system's prefers-color-scheme (rule U3), so Playwright's colorScheme: 'dark'
@@ -82,8 +83,279 @@ const darkCards = (p, sel) =>
     else delete H.dataset.theme;
     return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
   }, sel);
+// Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
+// demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
+// in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
+// a seal that the token's key opens, holding both ratings, and the site's ?draft preview reads nothing. B, unaware, rates
+// a third photo: its write is refused (no plain draft comes back), and it locks, that rating sealed too. The next unlock
+// opens the seal into the draft. Then a seal held while it is encrypted: the page is read-only under "Sealing…", the other
+// tab's rating made meanwhile goes into the seal, and that tab locks. The reloads that follow a sign out run without
+// admin.js (aborted), so the locked pages never unlock with the demo's token and the store can be read as left. Once, at
+// 1280.
+async function sealPart(b, base, fails) {
+  const F = 'seal: ',
+    sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await sc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const errs = [],
+    open = async () => {
+      const p = await sc.newPage();
+      p.on('pageerror', e => p.watch && errs.push(e.stack || e.message));
+      p.watch = true;
+      await p.goto(base + 'admin.html?demo#photos/quality');
+      await p.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.seen && !DW.busy, null, {timeout: 60000});
+      return p;
+    },
+    // The store as left, read with a key and mark derived here from the demo's token (not with admin-draft.js).
+    stored = p =>
+      p.evaluate(async () => {
+        const db = await new Promise((ok, ko) => {
+            const r = indexedDB.open('demo:reefid-admin-draft');
+            r.onsuccess = () => ok(r.result);
+            r.onerror = ko;
+          }),
+          get = k =>
+            new Promise(ok => {
+              const q = db.transaction('draft').objectStore('draft').get(k);
+              q.onsuccess = () => ok(q.result);
+            }),
+          enc = new TextEncoder(),
+          sub = crypto.subtle,
+          m = btoa(String.fromCharCode(...new Uint8Array(await sub.digest('SHA-256', enc.encode('reefid-admin-mark|demo'))))).slice(0, 22),
+          key = await sub.importKey('raw', await sub.digest('SHA-256', enc.encode('reefid-admin-draft|demo')), 'AES-GCM', false, [
+            'decrypt'
+          ]),
+          [state, draft, base, seal] = await Promise.all(['state', 'draft', 'base', 'seal:' + m].map(get));
+        let q = null;
+        if (seal)
+          q =
+            JSON.parse(JSON.parse(new TextDecoder().decode(await sub.decrypt({name: 'AES-GCM', iv: seal.iv}, key, seal.ct))).j).quality ||
+            {};
+        db.close();
+        return {gen: state && state.gen, draft: !!draft, base: !!base, seal: !!seal, q};
+      }),
+    rate = (p, f, v) =>
+      p.evaluate(
+        ([f, v]) => {
+          DRAFT.quality = {...(DRAFT.quality || {}), [f]: v};
+          saveDraft();
+          return !!DW.busy;
+        },
+        [f, v]
+      ),
+    has = (p, f, v) =>
+      p
+        .waitForFunction(([f, v]) => (DRAFT.quality || {})[f] === v && !DW.busy, [f, v], {timeout: 15000})
+        .then(
+          () => true,
+          () => false
+        );
+  const A = await open(),
+    P = await A.evaluate(() =>
+      Object.keys(PHOTOS)
+        .filter(f => !(SAVED.quality || {})[f])
+        .slice(0, 5)
+    );
+  await rate(A, P[0], 1);
+  await A.waitForFunction(() => !DW.busy);
+  const B = await open();
+  if (!(await has(B, P[0], 1))) fails.push(F + 'a second tab did not open on the first tab’s rating');
+  await rate(B, P[1], 3);
+  if (!(await has(A, P[1], 3))) fails.push(F + 'the first tab did not take in the second tab’s rating');
+  // B stops hearing the other tabs; A signs out (Sign out in the ⋯ menu)
+  await B.evaluate(() => (DCH.onmessage = null));
+  await sc.route(/\/admin\.js(\?|$)/, r => r.abort());
+  A.watch = B.watch = false;
+  await Promise.all([A.waitForEvent('load'), A.evaluate(() => ((document.querySelector('.adm-more').open = true), $('signout').click()))]);
+  let st = await stored(A);
+  if (st.draft || st.base || !st.seal || st.gen !== 1 || st.q[P[0]] !== 1 || st.q[P[1]] !== 3)
+    fails.push(F + `Sign out left a plain draft, or a seal without both tabs’ ratings ${JSON.stringify(st)}`);
+  if (await A.evaluate(() => ddbPeek(indexedDB, 'demo:reefid-admin-draft')))
+    fails.push(F + 'the ?draft preview still reads a draft after Sign out');
+  // B, unaware, rates a third photo: refused, it locks, its rating sealed
+  await Promise.all([B.waitForEvent('load', {timeout: 20000}), rate(B, P[2], 2)]).catch(e =>
+    fails.push(F + 'the other tab did not lock: ' + e.message)
+  );
+  st = await stored(A);
+  if (st.draft || st.base || !st.seal || st.q[P[2]] !== 2 || st.q[P[0]] !== 1)
+    fails.push(F + `the other tab wrote a plain draft back, or its rating was not sealed ${JSON.stringify(st)}`);
+  // The next unlock (the demo's token) opens the seal
+  await sc.unroute(/\/admin\.js(\?|$)/);
+  await B.close();
+  await A.close();
+  const C = await open();
+  const back = await C.evaluate(P => P.map(f => (DRAFT.quality || {})[f]), P);
+  st = await stored(C);
+  if (back.slice(0, 3).join() !== '1,3,2' || st.seal || !st.draft || !st.base)
+    fails.push(F + `the unlock did not open the seal into the draft ${JSON.stringify({back, st})}`);
+  // A seal held while it is encrypted: read-only meanwhile; the other tab's rating made then is sealed; that tab locks
+  const D = await open();
+  await C.evaluate(() => {
+    const e = crypto.subtle.encrypt.bind(crypto.subtle);
+    crypto.subtle.encrypt = async (...a) => {
+      if (!window.smokeHeld) {
+        window.smokeHeld = 1; // the first encryption only
+        await new Promise(r => (window.smokeGo = r));
+      }
+      return e(...a);
+    };
+  });
+  await sc.route(/\/admin\.js(\?|$)/, r => r.abort());
+  C.watch = D.watch = false;
+  const cl = C.waitForEvent('load', {timeout: 30000}),
+    dl = D.waitForEvent('load', {timeout: 30000});
+  await C.evaluate(() => ((document.querySelector('.adm-more').open = true), $('signout').click()));
+  await C.waitForFunction(() => typeof window.smokeGo === 'function');
+  const ro = await C.evaluate(() => ({
+    layer: !!document.querySelector('.adm-sealing'),
+    inert: !!document.querySelector('#view').closest('[inert]') && !!$('save').closest('[inert]'),
+    btn: [$('signout').disabled, $('signout').textContent]
+  }));
+  if (!ro.layer || !ro.inert || ro.btn.join() !== 'true,Sealing…')
+    fails.push(F + `the page was not read-only while it sealed ${JSON.stringify(ro)}`);
+  await C.evaluate(() => $('signout').click()); // a second click does nothing
+  await rate(D, P[3], 1);
+  await D.waitForFunction(() => !DW.busy);
+  await C.evaluate(() => window.smokeGo());
+  await Promise.all([cl, dl]).catch(e => fails.push(F + 'a tab did not lock: ' + e.message));
+  st = await stored(C);
+  if (st.draft || st.base || !st.seal || st.gen !== 2 || st.q[P[3]] !== 1 || st.q[P[1]] !== 3)
+    fails.push(F + `a rating made while the seal was encrypted was lost, or a plain draft was left ${JSON.stringify(st)}`);
+  // No IndexedDB (Codex review #1078): nothing is kept, so Sign out with an edit made in this visit warns and stays
+  await sc.unroute(/\/admin\.js(\?|$)/);
+  const N = await sc.newPage();
+  await N.addInitScript(() => {
+    indexedDB.open = () => {
+      throw new Error('no IndexedDB here');
+    };
+  });
+  await N.goto(base + 'admin.html?demo#photos/quality');
+  await N.waitForFunction(() => typeof snap !== 'undefined' && snap !== null && typeof DW !== 'undefined', null, {timeout: 60000});
+  const nb = await N.evaluate(f => {
+    DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1};
+    saveDraft();
+    $('signout').click();
+    return {dw: DW, lost: draftLost};
+  }, P[4]);
+  await N.waitForTimeout(500);
+  const na = await N.evaluate(() => ({
+    token: TOKEN,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || '',
+    layer: !!document.querySelector('.adm-sealing')
+  }));
+  if (nb.dw !== null || !nb.lost || na.token !== 'demo' || !/could not be sealed/.test(na.toast) || na.layer)
+    fails.push(F + `without IndexedDB, Sign out did not warn and stay with the visit's edit ${JSON.stringify({nb, na})}`);
+  // A draft from before the store whose move fails (Codex review #1078): it stays in localStorage, and Sign out warns
+  // and stays rather than reporting a seal while it is left there in plain
+  const M = await sc.newPage();
+  await M.addInitScript(f => {
+    localStorage.setItem('demo:reefid-curation-draft', JSON.stringify({v: 1, genera: {}, quality: {[f]: 1}}));
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.migrate = () => Promise.reject(new Error('storage full'));
+          return T;
+        })
+    });
+  }, P[4]);
+  await M.goto(base + 'admin.html?demo#photos/quality');
+  await M.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && !DW.busy, null, {timeout: 60000});
+  await M.evaluate(() => $('signout').click());
+  await M.waitForTimeout(800);
+  const mv = await M.evaluate(() => ({
+    token: TOKEN,
+    kept: !!localStorage.getItem('demo:reefid-curation-draft'),
+    out: !!DW.out,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+  }));
+  if (mv.token !== 'demo' || !mv.kept || mv.out || !/could not be sealed/.test(mv.toast))
+    fails.push(F + `a draft whose move failed was left in plain by a Sign out that did not warn ${JSON.stringify(mv)}`);
+  // The store opens but its first read fails (Codex review #1078): no store, and leaving the page warns
+  const R = await sc.newPage();
+  await R.addInitScript(() => {
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.load = () => Promise.reject(new Error('read failed'));
+          return T;
+        })
+    });
+  });
+  await R.goto(base + 'admin.html?demo#photos/quality');
+  await R.waitForFunction(() => typeof snap !== 'undefined' && snap !== null, null, {timeout: 60000});
+  const rl = await R.evaluate(() => ({dw: DW, busy: draftBusy()}));
+  if (rl.dw !== null || !rl.busy) fails.push(F + `a store whose first read failed was used, or leaving did not warn ${JSON.stringify(rl)}`);
+  // The one-time move of a draft kept in localStorage before the store (draftMove): its edit is in the draft and the
+  // store, and both keys are gone (a context of its own: an empty store)
+  const vc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await vc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const V = await vc.newPage();
+  V.on('pageerror', e => errs.push(e.stack || e.message));
+  await V.addInitScript(f => {
+    if (sessionStorage.getItem('smoke-moved')) return;
+    sessionStorage.setItem('smoke-moved', '1');
+    localStorage.setItem(
+      'demo:reefid-curation-draft',
+      JSON.stringify({v: 1, genera: {}, quality: {[f]: 3}, _tab: {rev: 'old.1', seen: null}})
+    );
+    localStorage.setItem('demo:reefid-curation-base', JSON.stringify({v: 1, genera: {}}));
+  }, P[4]);
+  await V.goto(base + 'admin.html?demo#photos/quality');
+  await V.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && DW.seen && !DW.busy, null, {timeout: 60000});
+  const mo = await V.evaluate(
+    f => ({
+      draft: (DRAFT.quality || {})[f],
+      keys: ['demo:reefid-curation-draft', 'demo:reefid-curation-base'].filter(k => localStorage.getItem(k) !== null),
+      tab: '_tab' in DRAFT
+    }),
+    P[4]
+  );
+  const ms = await stored(V);
+  if (mo.draft !== 3 || mo.keys.length || mo.tab || !ms.draft)
+    fails.push(F + `the draft kept in localStorage did not move into the store ${JSON.stringify({mo, ms})}`);
+  // The site's ?draft preview (app.js curation) reads the admin's store (the real one: the preview is never the demo's)
+  const W = await vc.newPage();
+  await W.goto(base + 'privacy.html');
+  await W.evaluate(
+    () =>
+      new Promise((ok, ko) => {
+        const r = indexedDB.open('reefid-admin-draft', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('draft');
+        r.onerror = ko;
+        r.onsuccess = () => {
+          const t = r.result.transaction('draft', 'readwrite');
+          t.objectStore('draft').put(
+            {j: JSON.stringify({v: 1, genera: {}, quality: {'smoke-preview': 1}}), rev: 'x.1', seen: null},
+            'draft'
+          );
+          t.oncomplete = () => (r.result.close(), ok());
+          t.onerror = ko;
+        };
+      })
+  );
+  await W.goto(base + 'index.html?draft');
+  await W.waitForFunction(() => typeof curation === 'function', null, {timeout: 60000});
+  const pv = await W.evaluate(() => curation().then(c => (c.quality || {})['smoke-preview'] || null));
+  if (pv !== 1) fails.push(F + `the site's ?draft preview did not read the admin's stored draft (${pv})`);
+  await vc.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await sc.close();
+}
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos']}),
+  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos', 'seal']}),
     ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -8992,6 +9264,7 @@ const darkCards = (p, sel) =>
     if (once && run.has('photos')) await photosPart();
     await finish();
   }
+  if (ws.includes(1280) && run.has('seal')) await sealPart(b, base, fails);
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.
