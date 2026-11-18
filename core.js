@@ -410,10 +410,10 @@
   const SEASLUGST_SHEET = 167;
   // The sync script version that replays the sea slugs' progress under the content editor's look-alike pairs (rule D4;
   // SUBJECTS seaslug structure sheet; Pierre, 2026-11-18: "Option 2 : on le construit maintenant"): its replay's units
-  // from seaslug.json with curation.json's seaslug pairs laid over it, keyed by the structure stamp (Code.gs vNEXT:
+  // from seaslug.json with curation.json's seaslug pairs laid over it, keyed by the structure stamp (Code.gs v174:
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
-  const SEASLUGPAIRS_SHEET = 173;
+  const SEASLUGPAIRS_SHEET = 174;
   const SUBJECTS = [
     {
       id: 'coral',
