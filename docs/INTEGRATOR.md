@@ -31,6 +31,13 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
 
 - **Keep the four agent slots full from the whole queue** (Pierre, 11-14: "Tu lances tout ce que tu peux lancer…
   Qui t'as demandé de te limiter ?"): when a slot frees, the next decided item starts; never offer him a short list.
+  Broken again on 11-18 afternoon (one agent for about three hours, Pierre: "On a une liste de 80+ taches en attente"):
+  the integrator worked from a short task list half marked "after Pierre" and kept briefing for "after the merge". So:
+  the turn an agent reports, the next one starts, before any merge work; every `send_later` check-in counts the
+  running agents first; the source is `docs/reviews/2026-11-18-backlog-inventory.md` and ROADMAP, not a short list.
+- **Never end a turn without the next `send_later` check-in** (11-18: none was set after 16:15, nothing woke the
+  integrator for two hours while an agent sat on a permission prompt). An agent waiting on a prompt: tell Pierre in
+  one line and tell the agent how to do without it.
 - **Filter an agent's "Choices I made" before passing it on**: what is easy to correct afterwards ships as your call.
 - **A rule said to be Pierre's quotes his words.** #558 (11-05) wrote "never merged on silence… even when it looks
   reversible" as his; he never said it (11-14) and it is gone. Paraphrase only as "integrator's reading".
