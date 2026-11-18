@@ -3196,15 +3196,21 @@ function cardShow(o) {
   document.body.appendChild(d);
   // A safety net (a dimmed screen with no card on it would leave the game stuck): a card still invisible after a moment (no panel drawn, no height, off screen or never faded in) closes by itself, so the
   // player is never locked behind an empty backdrop, and the event log names it so the cause can be found.
+  // The 2.5 s count starts at the first frame drawn after the card is in (two animation frames), never at its creation: a
+  // card opened while the page is busy (a slow start-up: the first page comes after seconds of work) or hidden (a
+  // background tab) has had no frame yet, so its fade-in has not started (opacity 0) and the net would close a card that
+  // is only waiting to be drawn ("empty card closed: feedback | Thank you", 2026-11-19, fish/progress). A hidden page
+  // draws no frame: the count starts when it is visible again.
   const check = () => {
     if (shut || !d.isConnected) return;
-    // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: check again later.
-    if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return setTimeout(check, 2500);
+    // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: count again from the next frame.
+    if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return arm();
     if (cardSeen(d)) return;
     if (typeof ev === 'function') ev('err', {msg: 'empty card closed: ' + d.dataset.info});
     close('empty');
   };
-  setTimeout(check, 2500);
+  const arm = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(check, 2500)));
+  arm();
   return d;
 }
 // Leaving the app (or the tab) while a card is open (to tell a player stuck behind a card from one who just left): the
