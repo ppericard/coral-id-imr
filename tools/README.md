@@ -2,8 +2,8 @@
 
 Scripts that build, check and analyse the data, the site and the work around them. Run them from the repository root
 (`python3 tools/<name>.py`, `node tools/<name>.js`). The header of each file says its usage, what it reads and what it
-writes. [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) "Tools" holds
-the long descriptions, [docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
+writes. [docs/spec/tools.md](../docs/spec/tools.md) holds the long descriptions (inputs, outputs, options, tests),
+[docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
 
 Conventions that hold across them:
 
