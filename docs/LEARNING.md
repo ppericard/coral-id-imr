@@ -1301,6 +1301,36 @@ dropped by the players' answers.
   would move the progress the sheet replays (rule D5, a rules version of their own), a decision for Pierre. The
   progress itself is untouched: the sheet replays a fish answer from the scoring record it logged (`core.js`
   `scoreRec`), whatever pooled numbers it holds (`tests/fishstats.test.js`).
+- **What the real reply moves** (`?stats=1&s=fish` read 2026-11-18, `av=tool`, no player in it; 2,163 rated photos, 81
+  units, 1,154 pairs): the photo ratings lead nowhere yet (median 1 weighed answer a photo, none over 5, the weight of the
+  judged-ease prior `PDIFF.W`), so a fish photo's difficulty stays its prior for now. The unit offsets do move: 34 units
+  hold 20 or more weighed answers, the offsets run from −1.14 to +1.26 (10th to 90th percentile −0.52 to +0.46), against
+  a judged-ease term that is small per unit (mean +0.06, sd 0.14, correlation −0.24 with the offset over the 32 units
+  that have both: no sign that the two count the same thing twice). 206 pairs were offered 8 times or more, 59 20 times
+  or more, 7 of those at or over `CONF.TRAP` (the most: Emperors and Snappers, 26 mix-ups in 97 offers).
+- **Checks** (rule L11, level 1: one subject, one input the corals and the sea slugs already use; the integrator may raise
+  it). Declared before running: primary `know@300:up` (none expected), the guardrails of `tools/learncmp.js`
+  non-inferiority. `tools/learnsim.js --subject fish --questions 300`, the five fish profiles, before = no statistics
+  (the judged-ease priors alone), after = that reply as the photo statistics (`--stats`; the fish's memory and format
+  offsets in it are not read, `pmem`, `pfmt`), the learner's true difficulties the same reply in both arms (`--truth`:
+  a photo not rated takes its unit's offset), so the learner's world does not move with the app's estimate (it is the
+  estimate's own source, so a reading in its favour). Look 1, seeds 1-5 (25 pairs): knowledge held on every profile; the
+  bar's error E = bar − D* breached for the strong RA (+0.050 [+0.090], margin +0.030) and was unclear for the others,
+  so one step up: look 2, declared before it ran, seeds 1-15 (75 pairs, `--looks 2`). True knowledge at 300 answers,
+  after − before: +0.001 / +0.003 / −0.001 / −0.001 / −0.000 (beginner, casual diver, lecture RA, strong RA, expert),
+  every bound held, the primary no clear difference (T −4.24, p 0.63). Units at Open Water +0.6 / +2.2 / +2.0 / +1.9 /
+  +0.7, held; units met held; answers to the first Open Water unit fewer or equal (−1.2 / −17.9 / −4.1 / −5.5 /
+  −6.0). E stays breached for the strong RA (+0.034 [+0.054], margin +0.030) and unclear for the others: E is negative
+  everywhere (the bar reads below the learner's true knowledge: −0.367 → −0.333 for the strong RA), so the change brings
+  the bar closer to it, yet the guardrail was declared for the other side, and a breach goes to Pierre (rule L11).
+  Plateau of the shown score unclear for the strong RA and the expert (+8 [+13], +5 [+10], margin +8 / +8). The corals
+  and the sea slugs are not touched (their reads and the gate are checked by `tests/fishstats.test.js`,
+  `tests/seaslugstats.test.js`).
+- **The real log (rule L12) was not run**: the draw cannot be replayed (the log holds the questions asked), the fish
+  ratings and offsets were fitted on the very answers a recomputed expectation would be scored on (an in-sample
+  reading), and the Answers tab is too large to bring through the connector into a session. What was measured instead is
+  above (the reply, the simulation). To do once fish answers have been drawn under the new numbers: a next-answer
+  log-loss by time (ratings fitted on the first part, scored on the rest) on a saved extract.
 
 ### Photo exposure (2026-11-06, Q187-Q190; fish too)
 
