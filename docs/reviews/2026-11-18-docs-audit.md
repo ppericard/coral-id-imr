@@ -34,7 +34,7 @@ decisions that matter are spread over six places.
 - `docs/` holds 4,156,076 bytes in 98 files. `ARCHITECTURE.md` and `LEARNING.md` are 1,469,456 of them: 35%. One line of
   `ARCHITECTURE.md` (the sheet script's version history, line 642) is 93,791 bytes: 12.8% of the file (measured).
 - The 2026-11-18 backlog inventory listed 17 contradictions between the docs. Re-checked today: 15 still stand, one is
-  fixed (X1) and one is half fixed (X17). Section 4 adds eight more.
+  fixed (X1) and one is half fixed (X17). Section 4 adds nine more.
 - The three player-facing texts (`privacy.html`, `index.html`'s description, the old README) still say fish are in beta,
   none names the sea slugs (`privacy.html` and `index.html`), and `privacy.html` does not mention the live mode.
 
