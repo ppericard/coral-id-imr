@@ -4,7 +4,7 @@
 // key is its id, e.g. basics → #learn/basics).
 // Stamped at deploy (tools/stamp_versions.py: one hash of the Lab files), never edited: browsers never mix new and old files.
 const LAB_V = 84;
-// One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
+// One SVG icon set for the Tools hub (one weight and size, unlike Unicode glyphs).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
   map: '<circle cx="12" cy="12" r="2.5"/><circle cx="4.5" cy="6" r="1.8"/><circle cx="19.5" cy="6" r="1.8"/><circle cx="4.5" cy="18" r="1.8"/><circle cx="19.5" cy="18" r="1.8"/><circle cx="12" cy="3" r="1.5"/><path d="M10 10.8 6 7.1M14 10.8l4-3.7M10 13.2l-4 3.7M14 13.2l4 3.7M12 9.5V4.5"/>',
@@ -66,7 +66,7 @@ const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn', fishba
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly. One that fails (unstable
-// line) is tried again up to 3 times, 1, 2 then 3 s later (Pierre, 2026-11-01).
+// line) is tried again up to 3 times, 1, 2 then 3 s later.
 const labLoad = (f, n = 0) => {
   const s = document.createElement('script');
   s.src = `proto/${f}.js?v=${LAB_V}`;
@@ -91,8 +91,7 @@ LAB.files.forEach(f => {
 /* ---------- helpers shared by the prototypes ---------- */
 // Slate order (data.json key order).
 const labNames = () => Object.keys(DATA.gen);
-// The genera a Lab game asks about (rule L4, one progression path: Pierre, 2026-11-04, "any future game or
-// mode, no exceptions"): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
+// The genera a Lab game asks about (rule L4: one progression path for every game or mode, no exceptions): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
 // subject on screen (the Tools are the corals'). Wrong choices may name any genus, as the quiz's do (model.js
 // distractors); the reference tools (map, matrix, gallery, key, board, sizes, explorer) keep every genus.
 const labPlay = () => {
@@ -120,7 +119,7 @@ const trOpt = id => DATA.traits.flatMap(t => t.opts).find(o => o.id === id);
 const trName = id => (trOpt(id) || {t: id}).t;
 const trSet = c => DATA.traits.find(t => t.id === c).opts.map(o => o.id);
 // A genus's corallite traits (data.json): `tr` the traits of the genus, `trs` traits found in some of its species only
-// (Pierre, 2026-11-04: a clear crown of paliform lobes in a few Favites, say). Every tool reads them through these
+// (a clear crown of paliform lobes in a few Favites, say). Every tool reads them through these
 // helpers and the same rule, never by genus name: 1 = the genus has it, 0.5 = some species, 0 = no. A some-species
 // trait counts half a match in the Coral ID Key, never eliminates in the Elimination board, and is labelled so.
 const trHas = (g, id) => (g.tr.includes(id) ? 1 : (g.trs || []).includes(id) ? 0.5 : 0);
@@ -148,7 +147,7 @@ function labChoices(t, k = 4) {
 }
 const labHead = (title, lede) =>
   `<div class="crumbs"><a href="${esc(hr('lab'))}">Tools</a> › ${esc(title)}</div><h2>${esc(title)}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
-// Keep / trim votes, so Pierre can tell which prototypes to keep.
+// Keep / trim votes, so the owner can tell which prototypes to keep.
 const labVotes = () => store.get('reefid-lab-votes', {}) || {};
 
 function viewLab(h) {
@@ -178,7 +177,7 @@ function viewLab(h) {
     return;
   }
   const votes = labVotes();
-  // A prototype marked `admin` (a design mock-up for Pierre, e.g. cards) is listed in the admin's browser only; its
+  // A prototype marked `admin` (a design mock-up for the owner, e.g. cards) is listed in the admin's browser only; its
   // link works for anyone.
   const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id] && p.hub !== false);

@@ -1,11 +1,10 @@
-// Player journey (Pierre, 2026-11-02, the first RAs playing: "more on each player: their progress, the genera that were
-// easy and less easy for them, when they unlocked each genus, an analysis of a person's path"). Built from the answer
-// log the Players page already loads (ANS.rows, sheet readAnswers: [anonymous id, time, genus shown, answered, right,
-// mode, photos, expected, ability, new photos, choices, anonymous]), joined to the name by the player's anonymous id
-// (USERS, sheet v13); and the genus sheets they opened (sheet v30 'pages', admin.js loadPages, under the same id). Opened
-// from a row of Players (#players/list/journey/<name>). Loaded after admin.js,
-// whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The explanations are in the
-// page help (HELP.journey, rule A2).
+// Player journey: each player's progress, the genera easy and hard for them, when they unlocked each, their path
+// (docs/decisions/2026-11-18-decisions-from-comments-3.md). Built from the answer log the Players page already loads
+// (ANS.rows, sheet readAnswers: [anonymous id, time, genus shown, answered, right, mode, photos, expected, ability, new
+// photos, choices, anonymous]), joined to the name by the player's anonymous id (USERS); and the genus sheets they
+// opened ('pages', admin.js loadPages, under the same id). Opened from a row of Players (#players/list/journey/<name>).
+// Loaded after admin.js, whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The
+// explanations are in the page help (HELP.journey, rule A2).
 const JOURNEY = {
   WIN: 20, // answers in the rolling "right" curve
   MIN: 3, // answers on a genus before it can be called easy or hard for the player
@@ -15,18 +14,19 @@ const JOURNEY = {
 let JSORT = 'met';
 // First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
 // them as reefid-sync-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown, kind]} and
-// reefid-sync-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
-// (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
-// reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
+// reefid-sync-coral-intro-offer {at, open, via, t, n} (model.js INTRO; older records lack times and via), with the back
+// card's choice (bk keep / one, after answer bat, bn genera closed, time bt), and the first-launch question
+// reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
 function journeyCards(name, T = ASUBJ) {
   const S = savedFor(name, T);
   return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
 }
-// offer, and a declined offer (open 0): records from before 2026-11-12, when a card offered Open all (Pierre, Q337).
+// How Open all was given (intro-offer via); 'offer' and a declined offer (open 0) come from older records, when a card
+// offered Open all.
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 // How the first-launch answer was given (model.js startSet via), and the fallback cards (core.js CHOICE).
-// admin: Pierre's change on Players (core.js startAdminSet, sheet v99).
+// admin: the admin's change on Players (core.js startAdminSet).
 const JSTART = {
     tour: 'in the welcome tour',
     card: 'on the card before the quiz',
@@ -39,7 +39,7 @@ const JSTART = {
 // An answer's words (core.js startText): the corals' question, whose record (reefid-sync-coral-start) the journey reads.
 const jSaid = c => (startText(ASUBJ.id, c) || [c])[0];
 // jorder: begin
-// The Cards list in time order (Pierre, 2026-11-05: Nov 4 rows came before Nov 2 ones): items [time or null, html],
+// The Cards list in time order: items [time or null, html],
 // the timed ones oldest first, the untimed ones after them in their own order.
 const jOrder = items =>
   items
@@ -55,7 +55,7 @@ const jStart = (S, before, tm = jTime) => {
   const ev = startEvents(S),
     h = ev.filter(x => x[3] !== 'ease');
   // The same answer given again is a real event (core.js startEvents keeps it): "Answered again", not "Changed to";
-  // "inferred" is said once (Pierre, 2026-11-05).
+  // "inferred" is said once.
   return [
     ...h.map(([c, a, t, via], i) => [
       t || null,
@@ -79,7 +79,7 @@ const jStart = (S, before, tm = jTime) => {
 // joffslate: begin
 // The word beside a unit outside the slate: its rank when the slate's units are of another rank (a fish scientific genus
 // beside the families: "genus"), else "bonus" (a coral bonus genus). The rank from the unit's id (f:, g:, s:), as
-// core.js rankKey (Pierre, 2026-11-08: the fish genera are not bonus).
+// core.js rankKey (a fish genus is no bonus).
 const JRANK = {f: 'family', g: 'genus', s: 'species'};
 const jRankOf = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
 const jOffSlate = (n, slate) => {
@@ -89,7 +89,7 @@ const jOffSlate = (n, slate) => {
 };
 // joffslate: end
 // jsteps: begin
-// The steps of a player's path besides the units met and learned (fish admin at parity, Journey details): the first
+// The steps of a player's path besides the units met and learned: the first
 // question on each rank of the subject's units other than its own (SUBJECTS sheets and rank: the fish scientific genera,
 // later its species) and on each circle after the first (a unit record's circle: the fish families that open after the
 // IMR course's, circle 2 by itself, circle 3 by the player's yes). A subject with neither (the corals) has none. R: the
@@ -119,14 +119,13 @@ const jStepWords = ([, kind, w]) =>
   kind === 'rank' ? [`${w[0].toUpperCase() + w.slice(1)} questions`, w[0].toUpperCase() + w.slice(1)] : [`Circle ${w}`, `Circle ${w}`];
 // jsteps: end
 // jgames: begin
-// The Journey's Games card (as on Players, Pierre 2026-11-02: "bring that page's numbers into the journey"): the player's
-// answers in the subject by format, [title, answers, right], the formats with no answer left out. The photo quiz split:
-// its own questions, the "Again: A or B?" rematch after a mix-up (2 choices, logged as the photo quiz), a look-alike duel
-// slipped into it (|d), typed (|t: model.js TYPED, its exam questions also under Mastery exam), Find the X (|f), the
-// mastery exam (|x, from 2026-11-02). The Custom quiz and the Duel tab only for a subject that has them (SUBJECTS
-// pages; the Duel tab's row kept at 0, as before); a subject whose units sit at several ranks (SUBJECTS sheets) adds
-// the questions on each rank, as the Answer log's Conditions count them (conds: admin.js logConds(R, S); fish admin at
-// parity, Journey details).
+// The Journey's Games card, Players' numbers for one player: their answers in the subject by format, [title, answers,
+// right], the formats with no answer left out. The photo quiz split: its own questions, the "Again: A or B?" rematch
+// after a mix-up (2 choices, logged as the photo quiz), a look-alike duel slipped into it (|d), typed (|t: model.js
+// TYPED, its exam questions also under Mastery exam), Find the X (|f), the mastery exam (|x). The Custom quiz and the
+// Duel tab only for a subject that has them (SUBJECTS pages; the Duel tab's row shown even at 0); a subject whose units
+// sit at several ranks (SUBJECTS sheets) adds the questions on each rank, as the Answer log's Conditions count them
+// (conds: admin.js logConds(R, S)).
 function jGames(R, S, conds = []) {
   const has = p => (S.pages || []).includes(p),
     nch = r =>
@@ -148,7 +147,7 @@ function jGames(R, S, conds = []) {
       // Find the X (|f, quiz.js FIND): one name, four photos (the subjects whose photos read as tiles: the fish).
       ['Find the X', r => /^quiz\|(.*\|)?f(\||$)/.test(r[5])],
       ['Mastery exam', r => /\|x$/.test(r[5])],
-      // The custom quiz (quiz|s…, 2026-11-03): photo-quiz answers on the units the player picked, also in the rows above.
+      // The custom quiz (quiz|s…): photo-quiz answers on the units the player picked, also in the rows above.
       ...(has('quiz-custom') ? [[`Custom quiz (${S.many} picked)`, r => /^quiz\|s(\||$)/.test(r[5])]] : []),
       ...(has('quiz-duel') ? [['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5]), true]] : [])
     ].map(count),
@@ -160,9 +159,9 @@ function jGames(R, S, conds = []) {
 }
 // jgames: end
 // jlocal: begin
-// The Cards list in the player's own local time (Pierre's list of 2026-11-05, left from #554: they were the admin's
-// clock): a time at the UTC offset the player's device logged with their answer nearest to it (sheet v44, readAnswers
-// index 14, minutes east of UTC; +480 in the rows logged before), so a trip or a daylight saving change follows their
+// The Cards list in the player's own local time, not the admin's clock: a time at the UTC offset the player's device
+// logged with their answer nearest to it (readAnswers index 14, minutes east of UTC; +480 in older rows), so a trip
+// or a daylight saving change follows their
 // answers. R: the player's rows in time order. jOffAt: that offset, or null when no row has a valid one (an older script
 // or app sent none): an integer of at most 840 minutes either way, as Code.gs tz_; two answers as near, the earlier.
 // jAtText: t moved by the offset and written in UTC, so neither the admin's own zone nor its daylight saving enters; as
@@ -196,10 +195,10 @@ const jAtText = (t, o) =>
 const jUtcText = o =>
   `UTC${o < 0 ? '−' : '+'}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ':' + String(Math.abs(o) % 60).padStart(2, '0') : ''}`;
 // jlocal: end
-const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
+const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText), so admin pages load fast
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
-// A unit on a journey or in a session, as Analyses › Learning › Answer log names it (fish admin at parity, #876): admin.js
+// A unit on a journey or in a session, as Analyses › Learning › Answer log names it: admin.js
 // repUnit, a coral genus in italics with its page, another subject's unit once its entries are read (admin.js fishAdmin)
 // by its name (a family plain, a genus or species in italics, its id's prefix off) with its family's page in Tree; an IMR
 // sub-entry (a genus the IMR course names otherwise: fishAdmin imr) with its IMR name beside it. jName: the same in plain
@@ -274,7 +273,7 @@ function journeyOf(R, L = slateOf(DATA)) {
 // A line chart over the answers (x = answer number): series [{v: [...], cls}], y from 0 to top.
 function journeyChart(series, top, opt = {}) {
   // Drawn at the page's width (a little under it, so never scaled down), so its labels keep the 12 px minimum (--fs-xs)
-  // on a phone as on a desktop (rule U3; Codex review #351).
+  // on a phone as on a desktop (rule U3).
   // opt.w / opt.h: a smaller chart drawn at its own box's width (a session's summary, sessionSummary); opt.min below.
   const W = opt.w || Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
     H = opt.h || 190,
@@ -284,7 +283,7 @@ function journeyChart(series, top, opt = {}) {
     pb = 22,
     n = Math.max(2, series[0].v.length),
     x = i => pl + ((W - pl - pr) * i) / (n - 1),
-    // opt.min: the bottom of the scale (0 by default), so a session's curve uses the chart's height (Pierre, 2026-11-05).
+    // opt.min: the bottom of the scale (0 by default), so a session's curve uses the chart's height.
     lo = opt.min || 0,
     y = v => pt + (H - pt - pb) * (1 - (v - lo) / (top - lo));
   const path = v =>
@@ -328,17 +327,15 @@ function journeyChart(series, top, opt = {}) {
 function renderJourney(name, anonId = '') {
   const here = anonId ? 'players/list/anon/' + anonId : 'players/list/journey/' + name;
   status();
-  // One journey per subject (Pierre, 2026-11-06: "Journey is per mode, necessarily"), under the subject's prefix: the
-  // page's own Corals | Fish shows the player's answers in each and opens the other (the header switch keeps the page
-  // too). Every subject's progress is replayed here from its answers (admin.js progOf, unitsOf; Pierre, 2026-11-06:
-  // "everything that helps me follow how players' progress goes"), with its saved copy's cards and mastery exams; the
-  // Elo and the genus sheets opened are the replayed subject's (SUBJECTS replay) only, from the sheet.
+  // One journey per subject (docs/decisions/2026-11-18-decisions-from-comments-3.md), under the subject's prefix: the
+  // page's own subject switch shows the player's answers in each and opens the other (the header switch keeps the page
+  // too). Every subject's progress is replayed here from its answers (admin.js progOf, unitsOf), with its saved copy's
+  // cards and mastery exams; the Elo and the genus sheets opened are the replayed subject's (SUBJECTS replay) only.
   const M = unitsOf(ASUBJ),
     full = !!M,
     own = !!ASUBJ.replay;
   if (!M && !jReg()) unitAdmin(unitWait(ASUBJ)).then(() => cur === here && jReg() && render());
-  // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (sheet v58 flag 2;
-  // Codex review #690).
+  // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (flag 2).
   const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
     jn = S => jRows(S).length,
     jseg = () =>
@@ -355,9 +352,9 @@ function renderJourney(name, anonId = '') {
     if (pagesStale()) loadPages().catch(() => {});
     return;
   }
-  // A device that never signed in (Pierre, 2026-11-03): #players/list/anon/<its anonymous id>, from Players > Not signed in. Its
-  // answers are all there is: no saved progress, so no cards and no learned genera.
-  // An archived record (sheet v58, the Archived fold on Players): read-only, its path as it was, marked archived.
+  // A device that never signed in: #players/list/anon/<its anonymous id>, from Players > Not signed in. Its answers are
+  // all there is: no saved progress, so no cards and no learned genera.
+  // An archived record (the Archived fold on Players): read-only, its path as it was, marked archived.
   const u = anonId
     ? {name: 'Not signed in · ' + anonId, id: anonId}
     : (USERS.users || []).find(x => x.name === name) ||
@@ -378,11 +375,11 @@ function renderJourney(name, anonId = '') {
     total = J.slate.size,
     of = full ? `/${total}` : '', // met out of the slate, once the subject's units are read
     lv = own && RAS[u.id] ? RAS[u.id][0] : null,
-    // The photo quiz apart from the Duel tab (core.js playSplit; Pierre, 2026-11-03).
+    // The photo quiz apart from the Duel tab (core.js playSplit).
     sp = playSplit(R)[R.length ? R[0][0] : ''] || {q: [0, 0], q50: [0, 0], d: [0, 0]},
     sLen = J.S.map(s => s.length).sort((a, b) => a - b),
     medS = sLen[Math.floor(sLen.length / 2)],
-    // Seconds to answer and photo enlarged (sheet v23; null before): logged to be analysed later, shown here only.
+    // Seconds to answer and photo enlarged (null in older rows), shown here only.
     RT = R.map(r => r[12])
       .filter(x => typeof x === 'number')
       .sort((a, b) => a - b),
@@ -408,10 +405,10 @@ function renderJourney(name, anonId = '') {
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
     cardT = e => e[2] || (R[Math.min(R.length, Math.max(1, e[0])) - 1] || R[0])[1],
     // Answers in the log before a time: where an event with a time sits in the history. The app's own count restarts at
-    // a progress reset while the sheet keeps every answer (Codex review #352); the count only for events without a time.
+    // a progress reset while the sheet keeps every answer; the count only for events without a time.
     before = (tm, n) => (tm ? R.filter(r => r[1] < tm).length : n),
     openN = offer && offer.open ? before(offer.t, offer.at) : null,
-    // The kind kept with the card (from 2026-11-02); before, guessed from readiness and the answer count.
+    // The kind kept with the card; an older card's is guessed from readiness and the answer count.
     kindOf = e =>
       !e
         ? ''
@@ -502,10 +499,10 @@ function renderJourney(name, anonId = '') {
                   : [[null, `<li><b>Open all ${many}</b> not used</li>`]])
             ])}</ul>`;
 
-  // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
-  // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
-  // questions; if it is lost and learned again, the last one is still the one that counts. Learned before exam
-  // questions were logged (2026-11-02): no such answer, the time is unknown.
+  // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus (the
+  // log says which question validated it). Once learned a genus gets no more exam questions; if it is lost and learned
+  // again, the last one is still the one that counts. Learned before exam questions were logged: no such answer, the
+  // time is unknown.
   const LRN = PG
       ? Object.fromEntries(
           Object.entries(PG.G)
@@ -526,7 +523,7 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a[1] - b[1]),
     lrnUnknown = Object.keys(LRN).filter(g => lrnAt[g] == null && J.slate.has(g)).length,
     // Only the genera whose time is known: one learned before times were kept has no place on the time line (counting it
-    // from the first answer drew a learned genus where there was none; Pierre, 2026-11-02, "what is this curve based on?").
+    // from the first answer would draw a learned genus where there was none).
     lrnSeries = R.map((_, i) => lrnPts.filter(([, k]) => k <= i).length);
 
   // 1. Progress: right answers on the last WIN against what was expected of them, and genera met.
@@ -602,7 +599,7 @@ function renderJourney(name, anonId = '') {
             .join('')}</table>`
         : '<p class="note">None</p>'
     }${
-      // their own heatmap (admin-heatmap.js, Q123 m per player): every unit against every unit from their answers; an
+      // their own heatmap (admin-heatmap.js, per player): every unit against every unit from their answers; an
       // archive's answers are out of every view (rule D7), so none for it
       !u.arch && hasPage(ASUBJ, 'analyses/difficulty/heatmap')
         ? `<p><a class="adm-link" data-own href="#${esc(ASUBJ.hash)}analyses/difficulty/heatmap?player=${esc(encodeURIComponent(u.id))}">Heatmap ›</a></p>`
@@ -673,7 +670,7 @@ function renderJourney(name, anonId = '') {
     )
     .join('')}</table></section>`;
 
-  // 4. When they played (Pierre, 2026-11-03: by the hour, not only by the day): one row a day from the first day to
+  // 4. When they played, by the hour, not only by the day: one row a day from the first day to
   // the last, days without an answer included, one cell an hour (this device's time zone); the shade is the answers that
   // hour against the busiest hour, in 5 steps of the app's level ramp (--lv1..--lv5); answers and right share on hover.
   const DAY = 864e5,
@@ -701,11 +698,11 @@ function renderJourney(name, anonId = '') {
     <p class="adm-axis"><span class="adm-hkey">fewer${[1, 2, 3, 4, 5].map(k => `<i style="background:var(--lv${k})"></i>`).join('')}more</span><span>busiest hour ${hmx} · local time</span></p>
     <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'}${(c => (c ? ` (${c} with the custom quiz)` : ''))(J.S.filter(L => L.some(r => /^quiz\|s(\||$)/.test(r[5]))).length)} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
 
-  // 5. Genus sheets opened (sheet v30 'pages', admin.js loadPages, sheetsOf; Pierre, 2026-11-03: do players read the
-  // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
+  // 5. Genus sheets opened ('pages', admin.js loadPages, sheetsOf: do players read the sheets, and when?): per genus the
+  // times opened and the time spent, whether the first opening came before or after
   // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
   // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.
-  // an archived record's summaries come apart from the others (sheet v58 readEvents arch): read only here
+  // an archived record's summaries come apart from the others (readEvents arch): read only here
   const PR = PGS && (u.arch ? PGS.arch : PGS.rows),
     SH = PR ? sheetsOf(PR.filter(x => x.id === u.id)) : null,
     secs = n =>
@@ -770,9 +767,9 @@ function renderJourney(name, anonId = '') {
       ['Quiz right', pct(sp.q[1], sp.q[0])],
       ['Last 50', pct(sp.q50[1], sp.q50[0])],
       ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
-      // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (Pierre, 2026-11-05: the signed
-      // level read as good or bad); the level in its title. Not the number players see since v63 (Q134: they see the app's
-      // '~level'): it is the one level every device has, signed in or not, and the one the margin (levelMargin) is for.
+      // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (a bare signed level reads as
+      // good or bad); the level in its title. Not the number players see (the app's own level: docs/LEARNING.md "One
+      // player level shown"): it is the one level every device has, signed in or not, the one levelMargin is for.
       ...(own ? [['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])]] : []),
       [`${jMany()} met`, `${J.marks.length}${of}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
@@ -822,10 +819,10 @@ function bindJReload() {
 }
 
 // sessfacts: begin
-// One session of Players › Activity › Recent sessions, unfolded under its row (Pierre, 2026-11-05: "what the player made
-// of the session": its success chart, start / end / length, answers and % right, genera met or opened, notable events,
+// One session of Players › Activity › Recent sessions, unfolded under its row (docs/ARCHITECTURE.md: what the player made
+// of the session): its success chart, start / end / length, answers and % right, genera met or opened, notable events,
 // the most improved genera, the main difficulties met, achievements unlocked, a link to the Journey; a short summary,
-// not raw numbers only). The explanations are in the page help (HELP.stats, rule A2).
+// not raw numbers only. The explanations are in the page help (HELP.stats, rule A2).
 const SESS = {
   WIN: 10, // answers in the session's rolling "right" curve (drawn from the 5th answer, as the Journey's)
   TOP: 3, // genera, pairs and photos in each list
@@ -834,7 +831,7 @@ const SESS = {
   RUN: 10, // right answers in a row worth telling (the "On a roll" achievement's run)
   END: 3, // misses in a row at the end worth telling
   EDGE: 5 * 6e4, // ms around the session's answers within which a card, an offer or an achievement belongs to it
-  PAD: 5 // the chart's scale starts this many points under the session's lowest value, rounded down to 10 (Pierre, 2026-11-05)
+  PAD: 5 // the chart's scale starts this many points under the session's lowest value, rounded down to 10
 };
 // The facts of a session, pure (tests/session.test.js): L its answers (one player's rows, in time order), B the player's
 // earlier answers (in time order); o: diff (photo file -> difficulty or null), prog ({genus: [bar before, bar after]}),
@@ -1048,7 +1045,7 @@ function sessionSummary(id, L, name, o = {}) {
   // The chart: right answers over the session's last SESS.WIN against the expected, a dot at each new genus's first
   // question, a ★ at a genus learned; a session too short for a curve shows its answers as dots.
   // The scale: from under the session's lowest point (SESS.PAD, rounded down to 10) to 100%, so its evolution shows
-  // (Pierre, 2026-11-05: 0-100% squashed it). On desktop the chart takes the left of the panel, the lists the right.
+  // (0-100% would squash it). On desktop the chart takes the left of the panel, the lists the right.
   const vals = [...F.acc, ...F.expS].filter(v => v != null).map(v => v * 100),
     lo = vals.length ? Math.max(0, Math.min(90, Math.floor((Math.min(...vals) - SESS.PAD) / 10) * 10)) : 0,
     pw = Math.min(innerWidth - 84, ($v.clientWidth || 900) - 48),
@@ -1076,7 +1073,7 @@ function sessionSummary(id, L, name, o = {}) {
           )}`
         : `<p class="adm-jdots">${L.map(r => `<i class="${r[4] ? 'ok' : 'ko'}"></i>`).join('')}</p>`;
 
-  // The lists, in the order of Pierre's list: new genera, events, most improved, difficulties (genera, mix-ups, photos),
+  // The lists, in this order: new genera, events, most improved, difficulties (genera, mix-ups, photos),
   // achievements.
   const block = (t, body, cls) => (body ? `<div${cls ? ` class="${cls}"` : ''}><h4>${t}</h4>${body}</div>` : ''),
     newG =
@@ -1092,8 +1089,8 @@ function sessionSummary(id, L, name, o = {}) {
           : '',
     VT = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites'},
     // A photo everyone misses (Health's rule, admin.js healthBad: answered by 3 players or more, most of whom miss it,
-    // and under 40% right over 5 answers or more, or clearly harder than its genus's other photos) says so (Pierre,
-    // 2026-11-05), beside its difficulty (admin.js recBadge).
+    // and under 40% right over 5 answers or more, or clearly harder than its genus's other photos) says so, beside its
+    // difficulty (admin.js recBadge).
     hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
     tile = x => {
       // A unit of the site's coral data only (another subject's photos are not in its registry).
