@@ -6537,6 +6537,35 @@
     GENUS: /^[A-Z][a-z]{2,30}$/,
     FROM: ['quiz', 'learn', 'progress', 'other']
   };
+  // The screen a summary was sent from (Pierre, 2026-11-18: the screen sizes the players really use, to design the
+  // multi-photo game formats): the usable CSS viewport (innerWidth, innerHeight), each rounded to STEP px, the pixel
+  // ratio to one decimal, the orientation (p: portrait, height >= width, as CSS's orientation; l: landscape), and the
+  // width band of its short side (b: how many BANDS edges it is above: 0 ≤360, 1 361-390, 2 391-414, 3 415-600, 4 more),
+  // taken on the device from the exact width, since a 10 px grid cannot keep the edges (a 393 px phone rounds to 390).
+  // Coarse on purpose (no fingerprinting beyond what a summary already says): nothing exact leaves the device, and the
+  // sheet rounds and clamps again (pagesClean). Sent only once the sheet keeps it (sync.js VIEWPORT_SHEET, rule D4).
+  const VIEWPORT = {
+    STEP: 10,
+    MAX: 10000, // px, either side
+    DPR: [0.5, 8], // the pixel ratio kept within these
+    BANDS: [360, 390, 414, 600]
+  };
+  const vpBand = s => VIEWPORT.BANDS.filter(e => s > e).length;
+  // {w, h, d, o, b} from the exact width, height and pixel ratio; null when one is not a positive number.
+  function viewportOf(w, h, dpr) {
+    const W = Number(w),
+      H = Number(h),
+      D = Number(dpr);
+    if (!(W > 0 && H > 0 && D > 0 && isFinite(W) && isFinite(H) && isFinite(D))) return null;
+    const px = v => Math.min(VIEWPORT.MAX, Math.round(v / VIEWPORT.STEP) * VIEWPORT.STEP);
+    return {
+      w: px(W),
+      h: px(H),
+      d: Math.round(Math.max(VIEWPORT.DPR[0], Math.min(VIEWPORT.DPR[1], D)) * 10) / 10,
+      o: H >= W ? 'p' : 'l',
+      b: vpBand(Math.min(W, H))
+    };
+  }
   // routes: begin
   // The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
   // #<section>/<page>[/<thing>…][?filters], in the words on screen: #learn/genus/Acropora, #practice/duels/A/B,
@@ -6905,6 +6934,17 @@
       );
     const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
     if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
+    // The screen (VIEWPORT, sheet v177): rounded and clamped again, whatever the device sent; its band kept when it is
+    // one (0 to 4) and agrees with the rounded short side within the grid, else taken from the rounded short side.
+    const V = obj(o.vp),
+      vp = V.w !== undefined ? viewportOf(V.w, V.h, V.d) : null;
+    if (vp) {
+      const b = Number(V.b),
+        lo = vpBand(Math.min(vp.w, vp.h) - VIEWPORT.STEP / 2),
+        hi = vpBand(Math.min(vp.w, vp.h) + VIEWPORT.STEP / 2);
+      if (Number.isInteger(b) && b >= lo && b <= hi) vp.b = b;
+      out.vp = {w: vp.w, h: vp.h, d: vp.d, o: V.o === 'p' || V.o === 'l' ? V.o : vp.o, b: vp.b};
+    }
     return out;
   }
 
@@ -7174,6 +7214,8 @@
     pagesSummary,
     pagesTake,
     pagesClean,
+    VIEWPORT,
+    viewportOf,
     pagesOwner,
     pagesBatch,
     pagesOwn,
