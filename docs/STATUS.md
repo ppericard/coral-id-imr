@@ -27,7 +27,9 @@ code or run tests, read-only studies on top (W27 as reworded in #1086); model an
   short feedback sheet study (agent); Anthropic's subagent guidance (docs agent).
 - **#1045**: decided (down; reference from the photo's traits): `refLevel` from traits still to build.
 
-## Next (the queue, in order; task list "Queue for free code-agent slots")
+## Next
+
+The queue, in order (agents take it four at a time):
 
 1. Roles UI (a Roles line in a player's bar: grant role + scope, revoke; Admin › Roles with rights and the audit).
 2. Fish basics from Pierre's Drive decks (folder "IMR fish", `Fish Identification_2026`); C12: lecture photos never
