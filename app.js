@@ -2478,15 +2478,20 @@ const UNITS = {
     // form, no other number), each its species unit's; a name two species list is right for the one asked (typeMatchIn
     // shared, Q381). A typed answer is read among the names of the rank asked (quiz.js typeMatch), so a family question
     // never meets them.
+    // The genera among them are those in the game now (sciNow: circles 2 and 3's from GENERA_SHEET, rule D4; Codex
+    // review #1067), so a typed name never answers a genus the sheet cannot replay yet; namesKey tells quiz.js typeNames
+    // when that set changes.
     names: () => {
       const G = FISH ? FISH.gen : {},
-        own = Object.fromEntries(Object.entries(G).filter(([, g]) => g.rank !== 'species')),
+        sci = new Set(sciNow()),
+        own = Object.fromEntries(Object.entries(G).filter(([n, g]) => g.rank !== 'species' && (g.rank !== 'genus' || sci.has(n)))),
         sp = (FISH ? FISH.spl || [] : []).map(n => FISH.sps[G[n].sp]);
       return [
         ...fishTypeNames(own, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []),
         ...cnTypeNames(sp).map(o => ({...o, g: 's:' + o.g}))
       ];
     },
+    namesKey: () => sciNow().length,
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the

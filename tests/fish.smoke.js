@@ -1080,7 +1080,9 @@ async function freshPlayers(b, base, errs) {
       !generaOn() && sci.all().length === G.filter(n => GX(n).circle === 1).length && !setOf('g:Aeoliscus'),
       'sci: circle 1’s alone below GENERA_SHEET'
     );
+    ok(!typeMatch('Aeoliscus', 'genus'), 'sci: no typed name of theirs below GENERA_SHEET (Codex review #1067)');
     store.set(SHEETV, GENERA_SHEET);
+    ok((typeMatch('Aeoliscus', 'genus') || {}).g === 'g:Aeoliscus', 'sci: typed, from GENERA_SHEET');
     ok(
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
