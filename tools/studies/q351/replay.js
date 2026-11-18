@@ -1,4 +1,4 @@
-// Q351 step 2 (docs/reviews/2026-11-14-q351-step2.md): replays an answer log player by player under today's rules
+// The replay study, step 2 (docs/reviews/2026-11-14-q351-step2.md): replays an answer log player by player under today's rules
 // (BASE: core.js scoreAnswer) and three uncertainty arms: DAMP (BASE's abilities, the expectation damped by a variance),
 // GK (a Glicko / simplified Kalman level + per-unit deviation, each with a mean and a variance) and GKD (GK plus a
 // learning drift). The arms' variances are chosen on a grid by leave one player out. Read-only: it reads files and
@@ -50,7 +50,7 @@ function loadSheet() {
   const rows = raw
     .filter(r => {
       const s = r[18];
-      // A surprise card's answer counts in no history (core.js subjRows, winkRow; Codex review #883).
+      // A surprise card's answer counts in no history (core.js subjRows, winkRow).
       if (String(r[6] || '') === C.WINK_MODE) return false;
       return SUBJ === 'coral' ? s === '' || s === 'coral' : s === SUBJ;
     })
@@ -160,7 +160,7 @@ function base(list) {
       return;
     }
     // The ability and time weight are the scorer's own (its th0 and rw: the unit's count already holds this answer,
-    // which changes levelMove's shrinkage; quiz.js logs that th0; Codex review #883).
+    // which changes levelMove's shrinkage; quiz.js logs that th0).
     const res = C.scoreAnswer(P, {
       t: a.t,
       c: a.c,
@@ -231,7 +231,7 @@ function kal(list, b, prm, mode) {
       L.m += (L.v / vt) * dth;
       u.m += (u.v / vt) * dth;
       if (mode === 'gkd') u.m += eta;
-      // The bounds on the state itself, as today's eloStep clamps each record (Codex review #883): the level within
+      // The bounds on the state itself, as eloStep clamps each record: the level within
       // [lo, hi], then the unit's deviation so that level + deviation stays within them. No excess builds up behind
       // the prediction's clamp.
       L.m = clamp(L.m, E.lo, E.hi);
@@ -332,7 +332,7 @@ function lopo(G, mode) {
   });
   let bi = 0;
   all.forEach((v, j) => v < all[bi] && (bi = j));
-  // The jackknife's replicates (Codex review #883): with player q deleted, each other player's grid point is chosen
+  // The jackknife's replicates: with player q deleted, each other player's grid point is chosen
   // on the players other than itself and q, so a replicate is the whole estimator without q. jk[q]: per remaining
   // player, its log-odds per answer under that choice.
   const cache = {},
