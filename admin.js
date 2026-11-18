@@ -5007,8 +5007,19 @@ const pagesRows = rows =>
       } catch (e) {
         d = pagesClean({});
       }
-      // ua: the Browser column (sync.js uaShort, "… mobile" on a phone; Players › Visits).
-      return {t: r[1], dev: r[2], id: r[4], vi: d.vi || r[0], na: typeof d.na === 'number' ? d.na : null, r: d.r, g: d.g, ua: r[9] || ''};
+      // ua: the Browser column (sync.js uaShort, "… mobile" on a phone; Players › Visits); vp: the screen, rounded (core.js
+      // VIEWPORT, sheet v177; null before, or from an app that had not seen that script yet).
+      return {
+        t: r[1],
+        dev: r[2],
+        id: r[4],
+        vi: d.vi || r[0],
+        na: typeof d.na === 'number' ? d.na : null,
+        r: d.r,
+        g: d.g,
+        ua: r[9] || '',
+        vp: d.vp || null
+      };
     });
 // The genus sheets one player opened, from their summaries: per genus the times opened, the seconds, how the first
 // opening was reached and whether the genus had been asked to them before it; and their visits.
