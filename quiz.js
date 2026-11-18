@@ -993,7 +993,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
   // A Find the X showed four tiles, each of its own unit.
   const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
-    phx = phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
+    phx =
+      mimArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx) ||
+      phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
   if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
@@ -1492,6 +1494,98 @@ function phaseShow({p, k}, n, brk) {
       if (how === 'route') return; // left unseen: it comes back with the next such photo
       store.set(subjDev(SUBJ.id, PHASEC.KEY + k), Date.now());
       toldAdd(phaseTok(k));
+      if (brk) route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+  return d;
+}
+// The mimicry card (docs/LEARNING.md "The mimicry class"): the first question that shows a photo of the mimicry class
+// (model.js mimOf) brings its pair's card at the break at Next: a photo of the species beside one of the species it
+// resembles, the marks that tell them apart, each with its sources, and the sources that state the resemblance. Once per
+// pair and subject: on this device (MIMC.KEY, the pairs shown) and, signed in, on the account's other devices (core.js
+// TOLD 'mim:<subject>-<pair>'), marked only when shown. It takes the break before the phase card, on the same
+// conditions. Its photos (mimPics) show one observation and one subject each (rule P3), never one of a species whose look
+// varies by region taken outside the region (species region, loc world); with no such photo, the card waits.
+const MIMC = {KEY: 'mim'};
+const mimTok = id => `mim:${SUBJ.id}-${id}`;
+const mimSeen = id => !!(store.get(subjDev(SUBJ.id, MIMC.KEY), null) || {})[id] || toldHas(mimTok(id));
+// A photo the card may show: one subject in view (its tags' count 1 or s, or no tags), not from outside the region of a
+// species flagged regional (reg).
+const mimPhotoOk = (p, reg) => !!p && !p.multi && (!p.jt || /^[1s]$/.test(String(p.jt).charAt(6))) && !(reg && p.loc === 'world');
+// The card's two photos for entry m (app.js mimLay), shown with photo p on unit n: p itself when it may show, else another
+// of its species at the stage that resembles, from n's photos; and one of the species it resembles from that species'
+// family, a juvenile when the pair names its juveniles, else an adult first. Each list in its easy order. null: none.
+function mimPics(m, p, n) {
+  const st = (m.pair.st || {}).b || 'all',
+    stage = (x, s) => s !== 'juvenile' || phaseOf(x) === 'juvenile',
+    own = ((GX(n) || {}).views || {}).wide || [],
+    a = mimPhotoOk(p, m.ra) ? p : own.find(x => x.sp === m.sp && stage(x, m.st) && mimPhotoOk(x, m.ra)),
+    B = (((GX(m.fb) || {}).views || {}).wide || []).filter(x => x.sp === m.pair.b && stage(x, st) && mimPhotoOk(x, m.rb)),
+    b = (st === 'all' && B.find(x => !phaseOf(x))) || B[0];
+  return a && b ? [a, b] : null;
+}
+// The first photo of L (the photos shown, each with its unit: {n, p}) whose pair's card is due: {n, p, m}, else null.
+function mimCardOf(L, seen) {
+  for (const {n, p} of L || []) {
+    const m = n && p ? mimOf(n, p) : null;
+    if (m && !seen(m.pair.id) && mimPics(m, p, n)) return {n, p, m};
+  }
+  return null;
+}
+function mimArm(nb, cur, L, hold) {
+  if (!photoQuiz(cur) || hold || !mimCardOf(L, mimSeen)) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const c = mimCardOf(L, mimSeen),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    mimShow(c, true);
+    return true;
+  });
+}
+// A source's short form on the card, its title's first part and its page (Randall 2005, p. 317), linked when it has an
+// address.
+const mimSrc = L =>
+  (L || [])
+    .map(s => {
+      const pg = (String(s.t).match(/p\. \d+$/) || [''])[0],
+        h = String(s.t).split(', ')[0],
+        t = pg && h !== s.t ? `${h}, ${pg}` : h;
+      return s.u ? `<a href="${esc(safeUrl(s.u))}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t);
+    })
+    .join('; ');
+// c: {n, p, m} (mimCardOf); brk: shown at the break, so its close goes on to the next question.
+function mimShow({n, p, m}, brk) {
+  const two = mimPics(m, p, n);
+  if (!two) return null;
+  const [a, b] = two,
+    r = m.pair,
+    nm = x => (x.common ? esc(x.common) : `<i>${esc(x.sci)}</i>`),
+    word = x => (phaseOf(x) === 'juvenile' ? ' (juvenile)' : ''),
+    fig = (x, t) =>
+      `<figure><img src="${img(x, 's')}" alt="${esc(t.common || t.sci)}"><figcaption>${nm(t)}${word(x)}</figcaption></figure>`,
+    marks = (r.marks || [])
+      .map(k => `<li><b>${nm(k.side === 'a' ? m.na : m.nb)}</b>: ${esc(k.t)} <small>(${mimSrc(k.src)})</small></li>`)
+      .join(''),
+    title = m.st === 'juvenile' ? 'Careful: this juvenile resembles another species' : 'Careful: this species resembles another one';
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'tipcard phasecard mimcard',
+    kick: 'Look-alikes',
+    title: esc(title),
+    body: `<div class="phvis">${fig(a, m.na)}${fig(b, m.nb)}</div><ul class="mimmarks">${marks}</ul><p class="mimsrc"><b>Resembles</b>: ${mimSrc(r.says)}</p><p class="credit">${[a, b].map(credit).join('<br>')}</p>`,
+    primary: {text: 'Got it', attr: 'disabled'},
+    esc: 1,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      if (how === 'route') return; // left unseen: it comes back with the next such photo
+      const k = subjDev(SUBJ.id, MIMC.KEY);
+      store.set(k, {...(store.get(k, null) || {}), [r.id]: Date.now()});
+      toldAdd(mimTok(r.id));
       if (brk) route();
     }
   });

@@ -1174,6 +1174,7 @@ const fishBuild = () => {
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
+  mimLay(FISH, f);
   // What its units were made from, for the content version of their answers (contentVer), kept out of sight on them (not
   // enumerable). gm: a hash of {photos: {}} while the game photos have not come (dataPartial), another content.
   Object.defineProperty(FISH, 'cvIn', {
@@ -1183,6 +1184,38 @@ const fishBuild = () => {
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+// The mimicry class (docs/LEARNING.md "The mimicry class"): each pair of the tree's file where a source says species a
+// resembles species b (fish.json lookalikes, kind resembles; tools/fish_lookalikes.json) puts an entry on the family of
+// a, its units' home (model.js varHome): sp, the species; st, the stage that resembles (juvenile: its juvenile photos
+// only; all: every photo); m, the units of b (b, its genus, its family), any of which met opens the gate (model.js mimOf,
+// mimAt); fb, the family of b, whose photos the card draws on; pair, the record its card reads (quiz.js mimShow); na and
+// nb, the two species' names; ra and rb, whether a
+// species' look varies by region (species region), its photos from elsewhere then kept off the card. A subject whose
+// file has no pairs gets none.
+function mimLay(X, f) {
+  const sp = new Map(((f || {}).species || []).map(s => [s.id, s])),
+    name = s => ({sci: s.name, common: (s.cn && s.cn[0] && s.cn[0][0]) || s.common || ''}),
+    by = {};
+  ((f || {}).lookalikes || [])
+    .filter(r => r.kind === 'resembles')
+    .forEach(r => {
+      const a = sp.get(r.a),
+        b = sp.get(r.b);
+      if (!a || !b || !X.gen[a.family]) return;
+      (by[a.family] = by[a.family] || []).push({
+        sp: a.id,
+        st: (r.st || {}).a || 'all',
+        m: [b.id, b.genus, b.family].filter(Boolean),
+        fb: b.family,
+        pair: r,
+        na: name(a),
+        nb: name(b),
+        ra: !!a.region,
+        rb: !!b.region
+      });
+    });
+  Object.entries(by).forEach(([id, L]) => (X.gen[id].mim = L));
+}
 // A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
 const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, FISH: null, FISHP: null, FISHH: null, FISHRAW: null, FISHF: null, FISHST: '', FISHON: false});

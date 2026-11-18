@@ -291,15 +291,32 @@ const varHome = n => {
 };
 const varAtOf = (n, v) => ((GX(n) || {}).varAt || {})[v] || ((GX(varHome(n)) || {}).varAt || {})[v] || VAR_AT[v] || [0, 0];
 const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
+// The mimicry class (docs/LEARNING.md "The mimicry class"): a photo of a species a source says resembles another (its
+// home's mim, app.js mimLay: its juvenile photos, or every photo) comes into its unit's draw on its unit's bar from Open
+// Water once a unit of the species it resembles is met (MIM_AT.met), and at Advanced while none is (MIM_AT.alone), so it
+// never waits on a unit the player may not open. The draw only: its kind and its group for "Learned" stay its phase's
+// (core.js varKindOf, varUnit), as the sheet's replay reads them.
+const MIM_AT = {met: [0.5, 0.8], alone: [0.8, 0.8]};
+const mimOf = (n, p) => {
+  const L = p && (GX(varHome(n)) || {}).mim;
+  return (L && L.find(m => m.sp === p.sp && (m.st !== 'juvenile' || phaseOf(p) === 'juvenile'))) || null;
+};
+const mimAt = m => (m.m.some(id => GX(id) && introduced(id)) ? MIM_AT.met : MIM_AT.alone);
 // The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
-// kind's ramp on the unit's bar (genScore), 1 for a photo with no variant; on, whether anything is held back: false when
-// nothing is, or when fewer than PICKD.VARIETY observations of L are at full weight (the fallback: nothing held back, f
-// then 1 everywhere).
+// kind's ramp on the unit's bar (genScore), a photo of the mimicry class its own ramp (mimOf, mimAt), 1 for a photo with
+// no variant; on, whether anything is held back: false when nothing is, or when fewer than PICKD.VARIETY observations of L
+// are at full weight (the fallback: nothing held back, f then 1 everywhere).
 function varOf(n, L) {
   const juv = (GX(varHome(n)) || {}).juv,
     F = {},
+    MF = new Map(),
     kind = p => varKindOf(p, juv),
     f0 = p => {
+      const m = mimOf(n, p);
+      if (m) {
+        if (!MF.has(m)) MF.set(m, varRamp(genScore(n), mimAt(m)));
+        return MF.get(m);
+      }
       const v = kind(p);
       if (!v) return 1;
       if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));

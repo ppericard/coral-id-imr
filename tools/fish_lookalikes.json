@@ -1,0 +1,102 @@
+{
+ "about": "Hand-kept: the fish look-alike pairs between species and the species whose look varies by region, each statement with its source and a quote of what was read (rule C2). tools/build_fish.py (lookalikes) checks it and writes fish.json pairs and species region. A pair: id, a and b (species ids of fish.json), kind (resembles: a source says a resembles b; confused: a plain confusion), st (the stage of each side that resembles: juvenile or all), says (the sources that state the resemblance, each with its quote), marks (what tells them apart on a photo, in our words, each on its side a or b with its sources and the quote it rests on; no digit, never the word mimic). regional: species id -> why (our words) and src (sources with quotes). src: the sources by key, t its title and u its address. Read 2026-11-18. Study: docs/reviews/2026-11-18-classic-lookalike-pairs.md.",
+ "src": {
+  "randall2005-304": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 304", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "randall2005-317": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 317", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "randall2005-320": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 320", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "randall2005-321": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 321", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "randall2005-322": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 322", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "randall2005-323": {"t": "Randall 2005, A review of mimicry in marine fishes, Zoological Studies 44(3), p. 323", "u": "https://zoolstud.sinica.edu.tw/Journals/44.3/299.pdf"},
+  "imr-surgeonfish": {"t": "IMR fish presentation, Surgeonfish"},
+  "fb-pyroferus": {"t": "FishBase, Acanthurus pyroferus", "u": "https://www.fishbase.se/summary/Acanthurus-pyroferus.html"},
+  "am-vrolikii": {"t": "Australian Museum, Pearlscale Angelfish", "u": "https://australian.museum/learn/animals/fishes/pearlscale-angelfish-centropyge-vrolikii-bleeker-1853/"},
+  "fb-prionurus": {"t": "FishBase, Paraluteres prionurus", "u": "https://www.fishbase.se/summary/Paraluteres-prionurus.html"},
+  "foa-valentini": {"t": "Fishes of Australia, Blacksaddle Toby", "u": "https://fishesofaustralia.net.au/home/species/861"},
+  "fb-taeniatus": {"t": "FishBase, Aspidontus taeniatus", "u": "https://www.fishbase.se/summary/Aspidontus-taeniatus.html"},
+  "am-dimidiatus": {"t": "Australian Museum, Common Cleanerfish", "u": "https://australian.museum/learn/animals/fishes/common-cleanerfish-labroides-dimidiatus/"},
+  "fb-rhinorhynchos": {"t": "FishBase, Plagiotremus rhinorhynchos", "u": "https://www.fishbase.se/summary/Plagiotremus-rhinorhynchos.html"},
+  "fb-breviceps": {"t": "FishBase, Petroscirtes breviceps", "u": "https://www.fishbase.se/summary/Petroscirtes-breviceps.html"},
+  "fb-grammistes": {"t": "FishBase, Meiacanthus grammistes", "u": "https://www.fishbase.se/summary/Meiacanthus-grammistes.html"},
+  "foa-bilineata": {"t": "Fishes of Australia, Two-line Monocle Bream", "u": "https://fishesofaustralia.net.au/home/species/618"},
+  "fb-leucotaenia": {"t": "FishBase, Pholidichthys leucotaenia", "u": "https://www.fishbase.se/summary/Pholidichthys-leucotaenia.html"},
+  "wp-leucotaenia": {"t": "Wikipedia, Pholidichthys leucotaenia", "u": "https://en.wikipedia.org/wiki/Pholidichthys_leucotaenia"},
+  "am-lineatus": {"t": "Australian Museum, Striped Catfish", "u": "https://australian.museum/learn/animals/fishes/striped-catfish-plotosus-lineatus/"},
+  "fb-lineatus": {"t": "FishBase, Plotosus lineatus", "u": "https://www.fishbase.se/summary/Plotosus-lineatus.html"}
+ },
+ "pairs": [
+  {"id": "M1", "a": "s035", "b": "s027", "kind": "resembles", "st": {"a": "juvenile", "b": "all"},
+   "says": [
+    {"src": "fb-pyroferus", "q": "Juveniles mimic Centropyge spp."},
+    {"src": "am-vrolikii", "q": "The Pearlscale Angelfish resembles the juvenile Mimic Surgeonfish, Acanthurus pyroferus"},
+    {"src": "randall2005-320", "q": "In the more western part of the Pacific, the young of Acanthurus pyroferus (Fig. 102) usually mimic Centropyge vrolikii"}
+   ],
+   "marks": [
+    {"side": "b", "t": "A large spine at the lower edge of the cheek", "src": ["am-vrolikii"], "q": "but can be distinguished by the presence of a large spine on the lower preopercular margin."},
+    {"side": "a", "t": "A scalpel on the tail base, as every surgeonfish", "src": ["imr-surgeonfish", "fb-pyroferus"], "q": "Scalpel on the tail base (caudal peduncle) (IMR); caudal spine socket with a narrow black margin (FishBase)"}
+   ]},
+  {"id": "M2", "a": "s553", "b": "s362", "kind": "resembles", "st": {"a": "all", "b": "all"},
+   "says": [
+    {"src": "fb-prionurus", "q": "Mimic the poisonous puffer, Canthigaster valentini which it greatly resembles."},
+    {"src": "randall2005-317", "q": "The Indo-Pacific filefish Paraluteres prionurus (Fig. 89) also mimics Canthigaster valentini"},
+    {"src": "foa-valentini", "q": "mimiced by the almost identical Blacksaddle Filefish"}
+   ],
+   "marks": [
+    {"side": "a", "t": "Its first dorsal spine, usually held flat: raised, the likeness fades", "src": ["randall2005-317"], "q": "The filefishes of the genus Paraluteres are usually seen with the 1st dorsal fin fully depressed; once this fin is erect, the effect of mimicry is reduced."},
+    {"side": "a", "t": "A broad, nearly see-through second dorsal fin", "src": ["randall2005-317"], "q": "The 2nd dorsal fin of Paraluteres is broader than that of Canthigaster, but it is nearly transparent."},
+    {"side": "a", "t": "A round dark blotch above the start of the anal fin", "src": ["fb-prionurus"], "q": "normally with a round dark blotch above origin of anal fin"}
+   ]},
+  {"id": "M3", "a": "s485", "b": "s272", "kind": "resembles", "st": {"a": "all", "b": "all"},
+   "says": [
+    {"src": "fb-taeniatus", "q": "Bears an amazing resemblance to the cleaner wrasse, Labroides dimidiatus."},
+    {"src": "randall2005-322", "q": "The Mimic Blenny matches the color the Cleaner Wrasse of the same size as it grows."}
+   ],
+   "marks": [
+    {"side": "a", "t": "The mouth under the snout", "src": ["fb-taeniatus"], "q": "Distinguished from L. dimidiatus by the position of its mouth, which is terminal in the wrasse but under the snout in the blenny."},
+    {"side": "b", "t": "The mouth at the tip of the snout", "src": ["fb-taeniatus"], "q": "Distinguished from L. dimidiatus by the position of its mouth, which is terminal in the wrasse but under the snout in the blenny."},
+    {"side": "b", "t": "A black stripe from the eye to the tail's edge, widening toward the tail", "src": ["am-dimidiatus"], "q": "There is a black stripe from the eye to the caudal fin margin. The stripe widens posteriorly."}
+   ]},
+  {"id": "M4", "a": "s322", "b": "s272", "kind": "resembles", "st": {"a": "juvenile", "b": "juvenile"},
+   "says": [
+    {"src": "fb-rhinorhynchos", "q": "Juveniles mimic the cleaner wrasse Labroides dimidiatus"},
+    {"src": "randall2005-323", "q": "Moland and Jones (2004) found 92% of mimetic P. rhinorhinchos closely associated with juvenile L. dimidiatus."}
+   ],
+   "marks": [
+    {"side": "b", "t": "The young cleaner wrasse: black, with a bright blue stripe along the back", "src": ["randall2005-322"], "q": "Juveniles of Labroides dimidiatus are black except for a bright blue dorsal stripe, and they gradually change to the adult pattern with growth."}
+   ]},
+  {"id": "M5", "a": "s484", "b": "s319", "kind": "resembles", "st": {"a": "all", "b": "all"},
+   "says": [
+    {"src": "fb-breviceps", "q": "Highly variable in color and mimics Meiacanthus species"},
+    {"src": "fb-grammistes", "q": "Several geographical variations and is mimicked by another blenny Petroscirtes breviceps"}
+   ],
+   "marks": [
+    {"side": "a", "t": "One broad dark stripe from the snout through the eye to the tail, often broken", "src": ["fb-breviceps"], "q": "Dark, broad stripe from snout through eye to caudal fin; stripe may be broken into segments"},
+    {"side": "b", "t": "Thin lines along the body that end in spots at the tail base", "src": ["fb-grammistes"], "q": "Identified by the lined pattern on the body that ends in spots on the tail-fin base"}
+   ]},
+  {"id": "M6", "a": "s138", "b": "s319", "kind": "resembles", "st": {"a": "juvenile", "b": "all"},
+   "says": [
+    {"src": "foa-bilineata", "q": "Juveniles mimic the Linespot Fangblenny, Meiacanthus grammistes which has venomous fangs."}
+   ],
+   "marks": [
+    {"side": "a", "t": "Upper half black with two yellow stripes, a pale stripe along the middle", "src": ["foa-bilineata"], "q": "Juveniles - upper half of body black with two yellow stripes, midsides with a broad white indistinct stripe, anal fin with a black marking."},
+    {"side": "a", "t": "A black mark on the anal fin", "src": ["foa-bilineata"], "q": "Juveniles - upper half of body black with two yellow stripes, midsides with a broad white indistinct stripe, anal fin with a black marking."},
+    {"side": "b", "t": "Thin lines along the body that end in spots at the tail base", "src": ["fb-grammistes"], "q": "Identified by the lined pattern on the body that ends in spots on the tail-fin base"}
+   ]},
+  {"id": "M7", "a": "s627", "b": "s340", "kind": "resembles", "st": {"a": "juvenile", "b": "juvenile"},
+   "says": [
+    {"src": "fb-leucotaenia", "q": "Juveniles resemble the venomous striped catfish Plotosus lineatus."},
+    {"src": "randall2005-304", "q": "Schooling juveniles of the Convictfish Pholidichthys leucotaenia (Fig. 27) look very much like schools of the juvenile venomous catfish Plotosus lineatus (Fig. 28)."},
+    {"src": "wp-leucotaenia", "q": "Juveniles resemble the striped catfish Plotosus lineatus, which is venomous, having a black body with a white dorsal stripe."}
+   ],
+   "marks": [
+    {"side": "a", "t": "Its schools tend to be looser than the catfish's", "src": ["randall2005-304"], "q": "Convictfish juveniles may also form dense schools, although they tend to be more dispersed."},
+    {"side": "b", "t": "Barbels around the mouth", "src": ["am-lineatus", "fb-lineatus"], "q": "The Striped Catfish can be recognised by its striped colouration, barbels around the mouth (Australian Museum); with 4 pairs of mouth barbels (FishBase)"}
+   ]}
+ ],
+ "regional": {
+  "s035": {"why": "Its juveniles resemble a different pygmy angelfish from one region to another, so a juvenile photographed elsewhere may show a form not met here.",
+   "src": [
+    {"src": "randall2005-321", "q": "which mimics Centropyge flavissima in the central and eastern islands of the South Pacific, is the same species as the one in the western Pacific where its young usually resemble C. vrolikii."},
+    {"src": "fb-pyroferus", "q": "(in Guam, juveniles mimic C. flavissimus but in Palau where this species is absent, they mimic C. vrolikii)"}
+   ]}
+ }
+}
