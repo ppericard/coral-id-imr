@@ -170,7 +170,8 @@ declares the change's level with one line of why; the integrator checks it and m
 
 **Every check has a hard cap of 40 minutes of compute, at every level; when the agent reaches it, it stops and returns
 what it has.** Level 2 runs only the worlds the change touches (the rated world for the levels it touches; the app world
-only if it changes what the player sees). **Level 3 never runs on this machine**: only with Pierre's explicit go, on
+only if it changes what the player sees); LEARNING.md's level-2 figures are its minimum.
+**Level 3 never runs on this machine**: only with Pierre's explicit go, on
 GitHub runners, with its duration announced first. An unclear result is reported as "the measure cannot tell", never
 escalated automatically.
 
@@ -205,13 +206,14 @@ the model and its assumptions in the PR and check them. They are rare: taking th
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
 levels by possible effect, the rated world beside the app world, 2026-11-08; the 40-minute cap, level 2's worlds, level 3 off this machine, 2026-11-18, Q405
-("6h de calcul ne devrait JAMAIS arriver", 11-17).
+("6h de calcul ne devrait JAMAIS arriver", 11-17); this rule over LEARNING.md and the tools where they differ, LEARNING.md's
+level-2 figures the minimum, 2026-11-19 (Q415).
 
 ### L12
 
 **Check algorithm changes against the real players, not only the simulation** (rule L11, from level 1). Any change to the
 learning algorithm (Elo, progress, draw, opening, difficulty, typed questions…) is checked twice before its PR: in
-`tools/learnsim.js` (5 seeds, the four profiles: no learning path may break) and on the real answer log (read-only
+`tools/learnsim.js` (5 seeds, the subject's default profiles: no learning path may break) and on the real answer log (read-only
 replay of the sheet's Answers tab, or a saved extract kept outside the repo): the change must not move the app's
 estimates away from what players really do, and should bring them closer (next-answer log-loss and calibration,
 Expected against actual, overall and by level band and question format). Where a replay cannot judge a change (a
@@ -222,7 +224,8 @@ level is their global level (Elo) and their progress, never their success rate**
 for every player (docs/LEARNING.md "What each number measures"); the Elo settles only after many answers (shown from
 200), so say what a level rests on. Compare players with right − expected.
 *Why:* the real log caught many problems in these last days; two agents read a 75-83% success rate as "mid-level
-players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12.
+players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12; the
+subject's default profiles, 2026-11-19 (Q415).
 
 ### L13
 

@@ -46,7 +46,8 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   3. **every choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
      words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
      is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
-     agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
+     agreed rubric, per-species photo pre-proposals, the fish families' sourced ID marks in our own words, published without
+     his prior check and corrected by him in place (2026-11-08); only a change to the process itself waits for him); the PR's
      "Choices I made" section is empty;
   4. it rides a green merge train, alone or with other ready PRs, whose tree `main` then equals (rule W26: the train
      tests it on the current `main`, where Publish commits land without PRs), and goes in as a squash merge titled
@@ -188,7 +189,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One engine, never naming a subject.
+- **S1** One shared engine; a difference between subjects is declared and named in one place, never a hidden test on the subject.
 - **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
@@ -240,7 +241,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
    before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
    back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests but those tagged `slow`, in the machine slot: rule W24),
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
@@ -255,7 +256,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects is declared and named in one place (rule S1).
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).
