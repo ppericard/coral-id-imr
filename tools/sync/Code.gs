@@ -2490,7 +2490,7 @@ function boardUnitsSave_(boards){
   CORE_.SUBJECTS.filter(S => S.board && S !== B0).forEach(S => {
     const b = boards && typeof boards === 'object' ? boards[S.id] : null;
     if (Array.isArray(b)) {
-      // An app from before the score sends a list: it never replaces a tree a current app sent (Codex review #730), so the
+      // An app from before the score sends a list: it never replaces a tree a current app sent, so the
       // board stays on the scale My progress shows.
       const list = b.map(String).filter(u => BOARD_U_.test(u)).slice(0, 400), json = JSON.stringify(list);
       if (list.length && !(S.score && /^[{@]/.test(props.getProperty(BOARD_UNITS_ + S.id) || '')) && props.getProperty(BOARD_UNITS_ + S.id) !== json)
@@ -2504,7 +2504,7 @@ function boardUnitsSave_(boards){
   });
   return bt;
 }
-// What a subject's board counts: its units list, or (v101) its tree ({f, s}); [] when nothing was sent yet, or when the
+// What a subject's board counts: its units list, or its tree ({f, s}); [] when nothing was sent yet, or when the
 // tree kept cannot be read back (boardTreeGet_, logged).
 function boardUnits_(S){
   const v = PropertiesService.getScriptProperties().getProperty(BOARD_UNITS_ + S.id) || '';
@@ -2517,81 +2517,76 @@ function board_(sid){
   if (hit) return JSON.parse(hit);
   const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), out = {ok: true, rows: []};
   if (ra && ra.getLastRow() > 1) {
-    // v16: the % from the saved progress, over the genera of the list (the "By genus" tab's columns, written from each
-    // sync's summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read.
-    // v95: another subject's, over its units (boardUnits_), from its own saved progress only (the
-    // Progress column is the first subject's). v147: a subject ranked by a tree, over the tree the sheet makes with its
-    // replay's units under the structure in force when it holds one (subjTreeKept_), so a circle Publish moves the board
-    // with no device's save; a list kept from an app from before the score stays the board's scale, as before.
+    // The % from the saved progress, over the genera of the list (the "By genus" tab's columns, written from each sync's
+    // summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read. Another
+    // subject's, over its units (boardUnits_), from its own saved progress only. A subject ranked by a tree, over the
+    // tree the sheet makes with its replay's units under the structure in force when it holds one (subjTreeKept_), so a
+    // circle Publish moves the board with no device's save; a list kept from an old app stays the board's scale.
     const bg = first ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus') : null,
       kept = first ? null : boardUnits_(S),
       list = first ? (bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : []) : Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || kept,
       pk = CORE_.subjKey(S.id, 'progress');
-    // v118 (Pierre, 2026-11-09, rule D8): a player whose saved copy applied an older rules version of the subject than
+    // Rule D8: a player whose saved copy applied an older rules version of the subject than
     // today's (core.js rvOf) is ranked by the progress their app will hold once it adopts the replay of their log
     // (core.js replayAdopted over the saved copy: the floor of a subject replayed with one included), from the replay
     // kept in the subject's Replayed tab for today's rules, row count and reset (boardRpl_; made by boardWarm_ in the
-    // 15-minute trigger, or by the player's own sync); none kept yet, the saved copy's as before. A player up to date
+    // 15-minute trigger, or by the player's own sync); none kept yet, the saved copy's. A player up to date
     // keeps the saved copy's. Read only here: nothing is fetched or replayed, and no lock is taken.
     const X = boardRpl_(S), D = datas_(ra);
     const dataOf = r => { try { return JSON.parse(D[lc_(r[0])] || '{}'); } catch (e) { return null; } };
     const progOf = d => { try { const P = JSON.parse((first ? dataKey_(d, 'progress') : d[pk]) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
     // A player whose replay cannot be read or adopted keeps the saved copy's: one account never breaks the board.
     const nowOf = r => { const d = dataOf(r), P = d ? progOf(d) : null; try { return P ? X.adopted(String(r[0]), d, P) : P; } catch (e) { return P; } };
-    // v63: the level the app shows (progress.js eloLine): '~level'.th as saved (the app's eloScore rounds the Elo, so
-    // every device reads the same number), once its record counts ELO_MIN answers, else null. v118: the replayed level
+    // The level the app shows (progress.js eloLine): '~level'.th as saved (the app's eloScore rounds the Elo, so every
+    // device reads the same number), once its record counts ELO_MIN answers, else null. The replayed level
     // for a player behind the rules (core.js replayedOf: the replay's ability, the larger answer count), as their app
     // will show it.
     const n_ = s => s && typeof s === 'object' ? (Number(s.ok) || 0) + (Number(s.ko) || 0) : 0;
     const levelOf = P => { const L = P && P['~level']; return L && typeof L.th === 'number' && isFinite(L.th) && n_(L) >= ELO_MIN ? L.th : null; };
-    // A player with answers is listed before the level shows, at 0% too (Codex review #639): any record of the saved
+    // A player with answers is listed before the level shows, at 0% too: any record of the saved
     // progress with answers.
     const answered = P => !!P && Object.keys(P).some(k => n_(P[k]) > 0), adm = adminAcct_(), listed = boardRows_(ra);
     const all = listed
-      // Progress saved before v14 (blank): learned / total until the player's next sync writes it.
-      // Level only from ELO_MIN answers (v15, Pierre: "even 50 is not enough to settle the score"): null before.
+      // A blank Progress cell: learned / total until the player's next sync writes it.
+      // Level only from ELO_MIN answers (fewer do not settle the score): null before.
       .map(r => { const P = nowOf(r), lv = levelOf(P), own = !P ? null : !Array.isArray(list) ? (S.score ? CORE_.treeScore(P, list, S.score).pct : null) : list.length ? pctOf_(P, list) : null,
           pct = own != null || !first ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
         return lv != null || pct || answered(P) ? [String(r[0]), pct, lv].concat(adm && r[6] === adm ? [1] : []) : null; })
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
-    // v171 (Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle cohorte aurait un
-    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"); v179, the groups (Pierre,
-    // 2026-11-18): the one ranking above, split by who is where (groupBoards_), each scope keeping its order and its first
-    // 200: rows, the general board, without the members of an apart group; groups, [{id, n, rows}] every group with a
-    // board. An app from before reads rows as before. The groups unreadable: rows unsplit, as before.
+    // The groups' boards (docs/ARCHITECTURE.md "Player groups"): the one ranking above, split by who is where
+    // (groupBoards_), each scope keeping its order and its first 200: rows, the general board, without the members of an
+    // apart group; groups, [{id, n, rows}] every group with a board. The groups unreadable: rows unsplit.
     const top = L => L.slice(0, 200);
     out.rows = top(all);
     try { const g = groupBoards_(all, top); out.rows = g.rows; out.groups = g.groups; } catch (e) { delete out.groups; }
   }
-  try { cache.put(key, JSON.stringify(out), 300); } catch (e) {}  // v171: a reply over the cache's 100 KB is served uncached
+  try { cache.put(key, JSON.stringify(out), 300); } catch (e) {}  // a reply over the cache's 100 KB is served uncached
   return out;
 }
-// The RAs rows a leaderboard lists: with a name, not opted out (Board 0), hidden by an admin (-1, v20) or archived (-2).
+// The RAs rows a leaderboard lists: with a name, not opted out (Board 0), hidden by an admin (-1) or archived (-2).
 const boardRows_ = ra => ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().filter(r => r[0] && !(r[9] !== '' && Number(r[9]) <= 0));
 // Every player's saved data as readData_ reads it (the Progress data tab, else the RAs Data column), by lower-case
 // name, from one read of each tab: {name: JSON text}, with no prototype (a player named constructor or __proto__ is an
-// entry like any other; Codex review #810).
+// entry like any other).
 function datas_(ra){
   const t0 = Date.now(), out = Object.create(null), dt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in out)) out[k] = r.slice(2).map(String).join('') || '{}'; });
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().forEach(r => { const k = String(r[0]).toLowerCase(), h = String(r[7] || ''); if (r[0] !== '' && !(k in out)) out[k] = h && h !== '@' + DATA_TAB ? h : '{}'; });
-  if (dt && dt.getLastRow() > 1) tim_('read Progress data', t0, dt.getLastRow() - 1, dt.getLastColumn());  // v130: the Timings tab
+  if (dt && dt.getLastRow() > 1) tim_('read Progress data', t0, dt.getLastRow() - 1, dt.getLastColumn());  // the Timings tab
   return out;
 }
-// The leaderboard's replays (v118; Pierre, 2026-11-09, rule D8: "whenever progress is recalculated, the leaderboard
-// must be recalculated automatically, even if people do not reconnect"). For any subject with rules versions (core.js
-// rvsOf: the corals' RVS, another subject's SUBJECTS replayed rvs; none: nothing to do), from one read of its answers
-// and of its Replayed tab, both only once a player behind is met, each by name in a map with no prototype (Codex review
-// #810: a player named constructor):
+// The leaderboard's replays (rule D8: the leaderboard follows every recalculation, even for players who do not come
+// back). For any subject with rules versions (core.js rvsOf; none: nothing to do), from one read of its answers and of
+// its Replayed tab, both only once a player behind is met, each by name in a map with no prototype:
 // - need(name, data): null when the saved data applied the subject's last rules version (its rv key, core.js subjKey
 //   'rv', as sync.js rvKey saves it), else the replay that player calls for: its reset and first-launch answer (as the
 //   player's own sync asks for it: load_, replays_), rows since the reset, the record kept (rec: null unless it is today's
 //   rules, row count and reset: rplFresh_) and the kept row (row, at);
 // - adopted(name, data, P): the progress P (the saved copy's) as the player's app will hold it once it adopts that
 //   replay (core.js replayAdopted), P itself when none is needed or kept.
-// v146: a subject with a structure (core.js SUBJECTS structure): a player whose saved data applied another structure
-// stamp than the one in force (its st key, sync.js stKey; '' when none) is behind too (Q363 h A, rule D8), and the stamp
+// A subject with a structure (core.js SUBJECTS structure): a player whose saved data applied another structure stamp
+// than the one in force (its st key, sync.js stKey; '' when none) is behind too (rule D8), and the stamp
 // joins the cache's identity (rplSince_). warm (boardWarm_): the stamp read as replay_ reads it (subjSt_, fetched when not
 // cached); else (the public board_) from the cache only (subjStKept_), never a fetch: not there, the rules version alone.
 function boardRpl_(S, warm){
@@ -2600,8 +2595,8 @@ function boardRpl_(S, warm){
   let mine = null, kept = null, stIn;
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
   const stOf = d => { try { return String(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'st')) || '""') || ''); } catch (e) { return ''; } };
-  // the stamp in force: '' with no structure, null when it cannot be read (then the rules version alone decides)
-  // v163: the subject replayed here too, when it has a structure (the corals' pairs)
+  // the stamp in force: '' with no structure, null when it cannot be read (then the rules version alone decides); the
+  // subject replayed here too, when it has a structure (the corals' pairs)
   const stHere = () => (stIn !== undefined ? stIn : (stIn = !S.structure ? '' : warm ? subjSt_(sid) : subjStKept_(sid)));
   const need = (name, d) => {
     if (!top || !d) return null;
@@ -2625,15 +2620,15 @@ function boardRpl_(S, warm){
   };
   return {sid: sid, top: top, arg: arg, tab: tab, need: need, adopted: adopted};
 }
-// The leaderboard's replays made ahead (v118, rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
+// The leaderboard's replays made ahead (rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
 // saved copy is behind today's rules and whose replay is not kept for today's rules, row count and reset gets it made
 // (rplMake_, outside the script lock: data.json and fish.json are fetched here if not cached, and the photo stats read
-// from their snapshot, v145, or made from the whole log while there is none), the same
+// from their snapshot, or made from the whole log while there is none), the same
 // record that player's next sync reuses (replay_). New replays start only within BOARD_WARM_MS of the run's start (Apps
 // Script's 6-minute limit), the rest at the next run. Then every one is written to its subject's Replayed tab under one
-// short lock, each only if, read again under the lock, nothing it was made from changed meanwhile (Codex review #810,
-// rule D7: a replay made while the account was deleted must not bring its row back): the account is still there under
+// short lock, each only if, read again under the lock, nothing it was made from changed meanwhile (rule D7: a replay
+// made while the account was deleted must not bring its row back): the account is still there under
 // the same name and code, listed (not archived, hidden or opted out), with the same saved data (a delete, a merge, an
 // archive, a save, a reset), the same answers of that subject since its reset (the Answers tab read again: a delete, a
 // merge, a claim of a device's answers, answers logged), and its Replayed row as it was read (a player's own sync wrote
@@ -2645,7 +2640,7 @@ function boardWarm_(){
   if (!ra || ra.getLastRow() < 2) return 0;
   const rows = boardRows_(ra), D = datas_(ra), pend = [];
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => {
-    const X = boardRpl_(S, true);  // v146: the structure stamp in force, read as a player's sync reads it
+    const X = boardRpl_(S, true);  // the structure stamp in force, read as a player's sync reads it
     if (!X.top) return;
     rows.forEach(r => {
       if (Date.now() - t0 > BOARD_WARM_MS) return;
@@ -2689,14 +2684,14 @@ function boardWarm_(){
   return made;
 }
 
-// Achievements, as on Steam (v15; Pierre, 2026-11-01): GET ?achs=1 → {ok, n: signed-in players with an achievement
+// Achievements' shares, as on Steam: GET ?achs=1 → {ok, n: signed-in players with an achievement
 // record, counts: {achievement id: players holding it}}, from each player's saved progress (its reefid-sync-ach key, app.js).
 // Counts only, no name. Cached 10 minutes.
 function achs_(){
   const cache = CacheService.getScriptCache(), hit = cache.get('achs15');
   if (hit) return JSON.parse(hit);
-  const out = {ok: true, n: 0, counts: Object.create(null)};  // v119: by achievement id as a device saved it, no prototype
-  liveRows_().forEach(r => {  // v58: an archive holds no share
+  const out = {ok: true, n: 0, counts: Object.create(null)};  // by achievement id as a device saved it, no prototype
+  liveRows_().forEach(r => {  // an archive holds no share
     let A = null;
     try { A = JSON.parse(dataKey_(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}'), 'ach') || 'null'); } catch (e) {}
     if (!A || typeof A !== 'object') return;
@@ -2707,28 +2702,27 @@ function achs_(){
   return out;
 }
 
-// Admin user management (v11, Pierre 2026-11-01: "a page in the admin to manage the users, now that beta testers come").
-// Every call needs the admin token (isAdmin_), like reading reports. POST bodies:
+// Admin user management. Every call needs the admin token (gate_), like reading reports. POST bodies:
 //   {users: 1, token} → {ok, users: [{name, updated, learned, seen, total, review, answers, right, first, last, days,
 //     modes: {mode: [answers, right]}, recent: [answers, right] (last 50), mix: [[shown, answered, times]] (top 5),
 //     reports, size}], removed: [{name, into, time}]}
 //   {userArchive: {from, into}, token} → {ok, answers, reports}: the record moves to an archive name, Board -2, out of
-//     normal operation (v58, was userRename v20); 'exists' when the new name is taken, 'archived' for an archive,
-//     'reserved' (v119) for a reserved archive name (core.js reservedName).
-//   {userBoard: name, hide, token} → {ok, board}: hidden from the leaderboard by an admin (-1) or shown again (1) (v20).
+//     normal operation; 'exists' when the new name is taken, 'archived' for an archive, 'reserved' for a reserved
+//     archive name (core.js reservedName).
+//   {userBoard: name, hide, token} → {ok, board}: hidden from the leaderboard by an admin (-1) or shown again (1).
 //   {userData: name, token} → {ok, rev, data}: that player's saved progress (the admin merges two players in the browser,
 //     with core.js mergeUsers, then sends the result back with userMerge).
 //   {userDelete: name, answers: true|false, token} → {ok, answers, reports}: deletes everything of the player but the
-//     Removed tombstone (deleteAccount_, v55). answers true ("delete everything"): their answers and reports go too;
+//     Removed tombstone (deleteAccount_). answers true ("delete everything"): their answers and reports go too;
 //     false ("delete, keep answers"): both stay without the name, "~deleted <id>" (pooled photo statistics only; the
 //     reports never verified).
 //   {userMerge: {from, into, data, at}, token} → into gets data (the merged progress; at = into's revision when the admin
 //     read it, else 'stale'), every answer and report of from is relabelled into, and from's rows are deleted.
 // Both leave a line in the "Removed" tab (name, code hash, into, time): a device still signed in with that name and code
 // gets error 'gone' (with into) instead of silently re-creating the account. Someone new may still pick the name with
-// another code. v55: a delete keeps nothing else in normal operation (deleteAccount_).
+// another code. A delete keeps nothing else in normal operation (deleteAccount_).
 const REMOVED = ['Name', 'Code hash', 'Into', 'Time'];
-// v58 (Pierre, 2026-11-05, Q84): an archived record is Board -2 in the RAs tab (no new column). Archived means kept, never
+// An archived record is Board -2 in the RAs tab (no new column). Archived means kept, never
 // used in normal operation (rule D7): every reader of the RAs rows for a normal feature reads liveRows_.
 const ARCHIVED = -2;
 const archived_ = row => row[9] !== '' && Number(row[9]) === ARCHIVED;
@@ -2754,7 +2748,7 @@ function dropRows_(tab, name, col){
   const v = sh.getRange(2, col || 1, sh.getLastRow() - 1, 1).getValues(), k = lc_(name); let n = 0;
   for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) { sh.deleteRow(i + 2); n++; }
   if (tab === 'Answers') dropHold_(name);
-  if (tab === 'Answers' && n) statsDirty_();  // v134: the pooled stats' fold starts again
+  if (tab === 'Answers' && n) statsDirty_();  // the pooled stats' fold starts again
   return n;
 }
 // Renames the name in column `col` of tab `tab` (answers, reports): one write of the whole column.
@@ -2763,10 +2757,10 @@ function relabel_(tab, col, from, into){
   const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(), k = lc_(from); let n = 0;
   v.forEach(r => { if (lc_(r[0]) === k) { r[0] = safe_(into); n++; } });
   if (n) rg.setValues(v);
-  if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); statsDirty_(); }  // their opening hold (hold_) is computed again; v134: the pooled stats' fold starts again
+  if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); statsDirty_(); }  // their opening hold (hold_) is computed again, the pooled stats' fold starts again
   return n;
 }
-// v109: blanks the Device column (DEV_COL) of every Answers row of this name: one write of that column, only when a cell
+// Blanks the Device column (DEV_COL) of every Answers row of this name: one write of that column, only when a cell
 // changes.
 function devBlank_(name){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
@@ -2777,21 +2771,18 @@ function devBlank_(name){
   if (c) rg.setValues(v);
   return c;
 }
-// Player groups (v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
-// groupes"; the staff are a group, not a role, and the group model replaces the beta groups (v48), the one cohort per
-// player and the staff of v171; ARCHITECTURE.md "Player groups"). A group has an id, a name and three settings: board
-// (it has its own leaderboard), apart (its members leave the general board and every other group's, as the staff did)
-// and beta ('' or the subject it opens, as a beta group did: core.js SUBJECTS open: 'group', subjGroup). A player is in
-// any number of groups. Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and
-// Groups, one row a membership (Group: the group's id, Name: the player's, Added), as the beta groups were kept. Ids:
-// 'g:' and 8 random characters for a group made from v179; a group the migration made keeps the Group cell its rows had
-// (a subject's id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns
-// its player's groups from the load and save replies (groups: the subjects in beta they open, as before; gids: their
-// groups' ids); the admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group
-// grants a right, and no grant puts anyone in a group.
+// Player groups (docs/ARCHITECTURE.md "Player groups"): a player is in any number of groups; the staff are a group, not
+// a role. A group has an id, a name and three settings: board (it has its own leaderboard), apart (its members leave the
+// general board and every other group's) and beta ('' or the subject it opens: core.js SUBJECTS open: 'group',
+// subjGroup). Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and Groups,
+// one row a membership (Group: the group's id, Name: the player's, Added). Ids: 'g:' and 8 random characters; a group
+// the migration made keeps the Group cell its rows had (a subject's id, 'cohort:<name>', 'staff'). The app learns its
+// player's groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the
+// admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group grants a right,
+// and no grant puts anyone in a group.
 const GROUPS = {TAB: 'Groups', HEAD: ['Group', 'Name', 'Added']};
 const GDEF = {TAB: 'Group settings', HEAD: ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added']}, GNAME_MAX = 40;
-const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // v53: the subjects that open to a group
+const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // the subjects that open to a group
 function groupRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues() : [];
@@ -2824,8 +2815,8 @@ function groupMembers_(gs){
   gs.rows.forEach(r => { (m[r[0]] = m[r[0]] || Object.create(null))[lc_(r[1])] = 1; });
   return m;
 }
-// name (lower case) -> {gids: the ids of its groups, groups: the subjects in beta its groups open}, each once. v119: no
-// prototype (reserved names, Pierre 2026-11-09).
+// name (lower case) -> {gids: the ids of its groups, groups: the subjects in beta its groups open}, each once. No
+// prototype (reserved names).
 function groupMap_(gs){
   gs = gs || groupState_();
   const ok = groupIds_(), beta = Object.create(null), m = Object.create(null);
@@ -2856,7 +2847,7 @@ function groupSet_(ra, names, g, on){
   const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
   if (on) {
-    const add = [], seen = Object.create(null);  // v58: live players only, never an archive
+    const add = [], seen = Object.create(null);  // live players only, never an archive
     names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
     if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, GROUPS.HEAD.length).setValues(add);
     return add.length;
@@ -2894,11 +2885,11 @@ function groupDo_(p){
   return {ok: true, group: d};
 }
 // groups-migration: begin
-// v179 (Pierre, 2026-11-18, "ok" to the group model; rule W3): the groups the data before this version held, made
-// groups once (ONCE_ groups), nothing lost. Each distinct Group cell of the Groups tab is a group whose id is that cell
+// The groups the data held before the group model, made groups once (ONCE_ groups; rule W3), nothing lost. Each
+// distinct Group cell of the Groups tab is a group whose id is that cell
 // (its rows stay as they are, the date of its first row its Added): a subject's id is that subject's beta group ("<subject
 // name> beta", beta: that subject, as it opened it), 'cohort:<name>' a cohort (named <name>, with a board), any other cell
-// a group named by it. The staff (v171: the accounts holding the trainer role in the instance under the code hash the
+// a group named by it. The staff (the accounts holding the trainer role in the instance under the code hash the
 // grant was given to) are the group 'staff', "Staff", board and apart, as their board was (none when nobody holds the
 // role); their role stays theirs.
 // groupsBefore_ reads them without writing (groupState_ until the migration ran), groupsMigrate_ writes them, under the
@@ -2944,8 +2935,8 @@ function groupsMigrate_(){
 // The first change to the groups before the migration ran makes it first (the caller holds the script lock).
 const groupsNow_ = () => { if (!groupsMigrated_()) groupsMigrate_(); };
 // groups-migration: end
-// v115 (Pierre, 2026-11-08, ROADMAP "Security follow-ups": "je suis ok avec tout ce que tu as listé"): the players
-// and devices the admin leaves out of the statistics, by the admin's anonymous id (aid_: a signed-in player's or a device
+// The players and devices the admin leaves out of the statistics (docs/ROADMAP.md "Security follow-ups"), by the
+// admin's anonymous id (aid_: a signed-in player's or a device
 // not signed in, "~anon <id>"), one row each in the tab "Stats excluded" (Id, Added). Their answers rate no photo, no
 // confusion, no photo memory and no format offset (stats_), and the Analyses report leaves them out (readAnswers serves
 // the list as excluded, tools/analyses.js drops their rows); their own progress, level, leaderboard place and answers
@@ -2968,28 +2959,28 @@ function sxPut_(id, on){
 // answers as "~deleted <id>", an archive's new name), so what was left out stays out and nothing points to the name.
 // Returns whether from had a row.
 function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && into) sxPut_(aid_(into), true); return had; }
-// v55 (Pierre, 2026-11-05, Q84-Q91: "when an account is deleted, the information tied to it is cleaned up; archived
-// means not used in normal operation"). Deletes everything of an account but its Removed tombstone (the caller writes
-// it): RAs, Progress data, By genus, Replayed, Groups, its page summaries (Pages, Q88: per-player behaviour, no photo
-// use) and its name in the log tabs (redact_). With answers (Q85 "delete everything": a test account, or the player
-// asked) its answers and reports are deleted; without ("delete, keep answers") the answers become "~deleted <id>" (pooled
-// photo statistics only, Q86) and the reports too, with Verified 0: their content stays (a bad photo stays a bad photo),
+// Rule D7 (docs/SECURITY.md): when an account is deleted, the information tied to it is cleaned up; archived means not
+// used in normal operation. Deletes everything of an account but its Removed tombstone (the caller writes it): RAs,
+// Progress data, By genus, Replayed, Groups, its page summaries (Pages: per-player behaviour, no photo use) and its name
+// in the log tabs (redact_). With answers ("delete everything": a test account, or the player asked) its answers and
+// reports are deleted; without ("delete, keep answers") the answers become "~deleted <id>" (pooled photo statistics
+// only) and the reports too, with Verified 0: their content stays (a bad photo stays a bad photo),
 // open ones stay in the admin's Inbox as from a removed account, and nobody is ever thanked for them. Under the script
 // lock (the caller holds it). Returns {ok, answers, reports}: how many rows were deleted or relabelled.
-// v156 (roles step 1): by, the id of who deletes (the admin's caller id, or the player's own anonymous id for a
+// by: the id of who deletes (the admin's caller id, or the player's own anonymous id for a
 // self-delete), written in the Audit tab beside each grant the account loses (rolesDrop_).
 function deleteAccount_(name, all, by){
   const del = '~deleted ' + aid_(name);
-  { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // v125
+  { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // the admin's mark goes with it
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
-  if (!all && answers) devBlank_(del);  // v109: the answers kept lead back to no device (rule D7)
+  if (!all && answers) devBlank_(del);  // the answers kept lead back to no device (rule D7)
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
-  dropRows_(GROUPS.TAB, name, 2);  // v48: out of every group (v179: the staff's too; a group itself holds no player data)
-  rolesDrop_(name, by || '');  // v156: its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
-  sxMove_(name, all ? '' : del);  // v115: out of the statistics stays out, under the id the answers keep
-  // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
+  dropRows_(GROUPS.TAB, name, 2);  // out of every group, the staff's too (a group itself holds no player data)
+  rolesDrop_(name, by || '');  // its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
+  sxMove_(name, all ? '' : del);  // out of the statistics stays out, under the id the answers keep
+  // Names merged into it before point nowhere now: their devices are told the account was removed,
   // and their answers and reports never go under the deleted name (nor to someone who takes it later).
   relabel_('Removed', 3, name, '');
   redact_(name, del);
