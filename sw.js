@@ -1,21 +1,20 @@
 // Offline cache: app shell first, then photos as they are viewed.
 // The shell cache is reefid-shell-vN: on activation every other shell cache goes (REPLACES), never the photo cache.
 const V = 'reefid-shell-v343';
-// Shell caches this worker replaces: its own name, and the one from before the rename to IMR Reef ID (2026-11-03).
+// Shell caches this worker replaces: its own name, and the app's name before IMR Reef ID.
 const REPLACES = ['reefid-shell-', 'imr-coral-id-']; // rename-app: keep
 // The question "your version?" to the open pages (app.js), under its name before the rename too.
 const VER_ASK = ['reefid-ver?', 'imr-ver?']; // rename-app: keep
-// Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
-// offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
-// Its name did not follow the rename to IMR Reef ID (2026-11-03): a new name would have thrown away, or copied while the
-// app waits, up to PH_MAX offline photos per phone. It gets one with the domain move, on a new origin whose caches
-// start empty anyway (docs/ROADMAP.md).
+// Photos live in their own cache that no deploy deletes, so bumping V never wipes the offline photos. Capped at PH_MAX
+// entries, oldest first out (cache keys keep insertion order). It keeps the app's old name: a new name would throw away,
+// or copy while the app waits, up to PH_MAX offline photos per phone. It gets one with the domain move, on a new origin
+// whose caches start empty anyway (docs/ROADMAP.md).
 const PH = 'imr-photos-v1',
   PH_MAX = 2500;
-// The admin's own files (Pierre, 2026-11-04: admin pages slow on his phone) live in a cache of their own that no deploy
-// deletes either: a new app version used to drop them with the old shell cache, so the first admin visit after each
-// deploy downloaded them all again (about 240 kB gzipped), even unchanged. One entry per file: a new ?v= replaces the
-// older one. Only the admin's code: no player data is ever kept here.
+// The admin's own files live in a cache of their own that no deploy deletes either, so the admin pages stay fast on a
+// phone: kept with the shell cache, they would all download again (about 240 kB gzipped) at the first admin visit after
+// each deploy, even unchanged. One entry per file: a new ?v= replaces the older one. Only the admin's code: no player
+// data is ever kept here.
 const ADM = 'reefid-admin-files',
   ADM_FILE = /\/(admin[\w-]*\.(js|css)|autosort\.js|analysis\.js)$/;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
@@ -77,10 +76,10 @@ const SHELL = [
     'cards'
   ].map(f => `proto/${f}.js?v=84`)
 ];
-// A shell file for the new version (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
-// station). A versioned file (?v=: a new content is a new URL) or a font that a cache already holds, the version being
-// replaced's, is copied from it rather than downloaded again: most deploys change a few files, and the install, which
-// the takeover waits for, downloaded the whole shell (about 1 MB). The other files (the page, curation-play.json, the
+// A shell file for the new version (~86 kbit/s at the field station). A versioned file (?v=: a new content is a new URL)
+// or a font that a cache already holds, the version being replaced's, is copied from it rather than downloaded again:
+// most deploys change a few files, and the install, which the takeover waits for, would otherwise download the whole
+// shell (about 1 MB). The other files (the page, curation-play.json, the
 // manifest, the icon) are asked from the server itself (cache: 'no-cache', a revalidation): taken from the browser's HTTP
 // cache (GitHub Pages: 10 minutes), the new version could hold the page of the deploy before and run its old code.
 const fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
@@ -104,16 +103,16 @@ self.addEventListener('install', e =>
   e.waitUntil(
     caches
       .open(V)
-      // Each file on its own, tried up to 3 times: with addAll, one file failing on an unstable line failed the whole
-      // install, so a phone on such a line never got the offline copy (tools/perf.js, 1 request in 5 failing).
+      // Each file on its own, tried up to 3 times: with addAll, one file failing on an unstable line would fail the whole
+      // install, so a phone on such a line would never get the offline copy (tools/perf.js, 1 request in 5 failing).
       .then(c => Promise.all(SHELL.map(u => get(c, u))))
       .then(() => self.skipWaiting())
   )
 );
 // A version waiting is asked again to take over (SKIP, sent by the worker it replaces: fetch below). Chromium stops the old
 // worker for the swap the moment it is idle; a request that comes in that instant starts it again, and the swap then
-// waited for its idle timer (30 s, 5 min with DevTools attached: over 90 s in 3 runs of 3, 2026-11-14; the net smoke's
-// "a new version did not take over"). skipWaiting() called again asks for that stop again at once.
+// waits for its idle timer (30 s, 5 min with DevTools attached; the net smoke's "a new version did not take over").
+// skipWaiting() called again asks for that stop again at once.
 const SKIP = 'reefid-skip';
 self.addEventListener('message', e => e.data && e.data.t === SKIP && e.waitUntil(self.skipWaiting()));
 // Activate: photos still in an old shell cache move to the photo cache first, then the old shell caches go.
@@ -131,14 +130,13 @@ self.addEventListener('activate', e =>
           }
         await caches.delete(k);
       }
-      // The Coral Finder book's crops (img/<genus>-cf-<page>-<tag>…) left the app on 2026-11-08 (Pierre: copyrighted):
-      // the copies a device kept leave its photo cache too.
+      // The Coral Finder book's crops (img/<genus>-cf-<page>-<tag>…, copyrighted) are not in the app: the copies a
+      // device kept leave its photo cache too.
       for (const req of await ph.keys()) if (/\/img\/[a-z]+-cf-\d/.test(new URL(req.url).pathname)) await ph.delete(req);
       await self.clients.claim();
-      // Pages too old to know about updates (Pierre, 2026-11-03: RAs who opened one of the very first versions kept it
-      // open for days, so their answers never reached the sheet): each open page is asked its version; a page that
-      // answers reloads by itself at its next page change (app.js UPDATED); one that does not answer within 3 s runs a
-      // version from before 2026-11-03 and is reloaded now, onto this version.
+      // Pages too old to know about updates (a page kept open for days on a very early version never sends its answers
+      // to the sheet): each open page is asked its version; a page that answers reloads by itself at its next page change
+      // (app.js UPDATED); one that does not answer within 3 s runs such an early version and is reloaded now.
       // Only the app's own page (index.html): the admin, privacy and Lab pages are left alone.
       const pages = (await self.clients.matchAll({type: 'window'})).filter(c => /\/(index\.html)?$/.test(new URL(c.url).pathname));
       await Promise.all(
@@ -149,8 +147,8 @@ self.addEventListener('activate', e =>
                 c.navigate(c.url).catch(() => {});
                 done();
               }, 3000);
-              // Asked under both names: a page from before the rename to IMR Reef ID (2026-11-03) knows only the old
-              // one, and must not be reloaded in the middle of a question for that.
+              // Asked under both names: a page from before the rename to IMR Reef ID knows only the old one, and must
+              // not be reloaded in the middle of a question for that.
               VER_ASK.forEach(q => {
                 const ch = new MessageChannel();
                 ch.port1.onmessage = () => {
@@ -184,8 +182,8 @@ const trim = async c => {
 // <img> asks no-cors, whose opaque reply cannot be checked (a 404 would be kept) and weighs ~7 MB of quota each in
 // Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error, a file missing), the page is told by
 // the failed request itself and picks the next source: the photo's online original, or the site's copy for a photo with
-// none (app.js photoFail; Pierre, 2026-11-05: the photos with an online original leave img/, so the worker no longer
-// serves the site's copy by itself).
+// none (app.js photoFail: the photos with an online original are not in img/, so the worker never serves the site's
+// copy by itself).
 // The same file at its other address (R2 for a site photo, the site for an R2 one), and a photo looked up under both.
 const twinOf = u => {
   const r2 = u.origin === R2,
@@ -232,9 +230,8 @@ self.addEventListener('fetch', e => {
   // A newer version waits for this worker, which is busy, or running again after the stop for the swap (SKIP, above).
   if (self.registration.waiting) self.registration.waiting.postMessage({t: SKIP});
   if (e.request.method !== 'GET') return;
-  // A page opened while a newer version waits for this worker is left to the browser (2026-11-14, the net smoke's admin
-  // page on a merge train): the navigation makes Chromium take the waiting version over and stop this worker with the
-  // navigation's fetch event in it, and a page whose reply the worker was to give then never loads, not even with a
+  // A page opened while a newer version waits for this worker is left to the browser: the navigation makes Chromium take
+  // the waiting version over and stop this worker with the navigation's fetch event in it, and a page whose reply the worker was to give then never loads, not even with a
   // worker that only passes the request on. Not answered here, it loads from the network. The cost, only while a version
   // waits (usually under a second; longer while the old worker is kept busy or was started again): such a page gets neither
   // the copy kept offline nor, on a slow line, the cached copy after SLOW. docs/ARCHITECTURE.md "Service worker".
@@ -243,7 +240,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(photo(e.request, u).catch(() => Response.error()));
   else if (u.origin !== location.origin) return;
   // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
-  // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
+  // all once cached, so the app stays fluid on poor connections (no launch revalidates every file).
   else if (u.searchParams.has('v') || u.pathname.includes('/fonts/'))
     e.respondWith(
       caches.match(e.request).then(
@@ -265,11 +262,10 @@ self.addEventListener('fetch', e => {
     );
   // The other app files (the page itself, curation-play.json, the manifest): revalidated with the server. On a slow link
   // (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still refreshes
-  // the cache in the background (code re-review 2026-11-01, L1).
-  // The page's reply never waits for its cache copy (2026-11-04, net.smoke step 9: the admin page never reached
-  // DOMContentLoaded although the server had answered in 1 ms; the reply waited for a write into the shell cache that
-  // never ended, the old worker writing into the cache a new version's activation was replacing). The copy, taken
-  // before the reply is read, is written in the event's lifetime instead.
+  // the cache in the background.
+  // The page's reply never waits for its cache copy (tests/net.smoke.js step 9): a write into the shell cache a new
+  // version's activation is replacing may never end, and the page would never load. The copy, taken before the reply is
+  // read, is written in the event's lifetime instead.
   else {
     let copy = null;
     const net = fetch(e.request, {cache: 'no-cache'}).then(res => {

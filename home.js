@@ -9,18 +9,18 @@
   const LAND_AR = [1.3, 1.8];
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
-  // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover), but his ★ Cover on one he confirmed
-  // (cj: app.js fishCurate; Pierre's exception, 2026-11-15). Never a photo tagged with a visible watermark or text (its
-  // judged flag w; Pierre, 2026-11-15, Q373: Home skips them, the games keep them), his ★ Cover included, one he kept as a
-  // cover in the admin too (autosort.js fishCoverW, Q379: his Keep holds the cover elsewhere, never on Home): homeOk.
+  // Never a juvenile (app.js juvP: a juvenile is never a cover), but the admin's ★ Cover on one he confirmed (cj: app.js
+  // fishCurate). Never a photo tagged with a visible watermark or text (its judged flag w: Home skips them, the games
+  // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js fishCoverW: the Keep holds the
+  // cover elsewhere, never on Home): homeOk.
   const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
   const landOk = p => homeOk(p) && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
   // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),
   // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
   const onR2 = p => !(p.r && p.src),
     landR2 = p => landOk(p) && onR2(p);
-  // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
-  // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
+  // A unit's photo on a Home tile. Landscape tiles (UNITS land): the admin's ★ Cover (coverP, app.js fishCurate) when it
+  // suits the tile (docs/ARCHITECTURE.md "Fish content": the cover first, if it fits a landscape tile),
   // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it, one
   // on R2 first (before fish-game.json is in, app.js fishHome, every photo is remote: then one that suits it all the same),
   // else its first that is not a juvenile (app.js adultFirst), never one with a watermark (homeOk). Other tiles: the
@@ -30,10 +30,9 @@
     return land ? (landOk(g.coverP) ? g.coverP : L.find(landR2) || L.find(landOk) || adultFirst(g.views.wide.filter(homeOk))) : cover(g);
   };
   const homeUnit = n => GX(n).views.wide.some(homeOk);
-  // The Learn band rotates (ROADMAP "Fish Home mosaic: rotate the photos"; Pierre, 2026-11-08: for variety, instead of
-  // always the same photo per family): a landscape tile shows, each day, one of its unit's photos on R2 that suit it
-  // (landR2), picked from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js refLevel) in the
-  // game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
+  // The Learn band rotates, for variety, instead of always the same photo per family: a landscape tile shows, each day,
+  // one of its unit's photos on R2 that suit it (landR2), picked from landPool: the ★ Cover first, then its reference
+  // photos (core.js refLevel) in the game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's.
   const LAND_ROT = 6;
   const landPool = g => {
     const out = landR2(g.coverP) ? [g.coverP] : [];
@@ -45,8 +44,8 @@
   };
   // The pick is the day's (dayPick: unit n and the local date, hashed), the same at every drawing of that day: the service
   // worker keeps photos cache-first (sw.js), so a family drawn again that day comes from the phone's cache. Home still
-  // draws 12 of its families at random, so new ones are asked for until most families were drawn that day; a new pick at
-  // every drawing (#909) kept asking R2 for some 7 new photos at each visit.
+  // draws 12 of its families at random, so new ones are asked for until most families were drawn that day (a new pick at
+  // every drawing would ask R2 for some 7 new photos at each visit).
   const dayPick = (L, n, now = Date.now()) => {
     if (!L.length) return null;
     const d = new Date(now),
@@ -69,24 +68,24 @@
       fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name, // a subject whose units have names of their own (fish entries)
       // its words where they are not the corals' (app.js UNITS door: the fish's, the sea slugs')
       W = UNITS[SUBJ.id].door || {};
-    // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
+    // The subject switch (docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
     // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header's switch (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
     // in beta); the doors follow the subject on screen.
     const subj = subjMine().length > 1 ? `<div class="seg hsubj" role="group" aria-label="Subject">${subjBtns()}</div>` : '';
-    // Door 1 art: a band of corallite close-ups, an illustration only (Pierre, 2026-11-03): its two buttons carry the door
-    // (fish: a photo of each of 12 IMR families). Door 2 art: a real ReefCloud photo with its 5 points (Pierre's,
-    // 2026-10-31), centred on the active point.
-    // A quiet line in the Learn & practise door (Pierre, 2026-11-03): Coral basics for a player who has not done it and
+    // Door 1 art: a band of corallite close-ups, an illustration only: its two buttons carry the door (fish: a photo of
+    // each of 12 IMR families). Door 2 art: a real ReefCloud photo with its 5 points (Pierre's own), centred on the active
+    // point.
+    // A quiet line in the Learn & practise door: Coral basics for a player who has not done it and
     // has few answers (under CHOICE.ASK, core.js, the same bar as the first-launch question); gone once it is done.
     // Only for a subject that has a basics module (app.js basicsDue: Coral basics teaches coral words).
     const G = P[LEVEL] || {},
-      // Not for a player who said they had the IMR course or know corals well (Pierre, 2026-11-04).
+      // Not for a player who said they had the IMR course or know corals well.
       said = (store.get(startKey(SUBJ.id), null) || {}).c,
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
-    // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
-    // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
-    // photo picked to suit them, one of several, the day's (bandPhoto: Pierre's cover or a reference photo that suits the
+    // A subject whose photos are wide (UNITS land: most fish are horizontal, and square tiles cut them; docs/DESIGN.md)
+    // gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
+    // photo picked to suit them, one of several, the day's (bandPhoto: the cover or a reference photo that suits the
     // tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
@@ -103,11 +102,11 @@
           .join('');
     // Before the data (app.js beforeData) the Identify door's photo waits too, dark like the band: drawn at once, its 60 KB
     // shared the slow line with data.json and the curation and put the band ~5 s later at 86 kbit/s (tools/perf.js field).
-    // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
+    // Door 2, Identify: the current subject's tool only (docs/ARCHITECTURE.md): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
       // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
-      // same photo a tile would show (tilePhoto, Q291).
+      // same photo a tile would show (tilePhoto).
       fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
       fishArt = fp
         ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
@@ -156,8 +155,8 @@ ${idoor}
       <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="${esc(hr('about'))}">Credits</a></p>
     </div>`;
   };
-  // The Fish ID Key, coming soon (Pierre, 2026-11-04: Identify shows the current subject's tool only, "Fish ID Key, coming
-  // soon" in fish mode; ROADMAP "Fish ID Key for EventMeasure"). The Coral ID Key is reached through the subject switch.
+  // The Fish ID Key, coming soon (Identify shows the current subject's tool only; docs/ROADMAP.md "Fish ID Key for
+  // EventMeasure"). The Coral ID Key is reached through the subject switch.
   window.viewFishKey = function () {
     const W = UNITS[SUBJ.id].door || {}; // the subject's words (app.js UNITS door)
     $v.innerHTML = `<div class="keysoon">
@@ -168,10 +167,10 @@ ${idoor}
       <p><a class="next" href="${esc(hr('genera'))}">Learn the ${esc(SUBJ.what.toLowerCase())} ${esc(SUBJ.many)}</a></p>
     </div>`;
   };
-  // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home
-  // and this page, linked from it and from the ? help of every page. Each photo keeps its own credit (rule P5).
+  // About and credits: no credits block on the pages, only the one-line credit at the bottom of Home and this page,
+  // linked from it and from the ? help of every page. Each photo keeps its own credit (rule P5).
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
-  // content is not reproduced (Pierre, 2026-11-03, a rights question). The Home credit line does not name it.
+  // content is not reproduced (a rights question). The Home credit line does not name it.
   window.viewAbout = function () {
     const inat = 'https://www.inaturalist.org',
       ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
