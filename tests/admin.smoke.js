@@ -4682,6 +4682,7 @@ const darkCards = (p, sel) =>
           }));
           if (
             i1.rows.length !== 5 ||
+            !/^p90 save \| 0\.9 s · 9800 calls, 7 days \| 18%$/.test(i1.rows[3]) ||
             !/^Sheet cells \| 7\.40 M of 10\.00 M · 31 tabs \| 74% ! \[adm-warn\]$/.test(i1.rows[0]) ||
             !/^Answers tab \| 41000 rows × 18 columns · 3\.90 M cells \| 39%$/.test(i1.rows[1]) ||
             !/^p90 read Answers \| 2\.1 s · 1200 calls, 7 days \| 42%$/.test(i1.rows[2]) ||
