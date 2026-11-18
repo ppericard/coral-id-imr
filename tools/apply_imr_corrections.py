@@ -1,15 +1,15 @@
-# Corrections to the IMR wording approved by Pierre (2026-11-03, review of the plain sentences): where the references
-# checked for the plain sentences (tools/plain_sources.json) differ from the lecture wording, these four lines follow
-# the references. An exception to rule C1, made by Pierre himself. The ID tips themselves are corrected in
+# Approved corrections to the IMR wording: where the references checked for the plain sentences
+# (tools/plain_sources.json) differ from the lecture wording, these four lines follow the references. An approved
+# exception to rule C1. The ID tips themselves are corrected in
 # tools/id_tips.txt (tools/apply_id_tips.py); this script corrects the lecture notes (gen[g].imr, review slides included),
 # the mnemonic, the short description (sum) and Herpolitha's "to check" note. Re-runnable: python3 tools/apply_imr_corrections.py
-# The lecture notes and the mnemonic live in the IMR instance's coral layer (tools/instances/imr/coral.json, since step 5
-# of docs/reviews/2026-11-14-sheet-overlay-design.md): written there, then laid on data.json.
+# The lecture notes and the mnemonic live in the IMR instance's coral layer (tools/instances/imr/coral.json): written
+# there, then laid on data.json.
 #
-# - Seriatopora: corallites in neat rows, not "black" (Pierre has seen pale ones at Dauin; Corals of the World,
+# - Seriatopora: corallites in neat rows, not "black" (pale ones are seen at Dauin; Corals of the World,
 #   S. hystrix: "Corallites are arranged in neat rows along branches", colour pink, cream, blue or green; Wikipedia and
-#   Naturalis: rows, no dark colour). The lecture's mnemonic "Serius Black" (serial black pores) goes too (Pierre: not a
-#   fan, a better one or none): the name itself says it, Latin seriatus "in rows" + pora, so SERIA_MN.
+#   Naturalis: rows, no dark colour). The lecture's mnemonic "Serius Black" (serial black pores) goes too, for a better
+#   one: the name itself says it, Latin seriatus "in rows" + pora, so SERIA_MN.
 # - Lobactis: tentacular lobes "often green, blue or white", not "pale" (Corals of the World, Fungia (Lobactis) scutaria:
 #   "Usually brown, blue or yellow, often with bright green, blue or white tentacular lobes").
 # - Heliofungia: tentacle tips "white or pink" (Corals of the World, H. actiniformis: "tentacles with white or pink tips").

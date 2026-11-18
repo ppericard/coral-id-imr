@@ -1,7 +1,7 @@
 # Builds data.json "x": genera that are NOT on the IMR slate but are in the Coral Finder 2022 book AND present at Dauin
-# (Pierre, 2026-10-31: the IMR list is not exhaustive; rare genera can turn up on dives or photos). Shown only in the
+# (the IMR list is not exhaustive; rare genera can turn up on dives or photos). Shown only in the
 # Identify > Coral ID Key (on by default, switch in ⚙), never in games, quizzes, progress or the Genera pages.
-# Presence at Dauin (Pierre's rule): at least one iNaturalist observation within 40 km of Dauin that is Research Grade,
+# Presence at Dauin: at least one iNaturalist observation within 40 km of Dauin that is Research Grade,
 # or that 2+ people identified to this genus independently. Every text gives the facts of the Coral Finder book
 # page(s) cited in "pages", in the app's own words (tools/apply_book_rewrite.py, tests/booktext.test.js: no 5-word run
 # of the old near-book wording); boxes come from the book's A-Z index pages placed in the front-page key ranges.
@@ -12,7 +12,7 @@
 import json
 import inat
 from datajson import dump  # the one data.json layout (one genus per line)
-from fetch_local import LIC, photo_ok  # accepted licences, never share-alike (Pierre, 2026-11-05)
+from fetch_local import LIC, photo_ok  # accepted licences, never share-alike
 DAUIN, PH = 'lat=9.19&lng=123.26&radius=40', 'place_id=6873'
 get = inat.get
 
