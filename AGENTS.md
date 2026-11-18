@@ -127,7 +127,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
-- **C3** An ID tip is short and simple for anyone; detail goes on the sheet.
+- **C3** An ID tip is short and simple for anyone; detail goes on the sheet; the answer's feedback shows one decisive line, the rest behind "More".
 - **C4** Corals: growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues cite only species present at Dauin or in the Philippines.

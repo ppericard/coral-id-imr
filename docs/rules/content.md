@@ -26,11 +26,17 @@ one; the editor asks for one when a fact is added.
 
 **An ID tip is short, simple and understandable by everyone, whatever its source** (IMR or another one): one tip or
 a few essentials. The tips are what the app puts forward: the **ID tip** (`gen[g].qt`; corals: from
-`tools/id_tips.txt`) is shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box. The
+`tools/id_tips.txt`) is shown on the cards, in the ID tips view and in the comparisons in a highlighted box. The
 technical, descriptive detail of what separates a unit from another goes on its sheet (corals: the full lecture cues,
 `gen[g].imr`, incl. review slides and presenter notes, appear there under "IMR lecture notes").
-*Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone.
-*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05; subject-neutral wording, 2026-11-06.
+**The answer's feedback sheet shows the verdict, the photo's own species line and one decisive line**: the line telling
+the right answer from the player's answer, or, after a right answer, the cue telling it from a look-alike among the
+choices, else its first ID tip. Everything else (the IMR ID tips, the Coral ID Key criteria, the mnemonic, links) sits
+behind "More". No line is ever made by comparing trait tags (rule C2).
+*Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone, and feedback that shows
+one line, the one that settles the answer, gets read.
+*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05; subject-neutral wording, 2026-11-06; the feedback sheet's
+one decisive line, 2026-11-18 ("ok", the feedback sheet study's recommendation (e), PR #1097).
 
 ### C4
 
