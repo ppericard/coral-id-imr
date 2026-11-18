@@ -1196,7 +1196,8 @@ const fishBuild = () => {
 // The mimicry class (docs/LEARNING.md "The mimicry class"): each pair of the tree's file where a source says species a
 // resembles species b (fish.json lookalikes, kind resembles; tools/fish_lookalikes.json) puts an entry on the family of
 // a, its units' home (model.js varHome): sp, the species; st, the stage that resembles (juvenile: its juvenile photos
-// only; all: every photo); m, the units of b (b, its genus, its family), any of which met opens the gate (model.js mimOf,
+// only; all: every photo); m, the units of b (its species unit s:<id>, core.js fishSpUnits; its genus; its family), any
+// of which met opens the gate (model.js mimOf,
 // mimAt); fb, the family of b, whose photos the card draws on; pair, the record its card reads (quiz.js mimShow); na and
 // nb, the two species' names (sci, and cn, cni as cnFirst reads them); ra and rb, whether a
 // species' look varies by region (species region), its photos from elsewhere then kept off the card. A subject whose
@@ -1214,7 +1215,7 @@ function mimLay(X, f) {
       (by[a.family] = by[a.family] || []).push({
         sp: a.id,
         st: (r.st || {}).a || 'all',
-        m: [b.id, b.genus, b.family].filter(Boolean),
+        m: ['s:' + b.id, b.genus, b.family].filter(Boolean),
         fb: b.family,
         pair: r,
         na: name(a),

@@ -97,7 +97,7 @@ test('mimLay: each resembling species on its family, with the units of the speci
     {
       sp: 's035',
       st: 'juvenile',
-      m: ['s027', 'g:Centropyge', 'f:Angelfishes'],
+      m: ['s:s027', 'g:Centropyge', 'f:Angelfishes'],
       fb: 'f:Angelfishes',
       ra: true,
       rb: false,

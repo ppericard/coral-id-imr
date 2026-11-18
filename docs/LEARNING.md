@@ -3828,7 +3828,7 @@ whose look varies by region. Decision record: [2026-11-18-variant-classes](decis
 - **The class in the draw** (`app.js` `mimLay`; `model.js` `MIM_AT`, `mimOf`, `mimAt`, `varOf`): the family of each
   resembling species carries its entries (`mim`); a photo of that species at the stage that resembles (its juveniles, or
   every photo) weighs a ramp on the bar of the unit asked: from Open Water to Advanced (`MIM_AT.met`, [0.5, 0.8]) once a
-  unit of the species it resembles (that species, its genus or its family) is met (`introduced`), at Advanced
+  unit of the species it resembles (that species' unit `s:<id>`, its genus or its family) is met (`introduced`), at Advanced
   (`MIM_AT.alone`, [0.8, 0.8], the late class's timing) while none is, so the photo never waits on a unit the player may
   never open (circle 3 declined: M6's bream). It replaces the photo's class timing (*Acanthurus pyroferus* and
   *Scolopsis bilineata*, class B, came at Advanced; they now come from Open Water once their model is met). The variety
