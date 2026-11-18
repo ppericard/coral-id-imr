@@ -740,7 +740,8 @@ on families only to an IMR RA with every species open:
 - **Held-out photos**: a fixed set per species and per entry never shown in practice, for a transfer check (recognition of unseen photos at
   the start and later) and to keep the exam honest. Pierre, 2026-11-04: fish first (many photos), corals later (few photos per genus);
   ROADMAP "A held-out photo set". Built: per species (`fish-holdout.json`, #1023), wired on 2026-11-18 (the mastery exam's photos
-  only, logged `|h|x`; Pierre: "Je pensais qu'on gardait des photos pour la fin"; docs/LEARNING.md "The held-out photos in the game").
+  only, logged `|h|x`; Pierre: "Je pensais qu'on gardait des photos pour la fin"); per player and for every subject the same
+  day (Pierre: "la réserve elle doit être définie par joueur"; the file gone; docs/LEARNING.md "The reserve in the game").
 - **Real-log replay** once fish answers reach the sheet (rule L12); until then, say what was measured instead.
 - Tests: `tests/draw.smoke.js` for the species draw (choices, display, the welcome answers and the open-all card), `tests/fish.test.js` for the data (no duplicate name
   among the choices of one question).

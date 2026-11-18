@@ -15,7 +15,7 @@ What the day (29 merges) added, as habits:
   sea slug smoke and the admin smoke's report tile (#1018). After such a change, run the full unit suite and read the
   smokes that name the data, not only the docs test.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json`, `suggest.json` (re-import the PR's species
-  over `main`'s file), `fish-holdout.json`. A judging PR on species already in play carries the rebuilt game file
+  over `main`'s file). A judging PR on species already in play carries the rebuilt game file
   (`tools/seaslug_game.py --check` fails otherwise).
 - **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`.
 - **The Candidate photos run moves `main`** after any judging merge; a train started meanwhile stops ("main moved"):

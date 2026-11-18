@@ -403,6 +403,11 @@ const ID_ALLOW = [
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
   {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"},
+  // the one fish held-out set (#1023, #1057), replaced by the per-player reserve (core.js reserveOf, 2026-11-18)
+  ...['fish-holdout.json', 'tools/holdout.py'].map(key => ({
+    key,
+    why: 'the held-out set, replaced by the per-player reserve (2026-11-18); LEARNING keeps its rule and its checks'
+  })),
   // the gates at or below the gate floor, deleted with it: only ARCHITECTURE's version history still names them
   ...[
     'analysis.js AN_SUBJ_SHEET',

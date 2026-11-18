@@ -4008,7 +4008,67 @@ unknown; the three versions of the file of 2026-11-06 to 2026-11-09 recover 54 s
   beyond it. Descriptive only: four players allow no test (the smallest two-sided sign-flip p is 0.125). It cannot
   show whether holding them back helps (what the card and the stage teach), only that the change moves few real answers.
 
+### The reserve in the game (per player, every subject; 2026-11-18)
+
+Pierre, 2026-11-18 ~12:05 Manila, on #1057's one held-out set for every player (below): "En fait la réserve elle doit
+être définie par joueur. Il n'y a pas d'intérêt d'avoir une réserve globale", then "oui, lance". So each player has a
+reserve of their own, which their mastery exam asks first, and every photo is practised and rated by other players.
+`fish-holdout.json`, `tools/holdout.py`, their CI and photo-workflow steps and their loading are gone.
+
+**The rule** (`core.js` `reserveOf`, one function for every subject, rule S1; #1057's rule otherwise):
+- **Per player and unit**: the player's stable id (`reserveId`: the account's name in any case, the same on all their
+  devices; else this device's anonymous id as the sheet logs its answers, `~anon <id>`; `app.js` `resId`) and each
+  observation (a fish, a colony: rule P4) give a hash (`resHash`: FNV-1a with murmur3's finaliser, 32 bits); within each
+  species (a unit with no species, a coral genus: the unit) the eligible observations are taken in that order.
+- **Eligible**: none of the observation's photos is Pierre's own, an IMR lecture photo, a reference source's or of
+  reference level (`refLevel`), nor a card's (a unit's cover, a featured photo, his ★ picks).
+- **How many** (Pierre, 2026-11-18: "Il en faut suffisament pour refaire l'examen plusieurs fois, si et seulement si on
+  a assez de photos par ailleurs"; "Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): up to 15 per
+  unit with a mastery exam (`RESERVE.target`, three exams of `EXAM.n`), across its species in turn, never leaving a
+  species fewer than 8 in practice (`RESERVE.keep`) nor a unit with an exam fewer than 30 (`RESERVE.floor`); each such
+  unit's floor bounds what the others take from its species (a thin genus in a rich family keeps its photos). The units
+  with the most observations first (a family before its genera), each topped up to 15.
+- **Stateless**: a function of the id and the photos in play, computed at each build of the units (`app.js` `build`,
+  `fishBuild`, `reserveOn`), so a photo added or gone moves it at its margin only; a new account named at sign-in gets
+  its units made again at the next page change (`resSeen`). `reserveSplit` moves the reserved photos out of every unit's
+  views and game lists into its held lists by view (`g.held`, marked `ho`), which no game, card, sheet or list reads;
+  `genusDiff` and the variant groups (`varUnitOf`) read both, so the unit's difficulty and its variant table are the
+  sheet's, which never has a reserve (rules D8, D9).
+- **The exam** (`model.js` `examSet`): the player's reserved observations never shown to them first, then any
+  observation never shown to them, then the least seen of those never answered right, then the least seen; never shown
+  means on no unit (a fish family and its genera share photos) and by observation, whatever photo or view of it was
+  shown (rule P4, Q190): until now the second step read "never shown on this unit, by file".
+- **Logged** `|h` (after `|c`, before `|kN`, `|t` and `|x`), as before: the log keeps which answers were on reserved
+  photos whatever the photos in play later; counted like any answer (Q385 (c) A), no replay branch, no rules version.
+  The sheet can compute a player's reserve from the log's player with the same functions (`Code.gs` embeds `core.js`).
+
+**Its size on today's files** (player "player one"; 20 players for the spread): the fish 2,319 observations reserved
+(302 units with an exam since the genera of every circle are units, v176: 173 reach 15, 92 hold fewer, 37 none; #1057's
+set held 1,946 over 65 families and 130 genera); the sea slugs 437 (111 units: 35, 24, 52); the corals 96 colonies in 14
+of 39 genera (Acropora and Lobophyllia 15, Plerogyra 14; 25 genera under the floor hold none). Two players share 20.5%
+(fish), 31.8% (sea slugs), 28.9% (corals) of their reserves, exactly what chance gives for those sizes (the share each
+species holds of its eligible observations: 20.5%, 31.8%, 29.1%), and 20 players together reserve 14,119 different
+fish observations of about 23,000.
+
+**Check declared before running** (rule L11; level 2: it changes which photos practice draws from, now for the corals
+and the sea slugs too, and which photos the exam asks; a hard cap of 40 minutes of machine time, Pierre's 30-40):
+- **App world** (the real app, `node tests/slot.js -- node tools/learnsim.js`): the fish and the corals, profiles
+  beginner, strongRA, expert × seeds 1-5 × 300 questions, this branch against `main` (each arm with its own tools; the
+  branch's player id per profile and seed, `learnsim.js` `simId`). Guardrails only: no exam comes before 300 questions,
+  so this world sees only the withheld practice photos.
+- **Rated world** (`--world rated`), the levels it touches (the exam, so Learned; Open Water through the practice pools):
+  the fish and the corals, the same three profiles × seeds 1-5 × 1,000 answers. **Primary `learned@1000:down`, fish**
+  (units learned at 1,000: an exam on photos never seen is expected to be harder, the honest exam's cost), pooled over
+  the profiles, one look. Every guardrail of the table.
+- **The sea slugs**: neither world plays them (`learnsim.js` `--subject coral|fish`, `ratedworld.js` `unitsOf`), so
+  the measure cannot tell; their reserve runs the same code as the fish's.
+- **Power given up**: 5 seeds and 1,000 answers instead of level 2's 10 seeds to each level: few exams by 1,000, so
+  the primary may well read "cannot tell"; #1057's A/A run showed the Open Water measures move by a breach's size
+  between two runs of nearly the same pool at 10 seeds, so a breach there is read against that.
+
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
+
+Replaced on 2026-11-18 by the per-player reserve (above): what follows is #1057's set and its checks, kept for the record.
 
 ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check
 (recognition of photos never seen, at the start and later) and an honest exam"); the design note
