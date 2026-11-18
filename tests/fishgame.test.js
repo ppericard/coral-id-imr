@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // The curated fish game photos: tools/fish_game.py, run by the Candidate photos workflow, downloads the photos Pierre
 // put in play (curation.json fish, core.js fishOn) into the R2 upload folder and writes fish-game.json; core.js
-// fishPhotos plays them. Offline: a made-up fixture, the originals served by a stub (never iNaturalist, FishBase or R2). The download needs python3 with Pillow
-// (tools/requirements.txt, installed by checks.yml).
+// fishPhotos plays them. Offline: a made-up fixture, the originals served by a stub (never iNaturalist, FishBase or
+// R2). The download needs python3 with Pillow (tools/requirements.txt, installed by checks.yml).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -265,8 +265,8 @@ print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.
 });
 
 // The photos that enter play by themselves (a candidate judged sure; a reference photo judged sure on the same rubric,
-// whatever its reference level; treated exactly like the photos he adds, hosted on R2): the same download, listed with auto, out once he rejects, excludes or moves the photo; never the
-// same photo or (a reference photo) observation twice.
+// whatever its reference level; treated exactly like the photos he adds, hosted on R2): the same download, listed with
+// auto, out once he rejects, excludes or moves the photo; never the same photo or (a reference photo) observation twice.
 const AUTO_SUG = {
   fish: {
     ...SUG.fish,
@@ -816,10 +816,11 @@ print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').lis
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// fish-photos.json, written by the same run (no remote photo, the sheet-only photos on R2): its first photos are fish-game.json's records (on R2 already), at most FIRST per entry, the adults and the easiest first;
-// a sheet-only photo still remote is downloaded in the four sizes like a game photo and listed without r (its src, the
-// original, kept for the fallback; its credit, licence and observation exactly as they were); a species with a photo in
-// play loses its sheet-only photo; a rerun with nothing new writes the same bytes.
+// fish-photos.json, written by the same run (no remote photo, the sheet-only photos on R2): its first photos are
+// fish-game.json's records (on R2 already), at most FIRST per entry, the adults and the easiest first; a sheet-only
+// photo still remote is downloaded in the four sizes like a game photo and listed without r (its src, the original,
+// kept for the fallback; its credit, licence and observation exactly as they were); a species with a photo in play
+// loses its sheet-only photo; a rerun with nothing new writes the same bytes.
 const read2 = (dir, f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 
 // The first photos in core.js easyRank's order: the reference-level photos (core.js refLevel) before the rest, whatever

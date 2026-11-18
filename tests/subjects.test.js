@@ -166,9 +166,10 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
   if (noSrc) assert.match(X.gen[noSrc.id].lsrc[noSrc.look[0][0]], /^IMR fish presentation/);
 });
 
-// No fish photo hot-linked (no remote iNaturalist photo, the sheet-only photos on R2): fish-photos.json's first photos are records of fish-game.json (on R2, the same name, crop and shape), and its
-// sheet-only photos are on R2 too. The one exception: a sheet-only photo tools/fish_photos.py has just found, remote
-// (r: 1) until the next Candidate photos run downloads it (tools/fish_game.py sheet_of): from an allowed photo host only.
+// No fish photo hot-linked: fish-photos.json's first photos are records of fish-game.json (on R2, the same name, crop
+// and shape), and its sheet-only photos are on R2 too. The one exception: a sheet-only photo tools/fish_photos.py has
+// just found, remote (r: 1) until the next Candidate photos run downloads it (tools/fish_game.py sheet_of): from an
+// allowed photo host only.
 test('fish-photos.json: no remote photo, the first photos are fish-game.json records in play, the sheet-only photos on R2', () => {
   const ok = new Set(['cc0', 'cc-by', 'cc-by-nc']),
     GM = C.fishGameRead(read('fish-game.json')).photos,

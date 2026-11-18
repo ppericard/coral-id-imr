@@ -273,7 +273,8 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
 });
 
 // The first-meeting card (quiz.js introCard: cover()) shows his ★ Cover even when it is not what the automatic choice
-// would take (his covers are all very visible and of reference level): a reference-level photo of the family (core.js refLevel, refFirst) leads the game's order, his pick is the card.
+// would take (his covers are all very visible and of reference level): a reference-level photo of the family (core.js
+// refLevel, refFirst) leads the game's order, his pick is the card.
 test('fish first-meeting card: his ★ Cover wins over a reference-level photo (Q289)', () => {
   const X = app(),
     r = raw();
@@ -293,8 +294,9 @@ test("real data: a curated cover below the automatic choice is still the family'
   low.forEach(([id, k]) => assert.strictEqual(C.fishPid(X.cover(FISH.gen[id]).f), C.fishPid(k.cover), id));
 });
 
-// Home's landscape tiles (home.js tilePhoto): his cover when its shape (ar) suits the tile (LAND_AR) and it shows the whole fish,
-// else the mosaic's own pick (the first of the game's order that suits the tile, else the first); square tiles: cover().
+// Home's landscape tiles (home.js tilePhoto): his cover when its shape (ar) suits the tile (LAND_AR) and it shows the
+// whole fish, else the mosaic's own pick (the first of the game's order that suits the tile, else the first); square
+// tiles: cover().
 test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick (Q291)', () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
     X = app(),
@@ -325,8 +327,9 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
 });
 
 // The Learn band rotates (home.js landPool, bandPhoto): each landscape tile draws one of its unit's photos that suit it,
-// his cover first then its reference photos (core.js refLevel) in the game's order, at most LAND_ROT, the day's pick (dayPick: the same all day, so the
-// service worker's cached photos serve Home after the day's first visit); a unit with none keeps tilePhoto's photo.
+// his cover first then its reference photos (core.js refLevel) in the game's order, at most LAND_ROT, the day's pick
+// (dayPick: the same all day, so the service worker's cached photos serve Home after the day's first visit); a unit with
+// none keeps tilePhoto's photo.
 const homeBand = () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
     X = app(),
@@ -435,7 +438,8 @@ test('Home band: rotates only among R2 photos; a tile prefers one on R2', () => 
   }
 });
 
-// A wink's surprise card (quiz.js winkPhoto; the Thresher sharks' first): his ★ Cover while in play (coverP), else one of the wink's chosen photos in play, else the unit's best.
+// A wink's surprise card (quiz.js winkPhoto; the Thresher sharks' first): his ★ Cover while in play (coverP), else one
+// of the wink's chosen photos in play, else the unit's best.
 test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q290)", () => {
   const qs = fs.readFileSync(path.join(ROOT, 'quiz.js'), 'utf8'),
     ctx = {fishPid: C.fishPid, easyRank: C.easyRank, pick: a => a[0]};
@@ -457,8 +461,9 @@ test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q29
 });
 
 // ---- A genus's and a species' ★ Cover: curation.json fish genera under the genus's 'g:' id or the species' id,
-// {cover}. A genus unit (circle 1) takes it as its coverP, as a family; a genus with no unit and a species get it in FISH.covers while it is in play as a photo of
-// that genus or species; learn.js reads them: the species' first photo (spPhoto), the genus row and cards (genCover). ----
+// {cover}. A genus unit (circle 1) takes it as its coverP, as a family; a genus with no unit and a species get it in
+// FISH.covers while it is in play as a photo of that genus or species; learn.js reads them: the species' first photo
+// (spPhoto), the genus row and cards (genCover). ----
 // Two families: f:A (circle 1, its genus g:Xus a unit), f:B (circle 3, its genus g:Yus no unit).
 const F2 = {
   families: [
@@ -566,9 +571,10 @@ test('sheets: the species cover leads its photos, the genus cover its row and ca
   assert.strictEqual(L.genCover(F2.genera[1]).f, 'fi5');
 });
 
-// A juvenile photo is never a cover, at any rank, picked or not: juvenile = its phase word (the record's ph) or its tags' juvenile flag (app.js juvP).
-// His pick on one is ignored (fishCurate: no coverP, no FISH.covers); every default skips them while the unit has another
-// photo (the card's cover, rankPhotos, a species' one photo, the family hero), and a unit of juveniles only keeps one.
+// A juvenile photo is never a cover, at any rank, picked or not: juvenile = its phase word (the record's ph) or its
+// tags' juvenile flag (app.js juvP). His pick on one is ignored (fishCurate: no coverP, no FISH.covers); every default
+// skips them while the unit has another photo (the card's cover, rankPhotos, a species' one photo, the family hero), and
+// a unit of juveniles only keeps one.
 test('a juvenile is never a cover: his pick ignored, the defaults skip it, a unit of juveniles keeps one', () => {
   const X = app(),
     R = () => {
@@ -600,9 +606,10 @@ test('a juvenile is never a cover: his pick ignored, the defaults skip it, a uni
   assert.strictEqual(L.spPhoto({id: 's3'}).f, 'fi4', 'juveniles only: it keeps one');
 });
 
-// Pierre's exception (a juvenile better known than the adults, as the Boxfishes' yellow one): his ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id: {cover, coverJ}},
-// coverJ naming the cover's photo under either name: app.js coverOk), at every rank, in the card, the default's species
-// pick (seenCover), a species' one photo and its sheet. A confirmation naming another photo is none; the default alone
+// Pierre's exception (a juvenile better known than the adults, as the Boxfishes' yellow one): his ★ cover on a juvenile
+// holds once he confirmed it (curation.json fish genera {id: {cover, coverJ}}, coverJ naming the cover's photo under
+// either name: app.js coverOk), at every rank, in the card, the default's species pick (seenCover), a species' one photo
+// and its sheet. A confirmation naming another photo is none; the default alone
 // never takes a juvenile.
 test('a juvenile cover he confirmed holds everywhere; the default still never takes one', () => {
   const X = app(),
@@ -637,10 +644,10 @@ test('a juvenile cover he confirmed holds everywhere; the default still never ta
   assert.strictEqual(sheets(X.run(R(), cur2({s2: {cover: 'fi3'}}))).spPhoto({id: 's2'}).f, 'fi6', 'not confirmed: the adult');
 });
 
-// A watermarked photo is never a default cover, at any level (its flag w: app.js wmP): the card's default, rankPhotos, the default's species pick, a species' one photo
-// and its sheet's first photo skip it while the node has another adult photo. His ★ cover on one stays his choice (rule
-// A1) at every rank, kept in the admin (coverW: autosort.js fishCoverW) or not: the app never reads coverW. Home skips
-// it all the same, kept or not, his ★ cover included (home.js homeOk).
+// A watermarked photo is never a default cover, at any level (its flag w: app.js wmP): the card's default, rankPhotos,
+// the default's species pick, a species' one photo and its sheet's first photo skip it while the node has another adult
+// photo. His ★ cover on one stays his choice (rule A1) at every rank, kept in the admin (coverW: autosort.js fishCoverW)
+// or not: the app never reads coverW. Home skips it all the same, kept or not, his ★ cover included (home.js homeOk).
 test('a watermarked photo is never a default cover; his ★ cover on one stays his, and Home skips it, kept or not', () => {
   const X = app(),
     R = () => {
@@ -759,8 +766,9 @@ test('real data: a genus and a species cover picked in the admin are the app’s
   assert.ok(!B.covers[sid] || C.fishPid(B.covers[sid].f) !== C.fishPid(ps.f));
 });
 
-// The ranks ★ Cover can set are the subject's own (corals, sea slugs or plants alike): read from SUBJECTS sheets, broadest first, else the unit's rank alone
-// (no switch); a key's rank from its sheet prefix, else the narrowest rank (admin.js fuRanks, fuRankOf; rule S1).
+// The ranks ★ Cover can set are the subject's own (corals, sea slugs or plants alike): read from SUBJECTS sheets,
+// broadest first, else the unit's rank alone (no switch); a key's rank from its sheet prefix, else the narrowest rank
+// (admin.js fuRanks, fuRankOf; rule S1).
 test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alone', () => {
   const ad = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
     ctx = {ASUBJ: null};
@@ -784,10 +792,11 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
   assert.strictEqual(ctx.rankOf(coral, 'Acropora'), coral.rank);
 });
 
-// ---- The default cover of a node with leaves: when he has picked no cover for the node, among its species with a reference-level photo that is not a juvenile, the one most seen around the
-// instance's centre by distinct observers (ties: observations, then the easy order), then his ★ cover of that species,
-// else its easiest such reference photo; with no reference photo under the node, the most seen species with an adult
-// photo; a node with no presence keeps the easy order's first. The app (app.js seenCover: fishCurate, rankPhotos;
+// ---- The default cover of a node with leaves: when he has picked no cover for the node, among its species with a
+// reference-level photo that is not a juvenile, the one most seen around the instance's centre by distinct observers
+// (ties: observations, then the easy order), then his ★ cover of that species, else its easiest such reference photo;
+// with no reference photo under the node, the most seen species with an adult photo; a node with no presence keeps the
+// easy order's first. The app (app.js seenCover: fishCurate, rankPhotos;
 // learn.js nodeCover) and the admin (autosort.js fishCoverOf) alike.
 // f:A and g:Xus hold s1 (fi1 e5, fi2 e3) and s2 (fi3 e4, fi6 e2): fi1 leads the easy order; none is reference-level
 // unless a case makes it one (side profile, sharp, a reference source: core.js refLevel).
