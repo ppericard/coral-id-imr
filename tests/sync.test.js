@@ -1166,7 +1166,8 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
-// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch).
+// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch); v179: a
+// group whose beta setting names the subject (Code.gs groupDo_; tests/playergroups.test.js has the rest of the model).
 test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
   const s = seed();
   // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
@@ -1174,23 +1175,24 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   const groups = (n, pin) => s.get({name: n, pin}).groups;
   assert.deepStrictEqual(groups('Ana', '1234'), [], 'in no group: [] (the app closes the beta subject)');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true}).error, 'token', 'admin only');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'coral', on: true, token: TOK}).error, 'group', 'a subject in beta only');
-  assert.strictEqual(s.post({userGroup: 'Nobody', group: 'fish', on: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userGroup: 'ana', group: 'fish', on: true, token: TOK}), {
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).error, 'group', 'a group that exists only');
+  assert.strictEqual(s.post({userGroup: 'Nobody', group: g, on: true, token: TOK}).error, 'user');
+  assert.deepStrictEqual(s.post({userGroup: 'ana', group: g, on: true, token: TOK}), {
     ok: true,
-    group: 'fish',
+    group: g,
     n: 1,
     members: 1,
     v: SV
   });
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 0, 'once');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 0, 'once');
   assert.deepStrictEqual(groups('Ana', '1234'), ['fish'], 'the load reply');
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).groups, ['fish'], 'the save reply');
   assert.deepStrictEqual(groups('Ben', '1111'), [], 'the others not');
   assert.strictEqual(s.get({name: 'Ana', pin: '9999'}).groups, undefined, 'never with a wrong code');
   // Everyone at once (a list): unknown names skipped, members counted once.
-  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: 'fish', on: true, token: TOK});
+  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: g, on: true, token: TOK});
   assert.deepStrictEqual([all.n, all.members], [2, 3]);
   const list = s.post({users: 1, token: TOK}).users;
   assert.deepStrictEqual(
@@ -1200,7 +1202,7 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   );
   assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added']);
   // Out again.
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: false, token: TOK}).n, 1);
+  assert.strictEqual(s.post({userGroup: 'Ben', group: g, on: false, token: TOK}).n, 1);
   assert.deepStrictEqual(groups('Ben', '1111'), []);
   // A merge carries the memberships; an archive (v58) and a delete remove them.
   assert.strictEqual(s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
@@ -1211,22 +1213,23 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ana B'), 'the merged name leaves the tab');
   assert.strictEqual(s.post({userDelete: 'Ben', token: TOK}).ok, true);
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ben'), 'deleted: out of the group');
-  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: 'fish', on: true, token: TOK}).members, 0, 'an archive is never added');
+  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: g, on: true, token: TOK}).members, 0, 'an archive is never added');
 });
 
-// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all has no
-// group (its rows kept in the tab, read again once it is back to 'group').
-test("groups (v53): a subject that opens to all has no group, whatever its beta label; back to 'group', its rows count again", () => {
+// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all opens
+// to everyone, its group's members kept (v179: the group stays, its beta setting opens nothing until it is back to 'group').
+test("groups (v53): a subject that opens to all opens nothing through a group, whatever its beta label; back to 'group', its members count again", () => {
   const s = seed();
   const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
   open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 1);
   open('all');
   // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
   assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
   assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
+  assert.strictEqual(s.post({groupMake: {n: 'Sea slug beta', beta: 'seaslug'}, token: TOK}).error, 'beta', 'no beta setting for it');
   assert.ok(
     s.sheets.Groups.rows.some(r => r[1] === 'Ana'),
     'the rows stay in the tab'

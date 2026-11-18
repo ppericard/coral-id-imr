@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 178 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 179 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 178;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 179;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -264,9 +264,9 @@ function load_(name, row, q){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v58: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
-  // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
-  try { out.groups = groupsOf_(name); } catch (err) {}
-  try { out.cohort = cohortOf_(name); } catch (err) {}  // v171: the player's cohort ('' for none), its board shown first
+  // v48: the subjects in beta the player's groups open (groupsOf_), [] for none; v179: gids, the ids of their groups (the
+  // Leaderboard shows their boards first). A failure leaves both out (the app keeps what it had).
+  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}
   try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
   if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // v125: this is the admin's account (the app shows its 🌱)
   // v57: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
@@ -320,7 +320,7 @@ function doPost_(e){
     return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // v156: roles step 1 (roles_)
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude; v179 groupMake, groupEdit, groupDrop)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
@@ -436,8 +436,7 @@ function doPost_(e){
   // timeout, and those failed). The answers this save logged are in the tab by now.
   // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
   // another device's must not keep the order it replayed them in): the app takes it after a send.
-  try { out.groups = groupsOf_(name); } catch (err) {}  // v48, as the load reply
-  try { out.cohort = cohortOf_(name); } catch (err) {}  // v171, as the load reply
+  try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // v48, v179 gids: as the load reply
   try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
@@ -1800,14 +1799,12 @@ function roles_(p){
     const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, aid_(name)), {ok: false, error: e});
     if (!row) return fail('user');
     if (archived_(row)) return fail('archived');
-    // v171: the trainer role makes the staff, who have a board of their own: every board's cache is dropped.
-    if (p.roleGrant) { const res = grantPut_(String(row[0]), row[6], role, scope, who.id, self); if (role === 'trainer') boardsDrop_(); return {ok: true, result: res}; }
+    if (p.roleGrant) return {ok: true, result: grantPut_(String(row[0]), row[6], role, scope, who.id, self)};
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), k = lc_(row[0]);
     const v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : [];
     let n = 0;
     for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k && String(v[i][1]) === role && String(v[i][2]) === scope) { sh.deleteRow(i + 2); n++; }
     audit_(who.id, 'revoke ' + role + (self ? ' (self)' : ''), scope, n ? 'ok' : 'none', aid_(row[0]));
-    if (n && role === 'trainer') boardsDrop_();
     return {ok: true, result: n ? 'ok' : 'none'};
   } finally { lock.releaseLock(); }
 }
@@ -2580,20 +2577,13 @@ function board_(sid){
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
     // v171 (Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle cohorte aurait un
-    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"): the one ranking above, split by who
-    // is where, each scope keeping its order and its first 200: rows, the general board, without the staff; staff, the
-    // trainers (staffSet_); cohorts, [{n: display name, rows}] for every cohort, the newest first, its members but the
-    // staff (cohortMap_). An app from before reads rows as before. The roles or groups unreadable: rows unsplit, as before.
+    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"); v179, the groups (Pierre,
+    // 2026-11-18): the one ranking above, split by who is where (groupBoards_), each scope keeping its order and its first
+    // 200: rows, the general board, without the members of an apart group; groups, [{id, n, rows}] every group with a
+    // board. An app from before reads rows as before. The groups unreadable: rows unsplit, as before.
     const top = L => L.slice(0, 200);
     out.rows = top(all);
-    try {
-      const st = staffSet_(), gr = groupRows_(), cm = cohortMap_(gr), staff = Object.create(null);
-      listed.forEach(r => { if (st.has(lc_(r[0]) + '|' + String(r[6]))) staff[lc_(r[0])] = 1; });
-      const rest = all.filter(x => !staff[lc_(x[0])]);
-      out.staff = top(all.filter(x => staff[lc_(x[0])]));
-      out.cohorts = cohortNames_(gr).map(n => ({n: n, rows: top(rest.filter(x => cm[lc_(x[0])] === n))}));
-      out.rows = top(rest);
-    } catch (e) { delete out.staff; delete out.cohorts; }
+    try { const g = groupBoards_(all, top); out.rows = g.rows; out.groups = g.groups; } catch (e) { delete out.groups; }
   }
   try { cache.put(key, JSON.stringify(out), 300); } catch (e) {}  // v171: a reply over the cache's 100 KB is served uncached
   return out;
@@ -2808,66 +2798,84 @@ function devBlank_(name){
   if (c) rg.setValues(v);
   return c;
 }
-// v48: beta groups (Pierre, 2026-11-04: "fish opens to a group I pick in the admin, for now everyone; not one site-wide
-// switch"). A subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup, v53; until v52 its beta label: fish) opens in the app to the admin and to the players of its group,
-// named by the subject's id. The Groups tab holds one row per membership: Group, Name, Added. The app learns its player's
-// groups from the load and save replies (groups); the admin's player list carries each player's.
+// Player groups (v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
+// groupes"; the staff are a group, not a role, and the group model replaces the beta groups (v48), the one cohort per
+// player and the staff of v171; ARCHITECTURE.md "Player groups"). A group has an id, a name and three settings: board
+// (it has its own leaderboard), apart (its members leave the general board and every other group's, as the staff did)
+// and beta ('' or the subject it opens, as a beta group did: core.js SUBJECTS open: 'group', subjGroup). A player is in
+// any number of groups. Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and
+// Groups, one row a membership (Group: the group's id, Name: the player's, Added), as the beta groups were kept. Ids:
+// 'g:' and 8 random characters for a group made from v179; a group the migration made keeps the Group cell its rows had
+// (a subject's id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns
+// its player's groups from the load and save replies (groups: the subjects in beta they open, as before; gids: their
+// groups' ids); the admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group
+// grants a right, and no grant puts anyone in a group.
 const GROUPS = {TAB: 'Groups', HEAD: ['Group', 'Name', 'Added']};
-const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // v53: SUBJECTS open: 'group', not the beta label
+const GDEF = {TAB: 'Group settings', HEAD: ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added']}, GNAME_MAX = 40;
+const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // v53: the subjects that open to a group
 function groupRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues() : [];
 }
-// name (lower case) -> the groups of a subject still in beta it is in, each once. v119: no prototype, so a player named
-// constructor or __proto__ is in their own groups, never Object's member (reserved names, Pierre 2026-11-09).
-function groupMap_(){
-  const ok = groupIds_(), m = Object.create(null);
-  groupRows_().forEach(r => { const g = String(r[0]), k = lc_(r[1]); if (k && ok.indexOf(g) >= 0 && (m[k] = m[k] || []).indexOf(g) < 0) m[k].push(g); });
-  return m;
+function gdefRows_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GDEF.TAB);
+  return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GDEF.HEAD.length).getValues() : [];
 }
-const groupsOf_ = name => groupMap_()[lc_(name)] || [];
-// v171: cohorts, for now (Pierre, 2026-11-17: "chaque nouvelle cohorte aurait un leaderboard indépendant"; ROADMAP
-// "Roles, instances and cohorts"): a named group of players the admin makes and fills on Players, kept in the same
-// Groups tab, its Group cell COHORT_ + the display name chosen at creation ("cohort:RA November 2026"), so a subject's
-// beta group (its bare id) is untouched: groupMap_ reads subject ids only. A player is in one cohort at most (groupSet_
-// moves them). A cohort exists while it has a member. The boards only ask who is a member (cohortMap_), so roles step
-// 2's real cohorts (a trainer makes one, students join with a code, Q345) can replace this behind the same map.
-const COHORT_ = 'cohort:', COHORT_MAX = 40;
-// The Group cell of a cohort named n ('' for a name that cannot be one: empty, too long, a control character).
-const cohortId_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= COHORT_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? COHORT_ + s : ''; };
-const isCohort_ = g => String(g).indexOf(COHORT_) === 0 && String(g).length > COHORT_.length;
-// name (lower case) -> the display name of the cohort it is in; the newest row wins should two ever be there. No prototype.
-function cohortMap_(rows){
+const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, apart: Number(r[3]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});
+// Writes a group's settings at row r of the Group settings tab, its Name cell plain text first, so a name such as
+// "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
+function gdefPut_(sh, r, d){
+  sh.getRange(r, 2).setNumberFormat('@');
+  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, d.apart, d.beta, new Date(d.at || Date.now())]]);
+}
+// A group's name as typed, its spaces folded ('' for one that cannot be: empty, too long, a control character).
+const gname_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= GNAME_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? s : ''; };
+// Every group and membership, read once: {defs: [{id, n, board, apart, beta, at}] in the tab's order, rows: [[group id,
+// player name]] of the groups that exist}. Until the one-shot migration ran, the groups as it will make them from the data
+// before (groupsBefore_), so a reader gives the same answer in the minutes between the install and the migration.
+function groupState_(){
+  if (!groupsMigrated_()) return groupsBefore_();  // groups-migration
+  const defs = gdefRows_().filter(r => r[0] !== '').map(gdefOf_), ids = Object.create(null);
+  defs.forEach(d => (ids[d.id] = 1));
+  return {defs: defs, rows: groupRows_().filter(r => ids[String(r[0])] && lc_(r[1])).map(r => [String(r[0]), String(r[1])])};
+}
+// id -> the lower-case names of its members (no prototype: a player named constructor is a member like any other).
+function groupMembers_(gs){
   const m = Object.create(null);
-  (rows || groupRows_()).forEach(r => { const g = String(r[0]), k = lc_(r[1]); if (k && isCohort_(g)) m[k] = g.slice(COHORT_.length); });
+  gs.rows.forEach(r => { (m[r[0]] = m[r[0]] || Object.create(null))[lc_(r[1])] = 1; });
   return m;
 }
-// Every cohort's display name, the newest first (by its first row in the Groups tab).
-function cohortNames_(rows){
-  const seen = [];
-  (rows || groupRows_()).forEach(r => { const g = String(r[0]); if (isCohort_(g) && seen.indexOf(g) < 0) seen.push(g); });
-  return seen.reverse().map(g => g.slice(COHORT_.length));
+// name (lower case) -> {gids: the ids of its groups, groups: the subjects in beta its groups open}, each once. v119: no
+// prototype (reserved names, Pierre 2026-11-09).
+function groupMap_(gs){
+  gs = gs || groupState_();
+  const ok = groupIds_(), beta = Object.create(null), m = Object.create(null);
+  gs.defs.forEach(d => (beta[d.id] = d.beta));
+  gs.rows.forEach(r => {
+    const k = lc_(r[1]), e = m[k] = m[k] || {gids: [], groups: []}, b = beta[r[0]];
+    if (e.gids.indexOf(r[0]) < 0) e.gids.push(r[0]);
+    if (b && ok.indexOf(b) >= 0 && e.groups.indexOf(b) < 0) e.groups.push(b);
+  });
+  return m;
 }
-const cohortOf_ = name => cohortMap_()[lc_(name)] || '';
-// v171: the staff (Pierre, 2026-11-17: "techniquement le staff aurait les droits de 'trainer' dans l'app"): the accounts
-// holding the trainer role in the instance (roles step 1, the Roles tab), each by its lower-case name and the code hash
-// the grant was given to (as can_ reads a grant), so a name taken again after a delete is not staff.
-function staffSet_(){
-  const s = new Set();
-  grants_().forEach(g => { if (g.role === 'trainer' && g.scope === INST_SCOPE_) s.add(g.name + '|' + g.h); });
-  return s;
+const groupsOf_ = name => groupMap_()[lc_(name)] || {gids: [], groups: []};
+// The leaderboards (board_) of one ranking: rows, the general board, without the members of an apart group; groups,
+// [{id, n, rows}] for every group with a board, the newest first, its members, but those of an apart group on the board
+// of no group that is not apart (a player in two apart groups is on both). Each keeps the ranking's order.
+function groupBoards_(all, top){
+  const gs = groupState_(), mem = groupMembers_(gs), apart = Object.create(null);
+  gs.defs.forEach(d => { if (d.apart && mem[d.id]) Object.keys(mem[d.id]).forEach(k => (apart[k] = 1)); });
+  const defs = gs.defs.map((d, i) => [d, i]).filter(x => x[0].board).sort((a, b) => b[0].at - a[0].at || b[1] - a[1]).map(x => x[0]);
+  return {rows: top(all.filter(x => !apart[lc_(x[0])])),
+    groups: defs.map(d => ({id: d.id, n: d.n, rows: top(all.filter(x => { const k = lc_(x[0]); return mem[d.id] && mem[d.id][k] && (d.apart || !apart[k]); }))}))};
 }
-// Every subject's board cache dropped (a membership or a role changed who is on which board).
+// Every subject's board cache dropped (a membership or a group's setting changed who is on which board).
 const boardsDrop_ = () => CORE_.SUBJECTS.filter(S => S.board).forEach(S => { try { CacheService.getScriptCache().remove(boardCache_(S)); } catch (e) {} });
-// Adds (on) or removes players of a group: existing players only (RAs tab), each once. Returns how many changed. v171:
-// added to a cohort, a player leaves the cohort they were in (one cohort each).
+// Adds (on) or removes players of a group: existing players only (RAs tab), each once. Returns how many changed. Under
+// the script lock (the caller holds it).
 function groupSet_(ra, names, g, on){
   const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
-  if (on && isCohort_(g)) {
-    const out = Object.create(null); names.forEach(x => (out[lc_(x)] = 1));
-    for (let i = rows.length - 1; i >= 0; i--) if (isCohort_(rows[i][0]) && String(rows[i][0]) !== g && out[lc_(rows[i][1])] && find_(ra, String(rows[i][1]))) { sh.deleteRow(i + 2); rows.splice(i, 1); }
-  }
   if (on) {
     const add = [], seen = Object.create(null);  // v58: live players only, never an archive
     names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
@@ -2878,6 +2886,85 @@ function groupSet_(ra, names, g, on){
   for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === g && out[lc_(rows[i][1])]) { sh.deleteRow(i + 2); n++; }
   return n;
 }
+// The admin's changes to the groups themselves, under the script lock (users_, the players right, audited):
+// {groupMake: {n, board, apart, beta}} makes a group (its name unique, case aside); {groupEdit: id, n, board, apart, beta}
+// renames it or changes a setting (a field left out stays); {groupDrop: id} deletes it, only when nobody is in it.
+// beta: '' or a subject that opens to a group (or the value it holds). Answers {ok, group: its settings} ({ok, group: id}
+// for a delete); errors 'name' (empty, over 40 characters, a control character), 'exists' (another group's name),
+// 'beta', 'group' (no such group), 'members' (a delete while it has members).
+function groupDo_(p){
+  const gs = groupState_(), sh = sheet_(GDEF.TAB, GDEF.HEAD), id = String(p.groupMake ? '' : p.groupEdit || p.groupDrop || '');
+  const at = id ? gs.defs.map(d => d.id).indexOf(id) : -1, cur = at >= 0 ? gs.defs[at] : null, o = p.groupMake && typeof p.groupMake === 'object' ? p.groupMake : p;
+  if (!p.groupMake && !cur) return {ok: false, error: 'group'};
+  const row = () => gdefRows_().map(r => String(r[0])).indexOf(id) + 2;  // its row in the tab (the defs are its rows in order)
+  if (p.groupDrop) {
+    if (gs.rows.some(r => r[0] === id)) return {ok: false, error: 'members'};
+    sh.deleteRow(row());
+    boardsDrop_();
+    return {ok: true, group: id};
+  }
+  const n = o.n === undefined && cur ? cur.n : gname_(o.n);
+  if (!n) return {ok: false, error: 'name'};
+  if (o.n !== undefined && gs.defs.some(d => d !== cur && lc_(d.n) === lc_(n))) return {ok: false, error: 'exists'};  // a setting changed alone never asks
+  const beta = o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '');
+  if (beta && groupIds_().indexOf(beta) < 0 && !(cur && cur.beta === beta)) return {ok: false, error: 'beta'};
+  const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
+  const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), apart: flag('apart', cur ? cur.apart : 0), beta: beta, at: cur ? cur.at : Date.now()};
+  gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
+  boardsDrop_();
+  return {ok: true, group: d};
+}
+// groups-migration: begin
+// v179 (Pierre, 2026-11-18, "ok" to the group model; rule W3): the groups the data before this version held, made
+// groups once (ONCE_ groups), nothing lost. Each distinct Group cell of the Groups tab is a group whose id is that cell
+// (its rows stay as they are, the date of its first row its Added): a subject's id is that subject's beta group ("<subject
+// name> beta", beta: that subject, as it opened it), 'cohort:<name>' a cohort (named <name>, with a board), any other cell
+// a group named by it. The staff (v171: the accounts holding the trainer role in the instance under the code hash the
+// grant was given to) are the group 'staff', "Staff", board and apart, as their board was (none when nobody holds the
+// role); their role stays theirs.
+// groupsBefore_ reads them without writing (groupState_ until the migration ran), groupsMigrate_ writes them, under the
+// script lock, from ONCE_ or from the first change to a group or a membership before it (groupsNow_), and only once.
+// Remove this block, and the lines marked groups-migration, once the Deploy log shows "one-shot groups" (v179 live).
+const GSTAFF_ = 'staff';
+const groupsMigrated_ = () => !!PropertiesService.getScriptProperties().getProperty('ONCE_groups');
+function groupsBefore_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB), defs = [], seen = Object.create(null);
+  const rows = (sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : []).filter(r => String(r[0]) !== '' && lc_(r[1]));
+  rows.forEach(r => {
+    const g = String(r[0]); if (g === GSTAFF_ || seen[g]) return;
+    seen[g] = 1;
+    const S = CORE_.SUBJECTS.find(x => x.id === g), coh = g.indexOf('cohort:') === 0 && g.length > 7;
+    defs.push({id: g, n: S ? S.name + ' beta' : coh ? g.slice(7) : g, board: coh ? 1 : 0, apart: 0, beta: S ? g : '', at: new Date(r[2]).getTime() || 0});
+  });
+  // The staff: today's trainers whose account still has the code hash of their grant (archives and removed names left out).
+  const rt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), live = Object.create(null), staff = [];
+  liveRows_().forEach(r => (live[lc_(r[0])] = r));
+  const since = [];
+  if (rt && rt.getLastRow() > 1) rt.getRange(2, 1, rt.getLastRow() - 1, ROLES.HEAD.length).getValues().forEach(r => {
+    const k = lc_(r[0]), a = live[k];
+    if (String(r[1]) !== 'trainer' || String(r[2]) !== INST_SCOPE_ || !a || String(a[6]) !== String(r[4]) || staff.some(x => lc_(x) === k)) return;
+    staff.push(String(a[0])); since.push(new Date(r[3]).getTime() || 0);
+  });
+  rows.forEach(r => { if (String(r[0]) === GSTAFF_ && !staff.some(x => lc_(x) === lc_(r[1]))) staff.push(String(r[1])); });  // a try that failed part way
+  if (staff.length) defs.unshift({id: GSTAFF_, n: 'Staff', board: 1, apart: 1, beta: '', at: since.length ? Math.min.apply(null, since) : 0});
+  const out = rows.filter(r => String(r[0]) !== GSTAFF_).map(r => [String(r[0]), String(r[1])]);
+  return {defs: defs, rows: out.concat(staff.map(x => [GSTAFF_, x]))};
+}
+function groupsMigrate_(){
+  const props = PropertiesService.getScriptProperties();
+  if (groupsMigrated_()) return 'already made by a change to the groups';
+  const st = groupsBefore_(), sh = sheet_(GDEF.TAB, GDEF.HEAD), have = Object.create(null);
+  gdefRows_().forEach(r => (have[String(r[0])] = 1));
+  const add = st.defs.filter(d => !have[d.id]);
+  add.forEach(d => gdefPut_(sh, sh.getLastRow() + 1, d));
+  const ra = sheet_('RAs', HEAD), staff = st.rows.filter(r => r[0] === GSTAFF_).map(r => r[1]), n = groupSet_(ra, staff, GSTAFF_, true);
+  props.setProperty('ONCE_groups', String(Date.now()));
+  boardsDrop_();
+  return add.length + ' group' + (add.length === 1 ? '' : 's') + ' set from the Groups tab and the trainers (' + st.defs.filter(d => d.beta).length + ' beta, ' + st.defs.filter(d => d.id.indexOf('cohort:') === 0).length + ' cohort' + (staff.length ? ', the staff' : '') + '), ' + n + ' staff member' + (n === 1 ? '' : 's') + ' added';
+}
+// The first change to the groups before the migration ran makes it first (the caller holds the script lock).
+const groupsNow_ = () => { if (!groupsMigrated_()) groupsMigrate_(); };
+// groups-migration: end
 // v115 (Pierre, 2026-11-08, ROADMAP "Security follow-ups": "je suis ok avec tout ce que tu as listé"): the players
 // and devices the admin leaves out of the statistics, by the admin's anonymous id (aid_: a signed-in player's or a device
 // not signed in, "~anon <id>"), one row each in the tab "Stats excluded" (Id, Added). Their answers rate no photo, no
@@ -2920,7 +3007,7 @@ function deleteAccount_(name, all, by){
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
-  dropRows_(GROUPS.TAB, name, 2);  // v48: out of every beta group
+  dropRows_(GROUPS.TAB, name, 2);  // v48: out of every group (v179: the staff's too; a group itself holds no player data)
   rolesDrop_(name, by || '');  // v156: its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
   sxMove_(name, all ? '' : del);  // v115: out of the statistics stays out, under the id the answers keep
   // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
@@ -2989,7 +3076,8 @@ function redact_(name, into){
 // (never the name the request carries). The action is told as usersDo_ below picks its branch; the list and userData
 // are reads, not audited.
 function users_(p){
-  const act = p.userBoard ? 'userBoard' : p.userGroup ? 'userGroup' : p.userStart ? 'userStart' : p.statsExclude ? 'statsExclude'
+  const act = p.userBoard ? 'userBoard' : p.userGroup ? 'userGroup' : p.groupMake ? 'groupMake' : p.groupEdit ? 'groupEdit' : p.groupDrop ? 'groupDrop'
+    : p.userStart ? 'userStart' : p.statsExclude ? 'statsExclude'
     : p.userData ? 'userData' : Array.isArray(p.anonDelete) ? 'anonDelete' : p.userArchive ? 'userArchive' : p.userDelete ? 'userDelete'
     : p.userMerge ? 'userMerge' : 'users';
   const who = gate_(p.token, 'players', act);
@@ -2997,7 +3085,7 @@ function users_(p){
   if (act === 'users' || act === 'userData') return usersDo_(p, who);
   const id = x => aid_(String(x || '')), m = p.userMerge || {};
   const target = act === 'userBoard' ? id(p.userBoard) : act === 'userStart' ? id(p.userStart) : act === 'userDelete' ? id(p.userDelete)
-    : act === 'userGroup' ? (Array.isArray(p.userGroup) ? '' : id(p.userGroup)) : act === 'statsExclude' ? (SX_ID.test(String(p.statsExclude)) ? String(p.statsExclude) : '')
+    : act === 'userGroup' ? (Array.isArray(p.userGroup) ? '' : id(p.userGroup)) : act === 'groupEdit' || act === 'groupDrop' ? String(p[act]).slice(0, 60) : act === 'statsExclude' ? (SX_ID.test(String(p.statsExclude)) ? String(p.statsExclude) : '')
     : act === 'userArchive' ? id((p.userArchive || {}).from) : act === 'userMerge' ? id(m.from) + ' > ' + id(m.into) : '';
   const out = usersDo_(p, who);
   audit_(who.id, act, INST_SCOPE_, auditOf_(out), target);
@@ -3022,22 +3110,26 @@ function usersDo_(p, who){
       return {ok: true, board: b};
     } finally { lock.releaseLock(); }
   }
-  // v48: {userGroup: name | [names], group, on: true|false, token} adds players to the group of a subject in beta, or
-  // removes them (groupSet_); answers how many changed and the group's members. Under the script lock, as a rename or a
-  // merge could otherwise move a name between the read and the write.
-  // v171: {userGroup, cohort: display name, on, token} does the same for a cohort (cohortId_; on: the player leaves the
-  // cohort they were in; a new name makes the cohort), and every board's cache is dropped (the cohorts' boards follow).
+  // v48: {userGroup: name | [names], group, on: true|false, token} adds players to a group, or removes them (groupSet_);
+  // answers how many changed and the group's members. v179: group is any group's id (groupState_), not only a subject's
+  // beta group; v171's cohort form is gone. Under the script lock, as a rename or a merge could otherwise move a name
+  // between the read and the write; every board's cache is dropped (the groups' boards follow).
   if (p.userGroup) {
-    const coh = p.cohort != null, g = coh ? cohortId_(p.cohort) : String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
-    if (coh ? !g : groupIds_().indexOf(g) < 0) return {ok: false, error: 'group'};
+    const g = String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
     const lock = lock_();
     try {
+      groupsNow_();  // groups-migration
+      if (!groupState_().defs.some(d => d.id === g)) return {ok: false, error: 'group'};
       if (!Array.isArray(p.userGroup) && !row_(names[0])) return {ok: false, error: 'user'};
       const n = groupSet_(ra, names, g, !!p.on);
-      if (coh) { boardsDrop_(); const cm = cohortMap_(), c = g.slice(COHORT_.length); return {ok: true, cohort: c, n: n, members: Object.keys(cm).filter(k => cm[k] === c).length}; }
-      const m = groupMap_();
-      return {ok: true, group: g, n: n, members: Object.keys(m).filter(k => m[k].indexOf(g) >= 0).length};
+      boardsDrop_();
+      return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
     } finally { lock.releaseLock(); }
+  }
+  // v179: the groups themselves (groupDo_): make, rename or set, delete an empty one.
+  if (p.groupMake || p.groupEdit || p.groupDrop) {
+    const lock = lock_();
+    try { groupsNow_(); return groupDo_(p); } finally { lock.releaseLock(); }  // groups-migration: groupsNow_
   }
   // v99 (Pierre, 2026-11-08, Q228: a fallback card had moved a player to the wrong first-launch answer): {userStart: name,
   // s: subject id, c: answer, token} changes the player's answer to the subject's first-launch question (core.js
@@ -3134,7 +3226,7 @@ function usersDo_(p, who){
         // them must not log into the new account under the old name (Codex review #352).
         relabel_('Removed', 3, from, into);
         redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none (Codex review #603)
-        dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no beta group
+        dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no group
         rolesDrop_(from, who.id);  // v156: nor holds any role (rule D7): the name is free again at once, so a grant kept by name would pass to whoever takes it
         sxMove_(from, into);  // v115: its answers stay out of the statistics if they were
         rplDrop_(from);  // the replay (v28; every subject's) is made again under the new name when asked
@@ -3166,9 +3258,9 @@ function usersDo_(p, who){
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
       pagesMove_(from, into);
-      // v48: the merged name's beta groups join the kept name's (each once).
-      // v171: a cohort only when the kept name is in none (it keeps its own).
-      groupRows_().filter(r => lc_(r[1]) === lc_(from) && !(isCohort_(r[0]) && cohortOf_(into))).forEach(r => groupSet_(ra, [into], String(r[0]), true));
+      // v48: the merged name's groups join the kept name's (each once); v179: every group, the kept name keeps its own too.
+      groupsNow_();  // groups-migration
+      groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
       rolesDrop_(from, who.id);  // v156: the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
       sxMove_(from, '');  // v115: the kept name's choice holds for the answers it takes
@@ -3184,13 +3276,12 @@ function usersDo_(p, who){
   // id (v13): the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
   // v58: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
   // v119: every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
-  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null), hs = Object.create(null);
+  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
       review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
     out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
-    hs[lc_(u.name)] = String(r[6] || '');
   });
   // v60: the replayed subject's answers (the corals'), as before fish answers were logged: its mix-ups name its genera.
   const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
@@ -3213,11 +3304,11 @@ function usersDo_(p, who){
   if (rp && rp.getLastRow() > 1) rp.getRange(2, 2, rp.getLastRow() - 1, 1).getValues().forEach(r => { const u = by[lc_(r[0])] || arch[lc_(r[0])]; if (u) u.reports++; });
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
-  // v48: the beta groups each player is in.
-  const gm = groupMap_();
-  out.users.forEach(u => (u.groups = gm[lc_(u.name)] || []));
-  // v171: each player's cohort ('' for none) and staff 1 for a trainer (staffSet_), for the admin's Cohort and Staff.
-  try { const cm = cohortMap_(), st = staffSet_(); out.users.forEach(u => { u.cohort = cm[lc_(u.name)] || ''; if (st.has(lc_(u.name) + '|' + hs[lc_(u.name)])) u.staff = 1; }); } catch (e) {}
+  // v48: the subjects in beta each player's groups open; v179: gids, the ids of their groups, and every group's settings
+  // (groupDefs: [{id, n, board, apart, beta, at}], in the order they were made).
+  const gs = groupState_(), gm = groupMap_(gs);
+  out.users.forEach(u => { const g = gm[lc_(u.name)]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; });
+  out.groupDefs = gs.defs;
   replayedAll_(out.users, dcol);
   out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics
   return out;
@@ -3546,8 +3637,12 @@ const ONCE_ = {
       out.push('Reports ' + k + ' cell' + (k === 1 ? '' : 's'));
     }
     return 'units renamed (fish entries → families): ' + (out.join(', ') || 'nothing logged');
-  }
+  },
   // fishunits-migration: end
+  // groups-migration: begin
+  // v179: the beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
+  groups: () => groupsMigrate_()
+  // groups-migration: end
 };
 // The leaderboard's replays (boardWarm_, rule D8) at each run of the trigger that finds the script up to date (so by the
 // code installed), after the one-shot migrations, even when one fails (it is tried again at the next run); the Deploy log says how many were made, only when some were, and a failure.

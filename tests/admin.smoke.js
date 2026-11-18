@@ -4118,9 +4118,9 @@ async function sealPart(b, base, fails) {
             fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
           await qx.close();
         }
-        // Cohorts and staff (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts,
-        // New cohort… asking its name) and Staff Add / Remove; the Groups column and the line above the table follow. Before
-        // the version, neither shows.
+        // Cohorts (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts, New cohort…
+        // asking its name); the Groups column and the line above the table follow. Before the version, it does not show. The
+        // Staff toggle, which granted the trainer role, is gone at every version (Pierre, 2026-11-18: "Staff" is not a role).
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px cohorts page error: ${e.message}`));
@@ -4160,26 +4160,144 @@ async function sealPart(b, base, fails) {
             await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
             await calm();
             b = await bar();
-            if (!b.sel || b.sel[0] !== '' || b.sel[1].join('|') !== 'None|New cohort…' || b.staff !== 'Not staff Add' || b.wide)
+            if (!b.sel || b.sel[0] !== '' || b.sel[1].join('|') !== 'None|New cohort…' || b.staff || b.wide)
               fails.push(`${w}px cohorts: before ${JSON.stringify(b)}`);
             await q.selectOption('.adm-ubar [data-ucohort]', '+');
             await calm();
             b = await bar();
-            if (!b.sel || b.sel[0] !== 'RA Test 2026' || !/RA Test 2026: 1 · Staff: 0/.test(b.line) || !/RA Test 2026/.test(b.cell))
+            if (!b.sel || b.sel[0] !== 'RA Test 2026' || !/^RA Test 2026: 1$/.test(b.line) || !/RA Test 2026/.test(b.cell))
               fails.push(`${w}px cohorts: New cohort… ${JSON.stringify(b)}`);
-            await q.click('.adm-ubar [data-ustaff]');
-            await calm();
-            b = await bar();
-            if (b.staff !== 'Staff Remove' || !/Staff: 1/.test(b.line) || !/Staff/.test(b.cell))
-              fails.push(`${w}px cohorts: Staff Add ${JSON.stringify(b)}`);
-            await q.click('.adm-ubar [data-ustaff]');
-            await calm();
             await q.selectOption('.adm-ubar [data-ucohort]', '');
             await calm();
             b = await bar();
-            if (b.sel[0] !== '' || b.staff !== 'Not staff Add' || b.line) fails.push(`${w}px cohorts: back to none ${JSON.stringify(b)}`);
+            if (b.sel[0] !== '' || b.staff || b.line) fails.push(`${w}px cohorts: back to none ${JSON.stringify(b)}`);
           } catch (e) {
             fails.push(`${w}px cohorts: ${String(e.message).split('\n')[0]}`);
+          }
+          await q.close();
+        }
+        // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
+        // arbitraire de groupes"): a player's bar shows their groups as chips (× takes them out) and "+ Add to a group"; the
+        // Groups column follows; no Cohort select, no Staff toggle, no beta line. Players › Groups: every group, the newest
+        // first, with Board / Apart, Rename, Add all / Remove all (asked first), Delete once empty, New group. Before the
+        // version, the page says what it needs. No sideways scroll.
+        {
+          const q = await p.context().newPage(),
+            said = [];
+          q.on('pageerror', e => fails.push(`${w}px groups page error: ${e.message}`));
+          q.on('dialog', d => {
+            said.push(d.type() + ': ' + d.message());
+            return d.type() === 'prompt'
+              ? d.accept(said.length > 1 ? 'Crew' : 'RA Test 2026')
+              : d.type() === 'confirm'
+                ? d.accept()
+                : d.dismiss();
+          });
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(300))
+              .catch(() => fails.push(`${w}px groups: never settled`));
+          const bar = async () => {
+            if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
+            return q.evaluate(() => {
+              const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Carla Demo'),
+                add = document.querySelector('.adm-ubar [data-ugadd]');
+              return {
+                chips: [...document.querySelectorAll('.adm-ubar .adm-gchip')].map(c => c.textContent),
+                add: add ? [...add.options].map(o => o.textContent) : null,
+                old: !!document.querySelector('.adm-ubar [data-ucohort], .adm-ubar [data-ustaff], .adm-ubar [data-ugroup], .adm-ugroup'),
+                cell: row ? row.textContent : '',
+                wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+              };
+            });
+          };
+          const page = () =>
+            q.evaluate(() => ({
+              cards: [...document.querySelectorAll('.adm-gcard')].map(c => [
+                c.querySelector('.adm-gname').textContent,
+                c.querySelector('.adm-gcount').textContent,
+                [...c.querySelectorAll('[aria-pressed="true"]')]
+                  .map(b => b.closest('[aria-label]').getAttribute('aria-label') + ' ' + b.textContent)
+                  .join(','),
+                !!c.querySelector('[data-gdrop]')
+              ]),
+              note: (document.querySelector('#view .note') || {}).textContent || '',
+              wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+            }));
+          try {
+            const X = await p.evaluate(() => GROUPADM_SHEET);
+            await q.goto(base + `admin.html?demo&v=${X - 1}#players/groups`);
+            await calm();
+            let g = await page();
+            if (g.cards.length || !new RegExp(`need the sheet script v${X}`).test(g.note))
+              fails.push(`${w}px groups before v${X}: ${JSON.stringify(g)}`);
+            await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+            await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+            await calm();
+            const n = await q.evaluate(() => USERS.users.length);
+            let b = await bar();
+            if (b.chips.length || !b.add || b.add.join('|') !== '+ Add to a group|Staff|RA November 2026' || b.old || b.wide)
+              fails.push(`${w}px groups: the bar before ${JSON.stringify(b)}`);
+            await q.selectOption('.adm-ubar [data-ugadd]', {label: 'RA November 2026'});
+            await calm();
+            b = await bar();
+            if (
+              b.chips.join('|') !== 'RA November 2026×' ||
+              b.add.join('|') !== '+ Add to a group|Staff' ||
+              !/RA November 2026/.test(b.cell)
+            )
+              fails.push(`${w}px groups: + Add to a group ${JSON.stringify(b)}`);
+            await q.click('.adm-ubar [data-ugout]');
+            await calm();
+            b = await bar();
+            if (b.chips.length || /RA November 2026/.test(b.cell)) fails.push(`${w}px groups: × ${JSON.stringify(b)}`);
+            await q.goto(base + `admin.html?demo&v=${X}#players/groups`);
+            await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+            await calm();
+            g = await page();
+            if (
+              JSON.stringify(g.cards) !==
+                JSON.stringify([
+                  ['RA November 2026', `2 of ${n}`, 'Board On,Apart Off', false],
+                  ['Staff', `1 of ${n}`, 'Board On,Apart On', false]
+                ]) ||
+              g.wide
+            )
+              fails.push(`${w}px groups: the page ${JSON.stringify(g)}`);
+            await q.click('[data-gnew]');
+            await calm();
+            g = await page();
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `0 of ${n}`, 'Board On,Apart Off', true]))
+              fails.push(`${w}px groups: New group ${JSON.stringify(g.cards)}`);
+            const first = '.adm-gcard:first-child';
+            await q.click(`${first} [data-k="apart"][data-val="1"]`);
+            await calm();
+            await q.click(`${first} [data-gall]`);
+            await calm();
+            g = await page();
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `${n} of ${n}`, 'Board On,Apart On', false]))
+              fails.push(`${w}px groups: Apart, Add all ${JSON.stringify(g.cards[0])}`);
+            await q.click(`${first} [data-gnone]`);
+            await calm();
+            await q.click(`${first} [data-gren]`);
+            await calm();
+            g = await page();
+            if (g.cards[0][0] !== 'Crew' || g.cards[0][1] !== `0 of ${n}`)
+              fails.push(`${w}px groups: Remove all, Rename ${JSON.stringify(g.cards[0])}`);
+            await q.click(`${first} [data-gdrop]`);
+            await calm();
+            g = await page();
+            if (g.cards.length !== 2 || g.wide) fails.push(`${w}px groups: Delete ${JSON.stringify(g)}`);
+            if (
+              !said.includes(`confirm: Add all ${n} players to RA Test 2026?`) ||
+              !said.includes(`confirm: Remove all ${n} players from RA Test 2026?`)
+            )
+              fails.push(`${w}px groups: the bulk actions did not ask ${JSON.stringify(said)}`);
+          } catch (e) {
+            fails.push(`${w}px groups: ${String(e.message).split('\n')[0]}`);
           }
           await q.close();
         }
