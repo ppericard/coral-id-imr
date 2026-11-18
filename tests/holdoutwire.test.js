@@ -185,6 +185,21 @@ test('examSet: a held-out photo never shown to this player first, the hardest; n
   assert.ok(/^p/.test(N.examSet('u').shown[0].f));
 });
 
+// Codex review #1057: exposure by observation (rule P4): a sibling photo of a held-out fish already shown waits.
+test('examSet: a held-out observation already met (any photo of it) waits behind those never shown', () => {
+  const {L} = unit(),
+    H = [
+      {f: 'x1', o: 'ox', e: 1, ho: 1},
+      {f: 'x2', o: 'ox', e: 1, ho: 1},
+      {f: 'y1', o: 'oy', e: 4, ho: 1}
+    ],
+    E = engine('fish', L, {score: 0.9, held: H, others: {'f:X': {ps: {x1: [1, 1]}}}});
+  for (let i = 0; i < 10; i++) assert.strictEqual(E.examSet('u').shown[0].f, 'y1');
+  // nothing met: the hardest held-out observation (ox, ease 1) comes first
+  const F = engine('fish', L, {score: 0.9, held: H});
+  assert.ok(['x1', 'x2'].includes(F.examSet('u').shown[0].f));
+});
+
 test('photoSet never draws a held-out photo in practice (the views only)', () => {
   const {L, H} = unit(),
     E = engine('fish', L, {score: 0.9, held: H});

@@ -448,8 +448,12 @@ function examSet(n) {
     // never answered right; else the least seen.
     // The held-out photos never shown to this player on any unit first (the honest exam, ROADMAP "A held-out photo
     // set"; Q385): the hardest of them, as below.
-    seen = (g => g.held && g.held.length && shownAll())(GX(n)),
-    held = seen ? L.filter(p => p.ho && !seen.has(p.f)) : [],
+    // An observation counts as seen whatever photo of it was shown (rule P4; Codex review #1057): a sibling photo of a
+    // fish already met waits behind every observation never shown, then today's rule below.
+    hl = (GX(n) || {}).held || [],
+    seen = hl.length ? shownAll() : null,
+    seenObs = seen ? new Set(hl.filter(p => seen.has(p.f)).map(p => p.o || p.f)) : null,
+    held = seen ? L.filter(p => p.ho && !seen.has(p.f) && !seenObs.has(p.o || p.f)) : [],
     fresh = L.filter(p => !(ps[p.f] || [0])[0]),
     unright = L.filter(p => !(ps[p.f] || [0, 0])[1]),
     least = M =>
