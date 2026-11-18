@@ -1473,7 +1473,7 @@ learning change".
 - **Breaks** (`--breaks 10m,30m,1h,3h,8h,3d,1w,1mo`, `--after` 20): the app runs on a virtual clock, 10 s an answer.
   After the first session the player leaves for each break in turn, each from the same state with the generators
   seeded again, forgets, and comes back: it plays until the comeback is over (the questions flagged warm), then
-  `--after` questions more (200 at most in all). It forgets on the FSRS curve towards its starting knowledge:
+  `--after` questions more (200 at most a break). It forgets on the FSRS curve towards its starting knowledge:
   know′ = k0 + (know − k0)(1 + 19/81 · t / S)^−0.5, S = `LEARNER.S0` 2 days × `LEARNER.G` 2.5 for each further day
   the genus was answered right (the learner's own stability, not the app's). Its photo memory and pair skills do not
   fade. Per break: the comeback's length and success, the questions that held the openings on coming back, the success
@@ -1483,7 +1483,7 @@ learning change".
   consecutive questions), those right after a miss (`afterMiss`), and the questions where the rule "an opening only
   after a right answer" (`model.js` `openRight`) alone held it, with the opening chance it held back (`blocked`).
 - **The first-launch answer** (`--choice new|imr|know|auto`, default `new`; `auto`: the beginner and the casual diver
-  new, the lecture RA imr, the others know; `--fallback keep|accept`, the answer to the card that comes when the
+  new, the lecture RA imr, the strong RA and the expert know; `--fallback keep|accept`, the answer to the card that comes when the
   answers do not fit the choice; `--vars`, for calibration only, other values of its variables): per run the first 20
   answers' mean surprise (right − e), their right % and the global level then, and the fallback card; the first 80
   answers are kept as a trace for `tools/fallbackeval.js`.
@@ -1599,11 +1599,10 @@ bar is judged by it in several learner worlds.
 ### What was measured with them
 
 In the notebook, with their dates: the calibration of the opening's pace (`OPEN.K` and `OPEN.P`, the slope that
-replaced the switch, the first-meeting cards) and its first exploration; the learning-outcome baseline of 2026-11-02;
-the long runs' memory; **Open all: the app's expectation against the truth** (the starting ability of the genera opened
-at once over-estimates them for a beginner or a lecture-level RA; measured, not changed); the field learner's results
-and Pierre's Custom-8 scenario; the real-log test of the set size; and the judge's first design (the primaries
-declared in #624).
+replaced the switch, the first-meeting cards) and its first exploration; the first learning-outcome baseline; the long
+runs' memory; **Open all: the app's expectation against the truth** (the starting ability of the genera opened at once,
+measured, not changed); the field learner's results and Pierre's Custom-8 scenario; the real-log test of the set size;
+and the judge's first design.
 
 ## Decision log
 
