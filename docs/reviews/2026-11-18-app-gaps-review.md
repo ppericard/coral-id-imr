@@ -15,8 +15,15 @@ manque en terme de fonctionnalité ou de contenu".
   features and in content, from the player's, the trainer's and the admin's side.
 
 Labels (rule W11): **[measured]** = counted by a script on `main` @b6e0d263 (2026-11-18); **[read]** = read in a file or
-a doc; **[guess]** = my judgement. Sizes (all [guess], one agent): **S** up to half a day; **M** one to two days; **L**
-more, usually content work over many taxa. **L11** = the check level of rule L11 (0 none beyond the tests, 1 the app
+a doc; **[guess]** = my judgement. Sizes: **S**, **M**, **L** are the rough scale of the work (one small change, a few
+changes, a series or content work over many taxa), with no duration. Every row of the tables with a Size column also
+carries a type and a size band (my reading, from the files the item will touch: the type is the one `tools/effort.py`
+gives a merged PR touching them; the band is its lines changed: XS up to 20, S up to 100, M up to 400, L up to 1,500, XL
+above) and the measured agent time that `python3 tools/effort.py --estimate TYPE BAND` prints for them [measured]: the
+five closest merged PRs, their median and 25-75% range, first commit to green checks. For an L row it is one PR of the
+series; nothing is multiplied. Bulk work run by a light model (a box pass, a judging pass) gets no figure: the measured
+PRs are code PRs, and bulk work depends on the batch size. Where a row was built since this review was written, the
+actual PR is cited. **L11** = the check level of rule L11 (0 none beyond the tests, 1 the app
 world, 2 both worlds), and L12 (the real log) from level 1.
 
 Status words: **decided, not built** (a decision covers it: a gap to fill); **in flight #N** (an open PR builds it);
@@ -47,19 +54,19 @@ time, U7, U12, "no daily-habit app"): none is proposed again here.
 
 ### 1.1 Decided gaps (to fill)
 
-| # | Gap | Evidence | Decision | Size | L11 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Fish scientific genus units for circles 2-3 | `app.js:744` and `:755` (`fishGenera`: `f.circle === 1`, species `s.circle === 1`); the same filter in `core.js:1137`, `:1148` (`fishVarTable`) and `:1403`, `:1408` (`fishReplayGen`, so the sheet's replay and the board tree too). 107 genera of circles 2-3 outside the wink families (5 of circle 2, 102 of circle 3; 17 the only genus of their family; Gobies alone 23), 191 species [measured] | Q175 (every circle on the path and in the progress); ROADMAP "Fish genera need a presentation and ID cues before they open widely": "Not built: … circles 2-3", and Pierre, 2026-11-08: "each genus needs a short presentation and its ID cues … before the genera are opened to more players" [read] | units M, after rows 2-3 (content L) | 2, and L12 |
-| 2 | Fish genus presentation and ID marks (`plain`, `marks`) for circles 2-3 | `fish.json` genera: `plain` 122 of 130 in circle 1, 0 of 109 in circles 2-3; `marks` 83 and 0 [measured]. The build checks circle 1 only (`tools/build_fish.py:775`; `tools/fish_genus_marks.json` about: "for the circle-1 genera") | as row 1 | L | 0 |
-| 3 | Fish genus name roots for circles 2-3 | `root` 76 + 54 `skip` = the 130 genera of circle 1, none beyond [measured]; `tools/build_fish.py:767` | ROADMAP "Game modes", Name roots: "Corals and fish circle 1 done; circles 2-3 next" (Q124 d) [read] | M | 0 |
-| 4 | Fish family "Behaviour, habitat, size" lines for circles 2-3 | `fish.json` families `life`: 28 of 28 in circle 1, 0 of 39 beyond, while `marks` cover 66 of 67 (`tools/fish_sheets.json`) [measured] | Q11 and Q7 (2026-11-06: the family sheet, one per family of the book, Q1; agents draft, Pierre validates) [read] | M | 0 |
-| 5 | Find the X tiles (the fish's box) beyond circle 1 | `fish-game.json`: 420 photos with a tile (`xc`), 418 in circle 1, 2 in circle 3, 0 in circle 2; every circle-1 family has 4 or more tiled observations, 0 of 4 circle-2 and 1 of 35 circle-3 families have any [measured]. A family with no tile never plays Find the X (`quiz.js` `planFind`: `tiles(t).length`) | Q321 D1, D4; judging/FISH.md "The fish's box": "the rest wait for the next rounds, entry by entry" (a decided judging process) [read] | M (a box pass, about 6 observations × 37 families) | 1 |
-| 6 | Find the X on the species units | `quiz.js` `planFind` asks only units with no rank (`!rankOf(t)`): the families. The species are units since 2026-11-15 [read] | FISH_PATH "Formats and their order", 5: "the species once they are units" [read] | S (code) + tiles per species | 1 |
-| 7 | Sea slug genus ID marks for circles 2-3 | `seaslug.json` genera `marks`: 18 of 24 in circle 1 (6 more in `none` with a reason), 1 of 22 in circle 2, 0 of 32 in circle 3; family `marks` 3 of 33 [measured]. `tools/seaslug_cues.py` stops only on "a circle-1 genus with neither" [read] | Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"; study §9 step 7 ("family and genus sheets with sourced cues"); circles 2-3 in the game since 2026-11-16 [read] | L | 0 |
-| 8 | Sea slug stars achievement | 21 species carry `star` in `seaslug.json` [measured]; only `tools/seaslug_game.py:318` writes it, nothing in the app reads it; `SEASLUG_ACH` (`core.js:3971`) has no stars achievement [read] | Q369 (c): "A 'stars' set … with an achievement" (2026-11-15-seaslug-list.md) [read]. Its test (the units are genera, the stars species) is the integrator's call: e.g. the genera holding a star at Advanced | S (`core.js`: a changes file, rule D3) | 0 |
-| 9 | Fish species achievements that wait for nothing | fpct70 "Twilight zone" and fdauin20 "Local legend" are documented, not built (LEARNING "Fish achievements, around the global score": "Waiting, 6"); 70% is reachable since the species level's step 1 (families, genera and common names top out at 95%), whose gate is met (`sync.js` `speciesOn`: `SPECIES_SHEET` 161, the sheet script at v167) [read] | Q259-Q264, Q261 (fdauin20 = circle-1 species for now) [read]; fdauin20's "named" read as by common name at Advanced is my reading [guess] | S | 0 (timing by `learnsim --ach`, as the others) |
-| 10 | Fish read their own pooled statistics in the app | the sea slugs have `SUBJECTS` `stats` (`core.js` `SEASLUGST_SHEET`, #1060); the fish entry has none [read] | STATUS "Next after the queue"; ROADMAP "Admin for every subject", PR 11 [read] | M | 2, and L12 |
-| 11 | Sea slug replay without the variant table | `SUBJECTS` fish `replayed.vars` (`core.js:570`); the sea slugs' `replayed` has none (`core.js:771-777`). The app's exam asks each variant group for every subject (`model.js` `varLeft`), so for *Hexabranchus* (the only genus with juvenile photos: 7 [measured]) the sheet's replay may keep a learned mark the app would not give | Q391 b ("Learned asks each variant group"; Q391 a: one rule for every level), rules D8, D9: "the app and the sheet decide alike" (`model.js:390`) [read] | S (`core.js`, `Code.gs` through `sync_core.py`, rules D3-D5) | 1 |
+| # | Gap | Evidence | Decision | Size | L11 | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Fish scientific genus units for circles 2-3 | `app.js:744` and `:755` (`fishGenera`: `f.circle === 1`, species `s.circle === 1`); the same filter in `core.js:1137`, `:1148` (`fishVarTable`) and `:1403`, `:1408` (`fishReplayGen`, so the sheet's replay and the board tree too). 107 genera of circles 2-3 outside the wink families (5 of circle 2, 102 of circle 3; 17 the only genus of their family; Gobies alone 23), 191 species [measured] | Q175 (every circle on the path and in the progress); ROADMAP "Fish genera need a presentation and ID cues before they open widely": "Not built: … circles 2-3", and Pierre, 2026-11-08: "each genus needs a short presentation and its ID cues … before the genera are opened to more players" [read] | units M, after rows 2-3 (content L) | 2, and L12 | sheet L (built) | built since as #1067: measured sheet L, 4.1 h (`effort.py --like 1067`), the actual PR; the circle 2-3 content is rows 2-3 |
+| 2 | Fish genus presentation and ID marks (`plain`, `marks`) for circles 2-3 | `fish.json` genera: `plain` 122 of 130 in circle 1, 0 of 109 in circles 2-3; `marks` 83 and 0 [measured]. The build checks circle 1 only (`tools/build_fish.py:775`; `tools/fish_genus_marks.json` about: "for the circle-1 genera") | as row 1 | L | 0 | content L: fish.json genus `plain` and `marks`: sourced writing, not a mechanical pass | comparable to #980, #984, #1008, #1023, #1069: median 13 min (range 8 min-16 min) (for one PR of the series) |
+| 3 | Fish genus name roots for circles 2-3 | `root` 76 + 54 `skip` = the 130 genera of circle 1, none beyond [measured]; `tools/build_fish.py:767` | ROADMAP "Game modes", Name roots: "Corals and fish circle 1 done; circles 2-3 next" (Q124 d) [read] | M | 0 | content+tooling M: name roots in tools/ and data | comparable to #868, #869, #925, #972, #1070: median 41 min (range 17 min-68 min) |
+| 4 | Fish family "Behaviour, habitat, size" lines for circles 2-3 | `fish.json` families `life`: 28 of 28 in circle 1, 0 of 39 beyond, while `marks` cover 66 of 67 (`tools/fish_sheets.json`) [measured] | Q11 and Q7 (2026-11-06: the family sheet, one per family of the book, Q1; agents draft, Pierre validates) [read] | M | 0 | content M: tools/fish_sheets.json and fish.json `life` lines | comparable to #868, #961, #972, #985, #1015: median 17 min (range 8 min-18 min) |
+| 5 | Find the X tiles (the fish's box) beyond circle 1 | `fish-game.json`: 420 photos with a tile (`xc`), 418 in circle 1, 2 in circle 3, 0 in circle 2; every circle-1 family has 4 or more tiled observations, 0 of 4 circle-2 and 1 of 35 circle-3 families have any [measured]. A family with no tile never plays Find the X (`quiz.js` `planFind`: `tiles(t).length`) | Q321 D1, D4; judging/FISH.md "The fish's box": "the rest wait for the next rounds, entry by entry" (a decided judging process) [read] | M (a box pass, about 6 observations × 37 families) | 1 | bulk work, light model: a box pass over about 222 observations (6 × 37 families), light model | no figure: the measured PRs are code PRs, and bulk work depends on the batch size |
+| 6 | Find the X on the species units | `quiz.js` `planFind` asks only units with no rank (`!rankOf(t)`): the families. The species are units since 2026-11-15 [read] | FISH_PATH "Formats and their order", 5: "the species once they are units" [read] | S (code) + tiles per species | 1 | engine S: quiz.js `planFind`; the tiles per species are bulk work | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h); the tiles: no figure (bulk work) |
+| 7 | Sea slug genus ID marks for circles 2-3 | `seaslug.json` genera `marks`: 18 of 24 in circle 1 (6 more in `none` with a reason), 1 of 22 in circle 2, 0 of 32 in circle 3; family `marks` 3 of 33 [measured]. `tools/seaslug_cues.py` stops only on "a circle-1 genus with neither" [read] | Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"; study §9 step 7 ("family and genus sheets with sourced cues"); circles 2-3 in the game since 2026-11-16 [read] | L | 0 | content L: seaslug_cues.json: sourced writing, not a mechanical pass | comparable to #980, #984, #1008, #1023, #1069: median 13 min (range 8 min-16 min) (for one PR of the series) |
+| 8 | Sea slug stars achievement | 21 species carry `star` in `seaslug.json` [measured]; only `tools/seaslug_game.py:318` writes it, nothing in the app reads it; `SEASLUG_ACH` (`core.js:3971`) has no stars achievement [read] | Q369 (c): "A 'stars' set … with an achievement" (2026-11-15-seaslug-list.md) [read]. Its test (the units are genera, the stars species) is the integrator's call: e.g. the genera holding a star at Advanced | S (`core.js`: a changes file, rule D3) | 0 | engine S: core.js and a changes file | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
+| 9 | Fish species achievements that wait for nothing | fpct70 "Twilight zone" and fdauin20 "Local legend" are documented, not built (LEARNING "Fish achievements, around the global score": "Waiting, 6"); 70% is reachable since the species level's step 1 (families, genera and common names top out at 95%), whose gate is met (`sync.js` `speciesOn`: `SPECIES_SHEET` 161, the sheet script at v167) [read] | Q259-Q264, Q261 (fdauin20 = circle-1 species for now) [read]; fdauin20's "named" read as by common name at Advanced is my reading [guess] | S | 0 (timing by `learnsim --ach`, as the others) | engine S: core.js achievements | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
+| 10 | Fish read their own pooled statistics in the app | the sea slugs have `SUBJECTS` `stats` (`core.js` `SEASLUGST_SHEET`, #1060); the fish entry has none [read] | STATUS "Next after the queue"; ROADMAP "Admin for every subject", PR 11 [read] | M | 2, and L12 | sheet L: SUBJECTS stats in core.js and Code.gs (the sea slugs' version was #1060) | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) |
+| 11 | Sea slug replay without the variant table | `SUBJECTS` fish `replayed.vars` (`core.js:570`); the sea slugs' `replayed` has none (`core.js:771-777`). The app's exam asks each variant group for every subject (`model.js` `varLeft`), so for *Hexabranchus* (the only genus with juvenile photos: 7 [measured]) the sheet's replay may keep a learned mark the app would not give | Q391 b ("Learned asks each variant group"; Q391 a: one rule for every level), rules D8, D9: "the app and the sheet decide alike" (`model.js:390`) [read] | S (`core.js`, `Code.gs` through `sync_core.py`, rules D3-D5) | 1 | engine S: core.js, Code.gs through sync_core.py | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
 
 Notes on row 1:
 
@@ -77,12 +84,12 @@ Notes on row 1:
 
 ### 1.2 Integrator's calls (easy to correct)
 
-| # | Gap | Evidence | Size | L11 |
-| --- | --- | --- | --- | --- |
-| 12 | Sea slug files unversioned and out of the offline shell | `app.js` `UNITS.seaslug` `get`: `seaslug.json`, `seaslug-game.json` with no `?v=`; not in `sw.js` `SHELL` (`sw.js:26-57`). The reason given, "since only its group may open it" (ARCHITECTURE "Subjects", sea slugs), is stale since `open: 'all'` (2026-11-17). They fall in the revalidate branch: cached once fetched, but fetched again at every launch (198 KB + 1,060 KB) [measured, read] | S (a `?v=` reference; precaching them for everyone costs every install about 1.3 MB: a choice to make in that PR) | 0 |
-| 13 | Sea slug circle achievements beyond circle 1 | the fish have fc2 and fc3adv; the sea slugs only ssc1adv (`core.js:3971`) [read] | S | 0 |
-| 14 | Fish family-sheet genus content as an editor slot | `SUBJECTS` fish `content` genus slots: `cues`, `note` only; the genus `plain` and `marks` are not editable in the admin (ROADMAP row of row 2: "Not built: … the genus marks as a content-editor slot"); #1061 adds them for the sea slugs [read] | S | 0 |
-| 15 | Stale words | `learn.js:939` comment ("circle 1, and the opt-in circles once on": the code reads the whole path); ARCHITECTURE "Fish scientific genera" and FISH_PATH "Levels" ("98 genera in circle 1": 130 today) [read] | S | 0 |
+| # | Gap | Evidence | Size | L11 | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 12 | Sea slug files unversioned and out of the offline shell | `app.js` `UNITS.seaslug` `get`: `seaslug.json`, `seaslug-game.json` with no `?v=`; not in `sw.js` `SHELL` (`sw.js:26-57`). The reason given, "since only its group may open it" (ARCHITECTURE "Subjects", sea slugs), is stale since `open: 'all'` (2026-11-17). They fall in the revalidate branch: cached once fetched, but fetched again at every launch (198 KB + 1,060 KB) [measured, read] | S (a `?v=` reference; precaching them for everyone costs every install about 1.3 MB: a choice to make in that PR) | 0 | feature S: app.js `?v=` references, sw.js | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
+| 13 | Sea slug circle achievements beyond circle 1 | the fish have fc2 and fc3adv; the sea slugs only ssc1adv (`core.js:3971`) [read] | S | 0 | engine S: core.js achievements | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
+| 14 | Fish family-sheet genus content as an editor slot | `SUBJECTS` fish `content` genus slots: `cues`, `note` only; the genus `plain` and `marks` are not editable in the admin (ROADMAP row of row 2: "Not built: … the genus marks as a content-editor slot"); #1061 adds them for the sea slugs [read] | S | 0 | admin S: admin.js content slots | comparable to #798, #817, #821, #825, #908: median 12 min (range 3 min-18 min) |
+| 15 | Stale words | `learn.js:939` comment ("circle 1, and the opt-in circles once on": the code reads the whole path); ARCHITECTURE "Fish scientific genera" and FISH_PATH "Levels" ("98 genera in circle 1": 130 today) [read] | S | 0 | docs XS: a comment and two doc lines | comparable to #846, #921, #964, #1027, #1039: median 3 min (range 3 min-3 min) |
 
 The admin demo plays circle-1 families only (`admin-demo.js:841`, `:961`): made-up data, harmless.
 
@@ -98,19 +105,19 @@ The admin demo plays circle-1 families only (`admin-demo.js:841`, `:961`): made-
 Left after #1061 and #1062 (decided by Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
 prévu aussi ?"): their auto-sort, Photo review (Ease, Phase & framing, By difficulty) and To do's photo counts, which
 #1061 lists as not built; and Photos › Look-alikes, Coverage › Games and the cover proposals, which I found by comparing
-the fish's and the sea slugs' `SUBJECTS` `admin` `pages` [read]. **Decided, not built; M; L11 0.**
+the fish's and the sea slugs' `SUBJECTS` `admin` `pages` [read]. **Decided, not built; M (admin M, comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min)); L11 0.**
 
 ### 1.4 Needs Pierre
 
-| # | Gap | Evidence | Why it is his | Size | L11 |
-| --- | --- | --- | --- | --- | --- |
-| 16 | Fish family look-alike pairs beyond circle 1 | `fish.json` families with `look`: 15, all circle 1; 0 of 39 in circles 2-3 [measured]. The pairs come from the IMR presentation and Pierre's declared groups (2026-11-06, from experience) [read] | a pair is structure: a change replays every fish player (Q363 h A); the groups were his. The sea slugs' precedent: a sourced survey, then his choice (Q390 D) | M | 2 (traps, confusion groups) |
-| 17 | Fish juvenile classes beyond circle 1 | `fish.json` `juv`: 27 families, all circle 1 [measured]; 393 juvenile photos of circles 2-3 fall to the default class `j` (`core.js` `varKindOf`) [measured] | the classes of 2026-11-04 were a research note he approved; Q391 a set one rule for every level | M | 1 |
-| 18 | The 5-very-easy-photos target beyond circle 1 | checked for circle 1 only (`tools/fish_judge.py:66`, `:236`; `tools/fish_game.py:107`); 13 circle-3 families are below 5 (Sea Moths, Stonefishes, Flying Gurnards, Stargazers, Jawfishes, Snake Eels, Garden Eels, Stingrays, Soles, Cornetfishes, Remoras, Needlefishes, Convict Blennies) [measured] | his target (2026-11-04) was set when circle 1 alone played | S (the report) + M (photos) | 0 |
-| 19 | Practice games beyond the quiz for fish and sea slugs | `SUBJECTS` `pages`: corals `basics, genera, sheet, cmp, quiz, quiz-custom, quiz-duel, pairs`; fish and sea slugs `genera, sheet, quiz` (`core.js` SUBJECTS) [read]. No doc plans Compare, Custom quiz, the Duels tab or Memory for them [read] | not planned; rule L14 (side-by-side comparison) speaks for Compare and the Duels | M each | 1 |
-| 20 | Basics module and glossary beyond the corals | Coral basics and the glossary (`app.js` `GLOSS_PAT`, corals only); Fish basics decided (FISH_PATH, ROADMAP "Fish basics": Next) but waits for the IMR fish presentation (STATUS question); sea slugs: none, while their marks use rhinophores, cerata, gills, mantle [read] | the sea slugs' is not planned | M | 0 |
-| 21 | Sea slug Find the X | `UNITS.seaslug` `tiles: () => []`; no box on their photos (0 `bb`) [measured] | not planned; needs a box pass on their rubric | M | 1 |
-| 22 | Sea slug held-out set | not mentioned anywhere [read]; 12 photos per species (3,014 for 206 species) [measured] | the corals were parked for the same reason (few photos) | S (decision) | 2 if built |
+| # | Gap | Evidence | Why it is his | Size | L11 | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 16 | Fish family look-alike pairs beyond circle 1 | `fish.json` families with `look`: 15, all circle 1; 0 of 39 in circles 2-3 [measured]. The pairs come from the IMR presentation and Pierre's declared groups (2026-11-06, from experience) [read] | a pair is structure: a change replays every fish player (Q363 h A); the groups were his. The sea slugs' precedent: a sourced survey, then his choice (Q390 D) | M | 2 (traps, confusion groups) | content M: fish.json `look` pairs after a sourced survey | comparable to #868, #961, #972, #985, #1015: median 17 min (range 8 min-18 min) |
+| 17 | Fish juvenile classes beyond circle 1 | `fish.json` `juv`: 27 families, all circle 1 [measured]; 393 juvenile photos of circles 2-3 fall to the default class `j` (`core.js` `varKindOf`) [measured] | the classes of 2026-11-04 were a research note he approved; Q391 a set one rule for every level | M | 1 | content M: fish.json `juv` classes after a research note | comparable to #868, #961, #972, #985, #1015: median 17 min (range 8 min-18 min) |
+| 18 | The 5-very-easy-photos target beyond circle 1 | checked for circle 1 only (`tools/fish_judge.py:66`, `:236`; `tools/fish_game.py:107`); 13 circle-3 families are below 5 (Sea Moths, Stonefishes, Flying Gurnards, Stargazers, Jawfishes, Snake Eels, Garden Eels, Stingrays, Soles, Cornetfishes, Remoras, Needlefishes, Convict Blennies) [measured] | his target (2026-11-04) was set when circle 1 alone played | S (the report) + M (photos) | 0 | tooling S: the report in tools/fish_judge.py; the photos are bulk work | comparable to #860, #916, #965, #1003, #1072: median 4 min (range 4 min-6 min); the photos: no figure (bulk work) |
+| 19 | Practice games beyond the quiz for fish and sea slugs | `SUBJECTS` `pages`: corals `basics, genera, sheet, cmp, quiz, quiz-custom, quiz-duel, pairs`; fish and sea slugs `genera, sheet, quiz` (`core.js` SUBJECTS) [read]. No doc plans Compare, Custom quiz, the Duels tab or Memory for them [read] | not planned; rule L14 (side-by-side comparison) speaks for Compare and the Duels | M each | 1 | feature M: app.js, one practice game for one subject | comparable to #832, #899, #911, #986, #1056: median 18 min (range 5 min-30 min) |
+| 20 | Basics module and glossary beyond the corals | Coral basics and the glossary (`app.js` `GLOSS_PAT`, corals only); Fish basics decided (FISH_PATH, ROADMAP "Fish basics": Next) but waits for the IMR fish presentation (STATUS question); sea slugs: none, while their marks use rhinophores, cerata, gills, mantle [read] | the sea slugs' is not planned | M | 0 | feature M: app.js basics module, glossary | comparable to #832, #899, #911, #986, #1056: median 18 min (range 5 min-30 min) |
+| 21 | Sea slug Find the X | `UNITS.seaslug` `tiles: () => []`; no box on their photos (0 `bb`) [measured] | not planned; needs a box pass on their rubric | M | 1 | engine M: quiz.js, core.js; the box pass is bulk work | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h); the box pass: no figure (bulk work) |
+| 22 | Sea slug held-out set | not mentioned anywhere [read]; 12 photos per species (3,014 for 206 species) [measured] | the corals were parked for the same reason (few photos) | S (decision) | 2 if built | docs XS: recording the decision; building it would be engine M | comparable to #846, #921, #964, #1027, #1039: median 3 min (range 3 min-3 min) |
 
 ### 1.5 Corals
 
@@ -139,72 +146,72 @@ One line each; evidence is a file, a ROADMAP row or a count.
 
 ### 2.1 Onboarding and the tour
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Tour arrows over page text on phones; replaying the tour from the quiz loses the question | ROADMAP "Tour leftovers from the new-player walkthrough" | planned (Open question) | S each |
-| A beginner of the fish or the sea slugs gets no basics first ("Start from scratch: a few easy families first") | `SUBJECTS` `start`; row 20 | Fish basics planned (Next, blocked on the IMR presentation); sea slugs not planned | M |
-| The first-launch fallback calibrated on real beginners and experts | ROADMAP row of that name | planned (data needed) | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Tour arrows over page text on phones; replaying the tour from the quiz loses the question | ROADMAP "Tour leftovers from the new-player walkthrough" | planned (Open question) | S each | feature S: the tour in app.js | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
+| A beginner of the fish or the sea slugs gets no basics first ("Start from scratch: a few easy families first") | `SUBJECTS` `start`; row 20 | Fish basics planned (Next, blocked on the IMR presentation); sea slugs not planned | M | feature M: app.js basics for fish and sea slugs | comparable to #832, #899, #911, #986, #1056: median 18 min (range 5 min-30 min) |
+| The first-launch fallback calibrated on real beginners and experts | ROADMAP row of that name | planned (data needed) | M | engine S: first-launch constants in core.js | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
 
 ### 2.2 Learning paths and levels
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Species by scientific name, the half credit, species exams (fish, then sea slugs) | #1041, Q394-Q398; FISH_PATH "Open questions" 3, 5 | in flight, waiting on Pierre | L |
-| A wrong pick of another family's species counted against both families | FISH_PATH "Unlock rules", "Not built" (rule L2; needs a fish rules version) | decided, not built | M (L11 2) |
-| Species look-alike pairs (cross-family: dwarf angelfish against dark damselfish…) | ROADMAP "Fish look-alikes at any rank": "Designed, not built" | planned | M |
-| Matrix (4 photos, 5 names) after Find the X | ROADMAP "Game modes", Matrix: "Agreed: after Find the X" | decided, not built | M |
-| The fish genus step offered again after a "no" | ROADMAP "Fish: the path as a tree": "left … how to offer the genus step again" | planned | S |
-| Coral knowledge at species level (tags per species feeding the genus traits) | ROADMAP "Fish: the path as a tree", folded in (Pierre, 2026-11-04) | planned (Next) | M |
-| The family exam rethought (20 hard questions, scientific names) | FISH_PATH "Open questions" 5 | open | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Species by scientific name, the half credit, species exams (fish, then sea slugs) | #1041, Q394-Q398; FISH_PATH "Open questions" 3, 5 | in flight, waiting on Pierre | L | engine L: core.js, model.js, quiz.js | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) (for one PR of the series) |
+| A wrong pick of another family's species counted against both families | FISH_PATH "Unlock rules", "Not built" (rule L2; needs a fish rules version) | decided, not built | M (L11 2) | engine M: core.js, model.js, a fish rules version | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| Species look-alike pairs (cross-family: dwarf angelfish against dark damselfish…) | ROADMAP "Fish look-alikes at any rank": "Designed, not built" | planned | M | engine M: core.js, quiz.js | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| Matrix (4 photos, 5 names) after Find the X | ROADMAP "Game modes", Matrix: "Agreed: after Find the X" | decided, not built | M | engine L: quiz.js, core.js, a new game | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) |
+| The fish genus step offered again after a "no" | ROADMAP "Fish: the path as a tree": "left … how to offer the genus step again" | planned | S | engine S: core.js, quiz.js | comparable to #815, #820, #822, #896, #938: median 45 min (range 41 min-1.6 h) |
+| Coral knowledge at species level (tags per species feeding the genus traits) | ROADMAP "Fish: the path as a tree", folded in (Pierre, 2026-11-04) | planned (Next) | M | engine M: core.js trait tags | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| The family exam rethought (20 hard questions, scientific names) | FISH_PATH "Open questions" 5 | open | M | engine M: quiz.js, model.js | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
 
 ### 2.3 Reference content
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Fish ID Key (every species of the IMR PDF, for EventMeasure) | ROADMAP "Fish ID Key for EventMeasure"; Home shows "Coming soon" | planned (Next, after the fish mode) | L |
-| Sea slug ID key | `UNITS.seaslug` door: "There is no sea slug ID key yet" | not planned | L |
-| Species-level ID marks | `fish.json` species with `marks`: 0 of 664; sea slugs 0 of 206 [measured]; the writing order families → genera → species (Q7) | decided, not started | L |
-| Genus page "Don't confuse with" for sibling genera with our marks | ROADMAP "Fish genera need a presentation…": "Not built" | decided, not built | S |
-| Coral ID Key: photos in place of the drawings | ROADMAP row of that name | planned (as photos come) | M |
-| A calmer About and credits text; the sea slugs' About lists WoRMS alone, while their marks cite 24 sources (`tools/seaslug_cues.json` `src`) | ROADMAP "About and credits: a calmer rights text" (Next) | planned; the sea slugs' line integrator's call | S |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Fish ID Key (every species of the IMR PDF, for EventMeasure) | ROADMAP "Fish ID Key for EventMeasure"; Home shows "Coming soon" | planned (Next, after the fish mode) | L | feature L: the Key page in app.js; the species content is bulk work | comparable to #823, #826, #829, #858, #1058: median 53 min (range 47 min-60 min) (for one PR of the series); the species content: no figure (bulk work) |
+| Sea slug ID key | `UNITS.seaslug` door: "There is no sea slug ID key yet" | not planned | L | feature L: the Key page in app.js; the species content is bulk work | comparable to #823, #826, #829, #858, #1058: median 53 min (range 47 min-60 min) (for one PR of the series); the species content: no figure (bulk work) |
+| Species-level ID marks | `fish.json` species with `marks`: 0 of 664; sea slugs 0 of 206 [measured]; the writing order families → genera → species (Q7) | decided, not started | L | content XL: fish.json and seaslug.json species marks: sourced writing, not a mechanical pass | comparable to #879, #937, #978, #982, #1034: median 17 min (range 9 min-37 min) (for one PR of the series) |
+| Genus page "Don't confuse with" for sibling genera with our marks | ROADMAP "Fish genera need a presentation…": "Not built" | decided, not built | S | feature S: the genus page in app.js | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
+| Coral ID Key: photos in place of the drawings | ROADMAP row of that name | planned (as photos come) | M | bulk work, light model: photos swapped in as they come: depends on the number of photos | no figure: the measured PRs are code PRs, and bulk work depends on the batch size |
+| A calmer About and credits text; the sea slugs' About lists WoRMS alone, while their marks cite 24 sources (`tools/seaslug_cues.json` `src`) | ROADMAP "About and credits: a calmer rights text" (Next) | planned; the sea slugs' line integrator's call | S | feature S: About text in app.js | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
 
 ### 2.4 Offline and the installed app
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Sea slug files out of the shell | row 12 | integrator's call | S |
-| No way to take a subject's photos offline before a dive or a boat day: photos are cached only as viewed, at most 2,500 (`sw.js` `PH_MAX`), against 24,386 fish game photos [measured] | `sw.js` | not planned | M |
-| The domain and repository rename: a new origin loses the local progress of players not signed in unless handed over | ROADMAP "Domain and repository rename": "Next, before December 2026" | planned, **time-critical** | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Sea slug files out of the shell | row 12 | integrator's call | S | feature S: app.js and sw.js | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
+| No way to take a subject's photos offline before a dive or a boat day: photos are cached only as viewed, at most 2,500 (`sw.js` `PH_MAX`), against 24,386 fish game photos [measured] | `sw.js` | not planned | M | feature M: sw.js, app.js | comparable to #832, #899, #911, #986, #1056: median 18 min (range 5 min-30 min) |
+| The domain and repository rename: a new origin loses the local progress of players not signed in unless handed over | ROADMAP "Domain and repository rename": "Next, before December 2026" | planned, **time-critical** | M | feature L: the domain strings across the app, sw.js | comparable to #823, #826, #829, #858, #1058: median 53 min (range 47 min-60 min) |
 
 ### 2.5 Accessibility
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| No accessibility audit and no automated check (contrast, screen reader, keyboard); reduced motion is handled (`app.css`, 9 `prefers-reduced-motion` blocks), ARIA labels exist | no axe or a11y test in `tests/` [read]; ROADMAP "Next round of independent reviews" (4): "accessibility and performance auditor, new" | planned (after the work planned now) | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| No accessibility audit and no automated check (contrast, screen reader, keyboard); reduced motion is handled (`app.css`, 9 `prefers-reduced-motion` blocks), ARIA labels exist | no axe or a11y test in `tests/` [read]; ROADMAP "Next round of independent reviews" (4): "accessibility and performance auditor, new" | planned (after the work planned now) | M | tooling M: an automated check in tests/ | comparable to #783, #786, #811, #960, #1040: median 30 min (range 7 min-40 min) |
 
 ### 2.6 Feedback loops
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Regular reviews as a new RA on a phone; the one-tap answers used to check the difficulty targets | ROADMAP "Feedback without asking": "Next" | planned | M |
-| Fish pooled statistics read by the app | row 10 | decided, not built | M |
-| Re-measures that wait for data (photo exposure at ~500 fish answers, the comeback, time in the photo rating, photo-level features…) | ROADMAP rows "Waiting for data" | planned | – |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Regular reviews as a new RA on a phone; the one-tap answers used to check the difficulty targets | ROADMAP "Feedback without asking": "Next" | planned | M | study M: a review written as a study | comparable to #979, #1064, #1065, #1066, #1081: median 11 min (range 7 min-38 min) (study PRs are few: the same five for every band) |
+| Fish pooled statistics read by the app | row 10 | decided, not built | M | sheet L: SUBJECTS stats in core.js and Code.gs | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) |
+| Re-measures that wait for data (photo exposure at ~500 fish answers, the comeback, time in the photo rating, photo-level features…) | ROADMAP rows "Waiting for data" | planned | – | study S: each re-measure, written as a study when its data is there | comparable to #979, #1064, #1065, #1066, #1081: median 11 min (range 7 min-38 min) (study PRs are few: the same five for every band) |
 
 ### 2.7 Social: boards, cohorts, live mode
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Live mode (a trainer and a class on the same questions) | #1049 (Q393) | in flight; one question open | L |
-| Staff and cohort boards | #1050 (Q399) | in flight; one question open | M |
-| The sea slugs' board ranks by the genera's mean, no score tree | `SUBJECTS` seaslug (no `score`) | comes with #1041 | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Live mode (a trainer and a class on the same questions) | #1049 (Q393) | in flight; one question open | L | sheet XL: Code.gs, live.js (#1049 is open) | comparable to #840, #953, #975, #988, #1049: median 41.4 h (range 14.1 h-47.7 h) (for one PR of the series) |
+| Staff and cohort boards | #1050 (Q399) | in flight; one question open | M | sheet L: Code.gs, app.js (#1050 is open) | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) |
+| The sea slugs' board ranks by the genera's mean, no score tree | `SUBJECTS` seaslug (no `score`) | comes with #1041 | M | engine M: core.js score tree | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
 
 ### 2.8 Trainer tools
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| A trainer's set (an entry and a final check, the same photos for a cohort, scored apart) | ROADMAP "Game modes", Trainer's set | open question | M |
-| A trainer's view of a cohort's progress (weak units, stops), beyond the boards | ROADMAP "Roles, instances and cohorts" (trainer: "follows their progress"); #1050 brings boards only [read] | decided direction, not built | L |
-| Trainer pages per organisation | ROADMAP "The app as a generic product" | idea | L |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| A trainer's set (an entry and a final check, the same photos for a cohort, scored apart) | ROADMAP "Game modes", Trainer's set | open question | M | engine M: quiz.js, model.js | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| A trainer's view of a cohort's progress (weak units, stops), beyond the boards | ROADMAP "Roles, instances and cohorts" (trainer: "follows their progress"); #1050 brings boards only [read] | decided direction, not built | L | sheet L: Code.gs, app.js | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) (for one PR of the series) |
+| Trainer pages per organisation | ROADMAP "The app as a generic product" | idea | L | sheet L: Code.gs, app.js | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) (for one PR of the series) |
 
 ### 2.9 Content coverage, by subject [measured]
 
@@ -216,30 +223,30 @@ One line each; evidence is a file, a ROADMAP row or a count.
 
 ### 2.10 The admin's workflows
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| The sea slugs' admin after #1061 and #1062 | section 1.3 | decided, not built | M |
-| Fish species pairs in the admin | ROADMAP "Admin for every subject", PR 10: "species pairs Next" | planned | M |
-| A structure editor and look-alike line editor for the sea slugs | #1061, STATUS question | needs Pierre (a format, a replay) | M |
-| Editors publish through a relay in the sheet script, with an audit trail (no GitHub token for an editor) | ROADMAP "Roles, instances and cohorts" (Q348) | decided, not built | L |
-| The admin's draft kept on sign-out on a shared device | branch `admin-signout-seal`; ROADMAP Parked row | waiting on Pierre | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| The sea slugs' admin after #1061 and #1062 | section 1.3 | decided, not built | M | admin M: admin.js | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
+| Fish species pairs in the admin | ROADMAP "Admin for every subject", PR 10: "species pairs Next" | planned | M | admin M: admin.js pairs | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
+| A structure editor and look-alike line editor for the sea slugs | #1061, STATUS question | needs Pierre (a format, a replay) | M | admin M: admin.js, a new slot type | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
+| Editors publish through a relay in the sheet script, with an audit trail (no GitHub token for an editor) | ROADMAP "Roles, instances and cohorts" (Q348) | decided, not built | L | sheet L: Code.gs relay | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) (for one PR of the series) |
+| The admin's draft kept on sign-out on a shared device | branch `admin-signout-seal`; ROADMAP Parked row | waiting on Pierre | M | admin M: admin.js draft seal | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
 
 ### 2.11 Data and analytics
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| The sheet rating the fish photos (Photo stats › Difficulty for the fish) | ROADMAP backlog 4: "once the sheet rates the fish photos" | planned | M |
-| Analyses: the next views, the multiple-testing leftovers | ROADMAP "Analyses: next views", "… leaves open" | open | M |
-| Content versions on each answer (a photo swapped, a re-rating, offline replays safe) | ROADMAP "Content versions and duplicate-safe answers" | idea (the rules versions do part) | M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| The sheet rating the fish photos (Photo stats › Difficulty for the fish) | ROADMAP backlog 4: "once the sheet rates the fish photos" | planned | M | sheet M: Code.gs photo stats | comparable to #812, #835, #838, #958, #971: median 29 min (range 29 min-58 min) |
+| Analyses: the next views, the multiple-testing leftovers | ROADMAP "Analyses: next views", "… leaves open" | open | M | admin M: admin-analyses.js | comparable to #798, #869, #908, #1013, #1059: median 41 min (range 18 min-60 min) |
+| Content versions on each answer (a photo swapped, a re-rating, offline replays safe) | ROADMAP "Content versions and duplicate-safe answers" | idea (the rules versions do part) | M | sheet M: Code.gs, sync.js | comparable to #812, #835, #838, #958, #971: median 29 min (range 29 min-58 min) |
 
 ### 2.12 Identity and accounts
 
-| Gap | Evidence | Status | Size |
-| --- | --- | --- | --- |
-| Name and a 4-digit code during the pilot; a proper account later (password manager, maybe Google or Meta sign-in) | ROADMAP "Roles, instances and cohorts" (Q349) | decided direction, not built | L |
-| Staging, a preview per PR, own hosting and a domain | ROADMAP "Professionalise the platform" | waiting on Pierre (the study's questions) | M |
-| IMR-owned content separated from the core app (an IMR edition) | ROADMAP "Separate IMR-owned content from the core app" | agreed direction, not started | L |
-| Coral Finder out of the rules; Corals of the World permission before a wider deployment | ROADMAP rows of those names | Parked; "Before any wider deployment" | S, M |
+| Gap | Evidence | Status | Size | Type, size band, what it touches (my reading) | Measured agent time (tools/effort.py) |
+| --- | --- | --- | --- | --- | --- |
+| Name and a 4-digit code during the pilot; a proper account later (password manager, maybe Google or Meta sign-in) | ROADMAP "Roles, instances and cohorts" (Q349) | decided direction, not built | L | sheet L: Code.gs, sync.js | comparable to #775, #882, #946, #1050, #1060: median 8.9 h (range 3.2 h-13.3 h) (for one PR of the series) |
+| Staging, a preview per PR, own hosting and a domain | ROADMAP "Professionalise the platform" | waiting on Pierre (the study's questions) | M | tooling M: a workflow and its settings | comparable to #783, #786, #811, #960, #1040: median 30 min (range 7 min-40 min) |
+| IMR-owned content separated from the core app (an IMR edition) | ROADMAP "Separate IMR-owned content from the core app" | agreed direction, not started | L | content+tooling L: data.json, tools/ | comparable to #826, #906, #980, #1032, #1069: median 43 min (range 29 min-49 min) (for one PR of the series) |
+| Coral Finder out of the rules; Corals of the World permission before a wider deployment | ROADMAP rows of those names | Parked; "Before any wider deployment" | S, M | docs S: the rule wording of the Coral Finder; the Corals of the World permission is Pierre's request | comparable to #805, #843, #853, #862, #949: median 4 min (range 3 min-4 min); the permission: no agent figure |
 
 ### 2.13 ROADMAP "Next" and "Long term", in short
 
@@ -247,7 +254,7 @@ One line each; evidence is a file, a ROADMAP row or a count.
   once `model.js`, `quiz.js`, `core.js`, `sync.js` are free), tool and admin data into `data/`, `CAL.U`, the
   expectation's slope, the taxonomy watch's monthly refresh, auto-sort follow-ups, the next round of independent reviews.
 - **Long term**: roles, instances and cohorts (step 1 built); the app as a generic product; training for survey
-  organisations (ReefCloud point drills, degraded photos, 3D plots); more subjects (benthos next); partial transfer
+  organisations (ReefCloud point drills, degraded photos, 3D plots)<!-- effort-ok: 3D plots, not a duration -->; more subjects (benthos next); partial transfer
   between regions.
 - **Not planned and not declined**, from this review: rows 19-22, the offline photo download (2.4), the sea slug key
   (2.3). Localisation (the app is English only, `lang="en"`) is not planned either; IMR's RAs read English, so it is a
