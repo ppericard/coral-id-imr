@@ -113,15 +113,22 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 
 **The right model and effort for each task** (the Agent tool's `model` and `effort`, set at every agent launch;
 Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents
-(et notamment à l'intégrateur)"):
+(et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau"):
 
 | Task | Model | Effort |
 | --- | --- | --- |
-| Design, architecture, the learning engine, security, rule wording with consequences | the strongest | high |
-| Ordinary code (game formats, admin pages, fixes, docs) | intermediate | medium |
-| Mechanical, repetitive work (framing, sorting photos, conversions) | the lightest that passes the sample test (Model choice by measurement) | low |
+| Design, architecture, the learning engine, security, rule wording with consequences | Opus 5.5 (Fable 5.2 only where Opus at high effort measurably falls short) | high |
+| Ordinary code (game formats, admin pages, fixes, docs) | Sonnet 5.5 | medium to high |
+| Mechanical, repetitive work (framing, sorting photos, conversions) | Haiku 5.5, after the sample test against a strong model (Model choice by measurement) | low |
 
 In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through.
+
+Anthropic's guidance (checked 2026-11-18): Opus 5.5 is the recommended starting point and the integrator's model; effort
+is often a better lever than the model; an Opus orchestrator with Sonnet subagents measured about a third cheaper at
+about the same score; subagents pay off for independent work that would flood the main context, not for one dependent
+chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
+<https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence>,
+<https://platform.claude.com/docs/en/models/overview>.
 
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
