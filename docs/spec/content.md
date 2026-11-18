@@ -134,9 +134,12 @@ own writer).
 - **The leaderboard's tree** follows the structure in force: the sheet makes it itself with the replay's units
   (`SUBJECTS` `replayed` `tree`, `core.js` `treeBoardTree`, the app's own `UNITS` tree;
   [sync.md › Other subjects' replays](sync.md#other-subjects-replays)).
-- **Not built yet** (design note step 3): each instance's words for its circles, and the build's report of the genera a
-  circle edit brings into circle 1 with no name root (the build requires one only of the circle-1 genera of the base;
-  such a genus shows none on its sheet).
+- **The genera a circle edit brings into circle 1 with no name root**: the build requires a root (or a reason in
+  `skip`) only of the base's circle-1 genera, so such a genus shows none on its sheet. `tools/build_fish.py` reports
+  them after its other reports (`show_rootless`, `tools/fish_inforce.py` `rootless`, over `curation.json` read, never
+  written; also after `--regroup`, and alone with `--rootless`), each with its `skip` reason or "no root and no reason
+  in skip" ([fish.md › Name roots of the fish genera](fish.md#name-roots-of-the-fish-genera)).
+- **Not built yet** (design note step 3): each instance's words for its circles.
 
 ## The corals' structure: look-alike pairs only
 

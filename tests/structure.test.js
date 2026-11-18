@@ -357,6 +357,45 @@ test("tools/fish_inforce.py: the circles in force, the apply's own (family, gene
   assert.deepStrictEqual(ids(py(CUR).families), ids(F.families));
 });
 
+test('tools/fish_inforce.py rootless, and build_fish.py --rootless: the genera a circle edit brings into circle 1 with no name root', () => {
+  const run = (c, skip) =>
+      JSON.parse(
+        execFileSync(
+          'python3',
+          [
+            '-c',
+            'import sys, json; sys.path.insert(0, "tools"); import fish_inforce as f; d = json.load(sys.stdin); print(json.dumps(f.rootless(d["fish"], d["cur"], d["skip"])))'
+          ],
+          {cwd: ROOT, input: JSON.stringify({fish: F, cur: c, skip}), maxBuffer: 1 << 28}
+        ).toString()
+      ),
+    bare = F.genera.filter(g => g.family === IN && !g.root);
+  assert.ok(bare.length > 0, 'the fixture family has a genus with no root');
+  assert.deepStrictEqual(run(CUR, {}), [], 'no edit: nothing to report');
+  assert.deepStrictEqual(run(cur({nodes: {[C3]: circ(3), [OUT]: circ(null)}}), {}), [], 'a move out of circle 1 brings none in');
+  assert.deepStrictEqual(
+    run(cur({nodes: {[IN]: circ(1, 3)}}), {}),
+    bare.map(g => [g.name, IN, null])
+  );
+  const why = {[bare[0].name]: 'a made-up reason'};
+  assert.deepStrictEqual(run(cur({nodes: {[IN]: circ(1, 3)}}), why)[0], [bare[0].name, IN, 'a made-up reason']);
+  // the build's own report, on the committed fish.json and a curation file holding the edit
+  const f = path.join(require('os').tmpdir(), `rootless-${process.pid}.json`);
+  try {
+    fs.writeFileSync(f, JSON.stringify(cur({nodes: {[IN]: circ(1, 3)}})));
+    const out = execFileSync('python3', ['tools/build_fish.py', '--rootless', '--curation', f], {cwd: ROOT}).toString();
+    assert.ok(out.startsWith(`genera a circle edit brings into circle 1 with no name root: ${bare.length}\n`));
+    bare.forEach(g => assert.ok(out.includes(`  ${g.name} (${IN}): `)));
+  } finally {
+    fs.rmSync(f, {force: true});
+  }
+  assert.ok(
+    execFileSync('python3', ['tools/build_fish.py', '--rootless'], {cwd: ROOT})
+      .toString()
+      .startsWith('genera a circle edit brings into circle 1 with no name root: 0')
+  );
+});
+
 // ---- The sheet (Code.gs): the replay under the structure in force, keyed by the stamp ----
 
 const FRV = C.rvOf('fish');
