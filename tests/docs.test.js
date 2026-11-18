@@ -414,7 +414,6 @@ const ID_ALLOW = [
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
@@ -568,7 +567,7 @@ const DOC_BUDGET = {
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [207, 10330],
-  'docs/LEARNING.md': [304, 5240],
+  'docs/LEARNING.md': [226, 5240],
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],
