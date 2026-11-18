@@ -33,7 +33,7 @@ from genera import lists  # noqa: E402  core.js BENTHIC: the slate genera kept i
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'tools', 'coral_apart.json')
-LONGEST = 90  # one side's words at most (rule C3: short, read at a glance)
+LONGEST = 64  # one side's words at most (rule C3: short, read at a glance; the sheet shows both sides on a phone)
 
 
 class ApartError(SystemExit):
@@ -85,7 +85,7 @@ def lines(A, G):
     for key, why in N0.items():
         if not str(why).strip():
             bad(f'none {key}: a reason')
-    out = {}
+    out, long = {}, []
     for key, P in P0.items():
         ab = key.split('|')
         if not isinstance(P, dict) or not P or set(P) - set(ab):
@@ -95,8 +95,10 @@ def lines(A, G):
             if not (isinstance(m, list) and len(m) == 2 and isinstance(m[0], str)):
                 bad(f'{key} {x}: [words, sources]')
             text, rr = m
-            if not text.strip() or len(text) > LONGEST or text != ' '.join(text.split()):
-                bad(f"{key} {x}: '{text}': one line of at most {LONGEST} characters")
+            if not text.strip() or text != ' '.join(text.split()):
+                bad(f"{key} {x}: '{text}': one line of words")
+            if len(text) > LONGEST:
+                long.append(f"{key} {x} ({len(text)})")
             if not rr:
                 bad(f"{key} {x}: '{text}' has no source")
             S = []
@@ -108,6 +110,8 @@ def lines(A, G):
                 if t not in S:
                     S.append(t)
             out.setdefault(y, {})[x] = (f'{x}: {text}', '; '.join(S))
+    if long:
+        bad(f'lines over {LONGEST} characters: ' + ', '.join(long))
     if set(src) - used:
         bad('sources never used: ' + ', '.join(sorted(set(src) - used)))
     return out

@@ -100,10 +100,6 @@
   "kmb2017": {
    "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717)",
    "u": "https://doi.org/10.3897/zookeys.717.21885"
-  },
-  "np-tambja": {
-   "t": "Nudi Pixel, Willan, Tambja affinis group comparison",
-   "u": "https://nudipixel.net/similarities/tambja-affinis-group"
   }
  },
  "families": {
@@ -308,7 +304,7 @@
  "apart": {
   "Goniobranchus|Hypselodoris": {
    "Goniobranchus": [
-    "a broad mantle that overhangs the body widely",
+    "a broad mantle that overhangs the body widely, as G. kuniei",
     [["ssf-chrokuni", "the mantle overlap, now Goniobranchus kuniei and G. leopardus"]]
    ],
    "Hypselodoris": [
@@ -343,15 +339,10 @@
     "rhinophores ringed with stacked thin plates (perfoliate)",
     [["kmb2017", "diagnoses of the family Samlidae and the genus Samla"]]
    ]
-  },
-  "Tambja|Tyrannodoris": {
-   "Tyrannodoris": [
-    "very large oral tentacles, as T. luteolineata",
-    [["np-tambja", "Roboastra, now Tyrannodoris, luteolineata"]]
-   ]
   }
  },
  "apartNone": {
+  "Tambja|Tyrannodoris": "the one comparison read (Nudi Pixel, Willan: the Tambja affinis group) sets Tyrannodoris luteolineata (very large oral tentacles, two plain head stripes) apart from Tambja affinis and T. victoriae, not from the game's Tambja (T. morosa, T. olivaria)",
   "Chelidonura|Tubulophilinopsis": "the one comparison read (Nudi Pixel, Kodiat: Chelidonura varians against Tubulophilinopsis gardineri) sets the two species apart by their tail lobes; no source read says it of either genus",
   "Hypselodoris|Thorunna": "the sources read compare Hypselodoris maculosa with Thorunna australis, which is not a game species; no feature of the genus Thorunna was found",
   "Phyllidiella|Phyllidiopsis": "Brunckhorst's key sets Phyllidiopsis apart by its fused oral tentacles, under the animal; the rhinophore colours read are species marks (SEASLUG.WORLD's Phyllidiella pustulosa against Phyllidiopsis fissurata)"

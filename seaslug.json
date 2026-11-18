@@ -1088,7 +1088,7 @@
     ]
    },
    "apart": {
-    "g:Goniobranchus": "Goniobranchus: a broad mantle that overhangs the body widely",
+    "g:Goniobranchus": "Goniobranchus: a broad mantle that overhangs the body widely, as G. kuniei",
     "g:Hexabranchus": "Hexabranchus: gills set one by one into the back, with no pocket to pull them into"
    },
    "apsrc": {
@@ -1659,17 +1659,6 @@
      [
       0
      ]
-    ]
-   },
-   "apart": {
-    "g:Tyrannodoris": "Tyrannodoris: very large oral tentacles, as T. luteolineata"
-   },
-   "apsrc": {
-    "g:Tyrannodoris": [
-     {
-      "t": "Nudi Pixel, Willan, Tambja affinis group comparison, Roboastra, now Tyrannodoris, luteolineata",
-      "u": "https://nudipixel.net/similarities/tambja-affinis-group"
-     }
     ]
    }
   },

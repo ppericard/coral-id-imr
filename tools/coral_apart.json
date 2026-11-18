@@ -19,43 +19,43 @@
   },
   "Acropora|Echinopora": {
    "Acropora": ["a larger axial corallite at the tip of every branch", [["imr", "slide 16"], ["cf", "p. 9"]]],
-   "Echinopora": ["no axial corallite; a rough surface of small beads and fine spines", [["imr", "slide 28"], ["cf", "p. 9"]]]
+   "Echinopora": ["no axial corallite; a rough surface of beads and fine spines", [["imr", "slide 28"], ["cf", "p. 9"]]]
   },
   "Acropora|Montipora": {
    "Acropora": ["corallites stand out as little cups", [["imr", "slide 16"]]],
-   "Montipora": ["the tiniest corallites, looking empty, among bumps that are not corallites", [["imr", "slide 47"]]]
+   "Montipora": ["tiny, empty-looking corallites; the bumps are not corallites", [["imr", "slide 47"]]]
   },
   "Alveopora|Goniopora": {
    "Alveopora": ["12 tentacles on each polyp; a lighter skeleton", [["imr", "slide 45"], ["cf", "p. 71"]]],
    "Goniopora": ["24 tentacles on each polyp; a denser skeleton", [["imr", "slides 44, 45"], ["cf", "p. 71"]]]
   },
   "Astrea|Dipsastraea": {
-   "Astrea": ["round, crowded corallites; new ones bud in between the large ones", [["imr", "slides 62, 63"], ["cf", "p. 23"]]],
-   "Dipsastraea": ["oval corallites that divide in two; the colony does not look crowded", [["imr", "slide 61"], ["cf", "p. 23"]]]
+   "Astrea": ["round, crowded corallites; new ones bud between the large ones", [["imr", "slides 62, 63"], ["cf", "p. 23"]]],
+   "Dipsastraea": ["oval corallites that divide in two; a colony not crowded", [["imr", "slide 61"], ["cf", "p. 23"]]]
   },
   "Astrea|Favites": {
    "Astrea": ["each corallite has its own wall; the septa alternate in size", [["imr", "slides 62, 63"]]],
-   "Favites": ["walls mostly shared, at most a shadow between; an uneven colony surface", [["imr", "slide 65"], ["cf", "p. 24, 28"]]]
+   "Favites": ["shared or separate walls; roundish corallites; an uneven surface", [["imr", "slide 65"]]]
   },
   "Astreopora|Cyphastrea": {
    "Astreopora": ["corallites look like holes, the septa barely formed", [["imr", "slide 29"], ["cf", "p. 25"]]],
-   "Cyphastrea": ["smaller, neater cone-shaped corallites, beads and spinules between them", [["cf", "p. 25"]]]
+   "Cyphastrea": ["smaller, neater cone corallites with beads between them", [["cf", "p. 25"]]]
   },
   "Astreopora|Porites": {
    "Astreopora": ["tube-shaped corallites standing out, like holes", [["imr", "slide 29"]]],
    "Porites": ["a honeycomb of small corallites with shared walls", [["imr", "slide 26"]]]
   },
   "Ctenactis|Herpolitha": {
-   "Ctenactis": ["one long mouth furrow, no mouths outside it; large saw-like teeth", [["imr", "slide 52"], ["cf", "p. 65"]]],
-   "Herpolitha": ["a furrow the whole length, plus extra mouths scattered over the surface", [["imr", "slide 54"], ["cf", "p. 65"]]]
+   "Ctenactis": ["one long mouth furrow, no mouths outside it; big saw-like teeth", [["imr", "slide 52"], ["cf", "p. 65"]]],
+   "Herpolitha": ["a furrow the whole length plus extra mouths scattered around", [["imr", "slide 54"], ["cf", "p. 65"]]]
   },
   "Ctenactis|Lobactis": {
    "Ctenactis": ["a long, skateboard-like disc with a long mouth furrow", [["imr", "slide 52"], ["cf", "p. 65"]]],
-   "Lobactis": ["an oval disc with tall tentacular lobes, often green, blue or white", [["imr", "slide 53"], ["cf", "p. 64"]]]
+   "Lobactis": ["an oval disc, tall tentacular lobes often green, blue or white", [["imr", "slide 53"], ["cf", "p. 64"]]]
   },
   "Cyphastrea|Turbinaria": {
-   "Cyphastrea": ["beads and small spines between the corallites", [["cf", "p. 45"]]],
-   "Turbinaria": ["a smooth, plain surface between the corallites", [["imr", "slide 31"], ["cf", "p. 45"]]]
+   "Cyphastrea": ["beads and small spines between the corallites", [["cf", "p. 45-46"]]],
+   "Turbinaria": ["a smooth, plain surface between the corallites", [["imr", "slide 31"], ["cf", "p. 45-46"]]]
   },
   "Danafungia|Fungia": {
    "Danafungia": ["a domed or arched centre and large septal teeth", [["imr", "slide 51"], ["cf", "p. 63"]]],
@@ -66,24 +66,24 @@
    "Lithophyllon": ["fine, regular septal teeth: a neat, smooth look", [["imr", "slide 50"], ["cf", "p. 64"]]]
   },
   "Diploastrea|Dipsastraea": {
-   "Diploastrea": ["thick-walled corallites packed together in a regular polygon pattern", [["imr", "slide 64"], ["cf", "p. 27"]]],
-   "Dipsastraea": ["oval corallites, each with its own wall; the colony does not look crowded", [["imr", "slide 61"]]]
+   "Diploastrea": ["thick-walled corallites packed in a regular polygon pattern", [["imr", "slide 64"], ["cf", "p. 27"]]],
+   "Dipsastraea": ["oval corallites, each with its own wall; a colony not crowded", [["imr", "slide 61"]]]
   },
   "Diploastrea|Favites": {
-   "Diploastrea": ["thick-walled corallites packed together in a regular polygon pattern", [["imr", "slide 64"], ["cf", "p. 27"]]],
+   "Diploastrea": ["thick-walled corallites packed in a regular polygon pattern", [["imr", "slide 64"], ["cf", "p. 27"]]],
    "Favites": ["crowded, roundish corallites on an uneven colony surface", [["imr", "slide 65"]]]
   },
   "Dipsastraea|Favites": {
    "Dipsastraea": ["separate walls; oval corallites that divide in two", [["imr", "slide 61"]]],
-   "Favites": ["shared or separate walls; new corallites bud in between the others", [["imr", "slide 65"]]]
+   "Favites": ["shared or separate walls; new corallites bud between others", [["imr", "slide 65"]]]
   },
   "Dipsastraea|Goniastrea": {
    "Dipsastraea": ["oval corallites, each with its own wall", [["imr", "slide 61"]]],
-   "Goniastrea": ["angular corallites with shared walls and a crown of paliform lobes", [["imr", "slide 66"]]]
+   "Goniastrea": ["angular corallites, shared walls, a crown of paliform lobes", [["imr", "slide 66"]]]
   },
   "Duncanopsammia|Tubastraea": {
    "Duncanopsammia": ["thick plates bearing large, raised round corallites", [["imr", "slide 32"], ["cf", "p. 50"]]],
-   "Tubastraea": ["tube-shaped corallites, dark green to black or bright orange", [["imr", "slide 27"], ["cf", "p. 10"]]]
+   "Tubastraea": ["tube-shaped corallites, dark green to black or bright orange", [["imr", "slide 27"]]]
   },
   "Duncanopsammia|Turbinaria": {
    "Duncanopsammia": ["bigger corallites; thicker plates, a less regular colony", [["imr", "slide 32"]]],
@@ -94,15 +94,15 @@
    "Galaxea": ["tube corallites bristling with blade-like septa", [["imr", "slide 30"]]]
   },
   "Echinopora|Merulina": {
-   "Echinopora": ["separate round corallites on a beaded, spiny surface", [["imr", "slide 28"], ["cf", "p. 53"]]],
-   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 51"]]]
+   "Echinopora": ["separate round corallites on a beaded, spiny surface", [["imr", "slide 28"]]],
+   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 47-56"]]]
   },
   "Favites|Goniastrea": {
    "Favites": ["less regular corallites; paliform lobes usually absent", [["cf", "p. 32"]]],
    "Goniastrea": ["neat corallites with a crown of paliform lobes", [["imr", "slide 66"], ["cf", "p. 32"]]]
   },
   "Fungia|Heliofungia": {
-   "Fungia": ["the disc and its saw-like septal teeth in view", [["imr", "slide 49"]]],
+   "Fungia": ["a round disc, saw-like septal teeth, pale tentacular lobes", [["imr", "slide 49"]]],
    "Heliofungia": ["long anemone-like tentacles with white or pink tips, out by day", [["imr", "slide 55"]]]
   },
   "Fungia|Lithophyllon": {
@@ -111,11 +111,11 @@
   },
   "Fungia|Lobactis": {
    "Fungia": ["a round disc", [["imr", "slide 49"]]],
-   "Lobactis": ["an oval disc with tall tentacular lobes, often green, blue or white", [["imr", "slide 53"]]]
+   "Lobactis": ["an oval disc, tall tentacular lobes often green, blue or white", [["imr", "slide 53"]]]
   },
   "Galaxea|Tubastraea": {
    "Galaxea": ["corallites bristling with blade-like septa", [["imr", "slide 30"]]],
-   "Tubastraea": ["plain tubes, smooth outside, dark green to black or bright orange", [["imr", "slide 27"], ["cf", "p. 10"]]]
+   "Tubastraea": ["plain tubes, smooth outside; dark green to black or orange", [["imr", "slide 27"]]]
   },
   "Goniastrea|Leptoria": {
    "Goniastrea": ["neat corallites with a crown of paliform lobes", [["imr", "slide 66"], ["cf", "p. 18"]]],
@@ -126,8 +126,8 @@
    "Platygyra": ["ragged walls, alternating septa and no paliform lobes", [["imr", "slide 40"], ["cf", "p. 18"]]]
   },
   "Goniopora|Heliofungia": {
-   "Goniopora": ["a colony covered in long polyps out by day", [["imr", "slide 44"], ["cf", "p. 71"]]],
-   "Heliofungia": ["one free-living disc with long tentacles, white or pink tips", [["imr", "slide 55"], ["cf", "p. 63"]]]
+   "Goniopora": ["a colony covered in long polyps out by day", [["imr", "slide 44"], ["cf", "p. 71-74"]]],
+   "Heliofungia": ["one free-living disc with long tentacles, white or pink tips", [["imr", "slide 55"], ["cf", "p. 71-74"]]]
   },
   "Goniopora|Porites": {
    "Goniopora": ["long fleshy polyps out by day", [["imr", "slide 44"], ["cf", "p. 71"]]],
@@ -142,16 +142,16 @@
    "Plerogyra": ["large grape-like bubbles (vesicles)", [["imr", "slide 46"]]]
   },
   "Hydnophora|Merulina": {
-   "Hydnophora": ["cone-shaped mounds (monticules), the corallites in the hollows between", [["imr", "slide 48"], ["cf", "p. 11"]]],
-   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 12"]]]
+   "Hydnophora": ["cone-shaped mounds, the corallites in the hollows between", [["imr", "slide 48"], ["cf", "p. 11-12"]]],
+   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 11-12"]]]
   },
   "Hydnophora|Montipora": {
    "Hydnophora": ["coarse cone-shaped mounds, the corallites in the hollows between", [["imr", "slide 48"], ["cf", "p. 11"]]],
    "Montipora": ["tiny, empty-looking corallites among finer bumps", [["imr", "slide 47"], ["cf", "p. 11"]]]
   },
   "Hydnophora|Pectinia": {
-   "Hydnophora": ["small cone-shaped mounds all over the surface", [["imr", "slide 48"], ["cf", "p. 11"]]],
-   "Pectinia": ["tall thin plates and spires: a maze of hedge-like walls", [["imr", "slide 39"], ["cf", "p. 12"]]]
+   "Hydnophora": ["small cone-shaped mounds all over the surface", [["imr", "slide 48"], ["cf", "p. 11-12"]]],
+   "Pectinia": ["tall thin plates and spires: a maze of hedge-like walls", [["imr", "slide 39"], ["cf", "p. 11-12"]]]
   },
   "Leptoria|Pavona": {
    "Leptoria": ["long narrow valleys with equal, zipper-like septa", [["imr", "slide 41"]]],
@@ -170,15 +170,15 @@
    "Plerogyra": ["large grape-like bubbles (vesicles)", [["imr", "slide 46"]]]
   },
   "Merulina|Pachyseris": {
-   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 51"]]],
-   "Pachyseris": ["ridges and valleys running side by side, finely ribbed: a fingerprint look", [["imr", "slide 38"], ["cf", "p. 51"]]]
+   "Merulina": ["short valleys that fan out and fork towards the colony edge", [["cow-merulina", "Characters"], ["cf", "p. 47-56"]]],
+   "Pachyseris": ["parallel ridges and valleys, finely ribbed: a fingerprint look", [["imr", "slide 38"]]]
   },
   "Merulina|Pectinia": {
-   "Merulina": ["short valleys that fan out and fork across thin plates", [["cow-merulina", "Characters"], ["cf", "p. 12"]]],
-   "Pectinia": ["tall thin plates and spires: a maze of hedge-like walls", [["imr", "slide 39"], ["cf", "p. 12"]]]
+   "Merulina": ["short valleys that fan out and fork across thin plates", [["cow-merulina", "Characters"], ["cf", "p. 11-12"]]],
+   "Pectinia": ["tall thin plates and spires: a maze of hedge-like walls", [["imr", "slide 39"], ["cf", "p. 11-12"]]]
   },
   "Millepora|Porites": {
-   "Millepora": ["smooth, pores barely visible, fine hairs; mustard with pale edges", [["cf", "p. 31, 78"]]],
+   "Millepora": ["smooth, pores barely visible, fine hairs; mustard, pale edges", [["cf", "p. 31, 78"]]],
    "Porites": ["a honeycomb of small corallites with shared walls", [["imr", "slide 26"], ["cf", "p. 31"]]]
   },
   "Montipora|Porites": {
@@ -187,7 +187,7 @@
   },
   "Mycedium|Pachyseris": {
    "Mycedium": ["large nose-shaped corallites facing the colony edge", [["imr", "slide 33"]]],
-   "Pachyseris": ["ridges and valleys running side by side, finely ribbed: a fingerprint look", [["imr", "slide 38"]]]
+   "Pachyseris": ["parallel ridges and valleys, finely ribbed: a fingerprint look", [["imr", "slide 38"]]]
   },
   "Mycedium|Pectinia": {
    "Mycedium": ["large nose-shaped corallites facing the colony edge", [["imr", "slide 33"]]],
@@ -198,11 +198,11 @@
    "Turbinaria": ["small round corallites on a smooth surface", [["imr", "slides 31, 32"]]]
   },
   "Pachyseris|Pavona": {
-   "Pachyseris": ["ridges and valleys running side by side, finely ribbed: a fingerprint look", [["imr", "slide 38"]]],
+   "Pachyseris": ["parallel ridges and valleys, finely ribbed: a fingerprint look", [["imr", "slide 38"]]],
    "Pavona": ["star-like corallites joined by smooth, flowing septa", [["imr", "slide 37"]]]
   },
   "Pavona|Platygyra": {
-   "Pavona": ["corallites with no walls, joined by smooth, star-like septa", [["imr", "slide 37"], ["cf", "p. 16"]]],
+   "Pavona": ["star-like corallites joined by smooth, flowing septa", [["imr", "slide 37"]]],
    "Platygyra": ["a brain coral, ragged walls between its valleys", [["imr", "slide 40"]]]
   },
   "Pocillopora|Seriatopora": {

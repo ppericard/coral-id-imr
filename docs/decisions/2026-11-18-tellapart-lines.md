@@ -21,9 +21,14 @@ les 6 recommandations" (write the sourced lines for the coral slate pairs and th
   in `none` with why (6: *Acropora* / *Cyphastrea*, *Anacropora* / *Montipora*, *Astrea* / *Cyphastrea*,
   *Astreopora* / *Turbinaria*, *Cyphastrea* / *Echinopora*, *Duncanopsammia* / *Goniopora*).
 - **Sea slugs**: `tools/seaslug_cues.json` `apart`, laid by `tools/seaslug_cues.py` on `seaslug.json` genera, read by
-  `app.js` `fishGenera` (any tree subject's genus, rule S1). Every declared genus pair (9) is written (6, three of them
-  with one side) or in `apartNone` with why (3: *Chelidonura* / *Tubulophilinopsis*, *Hypselodoris* / *Thorunna*,
-  *Phyllidiella* / *Phyllidiopsis*).
+  `app.js` `fishGenera` (any tree subject's genus, rule S1). Every declared genus pair (9) is written (5, three of them
+  with one side) or in `apartNone` with why (4: *Chelidonura* / *Tubulophilinopsis*, *Hypselodoris* / *Thorunna*,
+  *Phyllidiella* / *Phyllidiopsis*, *Tambja* / *Tyrannodoris*).
+- **A one-sided line after a right answer**: the sheet's line after a right answer must say something of the unit shown,
+  so `quiz.js` `fbLine` takes a look-alike among the choices only when its record holds a half on the unit shown; else
+  the unit's first tip (a subject-neutral guard on #1110's chooser).
+- **Short**: one side at most 64 characters (`tools/apply_coral_apart.py` `LONGEST`), so both sides and their source fit
+  the phone sheet; the sea slugs keep their marks' 80.
 - **What a line may say**: each side names and describes its own genus, from a source that says it of that genus; a pair
   is written only when the two sides really tell the genera apart on a photo. A side is left out rather than inferred
   (no "A has it, so B lacks it" unless a source says so). Never a line from the trait tags. The coral sources, in order:
@@ -35,12 +40,13 @@ les 6 recommandations" (write the sourced lines for the coral slate pairs and th
 - **Not done here**: *Echinopora* / *Turbinaria*, the most mixed-up coral pair in the answers, is not a declared pair (a
   declaration is a source's or Pierre's); the 25 pairs with a bonus genus; a slot to edit the lines in the admin.
 
-Integrator's calls (easy to correct): every line's wording; the six coral and three sea-slug pairs left with the first
-tip; the one-sided sea-slug lines.
+For Pierre (content the IMR course stands behind, listed in the PR): every line's wording and its sources; the six coral
+and four sea-slug pairs left with the first tip; the one-sided sea-slug lines; *Astrea* / *Favites*, where IMR itself
+says Favites can have separate walls.
 
 ## Consequences
 
-After a mix-up of two declared coral genera (53 pairs) or sea-slug genera (6), the sheet says what tells them apart,
+After a mix-up of two declared coral genera (53 pairs) or sea-slug genera (5), the sheet says what tells them apart,
 with its source, instead of the first ID tip. `tests/tellapart.test.js` checks the lines against the real files through
 `quiz.js` `pairText`; `tests/booktext.test.js` keeps the Coral Finder wording out of the coral lines. Pierre reviews
 the lines in the files until the content editor has a slot for them (ROADMAP).

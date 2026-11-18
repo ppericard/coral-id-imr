@@ -19,13 +19,19 @@ const ROOT = path.join(__dirname, '..'),
   json = f => JSON.parse(src(f)),
   plain = x => JSON.parse(JSON.stringify(x));
 
-// quiz.js pairLine and pairText over a GX of the caller's
+// quiz.js pairLine, pairText and fbLine over a GX of the caller's (the markup helpers made plain)
 function pairs(GX) {
-  const ctx = {GX};
+  const ctx = {
+    GX,
+    uname: n => n,
+    glossAll: L => L,
+    tipsLabel: g => g.tl || 'ID tips (IMR)',
+    esc: s => String(s)
+  };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src('quiz.js'), 'function pairLine(', '// The one decisive line of the feedback sheet', {file: 'quiz.js'}) +
-      '\nthis.M = {pairLine, pairText};',
+    block(src('quiz.js'), 'function pairLine(', "// The feedback sheet's own tally", {file: 'quiz.js'}) +
+      '\nthis.M = {pairLine, pairText, fbLine};',
     ctx
   );
   return ctx.M;
@@ -44,8 +50,8 @@ test('data.json ap and apsrc are as tools/coral_apart.json gives them (python3 t
 test('a coral mix-up reads both halves, the unit shown first, with the IMR lecture and Coral Finder sources', () => {
   assert.deepStrictEqual(plain(coral.pairText('Ctenactis', 'Herpolitha')), {
     t:
-      'Ctenactis: one long mouth furrow, no mouths outside it; large saw-like teeth · Herpolitha: a furrow the whole length, ' +
-      'plus extra mouths scattered over the surface',
+      'Ctenactis: one long mouth furrow, no mouths outside it; big saw-like teeth · Herpolitha: a furrow the whole length ' +
+      'plus extra mouths scattered around',
     s: 'IMR Lecture 6, slide 52; Coral Finder, p. 65; IMR Lecture 6, slide 54'
   });
   // the other way round: the shown unit first
@@ -101,7 +107,7 @@ test('a sea slug mix-up reads the declared pair line from the built genera, with
   const P = slug.pairText('g:Hypselodoris', 'g:Goniobranchus');
   assert.strictEqual(
     P.t,
-    'Hypselodoris: a tall body, the mantle barely overhanging it, as H. tryoni · Goniobranchus: a broad mantle that overhangs the body widely'
+    'Hypselodoris: a tall body, the mantle barely overhanging it, as H. tryoni · Goniobranchus: a broad mantle that overhangs the body widely, as G. kuniei'
   );
   assert.match(P.s, /^Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet/);
   // one side only: the Hexabranchus line, whichever genus was shown
@@ -112,6 +118,22 @@ test('a sea slug mix-up reads the declared pair line from the built genera, with
   assert.strictEqual(slug.pairText('g:Hexabranchus', 'g:Thorunna').t, slug.pairText('g:Thorunna', 'g:Hexabranchus').t);
   // a pair left without a line
   Object.keys(S.apartNone).forEach(k => assert.strictEqual(slug.pairText(...k.split('|').map(n => 'g:' + n)), null, k));
+});
+
+test('the sheet line (quiz.js fbLine): a miss says the pair; a right answer only a pair with a half on the unit shown', () => {
+  const words = h => h.replace(/<[^>]*>/g, '');
+  // a miss: the one-sided line, whichever genus was shown
+  assert.match(words(slug.fbLine('g:Hypselodoris', 'g:Hexabranchus', false)), /^Hexabranchus: gills set one by one/);
+  // right on Hexabranchus beside a Hypselodoris choice: its own half
+  assert.match(
+    words(slug.fbLine('g:Hexabranchus', 'g:Hexabranchus', true, ['g:Hypselodoris', 'g:Hexabranchus'])),
+    /^Hexabranchus: gills set/
+  );
+  // right on Hypselodoris beside a Hexabranchus choice: no half on Hypselodoris, so its own first mark
+  const own = words(slug.fbLine('g:Hypselodoris', 'g:Hypselodoris', true, ['g:Hexabranchus', 'g:Hypselodoris']));
+  assert.ok(own.startsWith(`g:Hypselodoris: ${X.gen['g:Hypselodoris'].qt[0]}`), own);
+  // a coral right answer beside its look-alike: both halves, the genus shown first
+  assert.match(words(coral.fbLine('Leptoria', 'Leptoria', true, ['Platygyra', 'Leptoria'])), /^Leptoria: equal, zipper-like septa/);
 });
 
 test('every declared sea slug genus pair has a line or a reason; a record carries no line for a pair it does not declare', () => {

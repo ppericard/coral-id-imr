@@ -1093,7 +1093,9 @@ function pairText(a, b) {
 // a look-alike among the choices (chs: what the player just told apart); 3. else the shown unit's first ID tip or mark, said
 // as "X: ...", its source after it; 4. none (no tip: a fish species, a starred coral genus, a sea slug with no marks): the
 // sheet is the verdict and the species line alone. Never a line made by comparing trait tags (rule C2). A typed answer has
-// no choices (chs empty).
+// no choices (chs empty). After a right answer the pair's line must say something of the unit shown (its half, from the
+// look-alike's record): a pair whose only half describes the look-alike (the sea slugs' one-sided lines,
+// tools/seaslug_cues.json apart) leaves the unit's own first tip.
 function fbLine(target, c, good, chs = []) {
   const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
   const P =
@@ -1101,7 +1103,7 @@ function fbLine(target, c, good, chs = []) {
       ? pairText(target, c)
       : good
         ? chs
-            .filter(o => o !== target && GX(o))
+            .filter(o => o !== target && GX(o) && pairLine(o, target))
             .map(o => pairText(target, o))
             .find(Boolean)
         : null;
