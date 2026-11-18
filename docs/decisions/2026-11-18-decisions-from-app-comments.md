@@ -25,6 +25,13 @@ Each line: the date, Pierre's words as written (French where he spoke French), w
 - 2026-11-01: "at the very start it must be simple", then look-alike traps come in little by little, since look-alikes
   are how genera are learned. The number of traps among the wrong choices follows the genus's ability. `model.js`
   `FORMAT`, `trapsFor`, `distractors`.
+- 2026-11-08, after a device holding an old copy of an account showed again the cards and toasts already seen on
+  another: "as long as the page is not synchronised, there is no point showing things for the umpteenth time". For a
+  signed-in player the one-time cards and the achievements check wait for the visit's first sync, then are decided on
+  the merged state. `sync.js` `NOTICE`, `noticeLater`, `noticesGo`.
+- 2026-11-05: "a player can delete their own account and all their data themselves, from a discreet page". The page
+  #about/delete-account, linked from About › Privacy and the privacy notice, never from a menu; the sheet deletes
+  everything but a tombstone. `sync.js` `viewDeleteAccount`; docs/ARCHITECTURE.md "Pages and routing".
 
 ## Consequences
 
