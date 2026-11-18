@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The admin leaves a player or a device not signed in out
+// ROADMAP "Security follow-ups": the admin leaves a player or a device not signed in out
 // of the statistics (Code.gs sxSet_, statsExclude), and an answer whose photos are of another unit rates no photo
 // (photoCheck_, photoAlert_), the answer itself always kept. Against the in-memory sheet (tests/gas.js).
 const test = require('node:test'),

@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2): the content editor's circles and
 // look-alike pairs in the apply (core.js structApply, fishStructure), the structure stamp (structStamp), the sheet's
 // replay under the structure in force (Code.gs subjRpl_, replay_, replays_, boardRpl_), and the photo tools' circles in
-// force (tools/fish_inforce.py). The edits here are made-up fixtures.
+// force (tools/fish_inforce.py). The edits here are made-up fixtures: the real curation.json holds none.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

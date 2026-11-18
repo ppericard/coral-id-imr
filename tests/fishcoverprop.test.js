@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// Photo review › Cover proposals (admin-covers.js): where his ★ Cover of a family or a genus differs from the default
-// cover rule's pick, the rule's photo is proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;
-// a proposal is done once answered, once his cover changed, or once the rule agrees; never written to curation.json by a
+// Photo review › Cover proposals (admin-covers.js): where Pierre's ★ Cover of a family or a genus differs from the default
+// cover rule's pick, the rule's photo is proposed beside his; Accept sets it as his cover in the draft (one Undo
+// step), Keep mine records the pair in fish.kept; a proposal is done once answered, once his cover changed, or once the rule agrees; never written to curation.json by a
 // tool (rule A1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -226,7 +226,7 @@ test('a node page’s cover and why (Photos › Tree): his ★, else the rule on
   assert.strictEqual(nodeCoverWhy(c), 'No photo in play');
 });
 
-// His pick under one name, the game's copy under the other (a ★ cover fi<id>, a reference photo judged adult, back in
+// Pierre's pick under one name, the game's copy under the other (a ★ cover fi<id>, a reference photo judged adult, back in
 // play as its candidate copy fish-<species>-cand-<id> judged a juvenile, which the admin may call "out of play"): the
 // admin finds it as the app does (app.js fishCurate: the name, else core.js fishPid) and says why.
 test('his ★ cover under the other name of the same photo (reference fi<id>, candidate fish-<species>-cand-<id>)', () => {
@@ -294,7 +294,7 @@ test('his ★ cover under the other name of the same photo (reference fi<id>, ca
   assert.strictEqual(fishCoverOf(L4, {genera: {s2: {cover: 'fi3'}}}, 'f:A', j4, seen()).f, 'fish-s2-cand-3');
 });
 
-// The juvenile exception: his ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id:
+// The juvenile exception: Pierre's ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id:
 // {cover, coverJ}}, coverJ naming the cover's photo): ★ Cover's yes (fishCoverYes), the Tree page's one click
 // (fishCoverJOk); a new pick, taking it off, Remove or a proposal accepted drop the confirmation with the old pick. The
 // default rule alone never takes a juvenile.

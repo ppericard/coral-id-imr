@@ -279,8 +279,8 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
 });
 
 // A page or tool that names a photo file by a local path (img/<f>.webp, not built by the app's loc()/photoUrl()) names
-// one that is in img/: the photos with an online original live on R2 only (a page naming one, as tools/og/og.html
-// does for the link preview, would show holes).
+// one that is in img/: the photos with an online original live on R2 only (a page naming one by its local path,
+// tools/og/og.html's link preview included, would show holes).
 test('every img/ photo file named in the pages and tools is in img/ (the others live on R2 only)', () => {
   const ROOT = path.join(__dirname, '..'),
     files = execFileSync('git', ['ls-files', '*.html', '*.css', '*.js', '*.py', '*.sh'], {cwd: ROOT, encoding: 'utf8'})
