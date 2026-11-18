@@ -443,7 +443,8 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
     sheetTab: () => '',
     isBenthic: () => false,
     credit: () => '',
-    againTold: () => false,
+    againLeft: () => false,
+    fbLine: () => '', // the sheet's one line (quiz.js fbLine; tests/fbsheet.test.js)
     taxonLine: () => ''
   };
   vm.createContext(ctx);
