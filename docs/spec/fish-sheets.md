@@ -16,15 +16,17 @@ from the families page (each family's name opens its sheet; its photo enlarges) 
 
 - the English name, the scientific name or names and IMR's name below, its group in the key;
 - my progress on it once the game asks the families (`myProg`);
-- the hero photo, the easiest, most reference-like photo of its species whoever took it (`easyRank` over every game and
-  sheet-only photo of its species);
+- the hero photo: Pierre's ★ Cover of the family while in play (`coverP`), else its default cover (`nodeCover`: the
+  easiest reference photo, not a juvenile, of its species most seen around the instance's centre, whoever took it;
+  [fish.md › The default cover of a node with leaves](fish.md#the-default-cover-of-a-node-with-leaves));
 - the IMR cues verbatim with their slides, then its ID marks and lines ([below](#family-id-marks-and-behaviour-habitat-size-lines));
 - "Don't confuse with" (`.lrow`, the corals' look-alike cards): IMR's look-alike lines with their source, our lines for
   the pairs IMR gives no words for, then the families players mix it up with (`dataLooks`), with the mix-up count;
-- **the genera as rows** (up to 4 photos, one per species most common first, the species count and how many are
-  "opened for me", the IMR entry name), each opening its **short genus page** ([below](#the-genus-page)); a family with
-  one genus lists its species there;
-- the juveniles and phases (IMR's phase lines, the sourced juvenile note, the juvenile-tagged photos);
+- **the genera as rows** (up to 4 photos, one per species most common first, the genus's ★ Cover first when one is
+  picked, each species by its ★ cover else its first photo, `spPhoto`; the species count and how many are "opened for
+  me", the IMR entry name), each opening its **short genus page** ([below](#the-genus-page)); a family with one genus
+  lists its species there;
+- the juveniles and phases (IMR's phase lines, the sourced juvenile note, up to 4 juvenile-tagged photos);
 - a report link.
 
 Every species list has the **"Opened for me" filter, on each time a sheet opens** (`fishTiles`, a `.seg`, `fishMine`):
@@ -51,8 +53,9 @@ single-species genus row:
 - its family and genus, "★ IMR most sighted #n", "On the IMR reference list" and "Confirmed near Dauin" or "Not
   confirmed near Dauin" (`present.near`, rule C8's words); its size and depth ([below](#size-and-depth));
 - its rank in its family by the commonness index (`cmi`);
-- its photos: the first large, then two more, the juvenile-tagged ones apart (up to 2), the rest behind "N more photos",
-  each with its credit (`easyRank`, the sheet-only photos included);
+- its photos, in `easyRank` order (`fishSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
+  its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
+  juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
@@ -96,8 +99,8 @@ and on the species sheet's genus chip; the game's typed answers do not read it.
 ## Genus presentation and ID marks
 
 Every scientific genus in play has a short presentation and its ID cues, sourced. `tools/fish_genus_marks.json` (`src`
-{key: {t, u}}, `families` done, `genera` {name: {plain [words, refs], marks [[words, refs]] 1 to 3}}, a ref `[src key,
-where in it]`, `none` {name: why no marks}), in our own words, for every genus in play IMR gives no cues for, in every
+{key: {t, u}}, `families` done, `genera` {name: {plain [words, refs], marks [[words, refs]] 1 to 3}}, a ref
+`[src key, where in it]`, `none` {name: why no marks}), in our own words, for every genus in play IMR gives no cues for, in every
 circle (the surprise cards' families aside), written from the FAO species identification guide for the Western Central
 Pacific (vols 3 to 6, 1999 and 2001: each family's key to the genera, or its key to the species where it has none, and the species
 accounts) and FishBase species pages (where the guide splits genera by counts only, a visible feature FishBase gives for

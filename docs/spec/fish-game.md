@@ -2,8 +2,8 @@
 
 What a fish player gets, on the engine every subject shares ([subjects.md](subjects.md)): the units (the families of
 the reef fish ID book, then the scientific genera and the species), the circles and their gate, the surprise cards, the
-Learn page and My progress, and the global score. The fish content these read is in [fish.md](fish.md), the photos in
-[fish-photos.md](fish-photos.md), the sheets in [fish-sheets.md](fish-sheets.md); the plan behind the levels is
+Learn page and My progress, and the global score. The fish content these read is in [fish.md](fish.md), the photos
+(`fish-game.json`, the photos in play, included) in [fish-photos.md](fish-photos.md), the sheets in [fish-sheets.md](fish-sheets.md); the plan behind the levels is
 [FISH_PATH.md](../FISH_PATH.md). This is the specification of what the code does now; why each part was decided is in
 [docs/decisions/](../decisions/README.md) and the PRs.
 

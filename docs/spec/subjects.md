@@ -45,10 +45,12 @@ the engine). Each record:
   not its `rank` (the sea slugs' `genus`; `core.js` `unitRankOf`), logged with each answer; a tree subject's top rank,
   the family, is what the admin reads as its tree's;
 - `renamed` (the fish: `FISH_RENAMED`, old unit ids to new), `typeDrop` (the fish: a word a typed name may leave out);
-- `replay` (the corals: the subject whose answers the sheet rates photos, counts confusions and holds the opening from)
-  and `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers, [Sync and replay per
-  subject](#sync-and-replay-per-subject));
-- `pool` (the files its pooled statistics read), `stats` (the sea slugs': the script that serves them), `tiers` (the
+- `replay` (the corals: the subject of the first replay, asked as `rv`, and of the sheet's opening hold; an answer row
+  with no subject is theirs) and `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
+  [Sync and replay per subject](#sync-and-replay-per-subject));
+- `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
+  its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics)), `stats` (the sea slugs': the script
+  from which the app reads theirs), `tiers` (the
   corals: photo sources rank, rule P1), `calib` (the draw's calibration), `analyses` (its Analyses report), `score` (the
   fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and
   `structure` (what the content editor may change, [content.md](content.md)), `start` (its first-launch question,
@@ -169,7 +171,9 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   `mergeProgress` against its `base`). A saved copy without a subject's keys (saved by an app that did not know it) is
   not an empty record: `mergeSaved` leaves that subject alone (a reset is an empty record with a reset time, never an
   absent key), and the sheet keeps the saved copy's keys of a subject the saving app does not know (`core.js`
-  `keepSubjectKeys`). `syncSummary` (the leaderboard %, "By genus") is always the corals'. Signing in to a known
+  `keepSubjectKeys`). `syncSummary` (the leaderboard %, "By genus") is the first board subject's, the corals', whatever
+  the subject on screen; each other board's units travel beside it (`boards`, `boardUnits`; the fish send their score
+  tree). Signing in to a known
   account: the corals add only the delta since the device's first anonymous answer (`ANONB`); another subject adds
   everything on the device (`mergeProgress({}, here, sheet)`). Sign-out clears every subject's keys. `core.js`
   `mergeUsers` (the admin's account merge) merges each subject's progress and opt-ins on its own. Every subject's answers
@@ -177,8 +181,7 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   Reports (`repBtn`) from a fish or sea-slug question carry the unit's id and the remote photo id (`Code.gs`
   `logReports_` accepts digits in a unit); the admin's To do › Reports names the unit and shows its photo (`admin.js`
   `fishAdmin`, `repUnit`).
-- **Full replay**: the corals are the subject the sheet replays under the app's rules and rates photos from (`SUBJECTS`
-  `replay`; `core.js` `RVS`); `sync.js` `replayAdopt` always runs as that subject (`inSubject`), whatever the subject on
+- **Full replay**: the corals are the subject of the first replay (`SUBJECTS` `replay`; `core.js` `RVS`); `sync.js` `replayAdopt` always runs as that subject (`inSubject`), whatever the subject on
   screen, and `mergeSubject` compares rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
   are replayed from their own answers with their own rules versions and keys (`SUBJECTS` `replayed`, `FISH_RVS`,
   `SEASLUG_RVS`; `reefid-sync-fish-rv`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). The
@@ -194,8 +197,9 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
 ## Who sees a subject
 
 - **Beta**, the label (`SUBJECTS` `beta` {kick, line}): the sea slugs carry it, the corals and the fish do not. It puts a
-  small *beta* tag on the subject's switch buttons and on its pick in the welcome tour; `beta.kick` and `beta.line` are
-  its words; ⚙ has no subject row. The label is apart from who may open the subject (`open`, next).
+  small *beta* tag on the subject's switch buttons and on its pick in the welcome tour, and keeps its `hello.all` card
+  ([below](#the-subjects-card)); `beta.kick` and `beta.line` hold its words, which no page shows now; ⚙ has no subject
+  row. The label is apart from who may open the subject (`open`, next).
 - **Opening** (`SUBJECTS` `open`, `core.js` `subjGroup`): `open: 'group'` opens the subject to the admin and to the
   players of a group that opens it ([the beta group](#the-beta-group)); no field or `open: 'all'` (all three subjects
   now) opens it to every player, signed out included. `subjGroup(S)` (`S.open === 'group'`) is what `app.js`
