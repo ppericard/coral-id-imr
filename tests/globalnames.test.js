@@ -18,7 +18,8 @@ const file = u => u.replace(/[?#].*$/, '');
 
 // The scripts of a page as [{file}] or [{inline}], in the order the browser runs them.
 function scripts(html) {
-  const tag = /<script\b([^>]*)>([\s\S]*?)<\/script>|<link\b([^>]*data-tier="(\d+)"[^>]*)>/g;
+  // Case-insensitive and lenient on the closing tag, as HTML is (CodeQL: <SCRIPT>, </script >).
+  const tag = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>|<link\b([^>]*data-tier="(\d+)"[^>]*)>/gi;
   const inline = [],
     src = [],
     tiers = [];
