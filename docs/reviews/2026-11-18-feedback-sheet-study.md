@@ -12,8 +12,9 @@ feedback of an old study, ROADMAP "Parked"); (3) on a miss, the two photos side 
 rest, and Next always in the same place.
 
 Labels (rule W11): **[measured]** = measured by a script on `main` @6fe951a3 (the real app served from `127.0.0.1` in
-Chromium, or a count over the data files), or counted on the sync sheet's Answers tab (read-only, aggregates only, no
-name read or kept); **[read]** = read in a file or a doc; **[guess]** = my judgement.
+Chromium, or a count over the data files), or counted on the sync sheet's Answers tab (read-only; aggregates only; the
+players' names were read in memory only to put each player's answers in order, never kept or written); **[read]** =
+read in a file or a doc; **[guess]** = my judgement.
 
 ## Summary
 
@@ -22,89 +23,97 @@ name read or kept); **[read]** = read in a file or a doc; **[guess]** = my judge
   (62vh, 412 px) for the fish and scrolls in 13 of the 21 family mix-ups. The fish's "Tell them apart (IMR)" line, the
   only decisive line the app shows today, sits **below the fold** in those cases. The mix-up montage is squeezed to its
   180 px floor and the sheet then **covers its bottom** (up to 71 px of 180 at 390 × 664) [measured, section 1].
+- **Players do not stop on it.** From the answer log, the time between an answer and the next question's clock is a
+  median **0.9 s after a right answer** (corals and fish; 82-83% under 3 s) and **about 3 s after a miss** (half under
+  3 s; 16% of misses get 10 s or more). This is an upper bound: it includes the tap on Next and the next photo's loading
+  [measured, section 2]. Pierre's "je ne la lis jamais" holds for the players too.
 - **What it holds:** up to 11 items: the verdict, "This photo: …", the tips box (ID tips and mnemonic), "Similar names",
   "Your answer, X, would show: …" and Compare them, "Tell them apart" (fish), "This pair comes back as a duel", a fold
   (Coral ID Key criteria, or More), Report a problem, Next. A miss reads 34-96 words (median 49 corals, 75 fish, 35
   sea slugs) [measured].
-- **Next already stays in one place** on every phone and on desktop, whatever the state (the sheet is anchored to the
-  bottom; desktop pins Next at the bottom of the side column) [measured]. Keep that.
-- **Analytics: nothing measures whether anyone reads the sheet or opens its fold today** [read]. Two weak proxies exist
-  (genus sheets opened from a quiz answer, in the pages summary; and the gap between answers in the log). Proposed: four
+- **Next already stays in one place** on every phone and on desktop, whatever the state [measured]. Keep that.
+- **Analytics: nothing logs a fold opened**; the log gives the time on the feedback only as the gap above. Proposed: four
   numbers added to the pages summary (section 2).
-- **Three layouts mocked up inside the real app** on real questions (section 3). **Recommended: A, the short bottom
-  sheet** (verdict, one line, then More and Next on one row): 117-209 px instead of 241-449 px on a 360 px phone; the
-  mix-up photos go from 162 × 180 to 162 × 396-488 px [measured].
-- **The decisive line exists today for a minority of pairs** (section 4): corals 38 of 84 declared pairs (19 of the 59
-  slate pairs), fish 15 of 15 declared family pairs (only 11 wired into the feedback), sea slugs 0 of 9. Weighted by
-  the real mix-ups in the Answers tab: **29% of coral misses and 51% of fish-family misses** would get a pair line
-  [measured]. Where none exists, the fallback is the right unit's first ID tip, which is often not decisive (a
+- **Three layouts mocked up inside the real app** on real questions, Find the X included (section 3). **Recommended: A,
+  the short bottom sheet** (the verdict, the photo's species line, one line, then More and Next on one row): 143-276 px
+  instead of 241-449 px on a 360 px phone; the mix-up photos go from 162 × 180 to 162 × 370-413 px, and Find the X keeps
+  its four tiles at full size [measured].
+- **The decisive line exists for a minority of pairs** (section 4): corals 38 of 84 declared pairs (19 of the 59 slate
+  pairs); fish all 11 declared family pairs, plus 4 undeclared pairs whose line is on the family sheets only; sea slugs 0
+  of 9. Weighted by the real misses in the Answers tab: **29% of coral misses and 51% of fish-family misses** would get
+  a pair line [measured]. Where none exists, the fallback is the right unit's first ID tip, which is often not decisive (a
   Damselfish's first IMR cue is "Small to medium size") [measured]: the gaps want written lines (question (d)).
-- **Effort:** about 12-17 agent hours for the mechanism, the line chooser and the counter; 10-15 more for the missing
-  lines (section 5).
+- **Effort:** about 12-17 agent hours for the mechanism, the line chooser and the counter; 9-13 more for the missing
+  coral and sea-slug lines (section 5).
 
 ## 1. Today's sheet, measured
 
 ### How it was measured
 
-- **Rule D1 from the very first run.** Every Playwright context routed every request before the first page was opened:
+- **Rule D1 from the very first run.** Every Playwright context routed every request before its first page was opened:
   the local server passed, the photos' R2 host was answered from a local cache (filled once with curl through the
   proxy), everything else aborted; the browser mapped `script.google.com`, `script.googleusercontent.com` and
   `*.googleusercontent.com` to `127.0.0.1`; service workers blocked; every host logged. The app tried its 3 anonymous
-  reads to the sync script at each load (`?stats=1`, `?board=1`, `?achs=1`, as the multi-photo study found): **all 156
-  attempts over the runs were aborted inside the browser**, none reached Google [measured]. Signed out, made-up state only (rule D2).
+  reads to the sync script at each load (`?stats=1`, `?board=1`, `?achs=1`, as the multi-photo study found): **every
+  attempt (about 250 over the runs) was aborted inside the browser**; none reached Google [measured]. Signed out,
+  made-up state only (rule D2).
 - **The harness** (kept outside the repo, in the session's scratchpad): the worktree served from `127.0.0.1`, phones
   with `isMobile` and `hasTouch` (rule U4), `deviceScaleFactor` 2, light and dark.
-- **Distributions** (`measure`): after one real answer (so the page is in its answered layout), the real `fbBody` was
-  rendered into `#after` for **every unit** of each subject (right; "I don't know") and **every look-alike of every
-  unit** (wrong: the unit's `look`, 99 coral, 21 fish, 304 sea-slug cases), at each size; `fitStage` re-ran each time.
-  Measured: the sheet's visible height and full height (`scrollHeight`), the photo stage, Next's position, the words,
-  each item's height.
-- **Forced questions** (`shots`): a question on a chosen unit with chosen choices, built with the app's own
-  `photoSet` and `question`, answered by a tap, so `answer()`, the montage and `fitStage` are the app's. States: right,
-  wrong (a look-alike), typed ("I don't know"), duel (a look-alike pair, wrong). Same photos for every layout (a seeded
-  draw).
-- Usable sizes: **360 × 724, 390 × 664, 414 × 715** (the viewport; the header, 49 px, and the tab bar, 59 px, are inside it), and **desktop 1280 ×
-  800**.
+- **Distributions**: after one real answer (so the page is in its answered layout), the real `fbBody` was rendered into
+  `#after` for **every unit** of each subject (right; "I don't know") and **every look-alike of every unit** (wrong: the
+  unit's `look` as the running app has it, 99 coral, 21 fish, 304 sea-slug cases), at each size; `fitStage` re-ran each
+  time. Measured: the sheet's visible height and its content (`scrollHeight`), the feedback box itself, the photo stage,
+  Next's position, the words, each item's height.
+- **Forced questions**: a question on a chosen unit with chosen choices, built with the app's own `photoSet` and
+  `question`, answered by a tap, so `answer()`, the montage and `fitStage` are the app's. States: right, wrong (a
+  look-alike), typed ("I don't know"), duel (a look-alike pair, wrong), and Find the X (fish, wrong tile). Same photos
+  for every layout (a seeded draw).
+- Usable sizes: **360 × 724, 390 × 664, 414 × 715** (the viewport; the header, 49 px, and the tab bar, 59 px, are inside
+  it), and **desktop 1280 × 800**.
 
 ### Height of the sheet
 
-CSS px, min / median / max over every case [measured]. "Scrolls" = cases where the content is taller than the sheet (the
-phone sheet is capped at 62% of the height, `max-height: 62vh`).
+Phones: the bottom sheet's visible height, CSS px, min / median / max over every case; "scrolls" = cases where its
+content is taller (the sheet is capped at `max-height: 62vh`). Desktop: the feedback box in the side column, under the
+four choices (the column part itself stretches to the column's height, 403-443 px, whatever it holds) [measured].
 
-| Subject | State | 360 × 724 | 390 × 664 | 414 × 715 | Desktop 1280 × 800 (column part) |
+| Subject | State | 360 × 724 | 390 × 664 | 414 × 715 | Desktop 1280 × 800, feedback box |
 |---|---|---|---|---|---|
-| Corals (40 units) | right / "I don't know" | 241 / 269 / 316 | 241 / 269 / 316 | 226 / 269 / 316 | 403 |
-| | wrong (99) | 295 / 361 / 433 | 295 / 343 / 412 | 290 / 343 / 414 | 403 / 403 / 473 |
-| Fish (65 families) | right | 261 / 344 / 438 | 261 / 327 / 412, scrolls 1 | 261 / 319 / 395 | 443 / 443 / 495 |
-| | wrong (21) | 386 / 449 / 449, **scrolls 11** | 386 / 412 / 412, **scrolls 13** | 366 / 421 / 443, **scrolls 8** | 447 / 505 / 620 |
-| Sea slugs (78 genera) | right | 205 / 234 / 332 | 205 / 228 / 332 | 205 / 228 / 308 | 443 |
-| | wrong (304) | 234 / 297 / 449 | 234 / 284 / 412, scrolls 1 | 234 / 276 / 385 | 443 / 443 / 470 |
+| Corals (40 units) | right / "I don't know" | 241 / 269 / 316 | 241 / 269 / 316 | 226 / 269 / 316 | 196 / 241 / 307 |
+| | wrong (99) | 295 / 361 / 433 | 295 / 343 / 412 | 290 / 343 / 414 | 262 / 330 / 424 |
+| Fish (65 families) | right | 261 / 344 / 438 | 261 / 327 / 412, scrolls 1 | 261 / 319 / 395 | 232 / 336 / 446 |
+| | wrong (21) | 386 / 449 / 449, **scrolls 11** | 386 / 412 / 412, **scrolls 13** | 366 / 421 / 443, **scrolls 8** | 398 / 456 / 571 |
+| Sea slugs (78 genera) | right | 205 / 234 / 332 | 205 / 228 / 332 | 205 / 228 / 308 | 155 / 202 / 303 |
+| | wrong (304) | 234 / 297 / 449 | 234 / 284 / 412, scrolls 1 | 234 / 276 / 385 | 183 / 271 / 420 |
 
-The forced questions, one case each (sheet height; the photo slot left above it) [measured]:
+The forced questions, one case each (phones: the sheet, and the photo slot left above it; desktop: the feedback box)
+[measured]:
 
 | Subject, state | 360 × 724 | 390 × 664 | 414 × 715 | 1280 × 800 |
 |---|---|---|---|---|
-| Corals right (*Stylophora*) | 294; photo 282 × 279 | 294; 308 × 219 | 294; 329 × 270 | 403 |
-| Corals wrong (*Stylophora* taken for *Pocillopora*) | 420; montage 162 × 180 | 412 (capped); 177 × 180, **71 px of it under the sheet** | 420; 189 × 180 | 436 |
-| Corals typed, "I don't know" (*Favites*) | 316; 328 × 257 | 316; 358 × 197 | 316; 382 × 248 | 492 |
-| Corals duel (*Favites* / *Goniastrea*) | 385; 162 × 188 | 385; 177 × 180 | 385; 189 × 180 | 518 |
-| Fish right (Butterflyfishes) | 395; 328 × 210 | 395; 358 × 180 | 375; 382 × 221 | 443 |
-| Fish wrong (Butterflyfishes taken for Angelfishes) | 449 of 568 (scrolls 119); 162 × 180 | 412 of 568 (scrolls 156); 177 × 180 | 443 of 524; 189 × 180 | 629 |
-| Fish typed / duel | 339 / 433 | 296 / 393 | 296 / 393 | 532 / 536 |
-| Sea slugs right (*Hypselodoris*) | 308; 328 × 297 | 308; 358 × 237 | 308; 382 × 288 | 443 |
-| Sea slugs wrong (*Hypselodoris* taken for *Goniobranchus*) | 446; 162 × 180 | 405; 177 × 180 | 405; 189 × 191 | 466 |
-| Sea slugs typed / duel | 308 / 397 | 308 / 377 | 308 / 377 | 532 / 536 |
+| Corals right (*Stylophora*) | 294; photo 282 × 279 | 294; 308 × 219 | 294; 329 × 270 | 261 |
+| Corals wrong (*Stylophora* taken for *Pocillopora*) | 420; montage 162 × 180 | 412 (capped); 177 × 180, **71 px of it under the sheet** | 420; 189 × 180 | 387 |
+| Corals typed, "I don't know" (*Favites*) | 316; 328 × 257 | 316; 358 × 197 | 316; 382 × 248 | 287 |
+| Corals duel (*Favites* / *Goniastrea*) | 385; 162 × 188 | 385; 177 × 180 | 385; 189 × 180 | 356 |
+| Fish right (Butterflyfishes) | 375; 328 × 230 | 375; 358 × 180 | 375; 382 × 221 | 386 |
+| Fish wrong (Butterflyfishes taken for Angelfishes) | 449, content 511; 162 × 180 | 412, content 511; 177 × 180 | 443, content 467; 189 × 180 | 580 |
+| Fish Find the X (the Angelfishes tile tapped) | 449, content 551; tiles about 86 px | 412, content 531 | 443, content 488 | 600 |
+| Fish typed / duel | 339 / 449 | 296 / 393 | 296 / 393 | 310 / 468 |
+| Sea slugs right (*Hypselodoris*) | 308; 328 × 297 | 308; 358 × 237 | 308; 382 × 288 | 279 |
+| Sea slugs wrong (*Hypselodoris* taken for *Goniobranchus*) | 446; 162 × 180 | 405; 177 × 180 | 405; 189 × 191 | 417 |
+| Sea slugs typed / duel | 308 / 397 | 308 / 377 | 308 / 377 | 340 / 388 |
 
-- **On a miss the photos lose most.** The stage goes from 257-332 px tall (right) to its 180 px floor (wrong) at every
-  phone size, and at 390 × 664 the sheet's top (194 px from the top) is above the stage's bottom (265): 71 of the
+- **On a miss the photos lose most.** The stage drops to its 180 px floor on every miss at every phone size (a right
+  answer leaves 180-297 px), and at 390 × 664 the sheet's top (194 px from the top) is above the stage's bottom (265): 71 of the
   montage's 180 px are under the sheet for the corals, 39 for the fish, 32 for the sea slugs [measured]. The montage's
   notes "The photo shown" / "Your answer, same view" are cut in half (screenshots `today-*-wrong-*`).
+- **Find the X** keeps its four tiles but they shrink to about 86 px and the bottom row is half hidden, names cut
+  ("Butt…", "Ange…"), as the multi-photo study found (screenshot `today-fish-findx-p360-light`).
 - **Next never moves**: 621-660 px at 360 × 724, 561-600 at 390 × 664, 612-651 at 414 × 715, 741-784 on desktop, in
   every case and state [measured].
-- **Desktop fits but is crowded**: the sheet sits in the side column under the four choices; on the coral and fish
-  misses its end (the fold, Report a problem) scrolls under the pinned Next (screenshot `today-coral-wrong-d1280-light`).
-- Every rule touched holds today except the spirit of **U2** (one screen in every state): it fits, by squeezing the
-  photo to 180 px and scrolling the sheet.
+- **Desktop fits but is crowded**: the box sits under the four choices; on the coral and fish misses its end (the fold,
+  Report a problem) scrolls under the pinned Next (screenshot `today-coral-wrong-d1280-light`).
+- Rule U2 (one screen in every state) holds today only by squeezing the photo to 180 px and scrolling the sheet.
 
 ### What it holds, item by item
 
@@ -114,7 +123,7 @@ Heights at 360 × 724, median / max over the cases where the item appears [measu
 | # | Item | Where | Height | When |
 |---|---|---|---|---|
 | 1 | Verdict "✓ Yes, it's X" / "✗ No, it's X" / "No worries, it's X" (typed "I don't know"), with the unit's link, family line (fish, sea slugs), bonus or ★ tag | sheet | 23 / 46 | always |
-| 2 | "This photo: common name · scientific name" (`taxonLine`) | sheet | 20 / 61 | fish always; corals 17 of 40 genera; sea slugs 64 of 78 |
+| 2 | "This photo: common name · scientific name" (`taxonLine`; Pierre, 2026-11-07 and 11-09) | sheet | 20 / 61 | fish always; corals 17 of 40 genera; sea slugs 64 of 78 |
 | 3 | How a typed answer was read (`tyread`) | sheet | one line | typed, when read loosely |
 | 4 | **Tips box**: ID tips (IMR) or ID marks, the mnemonic (label hidden on phones) | sheet | corals 101 / 149, fish 140 / 207, sea slugs 40 / 120 | when the unit has tips |
 | 5 | "Similar names: Styloph*ora* / Pocillop*ora*" (`namesLine`) | sheet | 20 | 33 of 99 coral, 12 of 21 fish, 62 of 304 sea-slug misses |
@@ -131,91 +140,109 @@ slugs right 21 / 45, wrong 35 / 76 [measured].
 
 ## 2. Analytics: does anyone read it?
 
-**Nothing logs a fold opened or the time spent on the feedback** [read: `quiz.js` `answer` (the fold's `ontoggle` only
-calls `fitStage`), `sync.js` `ev`, `core.js` `pagesClean`, `Code.gs` `EVK`]. The answer log's Seconds column (`rt`) is the
-time to answer, from the question's clock (`qclockStart`) to the tap.
+**Nothing logs a fold opened** [read: `quiz.js` `answer` (the fold's `ontoggle` only calls `fitStage`), `sync.js` `ev`,
+`core.js` `pagesClean`, `Code.gs` `EVK`]. The answer log's Seconds column (`rt`) is the time to answer, from the
+question's clock (`qclockArm`: started when its first photo is in) to the tap.
 
-What exists, weak:
+What exists:
 
+- **The time on the feedback, from the log.** The sheet stores each answer's time as a full date-time (`Code.gs`
+  `logAnswers_`: `new Date(a.t)`), so for two answers in a row of one player, the next answer's time minus its Seconds
+  minus this answer's time is the feedback's time on screen plus the tap on Next, the next photo's loading and any card at
+  Next: an upper bound. Answers tab, 6,207 answers of 16 players since 2026-11-01, gaps of 0-300 s [measured]:
+
+  | After | Answers | Median | Middle half | Under 3 s | 10 s or more |
+  |---|---|---|---|---|---|
+  | Corals, right (photo quiz) | 2,212 | 0.9 s | 0.6-1.8 s | 82% | |
+  | Fish, right | 2,312 | 0.9 s | 0.6-2.0 s | 83% | |
+  | Corals, wrong | 497 | 3.2 s | 1.7-6.8 s | 47% | |
+  | Fish, wrong | 320 | 2.9 s | 1.6-5.8 s | 52% | |
+  | Duels (corals) | 173 | 0.9-1.1 s | | 96-100% | |
+
+  Duels left out, 6% of the gaps after a right answer and 16% after a miss are 10 s or more. Each
+  player's own median (players with 10 gaps or more): 0.5-3.8 s after a right answer (13 players), 1.7-5.1 s after a
+  miss (10 players) [measured]. A sheet of 34-96 words is not read in 3 s.
 - **Genus sheets opened from a quiz answer**: the pages summary (Pages tab) counts each genus sheet opened with how it
   was reached (`from: 'quiz'`), and the comparison page's openings by name [read: `sync.js` `pagesRoute`, `core.js`
   `PAGES.FROM`]. Corals only (the fish and sea-slug feedback has no sheet link).
-- **The gap between two answers**: the next answer's time minus its Seconds minus this answer's time is the feedback's
-  time on screen plus the Next tap, the photos' wait and any card at Next. The device logs the time to the
-  millisecond, but the Answers tab shows it to the minute [measured on the tab's first rows], so this is usable only
-  from the app's own log, never as a read of how many people read the sheet.
 
 **Proposed: four numbers in the pages summary** (one tally a visit, already sent when the app is left, already filed
 under the player's anonymous id, so no new event kind, no new tab, no per-answer row):
 
-`fb: [shown, more, sec, link]`: answers whose feedback was shown, those where More was opened, the seconds the
-feedback stayed on screen (each answer's capped at 120 s), and the taps on a link inside it (sheet, Compare them). Split
-by right / wrong if wanted (8 numbers).
+`fb: [shown, more, sec, link]`: answers whose feedback was shown, those where More was opened, the seconds the feedback
+stayed on screen (each answer's capped at 120 s), and the taps on a link inside it (sheet, Compare them). Split by right
+/ wrong if wanted (8 numbers). `shown` is the denominator.
 
 - Cost: `quiz.js` counts (the More toggle, the time from the sheet's draw to Next); `core.js` `pagesTake` adds the
   tally and `pagesClean` keeps it (clamped integers), copied into `Code.gs` (rule D3: one changes file; nothing to
-  gate, rule D4: an older script drops the field, as it drops any field it does not know); `privacy.html` "pages" says
-  it in one line ("how often you open More after an answer, and how long the answer stays on screen"). About 2-3 agent
-  hours with a unit test.
+  gate, rule D4: an older script drops the field, as it drops any field it does not know); `privacy.html` says it in
+  one line in its pages paragraph ("how often you open More after an answer, and how long the answer stays on screen").
+  About 2-3 agent hours with a unit test.
 - The Events tab is the wrong place: an event kind needs `EVK` in `Code.gs`, and `ev` keeps one event per key and at
   most 15 a visit (`EV_MAX`), so a counter per answer would be cut [read: `sync.js` `ev`].
-- What it answers: the share of answers whose More is opened, right and wrong, before and after the short sheet; and,
-  with `sec`, whether players stop on a miss at all.
+- What it answers that the log cannot: whether More is opened at all, right and wrong, once the short sheet is live;
+  the gap above then becomes a check of the short sheet (a miss's gap should not fall further).
 
 ## 3. Three layouts, mocked up on real questions
 
 Built inside the real app: the real question, `answer()`, montage, `fitStage` and Next; only `fbBody` was replaced (the
-whole of today's output moved behind More) and one style tag added, with the app's tokens. Phone 360 × 724 and desktop
-1280 × 800, light and dark. For each subject: right, wrong with a pair line, wrong with no pair line.
+rest of today's output moved behind More) and one style tag added, with the app's tokens. Phone 360 × 724 and desktop
+1280 × 800, light and dark. For each subject: right, wrong with a pair line, wrong with no pair line; for the fish, Find
+the X too.
 
 The questions: corals *Stylophora* (taken for *Pocillopora*; with no line: *Porites* taken for *Astreopora*); fish
-Butterflyfishes (taken for Angelfishes; with no line: Damselfishes taken for Cardinalfishes); sea slugs *Hypselodoris*
-(taken for *Goniobranchus*; with no line: *Coryphellina* taken for *Caloria*).
+Butterflyfishes (taken for Angelfishes; with no line: Damselfishes taken for Cardinalfishes; Find the X on
+Butterflyfishes, the Angelfishes tile tapped); sea slugs *Hypselodoris* (taken for *Goniobranchus*; with no line:
+*Coryphellina* taken for *Caloria*).
 
-In all three: the verdict at `--fs-xl`; one line, its source small after it (rule C2); More / Less and Next on **one
-row**, Next at the same place as today, More a 44 px target; the montage keeps its ✓ / ✗ name chips on the photos and
-drops its two notes.
+In all three: the verdict at `--fs-xl`; under it what Pierre asked for after every answer (the photo's species line,
+`taxonLine`) and a typed answer's reading (`tyread`), kept outside More; then one line, its source small after it (rule
+C2); More / Less and Next on **one row**, Next where it is today, More a 44 px target; the montage keeps its ✓ / ✗ name
+chips on the photos and drops its two notes.
 
-| Layout | What it is | Sheet at 360 × 724 | Mix-up photos at 360 × 724 | Next |
-|---|---|---|---|---|
-| today | section 1 | 241-449 | 162 × 180 | 621-660 |
-| **A. Short sheet** (recommended) | Today's bottom sheet, cut to the verdict, the line, More / Next. More unfolds today's content in the same sheet (up to 62vh, Next and Less stay pinned) | **117-209** (corals 138-160, fish 166-209, sea slugs 117-187) | **162 × 396-488** | 616-660 |
-| B. Choices stay | No sheet over the choices: they stay, coloured (✓ right, ✗ yours); the verdict, the line and More / Next under them. Desktop: as A (the column already keeps the choices) | 99-187, plus the choices (about 100 px) | 162 × 301-389 | 605-649 |
-| C. Verdict on the photo | The verdict and the line on a dark band over the bottom of the photos; the bar holds only More / Next | 69 (the bar) | 162 × 504-536 | 616-660 |
+| Layout | What it is | Sheet at 360 × 724 | Photos at 360 × 724 | Desktop feedback box | Next |
+|---|---|---|---|---|---|
+| today | section 1 | 241-449 (content up to 560) | mix-up 162 × 180; Find the X tiles about 86 | 155-600 | 621-660 |
+| **A. Short sheet** (recommended) | Today's bottom sheet, cut to the verdict, the species line, the line, More / Next. More unfolds today's content in the same sheet (up to 62vh; Next and Less stay pinned) | **143-276** (corals 160-164, fish 212-276, sea slugs 143-234) | mix-up **162 × 370-413**; with no line 162 × 393-462; Find the X tiles **160 × 160** | **103-240** | 616-660 |
+| B. Choices stay | No sheet over the choices: they stay, coloured (✓ right, ✗ yours); the verdict, the lines and More / Next under them. Desktop: as A (the column already keeps the choices) | 125-233, plus the choices (about 100 px) | mix-up 162 × 255-314 | as A | 605-649 |
+| C. Verdict on the photo | The verdict, the species line and the line on a dark band over the bottom of the photos; the bar holds only More / Next | 69 (the bar) | mix-up 162 × 504-536 | the band on the photos | 616-660 |
 
-[measured; desktop: every layout keeps the photos at today's size, the column part 403-443 px with Next at 740-784.]
+[measured]
 
 Read on the screenshots [my reading]:
 
 - **A** is the one mechanism for every state and subject, closest to today (one bottom sheet, one fold), and leaves the
-  mix-up photos 2.3 times taller. The sheet reads 7-30 words in place of 34-96.
-- **B** shows what was offered, which explains a mix-up a little better, but costs a third of A's photo gain on phones
-  and changes nothing on desktop.
+  mix-up photos about 2.1-2.3 times taller. Find the X keeps its tiles at the size it had before the answer, which
+  settles the multi-photo study's finding on the answered state. The sheet reads 7-30 words in place of 34-96.
+- **B** shows what was offered, which explains a mix-up a little better, but costs about a third of A's photo gain on
+  phones and changes nothing on desktop.
 - **C** gives the photos everything, but writes on them: the band covers the bottom fifth of the photos, the text's
   contrast depends on a scrim, and the dark-theme red verdict on the band is weak. The verdict is far from the thumb.
 - With **More open** (A), today's content is all there, in today's order, under the line (`A-*-wrong-more-*`).
 - The **"no line" case** shows the limit: the first ID tip is not chosen to be decisive (Damselfishes: "Small to medium
-  size"; *Porites*: "Small corallites, shared walls"), and a sea slug with no marks gets the verdict alone
-  (*Coryphellina*).
+  size"; *Porites*: "Small corallites, shared walls"), and a sea slug with no marks gets the verdict and its species
+  line alone (*Coryphellina*).
 
 Rules the short sheet touches:
 
-- **C3** says the ID tip is shown in the quiz feedback; behind More it is one tap away. The wording of C3 changes, which
-  goes to Pierre (question (e)).
-- **U14**: Report a problem moves behind More (one tap after the answer, still from every game). Integrator's call;
-  a ⚑ icon on the row is the alternative.
+- **C3** says the ID tip is shown in the quiz feedback; behind More it is one tap away. C3's wording changes, which goes
+  to Pierre (question (e)).
+- **U14**: Report a problem moves behind More (one tap after the answer, still from every game). Integrator's call; a ⚑
+  icon on the row is the alternative.
 - **P5**: the credits stay on the photo after the answer (today's chip) and behind More.
-- **S1**: the line comes from a record field (the unit's `lk`, section 4) and the unit's own tips, never from a test on the
-  subject.
-- **U11** unchanged (cards still at Next). The help text of the quiz (`quiz.js` `gameHelp`: "After answering you get the
-  IMR ID tips and why the other … are wrong") changes with it.
+- **S1**: the line comes from a record field (the unit's `lk`, section 4) and the unit's own tips, never from a test on
+  the subject.
+- **U11** unchanged (cards still at Next). The quiz's help text (`quiz.js` `gameHelp`: "After answering you get the IMR
+  ID tips and why the other … are wrong") changes with it.
 - **U2** is better met: the photos keep a real size in every answered state; the multi-photo study (branch
   `claude/multi-photo-study`) asks for the same short sheet for its formats.
 
 ## 4. The decisive line: what we have, per subject
 
-Counted on `data.json`, `fish.json`, `seaslug.json` at 6fe951a3 (`main` with its curation as the app builds it; the
-declared pairs are the units' `look`) [measured]; the coral source lines were read one by one [my reading of each].
+Counted on `data.json`, `fish.json` and `seaslug.json` at 6fe951a3. `curation.json` holds no pair or line edit today (no
+structure or content overlay for any subject) [read], so these files are the pairs the app plays; the running app's
+`look` lists gave the same cases (section 1) [measured]. The coral source lines were read one by one [my reading of
+each].
 
 ### Corals: 84 declared pairs
 
@@ -228,19 +255,19 @@ Finder box: …"), not a feedback line; some state the difference, some only nam
 | Slate (39 + *Millepora*) | **19** (13 source lines, 6 from IMR notes: *Leptoria* / *Platygyra*, *Alveopora* / *Goniopora*, *Dipsastraea* / *Favites*, *Astrea* / *Dipsastraea*, *Duncanopsammia* / *Turbinaria*, *Goniastrea* / *Leptoria*) | 4 (*Montipora* / *Porites*, *Goniopora* / *Porites*, *Astrea* / *Favites*, *Millepora* / *Porites*) | 36 | 59 |
 | With a bonus genus | 19 (+1 partial: *Halomitra* / *Podabacia*) | 5 | 0 | 25 |
 
-The **gaps that matter most** are the slate's 36 same-box pairs and 4 named ones. Among the coral mix-ups players make
-most (Answers tab, 626 coral-to-coral misses since 2026-11-01), the top pairs with no line: *Echinopora* / *Turbinaria*
+The **gaps that matter most** are the slate's 36 same-box pairs and 4 named ones. Among the coral pairs players mix up
+most (Answers tab, 626 coral-to-coral misses since 2026-11-01), the top ones with no line: *Echinopora* / *Turbinaria*
 (21, not even declared), *Astrea* / *Favites* (16), *Ctenactis* / *Herpolitha* (16), *Ctenactis* / *Lobactis* (13),
 *Halomitra* / *Lobactis* (13, not declared), *Pavona* / *Pectinia* (13, not declared), *Alveopora* / *Tubastraea* (13,
 not declared), *Tubastraea* / *Turbinaria* (12) [measured].
 
-### Fish: 15 family pairs, every one with a line
+### Fish: 11 declared family pairs, all with a line, and 4 more on the sheets
 
-- 11 declared look-alike pairs (`look`), all with IMR's own line for each side ("Angelfish: spine on the gill cover,
-  iridescent blue" / "Butterflyfish: no opercular spine, no iridescent blue"). The feedback shows one side today.
-- 4 more pairs with a sourced line on the family sheets only (`apart`, from the families' sources: Moorish Idol /
+- The 11 declared look-alike pairs (`look`) all carry IMR's own line for each side ("Angelfish: spine on the gill
+  cover, iridescent blue" / "Butterflyfish: no opercular spine, no iridescent blue"). The feedback shows one side today.
+- 4 undeclared pairs have a sourced line on the family sheets only (`apart`, from the families' sources: Moorish Idol /
   Surgeonfishes, Surgeonfishes / Rabbitfishes, Snappers / Fusiliers, Boxfishes / Puffers): `fbBody` does not read them
-  today [read: `quiz.js` `fbBody`, `learn.js` `viewFishSheet`].
+  [read: `quiz.js` `fbBody`, `learn.js` `viewFishSheet`].
 - The fish **genus units** (circle 1, 130) and **species units** have no pair line (`lk: []`); 83 of the 130 genera
   have ID marks, the species none (their feedback line is their scientific and other names) [measured].
 
@@ -252,13 +279,16 @@ in circle 1, 1 of 22 in circle 2, none in circle 3) [measured].
 
 ### Weighted by the real misses
 
-Answers tab, read-only, columns Genus shown / Answered / Right only (6,207 rows since 2026-11-01; no sea-slug answers
-yet) [measured]:
+Answers tab, read-only, columns Genus shown / Answered / Right / Mode (6,207 answers since 2026-11-01; no sea-slug
+answer yet). A two-choice question (Again after a mix-up, a duel) asks a pair already confused or declared, so it is
+counted apart [measured]:
 
-| Subject | Misses between two units of the same rank | On a declared pair | With a pair line |
+| Subject | Misses between two units of one rank | On a declared pair | With a pair line |
 |---|---|---|---|
-| Corals | 626 | 333 (53%) | **182 (29%)** |
-| Fish families | 302 | 136 (45%, the line shown today) | **154 (51%)** with the 4 `apart` pairs wired |
+| Corals, all | 626 | 333 (53%) | **182 (29%)** |
+| Corals, 4-choice and typed only | 352 | 194 (55%) | 94 (27%) |
+| Fish families, all | 302 | 136 (45%: the line shown today) | **154 (51%)** with the 4 `apart` pairs wired |
+| Fish families, 4-choice and typed only | 194 | 80 (41%) | 94 (48%) |
 | Fish genera | 35 | 0 | 0 |
 
 So declared pairs are the wrong denominator on their own: about half the misses are between units no source pairs.
@@ -273,7 +303,7 @@ One rule for every subject (rule S1), from record fields:
 2. **A right answer**: the line for the shown unit against a look-alike among the choices (what the player just told
    apart), else its first ID tip or mark.
 3. **No pair line**: the shown unit's first ID tip (IMR) or ID mark, said as "X: …". **None** (a sea slug with no marks,
-   a fish species): the verdict alone; More holds the rest.
+   a fish species): the verdict and the species line; More holds the rest.
 
 A line made by comparing the Coral Finder trait tags (`tr`: corallite size, walls, features) would cover 29 of the 36
 same-box slate pairs, but it is machine-made contrast (rule C2), and a missing tag is not an absent feature: not
@@ -285,7 +315,7 @@ Hours of agent work, reviews and two Codex rounds included [guess, one agent].
 
 | Work | Hours |
 |---|---|
-| The short sheet (layout A): `fbBody` split into verdict, line and More; the row; CSS for the 3 size classes; every state (right, wrong, typed, duel, Again, Find the X, wink); the montage's notes dropped; help text; DESIGN / ARCHITECTURE; the smokes that read the feedback (pages, draw, fish, sea slugs) | 6-9 |
+| The short sheet (layout A): `fbBody` split into verdict, species line, line and More; the row; CSS for the 3 size classes; every state (right, wrong, typed, duel, Again, Find the X, wink); the montage's notes dropped; help text; DESIGN / ARCHITECTURE; the smokes that read the feedback (pages, draw, fish, sea slugs) | 6-9 |
 | The line chooser, subject-neutral (`lk` read for every subject, both halves, the right-answer rule, the fallback), with unit tests; the fish `apart` lines into `lk` | 3-4 |
 | The More counter in the pages summary (`quiz.js`, `core.js`, `Code.gs` changes file, `privacy.html`, a test) | 2-3 |
 | Corals: a written, sourced line for the 40 slate pairs without one, in our own words (IMR notes first, then the Coral Finder pages; `tests/booktext.test.js` keeps book text out), Pierre's review in the admin | 6-9 |
@@ -296,9 +326,9 @@ The mechanism and the counter: about **12-17 hours**; with the coral and sea-slu
 
 ## 6. Questions for Pierre
 
-(a) **Which layout?** A, the short bottom sheet (verdict, one line, More and Next on one row); B, the choices stay in
-view with the line under them; C, the verdict and the line on the photo. **Recommendation: A** (one mechanism, photos
-2.3 times taller on a miss, closest to today).
+(a) **Which layout?** A, the short bottom sheet (the verdict, the photo's species line, one line, More and Next on one
+row); B, the choices stay in view with the line under them; C, the verdict and the line on the photo. **Recommendation:
+A** (one mechanism, photos about twice as tall on a miss, Find the X's tiles kept, closest to today).
 
 (b) **When the answer is right, what line?** The cue that tells it from a look-alike among the choices (else its first
 ID tip); always its first ID tip; or the verdict alone. **Recommendation: the look-alike cue, else the first tip.**
@@ -321,7 +351,7 @@ short sheet. **Recommendation: yes**, so we see whether More is opened at all.
 
 Kept outside the repo (no image is committed); the integrator sends them to Pierre as files. Ratio 2.
 
-- Today: `today-<subject>-<right|wrong|typed|duel>-<p360|p390|p414|d1280>-light.png`, and `-dark` at p360 and d1280
-  (72 shots).
-- Mockups: `<A|B|C>-<subject>-<right|wrong|none>-<p360|d1280>-<light|dark>.png`, and `<A|B|C>-<subject>-wrong-more-p360-light.png`
-  with More open (117 shots).
+- Today: `today-<subject>-<right|wrong|typed|duel>-<p360|p390|p414|d1280>-light.png`, `-dark` at p360 and d1280, and
+  `today-fish-findx-*` (78 shots).
+- Mockups: `<A|B|C>-<subject>-<right|wrong|none>-<p360|d1280>-<light|dark>.png`, `<A|B|C>-fish-findx-*`, and
+  `<A|B|C>-<subject>-wrong-more-p360-light.png` with More open (129 shots).
