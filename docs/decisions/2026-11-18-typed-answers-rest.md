@@ -35,5 +35,7 @@ meet; he decided on 2026-11-03 to adjust them on the players' own typed answers.
 
 - `?stats=1` `conf` and the admin's Pairs and heatmap scores include the typed mix-ups; Pairs' A→B and B→A and the
   heatmap's cells still count the choices only. On the real log of 2026-11-18, 12 coral and 5 fish pairs move, none
-  crosses `CONF.TRAP` or becomes a look-alike from the data.
+  crosses `CONF.TRAP` or becomes a look-alike from the data. One coral confusion group changes: *Acropora* now groups
+  with *Anacropora* (its classic look-alike) instead of *Astreopora* and *Cyphastrea*, which changes the opening order
+  and the exam's wait for group partners around those four genera.
 - Specified now in LEARNING.md "Typed questions" and ARCHITECTURE.md (Confusion scores; admin Confusions).

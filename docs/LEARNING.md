@@ -3430,9 +3430,14 @@ score as a mix-up between two choices does; "I don't know" and right typed answe
 Counting every unit as offered on every typed question would bury the pairs under offers no player weighed; counting
 the mix-up without its offer would make a typed mix-up weigh more than a picked one. Checks (rules L11-L12): the real
 log of 2026-11-18 (3,491 coral and 2,710 fish answers; 70 and 61 typed, 13 and 5 of them another unit's name, all by
-trusted players, 3 players each): 12 coral pairs and 5 fish pairs move, none crosses `CONF.TRAP` and none becomes a
-look-alike from the data (the largest: *Seriatopora* / *Stylophora* 0.135 → 0.153 on [84, 10] → [86, 12];
-*Echinopora* / *Porites* 0.016 → 0.077 on [7, 0] → [8, 1]); 10 of the 12 coral pairs come from one player. The full
+trusted players, 3 players each): 12 coral pairs and 5 fish pairs move, and read by the game itself (`model.js`
+`pooledConf` on each pair's real prior, `isDataLook`, `groupMap`, in the rated world's engine) none crosses `CONF.TRAP`
+and none becomes a look-alike from the data (the largest: *Seriatopora* / *Stylophora* 0.135 → 0.153 on [84, 10] → [86,
+12]; *Echinopora* / *Porites* 0.043 → 0.103 on [7, 0] → [8, 1]; the fish *Emperors* / *Groupers* 0.017 → 0.083); 10 of
+the 12 coral pairs come from one player. One confusion group changes: the declared pairs merge the most confused first
+(GROUP.MAX 3), and *Acropora* / *Anacropora* (0.099 → 0.108) now comes before *Acropora*'s other declared pairs, so
+*Acropora* groups with *Anacropora* instead of *Astreopora* and *Cyphastrea* (which stay a group of two); the fish groups
+are unchanged. A pick between two choices on the same pair could flip it as well: the order is that close. The full
 replay reads the pooled pairs only for the rows logged before their scoring record (2026-11-06; 2,053 of the 3,491
 coral rows): with the new pairs 15 of 490 player-genus bars move, by at most 0.36 points, less than one day of new
 answers moves them (21 bars, 0.52 points at most), so no rules version (rule D5: the pooled pairs are data the replay
@@ -3443,8 +3448,10 @@ stats of the real log before and after (the same photo ratings, memory and genus
 guardrail held or unclear, none breached (true knowledge at 300 within 0.006 for every profile; units met at 300 40 →
 40 except the beginner's 39.6 → 40.0); unclear (the measure cannot tell): the lecture RA's bar against true knowledge
 +0.025 [+0.062], the expert's units at Open Water −1.0 [−2.5], the lecture and strong RA's longest plateau, the
-beginner's units met at 100 −1.4 [−2.3]. Twelve pairs moved by a few hundredths change the traps drawn now and then,
-which sends a seed down another path; nothing points one way across the profiles.
+beginner's units met at 100 −1.4 [−2.3] (learncmp: "unclear: one step up", the integrator's call, rule L11). Outside
+the guardrails, the one difference whose bounds exclude zero: the expert's right % over answers 200-300, 95.2 → 92.2
+(−3.0 [−5.1, −0.9]; no margin is set for it). Twelve pairs moved by a few hundredths (and the *Acropora* group) change
+the traps drawn now and then, which sends a seed down another path; nothing points one way across the profiles.
 
 ### Fish on the same model (2026-11-03)
 

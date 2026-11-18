@@ -12169,7 +12169,7 @@ function statsConf() {
         .slice(0, 15)
         .map(
           ([g, t, a, sp, n]) =>
-            `<tr><td>${nm(g)}</td><td>${esc(t || '–')}${sp === null ? '' : sp ? ' <span title="Retyped exactly">✓</span>' : ' <span title="Not retyped exactly">✗</span>'}</td><td>${a === g ? '=' : nm(a)}</td><td class="n">${n}</td></tr>`
+            `<tr><td>${nm(g)}</td><td><span class="adm-cut" title="${esc(t)}">${esc(t || '–')}</span>${sp === null ? '' : sp ? ' <span title="Retyped exactly">✓</span>' : ' <span title="Not retyped exactly">✗</span>'}</td><td>${a === g ? '=' : nm(a)}</td><td class="n">${n}</td></tr>`
         )
         .join('')}</tbody></table></section>`
     : '';
