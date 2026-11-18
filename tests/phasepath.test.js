@@ -357,7 +357,14 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
     json = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
     Fs = ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(json),
     S = C.subjectOf('fish'),
-    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+    ctx = {
+      DOM: {EX: 0.9},
+      easyCover: C.easyCover,
+      fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
+      fishGenSets: C.fishGenSets,
+      rankWeights: C.rankWeights
+    };
   vm.createContext(ctx);
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   vm.runInContext(

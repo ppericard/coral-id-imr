@@ -1055,21 +1055,36 @@ async function freshPlayers(b, base, errs) {
     if (s0 === null) localStorage.removeItem(sk);
     else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
-    // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
-    // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
-    // counted in the progress, never a duel pair.
+    // species of each family in play, in every circle (Pierre, 2026-11-18), never two families; offered once a family is
+    // at Advanced, a family's genera in play only from its Advanced; their questions and typed answers among genera only,
+    // a family's among families; never a duel pair. Circles 2 and 3's from GENERA_SHEET (rule D4), circle 1's before.
     const sci = SETS().find(S => S.k === 'sci'),
-      G = FISH.sci;
-    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the circle-1 families');
+      G = FISH.sci,
+      slate = [...FISH.c1, ...FISH.c2, ...FISH.c3],
+      gv0 = store.get(SHEETV, 0);
+    ok(G.length > 200 && G.every(n => GX(n).rank === 'genus' && slate.includes(GX(n).parent)), 'sci: genera of the families in play');
+    ok(
+      [1, 2, 3].every(c => G.some(n => GX(n).circle === c && GX(GX(n).parent).circle === c)),
+      'sci: every circle, its family’s'
+    );
     ok(
       G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
         new Set(G.map(n => GX(n).name)).size === G.length,
-      'sci: a genus in one entry only'
+      'sci: a genus in one family only'
     );
+    store.set(SHEETV, GENERA_SHEET - 1);
+    ok(
+      !generaOn() && sci.all().length === G.filter(n => GX(n).circle === 1).length && !setOf('g:Aeoliscus'),
+      'sci: circle 1’s alone below GENERA_SHEET'
+    );
+    ok(!typeMatch('Aeoliscus', 'genus'), 'sci: no typed name of theirs below GENERA_SHEET (Codex review #1067)');
+    store.set(SHEETV, GENERA_SHEET);
+    ok((typeMatch('Aeoliscus', 'genus') || {}).g === 'g:Aeoliscus', 'sci: typed, from GENERA_SHEET');
     ok(
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
+    store.set(SHEETV, gv0); // the version the smoke runs at (no species unit in the draw below)
     FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
     // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
@@ -1163,7 +1178,7 @@ async function freshPlayers(b, base, errs) {
     pgAt('f:Butterflyfishes', 0.2);
     pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play: ' + pl);
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -1221,7 +1236,7 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
     // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
     ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
-    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw: ' + pool().filter(n => GX(n).rank));
     // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
     quizBoard();
     const so = document.querySelector('#view [data-seton="sci"]');
