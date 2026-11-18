@@ -3577,7 +3577,7 @@
   // A Coral Finder book crop's id (<genus>-cf-<page>-<tag>). The crops are out of the app and the repository;
   // curation.json still names some (rule A1: never rewritten), ids that match no photo.
   const cfCrop = f => /^[a-z]+-cf-\d/.test(f || '');
-  // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
+  // The automatic rating never calls an IMR lecture photo Poor (it misjudges slide images); only Pierre's rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
   function applySlots(d, c, o = {}) {
@@ -3625,9 +3625,9 @@
           byQ0 = L => L.slice().sort((a, b) => q(b) - q(a)),
           byQr = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
-        // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
-        // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
-        // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
+        // Sheet order: IMR photos first, then Pierre's own, then other observers, each by quality; Poor photos last.
+        // Never a Poor photo while better ones exist, except IMR lecture photos.
+        // Featured = always the first 3: his pinned photos, then the best remaining ones.
         // A pin or a suggestion naming no photo (a removed one: a Coral Finder book crop) is dropped.
         const slot = byQ => {
           const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
@@ -3653,7 +3653,7 @@
         };
         const {others, ranked, feat} = slot(byQr),
           feat0 = slot(byQ0).feat;
-        // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
+        // Sheet: strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games use them all).
         const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
         // Games: field photos and IMR lecture photos, never multi-coral photos.
         const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
