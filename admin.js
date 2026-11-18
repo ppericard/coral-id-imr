@@ -4412,7 +4412,7 @@ const HELP = {
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   // A getter: GROUPADM_SHEET is declared further down this file.
   get groups() {
-    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app; <b>Apart</b> On = its members leave the general leaderboard and every other group's (as the staff do), staying members of their other groups; <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
+    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
   },
   // A getter: GROUPADM_SHEET is declared further down this file.
   get users() {
@@ -10292,7 +10292,7 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
 // arbitraire de groupes"; "Staff" is not a role): one model for the beta groups, the cohorts and the staff (Code.gs
 // groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
-// Groups lists every group with its settings (Board, Apart, Beta) and members, makes, renames and deletes an empty one.
+// Groups lists every group with its settings (Board, Beta; no Apart since vNEXT, Pierre 2026-11-18) and members, makes, renames and deletes an empty one.
 // Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
 // (the Staff toggle, which granted the trainer role, is gone at every version).
 const GROUPADM_SHEET = 179;
@@ -10329,6 +10329,7 @@ function ugChips(u) {
 function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
+  toast('Saving…'); // the sheet can take a minute or two (its script lock)
   return userPost({userGroup: names, group: gid, on})
     .then(j => {
       if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
@@ -10348,7 +10349,7 @@ function memberSet(names, gid, on) {
     .catch(() => (toast('Not done (offline).'), render()));
 }
 // Players › Groups (sheet GROUPADM_SHEET): every group, the newest first, with its settings and members. New group asks
-// a name; Rename too; Board and Apart one click each way; Beta a list of the subjects that open to a group; Add all and
+// a name; Rename too; Board one click each way; Beta a list of the subjects that open to a group; Add all and
 // Remove all ask first (bulk, rule A2); Delete only an empty group, one click (nothing to lose).
 function renderGroups() {
   status();
@@ -10385,7 +10386,7 @@ function renderGroups() {
     return `<section class="adm-scard adm-gcard" data-g="${esc(d.id)}"><div class="adm-ghead"><b class="adm-gname">${esc(d.n)}</b><button type="button" class="adm-fchip plain" data-gren="${esc(d.id)}">Rename</button><span class="adm-gcount" title="Players in it"><b>${M.length}</b> of ${U.length}</span>${
       M.length ? '' : `<button type="button" class="adm-danger" data-gdrop="${esc(d.id)}">Delete</button>`
     }</div>
-      <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span><span title="Its members leave the other leaderboards">Apart ${seg(d.id, 'apart', d.apart, 'Apart')}</span>${
+      <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span>${
         B.length || d.beta
           ? `<label title="The subject in beta it opens">Beta <select data-gbeta="${esc(d.id)}"><option value="">None</option>${B.map(S => `<option value="${esc(S.id)}"${S.id === d.beta ? ' selected' : ''}>${esc(S.name)}</option>`).join('')}</select></label>`
           : ''
@@ -10422,8 +10423,16 @@ function bindGroups() {
       render();
     };
   // A change to a group itself (Code.gs groupMake, groupEdit, groupDrop): the list read again, as the sheet now has it.
-  const gpost = (body, msg) =>
-    userPost(body)
+  // The sheet can take a minute or two (its script lock, then the players read again: Pierre, 2026-11-18, "ça vient de
+  // basculer… après 2 min"): "Saving…" at once, and the group's card (id) greyed and its controls off until the answer.
+  const gpost = (body, msg, id) => {
+    toast('Saving…');
+    const c = id && [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
+    if (c) {
+      c.setAttribute('aria-busy', 'true');
+      c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
+    }
+    return userPost(body)
       .then(j => {
         if (!j || !j.ok)
           return (
@@ -10440,6 +10449,7 @@ function bindGroups() {
         return loadUsers(true).then(() => render());
       })
       .catch(() => (toast('Not done (offline).'), render()));
+  };
   const ask = (q, was = '') => (prompt(q, was) || '').replace(/\s+/g, ' ').trim();
   const nw = $v.querySelector('[data-gnew]');
   if (nw)
@@ -10452,7 +10462,7 @@ function bindGroups() {
       (b.onclick = () => {
         const d = gdefOf(b.dataset.gren),
           n = d && ask('Rename the group', d.n);
-        if (n && n !== d.n) gpost({groupEdit: d.id, n}, () => `${d.n} renamed ${n}.`);
+        if (n && n !== d.n) gpost({groupEdit: d.id, n}, () => `${d.n} renamed ${n}.`, d.id);
       })
   );
   $v.querySelectorAll('[data-gset]').forEach(
@@ -10462,7 +10472,9 @@ function bindGroups() {
         const d = gdefOf(b.dataset.gset),
           k = b.dataset.k,
           on = b.dataset.val === '1';
-        gpost({groupEdit: d.id, [k]: on}, () => `${d.n}: ${k === 'board' ? 'leaderboard' : 'apart'} ${on ? 'on' : 'off'}.`);
+        // the choice shown pressed at once; the card's controls stay off until the sheet answers (gpost)
+        b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        gpost({groupEdit: d.id, [k]: on}, () => `${d.n}: leaderboard ${on ? 'on' : 'off'}.`, d.id);
       })
   );
   $v.querySelectorAll('[data-gbeta]').forEach(
@@ -10471,7 +10483,8 @@ function bindGroups() {
         const d = gdefOf(sel.dataset.gbeta);
         gpost(
           {groupEdit: d.id, beta: sel.value},
-          () => `${d.n}: ${sel.value ? `opens ${subjectOf(sel.value).name}` : 'opens no subject'}.`
+          () => `${d.n}: ${sel.value ? `opens ${subjectOf(sel.value).name}` : 'opens no subject'}.`,
+          d.id
         );
       })
   );
@@ -10479,8 +10492,7 @@ function bindGroups() {
     b =>
       (b.onclick = () => {
         const d = gdefOf(b.dataset.gdrop);
-        b.disabled = true;
-        gpost({groupDrop: d.id}, () => `${d.n} deleted.`);
+        gpost({groupDrop: d.id}, () => `${d.n} deleted.`, d.id);
       })
   );
   $v.querySelectorAll('[data-ugout]').forEach(

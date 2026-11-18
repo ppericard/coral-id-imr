@@ -4179,7 +4179,8 @@ async function sealPart(b, base, fails) {
         // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
         // arbitraire de groupes"): a player's bar shows their groups as chips (× takes them out) and "+ Add to a group"; the
         // Groups column follows; no Cohort select, no Staff toggle, no beta line. Players › Groups: every group, the newest
-        // first, with Board / Apart, Rename, Add all / Remove all (asked first), Delete once empty, New group. Before the
+        // first, with Board (no Apart since vNEXT), Rename, Add all / Remove all (asked first), Delete once empty, New group,
+        // a change shown at once ("Saving…", the card busy until the sheet answers). Before the
         // version, the page says what it needs. No sideways scroll.
         {
           const q = await p.context().newPage(),
@@ -4261,8 +4262,8 @@ async function sealPart(b, base, fails) {
             if (
               JSON.stringify(g.cards) !==
                 JSON.stringify([
-                  ['RA November 2026', `2 of ${n}`, 'Board On,Apart Off', false],
-                  ['Staff', `1 of ${n}`, 'Board On,Apart On', false]
+                  ['RA November 2026', `2 of ${n}`, 'Board On', false],
+                  ['Staff', `1 of ${n}`, 'Board On', false]
                 ]) ||
               g.wide
             )
@@ -4270,16 +4271,24 @@ async function sealPart(b, base, fails) {
             await q.click('[data-gnew]');
             await calm();
             g = await page();
-            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `0 of ${n}`, 'Board On,Apart Off', true]))
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `0 of ${n}`, 'Board On', true]))
               fails.push(`${w}px groups: New group ${JSON.stringify(g.cards)}`);
+            if (await q.$('[data-k="apart"]')) fails.push(`${w}px groups: an Apart setting is still shown`);
             const first = '.adm-gcard:first-child';
-            await q.click(`${first} [data-k="apart"][data-val="1"]`);
+            // Board Off: pressed and the card busy at once, before the sheet answers
+            const busy = await q.evaluate(f => {
+              document.querySelector(`${f} [data-k="board"][data-val="0"]`).click();
+              const c = document.querySelector(f);
+              return [c.getAttribute('aria-busy'), c.querySelector('[data-k="board"][data-val="0"]').getAttribute('aria-pressed')];
+            }, first);
+            if (JSON.stringify(busy) !== JSON.stringify(['true', 'true']))
+              fails.push(`${w}px groups: Board Off not shown at once ${JSON.stringify(busy)}`);
             await calm();
             await q.click(`${first} [data-gall]`);
             await calm();
             g = await page();
-            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `${n} of ${n}`, 'Board On,Apart On', false]))
-              fails.push(`${w}px groups: Apart, Add all ${JSON.stringify(g.cards[0])}`);
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `${n} of ${n}`, 'Board Off', false]))
+              fails.push(`${w}px groups: Board Off, Add all ${JSON.stringify(g.cards[0])}`);
             await q.click(`${first} [data-gnone]`);
             await calm();
             await q.click(`${first} [data-gren]`);
