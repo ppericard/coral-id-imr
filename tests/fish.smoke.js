@@ -3124,7 +3124,7 @@ async function freshPlayers(b, base, errs) {
       coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
       p: startV().p,
       basics: !!document.querySelector('.unlock.basicsq'),
-      card: !!document.querySelector('.unlock.startq'),
+      card: !!document.querySelector('.unlock.startq:not(.basicsq)'), // the question's card (the basics offer is one too)
       q: !!document.querySelector('#view .q')
     }));
     const v = await q.evaluate(c => startVars(c), pick);
