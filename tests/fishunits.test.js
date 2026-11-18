@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish units page (admin plan PR 6 on the book's families, admin.js renderFishUnits): the families, genera and species
+// The fish units page (admin.js renderFishUnits): the families, genera and species
 // as the admin reads them from fish.json (autosort.js fishUnits), a family's choices in curation.json fish genera keyed by
 // family id (fishPick, fishFeat, fishCover, fishOk, fishDrop), the photo order (fishOrder: never by who took them), what a
 // family still needs before ✓ Validated (fishNeeds, fishUnitPhases), and the photo actions it shares with the fish
@@ -66,7 +66,7 @@ test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left 
   assert.deepStrictEqual(F.genera, {}, 'a second click on the cover takes his pick off');
 });
 
-// A genus's and a species' cover (Pierre, 2026-11-13): the same map under the genus's 'g:' id or the species' id; a photo
+// A genus's and a species' cover: the same map under the genus's 'g:' id or the species' id; a photo
 // leaving play from its family's page leaves them too, in the same step; another photo's covers stay.
 test('fishCover on a genus or a species; fishDrop takes the photo out of every cover', () => {
   let F = {add: {a: 's1', b: 's1', c: 's2'}};
@@ -156,7 +156,7 @@ test('fishUnits: families by key group, genera with their species, the IMR tag o
   );
   assert.deepStrictEqual([b.sci, b.circle, b.imr], [['Chaetodontidae'], 2, '']);
   assert.deepStrictEqual(A.fishUnits({species: []}), [], 'no families yet: none');
-  // The real fish.json, once it carries the book's families (the plan's PR 2): every game species in one family and one of
+  // The real fish.json, once it carries the book's families: every game species in one family and one of
   // its genera; 28 families in circle 1.
   const R = read('fish.json');
   if (!R.families) return;
@@ -226,7 +226,7 @@ test('fishCoverOf: his pick in play, else the family’s first photo in the game
   assert.strictEqual(A.fishCoverOf([], F, 'f:A'), null);
 });
 
-// A juvenile is never a cover (Pierre, 2026-11-13): fishJuv reads its phase word (his phase and tags, else the pass's,
+// A juvenile is never a cover: fishJuv reads its phase word (his phase and tags, else the pass's,
 // else a game record's ph or the source's life stage); his pick on one is ignored, the default skips them, a unit of
 // juveniles only keeps its first.
 test('fishJuv and fishCoverOf: a juvenile is never a cover, picked or not', () => {
@@ -274,7 +274,7 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
     F = {ease: {a0: 5, a1: 4, b0: 4}, tags: {a2: 'p1g0sm1r', b1: 'p1g0sm1j'}, add: {c0: 's3'}},
     cand = {s2: [{f: 'b0'}, {f: 'w1'}, {f: 'w2'}], s3: [{f: 'c0'}, {f: 'w3'}]};
   // play is what the page passes in: b0 is in play though not in F.add (the game plays it by itself, a sure candidate), so
-  // it does not wait (it counted as waiting before: 16,451 of the real file's 17,275 "waiting" were in play so).
+  // it does not wait.
   const C = A.fishCov(U, play, species, cand, F);
   const sp = Object.fromEntries(C.sp.map(r => [r.id, r]));
   assert.deepStrictEqual([sp.s1.n, sp.s1.obs, sp.s1.tgt, sp.s1.easy, sp.s1.ref, sp.s1.need], [12, 12, 12, 2, 1, []]);
@@ -298,7 +298,7 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
       ['s3', 7]
     ]
   );
-  // Two waiting photos of one observation add one observation (Codex review #659).
+  // Two waiting photos of one observation add one observation.
   const C2 = A.fishCov(
     U,
     play,
@@ -367,7 +367,7 @@ test('fishCovTodo and fishCandTodo: the counts of Coverage’s To do and of the 
   A.FISHCOV_TODO.forEach(([k, lv, , fn]) =>
     assert.strictEqual(C[lv].filter(r => fn(r, F)).length, (A.fishCovTodo(C, F).find(x => x[0] === k) || [0, 0, 0, 0])[3], k)
   );
-  // the candidates: those the swiper shows by default, never a Check (Pierre, 2026-11-09), one at target or set aside
+  // the candidates: those the swiper shows by default, never a Check, one at target or set aside
   assert.strictEqual(A.fishCandTodo([{}, {chk: true}, {full: true}, {aside: true}, {nph: true}]), 2);
   assert.strictEqual(A.fishCandTodo(null), 0);
 });
@@ -392,8 +392,8 @@ test('fishCov counts a candidate sent with Not this as waiting in its new specie
 });
 
 // A photo in play is never a candidate waiting, whatever name it is in play under (core.js fishPid): the game's own record
-// (a sure candidate, its candidate id), a reference record under its game id (fi<id>, fb<stem>), in any species. Before,
-// fishWaiting read the draft alone, so every candidate the game plays by itself counted as waiting.
+// (a sure candidate, its candidate id), a reference record under its game id (fi<id>, fb<stem>), in any species: so a
+// candidate the game plays by itself never counts as waiting.
 test('fishCov and fishWaiting: a candidate in play by itself, under any of its names, does not wait', () => {
   const U = [{id: 'f:A', name: 'As', species: ['s1', 's2'], phase: [], genera: [{id: 'g:X', name: 'X', species: ['s1', 's2']}]}],
     species = {s1: {name: 'X one'}, s2: {name: 'X two'}},
@@ -424,12 +424,12 @@ test('fishCov and fishWaiting: a candidate in play by itself, under any of its n
     Object.values(W).flat().length,
     "Coverage's + total is fishWaiting's: one count for Coverage, its To do, Where to look and the Tree pages"
   );
-  // with nothing in play, as before: every undecided candidate waits
+  // with nothing in play: every undecided candidate waits
   assert.strictEqual(Object.values(A.fishWaiting(cand, {})).flat().length, 5);
 });
 
-// Genus-level photos (gl, sp the genus's id: the sea slugs' observations agreed at the genus only; Pierre, 2026-11-17, Q389
-// (1)): counted in their genus's and family's photos, observations and candidates waiting, never as a species.
+// Genus-level photos (gl, sp the genus's id: the sea slugs' observations agreed at the genus only): counted in their
+// genus's and family's photos, observations and candidates waiting, never as a species.
 test('fishCov: a genus-level photo counts for its genus and family, never as a species (gl)', () => {
   const U = [
       {

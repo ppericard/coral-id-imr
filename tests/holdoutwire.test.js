@@ -1,9 +1,7 @@
 require('./slot.js').testGuard();
-// The held-out set in the game (ROADMAP "A held-out photo set"; Pierre, 2026-11-04 and 2026-11-16, Q385; the set #1023):
-// core.js fishHeld, fishObs, fishPhotos held, fishGen and fishGenUnits held; model.js examSet, genusDiff; the |h log
-// token on the exam's answers; the sheet's replay deciding alike (rules D8, D9). Exam only, no practice probe (Pierre,
-// 2026-11-18: "Je pensais qu'on gardait des photos pour la fin").
-// docs/LEARNING.md "The held-out photos in the game".
+// The held-out set in the game (ROADMAP "A held-out photo set"): core.js fishHeld, fishObs, fishPhotos held, fishGen and
+// fishGenUnits held; model.js examSet, genusDiff; the |h log token on the exam's answers; the sheet's replay deciding
+// alike (rules D8, D9). Exam only, no practice probe. docs/LEARNING.md "The held-out photos in the game".
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -82,7 +80,7 @@ test('fishPhotos and fishGen: held-out photos marked ho, in the unit’s held li
   const G = C.fishGen(F, L, {}, 'genus').gen['g:A'];
   assert.deepStrictEqual(G.views.wide.map(x => x.f).sort(), ['b', 'd']);
   assert.deepStrictEqual(G.held.map(x => x.f).sort(), ['a', 'c']);
-  // No held key without a held-out photo (the sheet's units are as before).
+  // No held key without a held-out photo (the sheet's units unchanged).
   assert.ok(!('held' in C.fishGen(F, C.fishPhotos({}, game, null), {}).gen['f:A']));
 });
 
@@ -187,12 +185,12 @@ test('examSet: a held-out photo never shown to this player first, the hardest; n
     F = engine('fish', L, {score: 0.9, held: H, others: {'f:X': {ps: seen}}}),
     q = F.examSet('u').shown[0];
   assert.ok(!q.ho, 'every held-out photo seen: today’s rule on the practice photos never shown, ' + q.f);
-  // A unit with no held-out photo: today's rule, as before.
+  // A unit with no held-out photo: the practice photos' rule.
   const N = engine('fish', L, {score: 0.9});
   assert.ok(/^p/.test(N.examSet('u').shown[0].f));
 });
 
-// Codex review #1057: exposure by observation (rule P4): a sibling photo of a held-out fish already shown waits.
+// Exposure by observation (rule P4): a sibling photo of a held-out fish already shown waits.
 test('examSet: a held-out observation already met (any photo of it) waits behind those never shown', () => {
   const {L} = unit(),
     H = [
@@ -290,7 +288,7 @@ test('the replay decides alike: a held-out answer (|h, |h|x) replays as the same
   assert.ok(a.p.P['f:X'].ok > 0 && a.p.P['f:X'].ko > 0);
 });
 
-// Codex review #1057: learnsim's truth from hashes (--truth gen) seeds the held-out photos' difficulties too.
+// learnsim's truth from hashes (--truth gen) seeds the held-out photos' difficulties too.
 test('learnsim: the held-out photos get their own simulated difficulty', () => {
   const src = read('tools/learnsim.js'),
     seed = src.slice(src.indexOf('const GEN_D = {};'), src.indexOf('PSTAT = ps;'));
