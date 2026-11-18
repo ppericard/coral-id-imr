@@ -200,6 +200,7 @@ test('logged with its own mode: quiz|f (custom quiz quiz|s|f), never |kN, |d or 
         nc: 4,
         tq: null,
         exq: false,
+        ph: [],
         ...o
       })
     );

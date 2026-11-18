@@ -150,6 +150,8 @@ const MEASURES = {
   },
   over: {label: 'E = bar - D*, units met', kind: 'row', dg: 3, get: (r, cp) => overOf((rowAt(r, cp) || {}).f)},
   met: {label: 'Units met', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).met ?? null},
+  // Units learned (s.mx: the mastery exam passed; learnsim and the rated world's rows), 2026-11-18 (the held-out exam).
+  learned: {label: 'Units learned (exam passed)', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).learned ?? null},
   hard: {label: 'Share under ease 4 before Open Water', kind: 'window', dg: 3, get: hardShare},
   right: {label: 'Right % since the previous checkpoint', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).right ?? null},
   prog: {label: "The app's progress %", kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).prog ?? null},

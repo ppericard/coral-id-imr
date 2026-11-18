@@ -144,6 +144,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
   const src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = {
       fishGen: C.fishGen,
+      fishHeld: C.fishHeld,
       fishPhotos: C.fishPhotos,
       easyRank: C.easyRank,
       easyCover: C.easyCover,

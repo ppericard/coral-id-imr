@@ -1188,7 +1188,9 @@
         if (U) out[id] = U;
       };
     Object.values(X.gen).forEach(g => {
-      if (!g.wink && !g.rank && !g.parent) put(g.id, (g.views || {}).wide || [], g, g);
+      // the unit's photos whole, its held-out ones too (g.held: only when fishPhotos had the set; the sheet never has it),
+      // so the app's table is the sheet's (model.js examPics, varUnitOf)
+      if (!g.wink && !g.rank && !g.parent) put(g.id, [...((g.views || {}).wide || []), ...(g.held || [])], g, g);
     });
     ((F && F.families) || [])
       .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
@@ -1207,7 +1209,7 @@
             const set = new Set(L.map(s => s.id));
             put(
               G.id,
-              ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
+              [...((E.views || {}).wide || []), ...(E.held || [])].filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
               E
             );
           });
@@ -1283,6 +1285,7 @@
     return L.map(([G, E, S]) => {
       const set = new Set(S),
         wide = E.views.wide.filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
+        held = (E.held || []).filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
         g = {
           id: G.id,
           name: G.name,
@@ -1293,7 +1296,8 @@
           circle: Math.min(...S.map(id => sp.get(id).circle)),
           species: S,
           look: L.filter(([o, X]) => X === E && o !== G).map(([o]) => o.id),
-          views: {wide}
+          views: {wide},
+          ...(held.length ? {held} : {})
         };
       if (wide.length) g.cover = easyCover(wide).f;
       return g;
@@ -1377,12 +1381,22 @@
         views: {
           wide: easyRank(
             (byFam[t.id] || [])
-              .filter(p => p && p.f && p.src && !sheetOnly(p))
+              .filter(p => p && p.f && p.src && !sheetOnly(p) && !p.ho)
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p)),
             undefined,
             false
           )
         },
+        // its held-out photos (fishPhotos held: ho), never in its views; only the mastery exam asks them
+        ...((byFam[t.id] || []).some(p => p && p.ho)
+          ? {
+              held: easyRank(
+                (byFam[t.id] || []).filter(p => p && p.ho && p.f && p.src && !sheetOnly(p)),
+                undefined,
+                false
+              )
+            }
+          : {}),
         ...(start.has(t.id) ? {first: 1} : {}),
         // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
         // heading above its block (learn.js viewFishList); display only
@@ -1784,16 +1798,53 @@
     const k = S && S.admin && S.admin.cur;
     return cur && k ? {...cur, fish: cur[k]} : cur;
   };
-  function fishPhotos(first, game, cur) {
+  // held (the app's fishBuild, the rated world): the held-out set (fishHeld), whose photos come marked ho, a copy, which
+  // fishGen keeps out of every unit's views (its held list). Without it (the sheet's pools and replay, the admin, the
+  // tools) every photo as before.
+  function fishPhotos(first, game, cur, held) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
       gone = F ? fishGone(cur) : xid,
       G = game && Object.keys(game).length ? game : first || {},
+      H = held && held.size ? held : null,
       out = {};
     Object.entries(G).forEach(([t, L]) => {
-      out[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      out[t] = (L || [])
+        .filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)))
+        .map(p => (H && H.has(p.sp + ' ' + fishObs(p)) ? {...p, ho: 1} : p));
     });
+    return out;
+  }
+  // The held-out set (fish-holdout.json, tools/holdout.py; ROADMAP "A held-out photo set", Pierre, 2026-11-04 and
+  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only by the mastery
+  // exam, unannounced (model.js examSet; Pierre, 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"). fishObs(p): a game record's observation as the file
+  // names it (tools/holdout.py obs_of: fish-game.json's short o, an iNaturalist id or a FishBase page; else the file).
+  // fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists (H), less the observations of a photo
+  // Pierre picked as a ★ cover or a featured photo (cur: curation.json fish genera cover, feat; matched by fishPid, as
+  // fishCurate reads them), which count as practice (#1023: the tool does not read the curation, so a Publish never makes
+  // the file stale). An empty set without the file.
+  const fishObs = p => {
+    const o = p && p.o;
+    if (!o) return String((p && p.f) || '');
+    const s = String(o);
+    return s.startsWith(FISH_OBS) ? s.slice(FISH_OBS.length) : s;
+  };
+  function fishHeld(H, game, cur) {
+    const out = new Set();
+    Object.entries((H && H.held) || {}).forEach(([sp, L]) => (Array.isArray(L) ? L : []).forEach(o => out.add(sp + ' ' + o)));
+    const picks = new Set(
+      Object.values((cur && cur.fish && cur.fish.genera) || {})
+        .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
+        .filter(Boolean)
+        .map(fishPid)
+    );
+    if (out.size && picks.size)
+      Object.values(game || {}).forEach(L =>
+        (L || []).forEach(p => {
+          if (p && p.f && picks.has(fishPid(p.f))) out.delete(p.sp + ' ' + fishObs(p));
+        })
+      );
     return out;
   }
   // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
@@ -7165,6 +7216,8 @@
     subjKey,
     subjDev,
     fishGen,
+    fishHeld,
+    fishObs,
     fishGlOf,
     fishReplayGen,
     SEASLUG_RVS,
