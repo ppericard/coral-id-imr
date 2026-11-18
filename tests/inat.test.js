@@ -74,6 +74,13 @@ test('build_fish.py presence_prefetch: the presence of every species as each spe
   assert.ok(R.batched.n < R.alone.n / 3, `${R.batched.n} requests batched, ${R.alone.n} alone`);
 });
 
+test('inatstub: each login has its own user id, numbered the same way on every run (no string hash)', () => {
+  const R = run('stubusers');
+  assert.ok(R.one_each);
+  assert.strictEqual(R.ids, R.logins);
+  assert.deepStrictEqual(R.first, [1, 2, 3]);
+});
+
 test('fish_commonness.py fetch: the observers of every entry counted together as each alone gives them', () => {
   const R = run('commonness');
   assert.deepStrictEqual(R.batched.rows, R.alone.rows);

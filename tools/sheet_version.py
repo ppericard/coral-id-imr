@@ -65,7 +65,7 @@ LEGACY_GAPS = {41, 43, 72, 73, 75, 78, 82}
 # The long header of the transition: the whole history on line 1 (two spaces before VERSION).
 HEAD = re.compile(r'^(?P<pre>// .*?  VERSION )(?P<n>\d+) \((?P<date>\d{4}-\d\d-\d\d): (?P<rest>v(?P<first>\d+): .*)$')
 CONST = re.compile(r'^const VERSION = (\d+);', re.M)
-# START_ADMIN_SHEET too (Codex review #757). Never SHEET_FLOOR (core.js): the gate floor, a version already live set by
+# START_ADMIN_SHEET too. Never SHEET_FLOOR (core.js): the gate floor, a version already live set by
 # hand, never one the assign moves (tests/gates.test.js ratchets it).
 GATE = re.compile(r'\bconst (?!SHEET_FLOOR\b)([A-Z][A-Z0-9_]*_SHEET) = (\d+);')
 BARE = re.compile(r'`[^`\n]*`|\b' + TOKEN + r'\b')  # a code span is skipped whole, so only a bare token matches
@@ -400,8 +400,8 @@ def assign(root='.', date=None, dry=False, base=None):
     if not h or old is None or h[0] != old:
         sys.exit('✗ %s: the header and the constant disagree: fix them first (--check)' % GS)
     n = old + 1
-    # The entry itself may name the new version with the placeholder (#1083): it is written into HISTORY.md with every
-    # bare placeholder set to vN, as in the code files (a code span stays as written).
+    # The entry itself may name the new version with the placeholder: it is written into HISTORY.md with every bare
+    # placeholder set to vN, as in the code files (a code span stays as written).
     entry = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), entry)
     date = date or datetime.now(ZoneInfo('Asia/Manila')).strftime('%Y-%m-%d')
     hist = read(HIST, root) if os.path.exists(os.path.join(root, HIST)) else None
@@ -419,7 +419,7 @@ def assign(root='.', date=None, dry=False, base=None):
     if moved:
         sys.exit('✗ gates main already has, changed by this PR: %s: put main\'s number back, a feature that needs a newer'
                  ' script adds a gate of its own (rule D4)' % ', '.join(moved))
-    mine = added(every)  # what the PR adds, even at a number main has reached since (Codex review #757)
+    mine = added(every)  # what the PR adds, even at a number main has reached since
     for k, (gn, f) in sorted(gates(root).items()):
         if gn > old or (k in mine and gn != n):
             body = edits.get(f, read(f, root))
@@ -430,7 +430,7 @@ def assign(root='.', date=None, dry=False, base=None):
         edits[f] = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), body)
         said.append('%s: %d x %s -> v%d' % (f, k, TOKEN, n))
     if 'core.js' in edits and GS in edits:
-        # Code.gs embeds core.js (tools/sync_core.py): its copy takes the edited gates too (Codex review #757).
+        # Code.gs embeds core.js (tools/sync_core.py): its copy takes the edited gates too.
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from sync_core import HEAD as C_HEAD, BEGIN as C_BEGIN, END as C_END, TAIL as C_TAIL, block
         gs = edits[GS]
