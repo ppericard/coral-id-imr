@@ -142,9 +142,11 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
 const obsOf = q => q[4].shown[0].o;
 
 test('the report: two questions planned ahead on one unit, one apart, never show the same colony', () => {
-  // Her 7th question on screen (Plerogyra), the next three planned while it waits: Porites, Lobophyllia, Porites. On
-  // main the two Porites draws favoured the colony at the aim, drawn independently: the same one in 10 of these 40
-  // sessions (and the Duel tab's next duel in 9 of 40, below).
+  // A question on screen (Plerogyra), the queue behind it Porites, Lobophyllia, Porites. In the app the queue is topped
+  // up one question at a time (her 10th was added while her 7th was on screen, the 8th and 9th already queued); here it
+  // is filled at once: either way the second Porites is drawn while the first is only planned. On main the two Porites
+  // draws favoured the colony at the aim, drawn independently: the same one in 10 of these 40 sessions (and the Duel
+  // tab's next duel in 9 of 40, below).
   let same = 0;
   for (let seed = 1; seed <= 40; seed++) {
     const G = game({seq: ['Porites', 'Lobophyllia', 'Porites'], seed});
@@ -281,4 +283,12 @@ test('the variants on their ramp: every adult photo in the window, the one shown
   assert.ok(adult.length > 0 && adult.every(f => f === 'a2'), 'the adult shown longest ago, the two others wait');
   // One adult of three left: about a third of the adults' share with no window (158 of 600 measured); none without it.
   assert.ok(adult.length > 30, `the juveniles stay on their ramp: the adult ${adult.length} of 600`);
+});
+
+// The wiring the tests above stand in for (G.show): every question shown goes into the window, the live game's too.
+test('the window is fed where a question shows: quiz.js question(), live.js liveBuild()', () => {
+  const q = cut(quiz, 'function question(cur, target, choices, prompt, set, kq) {', '\n  const ph = set.shown', {file: 'quiz.js'});
+  assert.ok(q.includes('seenAdd([cur, target, choices, prompt, set]);'), 'question() records its photos');
+  const live = cut(read('live.js'), 'function liveBuild(t) {', '\n}\n', {through: 1, file: 'live.js'});
+  assert.ok(/seenAdd\(\['live', t, ch, '', set\]\);\s*return \{ph/.test(live), 'liveBuild records the photos it sends');
 });

@@ -5917,8 +5917,8 @@ the start of a session her 8th and 10th answers, a minute apart, showed the same
 between them, all three answered right in the plain 4-choice quiz.
 
 - **The cause: the questions planned ahead.** The photo quiz chooses up to `AHEAD` (3) questions ahead (`quiz.js`
-  `planNext`, "Questions planned ahead"): while her 7th question was on screen it chose the 8th, 9th and 10th, so the
-  10th was drawn while the 8th was only planned. The draw's two memories of what was shown, the photo memory (`s.ps`)
+  `planNext`, "Questions planned ahead", topping the queue up one question at a time): while her 7th question was on
+  screen it added the 10th behind the 8th and 9th, still queued, so the 10th was drawn while the 8th was only planned. The draw's two memories of what was shown, the photo memory (`s.ps`)
   and the colonies held back (`s.ro`, the last 2 questions on the unit), are both written when a question is answered,
   so neither held the 8th's colony back; with every answer right nothing dropped the queue. A beginner's Porites draw
   leans on the few colonies near the aim, so two draws made blind to each other often met on the same one. Not the
@@ -5966,7 +5966,10 @@ the fish, `--looks 2`; still not held: to the integrator, no third look). 34 min
 True knowledge at 300 within ±0.005 for every profile in both looks (bounds within −0.003 of 0); the fish share under
 ease 4 before Open Water +0.001 to −0.003 (bounds ≤ +0.007, margin +0.05); right % within ±1.5 points. The corals'
 beginner plateau (the longest stretch without a new high of the shown score, 56 → 60 answers at 30 seeds) stays unclear
-by a point of its bound: the integrator's call under rule L11 (a step up, or to Pierre). The sea slugs have no learnsim
+by a point of its bound: under rule L11 that is a step up (level 2: the rated world, 10 seeds per profile, beside the
+app world) before the change ships, or Pierre's decision on the cost; not run here (the task's 40-minute cap of compute
+on the shared machine, 34 used): the integrator's to run (the "Learning check (tier 2)" workflow on a GitHub runner)
+or to take to Pierre. The sea slugs have no learnsim
 mode: not simulated (the draw is the same code; the unit tests are subject-neutral). **Real log** (rule L12): a replay
 cannot judge a draw change (the change asks other photos); what was read instead is the report's own rows (the 8th
 answer right, the 10th a plain 4-choice question, so the queue planned at the 7th was kept), on the sheet, read-only.
@@ -6699,7 +6702,7 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
 (the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
 `unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `famAdv` (the fish families at Advanced) and `spShare` (the share of answers on the fish species; both 2026-11-15, the species level), `right`, `prog`, `thErr`. The species units (kind `species`) are in both worlds
+`perPhoto` (answers per photo shown), `near` (the share of questions showing a colony or a photo shown in the 9 before: "No photo twice in a few questions", 2026-11-18), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `famAdv` (the fish families at Advanced) and `spShare` (the share of answers on the fish species; both 2026-11-15, the species level), `right`, `prog`, `thErr`. The species units (kind `species`) are in both worlds
 since the species level (step 1, by common name); the scientific species names do not exist yet. After the guardrails,
 learncmp also prints, with no margin, the right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the
 one-sided bounds either side.
@@ -7127,7 +7130,7 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 - 2026-11-18, a player's report (2026-11-17, "Same picture twice in a row"; "No photo twice in a few questions"): the
   draw reads the session's last `RECENT` questions shown and those planned ahead, and a colony there is not drawn while
   the unit has another (never leaving only the colonies held back before Open Water or as variants). Level 1; the
-  corals' beginner plateau unclear at the second look, the integrator's call.
+  corals' beginner plateau unclear at the second look: a step up (the rated world) or Pierre's decision before it ships.
 - 2026-11-17, Q391 (Pierre, 10:52 Manila: "Q391 a oui, b oui"), #953 rebuilt ("Juveniles and colour phases on their
   unit's mastery"): the fixed stage of 2026-11-15 replaced by a ramp of each unit's own bar per variant kind (`core.js`
   `VAR_AT`: early-class juveniles from the start, the other juveniles and the sexes and colour phases from Open Water to
