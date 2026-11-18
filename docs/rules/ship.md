@@ -247,10 +247,9 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 - Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
   Pierre's explicit go-ahead. On a PR branch, after the rebase on `origin/main`, `git push --force-with-lease` to your
   own PR branch (or, for the integrator, to the PR branch it is about to merge) is allowed; never a plain `--force`.
-- A history rewrite to shrink `.git` is planned, not declined (Pierre, 2026-11-02): first the photos to Cloudflare R2,
-  then remove from `img/` every photo with an online source (git keeps only those with no other backup; the fallback
-  becomes the original source), then rewrite history so the old photos leave `.git`; ask Pierre for the go before the
-  force-push and keep a backup clone (ROADMAP "Photos out of the repo").
+- The one history rewrite that shrank `.git` was done on 2026-11-08 (Pierre, 2026-11-02, 2026-11-08; HANDOVER.md "Photos
+  out of the repo, step 3"): the photos left for Cloudflare R2, git keeps only those with no other backup. Any other
+  rewrite needs Pierre's explicit go first, and a backup clone.
 - A merge to `main` is live on GitHub Pages within a minute or two; open tabs pick up the new shell on the next visit
   (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 

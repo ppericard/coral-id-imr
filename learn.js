@@ -752,8 +752,7 @@ function viewCompare(a, b) {
 // credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
 // stay a surprise. Each entry opens its family's sheet (viewFishSheet, below; an IMR entry by the family it was renamed into).
 function viewFishList() {
-  // Each photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06: a tap did nothing);
-  // the family and species sheets are a later project (docs/ROADMAP.md).
+  // Each photo enlarges in the shared viewer, as the coral photos do (a tap on a photo opens it).
   const flat = [];
   const tip = n => {
     const g = GX(n),
