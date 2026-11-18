@@ -4099,6 +4099,216 @@ body:has(.ikstart:not([hidden])) main {
   fill: var(--hl);
 }
 
+/* Fish basics (proto/fishbasics.js): the fish drawings of its steps, in the same quiet greys with the taught part in --hl. */
+.bxd .fn {
+  fill: color-mix(in srgb, var(--muted) 12%, var(--surface));
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--surface));
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.bxd .fn.hl,
+.bxd .sk.hl {
+  stroke: var(--hl);
+  stroke-width: 2.6;
+}
+.bxd .ey {
+  fill: var(--ink);
+}
+/* a false eye: an eye-like ring */
+.bxd .fl {
+  fill: var(--surface);
+  stroke: var(--hl);
+  stroke-width: 2.4;
+}
+/* markings and small parts taught, filled in --hl; .bar: a stroke, not a fill */
+.bxd .mk {
+  fill: var(--hl);
+  stroke: none;
+}
+.bxd .mk.bar {
+  fill: none;
+  stroke: var(--hl);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.bxd .ln.hl {
+  fill: none;
+}
+/* a body silhouette shown whole (step 1): body and fins in the highlight */
+.bxd .fhl .sk,
+.bxd .fhl .fn {
+  fill: var(--hl-soft);
+  stroke: var(--hl);
+  stroke-width: 1.8;
+}
+/* its fins a little paler than the body, so the outline reads as one fish */
+.bxd .fhl .fn {
+  fill: color-mix(in srgb, var(--hl-soft) 50%, var(--surface));
+}
+.bxd .fhl .ey {
+  fill: var(--ink);
+}
+/* the pickers' icons: the same drawings small, strokes kept at screen size */
+.bx-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .bx-picks {
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  }
+}
+.bx-picks button {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 6px 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.bx-picks button[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--accent);
+}
+.bx-picks span:not(.bx-gn) {
+  display: block;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  text-align: center;
+}
+.bx-picks button[aria-pressed='true'] span:not(.bx-gn) {
+  font-weight: 700;
+}
+.bx-picks button[aria-pressed='true'] .bx-gn {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.bx-picks .ok {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  color: var(--good);
+  font-style: normal;
+  font-size: var(--fs-xs);
+}
+/* the groups' picker: one number each, many of them */
+.bx-picks.many {
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+}
+.bx-picks .bx-gn {
+  margin: 2px 0;
+}
+.bx-pi {
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  height: auto;
+}
+.bx-pi * {
+  vector-effect: non-scaling-stroke;
+}
+.bx-pi .sk,
+.bx-pi .fn {
+  stroke-width: 1.4;
+}
+.bx-pi .hl {
+  stroke-width: 2;
+}
+.bx-pi .mk.bar {
+  stroke-width: 2.2;
+}
+.bx-vfig {
+  margin-top: 8px;
+}
+/* the small drawings (160 x 100) scale up: their words stay a readable size */
+.bxd.bxs .lb {
+  font-size: 6.5px;
+}
+.bxd.bxz .lb {
+  font-size: 9px;
+}
+.bx-vfig .bxd {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 34dvh;
+  border-radius: var(--r);
+}
+/* a silhouette or one tail is smaller than the full fish: it keeps a calm size */
+.bx-vfig .bxd.bxs {
+  max-width: 340px;
+  margin-inline: auto;
+}
+.bx-vfig .bxd.bxt {
+  max-width: 240px;
+  margin-inline: auto;
+}
+.bx-eg {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+/* a group's number, in the colour of its group (app.css .gdiv .gn) */
+.bx-gn {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: hsl(var(--g, 200) 40% 88%);
+  color: hsl(var(--g, 200) 50% 24%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 30% 68%);
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+:root[data-theme='dark'] .bx-gn {
+  background: hsl(var(--g, 200) 25% 24%);
+  color: hsl(var(--g, 200) 55% 84%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 25% 40%);
+}
+.bx-gt {
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+.bx-gfam {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.bx-gfam figure {
+  margin: 0;
+}
+.bx-gfam .bx-fx {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.bx-gfam img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+}
+.bx-gfam figcaption {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+}
+
 /* ---------- Cards and pop-ups (proto/cards.js, #lab-cards): every kind, opened live through app.js cardShow ---------- */
 .lckinds {
   list-style: none;
