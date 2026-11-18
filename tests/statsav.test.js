@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
 // Every read of the sync sheet's photo stats (?stats=1) made by this repository's code carries an app version (av).
-// The sheet logs a ?stats=1 read without one as an app from before 2026-11-03 (Code.gs v25 'old'); on 2026-11-05 the
-// only 'old' rows came from such reads by the project's own tools and agents, not from players' devices, and sent the
-// investigation of an old app version the wrong way (PR #561: tools/brief.py; the admin's read-only page; learnsim
-// --stats live). A name that is no build number (av=admin, brief, learnsim, tool) is never taken for a stale app
+// The sheet logs a ?stats=1 read without one as an old app ('old'), so a read by the project's own tools and agents
+// (tools/brief.py; the admin's read-only page; learnsim --stats live) would look like a player's stale device. A name
+// that is no build number (av=admin, brief, learnsim, tool) is never taken for a stale app
 // either (Code.gs behind_ reads a leading build number only).
 const test = require('node:test'),
   assert = require('node:assert'),

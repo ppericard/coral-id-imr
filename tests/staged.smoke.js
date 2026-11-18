@@ -1,4 +1,4 @@
-// Staged copy test (architecture review of 2026-11-18, R4): plays the site as the deploy builds it (tools/build_site.py:
+// Staged copy test (docs/reviews/2026-11-18-architecture-code-review.md, R4): plays the site as the deploy builds it (tools/build_site.py:
 // the players' curation, the stamps, the scripts minified by terser with source maps), so a minifier bug or a broken
 // stamp fails here, before the copy goes live, rather than on the players' phones. The other smokes serve the source and
 // several cut core.js as they serve it, so they cannot run on a minified copy; this one serves the copy as it is.
@@ -235,7 +235,7 @@ async function maps(dir, fails) {
     served = U.h10(fs.readFileSync(path.join(dir, 'app.js')));
   if (named !== served)
     fails.push(`maps: index.html names app.js ${named}, the file served is ${served} (the report's av check relies on it)`);
-  // The Lab's modules are loaded with one LAB_V: the tool's version of a module is that value (Codex review, #1106).
+  // The Lab's modules are loaded with one LAB_V: the tool's version of a module is that value.
   const labV = (/const LAB_V = '([0-9a-f]{10})';/.exec(fs.readFileSync(path.join(dir, 'proto/lab.js'), 'utf8')) || [])[1],
     labMine = await U.versionOf(U.fromDir(dir), 'proto/idkey.js');
   if (labV !== labMine) fails.push(`maps: proto/lab.js LAB_V is ${labV}, the tool computes ${labMine} for a Lab module`);
