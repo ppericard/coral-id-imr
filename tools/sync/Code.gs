@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 183 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 184 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 183;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 184;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -8194,7 +8194,24 @@ const CORE_ = (function () { const module = {exports: {}};
     seaPct('sspct20', 20, 'Slime trail', 1),
     seaPct('sspct30', 30, 'Colour chart', 2),
     seaPct('sspct40', 40, 'Torch light', 2),
-    seaPct('sspct50', 50, 'Half the reef', 3)
+    seaPct('sspct50', 50, 'Half the reef', 3),
+    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slugs
+    // have no species unit yet, so their % is the mean of the genera's bars and 100% needs every genus learned (Pierre,
+    // 2026-11-17: "une première version"; names and tiers for his review, docs/decisions/2026-11-18-seaslug-achievements-high.md).
+    seaPct('sspct60', 60, 'Gill and frill', 3),
+    seaPct('sspct70', 70, 'Muck magnet', 3),
+    seaPct('sspct80', 80, 'Slug savant', 3),
+    seaPct('sspct90', 90, 'Nudibranch nerd', 3),
+    // 100% shows rounded (77 genera learned and one at 95% make 100), so it also asks every genus learned (Codex, #1112);
+    // it rests on genera learned, so ACH_LEARN takes it back with a learned mark.
+    [
+      'sspct100',
+      'Every last slug',
+      '100% sea slug progress: every genus learned',
+      3,
+      '📈',
+      s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
@@ -8273,7 +8290,8 @@ const CORE_ = (function () { const module = {exports: {}};
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
