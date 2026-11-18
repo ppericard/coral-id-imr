@@ -73,6 +73,15 @@ const perPhoto = (run, cp) => {
     u = new Set(E.flatMap(e => e.slice(2))).size;
   return u ? n / u : null;
 };
+// The share of questions 1..cp showing a colony (observation) or a photo already shown in the NEAR - 1 questions before it
+// (model.js SEENQ: no photo twice in a few questions, a player's report of 2026-11-17; NEAR = model.js RECENT).
+const NEAR = 10;
+const nearRep = (run, cp) => {
+  const E = (run.expo || []).slice(0, cp);
+  if (!E.length) return null;
+  const k = E.filter((e, i) => E.slice(Math.max(0, i - NEAR + 1), i).some(x => x[1] === e[1] || x.slice(2).some(f => e.includes(f, 2)))).length;
+  return k / E.length;
+};
 // The share of answers 1..cp on the fish scientific genera (kind genus in a run whose slate is families: learnsim kinds),
 // the measure of Q208's "families met first" (2026-11-09); none for the corals, whose slate units are genera.
 const genShare = (run, cp) => {
@@ -168,6 +177,7 @@ const MEASURES = {
   // Photo exposure (learnsim expo and preOW, questions 1..N): answers on photos under ease 4, answers per photo shown.
   hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
   perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)},
+  near: {label: `Share of questions showing a colony shown in the ${NEAR - 1} before`, kind: 'window', dg: 3, get: (r, cp) => nearRep(r, cp)},
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
   famAdv: {label: 'Families at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => famAdv(r, cp)},
   spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
@@ -561,6 +571,8 @@ module.exports = {
   firstOW,
   hardAnswers,
   perPhoto,
+  NEAR,
+  nearRep,
   genShare,
   famAdv,
   spShare,

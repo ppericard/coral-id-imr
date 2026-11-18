@@ -13,8 +13,9 @@
 // photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first for the corals,
 // SUBJECTS tiers; never for fish, Pierre 2026-11-06), photos the player
 // has already been shown weigh less the better they are remembered (photo memory, PMEM: x e^offset), the colony of the
-// last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
-// a struggling player still sees new photos.
+// last 2 questions on the genus is held back, a colony shown or planned in the session's last RECENT questions waits
+// while the unit has another (SEENQ), and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a
+// struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
@@ -148,6 +149,46 @@ const colonyMem = (obs, ps) =>
         .reduce((a, h) => (!a || memBucket(h) > memBucket(a) || (memBucket(h) === memBucket(a) && h[0] > a[0]) ? h : a), undefined)
     ])
   );
+// No photo twice in a few questions (a player's report, 2026-11-17: "Same picture twice in a row"; docs/LEARNING.md "No
+// photo twice in a few questions"). The photo memory (s.ps) and the colonies held back (s.ro) are written when a question
+// is answered, but the photo quiz chooses up to AHEAD questions ahead (quiz.js planNext): a question planned two places
+// after one on the same unit was drawn before that one was shown, so neither held its photo back, and an easy colony
+// that fits the aim came twice, one question apart. So the draw also reads the session's own window: the photos of the
+// last RECENT questions shown (seenAdd: quiz.js question, live.js liveBuild) and of those planned (the NEXTQ queue, read
+// when drawing), and a colony (observation) shown or planned there is not drawn while the unit has another one to show;
+// with none left outside it, the one shown longest ago. RECENT (10), as a unit's recent results and the global record's
+// h: the game's own "recent", wider than AHEAD so the questions planned and the last ones shown both fit. In memory only
+// (a session): nothing synced, the persistent records untouched. Each photo counts by its file and by its observation.
+let SEENQ = [];
+// The photos of question q (its arguments: [cur, unit, choices, prompt, set]): every photo shown, hinted or revealed after
+// the answer (one observation, rule P4), or a Find the X's four tiles.
+const qPhotos = q => {
+  const set = (q && q[4]) || {};
+  return set.find ? set.find.map(x => x.p) : [...(set.shown || []), ...(set.hint ? [set.hint] : []), ...(set.reveal || [])];
+};
+// A question shown (once, however often its page is drawn again).
+const seenAdd = q => {
+  const set = q && q[4];
+  if (set && !(SEENQ.length && SEENQ[SEENQ.length - 1].s === set)) SEENQ = [...SEENQ, {s: set, L: qPhotos(q)}].slice(-RECENT);
+};
+// How many questions ago each photo file and observation of the window came (0: the latest, the last planned if any).
+function seenAges() {
+  const plan = [];
+  if (typeof NEXTQ !== 'undefined') for (let x = NEXTQ; x; x = x.next) plan.push(qPhotos(x.args));
+  const W = [...SEENQ.map(e => e.L), ...plan].slice(-RECENT),
+    a = {};
+  W.forEach((L, i) => L.filter(Boolean).forEach(p => [p.f, p.o].forEach(k => k && (a[k] = W.length - 1 - i))));
+  return a;
+}
+// Of L (observations or photos; photosOf(x): its photos), those outside the window, else those shown longest ago in it.
+function leastRecent(L, photosOf, ages = seenAges()) {
+  const age = x => Math.min(...photosOf(x).flatMap(p => [p.f, p.o].map(k => (k && k in ages ? ages[k] : Infinity))));
+  const ag = L.map(age),
+    out = L.filter((x, i) => ag[i] === Infinity);
+  if (out.length || !L.length) return out;
+  const m = Math.max(...ag);
+  return L.filter((x, i) => ag[i] === m);
+}
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -286,6 +327,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     const keep = rare && !keys.some(k => sc[k] > 0 && !mem[k] && hs[k] < 1);
     keys.forEach(k => mem[k] && !(keep && hs[k] < 1) && (sc[k] = 0));
   }
+  // No photo twice in a few questions (SEENQ, above): a colony shown or planned in the session's last RECENT questions
+  // waits while another can be drawn, before the variety, the floor and the cap, which then work on the others.
+  const live = keys.filter(k => sc[k] > 0),
+    fresh = new Set(leastRecent(live, k => phs[k]));
+  live.forEach(k => fresh.has(k) || (sc[k] = 0));
   const top = Math.max(0, ...Object.values(sc));
   keys
     .filter(k => sc[k] > 0)
@@ -443,7 +489,9 @@ function examSet(n) {
     todo = vs.filter(v => !done.includes(lab(v)));
   if (!vs.length) return null;
   const v = pick(todo.length ? todo : vs),
-    L = pics(v),
+    // Never a photo (or a sibling of one) shown or planned in the session's last questions while another is left (SEENQ):
+    // a question planned before this one is not in the photo memory yet.
+    L = leastRecent(pics(v), p => [p]),
     // Never shown at all first (a photo answered wrong has been seen, and its answer shown); else the least seen of those
     // never answered right; else the least seen.
     // The held-out photos never shown to this player on any unit first (the honest exam, ROADMAP "A held-out photo

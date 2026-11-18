@@ -328,6 +328,8 @@ function qclockArm() {
   else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
 }
 function question(cur, target, choices, prompt, set, kq) {
+  // Its photos join the session's window (model.js SEENQ): not drawn again in the next questions while another is left.
+  seenAdd([cur, target, choices, prompt, set]);
   EXAMQ = set.exam ? target : null;
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
   const ph = set.shown,
@@ -1713,7 +1715,9 @@ const againTold = () => {
 // next), and a wrong answer drops the queue (its "Again" comes one question later, as before), putting back the
 // planner's own state (the genus asked last, the duel and "Again" spacing) as it was before those questions were
 // chosen. What changes: after a right answer, the questions already chosen stay, chosen up to AHEAD - 1 answers earlier
-// (their weights lag those answers; a new card, exam question or duel comes up to that many questions later).
+// (their weights lag those answers; a new card, exam question or duel comes up to that many questions later). Their
+// photos do not lag: the draw reads the questions queued here and those shown (model.js SEENQ, seenAges), so a question
+// planned behind another on the same unit never shows its colony again (a player's report, 2026-11-17).
 const AHEAD = 3;
 let NEXTQ = null;
 // The genera in play, and the custom quiz's selection: a change of either drops the questions planned with the old ones.
