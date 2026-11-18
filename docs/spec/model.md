@@ -222,10 +222,10 @@ right answers bring it back up (`mxKept`, `core.js` `keepsMark`: the bar at `DOM
 `PROG.A`) for a record not rebuilt), and the exam comes back. A unit whose record says `noex` (a fish species) has no
 exam: its bar tops out at 95%. `tests/draw.smoke.js` plays an exam through the real quiz.
 
-A recalculation that takes a learned mark away (`model.js` `mxRecalc`: a mark passed under BKT, a record without
-`s.pg`, dropped by `core.js` `memRecalc`, the unit then taking the exam again) is silent while `MXL.QUIET` holds: it
-does not call `mxLost`, so no card, the achievements kept ([achievements.md](achievements.md#achievements);
-LEARNING.md "Learned under the former model").
+A recalculation that takes a learned mark away (`model.js` `mxRecalc`: a mark passed under BKT, a record with neither
+`s.pg` nor `s.ds` (`core.js` `afterBkt`), dropped by `core.js` `memRecalc`, the unit then taking the exam again) is
+silent while `MXL.QUIET` holds: it does not call `mxLost`, so no card, the achievements kept
+([achievements.md](achievements.md#achievements); LEARNING.md "Learned under the former model").
 
 ## Progress scale and mastery levels
 

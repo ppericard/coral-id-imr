@@ -352,11 +352,12 @@ one and an older app on one account); the harness is `tests/syncpage.js`.
 
 ## One-time notices after the first sync
 
-For a signed-in player, the one-time cards (the update notes `recalcNotice`, the learned mark taken away
-`mxLostNotice`, the rules versions' cards `rvNotice` with the apology `RV_SORRY`, the apology card `sorryNotice`, a
-subject's card `subjHello`, the leaderboard note `boardNotice`) and the achievements check (`achCheck`, `achRecheck`:
-their toasts, given and taken back) wait for the visit's first sync (`sync.js` `noticeLater`). They go when its pull and
-merge are done (`noticesGo`, from the end of `syncPush` / `syncPull`, whatever the reply: offline, an error or a refused
+For a signed-in player, the one-time cards (the update notes `recalcNotice`, the rules versions' cards `rvNotice` with
+the apology `RV_SORRY`, the apology card `sorryNotice`, a subject's card `subjHello`, the leaderboard note
+`boardNotice`) and the achievements check (`achCheck`: their toasts) wait for the visit's first sync (`sync.js`
+`noticeLater`); so would the card of a learned mark taken away (`progress.js` `mxLostNotice`) and the achievements it
+takes back (`achRecheck`), which show and take nothing while `model.js` `MXL.QUIET` holds (a card or a recheck still
+due is dropped unseen; rule D6). The waiting notices go when its pull and merge are done (`noticesGo`, from the end of `syncPush` / `syncPull`, whatever the reply: offline, an error or a refused
 code shows them at once from this device's state), or after `NOTICE.WAIT` (20 s) at most. Each is then decided on the
 merged state: the progress and achievements of every device, and **the notices told on any device of the account**,
 `reefid-sync-told` (`core.js` `TOLD`, `toldUnion`). Its tokens: `recalc:<note id>`, `rv:<version>` (a fish rules
