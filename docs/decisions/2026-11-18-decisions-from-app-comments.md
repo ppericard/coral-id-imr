@@ -32,6 +32,24 @@ Each line: the date, Pierre's words as written (French where he spoke French), w
 - 2026-11-05: "a player can delete their own account and all their data themselves, from a discreet page". The page
   #about/delete-account, linked from About › Privacy and the privacy notice, never from a menu; the sheet deletes
   everything but a tombstone. `sync.js` `viewDeleteAccount`; docs/ARCHITECTURE.md "Pages and routing".
+- 2026-11-05 and 2026-11-06, on the typed answers' spelling step (a player's idea; Pierre: "Good idea!"): a name typed
+  close but not exact is still right, and the player retypes it once. Its first plain line read like "a mean teacher
+  saying no", so the nudge is a warm one ("✏️ So close! … just fix the spelling and try once more"). `quiz.js`
+  `typeBind`.
+- 2026-11-14 (Q124), on the name confusion study (docs/reviews/2026-11-05-name-confusion-study.md): "Je suis tes
+  recommandations pour tout". After a mix-up of two similar names, the feedback shows both with the differing letters in
+  bold. `quiz.js` `namesAlike`, `namesDiff`, `namesLine`.
+- 2026-11-08 (Q290), of the Thresher sharks' surprise card: "we can use my cover for the card". A wink unit's ★ Cover,
+  when it is in play, is the surprise card's photo before the photos chosen for it. `quiz.js` `winkPhoto`.
+- 2026-11-01: "preload the photos". The next questions are chosen ahead and their photos fetched while the feedback is
+  read, so Next shows one at once on a slow line. `quiz.js` `planNext`, `NEXTQ`, `AHEAD`.
+- 2026-11-02, an RA tester's words, taken up: "so that we aren't taken out of the game". A genus sheet opened from a game
+  opens in a new tab on a computer; the same tab on a phone or tablet. `quiz.js` `sheetTab`.
+- 2026-11-12, of the custom quiz's reminder "N new genera are waiting in the Quiz" while the opening hold is on: "peut-être
+  pas quand même". The reminder waits for the hold to end; still shown once ever. `quiz.js` `leftDue`.
+- 2026-11-02, on asking players for feedback: people answer a tap, not "any comments?". The one-tap question between an
+  answer and the next question. `quiz.js` `PULSE`, `pulseAsk`; docs/LEARNING.md "What the players say about the
+  difficulty".
 
 ## Consequences
 
