@@ -1,7 +1,7 @@
 // Fish basics: the fish twin of Coral basics (proto/basics.js, the same engine and screens), a short guided path for
-// complete beginners: what to look at first on a reef fish. Body shape first (Pierre, 2026-11-04: identification always
-// starts with it), then the identification groups, then the vocabulary: fins (the dorsal fin is the second screen of the
-// Fins step), tail shapes, markings and a few key features. One step = a drawing of ours (the part being taught in --hl,
+// complete beginners: what to look at first on a reef fish. Body shape first (identification always starts with it;
+// docs/FISH_PATH.md), then the identification groups, then the vocabulary: fins (the dorsal fin
+// is the second screen of the Fins step), tail shapes, markings and a few key features. One step = a drawing of ours (the part being taught in --hl,
 // theme tokens only) or, for the groups, the app's own family photos with their credit; one plain sentence; an optional
 // one-question check. Nothing is forced: every step can be skipped, the checks are optional.
 // Content: the IMR fish presentation (Lecture 10, Fish Identification: anatomy, tail shapes, markings, the groups as it
@@ -710,7 +710,7 @@
     lede: 'For anyone who never had the fish lecture: what to look at first, one thing at a time, on simple drawings and the app’s own photos (credited in the enlarged view: tap a photo). Every step is optional; the little check under each one is too. Words lists every term and where it is shown.'
   };
   // Registered once the engine is there: proto/lab.js retries a failed download later, so the engine can arrive after
-  // this file (Codex review #1108). Checked every 250 ms for up to 5 minutes; registered late, the Lab page on screen is
+  // this file. Checked every 250 ms for up to 5 minutes; registered late, the Lab page on screen is
   // drawn again (lab.js redraws only when its last file is in, which may have been before this registration).
   (function reg(n) {
     if (typeof BASICS !== 'undefined' && BASICS && BASICS.add) {

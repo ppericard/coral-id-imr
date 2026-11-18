@@ -1,35 +1,35 @@
-// The presence rule, as the admin applies it to photos (Pierre, 2026-11-04; rule C8), the photo licences and
+// The presence rule, as the admin applies it to photos (rule C8), the photo licences and
 // the photo names (nameFlag).
 // Pure functions, no DOM: loaded by admin.html only (players never download it), tested in Node (tests/presence.test.js). The rule itself is
 // computed once in Python (tools/presence.py) into presence.json by tools/coral_presence.py; this file only reads it.
 (function (root) {
   // A photo out of the rule: taken abroad (loc world) of a species the rule does not confirm in the Philippines.
   // sp = presence.json sp ({species name: {ok, by, rg, chk}}). Flagged in the admin, never removed automatically:
-  // Pierre decides. A species presence.json does not know, or a photo named only to the genus, is not flagged.
+  // the admin decides. A species presence.json does not know, or a photo named only to the genus, is not flagged.
   const outOfRule = (p, sp) => {
     if (!p || p.loc !== 'world' || p.imr || p.cf || !sp) return false;
     const w = String(p.t || '').split(/\s+/);
     const r = w.length >= 2 && /^[a-z]/.test(w[1]) ? sp[w[0] + ' ' + w[1]] : null;
     return !!r && !r.ok;
   };
-  // The photos still needing Pierre's decision (To do): those a genus sheet shows now (photosOf(n): the curated list,
+  // The photos still needing the admin's decision (To do): those a genus sheet shows now (photosOf(n): the curated list,
   // removed and "not this genus" photos gone, approved candidates in), not hidden, not off the games' slots (several
-  // corals in the extra list, Coral Finder book), that are out of the rule. Codex review #496. A photo Pierre kept as an
-  // exception (kept(f): his Keep in To do, Pierre 2026-11-05) leaves the queue for good.
+  // corals in the extra list, Coral Finder book), that are out of the rule. A photo he kept as an exception (kept(f): his
+  // Keep in To do) leaves the queue for good.
   const ruleQueue = (genera, photosOf, isHidden, offSlot, sp, kept = () => false) =>
     genera.flatMap(n =>
       photosOf(n)
         .filter(p => !isHidden(n, p) && !offSlot(p) && !kept(p.f) && outOfRule(p, sp))
         .map(p => ({...p, genus: n, fv: p.base}))
     );
-  // Licences (Pierre, 2026-11-05: no share-alike for corals any more, aligned with the fish rules; the candidate search
-  // no longer takes them, tools/fetch_local.py LIC). A photo's licence: its lic, else read from its attribution text
+  // Licences: no share-alike for corals, as for the fish (docs/ARCHITECTURE.md "Share-alike coral photos"; the candidate
+  // search never takes them, tools/fetch_local.py LIC). A photo's licence: its lic, else read from its attribution text
   // ("(CC BY-NC-SA)", "no rights reserved" = CC0), as tools/fetch_local.py licence() does; null when neither says (IMR
   // lecture, Coral Finder book). One reading for the app and the admin: core.js licOf.
   const {licOf, rightsClass} = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   const licence = licOf;
   const shareAlike = p => /-sa$/.test(licence(p) || '');
-  // The share-alike photos on the site still needing Pierre's decision (To do › Share-alike): every photo a genus page
+  // The share-alike photos on the site still needing the admin's decision (To do › Share-alike): every photo a genus page
   // lists now (several-corals photos included: the site may show them), not removed, not kept (kept(f): his
   // Keep). Never removed automatically.
   const saQueue = (genera, photosOf, isHidden, kept = () => false) =>
@@ -38,7 +38,7 @@
         .filter(p => !isHidden(n, p) && !kept(p.f) && shareAlike(p))
         .map(p => ({...p, genus: n, fv: p.base}))
     );
-  // Names (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49): a photo or candidate whose name (t, iNaturalist's at
+  // Names (docs/ROADMAP.md "Taxonomy reference"): a photo or candidate whose name (t, iNaturalist's at
   // fetch time) is a former combination or moved genus, or iNaturalist's spelling of a name WoRMS writes otherwise.
   // nm = names.json's section for the subject ({sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}}),
   // written by tools/taxonomy.py from its reference file, which the admin never loads. A flag only: nothing is renamed
@@ -58,9 +58,9 @@
     const g = w[0] && nm.gen ? nm.gen[w[0]] : null;
     return g ? {kind: 'genus', now: g} : null;
   };
-  // The rights facet (docs/ROADMAP.md "Rights tagged for a later split", the licence study of 2026-11-08): how many of a
+  // The rights facet (docs/ROADMAP.md "Rights tagged for a later split", the licence study): how many of a
   // list's photos fall in each rights class (core.js rightsClass: own, open CC0 / CC BY, nc, imr, book) and how many are
-  // commercial-ready, ready = own + open (only Pierre's own, CC0 and CC BY photos could go into a paid app). A photo counts
+  // commercial-ready, ready = own + open (only the owner's own, CC0 and CC BY photos could go into a paid app). A photo counts
   // once (its f). Read-only: the admin shows it, nothing is moved or left out for it (rule P1: a tie-break only).
   const RIGHTS = ['own', 'open', 'nc', 'imr', 'book'];
   const rightsTally = L => {

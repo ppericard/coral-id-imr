@@ -43,7 +43,7 @@ updates itself.** A PR never edits `const VERSION`, line 1 (the header: the vers
 script now does and why, Pierre and the date; no version number). Where its comments or docs name the new version it
 writes `vNEXT`; a new gate on the script's version (rule D4) takes `main`'s `VERSION` + 1. Right before the merge the
 integrator brings the branch up to date with `main` and runs `python3 tools/sheet_version.py --assign`: `VERSION` + 1,
-line 1 set to the short form for it, the entry written at the top of HISTORY.md and in ARCHITECTURE.md's version history,
+line 1 set to the short form for it, the entry written at the top of HISTORY.md (there only),
 every gate the PR adds and every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any
 other, then merged (docs/INTEGRATOR.md). The self-update reads only `const VERSION = N;`, so line 1 and HISTORY.md are for people.
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates

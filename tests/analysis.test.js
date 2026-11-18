@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The Analyses module (analysis.js): the model code recovers known effects from synthetic data, the answer log is read
 // as the app logs it, milestones and verdicts, and the workflow script (tools/analyses.js) end to end on a stub sheet.
-// In three files that node --test runs in parallel (one held the run's critical path: test-suite audit, 2026-11-09):
+// In three files that node --test runs in parallel (one would hold the run's critical path):
 // this one, analysis-verdicts.test.js and analysis-views.test.js, on shared helpers (tests/analysisfix.js).
 const test = require('node:test'),
   assert = require('node:assert');
@@ -149,7 +149,7 @@ test('glmm with a guess rate recovers its effects; fmtFit a real guess rate and 
 // The admin demo's made-up answers (admin-demo.js, analysis.js demoLog) changed from one load to the next in Chromium: a
 // random-comparator sort (sort(() => R() - 0.5)) calls its comparator a number of times that depends on the engine and on
 // whether the code is optimised yet, so every later seeded draw moved, and tests/admin.smoke.js failed now and then on
-// Health's "difficulty in words" (2026-11-06). shuffle draws exactly n - 1 numbers.
+// Health's "difficulty in words". shuffle draws exactly n - 1 numbers.
 test('shuffle: a permutation from exactly n - 1 draws; no seeded stream feeds a random-comparator sort', () => {
   const fs = require('fs'),
     path = require('path'),
@@ -233,7 +233,7 @@ test('synthetic log: every analysis runs and gives back the generator’s effect
 });
 
 test('milestones, verdicts and the report: earlier milestones reused only for the same answers', () => {
-  // round thousands only (Pierre, 2026-11-05), never the total
+  // round thousands only, never the total
   assert.deepStrictEqual(A.milestones(2500), [1000, 2000]);
   assert.deepStrictEqual(A.milestones(3000), [1000, 2000, 3000]);
   assert.deepStrictEqual(A.milestones(1933), [1000]);
@@ -307,7 +307,7 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
-  // sheet v55: an account removed since the stored report (head stale): refitted at once, nothing reused.
+  // An account removed since the stored report (head stale): refitted at once, nothing reused.
   stale = true;
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'stored');
   assert.ok(/\(0 reused\)/.test(logs[logs.length - 1]), logs[logs.length - 1]);
@@ -326,9 +326,8 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
 });
 
-// Pierre, 2026-11-08: "il faut faire tous les 1000, mais pour le nombre de réponses dans le mode de jeu": the corals'
-// analyses are refitted every 1000 coral answers. The sheet's head counted every row of every subject, so the fish answers
-// made each hourly run read the whole log (and the admin announce a refit that was not due).
+// The corals' analyses are refitted every 1000 coral answers: the sheet's head counts each subject's rows apart, so the
+// fish answers never make an hourly run read the whole log (nor the admin announce a refit that is not due).
 test('tools/analyses.js on the real sheet script: fish answers never bring a coral refit', async () => {
   const {sheetRun} = require('../tools/analyses.js'),
     {loadCodeGs} = require('./gas.js'),
@@ -341,7 +340,7 @@ test('tools/analyses.js on the real sheet script: fish answers never bring a cor
       return r;
     };
   const sh = require('vm').runInContext("sheet_('Answers', LOG)", s.ctx);
-  // 1500 coral answers (1000 logged before v60 with no Subject), then 1600 fish answers: 3100 rows in the tab
+  // 1500 coral answers (1000 logged by an older app with no Subject), then 1600 fish answers: 3100 rows in the tab
   for (let i = 0; i < 1500; i++) sh.appendRow(row(i, i < 1000 ? '' : 'coral'));
   for (let i = 0; i < 1600; i++) sh.appendRow(row(1500 + i, 'fish'));
   assert.strictEqual(
@@ -356,7 +355,7 @@ test('tools/analyses.js on the real sheet script: fish answers never bring a cor
   assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
 });
 
-// Codex review #801: with players left out of the statistics (sheet v115), the stored report counts the answers it read
+// With players left out of the statistics, the stored report counts the answers it read
 // (without theirs) while the sheet's head counts every row: the run is judged on the answers the report reads, so an
 // unchanged log is never stored again, every hour, once the left-out answers cross a round thousand.
 test('tools/analyses.js on the real sheet script: answers left out of the statistics never bring a refit loop', async () => {
@@ -443,7 +442,7 @@ test("tools/analyses.js: the head of an older script (every subject's rows) is j
   assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
 });
 
-// Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"), refitted every 1000 answers of that
+// Each subject's analyses, refitted every 1000 answers of that
 // subject. The made-up fish answers of the tests and the admin demo: synth on the fish units' photos (core.js fishGen),
 // tagged with their subject as the sheet serves them.
 const fishLog = (n, o = {}) => {
@@ -497,7 +496,7 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
   const stored = {},
     puts = [],
     logs = [];
-  // PER: a script that stores one report per subject (v113); one before it, simulated, answers with the corals' report
+  // PER: a script that stores one report per subject; an older one, simulated, answers with the corals' report
   // and names the corals whatever the subject asked: the reply not naming the subject asked, nothing stored for it.
   const PER = 113;
   let v = PER;
@@ -598,7 +597,7 @@ test('admin Analyses status line: the subject, the milestone fitted, its answers
       S = f.anSubj({M: [lastM]});
     return f.anStatus(S, lastM, f.anCount(S));
   };
-  // sheet v105: the head's count of the corals' answers (2,729 coral and 1,292 fish answers on 2026-11-08)
+  // the head's count of the corals' answers (2,729 coral and 1,292 fish answers)
   assert.strictEqual(line({counts: {coral: 2729, fish: 1292}}, null, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
   assert.strictEqual(
     line({counts: {coral: 3004, fish: 1292}}, null, 2000),
@@ -615,7 +614,7 @@ test('admin Analyses status line: the subject, the milestone fitted, its answers
   assert.strictEqual(line({counts: null}, null, 2000), 'Corals: fitted on 2,000 answers · next at 3,000');
 });
 
-// Pierre, 2026-11-05: the report sits on round milestones only (1000, 2000, 3000, …), never shifted by the count of the
+// The report sits on round milestones only (1000, 2000, 3000, …), never shifted by the count of the
 // first stored report (1933 answers then: the next one at 2000, not 2933).
 test('tools/analyses.js plan: compute when the log reaches a round thousand the stored report lacks', () => {
   const {plan} = require('../tools/analyses.js'),
@@ -647,7 +646,7 @@ test('tools/analyses.js plan: compute when the log reaches a round thousand the 
   assert.strictEqual(A.STEP, 1000);
 });
 
-// Codex review #441: with few players (no bootstrap), an effect constant within each player must carry the players'
+// With few players (no bootstrap), an effect constant within each player must carry the players'
 // spread in its interval, not shrink with their number of answers (the fixed effects' covariance marginal over the
 // random effects, margV).
 test('a player-level effect from 4 players is not made sure by many answers each (lmm and glmm)', () => {
@@ -685,7 +684,7 @@ test('a player-level effect from 4 players is not made sure by many answers each
   assert.ok(L2.se[1] < 0.02 && Math.abs(L2.b[1] - 0.3) < 0.04, `within-player SE ${L2.se[1]}`);
 });
 
-// Codex review #441: the exam is read from |x whatever the format (a typed exam question is quiz|t|x).
+// The exam is read from |x whatever the format (a typed exam question is quiz|t|x).
 test('a typed exam question counts as an exam', () => {
   const r = (m, ch) => ['p1', 1, 'A', 'A', 1, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
   const L = A.prep([r('quiz|t|x', ''), r('quiz|x', 'A B C D'), r('quiz|t', '')]);
@@ -699,7 +698,7 @@ test('a typed exam question counts as an exam', () => {
   );
 });
 
-// Codex review #441: a change to the photos' features (curation: view, quality) refits every milestone.
+// A change to the photos' features (curation: view, quality) refits every milestone.
 test('stored milestones are refitted when the photo features change', () => {
   const fs = require('fs'),
     data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),
@@ -714,7 +713,7 @@ test('stored milestones are refitted when the photo features change', () => {
   assert.strictEqual(r3.R[1000], r1.R[1000], 'nothing changed: reused');
 });
 
-// Codex review #441: each player's mix-ups against the pooled rates are observed / expected, not the odds ratio exp(u).
+// Each player's mix-ups against the pooled rates are observed / expected, not the odds ratio exp(u).
 test('confusions: a player who mixes up often reads as observed / expected', () => {
   const R = A.rng(4),
     G = ['A', 'B', 'C', 'D'],
@@ -735,7 +734,7 @@ test('confusions: a player who mixes up often reads as observed / expected', () 
   assert.ok(p0.lo < p0.oe && p0.oe < p0.hi);
 });
 
-// Codex review #441 (second pass): a renamed player has a new anonymous id: the milestones holding the old one are refitted.
+// A renamed player has a new anonymous id: the milestones holding the old one are refitted.
 test('a milestone is refitted when a player’s id changes', () => {
   const rows = A.demoLog(
       JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'))),
@@ -753,7 +752,7 @@ test('a milestone is refitted when a player’s id changes', () => {
   assert.strictEqual(A.report(rows, meta, r1, {B: 0}).R[1000], r1.R[1000]);
 });
 
-// Codex review #441: the comeback calibration's bootstrap draws the same questions as its estimate (all the comeback
+// The comeback calibration's bootstrap draws the same questions as its estimate (all the comeback
 // questions, after a right or a wrong answer), not only the slope's sample.
 test('comeback calibration: estimate and interval over the same questions', () => {
   const rows = [],
@@ -771,14 +770,14 @@ test('comeback calibration: estimate and interval over the same questions', () =
   assert.ok(e.hi < 0.3, `interval [${e.lo}, ${e.hi}]`);
 });
 
-// Codex review #441: a start already above 80% reaches it at 0 answers, whatever the slope.
+// A start already above 80% reaches it at 0 answers, whatever the slope.
 test('answers to mastery: 0 when the start is already there', () => {
   assert.strictEqual(A.toMaster(1.747, -0.116, 0), 0);
   assert.strictEqual(A.toMaster(-1, -0.1, 0), 999);
   assert.ok(A.toMaster(-1, 0.5, 0) > 0 && A.toMaster(-1, 0.5, 0) < 999);
 });
 
-// Codex review #441: Sessions on a very long log (no Math.max over a spread of every answer).
+// Sessions on a very long log (no Math.max over a spread of every answer).
 test('sessions: 200,000 answers do not overflow the stack', () => {
   const A2 = [];
   for (let i = 0; i < 200000; i++)
@@ -797,7 +796,7 @@ test('sessions: 200,000 answers do not overflow the stack', () => {
   assert.ok(A.km(r.lens).length > 1);
 });
 
-// Codex review #441: the answers to mastery carry the intercept's uncertainty too (joint with the slope): an intercept
+// The answers to mastery carry the intercept's uncertainty too (joint with the slope): an intercept
 // above the target but uncertain, with a flat slope, is not "0 [0, 0]".
 test('answers to mastery: the interval comes from the intercept and the slope together', () => {
   const [lo, hi] = A.masterCI(1.667, -0.05, [
@@ -813,7 +812,7 @@ test('answers to mastery: the interval comes from the intercept and the slope to
   assert.ok(lo2 > 0 && hi2 < 999 && lo2 < A.toMaster(-0.5, 0.6, 0) && A.toMaster(-0.5, 0.6, 0) < hi2, `${lo2} ${hi2}`);
 });
 
-// Codex review #441: compaction always ends under the cap, however many milestones (older ones thinned, then only the
+// Compaction always ends under the cap, however many milestones (older ones thinned, then only the
 // latest), and keeps the latest whole.
 test('compact: under the cap with 300 milestones', () => {
   const eff = Array.from({length: 60}, (_, i) => ({
@@ -847,7 +846,7 @@ test('compact: under the cap with 300 milestones', () => {
   );
 });
 
-// Test-suite review, 2026-11-04: compact() keeps a running size instead of measuring the whole report at every step. Same
+// compact() keeps a running size instead of measuring the whole report at every step. Same
 // result as the measuring version (kept here as the reference) at every cap, from "fits as it is" through each of its
 // three steps down to "not even the latest fits"; the labels carry non-ASCII text (the size is in UTF-16 units, as before).
 test('compact: the running size gives the same report as measuring it at every step', () => {
@@ -919,7 +918,7 @@ test('compact: the running size gives the same report as measuring it at every s
   }
 });
 
-// Codex review #441: a wrong answer A -> B is a miss for B too (quiz.js counts it against both genera), so B's next
+// A wrong answer A -> B is a miss for B too (quiz.js counts it against both genera), so B's next
 // answer is "after a miss", and the Again on the pair counts for it.
 test('a mix-up is a miss for the genus given too', () => {
   const r = (t, g, a, ok, m, ch) => ['p1', t, g, a, ok, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
@@ -927,7 +926,7 @@ test('a mix-up is a miss for the genus given too', () => {
   assert.deepStrictEqual([L[2].afterMiss, L[2].afterAgain], [1, 1]);
 });
 
-// Codex review #441: the photos' views are the ones the games use (core.js applyCuration + applySlots): a genus on 2
+// The photos' views are the ones the games use (core.js applyCuration + applySlots): a genus on 2
 // zoom levels has no Close-up view in the games. Found in the real files, no genus named here.
 test('photo views follow the game pipeline (2 zoom levels)', () => {
   const fs = require('fs'),
@@ -947,7 +946,7 @@ test('photo views follow the game pipeline (2 zoom levels)', () => {
   });
 });
 
-// The plain reading (plainOf, Pierre 2026-11-04: "a non-statistician must understand it at a glance"): every effect has
+// The plain reading (plainOf: a non-statistician understands it at a glance): every effect has
 // a name in words, its direction says which way the chance of a right answer (or the time, the stops, the mix-ups) goes,
 // and its colour (tone) says whether that helps or hurts.
 test('plainOf: names in words, directions and tones', () => {
@@ -1022,7 +1021,7 @@ test('plainOf: every effect of every analysis has a plain name, no code or model
   assert.ok(n > 40, `${n} effects read`);
 });
 
-// Sessions in figures (sessDesc, the study of 2026-11-04): sessions cut at 30 minutes, how they end, the start against
+// Sessions in figures (sessDesc): sessions cut at 30 minutes, how they end, the start against
 // the end of the session before, players coming back (one last seen within a day is not counted yet).
 test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
   const H = 36e5,
@@ -1079,7 +1078,7 @@ test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
   assert.strictEqual(d.table[0].tail, '111');
 });
 
-// Codex review #495: a compacted milestone keeps each format's own expected chance and guess rate, so its plain
+// A compacted milestone keeps each format's own expected chance and guess rate, so its plain
 // reading does not change when the Formats table is dropped.
 test('compact keeps the formats’ baselines: the plain reading of a lean milestone is unchanged', () => {
   const fmt = () => ({
@@ -1098,7 +1097,7 @@ test('compact keeps the formats’ baselines: the plain reading of a lean milest
   assert.strictEqual(A.plainOf('fmt', lean.effects[0], lean, {row: rowOf(lean)}).text, before);
 });
 
-// Codex review #495: a pair's model effect is a change in the odds; "times as often" is the ratio of the chances at the
+// A pair's model effect is a change in the odds; "times as often" is the ratio of the chances at the
 // typical mix-up rate (doubling the odds at 30% is 1.54 times as often, not twice).
 test('freqRatio: an odds ratio read as how many times as often, at a given base rate', () => {
   near(A.freqRatio(0.3, Math.log(2)), 1.54, 0.01, 'odds ×2 at 30%');
@@ -1106,13 +1105,13 @@ test('freqRatio: an odds ratio read as how many times as often, at a given base 
   near(A.freqRatio(0.3, 0), 1, 1e-9, 'no effect');
 });
 
-// Codex review #495: the answers to mastery solve for 80% recognised beyond guessing (MASTER on sig(eta)), not 80%
+// The answers to mastery solve for 80% recognised beyond guessing (MASTER on sig(eta)), not 80%
 // raw right answers: every label says "beyond guessing".
 test('the answers-to-mastery label says beyond guessing', () => {
   assert.match(A.PLAIN.learn.n_all.name, /beyond guessing/);
 });
 
-// Codex review #495 (2nd pass): typed answers have no guess floor, so the typed-versus-choices contrast moves from the
+// Typed answers have no guess floor, so the typed-versus-choices contrast moves from the
 // choices' floor to none (80% right with 4 choices, +0.2 beyond guessing → about 77% right typed, not 83%).
 test('plainOf: typed answers are read without the guess floor', () => {
   const r = A.plainOf('learn', {k: 'typed', est: 0.2, lo: 0.1, hi: 0.3, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
@@ -1120,14 +1119,14 @@ test('plainOf: typed answers are read without the guess floor', () => {
   assert.match(r.text, /^More likely wrong: about 77% right instead of 80%/);
 });
 
-// Codex review #495 (2nd pass): the difficulty contrast is on recognition beyond guessing; the Again effect is measured
+// The difficulty contrast is on recognition beyond guessing; the Again effect is measured
 // on the next ordinary question after a miss, with an Again in between.
 test('plainOf: the difficulty and Again labels say what the model measures', () => {
   for (const k of ['rt', 'sess']) assert.match(A.PLAIN[k].diff.name, /beyond guessing/);
   assert.match(A.PLAIN.learn.again.name, /next ordinary question after a miss/i);
 });
 
-// Codex review #495 (3rd pass): the typed contrast's verdict is judged on the accuracy shown (a clear change in
+// The typed contrast's verdict is judged on the accuracy shown (a clear change in
 // recognition whose range of right answers still includes the baseline is not a clear change in right answers); an
 // effect with too few answers to estimate says so, not "no such answers".
 test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not enough data', () => {
@@ -1140,7 +1139,7 @@ test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not
   assert.strictEqual(c.tone, 'thin');
 });
 
-// Codex review #495 (4th pass): a format's difficulty is fitted with its own guess rate, so it is read as recognition
+// A format's difficulty is fitted with its own guess rate, so it is read as recognition
 // beyond guessing (the app's expectation without its guess floor), never as raw right answers on the app's floor; the
 // raw comparison is the format's "right answers against the app's expectation".
 test('plainOf: a format difficulty reads as recognition beyond guessing', () => {
@@ -1152,7 +1151,7 @@ test('plainOf: a format difficulty reads as recognition beyond guessing', () => 
   assert.match(A.PLAIN.fmt.d_k4.name, /beyond guessing/);
 });
 
-// Codex review #495 (5th pass): a chart of format difficulties is drawn on recognition beyond guessing, so it has its
+// A chart of format difficulties is drawn on recognition beyond guessing, so it has its
 // own outcome heading, not "Chance of a right answer".
 test('outOf: format difficulties chart on their own beyond-guessing outcome', () => {
   assert.strictEqual(A.outOf(A.PLAIN.fmt.d_k4), 'beyond');
@@ -1163,7 +1162,7 @@ test('outOf: format difficulties chart on their own beyond-guessing outcome', ()
   assert.ok(!/S\.o\b/.test(src), 'charts group by ANALYSIS.outOf, not the raw outcome');
 });
 
-// Codex review #500: "ended on 2+ misses" counts misses within the session only; the return rate uses the same
+// "Ended on 2+ misses" counts misses within the session only; the return rate uses the same
 // observation window for those who came back and those who did not (a session ended under a day ago counts for neither).
 test('sessDesc: misses in a row stay within a session; returns use one observation window', () => {
   const H = 36e5,

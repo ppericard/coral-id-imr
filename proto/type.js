@@ -1,7 +1,7 @@
-// Type the genus (Pierre, 2026-11-03): a photo, and the player types the genus instead of picking 1 of 4 (recall, not
-// recognition: what an RA does in front of a colony). Prototype of the typed questions the quiz now slips in more and
-// more as a player's level on a genus rises (model.js TYPED; docs/ROADMAP.md "Free-text answers").
-// What Pierre agreed: light spelling tolerance (1 letter on a short name, 2 on a long one), old names accepted ("formerly
+// Type the genus: a photo, and the player types the genus instead of picking 1 of 4 (recall, not recognition: what an
+// RA does in front of a colony). Prototype of the typed questions the quiz slips in more and more as a player's level
+// on a genus rises (model.js TYPED; docs/ROADMAP.md "Free-text answers").
+// The agreed rules: light spelling tolerance (1 letter on a short name, 2 on a long one), old names accepted ("formerly
 // X" in the genus's own lines), no suggestions while typing (that would turn it back into a pick from a list), the phone's
 // autocorrect and capitals off, an "I don't know" button (a miss), the right spelling shown after the answer. A word
 // that is no game genus, even with the tolerance, is not counted: the player is asked to check the spelling.
@@ -34,15 +34,14 @@ LAB.add({
     root.innerHTML = '<div id="tybody"></div>';
     const body = root.querySelector('#tybody');
     const round = () => {
-      // The corals' slate whatever the subject on screen: the Tools are the corals' (Codex review #442: with Fish chosen it
-      // drew fish teaching ids).
+      // The corals' slate whatever the subject on screen: the Tools are the corals'.
       // Only the genera unlocked on the quiz path (lab.js labPlay, rule L4), each with a photo the games may
       // teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view asked for, else in any view
-      // (Codex review #379: no fallback around the rule). Drawn among those that have one: with a few genera unlocked,
+      // (no fallback around the rule). Drawn among those that have one: with a few genera unlocked,
       // drawing again until one had a photo could go on for ever.
       const ok = (t, w) => gamePics(t, w).filter(x => gamePhotoOk(t, x)),
         any = t => ['wide', 'medium', 'macro'].flatMap(w => ok(t, w)),
-        all = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
+        all = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too
         pool = (typeof unlocked === 'function' ? CORALS(() => unlocked(all)) : all).filter(n => any(n).length);
       if (!pool.length) {
         body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
@@ -62,7 +61,7 @@ LAB.add({
         score.n++;
         score.ok += ok ? 1 : 0;
         score.streak = ok ? score.streak + 1 : 0;
-        body.querySelector('.tyscore').textContent = scoreLine(); // the answer just counted (Codex review #379)
+        body.querySelector('.tyscore').textContent = scoreLine(); // the answer just counted
         // The photo's source pill, only now: before the answer it would give the genus away (as Blur reveal). Hidden on
         // phones, as in every game (app.css .psrc, rule P5): the enlarged view carries the source there.
         const im = body.querySelector('.tystage img');

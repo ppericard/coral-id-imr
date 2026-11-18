@@ -1,5 +1,5 @@
 // Photos › Tree on the corals' side (#photos/tree/key/<node id>, #photos/tree/worms/<node id>; docs/ROADMAP.md "The Tree
-// tab", its last step: the corals join the tab; Pierre, 2026-11-13: "coraux, nudibranches ou plantes"). The corals'
+// tab": one tree for any subject, the corals included). The corals'
 // adapter of the generic tree (taxtree.js): the fish have theirs in admin.js (fuTreeOf, fuWormsOf); the node pages, the
 // tree at the left and its keys are the same (admin.js ttMount, fuTreeMount).
 //
@@ -96,7 +96,7 @@
   // the content editor's pairs (admin-content.js pairRows), needs(n) → [what], waiting(n) → count, draft: [genera]}.
   // [{k, grp, t, on(node)}]. The look-alikes, as the fish's (admin.js fuFilters): the base's, then each pair the draft
   // holds an entry for (one he added with + Pair, a withdrawal), so its tools in the bar (structBar) can be reached; each
-  // says when he added or withdrew it; Any look-alike, the pairs in force (Codex review #988).
+  // says when he added or withdrew it; Any look-alike, the pairs in force.
   function ctFilters(d, c) {
     const P0 = (c && c.pairs) || [],
       PR = (c && c.rows) || [],
@@ -179,7 +179,7 @@ const ctTagK = () => subjK('reefid-admin-tree-tag');
 // are (Photos › Genera › Live, its address unchanged: genusHref); its Tree page shows its cover and why, what it needs and
 // its featured photos per view, each opening that page. Nothing is chosen on a Tree page: a cover is a genus's
 // (curation.json genera[<genus>].cover, ★ on its genus page); above the genera no cover is shown, the default rule of the
-// fish (Q339 b: most seen near the centre) needing observers per genus the coral data does not hold.
+// fish (most seen near the centre) needing observers per genus the coral data does not hold.
 function renderCoralTree(id, view = TREE) {
   status();
   TT_VIEW = view;

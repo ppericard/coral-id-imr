@@ -398,26 +398,12 @@ const ID_ALLOW = [
   {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
   {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
+  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, tools/sync/HISTORY.md)'},
   {key: 'Code.gs floorRef_', why: 'removed 2026-11-09 with replayFloor (Q330); tools/sync/HISTORY.md tells its history'},
   {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
   {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
   {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"},
-  // the gates at or below the gate floor, deleted with it: only ARCHITECTURE's version history still names them
-  ...[
-    'analysis.js AN_SUBJ_SHEET',
-    'core.js REPLAYS_SHEET',
-    'admin.js LIVE_SHEET',
-    'sync.js DEV_SHEET',
-    'core.js logOk',
-    'core.js FMT_SHEET',
-    'core.js RT_SHEET',
-    'model.js PGD_SHEET'
-  ].map(key => ({
-    key,
-    why: 'removed with the gate floor (core.js SHEET_FLOOR, 2026-11-18); the version history tells its history'
-  }))
+  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
@@ -502,4 +488,32 @@ test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/
     });
     assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   }
+});
+
+// Decision records (rule W19; docs/decisions/README.md): each is named YYYY-MM-DD-topic.md, says its date (the name's) and
+// the PR that carried it out, holds a decision, links to files that exist and has a row in the index.
+test('every decision record has its date, its PR, a decision, working links and a row in the index', () => {
+  const dir = path.join(ROOT, 'docs', 'decisions');
+  const index = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+  const records = fs.readdirSync(dir).filter(f => f !== 'README.md');
+  assert.ok(records.length > 0, 'docs/decisions/ holds no record');
+  for (const f of records) {
+    assert.match(f, /^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$/, f + ': named YYYY-MM-DD-topic.md (lowercase, hyphens)');
+    const text = fs.readFileSync(path.join(dir, f), 'utf8');
+    assert.match(text, /^# \S/, f + ': no title on the first line');
+    const head = /^Date: (\d{4}-\d\d-\d\d)\b.*?\bPR: #(\d+)/ms.exec(text);
+    assert.ok(head, f + ': no "Date: YYYY-MM-DD. PR: #N." line');
+    assert.strictEqual(head[1], f.slice(0, 10), f + ': its Date is not the date in its name');
+    assert.match(text, /^(## Decisions?\b|.*\bDecisions?\b:)/m, f + ': no Decision section');
+    for (const m of text.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
+      if (/^[a-z]+:/i.test(m[1])) continue;
+      assert.ok(fs.existsSync(path.resolve(dir, m[1])), f + ': the link ' + m[1] + ' does not resolve');
+    }
+    const row = index.split('\n').find(l => l.startsWith('|') && l.includes('](' + f + ')'));
+    assert.ok(row, f + ': no row in docs/decisions/README.md "Index"');
+    assert.ok(row.startsWith('| ' + f.slice(0, 10) + ' |'), f + ': its index row does not start with its date');
+    assert.ok(row.includes('| #' + head[2] + ' |'), f + ': its index row does not name PR #' + head[2]);
+  }
+  for (const m of index.matchAll(/^\|[^|]*\|[^|]*\]\(([^)]+)\)/gm))
+    assert.ok(fs.existsSync(path.join(dir, m[1])), 'docs/decisions/README.md: the index names ' + m[1] + ', which does not exist');
 });

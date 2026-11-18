@@ -4393,7 +4393,7 @@ const HELP = {
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // A getter: EV_DAYS is declared further down this file.
   get alerts() {
-    return `<p>The sync sheet's <b>Alerts</b> tab, written by the sheet script itself (docs/SECURITY.md), newest first, the last ${EV_DAYS} days. <b>Limits reached</b>: the first request of a 6-hour window refused by a flood cap, by its key: <code>a:</code> a device not signed in (600 answers), <code>anon</code> all of them (6000), <code>n:</code> a player's account (3000 answers; shown as the player's admin id, as Players shows it beside the name), <code>newacct</code> new accounts (40), <code>reports</code> (300 report requests), <code>ev:</code> a device's events (200), <code>events</code> all events (3000), <code>old</code> old-app notes (300), <code>selfdel</code> / <code>sd:</code> self-deletes. The refused requests are not logged; the app keeps its answers and sends them later. <b>Photos of another unit</b>: answers whose photos are another unit's (logged, never rating a photo), by the sender's admin id. <b>Left out, signed in</b>: a device left out of the statistics signed in, so its account is left out too. A line that names a deleted, merged or archived account, or a device that has since signed in or was deleted, is not shown (rule D7; the tab keeps it). A burst of <code>a:</code> or <code>newacct</code> lines is the sign of a bot: docs/SECURITY.md "If it happens". Read-only: nothing here changes the sheet.</p><p><b>Infrastructure</b> (above the list; sheet script vNEXT): the numbers to watch before the platform outgrows its free tiers, flagged with ! past 70% of a limit. <b>Sheet cells</b>: every tab's allocated grid against Google's 10 million cells for a spreadsheet; <b>Answers tab</b>: its rows, columns and grid; <b>p90</b>: the 90th percentile of the slowest operations of the Timings tab over 7 days, against 5 s; <b>pCloud backup</b>: when the weekly backup last saved (flagged past 8 days). <b>Pages site</b>: the published site's size against GitHub Pages' 1 GB (the files of main the deploy keeps, before minifying); <b>R2 storage</b>: against the 10 GB free tier, measured by hand (<code>tools/infra.json</code>: change it after measuring, it says when it is a month old). Those two come from GitHub, so they show before the sheet script has the read. <code>python3 tools/brief.py</code> prints the same from the hourly Health run (docs/PAGES.md "Infrastructure health").</p>`;
+    return `<p>The sync sheet's <b>Alerts</b> tab, written by the sheet script itself (docs/SECURITY.md), newest first, the last ${EV_DAYS} days. <b>Limits reached</b>: the first request of a 6-hour window refused by a flood cap, by its key: <code>a:</code> a device not signed in (600 answers), <code>anon</code> all of them (6000), <code>n:</code> a player's account (3000 answers; shown as the player's admin id, as Players shows it beside the name), <code>newacct</code> new accounts (40), <code>reports</code> (300 report requests), <code>ev:</code> a device's events (200), <code>events</code> all events (3000), <code>old</code> old-app notes (300), <code>selfdel</code> / <code>sd:</code> self-deletes. The refused requests are not logged; the app keeps its answers and sends them later. <b>Photos of another unit</b>: answers whose photos are another unit's (logged, never rating a photo), by the sender's admin id. <b>Left out, signed in</b>: a device left out of the statistics signed in, so its account is left out too. A line that names a deleted, merged or archived account, or a device that has since signed in or was deleted, is not shown (rule D7; the tab keeps it). A burst of <code>a:</code> or <code>newacct</code> lines is the sign of a bot: docs/SECURITY.md "If it happens". Read-only: nothing here changes the sheet.</p><p><b>Infrastructure</b> (above the list; sheet script v180): the numbers to watch before the platform outgrows its free tiers, flagged with ! past 70% of a limit. <b>Sheet cells</b>: every tab's allocated grid against Google's 10 million cells for a spreadsheet; <b>Answers tab</b>: its rows, columns and grid; <b>p90</b>: the 90th percentile of the slowest operations of the Timings tab over 7 days, against 5 s; <b>pCloud backup</b>: when the weekly backup last saved (flagged past 8 days). <b>Pages site</b>: the published site's size against GitHub Pages' 1 GB (the files of main the deploy keeps, before minifying); <b>R2 storage</b>: against the 10 GB free tier, measured by hand (<code>tools/infra.json</code>: change it after measuring, it says when it is a month old). Those two come from GitHub, so they show before the sheet script has the read. <code>python3 tools/brief.py</code> prints the same from the hourly Health run (docs/PAGES.md "Infrastructure health").</p>`;
   },
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups, Time), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Difficulty › Heatmap (every genus against every genus), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
@@ -4412,7 +4412,7 @@ const HELP = {
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   // A getter: GROUPADM_SHEET is declared further down this file.
   get groups() {
-    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app; <b>Apart</b> On = its members leave the general leaderboard and every other group's (as the staff do), staying members of their other groups; <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
+    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
   },
   // A getter: GROUPADM_SHEET is declared further down this file.
   get users() {
@@ -10292,7 +10292,7 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
 // arbitraire de groupes"; "Staff" is not a role): one model for the beta groups, the cohorts and the staff (Code.gs
 // groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
-// Groups lists every group with its settings (Board, Apart, Beta) and members, makes, renames and deletes an empty one.
+// Groups lists every group with its settings (Board, Beta) and members, makes, renames and deletes an empty one.
 // Roles stay apart: nothing here grants or revokes one. Before that version, the beta group and the cohort as they were
 // (the Staff toggle, which granted the trainer role, is gone at every version).
 const GROUPADM_SHEET = 179;
@@ -10329,6 +10329,7 @@ function ugChips(u) {
 function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
+  toast('Saving…'); // the sheet can take a minute or two (its script lock)
   return userPost({userGroup: names, group: gid, on})
     .then(j => {
       if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
@@ -10348,7 +10349,7 @@ function memberSet(names, gid, on) {
     .catch(() => (toast('Not done (offline).'), render()));
 }
 // Players › Groups (sheet GROUPADM_SHEET): every group, the newest first, with its settings and members. New group asks
-// a name; Rename too; Board and Apart one click each way; Beta a list of the subjects that open to a group; Add all and
+// a name; Rename too; Board one click each way; Beta a list of the subjects that open to a group; Add all and
 // Remove all ask first (bulk, rule A2); Delete only an empty group, one click (nothing to lose).
 function renderGroups() {
   status();
@@ -10385,7 +10386,7 @@ function renderGroups() {
     return `<section class="adm-scard adm-gcard" data-g="${esc(d.id)}"><div class="adm-ghead"><b class="adm-gname">${esc(d.n)}</b><button type="button" class="adm-fchip plain" data-gren="${esc(d.id)}">Rename</button><span class="adm-gcount" title="Players in it"><b>${M.length}</b> of ${U.length}</span>${
       M.length ? '' : `<button type="button" class="adm-danger" data-gdrop="${esc(d.id)}">Delete</button>`
     }</div>
-      <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span><span title="Its members leave the other leaderboards">Apart ${seg(d.id, 'apart', d.apart, 'Apart')}</span>${
+      <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span>${
         B.length || d.beta
           ? `<label title="The subject in beta it opens">Beta <select data-gbeta="${esc(d.id)}"><option value="">None</option>${B.map(S => `<option value="${esc(S.id)}"${S.id === d.beta ? ' selected' : ''}>${esc(S.name)}</option>`).join('')}</select></label>`
           : ''
@@ -10422,8 +10423,16 @@ function bindGroups() {
       render();
     };
   // A change to a group itself (Code.gs groupMake, groupEdit, groupDrop): the list read again, as the sheet now has it.
-  const gpost = (body, msg) =>
-    userPost(body)
+  // The sheet can take a minute or two (its script lock, then the players read again): "Saving…" at once, and the
+  // group's card (id) greyed and its controls off until the answer.
+  const gpost = (body, msg, id) => {
+    toast('Saving…');
+    const c = id && [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
+    if (c) {
+      c.setAttribute('aria-busy', 'true');
+      c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
+    }
+    return userPost(body)
       .then(j => {
         if (!j || !j.ok)
           return (
@@ -10440,6 +10449,7 @@ function bindGroups() {
         return loadUsers(true).then(() => render());
       })
       .catch(() => (toast('Not done (offline).'), render()));
+  };
   const ask = (q, was = '') => (prompt(q, was) || '').replace(/\s+/g, ' ').trim();
   const nw = $v.querySelector('[data-gnew]');
   if (nw)
@@ -10452,7 +10462,7 @@ function bindGroups() {
       (b.onclick = () => {
         const d = gdefOf(b.dataset.gren),
           n = d && ask('Rename the group', d.n);
-        if (n && n !== d.n) gpost({groupEdit: d.id, n}, () => `${d.n} renamed ${n}.`);
+        if (n && n !== d.n) gpost({groupEdit: d.id, n}, () => `${d.n} renamed ${n}.`, d.id);
       })
   );
   $v.querySelectorAll('[data-gset]').forEach(
@@ -10462,7 +10472,9 @@ function bindGroups() {
         const d = gdefOf(b.dataset.gset),
           k = b.dataset.k,
           on = b.dataset.val === '1';
-        gpost({groupEdit: d.id, [k]: on}, () => `${d.n}: ${k === 'board' ? 'leaderboard' : 'apart'} ${on ? 'on' : 'off'}.`);
+        // the choice shown pressed at once; the card's controls stay off until the sheet answers (gpost)
+        b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        gpost({groupEdit: d.id, [k]: on}, () => `${d.n}: leaderboard ${on ? 'on' : 'off'}.`, d.id);
       })
   );
   $v.querySelectorAll('[data-gbeta]').forEach(
@@ -10471,7 +10483,8 @@ function bindGroups() {
         const d = gdefOf(sel.dataset.gbeta);
         gpost(
           {groupEdit: d.id, beta: sel.value},
-          () => `${d.n}: ${sel.value ? `opens ${subjectOf(sel.value).name}` : 'opens no subject'}.`
+          () => `${d.n}: ${sel.value ? `opens ${subjectOf(sel.value).name}` : 'opens no subject'}.`,
+          d.id
         );
       })
   );
@@ -10479,8 +10492,7 @@ function bindGroups() {
     b =>
       (b.onclick = () => {
         const d = gdefOf(b.dataset.gdrop);
-        b.disabled = true;
-        gpost({groupDrop: d.id}, () => `${d.n} deleted.`);
+        gpost({groupDrop: d.id}, () => `${d.n} deleted.`, d.id);
       })
   );
   $v.querySelectorAll('[data-ugout]').forEach(

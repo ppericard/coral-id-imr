@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 183 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 185 (2026-11-18). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 183;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 185;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -2555,8 +2555,8 @@ function board_(sid){
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
     // The groups' boards (docs/ARCHITECTURE.md "Player groups"): the one ranking above, split by who is where
-    // (groupBoards_), each scope keeping its order and its first 200: rows, the general board, without the members of an
-    // apart group; groups, [{id, n, rows}] every group with a board. The groups unreadable: rows unsplit.
+    // (groupBoards_), each scope keeping its order and its first 200: rows, the general board, everyone; groups, [{id, n,
+    // rows}] every group with a board. The groups unreadable: rows only.
     const top = L => L.slice(0, 200);
     out.rows = top(all);
     try { const g = groupBoards_(all, top); out.rows = g.rows; out.groups = g.groups; } catch (e) { delete out.groups; }
@@ -2771,16 +2771,16 @@ function devBlank_(name){
   if (c) rg.setValues(v);
   return c;
 }
-// Player groups (docs/ARCHITECTURE.md "Player groups"): a player is in any number of groups; the staff are a group, not
-// a role. A group has an id, a name and three settings: board (it has its own leaderboard), apart (its members leave the
-// general board and every other group's) and beta ('' or the subject it opens: core.js SUBJECTS open: 'group',
-// subjGroup). Two tabs: Group settings, one row a group (Group: its id, Name, Board, Apart, Beta, Added), and Groups,
-// one row a membership (Group: the group's id, Name: the player's, Added). Ids: 'g:' and 8 random characters; a group
-// the migration made keeps the Group cell its rows had (a subject's id, 'cohort:<name>', 'staff'), so the migration only
-// adds rows (groups-migration below). The app learns its
-// player's groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the
-// admin's player list carries each player's and every group (groupDefs). Roles stay apart: no group grants a right,
-// and no grant puts anyone in a group.
+// Player groups (docs/ARCHITECTURE.md "Player groups"; docs/decisions/2026-11-18-no-apart-groups.md): a player is in any
+// number of groups; the staff are a group, not a role. A group has an id, a name and two settings: board (it has its
+// own leaderboard) and beta ('' or the subject it opens: core.js SUBJECTS open: 'group', subjGroup). The general board
+// shows everyone, a group's board its members. Two tabs: Group settings, one row a group (Group: its id, Name, Board,
+// Apart: unused, written 0, Beta, Added), and Groups, one row a membership (Group: the group's id, Name: the player's,
+// Added). Ids: 'g:' and 8 random characters; a group the migration made keeps the Group cell its rows had (a subject's
+// id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns its player's
+// groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the admin's
+// player list carries each player's and every group (groupDefs). Roles stay apart: no group grants a right, and no
+// grant puts anyone in a group.
 const GROUPS = {TAB: 'Groups', HEAD: ['Group', 'Name', 'Added']};
 const GDEF = {TAB: 'Group settings', HEAD: ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added']}, GNAME_MAX = 40;
 const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // the subjects that open to a group
@@ -2792,16 +2792,16 @@ function gdefRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GDEF.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GDEF.HEAD.length).getValues() : [];
 }
-const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, apart: Number(r[3]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});
+const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});  // r[3]: Apart, unused
 // Writes a group's settings at row r of the Group settings tab, its Name cell plain text first, so a name such as
 // "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
 function gdefPut_(sh, r, d){
   sh.getRange(r, 2).setNumberFormat('@');
-  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, d.apart, d.beta, new Date(d.at || Date.now())]]);
+  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, 0, d.beta, new Date(d.at || Date.now())]]);  // Apart: unused, 0
 }
 // A group's name as typed, its spaces folded ('' for one that cannot be: empty, too long, a control character).
 const gname_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= GNAME_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? s : ''; };
-// Every group and membership, read once: {defs: [{id, n, board, apart, beta, at}] in the tab's order, rows: [[group id,
+// Every group and membership, read once: {defs: [{id, n, board, beta, at}] in the tab's order, rows: [[group id,
 // player name]] of the groups that exist}. Until the one-shot migration ran, the groups as it will make them from the data
 // before (groupsBefore_), so a reader gives the same answer in the minutes between the install and the migration.
 function groupState_(){
@@ -2830,15 +2830,13 @@ function groupMap_(gs){
   return m;
 }
 const groupsOf_ = name => groupMap_()[lc_(name)] || {gids: [], groups: []};
-// The leaderboards (board_) of one ranking: rows, the general board, without the members of an apart group; groups,
-// [{id, n, rows}] for every group with a board, the newest first, its members, but those of an apart group on the board
-// of no group that is not apart (a player in two apart groups is on both). Each keeps the ranking's order.
+// The leaderboards (board_) of one ranking: rows, the general board, everyone; groups,
+// [{id, n, rows}] for every group with a board, the newest first, its members. Each keeps the ranking's order.
 function groupBoards_(all, top){
-  const gs = groupState_(), mem = groupMembers_(gs), apart = Object.create(null);
-  gs.defs.forEach(d => { if (d.apart && mem[d.id]) Object.keys(mem[d.id]).forEach(k => (apart[k] = 1)); });
+  const gs = groupState_(), mem = groupMembers_(gs);
   const defs = gs.defs.map((d, i) => [d, i]).filter(x => x[0].board).sort((a, b) => b[0].at - a[0].at || b[1] - a[1]).map(x => x[0]);
-  return {rows: top(all.filter(x => !apart[lc_(x[0])])),
-    groups: defs.map(d => ({id: d.id, n: d.n, rows: top(all.filter(x => { const k = lc_(x[0]); return mem[d.id] && mem[d.id][k] && (d.apart || !apart[k]); }))}))};
+  return {rows: top(all),
+    groups: defs.map(d => ({id: d.id, n: d.n, rows: top(all.filter(x => !!(mem[d.id] && mem[d.id][lc_(x[0])])))}))};
 }
 // Every subject's board cache dropped (a membership or a group's setting changed who is on which board).
 const boardsDrop_ = () => CORE_.SUBJECTS.filter(S => S.board).forEach(S => { try { CacheService.getScriptCache().remove(boardCache_(S)); } catch (e) {} });
@@ -2858,8 +2856,8 @@ function groupSet_(ra, names, g, on){
   return n;
 }
 // The admin's changes to the groups themselves, under the script lock (users_, the players right, audited):
-// {groupMake: {n, board, apart, beta}} makes a group (its name unique, case aside); {groupEdit: id, n, board, apart, beta}
-// renames it or changes a setting (a field left out stays); {groupDrop: id} deletes it, only when nobody is in it.
+// {groupMake: {n, board, beta}} makes a group (its name unique, case aside); {groupEdit: id, n, board, beta} renames it
+// or changes a setting (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in it.
 // beta: '' or a subject that opens to a group (or the value it holds). Answers {ok, group: its settings} ({ok, group: id}
 // for a delete); errors 'name' (empty, over 40 characters, a control character), 'exists' (another group's name),
 // 'beta', 'group' (no such group), 'members' (a delete while it has members).
@@ -2880,7 +2878,7 @@ function groupDo_(p){
   const beta = o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '');
   if (beta && groupIds_().indexOf(beta) < 0 && !(cur && cur.beta === beta)) return {ok: false, error: 'beta'};
   const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
-  const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), apart: flag('apart', cur ? cur.apart : 0), beta: beta, at: cur ? cur.at : Date.now()};
+  const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), beta: beta, at: cur ? cur.at : Date.now()};
   gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
   boardsDrop_();
   return {ok: true, group: d};
@@ -2891,7 +2889,7 @@ function groupDo_(p){
 // (its rows stay as they are, the date of its first row its Added): a subject's id is that subject's beta group ("<subject
 // name> beta", beta: that subject, as it opened it), 'cohort:<name>' a cohort (named <name>, with a board), any other cell
 // a group named by it. The staff (the accounts holding the trainer role in the instance under the code hash the
-// grant was given to) are the group 'staff', "Staff", board and apart, as their board was (none when nobody holds the
+// grant was given to) are the group 'staff', "Staff", with a board, as their board was (none when nobody holds the
 // role); their role stays theirs.
 // groupsBefore_ reads them without writing (groupState_ until the migration ran), groupsMigrate_ writes them, under the
 // script lock, from ONCE_ or from the first change to a group or a membership before it (groupsNow_), and only once.
@@ -2905,7 +2903,7 @@ function groupsBefore_(){
     const g = String(r[0]); if (g === GSTAFF_ || seen[g]) return;
     seen[g] = 1;
     const S = CORE_.SUBJECTS.find(x => x.id === g), coh = g.indexOf('cohort:') === 0 && g.length > 7;
-    defs.push({id: g, n: S ? S.name + ' beta' : coh ? g.slice(7) : g, board: coh ? 1 : 0, apart: 0, beta: S ? g : '', at: new Date(r[2]).getTime() || 0});
+    defs.push({id: g, n: S ? S.name + ' beta' : coh ? g.slice(7) : g, board: coh ? 1 : 0, beta: S ? g : '', at: new Date(r[2]).getTime() || 0});
   });
   // The staff: today's trainers whose account still has the code hash of their grant (archives and removed names left out).
   const rt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), live = Object.create(null), staff = [];
@@ -2917,7 +2915,7 @@ function groupsBefore_(){
     staff.push(String(a[0])); since.push(new Date(r[3]).getTime() || 0);
   });
   rows.forEach(r => { if (String(r[0]) === GSTAFF_ && !staff.some(x => lc_(x) === lc_(r[1]))) staff.push(String(r[1])); });  // a try that failed part way
-  if (staff.length) defs.unshift({id: GSTAFF_, n: 'Staff', board: 1, apart: 1, beta: '', at: since.length ? Math.min.apply(null, since) : 0});
+  if (staff.length) defs.unshift({id: GSTAFF_, n: 'Staff', board: 1, beta: '', at: since.length ? Math.min.apply(null, since) : 0});
   const out = rows.filter(r => String(r[0]) !== GSTAFF_).map(r => [String(r[0]), String(r[1])]);
   return {defs: defs, rows: out.concat(staff.map(x => [GSTAFF_, x]))};
 }
@@ -3276,7 +3274,7 @@ function usersDo_(p, who){
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
   // The subjects in beta each player's groups open; gids, the ids of their groups, and every group's settings
-  // (groupDefs: [{id, n, board, apart, beta, at}], in the order they were made).
+  // (groupDefs: [{id, n, board, beta, at}], in the order they were made).
   const gs = groupState_(), gm = groupMap_(gs);
   out.users.forEach(u => { const g = gm[lc_(u.name)]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; });
   out.groupDefs = gs.defs;
@@ -7964,7 +7962,24 @@ const CORE_ = (function () { const module = {exports: {}};
     seaPct('sspct20', 20, 'Slime trail', 1),
     seaPct('sspct30', 30, 'Colour chart', 2),
     seaPct('sspct40', 40, 'Torch light', 2),
-    seaPct('sspct50', 50, 'Half the reef', 3)
+    seaPct('sspct50', 50, 'Half the reef', 3),
+    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slugs
+    // have no species unit yet, so their % is the mean of the genera's bars and 100% needs every genus learned (names
+    // and tiers: docs/decisions/2026-11-18-seaslug-achievements-high.md).
+    seaPct('sspct60', 60, 'Gill and frill', 3),
+    seaPct('sspct70', 70, 'Muck magnet', 3),
+    seaPct('sspct80', 80, 'Slug savant', 3),
+    seaPct('sspct90', 90, 'Nudibranch nerd', 3),
+    // 100% shows rounded (77 genera learned and one at 95% make 100), so it also asks every genus learned;
+    // it rests on genera learned, so ACH_LEARN takes it back with a learned mark.
+    [
+      'sspct100',
+      'Every last slug',
+      '100% sea slug progress: every genus learned',
+      3,
+      '📈',
+      s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id (the corals', then each subject's own: SUBJECTS achs).
@@ -8043,7 +8058,8 @@ const CORE_ = (function () { const module = {exports: {}};
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
