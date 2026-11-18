@@ -50,7 +50,10 @@ The trainer's page reveals by itself when the time is up or every student has an
 **Where it lives**: the script cache (`CacheService`), never a sheet tab. One value for the session (`lv:<code>`, written
 by the trainer's calls only), one for the roster (`lv:<code>:r`, written by joins only, under the script lock for a
 moment), and one per student (`lv:<code>:p:<pid>`, written by that student's calls only, which the page sends one at a
-time). So two writers never race on one value, and only a join takes the lock. The cache keeps a value at most 6 hours
+time). So two writers never race on one value. A join takes the script lock for a moment, and so do a reveal and an
+answer (`LV.LOCK`, 5 s at most): the reveal freezes the answers (the shares, the top 5, the summary), so an answer is
+re-checked and written under the lock, and the reveal reads the students' values under it; every answer accepted is in
+the reveal, none comes after it (Codex review #1049). An answer is timed from when it came, before any wait. The cache keeps a value at most 6 hours
 (Apps Script's limit, under Pierre's 24 h); each write keeps it 2 hours more, and a session older than 6 hours counts as
 ended. A cache can drop a value early under memory pressure (rare for values this small): the session then ends with a
 message, and nothing is lost but the game's points.
@@ -65,8 +68,11 @@ message, and nothing is lost but the game's points.
   writes at most one, and reads no sheet tab: tens of milliseconds of script time. Apps Script's quotas for a web app run
   as Pierre: 30 executions at once, 6 minutes each; no daily cap on web app calls or on the cache's reads (its limits
   are 100 KB a value and 6 hours). At 4.7 calls a second and about 0.1-0.3 s each, about 1-2 run at once: far under 30.
-  The players' saves and loads go on as before; the live calls never wait for the script lock (a join waits at most 5 s
-  for it, once per student).
+  The players' saves and loads go on as before; a join waits at most 5 s for the script lock, once per student, and an
+  answer or a reveal at most 5 s too, each holding it a few milliseconds (two cache reads and one write). An answer that
+  could not get it (`lock`) or never reached the script is sent again by the page at its next poll while the question is
+  open (`live.js` `liveRecon`); a reveal refused for it comes at the trainer's next poll (time up or everyone answered)
+  or at the next tap.
 - The existing traffic: a class's saves and anonymous sends (about one a player every few answers) and the admin's
   minute reads. The live calls add no sheet read or write, so the Answers tab's reads and the Timings tab are unchanged.
 - Latency: a web app call takes about 0.6-1.5 s (Google's redirect included), so a student sees the next question within
@@ -97,7 +103,8 @@ message, and nothing is lost but the game's points.
   each student's answers and points. Never a sheet tab, never an account name (a signed-in student joins under the
   first name they type or the one the app fills in).
 - In the sheet: one Audit row per start (ids only). The answers of **signed-in** students are logged by their own device
-  as any game answer, through the usual sync (the account's queue), with mode `live`, scored by the same scorer
+  as any game answer (each kept in the page's tab until it is logged, and tried again at the next poll when its subject's
+  data could not come: `live.js` `liveFlush`; Codex review #1049), through the usual sync (the account's queue), with mode `live`, scored by the same scorer
   (`core.js` `scoreAnswer`, as `quiz.js` `answer` does) so the full replay counts them the same. Only for units the
   student has unlocked (rule L4: no game opens a unit; a live answer on another unit counts in nothing).
 - A student not signed in keeps nothing: their answers wait in the page's tab (its session storage, so the reload of a

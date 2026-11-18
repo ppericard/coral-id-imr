@@ -158,10 +158,10 @@ const liveShareList = (ch, rev, mine = -1) => {
 };
 
 // ---- A student's page ----
-// LV: the student's game: {code, pid, pk, name, s: subject id, at: the question's state {qi, t0, rt, c}, mine: this
+// LV: the student's game: {code, pid, pk, name, s: subject id, at: the question's state {qi, t0, rt, c, st}, mine: this
 // page's answers {qi: {id: the choice's id, rt, at}} (for the answer time), logged: the question numbers already logged
-// or kept, hx: how many revealed questions the script has said (lvView_ hn), pend: a nickname's answers kept until a
-// sign-in, right}. All but at kept per tab (LIVE_KEY.ME), so a reload (a sign-in reloads the page) loses nothing.
+// or kept, hx: how many revealed questions the script has said (lvView_ hn), pend: the accepted answers not logged yet
+// (a nickname's until a sign-in, a signed-in player's until liveFlush logs them), right}. All but at kept per tab (LIVE_KEY.ME), so a reload (a sign-in reloads the page) loses nothing.
 let LV = null,
   LVT = 0;
 const liveSave = () =>
@@ -245,6 +245,7 @@ function liveShow(j) {
   liveCatch(j);
   const key = j.ph + ':' + j.qi;
   if (key !== LV.key) liveDraw(j, key);
+  else liveRecon(j);
   if (j.ph === 'q') liveClock(j.left, 'lvbar', j.lim * 1000);
 }
 function liveDraw(j, key) {
@@ -254,7 +255,7 @@ function liveDraw(j, key) {
   if (j.ph === 'lobby')
     $v.innerHTML = `<div class="live lvwait">${head}<p class="lvbig">You’re in!</p><p class="note">Waiting for the trainer to start…</p></div>`;
   else if (j.ph === 'q') {
-    LV.at = {qi: j.qi, t0: 0, c: j.mine, q: j.q};
+    LV.at = {qi: j.qi, t0: 0, c: j.mine, q: j.q, st: j.mine >= 0 ? 'ok' : ''};
     $v.innerHTML = `<div class="live lvq">${head}<p class="lvqn">Question ${j.qi + 1} of ${j.n}</p>
       <div class="lvbar" aria-hidden="true"><i id="lvbar"></i></div>${livePhotos(j.q.ph)}
       <div class="lvch" role="group" aria-label="Your answer">${j.q.ch
@@ -299,8 +300,8 @@ function liveDraw(j, key) {
       }</div>
       <p><a class="next sec" href="${esc(hr('live'))}" id="lvagain">Join another game</a></p></div>`;
     const sb = document.getElementById('lvsign');
-    if (sb) sb.onclick = () => liveSignin(() => liveFlush().then(n => liveKept(n)));
-    if (flush) liveFlush().then(n => liveKept(n));
+    if (sb) sb.onclick = () => liveSignin(() => liveKeep());
+    if (flush) liveKeep();
     // Another game: the join form at once (the address may already be #live, which no hashchange would redraw).
     document.getElementById('lvagain').onclick = e => {
       liveSet(LIVE_KEY.ME, null);
@@ -337,128 +338,190 @@ function liveAnswer(qi, i) {
   LV.at.t = new Date().toISOString();
   LV.mine = {...LV.mine, [qi]: {id: LV.at.q.ch[i][0], rt: LV.at.rt, at: LV.at.t}};
   liveSave();
+  liveSend(LV.at);
+}
+// The choices of the question on screen: i marked, all off (a choice sent or accepted) or all on again (i = -1).
+function liveMark(i, msg) {
   $v.querySelectorAll('.lvch [data-i]').forEach(b => {
-    b.disabled = true;
+    b.disabled = i >= 0;
     b.classList.toggle('on', Number(b.dataset.i) === i);
   });
   const m = document.getElementById('lvmsg');
-  if (m) m.textContent = 'Sending…';
-  LIVE_CH.answer({code: LV.code, pid: LV.pid, pk: LV.pk, qi, c: i}).then(j => {
-    const m2 = document.getElementById('lvmsg');
-    if (m2)
-      m2.textContent = j.ok ? 'Answer locked in. Wait for the reveal…' : j.error === 'phase' ? 'Too late for this one.' : liveErr(j.error);
+  if (m) m.textContent = msg;
+}
+// The answer of the question at (at.c) sent; at.st: 'out' while on its way, 'ok' accepted, 'no' refused for good (too
+// late), 'retry' not taken (no connection, the script busy): the next poll that finds the question open and no answer
+// accepted, sends it again (liveRecon; Codex review #1049).
+function liveSend(at) {
+  at.st = 'out';
+  liveMark(at.c, 'Sending…');
+  LIVE_CH.answer({code: LV.code, pid: LV.pid, pk: LV.pk, qi: at.qi, c: at.c}).then(j => {
+    if (!LV || LV.at !== at) return;
+    if (j.ok) return void ((at.st = 'ok'), (at.c = j.mine >= 0 ? j.mine : at.c), liveMark(at.c, 'Answer locked in. Wait for the reveal…'));
+    at.st = ['net', 'lock', 'server', 'busy'].includes(j.error) ? 'retry' : 'no';
+    const m = document.getElementById('lvmsg');
+    if (m) m.textContent = j.error === 'phase' ? 'Too late for this one.' : liveErr(j.error);
   });
 }
-// The student's answers the script accepted, once their right answer is out (lvView_ past: every question revealed since
-// the last reply, its reveal seen here or not): each logged at once when signed in (liveRecord), else kept for a sign-in
-// at the end (Q393 e). Only the choice the script accepted, never one it refused (too late); once per question. The
-// answer time is this page's own when it is for that same choice.
-function liveCatch(j) {
-  if (!LV || typeof j.hn !== 'number') return;
-  (j.past || [])
-    .filter(x => !LV.logged.includes(x.qi))
-    .forEach(x => {
-      LV.logged = [...LV.logged, x.qi];
-      const m = LV.mine[x.qi] && LV.mine[x.qi].id === x.c ? LV.mine[x.qi] : {},
-        o = {s: j.s, t: x.t, c: x.c, ok: x.c === x.t, ph: x.f, chs: x.ch, rt: m.rt, at: m.at};
-      if (SYNC) liveRecord(o);
-      else LV.pend.push(o);
-    });
-  LV.hx = Math.max(LV.hx || 0, j.hn);
-  liveSave();
+// A poll on the question on screen, while no answer is on its way: the answer the script holds is the one shown (its reply
+// may have been lost), and one it never got is sent again while the question is open.
+function liveRecon(j) {
+  const at = LV.at;
+  if (!at || j.ph !== 'q' || j.qi !== at.qi || at.st === 'out') return;
+  if (j.mine >= 0 && (at.st !== 'ok' || at.c !== j.mine)) {
+    at.st = 'ok';
+    at.c = j.mine;
+    liveMark(at.c, 'Answer locked in. Wait for the reveal…');
+  } else if (j.mine < 0 && at.st === 'retry' && j.left > 0) liveSend(at);
 }
+// The student's answers the script accepted, once their right answer is out (lvView_ past: every question revealed since
+// the last reply, its reveal seen here or not): each kept in LV.pend (per tab, saved with hx in one step), then logged
+// at once when signed in (liveFlush), else kept for a sign-in at the end (Q393 e). Only the choice the script accepted,
+// never one it refused (too late); once per question. The answer time is this page's own when it is for that same choice.
+function liveCatch(j) {
+  if (!LV) return;
+  if (typeof j.hn === 'number') {
+    (j.past || [])
+      .filter(x => !LV.logged.includes(x.qi))
+      .forEach(x => {
+        LV.logged = [...LV.logged, x.qi];
+        const m = LV.mine[x.qi] && LV.mine[x.qi].id === x.c ? LV.mine[x.qi] : {};
+        LV.pend = [...LV.pend, {qi: x.qi, s: j.s, t: x.t, c: x.c, ok: x.c === x.t, ph: x.f, chs: x.ch, rt: m.rt, at: m.at}];
+      });
+    LV.hx = Math.max(LV.hx || 0, j.hn);
+    liveSave();
+  }
+  // Signed in: what waits is logged now, and what could not be (its subject's data did not come) at the next poll.
+  if (SYNC && LV.pend.length) liveFlush();
+}
+// The waiting answers logged, one drain at a time (a poll and the end screen never log one twice): each leaves LV.pend
+// only once logged, or left out on purpose (a unit not unlocked: rule L4); one that failed (no connection for its
+// subject's data) stays for the next try (Codex review #1049). Resolves how many were logged.
+let LVF = null;
 function liveFlush() {
-  const L = LV ? LV.pend : [];
-  if (LV) ((LV.pend = []), liveSave());
-  return L.reduce((p, o) => p.then(n => liveRecord(o).then(ok => n + (ok ? 1 : 0))), Promise.resolve(0));
+  if (LVF) return LVF;
+  if (!SYNC || !LV || !LV.pend.length) return Promise.resolve(0);
+  const me = LV;
+  LVF = me.pend
+    .slice()
+    .reduce(
+      (p, o) =>
+        p.then(n =>
+          liveRecord(o).then(r => {
+            if (r !== 'fail' && LV === me) ((me.pend = me.pend.filter(x => x !== o)), liveSave());
+            return n + (r === 'ok' ? 1 : 0);
+          })
+        ),
+      Promise.resolve(0)
+    )
+    .finally(() => (LVF = null));
+  return LVF;
+}
+// The end screen's drain: tried again while something still waits (no connection), then says how many were kept.
+function liveKeep(n0 = 0) {
+  liveFlush().then(n => {
+    if (SYNC && LV && LV.pend.length && liveOn()) return void (LVT = setTimeout(() => liveKeep(n0 + n), LIVE.POLL));
+    liveKept(n0 + n);
+  });
 }
 // One live answer into the signed-in player's progress and answer log, as quiz.js answer scores and logs a photo-quiz
 // question (the same scorer: core.js scoreAnswer through scoreIn; the log's fields), in the question's subject (inSubject),
-// mode 'live'. Only on a unit the player has unlocked (rule L4: no game opens a unit) in a subject they may open; resolves
-// true once logged.
+// mode 'live'. Only on a unit the player has unlocked (rule L4: no game opens a unit) in a subject they may open. Resolves
+// 'ok' once logged, 'skip' when left out on purpose (that rule, a subject the player may not open), 'fail' when it could
+// not be done now (signed out, the subject's data did not come: liveFlush tries again). An error while scoring counts as
+// a 'skip', never tried again: part of it may already be in the progress.
 function liveRecord(o) {
   const S = subjectOf(o.s);
-  if (!SYNC || !S || !subjOpen(S) || !UNITS[S.id]) return Promise.resolve(false);
-  return UNITS[S.id]
-    .load(S)
-    .then(() =>
-      inSubject(S.id, () => {
-        const t = o.t,
-          c = o.c;
-        if (!GX(t) || !introReady(t)) return false;
-        const good = c === t,
-          s = st(t),
-          first = !((s.ok || 0) + (s.ko || 0)),
-          ph = o.ph.map(f => photoLook(f) || {f}),
-          chs = o.chs,
-          k = chs.length,
-          mq = 'live';
-        mxRecalc(() => {
-          memRecalc(s, pmem());
-          if (!good && GX(c)) memRecalc(st(c), pmem());
-        });
-        const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
-        const q = scoreIn({
-          t,
-          c,
-          ok: good,
-          k,
-          chs,
-          cv: !!GX(c),
-          ph: ph.map(p => p.f),
-          d0: (ph.length === 1 ? PICKD.SINGLE : 0) + ph.reduce((x, p) => x + photoDiff(t, p), 0) / Math.max(1, ph.length),
-          fam: famOf(t, ph),
-          cf: confTerm(t, chs, k),
-          look: () => pgLook(t, chs),
-          R: 1,
-          Rc: 1,
-          p: startP(),
-          sec: o.rt,
-          timed: rtOn(),
-          df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
-          dt: fmtOff(pfmt(), 'typed'),
-          dom: domRules(),
-          mu: genusDiff(t),
-          ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
-          ...(GX(t).from ? {from: GX(t).from} : {}),
-          ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
-        });
-        const res = scoreAnswer(P, q),
-          sp = speciesShown(ph);
-        if (!good) [t, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
-        if (!good) delete s.ex;
-        const ans = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          t: o.at || new Date().toISOString(),
-          g: t,
-          a: c,
-          ok: good ? 1 : 0,
-          m: mq,
-          ph: ph.map(p => p.f).join(' '),
-          ch: chs.join(' '),
-          e: Math.round(100 * res.e) / 100,
-          th: res.th0,
-          sc: scoreLog(q, res),
-          nw,
-          ...(typeof o.rt === 'number' ? {rt: o.rt} : {}),
-          zm: 0,
-          tz: -new Date().getTimezoneOffset(),
-          s: SUBJ.id,
-          rk: rankOf(t) || unitRankOf(SUBJ),
-          ...(unitName(t) ? {tn: unitName(t)} : {}),
-          ...(unitName(c) ? {ta: unitName(c)} : {}),
-          ...(sp ? {sp} : {})
-        };
-        holdStep(ans.e, good);
-        startStep(res.dm, k, good, first);
-        answeredAt(s, good);
-        logAnswer(ans);
-        save();
-        return true;
-      })
+  if (!SYNC) return Promise.resolve('fail');
+  if (!S || !subjOpen(S) || !UNITS[S.id]) return Promise.resolve('skip');
+  return Promise.resolve()
+    .then(() => UNITS[S.id].load(S))
+    .then(
+      () => 'in',
+      () => 'fail'
     )
-    .then(ok => (ok && typeof syncSoon === 'function' && syncSoon(), ok))
-    .catch(() => false);
+    .then(r => (r === 'fail' ? r : liveLog(S, o)));
+}
+function liveLog(S, o) {
+  let r = 'skip';
+  try {
+    r = inSubject(S.id, () => {
+      const t = o.t,
+        c = o.c;
+      if (!GX(t) || !introReady(t)) return 'skip';
+      const good = c === t,
+        s = st(t),
+        first = !((s.ok || 0) + (s.ko || 0)),
+        ph = o.ph.map(f => photoLook(f) || {f}),
+        chs = o.chs,
+        k = chs.length,
+        mq = 'live';
+      mxRecalc(() => {
+        memRecalc(s, pmem());
+        if (!good && GX(c)) memRecalc(st(c), pmem());
+      });
+      const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
+      const q = scoreIn({
+        t,
+        c,
+        ok: good,
+        k,
+        chs,
+        cv: !!GX(c),
+        ph: ph.map(p => p.f),
+        d0: (ph.length === 1 ? PICKD.SINGLE : 0) + ph.reduce((x, p) => x + photoDiff(t, p), 0) / Math.max(1, ph.length),
+        fam: famOf(t, ph),
+        cf: confTerm(t, chs, k),
+        look: () => pgLook(t, chs),
+        R: 1,
+        Rc: 1,
+        p: startP(),
+        sec: o.rt,
+        timed: rtOn(),
+        df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
+        dt: fmtOff(pfmt(), 'typed'),
+        dom: domRules(),
+        mu: genusDiff(t),
+        ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
+        ...(GX(t).from ? {from: GX(t).from} : {}),
+        ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
+      });
+      const res = scoreAnswer(P, q),
+        sp = speciesShown(ph);
+      if (!good) [t, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
+      if (!good) delete s.ex;
+      const ans = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        t: o.at || new Date().toISOString(),
+        g: t,
+        a: c,
+        ok: good ? 1 : 0,
+        m: mq,
+        ph: ph.map(p => p.f).join(' '),
+        ch: chs.join(' '),
+        e: Math.round(100 * res.e) / 100,
+        th: res.th0,
+        sc: scoreLog(q, res),
+        nw,
+        ...(typeof o.rt === 'number' ? {rt: o.rt} : {}),
+        zm: 0,
+        tz: -new Date().getTimezoneOffset(),
+        s: SUBJ.id,
+        rk: rankOf(t) || unitRankOf(SUBJ),
+        ...(unitName(t) ? {tn: unitName(t)} : {}),
+        ...(unitName(c) ? {ta: unitName(c)} : {}),
+        ...(sp ? {sp} : {})
+      };
+      holdStep(ans.e, good);
+      startStep(res.dm, k, good, first);
+      answeredAt(s, good);
+      logAnswer(ans);
+      save();
+      return 'ok';
+    });
+  } catch (e) {}
+  if (r === 'ok' && typeof syncSoon === 'function') syncSoon();
+  return r;
 }
 
 // ---- The trainer's page ----
@@ -496,8 +559,10 @@ function liveBuild(t) {
 function liveHost() {
   LH = liveGet(LIVE_KEY.HOST);
   if (LH && LH.code) {
+    // The saved game resumed with its subject's data loaded first (hostData; again at each question if it failed).
+    const me = LH;
     LH.key = '';
-    return hostPoll();
+    return void hostData().then(() => LH === me && hostPoll());
   }
   hostSetup();
 }
@@ -580,19 +645,39 @@ function hostReply(j) {
   if (j.ok && j.ph === 'end') return;
   LHT = setTimeout(hostPoll, LIVE.HOST);
 }
+// The game's subject's data (UNITS load), before a question is built in it: the header's subject may be another one since
+// (switched, then the page reloaded: only the subject on screen is loaded at start-up; Codex review #1049). Resolves
+// whether it came; a failed load is tried again at the next question.
+const hostData = () => {
+  const S = LH && subjectOf(LH.s);
+  return S && UNITS[S.id]
+    ? Promise.resolve()
+        .then(() => UNITS[S.id].load(S))
+        .then(
+          () => true,
+          () => false
+        )
+    : Promise.resolve(false);
+};
 function hostAct(act) {
   if (!LH) return;
   clearTimeout(LHT);
-  let q = null;
-  if (act === 'q') {
+  $v.querySelectorAll('.lvact').forEach(b => (b.disabled = true));
+  if (act !== 'q') return hostSend(act, null);
+  const me = LH;
+  hostData().then(() => {
+    if (LH !== me || !liveOn('host')) return;
     const qi = LH.last ? LH.last.qi + 1 : 0;
-    // Built in the game's subject (its data loaded, as the player's own subject switch does).
+    let q = null;
+    // Built in the game's subject, its data loaded (hostData), as the player's own subject switch does.
     for (let i = 0; i < 5 && !q; i++) q = inSubject(LH.s, () => liveBuild(i ? pick(LH.plan) : LH.plan[qi]));
-    if (!q) return (hostShow(LH.last, 'No photo or choices for this question: try again.'), (LHT = setTimeout(hostPoll, LIVE.HOST)));
+    if (!q) return void (hostShow(LH.last, 'No photo or choices for this question: try again.'), (LHT = setTimeout(hostPoll, LIVE.HOST)));
     LH.sent = qi;
     liveSet(LIVE_KEY.HOST, LH);
-  }
-  $v.querySelectorAll('.lvact').forEach(b => (b.disabled = true));
+    hostSend(act, q);
+  });
+}
+function hostSend(act, q) {
   hostCall(act, q).then(j => {
     if (!LH) return;
     if (j.ok || ['gone', 'old'].includes(j.error)) return hostReply(j);
