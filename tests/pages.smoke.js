@@ -3912,14 +3912,14 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // The app never gets ahead of the sheet script (rule D4): before v30 (or with no version known yet), none queued.
-  for (const v of [28, 29, 0]) {
-    const [c, p] = await open(390, v);
+  // Before any reply too: the app reads the script as the gate floor (core.js MIN_SHEET), which stores them (sheet v30).
+  {
+    const [c, p] = await open(390, 0);
     await answer(p);
     await p.click('#after h3 a[href^="#learn/genus/"]');
     await p.waitForTimeout(800);
     await hide(p);
-    if ((await queued(p)).length) fails.push(`pages summary queued with sheet v${v || 'unknown'}`);
+    if (!(await queued(p)).length) fails.push('pages summary not queued before any reply (the gate floor)');
     await c.close();
   }
   return fails;
