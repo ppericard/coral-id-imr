@@ -482,7 +482,7 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     });
   assert.deepStrictEqual(
     Y.gen['f:X'].views.wide.map(p => p.f),
-    // a5 reads the reference look (core.js refLevel: ease 5, profile, whole, good light, true colours, sharp): first.
+    // a5 reads the reference look (core.js refLevel: ease 4-5, profile, whole, good light, true colours, sharp): first.
     ['a5', 'b5', 'own5', 'own3', 'none']
   );
   assert.strictEqual(Y.gen['f:X'].cover, 'a5');
