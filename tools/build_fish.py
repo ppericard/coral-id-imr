@@ -106,6 +106,7 @@ import urllib.request
 from pathlib import Path
 
 import fish_commonness
+import fish_inforce
 import fish_names
 from instance import fish_source  # the source as the build reads it: fish_source.json with the instance's layer
 
@@ -120,6 +121,7 @@ CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common name
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
 OUT = ROOT / "fish.json"
+CUR = ROOT / "curation.json"  # read only, for show_rootless: the content editor's circle edits
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
 
@@ -1088,6 +1090,7 @@ def regroup(src_path, check, lay_path=None):
     print(f"regrouped {OUT.relative_to(ROOT)} with key {key['id'] if key else '(none)'}")
     for w in waiting:
         print("  waiting on Pierre: " + w)
+    show_rootless(o)
 
 
 def commonness(check):
@@ -1142,7 +1145,7 @@ def dumps(o):
 
 
 def main():
-    global NET, GMARKS
+    global NET, GMARKS, CUR
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1151,12 +1154,19 @@ def main():
     ap.add_argument("--regroup", action="store_true")
     ap.add_argument("--commonness", action="store_true", help="only re-apply the commonness index and order to fish.json")
     ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
+    ap.add_argument("--rootless", action="store_true", help="only print the genera a circle edit brings into circle 1 with no name root")
+    ap.add_argument("--curation", help=argparse.SUPPRESS)  # tests: another curation.json
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
     ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     a = ap.parse_args()
     if a.marks:
         GMARKS = Path(a.marks)
+    if a.curation:
+        CUR = Path(a.curation)
+    if a.rootless:
+        show_rootless(json.loads(OUT.read_text(encoding="utf-8")))
+        return
     if a.regroup:
         regroup(Path(a.src) if a.src else SRC, a.check, Path(a.layer) if a.layer else None)
         return
@@ -1191,9 +1201,22 @@ def main():
     show_missing(fish_commonness.apply(out))
     add_families(out, key_in_force(src), src.get("look", []))
     show(out, report)
+    show_rootless(out)
     if not a.dry:
         write(out)
         print(f"wrote {OUT.relative_to(ROOT)}")
+
+
+def show_rootless(o):
+    """The genera the content editor's circle edits (curation.json, read, never written) bring into circle 1 with no
+    name root: the build requires one only of the base's circle-1 genera (add_families), so these show none on their
+    sheet. Each says its skip reason when tools/fish_genus_roots.json has one."""
+    cur = json.loads(CUR.read_text(encoding="utf-8")) if CUR.exists() else {}
+    skip = json.loads(GROOTS.read_text(encoding="utf-8")).get("skip", {}) if GROOTS.exists() else {}
+    rl = fish_inforce.rootless(o, cur, skip)
+    print(f"genera a circle edit brings into circle 1 with no name root: {len(rl)}")
+    for name, fam, why in rl:
+        print(f"  {name} ({fam}): " + (f"skipped, {why}" if why else "no root and no reason in skip"))
 
 
 def build(src, report):

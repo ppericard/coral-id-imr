@@ -220,7 +220,9 @@ why}).
   and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, or a circle-1 genus has
   neither a root nor a reason in `skip`. A fish part may have no word, or be another genus the entry names (fifth item
   `genus`: "the genus *Pomacentrus*") or the person it says the name honours (`honours`). Only the circle-1 genera must
-  have a root or a reason.
+  have a root or a reason. The genera a content editor's circle edit brings into circle 1 are not stopped on: the build
+  prints them with no root (`show_rootless`: after its reports, after `--regroup`, alone with `--rootless`), their `skip`
+  reason when there is one ([content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
 - Shown by the same `rootLine` (counting the shared ending among every fish genus, "among the fish") through `learn.js`
   `treeRoot`, on the one sheet the genus opens (`treeSheets` `go`): its genus page, its one species' sheet, or its
   family's sheet when it is that family's only genus.
