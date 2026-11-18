@@ -4988,6 +4988,62 @@ async function namesCheck(b, base) {
   return fails;
 }
 
+// Your tricky pairs on My progress (progress.js trickyPairs, the name study's (f)): on a seeded record, the two pairs
+// mixed up twice or more show, the most mixed up first, each with its count and a link to its comparison; the pair mixed
+// up once does not. Opening the page writes nothing to the record (read only). Returns the failures.
+async function trickyCheck(b, base) {
+  const fails = [],
+    PROG = {
+      Pocillopora: {ok: 8, ko: 4, conf: {Stylophora: 3}, off: {Stylophora: 5}},
+      Stylophora: {ok: 5, ko: 2, conf: {Pocillopora: 1}, off: {Pocillopora: 3}},
+      Favites: {ok: 9, ko: 2, conf: {Dipsastraea: 2}, off: {Dipsastraea: 10}},
+      Acropora: {ok: 6, ko: 1, conf: {Montipora: 1}, off: {Montipora: 4}}
+    };
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(s => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"imr","t":1}');
+      localStorage.getItem('reefid-sync-coral-progress') || localStorage.setItem('reefid-sync-coral-progress', s);
+    }, JSON.stringify(PROG));
+    await c.addInitScript(TIPS_OFF);
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const before = await p.evaluate(() => localStorage.getItem('reefid-sync-coral-progress'));
+    await p.evaluate(() => go('progress'));
+    await p.waitForSelector('.pboard .gside', {timeout: 8000});
+    const s = await p.evaluate(() => {
+      const box = document.querySelector('.pboard .gside .ptricky');
+      return {
+        shown: !!(box && box.offsetParent),
+        head: box ? box.querySelector('h3').textContent : null,
+        chips: box ? [...box.querySelectorAll('.chip')].map(a => [a.tagName, a.textContent.trim(), a.getAttribute('href')]) : [],
+        after: localStorage.getItem('reefid-sync-coral-progress')
+      };
+    });
+    const want = [
+      ['A', 'Pocillopora ↔ Stylophora · 4 of 8', /compare\/Pocillopora\/Stylophora$/],
+      ['A', 'Dipsastraea ↔ Favites · 2 of 10', /compare\/Dipsastraea\/Favites$/]
+    ];
+    if (!s.shown || s.head !== 'Your tricky pairs') fails.push(`tricky pairs ${w}: the section is not on My progress ${JSON.stringify(s)}`);
+    else if (s.chips.length !== want.length || want.some(([t, x, h], i) => s.chips[i][0] !== t || s.chips[i][1] !== x || !h.test(s.chips[i][2] || '')))
+      fails.push(`tricky pairs ${w}: the chips ${JSON.stringify(s.chips)}`);
+    if (s.after !== before) fails.push(`tricky pairs ${w}: My progress wrote the record ${before} → ${s.after}`);
+    if (errs.length) fails.push(`tricky pairs ${w}: page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
+
 // The subject to start with (tour.js pick, plan): a player with one subject gets the six steps, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
 // subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
 // gets the choice right after the sign-in step; with fish open to all (core.js open: 'all'), a signed-out new player
@@ -5391,7 +5447,7 @@ async function installCheck(b, base) {
 // their own); tips: the "Did you know?" tips (tipsCheck) and the custom quiz's reminder (customLeftCheck); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
-// (namesCheck); subjtour: the subject to start with in
+// (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
 const PARTS = [
     'main',
@@ -6257,7 +6313,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
-  if (run.has('names')) for (const f of await namesCheck(b, base)) fails.push(f);
+  if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);
   if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);

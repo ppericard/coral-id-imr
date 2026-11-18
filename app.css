@@ -3660,6 +3660,14 @@ a.lt:hover {
   flex-wrap: wrap;
   gap: 6px;
 }
+/* Your tricky pairs (progress.js trickyHTML): a subject with no comparison page shows the pair as a plain chip, not a
+   control. */
+.pboard .gside span.chip {
+  cursor: default;
+}
+.pboard .gside span.chip:hover {
+  border-color: var(--line);
+}
 .pboard .gside p {
   margin: 0;
 }
