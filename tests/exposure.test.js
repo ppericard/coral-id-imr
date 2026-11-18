@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Photo exposure per player (Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5): Seen % and
+// Photo exposure per player (docs/reviews/2026-11-06-photo-exposure-study.md §5): Seen % and
 // Spread % per subject, computed by the sync sheet (Code.gs exposure_, pools_) with core.js unitPool and exposureOf, shown
 // on the admin's player list. The sheet runs against tests/gas.js: nothing reaches the real sheet (rule D1).
 const test = require('node:test'),
@@ -57,7 +57,7 @@ test("unitPool: every subject's game photos per unit, by colony, as its games dr
   assert.deepStrictEqual(Object.keys(P).sort(), units.slice().sort());
   units.forEach(n => {
     const g = d.gen[n] || d.x.gen[n],
-      // Research Grade only off data.json gen (app.js gamePhotoOk; Codex review #680)
+      // Research Grade only off data.json gen (app.js gamePhotoOk)
       want = new Set(
         ['wide', 'medium', 'macro']
           .flatMap(v => ((g.sl || {})[v] || {}).game || [])
@@ -131,8 +131,7 @@ test("v81 users: each player's exposure per subject, from the Answers tab and th
   assert.deepStrictEqual(ana.ex[fish.id].slice(2), [1, 2, 1]);
   assert.ok(!('ex' in r.users.find(u => u.name === 'Ben')), 'no answer, no exposure');
   // Cached: a second list reads no file again; each file was read once (curation.json once for both subjects' pools, and
-  // once for the corals' look-alike pairs the players' replayed progress is made under: Code.gs subjCur_, design note v2
-  // step 8).
+  // once for the corals' look-alike pairs the players' replayed progress is made under: Code.gs subjCur_).
   s.post({users: 1, token: TOK});
   assert.ok(
     [...coral.pool.files, ...fish.pool.files].every(x => f.n[x] >= 1),
@@ -140,7 +139,7 @@ test("v81 users: each player's exposure per subject, from the Answers tab and th
   );
   assert.strictEqual(f.n['curation.json'], 2);
   assert.strictEqual(f.n['fish-photos.json'], 1);
-  // Files out of reach: no exposure, the list as before.
+  // Files out of reach: no exposure, the rest of the list unchanged.
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: L});
   const u2 = s2.post({users: 1, token: TOK});

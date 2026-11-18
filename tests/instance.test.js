@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The instance's layer as its own files (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
-// tools/instance.py): tools/instance.json names the instance and its layer files; the build lays them on the sources,
+// The instance's layer as its own files (docs/reviews/2026-11-14-sheet-overlay-design.md; tools/instance.py): tools/instance.json names the instance and its layer files; the build lays them on the sources,
 // and fish.json and data.json are exactly what the two layers give, byte for byte. Needs python3, like the other checks.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -98,7 +97,7 @@ test('fish.json byte for byte: the layer laid again offline (cues, look, phase t
   r = regroup(circ);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /circles changed in the instance's layer.*\n.*t28/);
-  // A node fish.json leaves out (every species out) moved below circle 3: the full build might keep it (Codex review #984).
+  // A node fish.json leaves out (every species out) moved below circle 3: the full build might keep it.
   assert.ok(!F.teach.some(t => t.id === 't75') && FL.nodes.t75.circle === 3, 't75 Eagle rays: out of fish.json, circle 3');
   const out = clone(FL);
   out.nodes.t75.circle = 1;
@@ -147,7 +146,7 @@ print(json.dumps([
   ['mn' in gone['gen']['Acropora'], 'imrg' in gone, 'mn' in coral_compose(d, {})['gen']['Pocillopora']],
 ]))`)
   );
-  // A field the layer no longer gives (or no layer at all) leaves data.json too (Codex review #984).
+  // A field the layer stops giving (or no layer at all) leaves data.json too.
   assert.deepStrictEqual(
     out,
     [false, true, false, true, [false, false, false]],
