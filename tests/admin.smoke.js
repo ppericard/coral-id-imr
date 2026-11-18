@@ -6582,7 +6582,8 @@ async function sealPart(b, base, fails) {
           .catch(() => fe.push('Pairs not drawn'));
         const pr = await seen();
         if (
-          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
+          // Typed text: the typed mix-ups above as typed (admin.js typedText)
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text' ||
           pr.pair.join() !== 'Look-alike' ||
           pr.key.join() !== 'Key group' ||
           !pr.zo ||

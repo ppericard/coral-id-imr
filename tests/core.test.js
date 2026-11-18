@@ -11,6 +11,7 @@ const {
   genusOffsetsOf,
   GENUS_K,
   trustOf,
+  confAdd,
   confusionOf,
   confScore,
   CONF,
@@ -220,6 +221,45 @@ test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the di
     d1 = C.dir['Acropora|Montipora'] || [0, 0],
     d2 = C.dir['Montipora|Acropora'] || [0, 0];
   assert.deepStrictEqual([d1[0] + d2[0], d1[1] + d2[1]], [off, mix]);
+});
+
+test('a typed miss counts in the pooled pairs as offered once and mixed up, in core.js and Code.gs stats_ alike', () => {
+  const s = loadCodeGs();
+  let n = 0;
+  const send = (name, g, a, m, ch = '') =>
+    s.post({
+      name,
+      pin: '1234',
+      data: {},
+      summary: {},
+      answers: [{id: 't' + n++, t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(), g, a, ok: a === g ? 1 : 0, m, ph: 'x-1', ch}]
+    });
+  // Ana is trusted (12 right four-choice answers), Bob is not (too few answers).
+  for (let i = 0; i < 12; i++) send('Ana', 'Porites', 'Porites', 'quiz', 'Porites Favites Montipora Pavona');
+  send('Ana', 'Acropora', 'Montipora', 'quiz|t'); // a typed miss: Acropora|Montipora [1, 1]
+  send('Ana', 'Montipora', 'Acropora', 'quiz|t|x'); // an exam question typed, the other way: [2, 2]
+  send('Ana', 'Acropora', 'Acropora', 'quiz|t'); // typed right: nothing in play
+  send('Ana', 'Pavona', '', 'quiz|t'); // "I don't know": no pair
+  send('Ana', 'Pavona', 'Porites', 'quiz', 'Pavona Porites Favites Montipora'); // from choices, as before
+  send('Bob', 'Favites', 'Pavona', 'quiz|t'); // untrusted: nothing
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows,
+    C = confusionOf(rows);
+  assert.deepStrictEqual(C.pair, s.get({stats: '1'}).conf, 'the same pooled pairs in the admin and the sheet');
+  assert.deepStrictEqual(C.pair['Acropora|Montipora'], [2, 2]);
+  assert.deepStrictEqual(C.pair['Favites|Pavona'], [1, 0], "an untrusted player's typed miss counts nowhere");
+  assert.deepStrictEqual(C.pair['Pavona|Porites'], [13, 1], 'twelve offers beside Porites shown, one mixed up beside Pavona shown');
+  assert.ok(!('Acropora|Montipora' in C.dir) && !('Montipora|Acropora' in C.dir), 'the direction counts the choices only');
+  assert.deepStrictEqual(
+    {...C.old},
+    {'Acropora|Montipora': 1, 'Montipora|Acropora': 1},
+    'the typed mix-ups stay among those with no choices'
+  );
+  // confAdd alone: no unit shown, nothing; a miss with no choices and no |t (before v10) is no pair.
+  const O = {};
+  confAdd(O, '', 'Acropora', 0, 'quiz|t', '');
+  confAdd(O, 'Pavona', 'Acropora', 0, 'quiz', '');
+  confAdd(O, 'Pavona', 'Pavona', 0, 'quiz|t', '');
+  assert.deepStrictEqual(O, {});
 });
 
 test('confScore starts at the prior and follows the answers', () => {

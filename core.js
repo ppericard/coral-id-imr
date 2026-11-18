@@ -3372,22 +3372,40 @@
     return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
+  // One trusted answer added to the pooled pairs (conf: {"A|B": [offered together, mixed up]}, A before B alphabetically):
+  // the one rule of core.js confusionOf pair and Code.gs statsStep_ (?stats=1 conf). g the unit shown, a the unit
+  // answered, ok right, mode as logged, ch the units offered (space-separated). Each other unit offered beside g: one
+  // offer, and a mix-up when it was answered. A typed miss (TYPED_RE, no choices: the player wrote another unit's name
+  // from memory, docs/decisions/2026-11-18-typed-answers-rest.md) is an unprompted mix-up: the pair counts as offered once
+  // and mixed up, as a player's own record counts a mix-up with no offer (pairConf). "I don't know" ('') and a right
+  // typed answer add nothing: no pair was in play.
+  function confAdd(conf, g, a, ok, mode, ch) {
+    if (!g) return;
+    const inc = (x, took) => {
+      const k = g < x ? g + '|' + x : x + '|' + g,
+        c = (conf[k] = conf[k] || [0, 0]);
+      c[0]++;
+      if (took) c[1]++;
+    };
+    const L = String(ch || '')
+      .split(/\s+/)
+      .filter(x => x && x !== g);
+    if (L.length) L.forEach(x => inc(x, !ok && a === x));
+    else if (!ok && a && a !== g && TYPED_RE.test(String(mode || ''))) inc(a, true);
+  }
   // Confusions between genera (Pierre, 2026-11-01): from the answer log rows (as eloOf; row[10] = the genera offered,
-  // space-separated, logged since sheet script v10). pair["A|B"] (A before B alphabetically) = [offered together, mixed up]:
-  // one was shown with the other among the choices, and the other was answered. Same counts as Code.gs stats_ conf (tests
-  // check it). dir["shown|other"] = [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without
-  // their choices (before v10): they can't be turned into a rate, only counted.
+  // space-separated, logged since sheet script v10). pair["A|B"] (A before B alphabetically) = [offered together, mixed up],
+  // the pooled pairs the game plays with (confAdd): one was shown with the other among the choices and the other was
+  // answered, or (vNEXT) the other was typed for it. Same counts as Code.gs stats_ conf (tests check it).
+  // dir["shown|other"] = [offered, answered] keeps the direction, from the choices only. old["shown|answered"] = mix-ups
+  // logged without their choices: before v10 (they can't be turned into a rate, only counted) and the typed ones (also in
+  // pair; admin.js noChoiceMixups tells the two apart).
   function confusionOf(rows) {
     const trust = trustOf(rows);
     rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_ (v17)
     const pair = {},
       dir = {},
-      old = {},
-      inc = (O, k, took) => {
-        const c = (O[k] = O[k] || [0, 0]);
-        c[0]++;
-        if (took) c[1]++;
-      };
+      old = {};
     rows.forEach(r => {
       const g = r[2],
         a = r[3],
@@ -3396,14 +3414,16 @@
           .split(/\s+/)
           .filter(x => x && x !== g);
       if (!g) return;
+      confAdd(pair, g, a, ok, r[5], r[10]);
       if (!ch.length) {
         if (!ok && a && a !== g) old[g + '|' + a] = (old[g + '|' + a] || 0) + 1;
         return;
       }
       ch.forEach(x => {
-        const took = !ok && a === x;
-        inc(pair, g < x ? g + '|' + x : x + '|' + g, took);
-        inc(dir, g + '|' + x, took);
+        const k = g + '|' + x,
+          c = (dir[k] = dir[k] || [0, 0]);
+        c[0]++;
+        if (!ok && a === x) c[1]++;
       });
     });
     return {pair, dir, old};
@@ -7335,6 +7355,7 @@
     memOf,
     photoMemOf,
     memRecalc,
+    confAdd,
     confusionOf,
     CONF,
     confScore,

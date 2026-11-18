@@ -3420,6 +3420,26 @@ Pierre's decision (2026-11-03): release with these settings ("quickly in product
 following each player's measured recall, no fixed ramp), its variants simulated with 5 seeds (rule L11). Any change
 is recorded here with its numbers.
 
+**Typed mix-ups in the pooled pairs** (2026-11-18, ROADMAP "Typed answers, what is left";
+[decision](decisions/2026-11-18-typed-answers-rest.md)). A typed answer that names another unit is a mix-up the player
+produced with no choice to prompt it. The player's own record already counted it (`s.conf`, and `pairConf` takes a
+mix-up with no offer as offered once); the pooled pairs (`?stats=1` `conf`) did not, since they counted only the units
+offered among the choices. Now `core.js` `confAdd`, the one rule of `Code.gs` `statsStep_` and the admin's
+`confusionOf`, counts each trusted player's typed mix-up as one offer of the pair and one mix-up, so it moves the pair's
+score as a mix-up between two choices does; "I don't know" and right typed answers add nothing (no pair was in play).
+Counting every unit as offered on every typed question would bury the pairs under offers no player weighed; counting
+the mix-up without its offer would make a typed mix-up weigh more than a picked one. Checks (rules L11-L12): the real
+log of 2026-11-18 (3,491 coral and 2,710 fish answers; 70 and 61 typed, 13 and 5 of them another unit's name, all by
+trusted players, 3 players each): 12 coral pairs and 5 fish pairs move, none crosses `CONF.TRAP` and none becomes a
+look-alike from the data (the largest: *Seriatopora* / *Stylophora* 0.135 → 0.153 on [84, 10] → [86, 12];
+*Echinopora* / *Porites* 0.016 → 0.077 on [7, 0] → [8, 1]); 10 of the 12 coral pairs come from one player. The full
+replay reads the pooled pairs only for the rows logged before their scoring record (2026-11-06; 2,053 of the 3,491
+coral rows): with the new pairs 15 of 490 player-genus bars move, by at most 0.36 points, less than one day of new
+answers moves them (21 bars, 0.52 points at most), so no rules version (rule D5: the pooled pairs are data the replay
+reads as they are, and a row with its scoring record replays the same whatever they hold, `tests/scorer.test.js`).
+The app world cannot see the change beyond its stats snapshot (learnsim plays with fixed pooled stats and its typed
+answers never reach them): SIMRESULT
+
 ### Fish on the same model (2026-11-03)
 
 Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Subjects"). Nothing of the model above changes for fish: the same Elo per unit and global level, progress moving average, mastery exam, typed questions, opening of units, comeback, photo memory, confusion scores. What a fish entry brings in place of a genus's data, and the few settings of its own:
