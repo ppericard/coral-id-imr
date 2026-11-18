@@ -2330,8 +2330,7 @@ const darkCards = (p, sel) =>
     if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/^Corals: fitted on .* next at/.test(anv.badge))
       fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
     // the stored report's switch: round milestones only (Pierre, 2026-11-05: 1000, 2000, …, no "All N"), the newest pressed;
-    // the status line counts from it, the corals' answers only (Pierre, 2026-11-08: the demo's fish answers apart; a demo
-    // script before v105 counts every subject's rows in its head, so the line counts from the answer log read)
+    // the status line counts from it, the corals' answers only (Pierre, 2026-11-08: the demo's fish answers apart)
     await p
       .waitForFunction(() => / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''), null, {timeout: 30000})
       .catch(() => {});
@@ -2728,15 +2727,16 @@ const darkCards = (p, sel) =>
     // The actions part (once, at 1280; its own CI job since the CI speed work of 2026-11-15, a third of the main part's time):
     // run here in a whole run, first in a run without the main part.
     async function actionsPart() {
-      // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
+      // Once: Formats against a direct count, the milestone switch, views remembered, To do, Hidden, the view filter.
       await go('analyses/difficulty/formats');
       const anf = await p.evaluate(async () => {
         const log = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows,
-          // the newest milestone, shown by default: the first round thousand of answers in time order (Pierre, 2026-11-05)
-          rows = log
+          // the newest milestone, shown by default: the first round thousand of the corals' answers in time order (Pierre,
+          // 2026-11-05; the demo's fish answers have their own report, core.js subjRows)
+          rows = subjRows(log)
             .slice()
             .sort((a, b) => a[1] - b[1])
-            .slice(0, Math.floor(log.length / 1000) * 1000);
+            .slice(0, Math.floor(subjRows(log).length / 1000) * 1000);
         // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
         // no |k2 or |k3, with the app's expectation logged
         const direct = rows.filter(
@@ -2794,23 +2794,10 @@ const darkCards = (p, sel) =>
       if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
         fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
       if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
-      // A sync script before v35 has no report: the views say so, nothing breaks (rule D4).
-      {
-        const aq = await ctx.newPage(),
-          aqe = [];
-        aq.on('pageerror', e => aqe.push(e.message));
-        await aq.goto(base + 'admin.html?demo&v=30#analyses/speed/answer-time');
-        await aq
-          .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
-          .catch(() => aqe.push('no "No report yet"'));
-        if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
-        await aq.close();
-      }
-      // Pierre, 2026-11-08: the corals' status line never counts the fish answers. Script v104 (from v60 the demo logs fish
-      // answers too; the head's answers every row of every subject, not used: the line counts from the answer log read)
-      // and v105 (the head counts each subject apart).
+      // Pierre, 2026-11-08: the corals' status line never counts the fish answers (the demo logs fish answers too; the
+      // head counts each subject apart, v105).
       if (w === 1280)
-        for (const v of [104, 105]) {
+        for (const v of [105]) {
           const aq = await ctx.newPage(),
             aqe = [];
           aq.on('pageerror', e => aqe.push(e.message));
@@ -2838,18 +2825,16 @@ const darkCards = (p, sel) =>
           await aq.close();
         }
       // Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). From the script that stores one
-      // report per subject (analysis.js AN_SUBJ_SHEET), the fish side's Analyses draw the fish report: its own status line
+      // report per subject (sheet v113), the fish side's Analyses draw the fish report: its own status line
       // and milestone, its views but What makes a photo hard and the live views but Stops (one line on its Overview says so),
       // the fish words and unit names, never a coral genus; the corals' side keeps its own report. Its Stops is the live
-      // view drawn from the fish answers, not from the report (checked with fish Health, below: "Fish admin at parity"). A
-      // script before it: the fish side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and
-      // Mix-ups at 360 px too.
+      // view drawn from the fish answers, not from the report (checked with fish Health, below: "Fish admin at parity").
+      // At 1280, and the Overview and Mix-ups at 360 px too.
       {
-        const GATE = require('../analysis.js').AN_SUBJ_SHEET;
+        const GATE = require('../core.js').SHEET_FLOOR;
         for (const [v, vw] of [
           [GATE, 1280],
-          [GATE, 360],
-          [GATE - 1, 1280]
+          [GATE, 360]
         ]) {
           const fc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
           await fc.route(
@@ -2905,9 +2890,7 @@ const darkCards = (p, sel) =>
           };
           await fq.goto(base + `admin.html?demo&v=${v}#fish/analyses/overview`);
           let at = await look('fish/analyses/overview');
-          if (v < GATE) {
-            if (!at.none) fe.push(`the fish side shows a report: ${JSON.stringify(at)}`);
-          } else {
+          {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
             // every Analyses view on the fish side since the Heatmap (Q123 m, 2026-11-16): no line on what is not there
@@ -3690,7 +3673,7 @@ const darkCards = (p, sel) =>
       // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
       // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
       // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
-      // the answers are listed. Before v99, Change… is greyed (rule D4).
+      // the answers are listed.
       {
         const q = await p.context().newPage();
         q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
@@ -3704,8 +3687,6 @@ const darkCards = (p, sel) =>
         const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
           wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
         try {
-          await open(98);
-          if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v98): Change… not greyed`);
           await open(99);
           const b0 = await bar();
           if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
@@ -3742,7 +3723,7 @@ const darkCards = (p, sel) =>
         await q.close();
       }
       if (once) {
-        // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
+        // Once: sorts, the replayed progress, sheet reads, the leaderboard, rename, greyed names.
         if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
         // Names joined with the answer log by anonymous id: every demo player has answers in the corals' group (the fifth
         // column); sorting by name puts Ana first, reversed last.
@@ -3816,7 +3797,7 @@ const darkCards = (p, sel) =>
         }
         // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
         // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
-        // itself from their saved copies, which it still does with a script before v42 (one userData call each, rule D4).
+        // itself from their saved copies.
         {
           const open = async v => {
             const q = await p.context().newPage();
@@ -3844,11 +3825,8 @@ const darkCards = (p, sel) =>
           });
           if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
           await q.close();
-          const q41 = await open(41);
-          if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
-          await q41.close();
           // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191): Photos (Seen %) and Spread columns from the list's ex, in the
-          // subject of the switch, each cell a share (its counts in the title) or –; none before v81 (rule D4).
+          // subject of the switch, each cell a share (its counts in the title) or –.
           const cols = q =>
             q.evaluate(() => {
               const H = [...document.querySelectorAll('.adm-utbl thead button')].map(b => b.dataset.usort),
@@ -3867,50 +3845,6 @@ const darkCards = (p, sel) =>
           if (!ok || !ox.cells.some(c => /%$/.test(c[0]) && /%$/.test(c[1])) || !ox.tips)
             fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
           await qx.close();
-          const q80 = await open(80),
-            o80 = await cols(q80);
-          if (o80.at.some(i => i >= 0)) fails.push(`${w}px Players (v80): exposure columns before the script serves them`);
-          await q80.close();
-        }
-        // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
-        // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
-        // Journey's learned genera from the saved copy).
-        {
-          const q = await p.context().newPage();
-          q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
-          await q.goto(base + 'admin.html?demo&v=27#players/list');
-          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
-          await q.waitForTimeout(1500);
-          const o = await q.evaluate(() => {
-            const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort.endsWith(':' + k));
-            return {
-              prog: col('prog'),
-              marks: document.querySelectorAll('.adm-saved').length,
-              anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
-            };
-          });
-          if (o.prog !== -1 || o.marks || o.anonProg) fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
-          await q.goto(base + 'admin.html?demo&v=27#players/list/journey/' + encodeURIComponent('Dio Demo'));
-          await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
-          // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
-          await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
-          const j = await q.evaluate(() => ({
-            kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-            col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
-            learned: document.querySelectorAll('.adm-jlearn').length,
-            // Before sheet v44 no UTC offset is served: the Cards keep the admin's clock.
-            cards: /First cards/.test((document.querySelector('.adm-jcards') || {}).innerText || ''),
-            local: document.querySelectorAll('.adm-jt').length
-          }));
-          if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1 || !j.cards || j.local)
-            fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
-          // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
-          await q
-            .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
-              timeout: 10000
-            })
-            .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
-          await q.close();
         }
         // Cohorts and staff (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts,
         // New cohort… asking its name) and Staff Add / Remove; the Groups column and the line above the table follow. Before
@@ -3977,9 +3911,8 @@ const darkCards = (p, sel) =>
           }
           await q.close();
         }
-        // Out of the statistics (sheet EXCL_SHEET, ROADMAP "Security follow-ups"): a player's bar and every device not signed in
-        // carry Leave out / Count again, one click each way; a player left out is marked "out" in the list. Before it the
-        // buttons are there, disabled, with the version they wait for.
+        // Out of the statistics (sheet v115, ROADMAP "Security follow-ups"): a player's bar and every device not signed in
+        // carry Leave out / Count again, one click each way; a player left out is marked "out" in the list.
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px stats exclusion page error: ${e.message}`));
@@ -4003,18 +3936,11 @@ const darkCards = (p, sel) =>
                 ex: (USERS.excluded || []).length
               };
             });
-          const X = await p.evaluate(() => EXCL_SHEET);
-          await q.goto(base + `admin.html?demo&v=${X - 1}#players/list`);
+          await q.goto(base + 'admin.html?demo#players/list');
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
           await calm();
           await q.click('[data-uopen="Ben Demo"]');
           let e = await st();
-          if (!e.bar || !e.bar[1] || !e.bar[2].endsWith('v' + X)) fails.push(`${w}px stats exclusion before v${X}: ${JSON.stringify(e)}`);
-          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
-          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
-          await calm();
-          await q.click('[data-uopen="Ben Demo"]');
-          e = await st();
           if (!e.bar || e.bar[0] !== 'Leave out' || e.bar[1] || e.out || !e.anon)
             fails.push(`${w}px stats exclusion: before ${JSON.stringify(e)}`);
           await q.click('.adm-ubar [data-ustat]');
@@ -4250,7 +4176,7 @@ const darkCards = (p, sel) =>
         if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
         // The beta group (sheet v48; Pierre, 2026-11-04: fish opens to a group he picks here, not one site-wide switch): on
         // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
-        // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
+        // confirm is accepted, above); the corals' Players page has none.
         {
           // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
           // fish set back to 'group' at runtime, then opened to all again.
@@ -4299,7 +4225,8 @@ const darkCards = (p, sel) =>
             // group leaves it, and the members of another group keep theirs (a second subject set to a group here, every
             // player added to it first). Read on the page and on the demo sheet.
             {
-              // The other subject's sheet version is dropped with it: the demo sheet is v58, before the sea slugs' (v151).
+              // The other subject's sheet version is dropped with it: the demo sheet is the gate floor's (core.js SHEET_FLOOR),
+              // before the sea slugs' (v151).
               const other = await p.evaluate(b => SUBJECTS.find(S => S.id !== b && !S.replay && !subjGroup(S)).id, beta),
                 was = await p.evaluate(o => (S => ({open: S.open, sheet: S.sheet}))(SUBJECTS.find(S => S.id === o)), other),
                 // each subject's group line, by its name
@@ -4429,25 +4356,6 @@ const darkCards = (p, sel) =>
               await go('players/list');
               await go(beta + '/players/list');
             }
-            const q = await p.context().newPage();
-            // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
-            await q.route(
-              u => u.pathname === '/core.js',
-              async r => {
-                const res = await r.fetch();
-                await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
-              }
-            );
-            await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
-            await q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
-              .catch(() => {});
-            const old = await q.evaluate(() => ({
-              note: /needs the sheet script v48/.test(document.getElementById('view').innerText),
-              btn: !!document.querySelector('[data-ugall], [data-ugroup]')
-            }));
-            if (!old.note || old.btn) fails.push(`${w}px Players (${beta}) with sheet v45: ${JSON.stringify(old)}`);
-            await q.close();
             // Opened to all (core.js SUBJECTS open: 'all', the release's one field, forced here at runtime): no group line, no
             // Beta column, no Add / Remove, though the subject keeps its beta label; back to 'group', they return.
             await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta);
@@ -5452,16 +5360,13 @@ const darkCards = (p, sel) =>
       }
     }
     if (once) {
-      // Once: a live Activity (Pierre, 2026-11-08: "Les deux"). From sheet LIVE_SHEET the page reads the newest answers
-      // every minute while it is open and in view (admin.js liveArm, liveRead; the demo's readLive): an answer Carla gives
-      // now shows in her session without ↻; hidden, nothing is read; back in view, a read at once. Before it (this page,
-      // the demo's default script), no light read at all (rule D4). The minute is cut to 1.5 s here.
-      const LV = Number(/const LIVE_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'))[1]);
+      // Once: a live Activity (Pierre, 2026-11-08: "Les deux"; sheet v110). The page reads the newest answers every minute
+      // while it is open and in view (admin.js liveArm, liveRead; the demo's readLive): an answer Carla gives now shows in
+      // her session without ↻; hidden, nothing is read; back in view, a read at once. The minute is cut to 1.5 s here.
       const lives = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'readLive').length);
-      if (await lives(p)) fails.push(`${w}px live Activity: a light read before LIVE_SHEET`);
       const q = await p.context().newPage();
       q.on('pageerror', e => fails.push(`${w}px live Activity page error: ${e.message}`));
-      await q.goto(base + `admin.html?demo&v=${LV}#players/activity`);
+      await q.goto(base + 'admin.html?demo#players/activity');
       await q.waitForSelector('[data-recent] tbody tr', {timeout: 20000}).catch(() => {});
       const carla = () =>
         q.evaluate(() => {
@@ -5933,8 +5838,8 @@ const darkCards = (p, sel) =>
     }
     // Photo stats › Overview on the fish side (fish admin at parity): the corals' cards in the fish words (families,
     // observations, circles, the fish sources), every photo of the fish data in one row of All photos, the circles adding
-    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's script here
-    // logs no fish answer: every photo in play in None; with answers, the fresh fish session below), Fewest and most
+    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's made-up fish
+    // answers: some photos answered, the others in None; a fresh fish session's, below), Fewest and most
     // opening the families' Tree pages, no coral genus, no photo difficulty, no sideways scroll, dark in the dark theme;
     // the corals' Difficulty is not a fish page. At 390 and 1280.
     {
@@ -5989,7 +5894,7 @@ const darkCards = (p, sel) =>
         fo.fams !== fo.want.fams ||
         fo.src.join() !== fo.want.src.join() ||
         fo.ans.reduce((t, r) => t + r[1], 0) !== fo.pool['In play'] ||
-        fo.ans[0][1] !== fo.pool['In play'] ||
+        !(fo.ans[0][1] < fo.pool['In play']) ||
         fo.ends !== 10 ||
         fo.coral.length ||
         fo.words ||

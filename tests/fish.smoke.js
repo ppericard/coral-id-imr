@@ -823,7 +823,7 @@ async function freshPlayers(b, base, errs) {
       picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
     ok(!bonusOfferDue(), 'no circle offer card');
     // A unit's bar set through the former moving average (s.pg), whatever rule its record is under: a unit answered above
-    // took the domain-score bar (core.js DOM; the fish are not replayed, model.js domRules), which s.pg alone would not move.
+    // took the domain-score bar (core.js DOM), which s.pg alone would not move.
     const pgAt = (n, x) => {
       const s = st(n);
       delete s.dp;
@@ -841,11 +841,8 @@ async function freshPlayers(b, base, errs) {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
-    // The global score from the sheet script that ranks by it (core.js SCORE_SHEET, rule D4): before, the families' mean.
-    store.set(SHEETV, SCORE_SHEET - 1);
-    ok(headScore() === null && headPct() === progPct(), 'before SCORE_SHEET: the families mean, as before');
-    store.set(SHEETV, SCORE_SHEET);
-    ok(headScore() && headPct() === headScore().pct, 'from SCORE_SHEET: the global score');
+    // The global score, which the sheet ranks by (v101, below the gate floor core.js SHEET_FLOOR), also before any reply.
+    ok(headScore() && headPct() === headScore().pct, 'the global score');
     ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
@@ -2019,12 +2016,11 @@ async function freshPlayers(b, base, errs) {
     });
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (Pierre, 2026-11-04: separate per subject): #leaderboard on Fish asks the sheet for the fish
-    // board (&s=fish), shown only from a script that serves it (sheet v95, rule D4), kept apart from the corals' copy.
+    // board (&s=fish, sheet v95, below the gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
     // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
     const fb = await q.evaluate(async () => {
       const f0 = window.fetch,
         asked = [];
-      let v = BOARD_SHEET - 1;
       window.fetch = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=fish/.test(u)
@@ -2033,25 +2029,13 @@ async function freshPlayers(b, base, errs) {
               ['Other P', 20, null]
             ]
           : [['Coral P', 90, 1.1]];
-        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v})));
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: SHEET_FLOOR})));
       };
       const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
-      const sv0 = store.get(SHEETV, 0);
       try {
         localStorage.removeItem('reefid-fish-board-cache');
-        // The sheet's last reply before BOARD_SHEET (rule D4; Codex review #694): Fish behaves as before it had a board, the
-        // page shows the corals' board, and nothing announces one.
-        store.set(SHEETV, BOARD_SHEET - 1);
         go('board');
-        const before = await shown(),
-          live0 = boardLive(SUBJ),
-          asked0 = asked.splice(0);
-        // The sheet at BOARD_SHEET, a reply still from an older script (the update under way): the corals' rows are never
-        // shown as the fish board.
-        store.set(SHEETV, BOARD_SHEET);
-        viewBoard();
-        const old = await shown();
-        v = BOARD_SHEET;
+        const live0 = boardLive(SUBJ);
         boardAt.fish = 0;
         viewBoard();
         const fresh = await shown();
@@ -2059,30 +2043,23 @@ async function freshPlayers(b, base, errs) {
         document.querySelector('#boardset button[data-board="1"]').click();
         const dropped = !Object.keys(boardP).length;
         return {
-          before,
           live0,
-          asked0,
           dropped,
           asked,
-          old,
           fresh,
           kept: localStorage.getItem('reefid-fish-board-cache'),
           coral: localStorage.getItem('reefid-board-cache')
         };
       } finally {
         window.fetch = f0;
-        store.set(SHEETV, sv0);
       }
     });
     if (
-      fb.live0 ||
-      !/Coral P/.test(fb.before) ||
-      !fb.asked0.every(a => a === 'board=1') ||
+      !fb.live0 ||
       !fb.dropped ||
       !fb.asked.length ||
       !fb.asked.every(a => a === 'board=1&s=fish') ||
-      !/not available yet/.test(fb.old) ||
-      /Coral P/.test(fb.old) ||
+      /Coral P/.test(fb.fresh) ||
       !/Fish P/.test(fb.fresh) ||
       !/63%/.test(fb.fresh) ||
       !/Fish P/.test(fb.kept || '') ||

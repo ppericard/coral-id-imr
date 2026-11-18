@@ -8,7 +8,7 @@
 //                                             sea slugs; Pierre, 2026-11-08), each from its own answers (core.js
 //                                             subjRows): reads the log
 //                                             with readAnswers and stores the report with analysesPut (sheet v35; one
-//                                             stored report per subject from v113, AN_SUBJ_SHEET), both with the admin
+//                                             stored report per subject from v113), both with the admin
 //                                             token in ANALYSES_ADMIN_TOKEN; does nothing for a subject until the log
 //                                             reaches a round thousand of that subject's answers (counted apart by the
 //                                             sheet's head from v105; Pierre, 2026-11-08) its stored report does not
@@ -31,7 +31,6 @@ const A = require('../analysis.js'),
 const ROOT = path.join(__dirname, '..');
 const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
-const SHEET_V = 35; // analysesGet / analysesPut
 
 // The photos' features from the public files of this checkout, for a subject whose analyses read them (core.js SUBJECTS
 // analyses photos): true, the corals' view, quality, sharpness and source (analysis.js photoMeta); 'judged', its photos'
@@ -95,17 +94,13 @@ async function sheetRun(io, token, o = {}) {
     subject = o.subject || C.replaySubject();
   const head = await post({analysesGet: 1, head: 1, subject});
   if (!head || !head.ok) {
-    if (head && head.error === 'input') {
-      io.log(`The sync script answers as v${head.v || '?'}: the Analyses report needs v${SHEET_V}. Nothing done.`);
-      return 'old';
-    }
     io.log(`The sync script refused the admin token (${(head && head.error) || 'no reply'}). Nothing done.`);
     return 'refused';
   }
-  // Another subject's report only from the script that stores one per subject (rule D4): an older one would answer with
-  // the corals' stored report and store this one in its place.
-  if (subject !== C.replaySubject() && (!(Number(head.v) >= A.AN_SUBJ_SHEET) || head.subject !== subject)) {
-    io.log(`${C.subjectOf(subject).name}: the sync script answers as v${head.v || '?'}: one report per subject needs v${A.AN_SUBJ_SHEET}. Nothing done.`);
+  // Another subject's report only from a reply that names it (Code.gs v113 stores one report per subject): one that does
+  // not would be the corals' stored report, and this one stored in its place.
+  if (subject !== C.replaySubject() && head.subject !== subject) {
+    io.log(`${C.subjectOf(subject).name}: the sync script's reply names another subject (v${head.v || '?'}). Nothing done.`);
     return 'old';
   }
   const st = head.stored,

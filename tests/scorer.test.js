@@ -106,13 +106,11 @@ function session(seed, n) {
         L.some(x => x !== t && (pooled(t, x) >= C.CONF.TRAP || C.confScore(C.pairConf(P, t, x), pooled(t, x)) >= C.CONF.TRAP)),
       recallAt: () => Math.round((0.5 + r() * 0.5) * 1000) / 1000,
       startP: () => 0,
-      rtOn: () => true,
       mq: mode,
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => pfmt, // model.js pfmt: the device's offsets (this session plays a subject the sheet rates)
       // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
-      domRules: () => true,
       genusDiff: t => pgd[t] || 0
     };
     vm.createContext(env);

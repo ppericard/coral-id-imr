@@ -111,7 +111,7 @@ test('core.js logOut: cv only from CV_SHEET, pa only from PA_SHEET, each on its 
   assert.deepStrictEqual(a, {id: 'a1', m: 'quiz|f', pa: 'fi2', cv: 'cabc'});
   // The gate is main's script version + 1 when written (rule D4; tools/sheet_version.py --assign moves it at merge).
   const v = Number(/const VERSION = (\d+);/.exec(read('tools/sync/Code.gs'))[1]);
-  assert.ok(C.CV_SHEET > 174 && C.CV_SHEET <= v + 1, `CV_SHEET ${C.CV_SHEET}, VERSION ${v}`);
+  assert.ok(C.CV_SHEET > 175 && C.CV_SHEET <= v + 1, `CV_SHEET ${C.CV_SHEET}, VERSION ${v}`);
 });
 
 // ---- The content version ----

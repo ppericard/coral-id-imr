@@ -3384,9 +3384,7 @@ function cardRing(pct, was) {
 // (sheet v124: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
 // page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
-// those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
-const FROMHOME_SHEET = 124;
-const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
+// those taken while it is on screen are not counted).
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
@@ -3394,7 +3392,6 @@ function fromHome(h, nt) {
   if (document.getElementById('tour')) return void (toured = true);
   if (homeLeft || !HOME_AT || (routeFrom !== '' && routeFrom !== 'home') || !h || h === 'home') return;
   homeLeft = true;
-  if (!fromHomeOn()) return;
   ev('fromhome', {
     to: pageName(h, SUBJ.pv),
     s: Math.round((performance.now() - HOME_AT) / 100) / 10,

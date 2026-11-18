@@ -429,12 +429,10 @@ const server = http.createServer((req, res) => {
     const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
     if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
-    // The domain-score bar (core.js DOM, rules version 9) once the sheet replays it (model.js domRules: sheet v87, DOM_SHEET):
-    // a genus first answered takes it, a right answer credits it, a miss never raises it, and the answer logs the genus
-    // offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule (rule D4).
+    // The domain-score bar (core.js DOM, rules version 9; the sheet replays it from v87, below the gate floor core.js
+    // SHEET_FLOOR): a genus first answered takes it, a right answer credits it, a miss never raises it, and the answer logs
+    // the genus offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule.
     {
-      const sv = store.get('reefid-sheet-v', 0);
-      store.set('reefid-sheet-v', DOM_SHEET);
       delete P[t];
       answer('quiz', t, t, pics.slice(-1), false, null);
       const d1 = P[t].ds,
@@ -445,7 +443,6 @@ const server = http.createServer((req, res) => {
         fails.push(`${t}: the genus offset not logged: ${JSON.stringify(lg.sc)}`);
       answer('quiz', wrong, t, pics.slice(-1), false, null);
       if (!(P[t].ds <= d1)) fails.push(`${t}: a miss raised the domain-score bar ${d1} -> ${P[t].ds}`);
-      store.set('reefid-sheet-v', sv);
     }
     // What a right answer proves (pgWeight): more against a look-alike, and more among 4 plausible choices than 2.
     const la = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) >= CONF.TRAP),

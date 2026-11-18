@@ -198,7 +198,6 @@ test('domRecalcAll leaves an old record alone while the data is partial, and reb
     saved = 0;
   const ctx = {
     SUBJ: {},
-    domRules: () => true,
     DATA: {gen: {}},
     dataPartial: () => partial,
     P: {'f:A': {pg: 0.4, ok: 6, ko: 2}},

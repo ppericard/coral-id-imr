@@ -103,7 +103,7 @@ test('a wink answer takes the normal answer path: the account queue, or LOG0 and
   );
 });
 
-test('core: the marker, the subject readers and the send gate', () => {
+test('core: the marker and the subject readers', () => {
   const wk = {s: 'fish', m: 'wink', g: WALE},
     fq = {s: 'fish', m: 'quiz', g: 'f:Damselfishes'},
     cq = {m: 'quiz', g: 'Acropora'};
@@ -120,16 +120,8 @@ test('core: the marker, the subject readers and the send gate', () => {
   assert.deepStrictEqual(C.subjEntries([{...wk, s: ''}, cq]), [cq], 'never in the replayed one either');
   assert.deepStrictEqual(C.subjRows([wk, fq, cq].map(row), 'fish'), [row(fq)]);
   assert.deepStrictEqual(C.subjRows([{...wk, s: ''}, cq].map(row)), [row(cq)]);
-  // Sent only to a sheet whose readers leave it out (rule D4), whatever else the sheet takes.
-  assert.strictEqual(C.WINK_SHEET, 98);
-  assert.strictEqual(C.logOk(wk, 97), false);
-  assert.strictEqual(C.logOk(wk, undefined), false);
-  assert.strictEqual(C.logOk(wk, 98), true);
-  assert.strictEqual(C.logOk(cq, 0), true, 'the other answers as before');
-  assert.strictEqual(C.logOk(fq, 60), true);
-  assert.strictEqual(C.logOk(fq, 59), false);
-  const SV = Number(/const VERSION = (\d+);/.exec(read('tools/sync/Code.gs'))[1]);
-  assert.ok(SV >= C.WINK_SHEET, 'the script that leaves them out is the one in the repository');
+  // Sent as they come: the readers leave it out from v98, below the gate floor (core.js SHEET_FLOOR).
+  assert.ok(C.SHEET_FLOOR >= 98);
 });
 
 // The sheet: the same player's answers with and without a surprise card's, which every reader must give alike. The
