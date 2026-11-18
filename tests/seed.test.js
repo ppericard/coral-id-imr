@@ -21,10 +21,12 @@ const ROOT = path.join(__dirname, '..'),
   TOK = 'ghp_write000000000000000000',
   SEED = C.SEED;
 const BOARDS = C.SUBJECTS.filter(S => S.board),
-  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes'];
+  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes'],
+  SUNITS = ['g:Chromodoris', 'g:Hypselodoris'];
 const data = () => ({
   [C.subjKey('coral', 'progress')]: JSON.stringify({Acropora: {ok: 3, ko: 0, pg: 0.6}}),
-  [C.subjKey('fish', 'progress')]: JSON.stringify({'f:Damselfishes': {ok: 2, ko: 0, pg: 0.5}})
+  [C.subjKey('fish', 'progress')]: JSON.stringify({'f:Damselfishes': {ok: 2, ko: 0, pg: 0.5}}),
+  [C.subjKey('seaslug', 'progress')]: JSON.stringify({'g:Chromodoris': {ok: 2, ko: 0, pg: 0.5}})
 });
 // A player's save as the app sends it; extra goes into the summary, more into the data (what a player could try to claim with).
 const play = (s, name, pin, extra = {}, more = {}) =>
@@ -32,7 +34,7 @@ const play = (s, name, pin, extra = {}, more = {}) =>
     name,
     pin,
     data: Object.assign(data(), more),
-    summary: {genera: {Acropora: 'mid', Montipora: 'new'}, board: 1, boards: {fish: FUNITS}, ...extra},
+    summary: {genera: {Acropora: 'mid', Montipora: 'new'}, board: 1, boards: {fish: FUNITS, seaslug: SUNITS}, ...extra},
     answers: []
   });
 const names = s => s.sheets.RAs.rows.slice(1).map(r => r[0]);

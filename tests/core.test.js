@@ -463,11 +463,11 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
 // fish achievement never counts in the corals' list and back; every one reachable on the fish snapshot; none reachable on
 // an empty one (nothing for time or for opening the app).
 test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
-  const {ACH, FISH_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
+  const {ACH, FISH_ACH, SEASLUG_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
   // the 33 of 2026-11-08 less the 6 that wait for the scientific species names or Fish basics (fsp1, fsp10 and fsp50
   // came with the species level's step 1)
   assert.strictEqual(FISH_ACH.length, 27, String(FISH_ACH.length));
-  const ids = [...ACH, ...FISH_ACH].map(a => a.id);
+  const ids = [...ACH, ...FISH_ACH, ...SEASLUG_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
   assert.ok(
@@ -476,7 +476,7 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
   );
   assert.deepStrictEqual(
     SUBJECTS.filter(S => S.ach).map(S => S.achs()),
-    [ACH, FISH_ACH]
+    [ACH, FISH_ACH, SEASLUG_ACH]
   );
   assert.ok(ACH_CONTRIB.length && ACH_CONTRIB.every(a => a.kind === 'contrib'));
   const none = {
@@ -746,7 +746,8 @@ test('achRevoke and mergeAch: learned-based achievements taken back stay so thro
     'flearn1',
     'flearn10',
     'flearn30',
-    'flearncore'
+    'flearncore',
+    'sslearn1'
   ]);
   const snap = (learned, group = false) => ({
     total: 40,

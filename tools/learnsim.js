@@ -601,7 +601,10 @@ function play(cfg) {
     okey = p => p.o || p.f,
     expo = [],
     // Before Open Water (2026-11-08, model.js RARE): each question's [1 if its unit was under Open Water when drawn, else
-    // 0; the lowest judged ease of its photos, 0 for none], for the share of photos under ease 4 before Open Water.
+    // 0; the lowest judged ease of its photos, 0 for none], for the share of photos under ease 4 before Open Water; then
+    // (2026-11-15, juveniles and colour phases) 1 if a photo shown had a judged phase (core.js phaseOf), the answers its
+    // unit had before it, and the variant kind shown (core.js VAR_KINDS index: 0 none, 1 an early-class juvenile, 2
+    // another, 3 a late-class one, 4 a sex or colour phase; model.js varKind; Q391 a).
     preOW = [],
     POOL = Object.fromEntries(
       SL.concat(BONUS).map(g => [
@@ -749,7 +752,14 @@ function play(cfg) {
       pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
       first = !asked(t);
     if (shown.length) expo.push([t, okey(shown[0]), ...fs]);
-    if (shown.length) preOW.push([genScore(t) + 1e-9 < LV_AT[0] ? 1 : 0, Math.min(...shown.map(p => p.e || 0))]);
+    if (shown.length)
+      preOW.push([
+        genScore(t) + 1e-9 < LV_AT[0] ? 1 : 0,
+        Math.min(...shown.map(p => p.e || 0)),
+        typeof phaseOf === 'function' && shown.some(p => phaseOf(p)) ? 1 : 0,
+        ((P[t] || {}).ok || 0) + ((P[t] || {}).ko || 0),
+        typeof varKind === 'function' ? Math.max(0, ...shown.map(p => VAR_KINDS.indexOf(varKind(t, p)))) : 0
+      ]);
     let pick = t,
       pTrue;
     if (exem) {
@@ -1622,7 +1632,7 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX});
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX, calib: CALIBX});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();

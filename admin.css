@@ -4443,6 +4443,13 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   display: block;
   font-size: var(--fs-xs);
 }
+/* One rank's units in a view that lists them (admin-analyses.js anRk): its name above its own chart or table. */
+.adm-an-rk {
+  margin: 0.8em 0 0.2em;
+}
+.adm-an-rk:first-child {
+  margin-top: 0;
+}
 /* What is compared wraps, never cut; on a phone each result is a block: compared and verdict, then what it does. */
 .adm-an-eff td.an-c {
   min-width: 10em;

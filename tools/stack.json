@@ -57,12 +57,24 @@
       "name": "Playwright (smoke tests, Chromium)",
       "version": "1.65.1",
       "pins": [
-        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml"], "pattern": "playwright@{v}", "min": 2},
-        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml"], "pattern": "ms-playwright-${{ runner.os }}-{v}", "min": 2}
+        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml", ".github/workflows/pages.yml"], "pattern": "playwright@{v}", "min": 3},
+        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml", ".github/workflows/pages.yml"], "pattern": "ms-playwright-${{ runner.os }}-{v}", "min": 3}
       ],
       "latest": {"kind": "npm", "package": "playwright", "compare": "exact"},
       "lookup": "https://playwright.dev/docs/release-notes",
-      "why": "npm install into a temporary folder on CI; the browser cache key carries the same version."
+      "why": "npm install into a temporary folder on CI (the deploy too: its staged copy's smoke); the browser cache key carries the same version."
+    },
+    {
+      "id": "terser",
+      "name": "terser (the deploy's minifier)",
+      "version": "5.51.2",
+      "pins": [
+        {"files": [".github/workflows/pages.yml", ".github/workflows/smokes.yml"], "pattern": "terser@{v}", "min": 2},
+        {"files": ["tools/minify.js"], "pattern": "const TERSER = '{v}';"}
+      ],
+      "latest": {"kind": "npm", "package": "terser", "compare": "exact"},
+      "lookup": "https://github.com/terser/terser/blob/master/CHANGELOG.md",
+      "why": "npm install into a temporary folder at deploy and for the staged smoke (tools/minify.js checks the version it finds). A new version changes the served bytes, so every minified file's ?v= and sw.js V with them: the staged smoke plays it first."
     },
     {
       "id": "pillow",

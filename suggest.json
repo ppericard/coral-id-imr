@@ -5051,8 +5051,8 @@
   "119434": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 29
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "126110": {
@@ -5065,8 +5065,8 @@
   "119429": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 25
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "121050": {
@@ -5093,8 +5093,8 @@
   "49735": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 24
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "125934": {
@@ -5114,22 +5114,22 @@
   "201640": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 21
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "121048": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 22
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "50554": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 24
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "346881": {
@@ -5163,8 +5163,8 @@
   "119872": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 27
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "119438": {
@@ -5261,8 +5261,8 @@
   "207581": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 23
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "49904": {
@@ -5310,8 +5310,8 @@
   "467977": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 22
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "1475021": {
@@ -5380,8 +5380,8 @@
   "143227": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 21
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "782298": {
@@ -5415,8 +5415,8 @@
   "1263433": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-15",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "120977": {
@@ -5541,8 +5541,8 @@
   "126096": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-15",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "147938": {
@@ -5632,8 +5632,8 @@
   "199473": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-15",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "778448": {
@@ -6010,8 +6010,8 @@
   "467978": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-15",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "50550": {
@@ -6346,8 +6346,8 @@
   "504373": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 25
    }
   },
   "469419": {
@@ -6374,8 +6374,8 @@
   "120983": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "50398": {
@@ -6416,8 +6416,8 @@
   "1115871": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-16",
-    "n": 20
+    "at": "2026-11-17",
+    "n": 30
    }
   },
   "505174": {
@@ -6725,7 +6725,7 @@
    "seaslug": {
     "by": "claude",
     "at": "2026-11-17",
-    "n": 20
+    "n": 30
    }
   },
   "Nembrotha": {
@@ -6746,7 +6746,7 @@
    "seaslug": {
     "by": "claude",
     "at": "2026-11-17",
-    "n": 20
+    "n": 30
    }
   },
   "Halgerda": {
@@ -6879,7 +6879,7 @@
    "seaslug": {
     "by": "claude",
     "at": "2026-11-17",
-    "n": 13
+    "n": 14
    }
   },
   "Aegires": {
@@ -191961,6 +191961,11 @@
    "e": 1,
    "k": "best"
   },
+  "seaslug-1115871-cand-176760690": {
+   "jt": "o1g0mm1cw",
+   "e": 1,
+   "k": "best"
+  },
   "seaslug-1115871-cand-177823270": {
    "jt": "o1g0mm1cw",
    "e": 1,
@@ -191971,6 +191976,12 @@
    "e": 1,
    "k": "best",
    "n": "a white spotted animal on a white sponge, findable at full size by its rhinophore"
+  },
+  "seaslug-1115871-cand-238876265": {
+   "jt": "o1g0mlsc",
+   "e": 2,
+   "k": "best",
+   "n": "a second animal behind, out of focus"
   },
   "seaslug-1115871-cand-266960342": {
    "jt": "d1d0ml1cw",
@@ -192022,6 +192033,12 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-1115871-cand-616824887": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a translucent pale body on a busy background"
+  },
   "seaslug-1115871-cand-626713107": {
    "jt": "o1g0mm1c",
    "e": 1,
@@ -192047,9 +192064,41 @@
    "e": 1,
    "k": "best"
   },
+  "seaslug-1115871-cand-704383368": {
+   "jt": "d1g0sm1cwf",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-1115871-cand-704383597": {
+   "jt": "o1g0mm1cw",
+   "e": 1,
+   "k": "best",
+   "n": "the body twisted"
+  },
+  "seaslug-1115871-cand-704383663": {
+   "jt": "p1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "a translucent pale body among red algae"
+  },
+  "seaslug-1115871-cand-71745089": {
+   "jt": "o0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-1115871-cand-79236138": {
+   "jt": "o1g0ml1cw",
+   "e": 2,
+   "k": "best"
+  },
   "seaslug-1115871-cand-87811732": {
    "jt": "o1g0mm1c",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-1115871-cand-92692335": {
+   "jt": "d1g0sl1c",
+   "e": 3,
    "k": "best"
   },
   "seaslug-1115871-cand-96165204": {
@@ -192057,6 +192106,11 @@
    "e": 3,
    "k": "best",
    "n": "the tail runs behind a sponge at the left"
+  },
+  "seaslug-1115871-cand-99577353": {
+   "jt": "d1g0ml1cw",
+   "e": 2,
+   "k": "best"
   },
   "seaslug-1143046-cand-119363600": {
    "jt": "p1g0sl1",
@@ -192396,6 +192450,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-119429-cand-570357846": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-119429-cand-595796170": {
    "jt": "o1g0sl1",
    "e": 5,
@@ -192409,6 +192468,11 @@
   "seaslug-119429-cand-600215564": {
    "jt": "o1g1sl1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-119429-cand-604391070": {
+   "jt": "d1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-119429-cand-604394125": {
@@ -192425,6 +192489,12 @@
    "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-119429-cand-607133717": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the body twisted, the head toward the camera"
   },
   "seaslug-119429-cand-609316627": {
    "jt": "d1g0sl1",
@@ -192466,6 +192536,12 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-119429-cand-680291800": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the mantle folded, the body rearing"
+  },
   "seaslug-119429-cand-692709099": {
    "jt": "o0g0sl1",
    "e": 3,
@@ -192475,6 +192551,12 @@
    "jt": "o0g0slsw",
    "e": 3,
    "k": "best"
+  },
+  "seaslug-119429-cand-711509920": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the head toward the camera, the body foreshortened"
   },
   "seaslug-119429-cand-711509951": {
    "jt": "o1g1sl1",
@@ -192580,6 +192662,11 @@
   "seaslug-119434-cand-651220482": {
    "jt": "p1g0sl1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-119434-cand-655743918": {
+   "jt": "d1g0sss",
+   "e": 3,
    "k": "best"
   },
   "seaslug-119434-cand-679656534": {
@@ -192964,6 +193051,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-119872-cand-317800031": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-119872-cand-327353198": {
    "jt": "d1g0sl1",
    "e": 5,
@@ -192987,6 +193079,11 @@
   "seaslug-119872-cand-460653325": {
    "jt": "p1g0ml1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-119872-cand-464116083": {
+   "jt": "p1g0sl1w",
+   "e": 5,
    "k": "best"
   },
   "seaslug-119872-cand-479516244": {
@@ -193092,6 +193189,11 @@
   "seaslug-119872-cand-737458770": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-119872-cand-755326489": {
+   "jt": "d1d1sl1f",
+   "e": 2,
    "k": "best"
   },
   "seaslug-120937-cand-112063481": {
@@ -193611,6 +193713,11 @@
    "e": 1,
    "k": "best"
   },
+  "seaslug-120983-cand-164167979": {
+   "jt": "o0g0sm1",
+   "e": 2,
+   "k": "best"
+  },
   "seaslug-120983-cand-174691111": {
    "jt": "d1g0sl1",
    "e": 5,
@@ -193626,7 +193733,17 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-120983-cand-176244960": {
+   "jt": "o1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-120983-cand-18782053": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120983-cand-310453629": {
    "jt": "o1g0sl1",
    "e": 5,
    "k": "best"
@@ -193634,6 +193751,11 @@
   "seaslug-120983-cand-310453651": {
    "jt": "o1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-120983-cand-310453658": {
+   "jt": "o1g0sms",
+   "e": 4,
    "k": "best"
   },
   "seaslug-120983-cand-379546277": {
@@ -193646,6 +193768,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-120983-cand-479530522": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
   "seaslug-120983-cand-505873743": {
    "jt": "h1g0sl1",
    "e": 3,
@@ -193655,6 +193782,17 @@
    "jt": "p1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-120983-cand-508574820": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120983-cand-515317203": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body rearing, foreshortened toward the camera"
   },
   "seaslug-120983-cand-571367057": {
    "jt": "o1g0sl1f",
@@ -193671,6 +193809,16 @@
    "e": 4,
    "k": "best",
    "n": "a small pink aeolid at the lower right, plainly another shape"
+  },
+  "seaslug-120983-cand-626406697": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120983-cand-626406738": {
+   "jt": "d1g0sl1f",
+   "e": 4,
+   "k": "best"
   },
   "seaslug-120983-cand-629383966": {
    "jt": "h0g0sl1",
@@ -193689,6 +193837,11 @@
   },
   "seaslug-120983-cand-650631191": {
    "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120983-cand-67019011": {
+   "jt": "p1g0sl1w",
    "e": 5,
    "k": "best"
   },
@@ -193927,9 +194080,24 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-121048-cand-178212359": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-121048-cand-254608270": {
    "jt": "d1g0sls",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-121048-cand-254948374": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-121048-cand-267067073": {
+   "jt": "h1g0slsw",
+   "e": 3,
    "k": "best"
   },
   "seaslug-121048-cand-279858215": {
@@ -193962,9 +194130,19 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-121048-cand-469858711": {
+   "jt": "o1g1sl1f",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-121048-cand-469859666": {
    "jt": "h0g0ml1",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-121048-cand-477938565": {
+   "jt": "h1g0sm1",
+   "e": 2,
    "k": "best"
   },
   "seaslug-121048-cand-479237585": {
@@ -193997,6 +194175,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-121048-cand-564145375": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-121048-cand-594778018": {
    "jt": "d1d0ss1",
    "e": 1,
@@ -194007,6 +194190,12 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-121048-cand-611421750": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the head toward the camera, the body foreshortened"
+  },
   "seaslug-121048-cand-611421762": {
    "jt": "o1g1sms",
    "e": 3,
@@ -194014,6 +194203,11 @@
   },
   "seaslug-121048-cand-654671963": {
    "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-121048-cand-723949104": {
+   "jt": "p1g0sl1",
    "e": 5,
    "k": "best"
   },
@@ -194797,6 +194991,12 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-126096-cand-114165942": {
+   "jt": "o1g0sms",
+   "e": 3,
+   "k": "best",
+   "n": "three animals, two of them touching"
+  },
   "seaslug-126096-cand-114170949": {
    "jt": "p1g1sm1",
    "e": 3,
@@ -194805,6 +195005,11 @@
   "seaslug-126096-cand-181199931": {
    "jt": "p1g0sls",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-126096-cand-196761814": {
+   "jt": "p1g0ml1w",
+   "e": 4,
    "k": "best"
   },
   "seaslug-126096-cand-254948350": {
@@ -194822,6 +195027,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-126096-cand-270411642": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-126096-cand-270411658": {
    "jt": "o1g0sl1",
    "e": 5,
@@ -194832,13 +195042,35 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-126096-cand-277699217": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body bent, the head turned back under the gills"
+  },
+  "seaslug-126096-cand-342351789": {
+   "jt": "d1g0sss",
+   "e": 2,
+   "k": "best",
+   "n": "a small animal on a large busy sponge, a second smaller one beside it"
+  },
   "seaslug-126096-cand-35007430": {
    "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
   },
+  "seaslug-126096-cand-379546545": {
+   "jt": "p0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-126096-cand-393744899": {
    "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-126096-cand-460511141": {
+   "jt": "d1g0sm1",
    "e": 4,
    "k": "best"
   },
@@ -194867,6 +195099,17 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-126096-cand-598758289": {
+   "jt": "d1g0ss1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-126096-cand-604392034": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body twisted, the head toward the camera"
+  },
   "seaslug-126096-cand-604395842": {
    "jt": "h1g0sm1",
    "e": 2,
@@ -194880,6 +195123,11 @@
   "seaslug-126096-cand-608254281": {
    "jt": "o1g0sl1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-126096-cand-639461907": {
+   "jt": "p1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-126096-cand-641742893": {
@@ -195127,8 +195375,18 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-1263433-cand-163934534": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
   "seaslug-1263433-cand-181198215": {
    "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1263433-cand-181198223": {
+   "jt": "o1g0sl1",
    "e": 5,
    "k": "best"
   },
@@ -195140,6 +195398,11 @@
   "seaslug-1263433-cand-251076986": {
    "jt": "p1g0sm1",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-1263433-cand-272763252": {
+   "jt": "d1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-1263433-cand-317800028": {
@@ -195157,6 +195420,12 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-1263433-cand-385029137": {
+   "jt": "h0g0mls",
+   "e": 1,
+   "k": "best",
+   "n": "two animals, one behind the other, the front one head toward the camera"
+  },
   "seaslug-1263433-cand-437111591": {
    "jt": "d1g0sm1w",
    "e": 4,
@@ -195167,10 +195436,26 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-1263433-cand-461380293": {
+   "jt": "h0g0sl1w",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-1263433-cand-468578108": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-1263433-cand-564145321": {
    "jt": "p1g0sl1w",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-1263433-cand-585402073": {
+   "jt": "o1g0sm1w",
+   "e": 3,
+   "k": "best",
+   "n": "the body twisted, the gills toward the camera"
   },
   "seaslug-1263433-cand-605881853": {
    "jt": "o1g0sl1",
@@ -195202,6 +195487,17 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-1263433-cand-64516306": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1263433-cand-70026625": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the head toward the camera, the body foreshortened"
+  },
   "seaslug-1263433-cand-70026792": {
    "jt": "o1g0sm1",
    "e": 3,
@@ -195210,6 +195506,11 @@
   "seaslug-1263433-cand-712765432": {
    "jt": "o1g1sls",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-1263433-cand-722453942": {
+   "jt": "t0g0sl1",
+   "e": 1,
    "k": "best"
   },
   "seaslug-1263433-cand-81521711": {
@@ -196094,10 +196395,26 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-143227-cand-10173723": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-143227-cand-103864099": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-143227-cand-115681109": {
    "jt": "d0g0sl1",
    "e": 3,
    "k": "best"
+  },
+  "seaslug-143227-cand-178215363": {
+   "jt": "o1g0sls",
+   "e": 4,
+   "k": "best",
+   "n": "a second animal behind the subject, its tail under the subject's body"
   },
   "seaslug-143227-cand-178215379": {
    "jt": "p1g0sl1",
@@ -196108,6 +196425,12 @@
    "jt": "p1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-143227-cand-257317160": {
+   "jt": "o1g0sls",
+   "e": 4,
+   "k": "best",
+   "n": "a second animal under the subject, the two overlapping"
   },
   "seaslug-143227-cand-279705553": {
    "jt": "p1g0sl1",
@@ -196149,6 +196472,11 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-143227-cand-491138728": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-143227-cand-505983424": {
    "jt": "o1g0sl1",
    "e": 5,
@@ -196164,6 +196492,12 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-143227-cand-596132769": {
+   "jt": "d1g0ss1",
+   "e": 2,
+   "k": "best",
+   "n": "a tiny animal on a large busy reef"
+  },
   "seaslug-143227-cand-596377632": {
    "jt": "o1g0sm1",
    "e": 4,
@@ -196178,6 +196512,22 @@
    "jt": "d1g0sl1",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-143227-cand-614169534": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-143227-cand-630061539": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-143227-cand-631811031": {
+   "jt": "o1g0sm1",
+   "e": 3,
+   "k": "best",
+   "n": "the body twisted under a ledge"
   },
   "seaslug-143227-cand-669568295": {
    "jt": "p1g0ml1",
@@ -198050,14 +198400,39 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-199473-cand-159155248": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-199473-cand-181341223": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-199473-cand-19729671": {
    "jt": "o0g0sl1",
    "e": 3,
    "k": "best"
   },
+  "seaslug-199473-cand-19744285": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-199473-cand-250812862": {
    "jt": "o1g0sms",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-199473-cand-254530917": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-199473-cand-254608218": {
+   "jt": "o1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-199473-cand-257317129": {
@@ -198090,6 +198465,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-199473-cand-460472678": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-199473-cand-474070326": {
    "jt": "d0g0sl1",
    "e": 3,
@@ -198105,6 +198485,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-199473-cand-570345063": {
+   "jt": "o0g0sls",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-199473-cand-604392732": {
    "jt": "d1g0slo",
    "e": 4,
@@ -198115,9 +198500,25 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-199473-cand-610163824": {
+   "jt": "h1g0sm1w",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-199473-cand-613415448": {
+   "jt": "p1g0slsw",
+   "e": 4,
+   "k": "best",
+   "n": "a second animal under the subject, the two overlapping"
+  },
   "seaslug-199473-cand-613648203": {
    "jt": "o1g0slsw",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-199473-cand-635943936": {
+   "jt": "p0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-199473-cand-637996233": {
@@ -198490,6 +198891,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-201640-cand-479568702": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-201640-cand-487409697": {
    "jt": "d1g0sms",
    "e": 4,
@@ -198510,6 +198916,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-201640-cand-545719799": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-201640-cand-574281556": {
    "jt": "p1g0ml1",
    "e": 4,
@@ -198525,6 +198936,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-201640-cand-598782028": {
+   "jt": "o0g0ss1",
+   "e": 1,
+   "k": "best"
+  },
   "seaslug-201640-cand-617158638": {
    "jt": "p1g0sl1",
    "e": 4,
@@ -198535,15 +198951,36 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-201640-cand-623761394": {
+   "jt": "d1g1mm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-201640-cand-630690497": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-201640-cand-636823021": {
    "jt": "o0g0mm1",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-201640-cand-644633524": {
+   "jt": "t1g0sl1f",
+   "e": 2,
    "k": "best"
   },
   "seaslug-201640-cand-654164227": {
    "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-201640-cand-692709314": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body twisted, the gills soft"
   },
   "seaslug-201640-cand-693417470": {
    "jt": "p1g1sl1",
@@ -198554,6 +198991,17 @@
    "jt": "d1g0sl1w",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-201640-cand-694054390": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-201640-cand-712230905": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a narrow upright frame, the animal low in it"
   },
   "seaslug-207581-cand-175419924": {
    "jt": "d0g0sl1",
@@ -198570,6 +199018,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-207581-cand-279697836": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-207581-cand-363343629": {
    "jt": "d1g0sm1",
    "e": 4,
@@ -198578,6 +199031,11 @@
   "seaslug-207581-cand-397994383": {
    "jt": "d1g0sm1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-207581-cand-428390135": {
+   "jt": "o1g1ml1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-207581-cand-452545339": {
@@ -198590,6 +199048,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-207581-cand-46723767": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-207581-cand-469860382": {
    "jt": "d1g0ms1",
    "e": 2,
@@ -198600,6 +199063,12 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-207581-cand-501070931": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the head toward the camera, the body foreshortened"
+  },
   "seaslug-207581-cand-505873703": {
    "jt": "d1g0sl1",
    "e": 5,
@@ -198607,6 +199076,11 @@
   },
   "seaslug-207581-cand-552607457": {
    "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-207581-cand-560830081": {
+   "jt": "d1g0sl1w",
    "e": 5,
    "k": "best"
   },
@@ -198640,6 +199114,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-207581-cand-693257511": {
+   "jt": "o1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-207581-cand-693418197": {
    "jt": "d1g0sl1",
    "e": 5,
@@ -198648,6 +199127,11 @@
   "seaslug-207581-cand-693755286": {
    "jt": "d1d0mm1w",
    "e": 2,
+   "k": "best"
+  },
+  "seaslug-207581-cand-695734119": {
+   "jt": "d1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-207581-cand-717654178": {
@@ -201656,6 +202140,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-467977-cand-117631498": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-467977-cand-121864796": {
    "jt": "d1g0sm1",
    "e": 4,
@@ -201664,6 +202153,11 @@
   "seaslug-467977-cand-178718350": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-238818378": {
+   "jt": "p1g0ml1w",
+   "e": 4,
    "k": "best"
   },
   "seaslug-467977-cand-257159190": {
@@ -201681,8 +202175,18 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-467977-cand-277718695": {
+   "jt": "t1g0sm1",
+   "e": 2,
+   "k": "best"
+  },
   "seaslug-467977-cand-33464791": {
    "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-350038952": {
+   "jt": "o1g0sl1",
    "e": 5,
    "k": "best"
   },
@@ -201704,6 +202208,15 @@
     "code"
    ],
    "n": "Two chromodorids side by side, one blue-violet, one striped: maybe two species, maybe two colour forms of one."
+  },
+  "seaslug-467977-cand-47587165": {
+   "jt": "o1g0smkw",
+   "e": 3,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "a second chromodorid of another pattern, as large and sharp, beside the subject: the same species or another"
   },
   "seaslug-467977-cand-479024399": {
    "jt": "d1g0sl1",
@@ -201736,6 +202249,11 @@
    "e": 1,
    "k": "best"
   },
+  "seaslug-467977-cand-510896093": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-467977-cand-548882181": {
    "jt": "o1g0sl1",
    "e": 4,
@@ -201756,9 +202274,20 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-467977-cand-69248321": {
+   "jt": "d1g0sms",
+   "e": 3,
+   "k": "best",
+   "n": "two animals apart on a busy reef that competes with their outline"
+  },
   "seaslug-467977-cand-692710135": {
    "jt": "h1g0sl1",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-467977-cand-693807168": {
+   "jt": "o1g1mm1w",
+   "e": 2,
    "k": "best"
   },
   "seaslug-467977-cand-693807302": {
@@ -201786,6 +202315,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-467978-cand-212378338": {
+   "jt": "d1g0mm1w",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-467978-cand-230309432": {
    "jt": "o1g0sl1",
    "e": 5,
@@ -201805,6 +202339,18 @@
    "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-467978-cand-354157731": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "red algae over the rear of the body"
+  },
+  "seaslug-467978-cand-366435983": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "algae across the lower body"
   },
   "seaslug-467978-cand-385029125": {
    "jt": "d1g0sl1",
@@ -201857,6 +202403,17 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-467978-cand-531821374": {
+   "jt": "p1d1mm1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-467978-cand-608090936": {
+   "jt": "d1g0sm1",
+   "e": 3,
+   "k": "best",
+   "n": "algal threads across the body, a busy background that competes with it"
+  },
   "seaslug-467978-cand-617048197": {
    "jt": "d1g0mm1",
    "e": 3,
@@ -201870,6 +202427,31 @@
   "seaslug-467978-cand-638449685": {
    "jt": "o1g0sm1",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-467978-cand-668778407": {
+   "jt": "o1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-467978-cand-67020357": {
+   "jt": "o0g0ml1w",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-467978-cand-67819021": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467978-cand-693349796": {
+   "jt": "p1d0ml1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-467978-cand-708364835": {
+   "jt": "o1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-467980-cand-10223120": {
@@ -205572,6 +206154,16 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-49735-cand-585934001": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-49735-cand-594960710": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-49735-cand-595130155": {
    "jt": "h1g0sm1",
    "e": 2,
@@ -205582,9 +206174,24 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-49735-cand-624149470": {
+   "jt": "d1g1sl1f",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-49735-cand-631265131": {
    "jt": "o0g0sls",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-49735-cand-634039680": {
+   "jt": "d1g0sl1f",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-49735-cand-641301715": {
+   "jt": "o0g0sl1f",
+   "e": 2,
    "k": "best"
   },
   "seaslug-49735-cand-650002665": {
@@ -205601,6 +206208,12 @@
    "jt": "o0g1sl1w",
    "e": 2,
    "k": "best"
+  },
+  "seaslug-49735-cand-718234033": {
+   "jt": "o1g0sl1f",
+   "e": 3,
+   "k": "best",
+   "n": "the body curled; algal threads across it"
   },
   "seaslug-49735-cand-722448532": {
    "jt": "d1g0sl1",
@@ -206237,6 +206850,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-504373-cand-170979809": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-504373-cand-19789680": {
    "jt": "d0g0sl1",
    "e": 3,
@@ -206253,6 +206871,11 @@
    "k": "best"
   },
   "seaslug-504373-cand-250693174": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-504373-cand-252348180": {
    "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
@@ -206292,7 +206915,17 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-504373-cand-34472587": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-504373-cand-377561861": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-504373-cand-452314919": {
    "jt": "o0g0sl1",
    "e": 3,
    "k": "best"
@@ -206330,6 +206963,11 @@
   "seaslug-504373-cand-64331982": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-504373-cand-68692568": {
+   "jt": "o1g1sm1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-50442-cand-113205920": {
@@ -207566,6 +208204,11 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-50554-cand-271271587": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-50554-cand-279336739": {
    "jt": "h1g0sl1",
    "e": 3,
@@ -207574,6 +208217,11 @@
   "seaslug-50554-cand-337571671": {
    "jt": "o1g0sl1w",
    "e": 4,
+   "k": "best"
+  },
+  "seaslug-50554-cand-349882396": {
+   "jt": "d1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-50554-cand-351376543": {
@@ -207611,6 +208259,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-50554-cand-505093806": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-50554-cand-511102525": {
    "jt": "p1g0sl1",
    "e": 5,
@@ -207620,6 +208273,12 @@
    "jt": "d1g1sl1",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-50554-cand-519101813": {
+   "jt": "o1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "a background of its colours competes with the outline"
   },
   "seaslug-50554-cand-527403032": {
    "jt": "d1g0sl1",
@@ -207645,6 +208304,12 @@
    "jt": "o1g0ml1",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-50554-cand-702608391": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the rear in shadow, the head toward the camera"
   },
   "seaslug-50554-cand-702608402": {
    "jt": "o1d0sl1",
@@ -207675,6 +208340,11 @@
   "seaslug-50554-cand-723439979": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-50554-cand-723807242": {
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-50556-cand-111286411": {
@@ -213926,8 +214596,18 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Chromodoris-cand-116872575": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Chromodoris-cand-129404772": {
    "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-181341228": {
+   "jt": "d1g0sl1",
    "e": 5,
    "k": "best"
   },
@@ -213938,6 +214618,11 @@
   },
   "seaslug-Chromodoris-cand-246937752": {
    "jt": "o1g1ml1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-264941469": {
+   "jt": "h1g0sl1",
    "e": 3,
    "k": "best"
   },
@@ -213961,6 +214646,12 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-Chromodoris-cand-443336618": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "the mantle folded, the body twisted"
+  },
   "seaslug-Chromodoris-cand-446729699": {
    "jt": "o0g0sl1",
    "e": 3,
@@ -213970,6 +214661,17 @@
    "jt": "d1g0sm1",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-Chromodoris-cand-471558679": {
+   "jt": "d1g2bs1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-472819105": {
+   "jt": "o1g0ss1",
+   "e": 1,
+   "k": "best",
+   "n": "a tiny animal on a large busy reef"
   },
   "seaslug-Chromodoris-cand-479514629": {
    "jt": "o0g1mm1",
@@ -213986,9 +214688,24 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Chromodoris-cand-501337566": {
+   "jt": "h1g0mm1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-566664584": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
   "seaslug-Chromodoris-cand-595007194": {
    "jt": "d0g0bls",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-610094434": {
+   "jt": "o1g0sms",
+   "e": 4,
    "k": "best"
   },
   "seaslug-Chromodoris-cand-627849317": {
@@ -214004,6 +214721,11 @@
   "seaslug-Chromodoris-cand-692710236": {
    "jt": "p0g0sls",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-Chromodoris-cand-697323925": {
+   "jt": "o0g0sm1",
+   "e": 2,
    "k": "best"
   },
   "seaslug-Chromodoris-cand-70027624": {
@@ -215291,6 +216013,10 @@
    "egg": 1,
    "n": "a red egg rosette in branching coral, no animal"
   },
+  "seaslug-Hexabranchus-cand-376997137": {
+   "egg": 1,
+   "n": "a red egg rosette on rubble among soft corals, no animal"
+  },
   "seaslug-Hexabranchus-cand-376997163": {
    "egg": 1,
    "n": "a red egg rosette round a rock, no animal"
@@ -216116,6 +216842,11 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Phyllidia-cand-173729577": {
+   "jt": "h1g0sm1w",
+   "e": 2,
+   "k": "best"
+  },
   "seaslug-Phyllidia-cand-19724014": {
    "jt": "o1g0sl1",
    "e": 5,
@@ -216141,6 +216872,11 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-Phyllidia-cand-33232662": {
+   "jt": "o1g1ml1",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-Phyllidia-cand-369873": {
    "jt": "o1g0mm1",
    "e": 3,
@@ -216150,6 +216886,11 @@
   "seaslug-Phyllidia-cand-381402423": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-38653048": {
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-460599465": {
@@ -216162,14 +216903,29 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Phyllidia-cand-473203432": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Phyllidia-cand-479252789": {
    "jt": "o1g0sms",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-479568894": {
+   "jt": "o1g0sm1",
    "e": 4,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-479605689": {
    "jt": "d1g0sl1",
    "e": 5,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-481013950": {
+   "jt": "d1g1mm1",
+   "e": 2,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-566665035": {
@@ -216182,9 +216938,25 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-Phyllidia-cand-580521723": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body bent, its sides folded up"
+  },
   "seaslug-Phyllidia-cand-595419027": {
    "jt": "o1g2bs1",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-601653207": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-624089163": {
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-638458124": {
@@ -216200,6 +216972,11 @@
   "seaslug-Phyllidia-cand-69129714": {
    "jt": "h1g0sl1",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-Phyllidia-cand-69129930": {
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-703920558": {

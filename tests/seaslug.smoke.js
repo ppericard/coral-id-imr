@@ -11,7 +11,8 @@
 //    doors and the key page in the sea slugs' words; the switch to the fish and back swaps the tree in force (app.js
 //    treeAt), each subject's progress kept apart; their English names (seaslug.json en; Pierre, 2026-11-17) never in a
 //    question before its answer, after it in the verdict and the species line, on the Learn page's headings and tiles
-//    and on the sheets with their sources;
+//    and on the sheets with their sources; a genus sheet's sourced ID marks (tools/seaslug_cues.json), and no fish word on a
+//    genus or a species sheet, their ? text included (app.js UNITS words);
 // 3. a player in the sea-slug group (the sheet's groups, stubbed through the account's GROUPS_KEY record) sees it too.
 // Locally: node tests/seaslug.smoke.js (in the machine slot, tests/slot.js).
 const http = require('http'),
@@ -68,7 +69,8 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
   const fails = [];
   const check = (ok, what) => ok || fails.push(what);
 
-  // 1. Not the admin, in no group: the corals, and no sea-slug file asked for.
+  // 1. Not the admin, signed out: the sea slugs open to every player, in beta (Pierre, 2026-11-17: "ouverts à tous mais
+  // en gardant le mot bêta dedans"): the saved choice opens them and their files are fetched.
   {
     const {ctx, p, errs} = await page(b, base, () => {
       try {
@@ -90,10 +92,13 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       btn: !!document.querySelector('[data-subj="seaslug"]'),
       hash: location.hash
     }));
-    check(o.subj === 'coral', `1: a player outside the group is on ${o.subj}`);
-    check(!o.mine.includes('seaslug') && !o.btn, `1: the switch offers the sea slugs: ${o.mine}`);
+    check(o.subj === 'seaslug', `1: a player who is not the admin is on ${o.subj}`);
+    check(o.mine.includes('seaslug') && o.btn, `1: the switch does not offer the sea slugs: ${o.mine}`);
     check(o.saved === '"seaslug"', `1: the saved choice changed: ${o.saved}`);
-    check(!asked.some(u => /seaslug/.test(u)), `1: sea-slug files fetched: ${asked.filter(u => /seaslug/.test(u))}`);
+    check(
+      asked.some(u => /seaslug\.json/.test(u)),
+      `1: the sea-slug files not fetched: ${asked.filter(u => /seaslug/.test(u))}`
+    );
     check(!errs.length, '1: page errors: ' + errs.join('; '));
     await ctx.close();
   }
@@ -257,6 +262,19 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     const gs = await p.evaluate(g => hr('g-' + g), F.genera[0].id);
     await p.goto(base + gs);
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), F.genera[0].name, {timeout: 15000});
+    // Its sourced ID marks (tools/seaslug_cues.json; study §9 step 7), each line with its source's number, and the sheet in
+    // the sea slugs' words, its ? text included (app.js UNITS words): no fish word.
+    const gm = await p.evaluate(() => ({
+      marks: [...document.querySelectorAll('#view .gmarks li')].map(li => [li.textContent, li.querySelectorAll('.srcn').length]),
+      srcs: (document.querySelector('#view .gmarks .msrc') || {}).textContent || '',
+      words: [...document.querySelectorAll('.lede, #view')].map(x => x.textContent).join(' ')
+    }));
+    check(
+      (F.genera[0].marks || []).length && gm.marks.length === F.genera[0].marks.length && gm.marks.every(([, n]) => n > 0),
+      `2: ${F.genera[0].name}'s ID marks, each with its source: ${JSON.stringify(gm.marks)}`
+    );
+    check(/^Sources: \[1\]/.test(gm.srcs), `2: ${F.genera[0].name}'s mark sources: "${gm.srcs}"`);
+    check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(gm.words), `2: a fish word on a sea-slug genus sheet`);
     // The genus look-alikes (seaslug.json genus look, dlook, lsrc; Pierre, 2026-11-17, Q390 D): a declared pair across two
     // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
     // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
@@ -302,10 +320,13 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       await p.waitForFunction(n => (document.querySelector('#view .fn-t') || {}).textContent === n, spn.name, {timeout: 15000});
       const sv = await p.evaluate(() => ({
         v: (document.querySelector('#view .fn-v') || {}).textContent || '',
-        more: [...document.querySelectorAll('#view .sheetmore .refs')].map(x => x.textContent).join(' ')
+        more: [...document.querySelectorAll('#view .sheetmore .refs')].map(x => x.textContent).join(' '),
+        words: [...document.querySelectorAll('.lede, #view')].map(x => x.textContent).join(' ')
       }));
       check(sv.v.startsWith(enFirst(spn)), `2: ${spn.name}'s sheet: "${sv.v}"`);
       check(/English names:/.test(sv.more), `2: ${spn.name}'s sheet: no English names with their sources`);
+      // in the sea slugs' words: its rank by its observers in the Philippines, no FishBase link, no IMR reference list
+      check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(sv.words), `2: a fish word on ${spn.name}'s sheet`);
     }
     // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
     // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase);
@@ -347,6 +368,64 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await p.waitForFunction(() => TREE_AT === SUBJ.id && FISH && FISH.gen['f:Chromodorididae'] && !FISH.gen['f:Damselfishes'], null, {
       timeout: 30000
     });
+    // Its leaderboard (Pierre, 2026-11-17; core.js SUBJECTS seaslug board, boardSheet): asked as &s=seaslug and shown only
+    // from the script that serves it (SEASLUGRP_SHEET, rule D4), the corals' board before; its replay's units, the app's
+    // (UNITS gen, read with its own tree in force: sync.js rpUnits). The sheet's replies are fixtures inside the page's
+    // fetch (rule D1).
+    const sb = await p.evaluate(async () => {
+      const f0 = window.fetch,
+        asked = [],
+        sv0 = store.get(SHEETV, 0);
+      window.fetch = u => {
+        asked.push(String(u).replace(/^.*\?/, ''));
+        const rows = /s=seaslug/.test(u) ? [['Slug P', 41, 0.7]] : [['Coral P', 90, 1.1]];
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: store.get(SHEETV, 0)})));
+      };
+      const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 200));
+      try {
+        store.set(SHEETV, SEASLUGRP_SHEET - 1);
+        go('board');
+        const before = await shown(),
+          live0 = boardLive(SUBJ),
+          rp0 = rpOn(SUBJ, sheetV()),
+          asked0 = asked.splice(0);
+        store.set(SHEETV, SEASLUGRP_SHEET);
+        Object.keys(boardP).forEach(k => delete boardP[k]);
+        viewBoard();
+        const after = await shown();
+        // its replay's units from its own tree, whichever subject is on screen
+        const units = inSubject('coral', () => rpUnits(subjectOf('seaslug')));
+        return {before, live0, rp0, asked0, after, asked, live1: boardLive(SUBJ), units: !!units && !!units['g:Chromodoris']};
+      } finally {
+        window.fetch = f0;
+        store.set(SHEETV, sv0);
+      }
+    });
+    check(
+      !sb.live0 && !sb.rp0 && /Coral P/.test(sb.before) && sb.asked0.every(a => a === 'board=1'),
+      `2: before its script, no sea slug board: ${JSON.stringify(sb)}`
+    );
+    check(
+      sb.live1 && /Slug P/.test(sb.after) && /41%/.test(sb.after) && sb.asked.every(a => a === 'board=1&s=seaslug'),
+      `2: the sea slug board: ${JSON.stringify(sb)}`
+    );
+    check(sb.units, '2: its replay units read with its own tree in force');
+    // Its achievements page: its own list (core.js SEASLUG_ACH) and ? text, the Contributions apart.
+    await p.evaluate(() => go('ach'));
+    await p.waitForFunction(() => document.querySelectorAll('#view .achl li').length > 0, null, {timeout: 15000});
+    const ach = await p.evaluate(() => ({
+      n: document.querySelectorAll('#view .achl')[0].querySelectorAll('li').length,
+      want: SEASLUG_ACH.length,
+      head: (document.querySelector('#view .btitle') || {}).textContent,
+      text: document.querySelector('#view').innerText,
+      // its ? text (behind the shared ?, rule U1): the subject's own
+      help: achSubj().id === 'seaslug' && UNITS[achSubj().id].achHelp()
+    }));
+    check(
+      ach.n === ach.want && new RegExp(`^\\d+/${ach.want} earned$`).test(ach.head) && /Naked gills/.test(ach.text),
+      `2: the achievements page: ${ach.n} ${ach.head}`
+    );
+    check(/sea slug learning/.test(ach.help || '') && !/Fish whisperer|Course director/.test(ach.text), '2: its own ? text and list');
     check(!errs.length, '2: page errors: ' + errs.join('; '));
     await ctx.close();
   }

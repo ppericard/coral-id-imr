@@ -1,0 +1,309 @@
+{
+ "about": "The sea slugs' own ID marks, by genus and by family (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7: family and genus sheets with sourced cues; Pierre, 2026-11-17: complete what is missing for the nudibranchs). Our own words, short and plain, never copied, written from public specialist sources: src, each {t, u}, t starting with the source's short name before its first comma (the quiz feedback's label names it). genera and families, by name: marks, 1 to 3 [visible feature that tells it from its family siblings and its look-alikes, its refs], a ref being [src key, where in it (a key couplet and page, or the species a fact sheet is about, by its name today)]. Only features seen on a photo from above or from the side, or the animal on its food: never a count, nor a feature seen only under the animal or in the hand; a species named is one of the genus's game species (rule C6). none: a circle-1 genus left without marks and why (no photo feature in the sources read): never a mark guessed. tools/seaslug_cues.py checks them and puts marks, msrc and mby on seaslug.json's genera and families (tools/seaslug_game.py); app.js fishGenera shows a genus's marks in the quiz feedback, learn.js genMarks and fishMarks on the sheets. Sources consulted: docs/reviews/2026-11-18-seaslug-cues-sources.md.",
+ "src": {
+  "brunck": {
+   "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs",
+   "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+  },
+  "jg2012": {
+   "t": "Johnson and Gosliner 2012, A new classification of the chromodorid nudibranchs (PLoS ONE)",
+   "u": "https://doi.org/10.1371/journal.pone.0033479"
+  },
+  "ssf-chroanna": {
+   "t": "Sea Slug Forum, Rudman 1998, Chromodoris annae fact sheet",
+   "u": "https://www.seaslugforum.net/find/chroanna"
+  },
+  "ssf-chrowill": {
+   "t": "Sea Slug Forum, Rudman 1998, Chromodoris willani fact sheet",
+   "u": "https://www.seaslugforum.net/find/chrowill"
+  },
+  "ssf-chrokuni": {
+   "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet",
+   "u": "https://www.seaslugforum.net/find/chrokuni"
+  },
+  "ssf-mantflap": {
+   "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris",
+   "u": "https://www.seaslugforum.net/find/mantflap"
+  },
+  "ssf-risbtryo": {
+   "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet",
+   "u": "https://www.seaslugforum.net/find/risbtryo"
+  },
+  "ssf-glosatro": {
+   "t": "Sea Slug Forum, Rudman 1998, Glossodoris atromarginata fact sheet",
+   "u": "https://www.seaslugforum.net/find/glosatro"
+  },
+  "ssf-retihalg": {
+   "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993)",
+   "u": "https://www.seaslugforum.net/find/retihalg"
+  },
+  "ssf-jorufune": {
+   "t": "Sea Slug Forum, Rudman 1998, Jorunna funebris fact sheet",
+   "u": "https://www.seaslugforum.net/find/jorufune"
+  },
+  "ssf-nembkuba": {
+   "t": "Sea Slug Forum, Rudman 2008, Nembrotha kubaryana fact sheet",
+   "u": "https://www.seaslugforum.net/find/nembkuba"
+  },
+  "ssf-nembcham": {
+   "t": "Sea Slug Forum, Rudman 1998, Nembrotha chamberlaini fact sheet",
+   "u": "https://www.seaslugforum.net/find/nembcham"
+  },
+  "ssf-tambmoro": {
+   "t": "Sea Slug Forum, Rudman 1999, Tambja morosa fact sheet",
+   "u": "https://www.seaslugforum.net/find/tambmoro"
+  },
+  "ssf-pteriant": {
+   "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet",
+   "u": "https://www.seaslugforum.net/find/pteriant"
+  },
+  "ssf-phylbria": {
+   "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet",
+   "u": "https://www.seaslugforum.net/find/phylbria"
+  },
+  "ssf-chelamoe": {
+   "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet",
+   "u": "https://www.seaslugforum.net/find/chelamoe"
+  },
+  "ssf-pleufors": {
+   "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet",
+   "u": "https://www.seaslugforum.net/find/pleufors"
+  },
+  "ssf-hexasang": {
+   "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet",
+   "u": "https://www.seaslugforum.net/find/hexasang"
+  },
+  "ssf-meliviri": {
+   "t": "Sea Slug Forum, Rudman 1999, Melibe viridis fact sheet",
+   "u": "https://www.seaslugforum.net/find/meliviri"
+  },
+  "ssf-thurline": {
+   "t": "Sea Slug Forum, Rudman 2001, Thuridilla lineolata fact sheet",
+   "u": "https://www.seaslugforum.net/find/thurline"
+  },
+  "ssw-thecpaci": {
+   "t": "SEASLUG.WORLD, Kimoto, Thecacera pacifica species page",
+   "u": "https://en.seaslug.world/species/thecacera_pacifica"
+  },
+  "ssw-phesmela": {
+   "t": "SEASLUG.WORLD, Kimoto, Phestilla melanobrachia species page",
+   "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+  },
+  "ssw-elysmarg": {
+   "t": "SEASLUG.WORLD, Kimoto, Elysia marginata species page",
+   "u": "https://en.seaslug.world/species/elysia_marginata"
+  },
+  "wiki-costasiella": {
+   "t": "Wikipedia, Costasiella (after Swennen 2007's diagnosis of the genus)",
+   "u": "https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1384690062"
+  }
+ },
+ "families": {
+  "Phyllidiidae": {
+   "marks": [
+    [
+     "Tough, flat oval body, its back covered in hard tubercles or ridges",
+     [["brunck", "General features, p. 9"]]
+    ],
+    [
+     "No gill tuft on the back: the gills lie in a groove under the mantle edge",
+     [["brunck", "General features, p. 9"]]
+    ],
+    ["Usually bold, contrasting colours and patterns", [["brunck", "General features, p. 9"]]]
+   ]
+  },
+  "Plakobranchidae": {
+   "marks": [
+    [
+     "Wing-like flaps (parapodia) along the sides, often edged in bright colours",
+     [["ssf-thurline", "the parapodia"], ["ssw-elysmarg", "the parapodia"]]
+    ]
+   ]
+  },
+  "Pleurobranchidae": {
+   "marks": [
+    [
+     "A large gill on the right side, in the gap between the mantle and the foot",
+     [["ssf-pleufors", "the side gill, as in all notaspids"]]
+    ]
+   ]
+  }
+ },
+ "genera": {
+  "Chromodoris": {
+   "marks": [
+    [
+     "Dark, often black lines running lengthwise along the back",
+     [["jg2012", "Chromodoris, the black-lined species"], ["ssf-chroanna", "the quadricolor colour group"]]
+    ],
+    [
+     "The lines on a bluish or white ground, often with an orange or yellow rim",
+     [["ssf-chroanna", "the quadricolor colour group"], ["ssf-chrowill", "the colour group"]]
+    ]
+   ]
+  },
+  "Goniobranchus": {
+   "marks": [
+    [
+     "A broad mantle that overhangs the foot widely",
+     [["ssf-chrokuni", "the mantle overlap, now Goniobranchus kuniei"]]
+    ],
+    [
+     "Some wave the mantle edge as they crawl, as G. kuniei and G. geometricus",
+     [["ssf-mantflap", "now Goniobranchus kuniei and G. geometricus"]]
+    ]
+   ]
+  },
+  "Hypselodoris": {
+   "marks": [
+    [
+     "A tall body whose mantle barely overhangs the foot, as in H. tryoni",
+     [["ssf-risbtryo", "the body shape, now Hypselodoris tryoni"]]
+    ],
+    [
+     "Some, as H. tryoni, crawl in pairs, one close behind the other",
+     [["ssf-mantflap", "trailing in Risbecia, now Hypselodoris"], ["ssf-risbtryo", "now Hypselodoris tryoni"]]
+    ]
+   ]
+  },
+  "Doriprismatica": {
+   "marks": [
+    [
+     "A very wavy mantle edge, rimmed with a thin black line",
+     [["ssf-glosatro", "now Doriprismatica atromarginata"]]
+    ],
+    [
+     "Black rhinophore tips and black-edged gills, which wave as it crawls",
+     [["ssf-glosatro", "now Doriprismatica atromarginata"]]
+    ]
+   ]
+  },
+  "Phyllidia": {
+   "marks": [
+    ["Cream to yellow rhinophores", [["brunck", "key to the genera, couplet 4, p. 26"]]],
+    [
+     "Hard tubercles, often capped in yellow, many joined into ridges",
+     [["brunck", "key to the genera, couplet 5, p. 26"], ["ssf-retihalg", "Phyllidia against Reticulidia"]]
+    ]
+   ]
+  },
+  "Reticulidia": {
+   "marks": [
+    ["Orange rhinophores", [["brunck", "key to the genera, couplet 4, p. 26"]]],
+    [
+     "A smooth network of ridges on the back, with no tubercles",
+     [["brunck", "key to the genera, couplet 4, p. 26"], ["ssf-retihalg", "Reticulidia against Phyllidia"]]
+    ]
+   ]
+  },
+  "Phyllidiella": {
+   "marks": [["Black rhinophores", [["brunck", "key to the genera, couplet 3, p. 26"]]]]
+  },
+  "Jorunna": {
+   "marks": [
+    [
+     "A velvety back, covered all over in tiny spiky papillae",
+     [["ssf-jorufune", "the papillate surface of the back"]]
+    ]
+   ]
+  },
+  "Nembrotha": {
+   "marks": [
+    [
+     "Often seen feeding on sea squirts (ascidians)",
+     [["ssf-nembkuba", "its food"], ["ssf-nembcham", "its food"]]
+    ]
+   ]
+  },
+  "Tambja": {
+   "marks": [
+    ["Feeds on branching, plant-like bryozoans", [["ssf-tambmoro", "the food of every Tambja"]]]
+   ]
+  },
+  "Thecacera": {
+   "marks": [
+    [
+     "Large finger-like appendages flank the gills, as in T. pacifica",
+     [["ssw-thecpaci", "Description"]]
+    ]
+   ]
+  },
+  "Pteraeolidia": {
+   "marks": [
+    [
+     "A long aeolid that farms algae in its cerata and body, so adults look brown",
+     [["ssf-pteriant", "its zooxanthellae"]]
+    ],
+    ["Young ones are white until they take up their algae", [["ssf-pteriant", "the white juvenile"]]]
+   ]
+  },
+  "Phyllodesmium": {
+   "marks": [
+    [
+     "Feeds on soft corals and hides among their polyps",
+     [["ssf-phylbria", "like other species of Phyllodesmium"]]
+    ],
+    [
+     "Many keep algae in their cerata, seen as rows of brown specks",
+     [["ssf-phylbria", "its zooxanthellae"]]
+    ]
+   ]
+  },
+  "Chelidonura": {
+   "marks": [
+    [
+     "A smooth body in two shields, a head shield and a back shield",
+     [["ssf-chelamoe", "the head and posterior shields"]]
+    ],
+    ["Side flaps (parapodia) fold up over the body", [["ssf-chelamoe", "the parapodia"]]]
+   ]
+  },
+  "Pleurobranchus": {
+   "marks": [
+    [
+     "A large gill on the right side, between the mantle and the foot",
+     [["ssf-pleufors", "the side gill"]]
+    ]
+   ]
+  },
+  "Hexabranchus": {
+   "marks": [
+    [
+     "Gills set one by one into the back, never pulled into a pocket",
+     [["ssf-hexasang", "its gills"]]
+    ],
+    ["Grows very large, and can swim", [["ssf-hexasang", "its size and swimming"]]]
+   ]
+  },
+  "Costasiella": {
+   "marks": [
+    ["Smooth, simple rhinophores with blunt tips", [["wiki-costasiella", "the genus's features"]]]
+   ]
+  },
+  "Phestilla": {
+   "marks": [
+    [
+     "A coral eater; P. melanobrachia lives on sun corals (Tubastraea)",
+     [["ssw-phesmela", "food and host corals; the genus"]]
+    ]
+   ]
+  },
+  "Melibe": {
+   "marks": [
+    [
+     "A wide oral hood, spread like a net to trap small crustaceans",
+     [["ssf-meliviri", "the oral veil"]]
+    ]
+   ]
+  }
+ },
+ "none": {
+  "Halgerda": "the Sea Slug Forum's Halgerda batangas sheet describes its species' colours (an orange network, orange-tipped tubercles), not a feature of the genus",
+  "Ardeadoris": "the Sea Slug Forum's Ardeadoris egretta sheet gives only a white body with a yellow border, which other white chromodorids share",
+  "Elysia": "the sources read describe its species' colours; none tells it from Thuridilla on a photo (the family's parapodia are the family's mark)",
+  "Thuridilla": "the sources read describe its species' colours; none tells it from Elysia on a photo (the family's parapodia are the family's mark)",
+  "Caloria": "no source read yet gives a feature of the genus",
+  "Coryphellina": "the Sea Slug Forum's sheet gives the papillate orange rhinophores of Coryphellina exoptata alone, not of the genus",
+  "Phyllidiopsis": "Brunckhorst's key (couplets 1 and 2, p. 25) sets it apart by its fused oral tentacles and its gut, both under the animal: nothing seen on a photo from above"
+ }
+}

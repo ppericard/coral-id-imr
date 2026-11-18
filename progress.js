@@ -464,12 +464,15 @@ const eloLine = G => {
 const BOARD_C = 'board-cache';
 const BOARD_SHEET = 95;
 const board0 = () => SUBJECTS.find(x => x.board);
-// A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
-const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
+// The script version that serves subject S's board: BOARD_SHEET, or its own when later (core.js SUBJECTS boardSheet: the
+// sea slugs', SEASLUGRP_SHEET).
+const boardV = S => Math.max(BOARD_SHEET, Number(S && S.boardSheet) || 0);
+// A board reply to show: the first subject's from any script, another's only from its version (boardV; tests/gates.test.js).
+const boardOk = (j, first, S) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= boardV(S));
 // A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
-// BOARD_SHEET (sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one: the
-// page shows the first subject's board, no rank on My progress, no announcement.
-const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= BOARD_SHEET));
+// its version (boardV; sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one:
+// the page shows the first subject's board, no rank on My progress, no announcement.
+const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= boardV(S)));
 const boardSubj = () => (boardLive(SUBJ) ? SUBJ : board0());
 const boardAt = {},
   boardP = {};
@@ -488,7 +491,7 @@ const loadBoard = (S = boardSubj()) => {
     boardAt[k] = Date.now();
     boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
-      .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
+      .then(j => (boardOk(j, first, S) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
         if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, staff: j.staff, cohorts: j.cohorts, t: Date.now(), v: j.v});
@@ -669,8 +672,14 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     C = U.core ? U.core() : [],
     T = SUBJ.score && U.tree ? U.tree() : null,
     at = (list, k) => list.filter(n => lvStep(n) >= k).length;
-  const groups = {};
+  const groups = {},
+    byUp = {},
+    byTax = {},
+    gx = n => (typeof GX === 'function' && GX(n)) || {},
+    tgOf = n => gx(n).tg || (gx(n).parent && gx(gx(n).parent).tg) || 0;
   L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
+  L.forEach(n => gx(n).parent && (byUp[gx(n).parent] = byUp[gx(n).parent] || []).push(n));
+  L.forEach(n => tgOf(n) && (byTax[tgOf(n)] = byTax[tgOf(n)] || []).push(n));
   return {
     total: L.length,
     met: st.filter(x => x >= 1).length,
@@ -687,6 +696,15 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     bonus: bonusList().filter(introduced).length,
     core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
     circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
+    // Its units grouped by the unit above them (GX parent: a sea slug genus's family), those with every unit at Advanced
+    // or above (core.js SEASLUG_ACH); 0 for a subject whose units have none (the corals, the fish families).
+    fam: Object.values(byUp).filter(g => g.every(n => lvStep(n) >= 3)).length,
+    // Each taxonomic group of the subject's tree (GX tg of a unit's parent, or its own: the sea slugs' taxa), in its
+    // number's order: {n, total, met, adv}; [] for a subject without.
+    tax: Object.keys(byTax)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(n => ({n, total: byTax[n].length, met: at(byTax[n], 1), adv: at(byTax[n], 3)})),
     sets: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 2)])),
     setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
     basics: !!A._basics,
@@ -859,7 +877,7 @@ const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
   ACH_C = () => ACH_CONTRIB,
   achTests = () => [...ACH_L(), ...ACH_C()];
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
-const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '👑': '🎓', '🌟': '⭐'},
+const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '🐌': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
 // Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
 // player's card. Kept on this

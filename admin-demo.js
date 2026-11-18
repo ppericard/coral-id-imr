@@ -830,7 +830,8 @@
     // Ben played it last (his Journey opens on it from Players), Ana a little, Mara once.
     const frows = [],
       FS = SUBJECTS.find(x => !x.replay);
-    let fana = [];
+    // fana: each other subject's made-up answers for its Analyses report alone (anaReport), by subject id
+    const fana = {};
     if (V >= 60 && FS) {
       const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
       let fs = 11;
@@ -839,7 +840,7 @@
         FG = fishGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
-      FANA_META = {ph: {}, fph: ANALYSIS.photoMetaFish(fp)};
+      FANA_META[FS.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(FS)};
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
         ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
@@ -903,14 +904,28 @@
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
       // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
+      // A few genus and species units too (one of fish.json's scientific genera or core.js fishSpUnits for each of 12 of
+      // those families, in turn), on their family's photos (as the game shows a species' photo at every rank), so the
+      // report tells the ranks asked apart as the real one does (analysis.js rankOfUnit): its rank effects, and the views
+      // that list units drawn one rank at a time.
       const FU = Object.keys(FG)
           .filter(id => FG[id].views.wide.length >= 3)
           .slice(0, 24),
+        SPU = fishSpUnits(fj),
+        FR = FU.slice(0, 12)
+          .map((f, i) => (i % 2 ? SPU.find(u => u.family === f) : (fj.genera || []).find(g => g.family === f)))
+          .map((x, i) => x && [x.id, FU[i]])
+          .filter(Boolean),
+        // the units in the order they open in the made-up answers (synth): a genus or species unit after every second family
+        famOf = Object.fromEntries(FU.flatMap((id, i) => [[id, id], ...(i % 2 && FR[i >> 1] ? [FR[i >> 1]] : [])])),
         k = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, x) => t + x[2], 0);
-      fana = ANALYSIS.synth({
+      fana[FS.id] = ANALYSIS.synth({
         players: ANALYSIS.DEMO_PLAYERS.map(x => [x[0], x[1], Math.ceil(x[2] * k), x[3]]),
-        photos: Object.fromEntries(FU.map(id => [id, FG[id].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])),
+        photos: Object.fromEntries(
+          Object.keys(famOf).map(id => [id, FG[famOf[id]].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])
+        ),
         look: Object.fromEntries(FU.map(id => [id, FG[id].look || []])),
+        rk: {genus: [0.6, 0.15], species: [1, 0.3]},
         start: NOW - 30 * DAY,
         end: NOW - 3 * DAY,
         seed: 5,
@@ -946,6 +961,25 @@
             id => XG[id].circle === 1 && !XG[id].wink && XG[id].views.wide.length && id.startsWith(x.sheets[unitRankOf(x)] || '')
           );
         if (E.length < 4) return;
+        // A subject with an Analyses report (core.js SUBJECTS analyses: the sea slugs) gets one as the fish's: the made-up
+        // analysis players on its units with the most photos, about 1,200 answers, its judged photo features (FANA_META);
+        // only the report is made from them.
+        if (x.analyses) {
+          const XU = Object.keys(XG)
+              .filter(id => id.startsWith(x.sheets[unitRankOf(x)] || '') && !XG[id].wink && XG[id].views.wide.length >= 3)
+              .slice(0, 24),
+            xk = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, y) => t + y[2], 0);
+          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fishGameRead(gm)), rk: ANALYSIS.rankRef(x)};
+          fana[x.id] = ANALYSIS.synth({
+            players: ANALYSIS.DEMO_PLAYERS.map(y => [y[0], y[1], Math.ceil(y[2] * xk), y[3]]),
+            photos: Object.fromEntries(XU.map(id => [id, XG[id].views.wide.slice(0, 8).map(y => ({f: y.f, v: 'wide'}))])),
+            look: Object.fromEntries(XU.map(id => [id, XG[id].look || []])),
+            start: NOW - 30 * DAY,
+            end: NOW - 3 * DAY,
+            seed: 7 + i,
+            subject: x.id
+          });
+        }
         [
           ['Ana Demo', 0.8, 30, NOW - 10 * DAY],
           ['Mara Demo', 0.45, 8, NOW - 9 * DAY]
@@ -1451,9 +1485,10 @@
   // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
   // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
   let ANA_META = null,
-    // the fish report's photo features (tools/analyses.js metaOf: SUBJECTS analyses photos 'judged'): the judged ease,
-    // phase and framing of the photos its made-up answers show (fish-photos.json's, the game's own records)
-    FANA_META = {ph: {}};
+    // each other subject's report's photo features, by subject id (tools/analyses.js metaOf: SUBJECTS analyses photos
+    // 'judged'): the judged ease, phase and framing of the photos its made-up answers show (the fish's fish-photos.json,
+    // the game's own records; the sea slugs' game file)
+    FANA_META = {};
   const ANA = {};
   // subject: the one asked (v113, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
   // and answers with it whatever the subject asked (?demo&v=112).
@@ -1471,17 +1506,17 @@
           done(e.data && e.data.res ? JSON.stringify({...e.data.res, ...(V >= 105 ? {subject: sj} : {})}) : null);
         };
         // one subject's answers, as the Action reads them (tools/analyses.js: core.js subjRows): the corals' with their
-        // photo features; the fish report's made-up answers (S.fana), with its judged features (FANA_META)
-        const rows = own ? subjRows(answers().rows) : S.fana.map(r => [aid(r[0]), ...r.slice(1)]);
-        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META, B: 0, seed: 1});
+        // photo features; another subject's report's made-up answers (S.fana), with its judged features (FANA_META)
+        const rows = own ? subjRows(answers().rows) : (S.fana[sj] || []).map(r => [aid(r[0]), ...r.slice(1)]);
+        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META[sj] || {ph: {}}, B: 0, seed: 1});
       });
     return ANA[sj].then(text => {
       // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
       // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
-      // The fish report's made-up answers count as fish answers too.
+      // Each other subject's report's made-up answers count as its answers too.
       const rows = answers().rows,
         c0 = subjCounts(rows),
-        counts = {...c0, ...(S.fana.length ? {[S.fana[0][17]]: (c0[S.fana[0][17]] || 0) + S.fana.length} : {})},
+        counts = {...c0, ...Object.fromEntries(Object.entries(S.fana).map(([k, L]) => [k, (c0[k] || 0) + L.length]))},
         head0 = V >= 105 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
         r = text && JSON.parse(text);
       const stored = r

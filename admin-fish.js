@@ -6,7 +6,7 @@
 // with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's judgment
 // (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species' photos in
 // play beside the card (most of them the auto-sort's proposals, which Pierre can take out of play), the fish auto-sort's
-// agreement and decisions (each undoable) below it. Every click goes into DRAFT.fish (autosort.js fishAdd, fishReject,
+// agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd, fishReject,
 // fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
 //
 // PR 5b, on the same card: the rubric's tags as rows (ease always, the phase for an entry whose phases differ, the seven
@@ -45,8 +45,8 @@ const FTAGS = [
   }
 ];
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', w: 'watermark', p: 'phase entry', r: 'reference photo'};
-const fishTagText = jt =>
-  !jt ? '' : [...FTAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FFLAGS[c])].filter(Boolean).map(esc).join(' · ');
+// Every value said, in the words of the tree subject in force (admin.js tagWords: the sea slugs' views and flags).
+const fishTagText = (jt, S = FISHS) => tagText(jt, tagWords(S, FTAGS, FFLAGS, true));
 // The rows Pierre sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
 // type (the tool adds p and r itself); the IMR phase words (judging/FISH.md "phase"), '' = none (an adult, or a
 // juvenile, which is the j flag).
@@ -141,6 +141,16 @@ const FPHASE_ROW = [
   ['female', 'Female'],
   ['male', 'Male']
 ];
+// The rows and flags of subject S's rubric (the tree subject in force, FISHS, by default): the fish's (FROWS, FFLAGS_MINE)
+// with those its SUBJECTS admin tags replace (the sea slugs': their six views, no night livery, the f flag; Pierre,
+// 2026-11-17: the sea slugs' admin at parity); the count row in its words ("One sea slug").
+const tagRows = (S = FISHS) => {
+  const T = (S && S.admin && S.admin.tags) || {},
+    w = x => (S ? x.replace(/\bSeveral fish\b/g, 'Several ' + S.name.toLowerCase()).replace(/\bfish\b/g, S.what.toLowerCase()) : x);
+  return FROWS.map(([i, n, o]) => [i, n, T[i] ? T[i].map(([v, l]) => [v, l]) : o.map(([v, l, t]) => [v, w(l), ...(t ? [w(t)] : [])])]);
+};
+const tagFlags = (S = FISHS) =>
+  S && S.admin && S.admin.tags && S.admin.tags.flags ? S.admin.tags.flags.map(([k, l]) => [k, l]) : FFLAGS_MINE;
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's. An option may carry
 // its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
@@ -179,10 +189,12 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
   if (open)
     h +=
       `<div class="adm-ftags">` +
-      FROWS.map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto)).join('') +
-      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${FFLAGS_MINE.map(
-        ([k, t]) => `<button type="button" data-ff2="${k}" aria-pressed="${code.slice(7).includes(k)}">${t}</button>`
-      ).join('')}</span></div>`;
+      tagRows()
+        .map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto))
+        .join('') +
+      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${tagFlags()
+        .map(([k, t]) => `<button type="button" data-ff2="${k}" aria-pressed="${code.slice(7).includes(k)}">${t}</button>`)
+        .join('')}</span></div>`;
   return h;
 }
 // Not this (5b; Pierre's only): the photo goes to another species of its entry first, then any game species, or none.
@@ -212,7 +224,7 @@ function bindFishRows(S, f, base, edit) {
 // rot) with it, one Undo step for both, through edit(fn).
 const fishCrop = (p, start, sug, edit) =>
   cropEditor(p, {
-    start: ((DRAFT.fish || {}).crop || {})[p.f] || start || null,
+    start: ((DRAFT[TK] || {}).crop || {})[p.f] || start || null,
     rot: fishRot(p.f),
     save: (v, full, ro) =>
       edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
@@ -229,9 +241,9 @@ const fishJudged = j =>
 // the family pages (fuP): a candidate (remote) gets both drawn on its original; a photo in play from fish-game.json, whose
 // R2 file has its published crop and rotation baked in (cr, ro), is shown as it is while the draft keeps them, else from
 // its original with the draft's (Codex review #793: drawn over the baked file, a published 90° showed as 180°).
-const fishRot = f => rotNorm(((DRAFT.fish || {}).rot || {})[f]);
+const fishRot = f => rotNorm(((DRAFT[TK] || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
-  crSrc({...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
+  crSrc({...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
 // its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
@@ -239,17 +251,26 @@ const fishSrcTag = p => {
   const o = origin(p);
   return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}${nameTag(p, FISHS)}`;
 };
+// A genus-level candidate's unit is its genus (gl: the sea slugs' genus-level lists, by the genus's id): "Genus sp.",
+// genus level (admin.js fuName).
 const fishName = sid => {
   const s = FISHC.species[sid] || {},
-    t = FISHC.entry[sid];
-  return {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
+    t = FISHC.entry[sid],
+    g = !FISHC.species[sid] && (FISHC.genera || {})[sid];
+  return g ? {sci: g.name + ' sp.', sub: 'genus level'} : {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
 };
+// The records the queue reads its targets from (autosort.js fishQueue, fishTarget): the species', and for a subject with
+// a target of its own (core.js SUBJECTS admin target) its genera's too, a genus-level list filling up to the same target.
+const candSpecies = () =>
+  FISHS && FISHS.admin.target > 0
+    ? {...Object.fromEntries(Object.keys(FISHC.genera || {}).map(g => [g, {tgt: FISHS.admin.target}])), ...FISHC.species}
+    : FISHC.species;
 // The photos of a species in play (Pierre's keep holds the add, never other species one could take for the subject: core.js
 // fishOther, Q323), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
   const L = Object.entries(F.add || {})
-      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG.fish || {})[f] || {}).jt))
-      .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG.fish || {})[f]}) || {f}),
+      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
+      .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG[TK] || {})[f]}) || {f}),
     seen = new Set(L.map(p => fishPid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
   fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(fishPid(p.f)) && seen.add(fishPid(p.f)) && L.push(p));
@@ -288,7 +309,7 @@ function fishZoom(p, sid, inPlay, blind) {
 }
 // One click on the fish part of the draft: one Undo step.
 function fishEdit(fn) {
-  DRAFT.fish = fn(DRAFT.fish || {});
+  DRAFT[TK] = fn(DRAFT[TK] || {});
   saveDraft();
   render();
 }
@@ -297,7 +318,7 @@ function fishEdit(fn) {
 // Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
 // every decision still standing, each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det, chip) {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     I = Object.entries(fishIdx(F)),
     FA = I.filter(([, x]) => !x.d.check && !x.d.undone),
     nIn = FA.filter(([, x]) => x.d.kind === 'a').length,
@@ -370,11 +391,14 @@ function renderFishCand() {
     fishLoad(true).then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
     return;
   }
-  const F = DRAFT.fish || {},
-    SF = (SUG && SUG.fish) || {},
-    Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+  const F = DRAFT[TK] || {},
+    SF = (SUG && SUG[TK]) || {},
+    Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
-    Q1 = FQ === 'chk' ? chks : Q0,
+    // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
+    // (Codex review #1061: Checks chosen on the fish showed the sea slugs an empty queue with no switch)
+    aqOn = !!FISHS.admin.autosort || chks.length > 0,
+    Q1 = aqOn && FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
     nFull = Q1.filter(x => x.full).length,
     nAside = Q1.filter(x => x.aside).length,
@@ -384,17 +408,21 @@ function renderFishCand() {
     nx = live.find(x => x !== c);
   const cnt = L => L.filter(shown).length;
   const seg =
-    `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The fish auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>` +
+    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a
+    // chip beside the others
+    (aqOn
+      ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>`
+      : '') +
     candFlags(
-      `${
+      `${aqOn ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
         nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
+          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHS.admin.target > 0 ? `${FISHS.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`}): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
       }${
         nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
           : ''
-      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the fish candidate pass (judging/FISH.md)">${nJ} not judged yet</span>` : ''}`,
+      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the ${esc(FISHS.what.toLowerCase())} candidate pass (judging/)">${nJ} not judged yet</span>` : ''}`,
       fishAutoBlock(false, true)
     ) +
     fishAutoBlock();
@@ -442,17 +470,17 @@ function renderFishCand() {
       // After his answer to a Check: what the auto-sort had said.
       told = () => {
         if (!chk) return;
-        const x = fishIdx(DRAFT.fish)[f];
+        const x = fishIdx(DRAFT[TK])[f];
         if (x)
           toast(
-            `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT.fish, f) === 'add') ? ' (same)' : ' (differs)'}.`
+            `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], f) === 'add') ? ' (same)' : ' (differs)'}.`
           );
       };
     S.querySelector('[data-add]').onclick = () => {
       FSKIP.delete(f);
       FPIN = null;
       fishEdit(G => fishAdd(G, f, sid, j, p));
-      if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT.fish, sid).map(q => q.o || q.f)).size}/${c.target}).`);
+      if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT[TK], sid).map(q => q.o || q.f)).size}/${c.target}).`);
       told();
     };
     S.querySelector('[data-rej]').onclick = () => {
@@ -479,14 +507,14 @@ function renderFishCand() {
       FPIN = f;
       fishEdit(fn);
     };
-    bindFishRows(S, f, () => fishTagsMine(DRAFT.fish, f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
+    bindFishRows(S, f, () => fishTagsMine(DRAFT[TK], f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
     S.querySelector('[data-ftags]').onclick = () => {
       FTAGS_OPEN = !FTAGS_OPEN;
       store.set('reefid-admin-ftags', FTAGS_OPEN);
       render();
     };
     // The crop (fishCrop): Pierre's, else the pass's (never on a Check).
-    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG.fish || {})[f] || {}).c, fishPin);
+    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG[TK] || {})[f] || {}).c, fishPin);
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;
       if (!to) return;
