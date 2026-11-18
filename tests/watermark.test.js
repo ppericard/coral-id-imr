@@ -1,10 +1,10 @@
 require('./slot.js').testGuard();
-// The watermark flag (Pierre, 2026-11-15, Q373; judging/FISH.md "Watermark"): a fish photo with a visible watermark or
+// The watermark flag (judging/FISH.md "Watermark"): a fish photo with a visible watermark or
 // text (a photographer's name, a logo) carries the judged flag w. Home skips it (home.js homeOk: the band, its tiles and
 // the Identify door's art); the games keep it as it is (no cap, no ease, no reference level, no order changes), so a
 // watermark is never a reason to leave play. The pass's w reaches tags the auto-sort copied into the curation, never the
-// tags Pierre set himself, so his Watermark off in the admin is his (autosort.js fishMarked, tools/fish_game.py marked);
-// a reference photo's tags and ease in his curation now count too. tools/judging_fish.py watermark writes the flags of
+// tags the admin set by hand, so the admin's Watermark off is kept (autosort.js fishMarked, tools/fish_game.py marked);
+// a reference photo's tags and ease in the curation count too. tools/judging_fish.py watermark writes the flags of
 // judging/fish-watermark.json into each photo's single judgement. Offline: fixtures and the repository's own files.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -66,7 +66,7 @@ print(json.dumps([[G.tile_tags(c) == G.tile_tags(G.marked(c, c + 'w', True)), G.
   out.forEach((x, i) => assert.ok(Array.isArray(x) ? x.every(Boolean) : x, `case ${i}`));
 });
 
-// The auto-sort's copy of the pass's tags (log code with t) takes the pass's w; tags Pierre set (t gone: fishOwn) stand.
+// The auto-sort's copy of the pass's tags (log code with t) takes the pass's w; tags the admin set (t gone: fishOwn) stand.
 const CASES = [
   // [his tags, the pass's jt, his log code, expected]
   ['p1g0sl1', 'p1g0sl1w', 'ate', 'p1g0sl1w'],

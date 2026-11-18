@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// "Mystery" tiles on My progress (Pierre, 2026-11-04; docs/ROADMAP.md row built 2026-11-15): a unit the player has never
+// "Mystery" tiles on My progress (docs/ROADMAP.md): a unit the player has never
 // met is a masked tile. Who sees them is the subject's (app.js UNITS mystery, from the first-launch answer: every fish
 // player, the corals for "I'm new to corals" only); which units, progress.js mysteryOf: never answered and never in the
 // intro map (a card, Open all, closed again by "One at a time" all count as met). progress.js runs here on stubs, as

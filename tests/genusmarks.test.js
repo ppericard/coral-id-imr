@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish genera's own presentation and ID marks (Pierre, 2026-11-08: each genus needs a short presentation and its ID
+// The fish genera's own presentation and ID marks (each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card
 // (app.js treeGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
@@ -68,7 +68,7 @@ test('built into fish.json as written: plain, marks, and each line pointing at i
 });
 
 test('every genus in play, any circle, has IMR cues or a presentation and its marks or a reason; never marks beside IMR cues', () => {
-  // In play: every family but the surprise cards' (wink); circles 2 and 3 too (Pierre, 2026-11-18, "d'abord le contenu",
+  // In play: every family but the surprise cards' (wink); circles 2 and 3 too (the content comes first,
   // before their genera open as units).
   const play = F.families.filter(f => !f.wink);
   for (const f of play) {
