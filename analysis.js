@@ -30,10 +30,6 @@
   // factors, Confusions and Learning curves, and each rank against the app's expectation in Formats
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
-    // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
-    // analysesPut know one report, the corals', so another subject's is neither stored (tools/analyses.js) nor read (the
-    // admin's Analyses, admin-analyses.js anLoad) from an older script (rule D4).
-    AN_SUBJ_SHEET = 113,
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
     Z = 1.96;
   const sig = x => 1 / (1 + Math.exp(-x)),
@@ -4676,7 +4672,6 @@
     AV,
     GAP,
     STEP,
-    AN_SUBJ_SHEET,
     BOOT_MIN,
     FORMATS,
     ANALYSES,

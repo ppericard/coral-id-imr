@@ -468,3 +468,29 @@ test('check_versions.py runs the sheet check on the source, never on a stamped c
     fs.rmSync(d, {recursive: true, force: true});
   }
 });
+
+// The gate floor (core.js SHEET_FLOOR; architecture review 2026-11-18, R3): a version already live, set by hand, never a
+// gate. A PR that adds or raises it with a Code.gs change is not a gate added at or below main's VERSION, and --assign
+// leaves it as written (were it a gate, it would be set to the new VERSION: the build's, not a live one).
+test('SHEET_FLOOR is not a gate: --check accepts it, --assign leaves it alone', () => {
+  const r = repo();
+  try {
+    r.edit('core.js', 'const x = 1;', 'const SHEET_FLOOR = 5;\nconst x = 1;');
+    r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
+    r.write('tools/sync/changes/claude-x.md', 'doGet answers 2 (Pierre, 2026-11-09).\n');
+    r.commit();
+    ok(r.check());
+    ok(r.run('--assign', '--base', 'main', '--date', '2026-11-09'));
+    assert.match(r.read('core.js'), /^const SHEET_FLOOR = 5;$/m, 'the floor as written');
+    assert.match(r.read('tools/sync/Code.gs'), /^const VERSION = 8;/m);
+    r.commit();
+    ok(r.check('--main'));
+    // raised later by a PR of its own, still not a main gate changed
+    r.git('checkout', '-q', '-b', 'pr2');
+    r.edit('core.js', 'const SHEET_FLOOR = 5;', 'const SHEET_FLOOR = 7;');
+    r.commit();
+    ok(r.run('--check', '--base', 'pr'));
+  } finally {
+    r.done();
+  }
+});

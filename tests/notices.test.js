@@ -183,8 +183,9 @@ test('a notice seen here goes to the account with the next save', async () => {
   assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save is due');
   a.run(3000); // syncSoon's timer
   await settle();
-  const post = a.sent.find(x => x.data);
-  assert.deepStrictEqual(JSON.parse(post.data['reefid-sync-told']), ['rv:9']);
+  // a light save (sync.js lightBody: {lt}), its delta or its whole data
+  const post = a.sent.map(x => x.lt || x).find(x => x.dz || x.data);
+  assert.deepStrictEqual(JSON.parse((post.dz || post.data)['reefid-sync-told']), ['rv:9']);
 });
 
 test('offline or a failed load: the notices show at once after the failure, from this device', async () => {

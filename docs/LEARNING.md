@@ -755,8 +755,8 @@ the genus ability (Q136: "Photos rated against the genus ability").
 P(right) = 1/k + (1 − 1/k) σ(θ − d + d_f), the guess rate kept at 1/k. `core.js` `fmtOffsetsOf` fits it (Newton's
 method on d_f with a prior N(0, `FMT.SD`² = 1), from `FMT.N` = 20 trusted answers with their logged expectation;
 `fmtOf`, the formats of `analysis.js`); the sheet serves it in `?stats=1` `fmt` (`Code.gs` `stats_`, v77), the app
-reads it from a sheet that reports v ≥ 68 (`model.js` `PFMT`, `core.js` `FMT_SHEET`, `fmtsOf`; rule D4: before, every
-offset is 0). Where it acts:
+reads it with the photo statistics (`model.js` `PFMT`, `core.js` `fmtsOf`; before the first reply, every offset is 0).
+Where it acts:
 - **the expectation of the ability steps**, the genus's and the global level's, in the one scorer (`core.js`
   `scoreAnswer`'s `df`, from `quiz.js` `answer`: the question's difficulty taken d_f easier), so a right 2-choice
   answer the format explains no longer raises the ability as a surprise. **Logged with the answer**: the scoring
@@ -1646,7 +1646,7 @@ stay) and the card never comes back in that direction for that answer. **Coral b
 moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
 prior p, and until 2026-11-12 the open-all offer's `at`), kept apart from the answer given (an ease event in the record's history, `reefid-sync-coral-start` h, applied from its time to that
 answer only; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
-from its time, `startPriorAt`; the live game applies the prior, eased or not, only once the sheet runs v36, `START_SHEET`, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
+from its time, `startPriorAt`; the live game applies the prior, eased or not, as the sheet's replay does from v36, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
 
 **The honest size of the silent move**: p only sets the starting ability of a genus never answered (`playerStart`:
 W (m t + N p) / (m + N), W 0.8, N 10, m the answers in the global level). The prior's weight N / (m + N) is 0.20 at 40
@@ -3299,8 +3299,9 @@ the sheet's leaderboard (Code.gs `pctOf_` now calls `core.js` `pctOf`, no copy) 
 
 **The transition (rule D4).** The moving average `s.pg` is no longer the bar. A record the new rules have not rebuilt
 (saved with `s.pg`) keeps it, and the former rule with it, until the sheet's full replay under rules version 9 reaches
-the device; a genus first answered in the app takes the new bar only once the sheet replies v ≥ 87 (`DOM_SHEET`,
-model.js `domRules`), and the app's own replay of its queued answers follows the same version. The fish are not
+the device; a genus first answered in the app takes the new bar (the sheet replays it from v87; until the gate floor of
+2026-11-18, `core.js` `SHEET_FLOOR`, a device with no reply yet still gave it the moving average), and so does the app's own
+replay of its queued answers. The fish are not
 replayed: a fish unit first answered takes the new bar at once, and one answered before is rebuilt on the device, silently
 (Pierre, 2026-11-06, Q200; no card, the apology is the corals' only). The device keeps no log of the answers the sheet has
 confirmed, and players cannot read the sheet's log, so the rebuild works from what every copy of the record holds
@@ -4741,8 +4742,8 @@ nouvelles manières de calculer les progrès et les scores"); a species with no 
 progress (fish)"):
 
 - Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
-  exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
-  (101; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+  exam as before. The app shows the score, and sends its tree to the sheet, which ranks the leaderboard by it (v101):
+  the leaderboard and My progress on one scale. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
 - Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
   not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
   sum of its species' weights, a genus too.
@@ -4889,7 +4890,7 @@ answers than the log.
 `fish.json`, `core.js` `fishReplayGen`; none of `stats_`'s photo numbers, which are the corals'), under the fish rules
 versions of their own (`core.js` `FISH_RVS`, `rvOf`; the integrator, 2026-11-08: a fish replay must never replay the
 corals again, so no coral player gets a card for it), asked by the app with the fish rules version it applied
-(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet v112 (`core.js` `REPLAYS_SHEET`, rule D4).
+(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` (sheet v112).
 **The floor** (until fish rules version 2: removed on 2026-11-09, Q330, the log the only reference, "The log, the only reference for progress" below; `core.js` `replayFloor`), applied by the sheet to the replay itself (`Code.gs` `replay_`), so every
 device of the account adopts the same record and keeps it as their shared merge baseline (Codex review #779: floored on
 each device, two devices disagreed and a recovered refused save counted its answers twice): against the account's saved
@@ -4906,7 +4907,7 @@ more; none on this data), told under the subject's id (`progress.js` `rvId`, `fi
 What was checked (rule L11): the engine is unchanged (no learning rule moves), so no `tools/learnsim.js` run; the change is
 where a fish bar is computed, checked on the real log as above and by `tests/fishreplay.test.js` (the replay's units are
 the app's; the floor on fixed and random records, no unit or headline down) and `tests/fishadopt.test.js` (the app
-adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no coral replay asked for, the reset cutoff
+adopts it, with the floor, its own rules version, no coral replay asked for, the reset cutoff
 and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
 `sstart`; ROADMAP).
 
@@ -5130,11 +5131,10 @@ may weigh how much it moves the ability, never a decay nor a penalty for being s
   stepped live). Two devices' records add up (`mergeProgress`, like the mix-ups), two accounts merged too
   (`mergeUsers`), and the replay's record goes with the level's answer count (`replayedOf`, `replayBase`). The times
   are recorded whatever the sheet's version.
-- **The app never gets ahead of the sheet** (rule D4): the weight is on only once the sync script's replies say
-  v ≥ `RT_SHEET` (32; `sync.js` `sheetV`, the last reply's `v` kept on the device as `reefid-sheet-v`; `model.js`
-  `rtOn`); before it every weight is 1, exactly as before, and so in the device's own answers replayed on top of an
-  adopted replay (`sync.js` `replayAdopt` passes `time` from the reply's `v`; Codex review #444). A device then adopts the v32 replay of its whole log under
-  rules version 4 (standard card `RV_CARD`).
+- **The app never gets ahead of the sheet** (rule D4): the weight was on only once the sync script's replies said
+  v ≥ 32 (Codex review #444), a gate deleted with the gate floor (`core.js` `SHEET_FLOOR`, 2026-11-18): the weight is on in
+  the live game and in the device's own answers replayed on top of an adopted replay. A device then adopts the v32 replay
+  of its whole log under rules version 4 (standard card `RV_CARD`).
 
 **Real answers, the app's implementation against main** (`tools/abilityeval.js`, `e+X+M` on main's `core.js` through
 `--model` against `e+X+M+A` on this one: `+A` replays `core.js` `rtWeight` / `rtAdd` as the app runs them, and gives
@@ -5548,9 +5548,8 @@ minutes, 58%), so no lag term is added and step 2 waits; proposed: the same tabl
     replayed rows' answer ids from the time of the oldest answer the device still queues (the request's `pt`; at least
     the last 500), so a lost reply that left up to 2,000 answers already logged in its queue never counts them twice
     (Codex review #399).
-  - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
-    (`core.js` `RV_SHEET`; rule D4: the app never gets ahead of the sheet script; before, it does exactly what it did,
-    and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
+  - **The app adopts it** (`sync.js` `replayAdopt`), once per version (sheet v28): when a reply carries a replay newer
+    than the one
     this device applied (`reefid-sync-coral-rv`, in the progress data: a device that signs in to the account takes it with
     the account, whose progress is the adopted one, and 0 when the account's data has none, never the version of an
     anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
@@ -5862,8 +5861,8 @@ already show. A read-only study of the answer log (1,262 trusted answers, 9 play
   [offset, weighed answers]}`; `core.js` `genusOffsetsOf`). The genus of a photo is the genus shown (one colony a
   question, rule P4), so no data file and no per-genus code.
 - **The app** (`model.js` `photoDiff`): (n × rating + 5 × gd[genus]) / (n + 5), and gd[genus] for a photo nobody has
-  answered; `gd` is read only from a sheet that reports v ≥ 31 (`PGD_SHEET`, rule D4, stored with the stats and
-  their `v`). With an older sheet, or for a genus with no offset, the prior is 0, which the replay below shows is
+  answered; `gd` comes with the photo statistics (sheet v31, stored with them). Before the first reply, or for a genus
+  with no offset, the prior is 0, which the replay below shows is
   already better than the sets. The genus difficulty that orders the opening (`genusDiff`, the mean `photoDiff` of a
   genus's photos) becomes data-driven through it with no code of its own.
 - **`GENUS_K` 0.4**: on the real log, 0.2 and 0.4 score alike and both beat the photo-only Elo; 0.8 moves too fast
@@ -6709,7 +6708,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
+  [--openall N] [--back keep|one] [--rt off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
   [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]` (the learner and the Custom-N scenario: "Field learner and
   the Custom-8 scenario" below; the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
@@ -6746,8 +6745,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   situation of the run that collapsed on 2026-11-03.
 - **Response time** (2026-11-04, "Response time" section 5): the learner takes log t = log 7 − 0.15 × right − 0.3 ×
   logit(its true chance) + 0.6 × N(0, 1) seconds (`LEARNER.RT`, calibrated so that its logs give back the two real
-  measures), handed to the app's question clock; the app weighs its steps by it (the sheet version it sees is set to
-  one that replays the time). `--rtapp off`: the app as with an older script (weights 1); `--rt off`: no seconds;
+  measures), handed to the app's question clock; the app weighs its steps by it. `--rt off`: no seconds;
   `--rtlog`: the app's answer log of every run, with the learner's chance and time noise, for `tools/abilityeval.js`.
 - **Openings after a miss** (2026-11-03): per profile, the genera opened on their own cards, those on the question
   right after a miss (0 with `openRight`), the questions where that rule alone held the opening and the openings they
