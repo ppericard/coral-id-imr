@@ -322,6 +322,9 @@ test('release: a second train fast-forwards it to the commit main ends on, and a
     assert.strictEqual(f.train('1').status, 0);
     const first = f.og('rev-parse', 'release');
     assert.strictEqual(first, f.og('rev-parse', 'main'));
+    // A train branch is named after the second it started in: two trains in one second (a fast runner) would share it.
+    // Real trains are minutes apart, so the test removes the first one's branch.
+    for (const b of f.trains()) f.og('update-ref', '-d', b);
     // A Publish lands on main after the train: main moves on, release does not.
     const publish = f.commitOn('refs/heads/main', 'Photo curation: y');
     f.og('update-ref', 'refs/heads/main', publish);
