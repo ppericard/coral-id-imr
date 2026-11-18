@@ -28,8 +28,8 @@ corals' model (`phSpec`, `PH_FX`: the ease per point, juvenile and another phase
 photo; a feature no answer measured left out; the judged ease primary, `PRIMARY` photo), its tables by ease, phase, view
 and whole or part (`tabs`), its photo lists against "ease, phase and framing" (`of`), a photo's thumbnail from
 `FISHA.ph` (`anThumbs`, enlarged by `zoomOne`). The report's fingerprint reads `fph` too, so a changed judgement refits
-the milestones. Their mix-ups carry no view effect (`analysis.js` `confusions`: a view never shown is left out). The views
-read live from the answer log (`admin.js` `LIVE_STATS`) read their answers there, not the report: Stops
+the milestones. Their mix-ups carry no view effect (`analysis.js` `confusions`: a view never shown is left out). For the
+fish, the views read live from the answer log (`admin.js` `LIVE_STATS`) read their answers there, not the report: Stops
 (`statsHealth`), Answer log (`statsPlayers`: the families and genera by name, an IMR sub-entry with its IMR name, its
 Conditions by rank and, once players type, typed against picked, `logConds`; no Elo column, the sheet sending the
 corals' levels only) and Pairs (`statsConf`: a pair starts as Look-alike when its families are declared look-alikes or it
@@ -207,7 +207,7 @@ unless said, so outside the multiple-testing correction.
   enough data yet, with the answers needed: rule A5), then what enlarging changes view by view (`dotRange`), each pair's
   chance that a miss goes to the other genus by view against a typical pair's, and each format's curve against four
   choices' (small multiples, `smallLines`), each with its table. Exploratory tests (one each, Benjamini-Hochberg); not
-  on the tree subjects' side for the views while their photos have one.
+  on the fish side for the views while their photos have one.
 - **Each genus with practice** (`anGcurve`, Learning › Practice): the flat genera and the three furthest below 80% in
   words, one small chart a genus (right answers by the answers already given, against the model's prediction;
   `smallLines` up to 5 a row, 2 on a phone), sorted lowest first, and a table (recognised today, what twice as many

@@ -22,8 +22,9 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
 - **The admin's Publish** pushes `curation.json` to `main`, which starts both Deploy Pages and Candidate photos (which
   also runs on a push changing `suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or
   `fish-photos.json`). Candidate photos commits `data.json`, `cand.json`, `excluded.json`, `fish-game.json`,
-  `fish-photos.json` and `img/` (and, in its `fish` job, `fish-cand.json` and `tools/fish_refill.json`) with
-  `GITHUB_TOKEN`; its completion starts Deploy Pages again, so the bot's changes are published too
+  `fish-holdout.json`, `fish-photos.json`, `fish-cand.json`, `tools/fish_refs.json`, `seaslug-cand.json`,
+  `seaslug.json`, `seaslug-game.json` and `img/` (and, in its `fish` job, `fish-cand.json` and
+  `tools/fish_refill.json`) with `GITHUB_TOKEN`; its completion starts Deploy Pages again, so the bot's changes are published too
   ([photos.md › The Candidate photos workflow](photos.md#the-candidate-photos-workflow)).
 - **The build**: the deploy writes the players' curation, minifies the scripts of its staged copy with source maps,
   stamps every `?v=` and `sw.js` `V` from content hashes (`tools/stamp_versions.py`, rule W15) and plays the copy
