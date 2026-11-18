@@ -62,7 +62,7 @@
     return p ? thumb(p, '(max-width:599.98px) calc((100vw - 40px) / 4), 270px') : ''; // a phone tile: a quarter of the band
   };
   window.viewHome = function () {
-    document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
+    document.documentElement.dataset.page = 'lab'; // as the Lab pages set it (proto/lab.js); no stylesheet reads it
     // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
     const names = DATA ? Object.keys(DATA.gen) : [],
       fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name, // a subject whose units have names of their own (fish entries)

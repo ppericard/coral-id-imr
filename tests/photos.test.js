@@ -328,7 +328,7 @@ print(json.dumps({'ok': run(four('imr-p1_i1')), 'size': run(four('imr-p1_i1')[:3
   assert.strictEqual(out.url, require('../core.js').PHOTO_BASE + 'img/a-s.webp', 'the bucket address read from core.js');
 });
 
-// Growth forms (rule C4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
+// Growth forms (rule C4): model.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
 // montage, the Look-alikes montages); a game photo with no form matches nothing. The admin's form (curation.json gf) or a
 // guess (forms.json gf) is enough.
 // A report, never a failure: a candidate approved without a form comes in with the admin's Publish, straight to main,
