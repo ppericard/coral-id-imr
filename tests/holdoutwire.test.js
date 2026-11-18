@@ -268,6 +268,14 @@ test('the replay decides alike: a held-out answer (|h, |h|x) replays as the same
   assert.ok(a.p.P['f:X'].ok > 0 && a.p.P['f:X'].ko > 0);
 });
 
+// Codex review #1057: learnsim's truth from hashes (--truth gen) seeds the held-out photos' difficulties too.
+test('learnsim: the held-out photos get their own simulated difficulty', () => {
+  const src = read('tools/learnsim.js'),
+    seed = src.slice(src.indexOf('const GEN_D = {};'), src.indexOf('PSTAT = ps;'));
+  assert.match(seed, /\.\.\.\(\(GX\(g\) \|\| \{\}\)\.held \|\| \[\]\)\]\.forEach\(p => \{/);
+  assert.match(seed, /GEN_D\[p\.f\] = d;/);
+});
+
 test('the app loads the set for the fish only, with Home’s files, and builds its units with it', () => {
   const app = read('app.js'),
     sw = read('sw.js');

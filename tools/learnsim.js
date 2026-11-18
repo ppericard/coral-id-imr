@@ -423,14 +423,14 @@ function play(cfg) {
   if (tg) {
     // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
     const ps = {};
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the exam's photos keep their own difficulty
+    // whether withheld or not (Codex review #1057)
     [...slateGenera(), ...BON].forEach(g =>
-      VIEWS.forEach(([v]) =>
-        gamePics(g, v).forEach(p => {
-          const d = muOf(g) + TSD * probit(hashU(p.f, 1));
-          GEN_D[p.f] = d;
-          ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
-        })
-      )
+      [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].forEach(p => {
+        const d = muOf(g) + TSD * probit(hashU(p.f, 1));
+        GEN_D[p.f] = d;
+        ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
+      })
     );
     PSTAT = ps;
   }

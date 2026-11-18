@@ -129,12 +129,30 @@ def build(game, fish, prev=None):
             g = (S, max(0, sum(len(P[s]) for s in S) - FLOOR))
             for s in S:
                 guard.setdefault(s, []).append(g)
+    # The observations held already (sticky) under the same floors: a unit whose practice went under its floor (photos
+    # gone from play) gives the excess back, from its species holding the most, the last in hash order first (Codex
+    # review #1057). Only the floor: a family may hold more than TARGET, its genera's top-ups.
+    for _, S in units:
+        lim = room_of(sum(len(P[s]) for s in S))
+        while sum(len(held[s]) for s in S) > lim:
+            held[max((s for s in S if held[s]), key=lambda x: len(held[x]))].pop()
     for uid, S in units:
         c = cap
         if not uid.startswith('f:'):  # a genus: its species keep GENUS_KEEP (never less than what they hold already)
             c = {s: min(cap[s], max(len(held[s]), len(P[s]) - GENUS_KEEP)) for s in S}
         take(held, E, c, S, sum(len(P[s]) for s in S), guard)
     return dict(sorted((s, sorted(L)) for s, L in held.items() if L))
+
+
+def room_of(n):
+    """The most a unit of n observations in play may hold back under the learning-first rules (FLOOR, RATIO), TARGET
+    aside; no bound when both are off."""
+    m = n
+    if RATIO:
+        m = min(m, n // (1 + RATIO))
+    if FLOOR:
+        m = min(m, max(0, n - FLOOR))
+    return m
 
 
 def take(held, E, cap, S, n=None, guard=None):
@@ -146,9 +164,7 @@ def take(held, E, cap, S, n=None, guard=None):
     guard: {species: [(a unit's species, the most that unit may hold)]}, the floors of the other units it belongs to.
     Returns how many the unit holds."""
     room = lambda s: all(sum(len(held[x]) for x in L) < m for L, m in (guard or {}).get(s, ()))
-    target = min(TARGET, n // (1 + RATIO)) if RATIO and n is not None else TARGET
-    if FLOOR and n is not None:
-        target = min(target, max(0, n - FLOOR))
+    target = TARGET if n is None else min(TARGET, room_of(n))
     need = target - sum(len(held[s]) for s in S)
     while need > 0:
         took = False

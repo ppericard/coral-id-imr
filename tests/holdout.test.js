@@ -146,6 +146,32 @@ test('learning first: a unit holds back only above 30 observations in practice',
   assert.strictEqual(held(game(many('s1', 30)), null, {FLOOR: 0, RATIO: 2}).s1.length, 10);
 });
 
+// Codex review #1057: the observations held already obey the floor too (a unit whose practice shrank gives some back).
+test('sticky under the floor: a unit whose practice went under 30 gives the excess back, the last in hash order first', () => {
+  const on = (G, prev = null) => held(G, prev, {}),
+    all = many('s1', 45),
+    H = on(game(all));
+  assert.strictEqual(H.s1.length, 15, '45 in play: 15 held, 30 left');
+  // 10 practice observations leave play: 35 in play, so 5 may stay held
+  const left = all.filter(p => H.s1.includes(p.o)).concat(all.filter(p => !H.s1.includes(p.o)).slice(0, 20)),
+    H2 = on(game(left), H);
+  assert.deepStrictEqual(H2.s1, byRank(H.s1).slice(0, 5).sort());
+  // a thin genus's species give back to their genus's floor as well (g:Y, s5: 40 in play, then 32)
+  const B = game(many('s3', 60, 1000), many('s4', 60, 2000), many('s5', 40, 3000)),
+    HB = on(B),
+    s5 = B.photos.t01.filter(p => p.sp === 's5'),
+    kept = s5.filter(p => HB.s5.includes(p.o)).concat(s5.filter(p => !HB.s5.includes(p.o)).slice(0, 32 - HB.s5.length)),
+    HB2 = on(
+      game(
+        B.photos.t01.filter(p => p.sp !== 's5'),
+        kept
+      ),
+      HB
+    );
+  assert.strictEqual(HB.s5.length, 10);
+  assert.strictEqual(HB2.s5.length, 2);
+});
+
 test("never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species", () => {
   const G = game(
     many('s1', 40),
