@@ -2643,7 +2643,8 @@ function fuFilters(T, U, E, D) {
       return !same(x, y);
     },
     feat = (k, s) => !same(((ent(F, k) || {}).feat || {})[s], ((ent(S0, k) || {}).feat || {})[s]),
-    name = id => (U.find(x => x.id === id) || {}).name || id,
+    // a unit's name, or one of its genera's (a subject whose pairs join genera: SUBJECTS structure pairs rank)
+    name = id => (U.find(x => x.id === id) || U.flatMap(x => x.genera || []).find(g => g.id === id) || {}).name || id,
     sp = FISHC.species,
     out = [];
   // The circles in force (the draft's: fuCircle), None for a family he took off the game.
@@ -2653,10 +2654,12 @@ function fuFilters(T, U, E, D) {
     .forEach(c => out.push({k: 'c' + c, grp: 'Circle', t: 'Circle ' + c, on: n => !!n.unit && fuCircle(n.u) === c}));
   if (cs.includes(null)) out.push({k: 'cnone', grp: 'Circle', t: 'No circle', on: n => !!n.unit && fuCircle(n.u) == null});
   // The pairs: the base's (fishPairs) and the ones he added (admin-content.js pairRows), each saying when he withdrew or
-  // added it (the structure editor's tools for it in the bar: structBar); Any look-alike, the pairs in force.
+  // added it (the structure editor's tools for it in the bar: structBar); Any look-alike, the pairs in force. The pair
+  // rows are of the rank the subject declares its pairs at (SUBJECTS structure pairs): the families' (the fish), or the
+  // genera's (the sea slugs: the base's pairs come from pairRows alone, the genus look of seaslug.json).
   const PR = typeof pairRows === 'function' ? pairRows(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ)) : [],
     byK = new Map(PR.map(r => [r.key, r])),
-    inU = new Set(U.map(u => u.id)),
+    inU = new Set([...U.map(u => u.id), ...U.flatMap(u => (u.genera || []).map(g => g.id))]),
     P0 = fishPairs(U),
     P = [...P0, ...PR.filter(r => !P0.some(p => p.k === r.key) && inU.has(r.a) && inU.has(r.b)).map(r => ({k: r.key, A: r.a, B: r.b}))],
     live = p => !byK.has(p.k) || byK.get(p.k).v === 1,
@@ -4429,7 +4432,7 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet vNEXT): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it, <b>Remove all</b> takes everyone out of it (both ask first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it, <b>Remove all</b> takes everyone out of it (both ask first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p><p><b>Cohort</b> and <b>Staff</b> (sheet v171; each has its own leaderboard in the app): <b>Cohort</b> in a player's bar puts them in one cohort (one at most; <b>None</b> takes them out); <b>New cohort…</b> asks its name, free text players read above its leaderboard ("RA November 2026"); a cohort exists while it has a member. <b>Staff</b> = the trainer role of the instance: <b>Add</b> / <b>Remove</b>. The staff have their own leaderboard and leave the general one and the cohorts'. Everyone sees every board: their cohort's first, then the staff's, then all players'; the other cohorts behind "Other cohorts". The Groups column shows both; the line above the table counts each cohort and the staff. A merge keeps the kept name's cohort; an archive or a delete takes the player out.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -4472,7 +4475,7 @@ const HELP = {
   lightprop: `<p>The light re-judge's proposals (rubric 6, Q308: a fish lit by a flash or a lamp on a dark background is good light, not a night shot): the photos you added whose tags and ease still hold the earlier judgement (<code>judging/fish-light-q308.json</code>). Each shows what would change, in words: struck through yours, in bold the re-judged value (light <b>g</b> good, <b>d</b> dim: the fish itself poorly lit, <b>n</b> night livery: a night colour pattern; the full codes in the tooltip). <b>One judgement per photo</b>, last: a photo judged twice (as a reference photo and as a candidate) whose two judgements disagreed was judged again once (<code>judging/fish-one-judgement.json</code>); where you added it with the earlier tags and ease, the new ones are proposed the same way. <b>Accept</b> writes the re-judged tags and ease into your draft (when they make one of your ★ covers a juvenile, it first asks whether to keep it as the cover anyway: yes keeps it, confirmed; no takes the tags and the cover is ignored until you confirm it on its Tree page); <b>Keep mine</b> keeps yours and the proposal goes; <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that photo's tags or ease elsewhere. The view leaves the switch once none is left.</p>`,
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
   fishmont: `<p>The look-alike pairs of families in force, one row each: the pairs the IMR course compares (its lines, from fish.json), less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b> (your draft's, as on the Tree). A withdrawn pair's photos stay chosen and come back with it. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in its Tree page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
-  units: `<p><b>Key</b> | <b>WoRMS</b> (at the top right): the same species in two classifications, each with one parent per node. <b>WoRMS</b>: the reference taxonomy (WoRMS, from fish.json), its classes, orders, suborders, families, subfamilies, genera and species as WoRMS names and ranks them, which are not always the key's (Labridae holds the wrasses and the parrotfishes; Pycnochromis five of the key's Chromis). A species is the same page in both views (its photos, its ★ cover, its tools); the switch keeps it. A WoRMS taxon's page is read-only for now: its cover is the default by the rule (its species with a reference photo most seen near the centre), and its children's cards show theirs; ★ Cover on a WoRMS taxon waits for your decision on how to store it. A count of tree problems in the bar (a missing parent) says fish.json's taxonomy needs a refresh.</p><p><b>Key</b>: the key's classification as a tree at the left (Allen et al. 2015, the key in force): its groups, the book's families, their genera and species, each with its rank in grey, its species and photos in play. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. Every node opens a page of its own: a group, its families' cards; a family, a genus or a species, its photos in play. Above the bar, the path from the group (each step a link); in the bar, the select of the node's children (its genera, its species: the way down on a phone, where the tree is hidden) and the family select. The families: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. <b>Tag…</b> beside it shows only what carries one tag, combined with All / IMR, in both views: a <b>Circle</b>, the <b>Look-alikes</b> (every family in a pair the IMR course compares, or one pair), <b>Needs photos</b> (species under their target), <b>Needs work</b> (families not ready to validate), <b>Draft</b> (what changed since your last Publish); each option says how many species it shows, the tree, the family select, the cards and the drill-down follow it, and it is remembered in this browser. <b>Tag…</b> again shows everything. Each page's bar shows its cover in force and why: your ★, else the default (for a family or a genus, its species with a reference photo most seen near the centre, then your ★ cover of that species, else its easiest reference photo; for a species, its first photo: featured, then the easiest), with a link to Cover proposals when the rule picks another photo than yours. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (${FISHT.obs}, ${FISHT.top} for the PDF's most sighted, ${FISHT.wink} for a species met only on the surprise cards) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). A surprise-card species shows ${FISHT.wink} photos, its featured ones first, then the surprise card's own; <b>N more</b> shows the rest, still in play. <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the page's node: the family's on its page, the genus's on the genus's, the species' on the species'; each genus and species heading shows its cover in force, ringed when it is yours, and its name opens its page; a photo shows which covers it is; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets; a juvenile only once you confirm it: on a juvenile photo it asks first; a pick on one you have not confirmed is ignored and flagged, its page offers <b>Juvenile: confirm as cover?</b> (also while a Light proposal would tag your cover juvenile), and it is counted in the bar of every page: <b>N ★ covers now juvenile</b> opens one; a photo with a watermark is never a default cover, but your ★ on one stays yours: its page asks <b>Watermark: keep as cover?</b>, <b>Keep</b> records your answer, <b>Choose another</b> opens its Cover proposal (a photo without one), and Home skips it either way), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> (on the family's page) once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. A species whose candidates come from another iNaturalist taxon (the Pacific form iNaturalist splits off) says so under its name, here and on its Candidates card; its IMR name is kept. Each species heading counts its candidates still waiting; they are added in Candidates. Publish sends it all (curation.json fish).</p><p><b>Sheet</b> (above the photos, on a family, a genus or a species the app gives a sheet; not on a genus the app opens as its species or its family, a surprise-card family or a WoRMS taxon): every text of its sheet you may edit, as the content editor (Pierre, 2026-11-15, Q359), with the text players see. <b>IMR</b> marks the IMR course's words: editable, the original kept; the sheet keeps their label. <b>✎</b> opens the text (a list one line per item; an empty box hides it), with an optional <b>Source</b> and <b>Link</b> shown with it on the sheet; when you fill an empty text with no source, Save asks once (<b>Save without source</b> then saves). <b>⊘</b> hides it, <b>↺</b> brings the original back (<b>Original</b> shows it beside yours). When the built text changed after your edit (<b>Base changed</b>), players keep yours and the box shows the three: when you edited, now, yours; <b>Keep mine</b>, <b>Take the new</b> or <b>Edit</b>. <b>In the base</b>: the build now says what you wrote; <b>Remove</b> drops your copy. An edit that cannot apply (its node gone, a text the page no longer has, the wrong kind) shows its text with <b>Remove</b>. <b>N sheet edits to check</b> in the bar of every Tree page opens the first. One click each, Undo steps back; Publish sends them (curation.json fish content) and counts them per rank.</p><p><b>Structure</b> (above the Sheet, on a family's page; not a surprise-card family): its <b>Circle</b> and its <b>Look-alikes</b>, as the content editor (Pierre, 2026-11-15, Q359). <b>1</b>, <b>2</b>, <b>3</b> or <b>None</b> (off the game: its species leave the game and the score) sets the circle in force; <b>↺</b> brings the built one back (<b>Original</b> says which). Each look-alike pair of the family: <b>Withdraw</b> takes it out (traps, duels, the exam's comparisons and the progress's look-alike weight), <b>↺</b> brings it back; <b>Add a look-alike…</b> picks the other family, then an optional <b>Source</b> and <b>Link</b> (left empty, Save asks once; <b>Save without source</b> then saves); its words are each sheet's Look-alike line, which shows at once. In the <b>Tag…</b> filter, <b>Any look-alike</b> offers <b>+ Pair</b> (both families chosen), one pair its state and the same tools; the pairs you withdrew or added say so, and <b>No circle</b> lists the families you took off the game. A built value changed since your edit (<b>Base changed</b>): yours stays in force; <b>Keep mine</b> or <b>Take the new</b>. One click each, Undo steps back. Publish asks once, saying it changes every player's path and progress: each player's progress is recalculated from their answers (Q363), and the leaderboard follows.</p>`,
+  units: `<p><b>Key</b> | <b>WoRMS</b> (at the top right): the same species in two classifications, each with one parent per node. <b>WoRMS</b>: the reference taxonomy (WoRMS, from fish.json), its classes, orders, suborders, families, subfamilies, genera and species as WoRMS names and ranks them, which are not always the key's (Labridae holds the wrasses and the parrotfishes; Pycnochromis five of the key's Chromis). A species is the same page in both views (its photos, its ★ cover, its tools); the switch keeps it. A WoRMS taxon's page is read-only for now: its cover is the default by the rule (its species with a reference photo most seen near the centre), and its children's cards show theirs; ★ Cover on a WoRMS taxon waits for your decision on how to store it. A count of tree problems in the bar (a missing parent) says fish.json's taxonomy needs a refresh.</p><p><b>Key</b>: the key's classification as a tree at the left (Allen et al. 2015, the key in force): its groups, the book's families, their genera and species, each with its rank in grey, its species and photos in play. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. Every node opens a page of its own: a group, its families' cards; a family, a genus or a species, its photos in play. Above the bar, the path from the group (each step a link); in the bar, the select of the node's children (its genera, its species: the way down on a phone, where the tree is hidden) and the family select. The families: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. <b>Tag…</b> beside it shows only what carries one tag, combined with All / IMR, in both views: a <b>Circle</b>, the <b>Look-alikes</b> (every family in a pair the IMR course compares, or one pair), <b>Needs photos</b> (species under their target), <b>Needs work</b> (families not ready to validate), <b>Draft</b> (what changed since your last Publish); each option says how many species it shows, the tree, the family select, the cards and the drill-down follow it, and it is remembered in this browser. <b>Tag…</b> again shows everything. Each page's bar shows its cover in force and why: your ★, else the default (for a family or a genus, its species with a reference photo most seen near the centre, then your ★ cover of that species, else its easiest reference photo; for a species, its first photo: featured, then the easiest), with a link to Cover proposals when the rule picks another photo than yours. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (${FISHT.obs}, ${FISHT.top} for the PDF's most sighted, ${FISHT.wink} for a species met only on the surprise cards) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). A surprise-card species shows ${FISHT.wink} photos, its featured ones first, then the surprise card's own; <b>N more</b> shows the rest, still in play. <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the page's node: the family's on its page, the genus's on the genus's, the species' on the species'; each genus and species heading shows its cover in force, ringed when it is yours, and its name opens its page; a photo shows which covers it is; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets; a juvenile only once you confirm it: on a juvenile photo it asks first; a pick on one you have not confirmed is ignored and flagged, its page offers <b>Juvenile: confirm as cover?</b> (also while a Light proposal would tag your cover juvenile), and it is counted in the bar of every page: <b>N ★ covers now juvenile</b> opens one; a photo with a watermark is never a default cover, but your ★ on one stays yours: its page asks <b>Watermark: keep as cover?</b>, <b>Keep</b> records your answer, <b>Choose another</b> opens its Cover proposal (a photo without one), and Home skips it either way), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> (on the family's page) once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. A species whose candidates come from another iNaturalist taxon (the Pacific form iNaturalist splits off) says so under its name, here and on its Candidates card; its IMR name is kept. Each species heading counts its candidates still waiting; they are added in Candidates. Publish sends it all (curation.json fish).</p><p><b>Sheet</b> (above the photos, on a family, a genus or a species the app gives a sheet; not on a genus the app opens as its species or its family, a surprise-card family or a WoRMS taxon): every text of its sheet you may edit, as the content editor (Pierre, 2026-11-15, Q359), with the text players see. <b>IMR</b> marks the IMR course's words: editable, the original kept; the sheet keeps their label. <b>✎</b> opens the text (a list one line per item; an empty box hides it), with an optional <b>Source</b> and <b>Link</b> shown with it on the sheet; when you fill an empty text with no source, Save asks once (<b>Save without source</b> then saves). <b>⊘</b> hides it, <b>↺</b> brings the original back (<b>Original</b> shows it beside yours). When the built text changed after your edit (<b>Base changed</b>), players keep yours and the box shows the three: when you edited, now, yours; <b>Keep mine</b>, <b>Take the new</b> or <b>Edit</b>. <b>In the base</b>: the build now says what you wrote; <b>Remove</b> drops your copy. An edit that cannot apply (its node gone, a text the page no longer has, the wrong kind) shows its text with <b>Remove</b>. <b>N sheet edits to check</b> in the bar of every Tree page opens the first. One click each, Undo steps back; Publish sends them (curation.json fish content) and counts them per rank.</p><p><b>Structure</b> (above the Sheet, on a family's page; not a surprise-card family): its <b>Circle</b> and its <b>Look-alikes</b>, as the content editor (Pierre, 2026-11-15, Q359). <b>1</b>, <b>2</b>, <b>3</b> or <b>None</b> (off the game: its species leave the game and the score) sets the circle in force; <b>↺</b> brings the built one back (<b>Original</b> says which). Each look-alike pair of the family: <b>Withdraw</b> takes it out (traps, duels, the exam's comparisons and the progress's look-alike weight), <b>↺</b> brings it back; <b>Add a look-alike…</b> picks the other family, then an optional <b>Source</b> and <b>Link</b> (left empty, Save asks once; <b>Save without source</b> then saves); its words are each sheet's Look-alike line, which shows at once. In the <b>Tag…</b> filter, <b>Any look-alike</b> offers <b>+ Pair</b> (both families chosen), one pair its state and the same tools; the pairs you withdrew or added say so, and <b>No circle</b> lists the families you took off the game. A built value changed since your edit (<b>Base changed</b>): yours stays in force; <b>Keep mine</b> or <b>Take the new</b>. One click each, Undo steps back. Publish asks once, saying it changes every player's path and progress: each player's progress is recalculated from their answers (Q363), and the leaderboard follows. Where the units are genera and the pairs join genera, the Structure box is on each genus's page (a genus the app opens as its family or its one species included), with no Circle, and <b>Tag…</b> › <b>Any look-alike</b> lists the genus pairs; there, each look-alike line on the Sheet (<b>Look-alike: …</b>) is the list of the sources that name the pair, one a line, its words then <b>|</b> and its link.</p>`,
   ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs and its featured photos per view. Its tools stay on its <b>Genus page</b> (Photos › Genera, the link in the bar and on each photo): ★ Cover, Feature, views, Validated. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
@@ -4983,16 +4986,9 @@ function loadPages(force) {
         if (!fresh()) return PGS;
         pgsAt = Date.now();
         return (PGS =
-          j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
+          j && j.ok && j.rows
             ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // v58: an archive's apart (its Journey only)
-            : {
-                err:
-                  !j || !(Number(j.v) >= PAGES.SHEET)
-                    ? `Sheet script v${PAGES.SHEET} not running yet (it updates itself within 15 minutes)`
-                    : j.error === 'token'
-                      ? 'Token refused'
-                      : 'Not available'
-              });
+            : {err: j && j.error === 'token' ? 'Token refused' : 'Not available'});
       })
       .catch(() => {
         if (!fresh()) return PGS;
@@ -9397,7 +9393,7 @@ function bindStats() {
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
   bindSess();
   // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. Between
-  // them, from sheet LIVE_SHEET, the light read every minute (liveArm below).
+  // them, the light read every minute (liveArm below).
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
@@ -9410,16 +9406,15 @@ function bindStats() {
   liveArm(); // Activity drawn: the next light read (none on any other page)
 }
 // A live Players › Activity (Pierre, 2026-11-08: "Les deux"): while the page is open and in view, every LIVE_READ.MS the
-// sheet's light read (Code.gs live_, POST readLive, from LIVE_SHEET: the last rows of the answer log and each player's
+// sheet's light read (Code.gs live_, POST readLive, sheet v110: the last rows of the answer log and each player's
 // last answer time, where readAnswers sends the whole log) brings the answers given since, merged into the log held
 // (liveMerge), and the page is drawn again (Recent sessions, who is playing now, "as of"). Hidden (another tab, the phone
 // asleep) or another page: no read, the timer stopped; back in view, a read at once when the last is over LIVE_READ.MS old.
 // When the light read cannot complete the log held (liveMerge full), the whole log is read again in the background, as
-// ↻ does but with the page kept on screen; a player new to the player list reads it again too. Before LIVE_SHEET (an
-// older script answers readLive 'input'), and without the token, nothing: ↻ by hand as before (rule D4).
-const LIVE_SHEET = 110;
+// ↻ does but with the page kept on screen; a player new to the player list reads it again too. Without the token,
+// nothing: ↻ by hand as before.
 const LIVE_READ = {MS: 60000};
-const liveOn = () => !!ANS && !ANS.old && Number(ANS.v) >= LIVE_SHEET;
+const liveOn = () => !!ANS && !ANS.old;
 let liveT = 0,
   liveAt = 0; // the last light read asked (a failed one too: the next waits LIVE_READ.MS)
 const liveWanted = () => cur === 'players/activity' && document.visibilityState === 'visible' && !!TOKEN && liveOn();
@@ -9650,21 +9645,12 @@ function savedClear() {
 // has not opened the app since a recalculation, or whose last answers are not saved yet). Signed-in players by name,
 // devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
 // Computed once per data load (the answer log, the stats, the saved copy), memoized.
-// Only from sheet script v28 (core.js RV_SHEET; rule D4: the admin never gets ahead of the script): before it the
-// players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
-// column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
-const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
-// The domain-score bar (core.js DOM) in the admin's replays only from the script that replays it (core.js DOM_SHEET; rule
-// D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
-const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
-// From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
-// time, about 15 s on a phone for 40 players) the player list carries that same replay, computed by the sheet (Code.gs
-// replayedAll_: rp = [progress %, learned, the saved copy's %]), and Players reads no saved copy. The Journey (full) still
-// replays here: it shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or
-// their copy) is replayed here as before.
-const RP_SHEET = 42;
-const rpOn = () => ((USERS && USERS.v) || 0) >= RP_SHEET;
+// The player list carries that same replay, computed by the sheet (sheet v42, Code.gs replayedAll_: rp = [progress %,
+// learned, the saved copy's %]; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
+// time, about 15 s on a phone for 40 players), and Players reads no saved copy. The Journey (full) still replays here: it
+// shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or their copy) is
+// replayed here.
 // The subject the sheet replays (SUBJECTS replay): the corals.
 const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
 // A player's saved copy for one subject (savedOf): null while read, {err} when it could not be.
@@ -9728,13 +9714,13 @@ const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).
 const unitWait = S => (S && S.sheets ? S : FISHS);
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
 // replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's (PR #808).
-const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, ...domReplay()} : {dom: domReplay().dom});
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD} : {});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
 function progOf(u, full, S = replayS()) {
   const M = unitsOf(S);
   if (!ANS || !M || !u || !u.id) return null;
-  if (S.replay && !full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
+  if (S.replay && !full && !u.anon && Array.isArray(u.rp)) {
     const [pct, learned, spct] = u.rp;
     return {
       pct,
@@ -9746,7 +9732,6 @@ function progOf(u, full, S = replayS()) {
   }
   const X = u.anon ? {P: {}} : savedFor(u.name, S);
   if (!X) return null;
-  if (!replayOn()) return {off: 1, G: X.err ? {} : X.P || {}, err: X.err};
   const key = S.id + '|' + u.id,
     m = PROGM.get(key);
   if (m && m.ans === ANS && m.S === X && m.M === M && m.mem === SMEM && m.learned === u.learned) return m.v;
@@ -9786,7 +9771,7 @@ const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="a
 // shows them, unitPct) from their saved copy, read when the row opens (one sheet call: never for the whole list).
 const UPWAIT = new Set(); // the subjects whose units a bar is waiting for (read once, the list drawn again then)
 function uprogHtml(u, S) {
-  if (S.replay ? !u.pg : !sxOf(u, S).n || !replayOn()) return '';
+  if (S.replay ? !u.pg : !sxOf(u, S).n) return '';
   if (!S.replay && !unitsOf(S) && !UPWAIT.has(S.id)) {
     UPWAIT.add(S.id);
     unitAdmin(unitWait(S)).then(() => cur === 'players/list' && render());
@@ -9815,7 +9800,13 @@ const UCOLS = [
   ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
   // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
   ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
-  ['groups', 'Groups', u => (u.groups || []).length, 0, 'The beta groups they are in']
+  [
+    'groups',
+    'Groups',
+    u => (u.groups || []).length + (u.cohort ? 1 : 0) + (u.staff ? 1 : 0),
+    0,
+    'The beta groups, cohort and staff they are in'
+  ]
 ];
 // A subject's group: [key, title, sort value (u, S), ascending first, tip (S), cell (u, S), shown for S]. sxOf(u, S): the
 // player's answers in S ({n, ok, at, s: sessions, len: their median length in minutes}), from the answer log.
@@ -9848,7 +9839,7 @@ const SCOLS = [
     (u, S) => (x => (x.s ? `${x.s} <small>· ${x.len < 1 ? '<1' : x.len} min</small>` : '–'))(sxOf(u, S)),
     () => true
   ],
-  // The replayed subject's progress (SUBJECTS replay; the Progress column from sheet script v28, replayOn).
+  // The replayed subject's progress (SUBJECTS replay; the Progress column, sheet script v28).
   [
     'prog',
     'Progress',
@@ -9856,7 +9847,7 @@ const SCOLS = [
     0,
     () => 'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)',
     u => (!u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')),
-    S => !!S.replay && replayOn()
+    S => !!S.replay
   ],
   // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
   // (Code.gs exposure_: ex {subject id: [seen, of, hit, asked, units]}). Photos = Seen %; Spread = Spread %, the one to
@@ -9868,7 +9859,7 @@ const SCOLS = [
     0,
     () => 'Seen %: the game photos they have been shown, out of the game photos of the units they have met',
     (u, S) => EXPO_CELL.photos(u, S),
-    () => expoOn()
+    () => true
   ],
   [
     'spread',
@@ -9878,7 +9869,7 @@ const SCOLS = [
     () =>
       'Spread %, in time order: of their questions on a unit that still had colonies they had never been shown, the share that showed one (100% = no colony repeated while an unseen one was left)',
     (u, S) => EXPO_CELL.spread(u, S),
-    () => expoOn()
+    () => true
   ]
 ];
 // Each player's answers and sessions per subject, from the whole log (rowsOf): {player id: {subject id: {n, ok, at, s,
@@ -9925,9 +9916,7 @@ const devsOf = u => {
 // The subject a player answered last in (their Journey opens there; Pierre's list, 2026-11-06), else the first.
 const lastSubj = u => SUBJECTS.reduce((b, S) => (sxOf(u, S).at > sxOf(u, b).at ? S : b), SUBJECTS[0]);
 const journeyHref = u => '#' + lastSubj(u).hash + 'players/list/journey/' + encodeURIComponent(u.name);
-// Sheet v81: each player's photo exposure per subject (ex); an older script sends none, and the two columns stay away.
-const EXPO_SHEET = 81;
-const expoOn = () => ((USERS && USERS.v) || 0) >= EXPO_SHEET;
+// Sheet v81: each player's photo exposure per subject (ex).
 const exOf = (u, S = ASUBJ) => (u && u.ex && u.ex[S.id]) || null;
 // A cell: the share, its counts in the title; – when the player has no answer on a unit with game photos.
 const exCell = (k, n, tip) => (n ? `<span title="${esc(tip)}">${pct(k, n)}</span>` : '–');
@@ -9943,25 +9932,15 @@ const EXPO_CELL = {
 // by one site-wide switch): for each subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once
 // it opens to all, even with its "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens
 // the subject to them, app.js subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all
-// above the table.
-const GROUP_SHEET = 48;
-// Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
-const DEL_SHEET = 55;
-const delOn = () => (USERS.v || 0) >= DEL_SHEET;
-// Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
-const ARCH_SHEET = 58;
-const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
+// above the table. Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_). Sheet v58: Archive
+// (userArchive, Board -2) and the Archived fold (users_ archived).
 // Out of the statistics (sheet v115, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
 // the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
-const EXCL_SHEET = 115;
-const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
-  `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
+  `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}">${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
 // Sheet v99: Change the starting answer (users_ userStart; core.js startAdminSet).
-const START_ADMIN_SHEET = 99;
-const startAdmOn = () => (USERS.v || 0) >= START_ADMIN_SHEET;
 // A player's starting answer per subject, in their bar (Pierre, 2026-11-08, Q228: a fallback card moved a player to the
 // wrong answer; "Change the starting answer" fixes it through the normal sync, never by hand in the sheet): the answer in
 // force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
@@ -9982,7 +9961,7 @@ function startBlock(u) {
         msg = uStartMsg && uStartMsg.name === u.name && uStartMsg.sid === S.id ? uStartMsg : null,
         d = `data-sname="${esc(u.name)}" data-sid="${esc(S.id)}"`,
         ctl = !on
-          ? `<button type="button" class="adm-fchip plain" data-ustart ${d}${startAdmOn() ? '' : ` disabled title="Needs the sheet script v${START_ADMIN_SHEET}"`}>Change…</button>`
+          ? `<button type="button" class="adm-fchip plain" data-ustart ${d}>Change…</button>`
           : on.busy
             ? '<span class="note">Changing…</span>'
             : on.c
@@ -9997,8 +9976,15 @@ function startBlock(u) {
     });
   return rows.some(Boolean) ? `<div class="adm-ustart">${rows.join('')}</div>` : '';
 }
+// Cohorts and staff (sheet v171; Pierre, 2026-11-17: "chaque nouvelle cohorte aurait un leaderboard indépendant", "le
+// staff aurait les droits de 'trainer'"): a player's Cohort select in their bar (one cohort each; New cohort… names a new
+// one, its display name free text; Code.gs userGroup with cohort) and Staff, the trainer role of the instance (roleGrant,
+// roleRevoke). Each has its own leaderboard in the app; the staff leave the others.
+const COHORT_SHEET = 171;
+const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET;
+const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
-const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= Math.max(GROUP_SHEET, S.sheet || 0);
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0);
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
@@ -10021,7 +10007,7 @@ function renderUsers() {
     return;
   }
   // The columns: the player's, then each subject's group (its key prefixed by the subject's id), each shown when it applies
-  // (the Progress column only from sheet script v28, replayOn; a Beta column only for a subject that opens to a group).
+  // (a Beta column only for a subject that opens to a group).
   const GRP = SUBJECTS.map(S => [
       S,
       SCOLS.filter(c => c[6](S)).map(([k, t, f, asc, tip, cl]) => ({
@@ -10051,7 +10037,7 @@ function renderUsers() {
     .map(u => ({
       ...u,
       at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
-      pg: replayOn() ? progOf(u) : null
+      pg: progOf(u)
     }))
     .sort((a, b) => {
       const x = col.f(a),
@@ -10081,11 +10067,21 @@ function renderUsers() {
             `<span>${inGroup(u, S) ? 'In' : 'Not in'} the ${esc(S.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-gid="${esc(S.id)}" data-on="${inGroup(u, S) ? 0 : 1}">${inGroup(u, S) ? 'Remove' : 'Add'}</button></span>`
         )
         .join('')}
+      ${
+        cohortOn()
+          ? `<label>Cohort <select data-ucohort="${esc(u.name)}"><option value="">None</option>${[
+              ...new Set([...cohortsOf(), u.cohort].filter(Boolean))
+            ]
+              .map(c => `<option value="${esc(c)}"${c === u.cohort ? ' selected' : ''}>${esc(c)}</option>`)
+              .join('')}<option value="+">New cohort…</option></select></label>
+      <span>${u.staff ? 'Staff' : 'Not staff'} <button type="button" class="adm-fchip" data-ustaff="${esc(u.name)}" data-on="${u.staff ? 0 : 1}">${u.staff ? 'Remove' : 'Add'}</button></span>`
+          : ''
+      }
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
-      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
+      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}">Archive…</button>
       ${
         uDel === u.name
-          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
+          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}">Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}">Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button></span>`
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
       }${startBlock(u)}</div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
@@ -10110,7 +10106,7 @@ function renderUsers() {
       : k === 'dev'
         ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
         : k === 'groups'
-          ? esc((u.groups || []).map(g => subjectOf(g).name).join(', ')) || '–'
+          ? esc([...(u.groups || []).map(g => subjectOf(g).name), u.cohort, u.staff ? 'Staff' : ''].filter(Boolean).join(', ')) || '–'
           : ago(u.at);
   }
   // Each beta group's line above the table (groupOn): how many players are in it, Add all for the others and Remove all
@@ -10118,7 +10114,7 @@ function renderUsers() {
   const gLine = SUBJECTS.filter(S => subjGroup(S))
     .map(S => {
       if (!groupOn(S))
-        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${Math.max(GROUP_SHEET, S.sheet || 0)} (live: v${USERS.v || '?'}).</p>`;
+        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${S.sheet || 0} (live: v${USERS.v || '?'}).</p>`;
       const out = U.filter(u => !inGroup(u, S)).length;
       return `<p class="adm-ugroup"><span>${esc(S.name)} beta: <b>${U.length - out}</b> of ${U.length} players</span>${out ? ` <button type="button" class="adm-fchip" data-ugall="${esc(S.id)}">Add all ${out}</button>` : ''}${U.length - out ? ` <button type="button" class="adm-fchip" data-ugnone="${esc(S.id)}">Remove all ${U.length - out}</button>` : ''}</p>`;
     })
@@ -10134,6 +10130,12 @@ function renderUsers() {
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
     gLine +
+    (cohortOn() && U.some(u => u.cohort || u.staff)
+      ? `<p class="adm-ugroup adm-ucoh"><span>${[
+          ...cohortsOf().map(c => `${esc(c)}: <b>${U.filter(u => u.cohort === c).length}</b>`),
+          `Staff: <b>${U.filter(u => u.staff).length}</b>`
+        ].join(' · ')}</span></p>`
+      : '') +
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
@@ -10277,6 +10279,48 @@ function bindUsers() {
         group(name, on, on ? `"${name}" added to the ${S.name} beta.` : `"${name}" removed from the ${S.name} beta.`, S.id);
       })
   );
+  // A cohort (sheet v171, cohortOn): one player in one cohort, or in none; New cohort… asks its name (free text, the
+  // name players see above its leaderboard). One change each, no confirmation: the select takes it back (rule A2).
+  $v.querySelectorAll('[data-ucohort]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        const name = sel.dataset.ucohort,
+          u = USERS.users.find(x => x.name === name) || {},
+          was = u.cohort || '';
+        let c = sel.value;
+        if (c === '+')
+          c = (prompt('New cohort: its name, as players will see it above its leaderboard', '') || '').replace(/\s+/g, ' ').trim();
+        if (c.length > 40) return (toast('A cohort name has 40 characters at most.'), render());
+        if (c === was || (!c && sel.value === '+')) return render();
+        userPost(c ? {userGroup: name, cohort: c, on: true} : {userGroup: name, cohort: was, on: false})
+          .then(j => {
+            if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            u.cohort = c;
+            toast(c ? `"${name}" in ${c}.` : `"${name}" in no cohort.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
+      })
+  );
+  // Staff (sheet v171): the trainer role of the instance (Code.gs roles_), one click each way.
+  $v.querySelectorAll('[data-ustaff]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.ustaff,
+          on = b.dataset.on === '1',
+          g = {account: name, role: 'trainer', scope: 'instance:imr'};
+        b.disabled = true;
+        userPost(on ? {roleGrant: g} : {roleRevoke: g})
+          .then(j => {
+            if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            const u = USERS.users.find(x => x.name === name);
+            if (u) u.staff = on ? 1 : 0;
+            toast(on ? `"${name}" is staff.` : `"${name}" is no longer staff.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
+      })
+  );
   $v.querySelectorAll('[data-ugall]').forEach(
     ga =>
       (ga.onclick = () => {
@@ -10333,9 +10377,7 @@ function bindUsers() {
               ? toast(`"${into}" is already a player.`)
               : j && j.error === 'reserved'
                 ? toast(`"${into}" is a reserved name: please choose another.`)
-                : j && j.error === 'input'
-                  ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
-                  : done(`"${name}" archived as "${into}".`, j)
+                : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
@@ -11588,7 +11630,7 @@ function statsConf() {
             `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}${p.dl ? ' · <b title="Offered together ' + CONF.N + ' times or more, score ' + CONF.TRAP + ' or more: duels, Again and the sheets treat it as a look-alike">look-alike from the data</b>' : ''}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
         )
         .join('')}</tbody></table></div>`
-        : `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
+        : `<p class="note">No answer with its choices yet.</p>`
     }</section>
     <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', phCell)}</section>
     <section class="adm-scard"><h3>${esc(S.admin.obs || 'Colonies')}</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener">${gnm(o.g)} ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>

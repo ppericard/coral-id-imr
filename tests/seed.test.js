@@ -13,7 +13,7 @@ const test = require('node:test'),
   vm = require('vm');
 const C = require('../core.js');
 const {loadCodeGs, madeBefore} = require('./gas.js');
-const {page, LIGHT, withData} = require('./syncpage.js');
+const {page, withData} = require('./syncpage.js');
 const block = require('./block.js');
 
 const ROOT = path.join(__dirname, '..'),
@@ -139,7 +139,7 @@ test("a delete, a merge or an archive of the admin's account clears it: a new ac
 
 // The app's board (progress.js paintBoard): the 🌱 after the admin's name element, outside its text, only on the marked
 // row of a script that sends the mark; every name escaped. A DOM stub: the list's HTML is read as written.
-const paint = (rows, v) => {
+const paint = (rows, v, extra = {}) => {
   const box = {innerHTML: '', querySelector: () => null};
   const ctx = {
     document: {getElementById: id => (id === 'board' ? box : null)},
@@ -155,28 +155,30 @@ const paint = (rows, v) => {
     markRow: C.markRow,
     markHtml: C.markHtml,
     SUBJ: {},
-    innerHeight: 800
+    innerHeight: 800,
+    store: {get: (k, d) => d},
+    COHORT_KEY: 'reefid-cohort'
   };
   vm.createContext(ctx);
   const src = read('progress.js');
   vm.runInContext(
-    block(src, 'const boardMe = ', '\n', {file: 'progress.js'}) +
+    block(src, 'const boardMe = ', '\nfunction viewBoard', {file: 'progress.js'}) +
       '\n' +
       block(src, 'function paintBoard(', '\n}\n', {through: 1, file: 'progress.js'}) +
       '\nthis.paintBoard = paintBoard;',
     ctx
   );
-  ctx.paintBoard({rows, v}, ctx.SUBJ);
+  ctx.paintBoard({rows, v, ...extra}, ctx.SUBJ);
   return box.innerHTML;
 };
 
-test("the app shows the 🌱 after the admin's name, outside its text, from a script that sends it; names escaped", () => {
+test("the app shows the 🌱 after the admin's name, outside its text, on the row that carries it; names escaped", () => {
   const rows = [
     ['Ana B.', 80, 1.2, 1],
     ['<img src=x onerror=alert(1)>', 70, null],
     ['Cy & "D"', 60, null, 0]
   ];
-  const html = paint(rows, C.MARK_SHEET),
+  const html = paint(rows, C.SHEET_FLOOR),
     mark = C.markHtml();
   assert.strictEqual(mark, `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`);
   const li = html.match(/<li[^>]*>.*?<\/li>/g);
@@ -186,12 +188,30 @@ test("the app shows the 🌱 after the admin's name, outside its text, from a sc
   assert.ok(li[2].includes('<b class="bname">Cy &amp; &quot;D&quot;</b></span>') && !li[2].includes(SEED), li[2]);
   assert.strictEqual(html.split(SEED).length - 1, 1, 'one mark');
   (html.match(/<b class="bname">.*?<\/b>/g) || []).forEach(b => assert.ok(!b.includes(SEED), b));
-  [undefined, C.MARK_SHEET - 1].forEach(v => assert.ok(!paint(rows, v).includes(SEED), String(v)));
 });
 
-test('the account line: the mark from a load reply of a script that knows the admin, for that account only', () => {
+test("the staff and cohort boards (sheet v171): the mark on every board, a cohort's name escaped as a player's", () => {
+  const N = Number(/const SCOPES_SHEET = (\d+);/.exec(read('progress.js'))[1]),
+    html = paint([['Cy', 60, null]], N, {staff: [['Ana B.', 80, 1.2, 1]], cohorts: [{n: '<i>RA</i> & co', rows: [['Cy', 60, null]]}]}),
+    mark = C.markHtml();
+  assert.ok(
+    html.includes(
+      '<h3 class="bhead">Staff</h3><ol class="blist"><li><span class="brank">🥇</span><span class="bwho"><b class="bname">Ana B.</b>' + mark
+    ),
+    html
+  );
+  assert.ok(
+    html.includes(
+      '<summary>Other cohorts</summary><section class="bscope" data-scope="other"><h3 class="bhead">&lt;i&gt;RA&lt;/i&gt; &amp; co</h3>'
+    ),
+    html
+  );
+  assert.ok(!html.includes('<i>'), 'no markup from a cohort name');
+});
+
+test('the account line: the mark from a load reply that says the admin, for that account only', () => {
   const mem = {},
-    ctx = {store: {get: (k, d) => (k in mem ? mem[k] : d), set: (k, v) => (mem[k] = v)}, MARK_SHEET: C.MARK_SHEET, SYNC: {name: 'Ana B.'}};
+    ctx = {store: {get: (k, d) => (k in mem ? mem[k] : d), set: (k, v) => (mem[k] = v)}, SYNC: {name: 'Ana B.'}};
   vm.createContext(ctx);
   const src = read('sync.js');
   vm.runInContext(
@@ -200,16 +220,15 @@ test('the account line: the mark from a load reply of a script that knows the ad
     ctx
   );
   const {markSeen, markMine} = ctx;
-  markSeen({ok: true, found: true, admin: 1, v: C.MARK_SHEET - 1}, 'Ana B.');
-  assert.strictEqual(markMine(), false, 'an older script');
-  markSeen({ok: true, found: true, admin: 1, v: C.MARK_SHEET}, 'Ana B.');
+  assert.strictEqual(markMine(), false, 'no reply yet');
+  markSeen({ok: true, found: true, admin: 1, v: C.SHEET_FLOOR}, 'Ana B.');
   assert.strictEqual(markMine(), true);
-  markSeen({ok: true, log: true, v: C.MARK_SHEET}, 'Ana B.');
+  markSeen({ok: true, log: true, v: C.SHEET_FLOOR}, 'Ana B.');
   assert.strictEqual(markMine(), true, 'a save reply changes nothing');
   ctx.SYNC = {name: 'Cy D.'};
   assert.strictEqual(markMine(), false, 'another account on this device');
   ctx.SYNC = {name: 'ana b.'};
-  markSeen({ok: true, found: true, v: C.MARK_SHEET}, 'ana b.');
+  markSeen({ok: true, found: true, v: C.SHEET_FLOOR}, 'ana b.');
   assert.strictEqual(markMine(), false, "no longer the admin's");
   ctx.SYNC = null;
   assert.strictEqual(markMine(), false);
@@ -260,7 +279,7 @@ test("a log read in progress never brings the admin's mark back after an archive
 // which says nothing of the admin: it must not take the mark away.
 test("the admin's own device keeps its mark through light saves that skip the load", async () => {
   const s = loadCodeGs(withData()),
-    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+    A = page(s, {SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
   A.play('m0', 'Acropora', true);
   await A.syncPush(); // a new account: a load (not found), then a save
   assert.ok(adminRead(s, 'Ana B.', '1230').ok);
@@ -282,7 +301,7 @@ test("the admin's own device keeps its mark through light saves that skip the lo
 // that finds no account under the name (deleted or archived, then taken again) too.
 test("a device's mark never passes to another account of the same name", async () => {
   const s = loadCodeGs(withData()),
-    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+    A = page(s, {SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
   A.play('n0', 'Acropora', true);
   await A.syncPush();
   assert.ok(adminRead(s, 'Ana B.', '1230').ok);

@@ -818,7 +818,7 @@ async function freshPlayers(b, base, errs) {
       picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
     ok(!bonusOfferDue(), 'no circle offer card');
     // A unit's bar set through the former moving average (s.pg), whatever rule its record is under: a unit answered above
-    // took the domain-score bar (core.js DOM; the fish are not replayed, model.js domRules), which s.pg alone would not move.
+    // took the domain-score bar (core.js DOM), which s.pg alone would not move.
     const pgAt = (n, x) => {
       const s = st(n);
       delete s.dp;
@@ -836,11 +836,8 @@ async function freshPlayers(b, base, errs) {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
-    // The global score from the sheet script that ranks by it (core.js SCORE_SHEET, rule D4): before, the families' mean.
-    store.set(SHEETV, SCORE_SHEET - 1);
-    ok(headScore() === null && headPct() === progPct(), 'before SCORE_SHEET: the families mean, as before');
-    store.set(SHEETV, SCORE_SHEET);
-    ok(headScore() && headPct() === headScore().pct, 'from SCORE_SHEET: the global score');
+    // The global score, which the sheet ranks by (v101, below the gate floor core.js SHEET_FLOOR), also before any reply.
+    ok(headScore() && headPct() === headScore().pct, 'the global score');
     ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
@@ -1058,21 +1055,36 @@ async function freshPlayers(b, base, errs) {
     if (s0 === null) localStorage.removeItem(sk);
     else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
-    // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
-    // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
-    // counted in the progress, never a duel pair.
+    // species of each family in play, in every circle (Pierre, 2026-11-18), never two families; offered once a family is
+    // at Advanced, a family's genera in play only from its Advanced; their questions and typed answers among genera only,
+    // a family's among families; never a duel pair. Circles 2 and 3's from GENERA_SHEET (rule D4), circle 1's before.
     const sci = SETS().find(S => S.k === 'sci'),
-      G = FISH.sci;
-    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the circle-1 families');
+      G = FISH.sci,
+      slate = [...FISH.c1, ...FISH.c2, ...FISH.c3],
+      gv0 = store.get(SHEETV, 0);
+    ok(G.length > 200 && G.every(n => GX(n).rank === 'genus' && slate.includes(GX(n).parent)), 'sci: genera of the families in play');
+    ok(
+      [1, 2, 3].every(c => G.some(n => GX(n).circle === c && GX(GX(n).parent).circle === c)),
+      'sci: every circle, its family’s'
+    );
     ok(
       G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
         new Set(G.map(n => GX(n).name)).size === G.length,
-      'sci: a genus in one entry only'
+      'sci: a genus in one family only'
     );
+    store.set(SHEETV, GENERA_SHEET - 1);
+    ok(
+      !generaOn() && sci.all().length === G.filter(n => GX(n).circle === 1).length && !setOf('g:Aeoliscus'),
+      'sci: circle 1’s alone below GENERA_SHEET'
+    );
+    ok(!typeMatch('Aeoliscus', 'genus'), 'sci: no typed name of theirs below GENERA_SHEET (Codex review #1067)');
+    store.set(SHEETV, GENERA_SHEET);
+    ok((typeMatch('Aeoliscus', 'genus') || {}).g === 'g:Aeoliscus', 'sci: typed, from GENERA_SHEET');
     ok(
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
+    store.set(SHEETV, gv0); // the version the smoke runs at (no species unit in the draw below)
     FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
     // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
@@ -1166,7 +1178,7 @@ async function freshPlayers(b, base, errs) {
     pgAt('f:Butterflyfishes', 0.2);
     pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play: ' + pl);
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -1224,7 +1236,7 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
     // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
     ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
-    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw: ' + pool().filter(n => GX(n).rank));
     // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
     quizBoard();
     const so = document.querySelector('#view [data-seton="sci"]');
@@ -1868,7 +1880,8 @@ async function freshPlayers(b, base, errs) {
     const spq = await q.evaluate(() => {
       const t = SHOWNQ[1],
         f = ((SHOWNQ[4] || {}).shown || [])[0],
-        p = GX(t).views.wide.find(x => f && x.f === f.f) || {},
+        // a held-out photo too (model.js examSet: an exam question on one)
+        p = [...GX(t).views.wide, ...(GX(t).held || [])].find(x => f && x.f === f.f) || {},
         s = FISH.sps[p.sp] || {};
       return {
         sci: s.name || '',
@@ -2013,12 +2026,11 @@ async function freshPlayers(b, base, errs) {
     });
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (Pierre, 2026-11-04: separate per subject): #leaderboard on Fish asks the sheet for the fish
-    // board (&s=fish), shown only from a script that serves it (sheet v95, rule D4), kept apart from the corals' copy.
+    // board (&s=fish, sheet v95, below the gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
     // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
     const fb = await q.evaluate(async () => {
       const f0 = window.fetch,
         asked = [];
-      let v = BOARD_SHEET - 1;
       window.fetch = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=fish/.test(u)
@@ -2027,25 +2039,13 @@ async function freshPlayers(b, base, errs) {
               ['Other P', 20, null]
             ]
           : [['Coral P', 90, 1.1]];
-        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v})));
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: SHEET_FLOOR})));
       };
       const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
-      const sv0 = store.get(SHEETV, 0);
       try {
         localStorage.removeItem('reefid-fish-board-cache');
-        // The sheet's last reply before BOARD_SHEET (rule D4; Codex review #694): Fish behaves as before it had a board, the
-        // page shows the corals' board, and nothing announces one.
-        store.set(SHEETV, BOARD_SHEET - 1);
         go('board');
-        const before = await shown(),
-          live0 = boardLive(SUBJ),
-          asked0 = asked.splice(0);
-        // The sheet at BOARD_SHEET, a reply still from an older script (the update under way): the corals' rows are never
-        // shown as the fish board.
-        store.set(SHEETV, BOARD_SHEET);
-        viewBoard();
-        const old = await shown();
-        v = BOARD_SHEET;
+        const live0 = boardLive(SUBJ);
         boardAt.fish = 0;
         viewBoard();
         const fresh = await shown();
@@ -2053,30 +2053,23 @@ async function freshPlayers(b, base, errs) {
         document.querySelector('#boardset button[data-board="1"]').click();
         const dropped = !Object.keys(boardP).length;
         return {
-          before,
           live0,
-          asked0,
           dropped,
           asked,
-          old,
           fresh,
           kept: localStorage.getItem('reefid-fish-board-cache'),
           coral: localStorage.getItem('reefid-board-cache')
         };
       } finally {
         window.fetch = f0;
-        store.set(SHEETV, sv0);
       }
     });
     if (
-      fb.live0 ||
-      !/Coral P/.test(fb.before) ||
-      !fb.asked0.every(a => a === 'board=1') ||
+      !fb.live0 ||
       !fb.dropped ||
       !fb.asked.length ||
       !fb.asked.every(a => a === 'board=1&s=fish') ||
-      !/not available yet/.test(fb.old) ||
-      /Coral P/.test(fb.old) ||
+      /Coral P/.test(fb.fresh) ||
       !/Fish P/.test(fb.fresh) ||
       !/63%/.test(fb.fresh) ||
       !/Fish P/.test(fb.kept || '') ||

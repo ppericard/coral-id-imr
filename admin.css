@@ -3396,6 +3396,11 @@ td.cov-c .cov-off {
 .adm-urow.open td {
   background: var(--surface-2);
 }
+/* The Players table's scroll box is the container its rows' bars measure (.adm-ubar, 100cqw). Only this box: a container
+   sizes without its content, which a shrink-to-fit table box elsewhere could not take. */
+.adm-ucard > .adm-tscroll {
+  container-type: inline-size;
+}
 .adm-udet > td {
   max-width: none;
   overflow: visible;
@@ -3410,7 +3415,11 @@ td.cov-c .cov-off {
   gap: 8px 18px;
   position: sticky;
   left: 0;
+  /* As wide as the visible part of the table's scroll box (its container, below), never past it: 100vw less a margin ran
+     past the box on a desktop, the page's side margins being wider than 50 px (Pierre, 2026-11-18: "ça dépasse"). */
+  box-sizing: border-box;
   max-width: calc(100vw - 50px);
+  max-width: 100cqw;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);

@@ -1837,10 +1837,10 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('typeof replayProgress', s.ctx), 'undefined', "no core.js name among the script's globals");
   assert.strictEqual(vm.runInContext('TRUST === CORE_.TRUST', s.ctx), false, 'Code.gs keeps its own constants');
   assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
-  // The app and the admin wait for this script version before they rely on the replay (core.js RV_SHEET; rule D4):
-  // the script that serves it says so in every reply.
-  // (Which version that is, and that the gate holds below it, is tests/gates.test.js's.)
-  assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
+  // The script says its version in every reply; the app reads it as at least the gate floor (core.js SHEET_FLOOR), never
+  // above this one (tests/gates.test.js).
+  assert.ok(vm.runInContext('VERSION', s.ctx) >= C.SHEET_FLOOR);
+  assert.strictEqual(vm.runInContext('CORE_.SHEET_FLOOR', s.ctx), C.SHEET_FLOOR);
 });
 
 // v61 (Pierre, 2026-11-06, Q132): each answer carries what the app scored it with (core.js scoreRec), kept in the Answers
@@ -2923,6 +2923,105 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
     ]
   );
   assert.strictEqual(rows[2][21], 'Pomacentrus moluccensis');
+});
+
+// v170 (#1041, the species step 2 plan): Species shown blanked any name with a digit, so every answer on a photo of a
+// species with no name yet (tools/seaslug_informal.json: Goniobranchus sp. 5) was logged without its species. Its label
+// is kept now, a digit only as the number after "sp. "; everything else is refused as before.
+test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchus sp. 5), a fish species unit (s:s091) still logs', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  const slug = (id, sp) =>
+    ans(id, {
+      g: 'g:Goniobranchus',
+      a: 'g:Goniobranchus',
+      ph: 'seaslug-goniobranchus-sp5-cand-2617827',
+      ch: 'g:Goniobranchus g:Hypselodoris',
+      s: 'seaslug',
+      rk: 'genus',
+      tn: 'Goniobranchus',
+      ta: 'Goniobranchus',
+      sp
+    });
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      slug('n1', 'Goniobranchus sp. 5'),
+      slug('n2', 'Goniobranchus sp. 5, Goniobranchus reticulatus'),
+      slug('n3', 'Goniobranchus sp. 12'),
+      // still refused: a digit anywhere but the number after "sp. " that ends a name, 4 digits, no letter first
+      slug('n4', 'Goniobranchus 5'),
+      slug('n5', 'Goniobranchus sp. 5000'),
+      slug('n6', '=Goniobranchus sp. 5'),
+      slug('n7', '5 Goniobranchus sp. 5'),
+      slug('n8', 'Goniobranchus sp.5'),
+      slug('n9', 'Goniobranchus sp. 5x'),
+      slug('n10', 'Goniobranchus sp. 5 =1+1'),
+      // a fish species unit (core.js fishSpUnits: s: and the species id) and its photo's species
+      fishAns('n11', {
+        g: 's:s091',
+        a: 's:s084',
+        ch: 's:s091 s:s084 s:s102',
+        m: 'quiz-duel|s:s091|s:s084',
+        rk: 'species',
+        tn: 'Blue-green chromis',
+        ta: 'Black-axil chromis',
+        sp: 'Chromis viridis'
+      })
+    ]
+  });
+  const R = s.sheets.Answers.rows.slice(1),
+    row = id => R.find(r => r[7] === id);
+  assert.deepStrictEqual(
+    ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10'].map(id => row(id)[21]),
+    ['Goniobranchus sp. 5', 'Goniobranchus sp. 5, Goniobranchus reticulatus', 'Goniobranchus sp. 12', '', '', '', '', '', '', '']
+  );
+  assert.deepStrictEqual(row('n1').slice(17, 22), ['seaslug', 'genus', 'Goniobranchus', 'Goniobranchus', 'Goniobranchus sp. 5']);
+  assert.deepStrictEqual(
+    [2, 3, 5, 11, 17, 18, 19, 20, 21].map(i => row('n11')[i]),
+    [
+      's:s091',
+      's:s084',
+      'quiz-duel|s:s091|s:s084',
+      's:s091 s:s084 s:s102',
+      'fish',
+      'species',
+      'Blue-green chromis',
+      'Black-axil chromis',
+      'Chromis viridis'
+    ],
+    'a fish species unit and its photo species, as before'
+  );
+  // readAnswers (the admin's Journey and Analyses) serves the rows in the tab's order, the label at 21 as it is.
+  const rows = s.post({readAnswers: 1, token: T}).rows,
+    srv = id => rows[R.indexOf(row(id))];
+  assert.strictEqual(rows.length, R.length);
+  assert.ok(rows.every(r => r.length === 23));
+  assert.deepStrictEqual(srv('n1').slice(17, 22), ['seaslug', 'genus', 'Goniobranchus', 'Goniobranchus', 'Goniobranchus sp. 5']);
+  assert.deepStrictEqual(
+    [srv('n1')[2], srv('n1')[3], srv('n1')[6]],
+    ['g:Goniobranchus', 'g:Goniobranchus', 'seaslug-goniobranchus-sp5-cand-2617827']
+  );
+  assert.deepStrictEqual([srv('n4')[21], srv('n11')[2], srv('n11')[21]], ['', 's:s091', 'Chromis viridis']);
+});
+
+test('v170 Answers: every species name of the game files is kept in Species shown', () => {
+  const s = loadCodeGs(),
+    names = ['fish', 'seaslug'].flatMap(f =>
+      require(`../${f}.json`)
+        .species.map(x => x.name)
+        .filter(Boolean)
+    );
+  assert.ok(names.includes('Goniobranchus sp. 5'));
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: names.map((sp, i) => fishAns('sn' + i, {sp}))});
+  const kept = s.sheets.Answers.rows.slice(1).map(r => r[21]);
+  assert.deepStrictEqual(
+    names.filter((n, i) => kept[i] !== n),
+    []
+  );
 });
 
 test('v60: a tab from before v60 (15 columns, no cells beyond) reads the new fields as the default subject', () => {

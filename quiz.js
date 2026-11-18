@@ -55,9 +55,12 @@ const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
-  // read again when the data, the subject or Pierre's curation (its names: curation.json fish.names) changes
-  const c = typeof CUR === 'undefined' ? null : CUR;
-  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ || TYPEN.c !== c) TYPEN = {d: DATA, s: SUBJ, c, L: UNITS[SUBJ.id].names()};
+  // read again when the data, the subject, Pierre's curation (its names: curation.json fish.names) or the subject's own
+  // key (UNITS namesKey: the fish genera in the game, app.js sciNow) changes
+  const c = typeof CUR === 'undefined' ? null : CUR,
+    k = UNITS[SUBJ.id].namesKey ? UNITS[SUBJ.id].namesKey() : '';
+  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ || TYPEN.c !== c || TYPEN.k !== k)
+    TYPEN = {d: DATA, s: SUBJ, c, k, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
 // rk: the rank of the unit asked (app.js rankOf): a typed answer is read among the names of that rank only (a fish
@@ -727,6 +730,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
+    // |h: a held-out photo shown (core.js fishHeld: only the mastery exam asks them, so …|h|x; Q385, Pierre 2026-11-18),
+    // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
+    // any answer.
+    (ph.some(p => p && p.ho) ? '|h' : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
     // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
@@ -749,17 +756,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     Rc: warm && !good && GX(c) ? recallAt(c) : 1,
     p: startP(),
     sec: tm.rt,
-    // The answer time (core.js rtWeight, model.js rtOn): only once the sheet replays it; recorded either way.
-    timed: rtOn(),
-    // The format's offset (core.js fmtOff; 0 with a sheet before FMT_SHEET), logged in sc (o) with the rest.
+    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
+    timed: true,
+    // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // The typed format's offset (core.js domF dt): the domain score is the share of photos named typed and alone, so the
     // bar measures against the typed format's calibrated difficulty (Codex review #646); logged t.
     dt: fmtOff(pfmt(), 'typed'),
-    // The domain-score bar (core.js domStep, model.js domRules: only once the sheet replays it, rule D4): the genus
-    // offsets of the genus shown and of the genus given (model.js genusDiff, the photo population's mean difficulty),
-    // logged with the answer so the replay meets the same ones.
-    dom: domRules(),
+    // The domain-score bar (core.js domStep): the genus offsets of the genus shown and of the genus given (model.js
+    // genusDiff, the photo population's mean difficulty), logged with the answer so the replay meets the same ones.
     mu: genusDiff(target),
     ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
     // A unit never answered starts from the unit its record names (a fish species: its family; core.js abilityOf), as the
@@ -856,9 +861,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
     // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's units'
-    // (core.js unitRankOf: SUBJECTS unitRank, else rank). An older script ignores these fields and would file the answer as
-    // a coral one: the answers of a subject the sheet does not replay are sent only from LOG_SHEET (core.js logOk,
-    // sync.js), queued until then (rule D4).
+    // (core.js unitRankOf: SUBJECTS unitRank, else rank).
     s: SUBJ.id,
     rk: rankOf(target) || unitRankOf(SUBJ),
     // The names at that rank, shown and answered, when a unit's id is not its name (a fish entry t01 is Damselfish, a
@@ -1120,8 +1123,8 @@ function winkPhoto(g) {
 // A surprise card's answer for the log (logAnswer), the fields of a game answer (quiz.js answer) that say what was shown
 // and answered: the wink unit (g, tn), its photo (ph, sp), the choice made (a, ta) among the four (ch: renamed ids,
 // core.js renamedId: an absurd choice names an old fish entry, t01 the Damselfishes), right or wrong, seconds and
-// enlarged (QCLOCK), the device's UTC offset, subject and rank; mode WINK_MODE; nothing scored (no e, th, nw, sc). Sent
-// only to a sheet whose readers leave it out (core.js logOk, WINK_SHEET), queued until then (rule D4).
+// enlarged (QCLOCK), the device's UTC offset, subject and rank; mode WINK_MODE; nothing scored (no e, th, nw, sc). The
+// sheet's readers leave it out (Code.gs v98).
 function winkAnswer(n, id, ids, p, tm) {
   const r = x => renamedId(SUBJ, x),
     a = r(id),

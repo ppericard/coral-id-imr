@@ -25,6 +25,7 @@ const ctx = {
   easyCover: C.easyCover,
   fishScoreTree: C.fishScoreTree,
   fishSpUnits: C.fishSpUnits,
+  fishGenSets: C.fishGenSets,
   rankWeights: C.rankWeights,
   LV_AT: [0.5, 0.8, 0.85],
   photoAny: n => !!(ctx.GXS[n] && ctx.GXS[n].views.wide.length),
@@ -132,8 +133,7 @@ test('the score tree: off as before (no species unit); on, every species unit on
   assert.ok(JSON.stringify(on).length < 50000, String(JSON.stringify(on).length));
   assert.ok(names.every(n => /^[A-Za-z][A-Za-z0-9: -]{0,39}$/.test(n)));
   // anchors (docs/FISH_PATH.md "My progress (fish)", Q242): families 50, families and every common name 89, and every genus
-  // of the game too 95 (the genera exist for circle 1 only: below the full scale's 95 then; checked as no lower than
-  // families and every common name)
+  // of the game too 95 (the genera exist in every circle since 2026-11-18)
   const P = {};
   on.f.forEach(([u]) => (P[u] = {mx: 1}));
   assert.strictEqual(C.treeScore(P, on, K).pct, 50);
@@ -142,12 +142,16 @@ test('the score tree: off as before (no species unit); on, every species unit on
   assert.strictEqual(R.pct, 89);
   assert.strictEqual(R.common, 1);
   on.s.forEach(e => e[1] && (P[e[1]] = {mx: 1}));
-  assert.ok(C.treeScore(P, on, K).pct >= 89);
+  assert.ok(
+    on.s.every(e => e[1]),
+    'every species under its genus unit'
+  );
+  assert.strictEqual(C.treeScore(P, on, K).pct, 95);
   // Q257: a player with the genera and no species stays at or under the families-and-genera anchor
   const G = {};
   on.f.forEach(([u]) => (G[u] = {mx: 1}));
   on.s.forEach(e => e[1] && (G[e[1]] = {mx: 1}));
-  assert.ok(C.treeScore(G, on, K).pct <= 74);
+  assert.strictEqual(C.treeScore(G, on, K).pct, 74);
   assert.strictEqual(C.treeScore(G, on, K).pct, C.treeScore(G, off, K).pct);
 });
 

@@ -137,18 +137,20 @@ test('treeScore: a species packed with others of its genus scores the same', () 
 test('fishScoreTree on fish.json: every family of the slate, every game species once, weights by commonness', () => {
   const gen = {},
     c = {1: [], 2: [], 3: []};
-  F.families.forEach(f => ((gen[f.id] = {circle: f.circle}), c[f.circle].push(f.id)));
+  // the slate as core.js fishGen makes it: every family but the surprise cards' (winks, never asked)
+  F.families.forEach(f => ((gen[f.id] = {circle: f.circle}), f.wink || c[f.circle].push(f.id)));
+  // the scientific genera of every circle (core.js fishGenSets; Pierre, 2026-11-18), never a surprise card's
   F.genera.forEach(g => {
     const f = F.families.find(x => x.id === g.family);
-    if (f && f.circle === 1) gen[g.id] = {rank: 'genus'};
+    if (f && !f.wink) gen[g.id] = {rank: 'genus'};
   });
   const X = {c1: c[1], c2: c[2], c3: c[3], gen},
     Tr = C.fishScoreTree(X, F),
     sp = new Map(F.species.map(s => [s.id, s])),
-    game = F.families.flatMap(f => f.species.filter(id => sp.has(id))),
+    game = F.families.filter(f => !f.wink).flatMap(f => f.species.filter(id => sp.has(id))),
     w = C.rankWeights(game.map(id => (sp.get(id).present || {}).dauinU || 0)),
     sum = a => a.reduce((t, x) => t + x, 0);
-  assert.strictEqual(Tr.f.length, F.families.length);
+  assert.strictEqual(Tr.f.length, F.families.filter(f => !f.wink).length);
   near(sum(Tr.s.map(e => e[0])), sum(w), 0.01);
   near(sum(Tr.f.map(e => e[1])), sum(w), 0.01);
   // A family weighs the sum of its species' weights.
@@ -162,17 +164,21 @@ test('fishScoreTree on fish.json: every family of the slate, every game species 
     fcv = F.families.find(f => f.species.includes(cv.id));
   assert.ok(wObs[i] - w[i] > 0.2, `observations would weigh it ${wObs[i]}, observers ${w[i]}`);
   near(Tr.f.find(e => e[0] === fcv.id)[1], sum(fcv.species.map(id => w[game.indexOf(id)])), 1e-3);
-  // Packed: a genus unit of the game (circle 1) once per circle, the species without one under ''.
+  // Packed: a genus unit of the game once per circle, the species without one under ''.
   assert.ok(Tr.s.every(e => e[1] === '' || gen[e[1]]));
   // A species with no common name in fish.json gets null (Q247), never packed with named ones.
   const none = game.filter(id => !sp.get(id).common);
   assert.ok(Tr.s.filter(e => e[3] === null).length >= Math.min(1, none.length));
-  assert.ok(Tr.s.length < 200 && JSON.stringify(Tr).length < 9000, 'small enough for the sheet (a script property)');
-  // Today (no species units): families only 50%; families and every genus unit of the game: half the scientific credit of
-  // the species those genera hold (the genus units exist for circle 1 only).
+  // small enough for the sheet's chunked tree (Code.gs BOARD_TREE_MAX_, from sync.js TREE_SHEET)
+  assert.ok(Tr.s.length < 300 && JSON.stringify(Tr).length < 50000, String(JSON.stringify(Tr).length));
+  // Without the species units: families only 50%; families and every genus unit of the game: half the scientific credit
+  // of the species those genera hold, every species since the genera exist in every circle (Pierre, 2026-11-18): the
+  // "families and every genus" anchor, 74% (a species with no common name at all is credited its scientific value alone,
+  // Q247, so the raw score is a hair over 0.55).
   const all = Object.fromEntries([...Tr.f.map(e => e[0]), ...Tr.s.map(e => e[1]).filter(Boolean)].map(k => [k, {mx: 1}])),
     gw = sum(Tr.s.filter(e => e[1]).map(e => e[0])) / sum(Tr.s.map(e => e[0]));
   assert.strictEqual(C.treeScore(Object.fromEntries(Tr.f.map(e => [e[0], {mx: 1}])), Tr, K).pct, 50);
   assert.strictEqual(C.treeScore(all, Tr, K).pct, Math.round(100 * Math.sqrt(0.25 + 0.75 * 0.8 * 0.5 * gw)));
-  assert.ok(C.treeScore(all, Tr, K).pct > 60);
+  assert.strictEqual(gw, 1, 'every species under a genus unit');
+  assert.strictEqual(C.treeScore(all, Tr, K).pct, 74);
 });

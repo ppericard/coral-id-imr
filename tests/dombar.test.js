@@ -463,7 +463,6 @@ test('a non-replayed subject (fish, Q200): its units rebuilt on the device from 
       GDIFF: {},
       LEVEL: '~level',
       PICKD: {SINGLE: 0.5},
-      domRules: () => true,
       genusDiff: () => 0,
       saved: 0,
       logs: []

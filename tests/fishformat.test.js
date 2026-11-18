@@ -81,12 +81,10 @@ function question(subject, F, {mode, chs, k}) {
     pgLook: () => false,
     recallAt: () => 1,
     startP: () => 0,
-    rtOn: () => true,
     mq: mode,
     fmtOf: C.fmtOf,
     fmtOff: C.fmtOff,
     pfmt,
-    domRules: () => true,
     genusDiff: () => 0
   };
   vm.createContext(env);
@@ -169,8 +167,8 @@ test('the game reads the per-format offsets only through pfmt (every browser fil
     'model.js: const pfmt = () => (SUBJ.replay ? PFMT : PFMT0);',
     "model.js: let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));",
     // The device's replay on top of the sheet's: the offsets only for the subject the sheet rates (S.replay), else none.
-    'sync.js: PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet',
-    "sync.js: st = S.replay ? {mem: PMEM, conf: PCONF, fmt: Number(v) >= FMT_SHEET ? PFMT : {}, gd: typeof PGD === 'object' ? PGD : {}} : {},"
+    'sync.js: PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf)',
+    "sync.js: st = S.replay ? {mem: PMEM, conf: PCONF, fmt: PFMT, gd: typeof PGD === 'object' ? PGD : {}} : {},"
   ]);
   // quiz.js scores with the subject's offsets.
   assert.match(quiz, /df: fmtOff\(pfmt\(\), fmtOf\(mq, chs\.length\)\)/);
