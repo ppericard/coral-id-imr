@@ -1455,7 +1455,8 @@ const SHARED = ['players/list', 'players/visits', 'players/groups'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights); To do › Alerts (renderAlerts: the sheet's Alerts tab, about no subject).
-const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts'];
+// Photo stats › Taxa (admin-taxa.js): the taxa out of play and why, from what the admin holds for each subject.
+const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts', 'photos/stats/taxa'];
 // A view with work of its own (options.live): had by a subject of its rank while live() says it has work, whatever
 // SUBJECTS admin pages lists; drawn by options.draw once on screen, work or not (render), so its last answer never
 // lands on "Not for … yet" (Photo review › Light proposals, admin-light.js; Cover proposals, admin-covers.js). draw()
@@ -1605,7 +1606,9 @@ const GROUPS = [
         'Photo stats',
         [
           ['overview', 'Overview'],
-          ['difficulty', 'Difficulty']
+          ['difficulty', 'Difficulty'],
+          // The taxa out of play and why (admin-taxa.js renderTaxa): every subject's (EVERY).
+          ['taxa', 'Taxa']
         ]
       ]
     ]
@@ -3683,6 +3686,9 @@ function render() {
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
   if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
   if (cur === 'photos/stats/overview') return renderPstats();
+  // Opened from its address, the page can be drawn before admin-taxa.js is in (as a journey, above).
+  if (cur === 'photos/stats/taxa')
+    return typeof renderTaxa === 'function' ? renderTaxa() : addEventListener('load', () => render(), {once: true});
   if (modeKey() === 'stats') return renderStats();
   if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
   // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js).
@@ -4461,6 +4467,7 @@ function toggleHelp() {
             'players/groups': 'groups',
             'photos/stats/difficulty': 'statsph',
             'photos/stats/overview': ASUBJ.sheets ? 'fishpstats' : 'pstats',
+            'photos/stats/taxa': 'taxa',
             'analyses/difficulty/pairs': 'statsconf',
             'analyses/difficulty/heatmap': ASUBJ.sheets ? 'fishheat' : 'statsheat',
             'analyses/learning/answer-log': 'statslog',
