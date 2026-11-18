@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The rank asked in the Analyses' models (the fish parity review, #1056; the integrator, 2026-11-17: a rank effect in the
-// models, not one report per rank): a fish question asks a family, a scientific genus or a species unit. On a synthetic
+// The rank asked in the Analyses' models (a rank effect in the models, not one report per rank): a fish question asks a family, a scientific genus or a species unit. On a synthetic
 // fish log with a rank effect planted (analysis.js synth rk), the models give it back; on the corals (one rank) nothing
 // changes.
 const test = require('node:test'),
@@ -140,9 +139,9 @@ test('the corals (one rank): the same models, the same results', () => {
   assert.ok(!plain.A.photo.tabs, "the corals' photo tables as before");
 });
 
-// Codex review #1058: a unit's seconds carry its rank's effect, so they are read from the reference rank's typical time,
-// not the median of every rank's answers. 480 answers, family questions at exactly 5 s, genus questions at exactly 10 s:
-// every family reads 5 s and every genus 10 s (the pooled median, 7.5 s, read 7.5 s and 15 s).
+// A unit's seconds carry its rank's effect, so they are read from the reference rank's typical time, not the median of
+// every rank's answers. 480 answers, family questions at exactly 5 s, genus questions at exactly 10 s: every family
+// reads 5 s and every genus 10 s (the pooled median, 7.5 s, would read 7.5 s and 15 s).
 test('Answer time by unit: each unit from the reference rank’s typical time (family 5 s, genus 10 s)', () => {
   const fs = require('fs'),
     path = require('path'),
@@ -162,12 +161,12 @@ test('Answer time by unit: each unit from the reference rank’s typical time (f
   near(r.effects.find(e => e.k === 'rk_genus').est, Math.log(2), 0.01, 'the genus coefficient');
   assert.strictEqual(r.s0, 5);
   r.genus.forEach(g => near(anSu(r, g.u), g.rk === 'genus' ? 10 : 5, 0.05, `${g.k}'s seconds`));
-  // a report without ranks: the typical answer's time, as before
+  // a report without ranks: the typical answer's time
   assert.strictEqual(anSu({typ: {s: 7.5}}, 0), 7.5);
 });
 
-// Codex review #1058: a pair's odds ratio against a typical pair of its rank is read on its own rank's mix-up rate, not
-// the pooled one: doubling the odds on a rank at 10% is ×1.82, where the pooled 25% read ×1.60.
+// A pair's odds ratio against a typical pair of its rank is read on its own rank's mix-up rate, not the pooled one:
+// doubling the odds on a rank at 10% is ×1.82, where the pooled 25% would read ×1.60.
 test('Pairs most mixed up: each pair against its own rank’s mix-up rate', () => {
   const fs = require('fs'),
     path = require('path'),

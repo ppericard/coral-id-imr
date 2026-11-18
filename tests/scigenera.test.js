@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
-// everyone once a family is at Advanced, a family's genera from its Advanced (Pierre, 2026-11-08, back from Q205's Open
-// Water); for a player at IMR, the genera the IMR course names alone come without the offer from their family's Open
-// Water (Q219), Naso only of the surgeonfishes (Q220); a photo of another genus keeps its family as the answer (Q221).
+// everyone once a family is at Advanced, a family's genera from its Advanced; for a player at IMR, the genera the IMR
+// course names alone come without the offer from their family's Open Water, Naso only of the surgeonfishes; a photo of
+// another genus keeps its family as the answer.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -18,7 +18,7 @@ const F = json('fish.json'),
   APP = src('app.js');
 
 // fishGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
-// core.js, as the app has it (the card photo, Q270; the fish score's tree, #730; the species units)
+// core.js, as the app has it (the card photo, the fish score's tree, the species units)
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
@@ -206,8 +206,8 @@ test('Q238: the IMR families first for anyone who ever answered imr (openPick re
   assert.ok(pick.includes('if (imrSaid()) {') && !pick.includes("c === 'imr'"));
 });
 
-// The genera of circles 2 and 3 (Pierre, 2026-11-18 ~06:32 Manila, "lance"; docs/FISH_PATH.md "Levels"): built for
-// circle 1 alone when circle 1 alone was on the path, every circle's since (core.js fishGenSets), each as circle 1's: in
+// The genera of circles 2 and 3 (docs/FISH_PATH.md "Levels"): every circle's genera (core.js fishGenSets), each as
+// circle 1's: in
 // its family's circle, its sibling genera as look-alikes, its family's line, opened at its family's Advanced, counted in
 // the score's tree; a surprise card's genus none.
 test('every circle: the genera of circles 2 and 3 are units as circle 1’s are', () => {
@@ -251,7 +251,7 @@ test('every circle: the genera of circles 2 and 3 are units as circle 1’s are'
 });
 
 // Rule D4: the genera of circles 2 and 3 open, and are offered as choices, only once the sheet replays them (sync.js
-// generaOn, GENERA_SHEET); before, circle 1's alone, as before; every one where sync.js is not loaded.
+// generaOn, GENERA_SHEET); before, circle 1's alone; every one where sync.js is not loaded.
 test('the gate: the genera of circles 2 and 3 from the sheet that replays them (rule D4)', () => {
   const now = on => {
     const c = {FISH: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
