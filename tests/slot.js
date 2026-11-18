@@ -3,17 +3,15 @@
 // and heavy tools (1b).
 //
 // 1. slot(name): at most SMOKE_SLOTS Playwright runs on this machine at once (default: one per 2 cores, at least 1), and
-//    none starts while the machine is already saturated (1-minute load average above LOAD x the cores: 8 on 4 cores; the
-//    crash that took the machine down came near 16; Pierre, 2026-11-05: "up to about twice the cores is fine"), and none
-//    starts with less than MIN_FREE_GB (5 GB) free on the repository's disk: it refuses, with what to clean. Several agent
-//    sessions share one machine: on 2026-11-04 its load average reached 21-30 on 4 cores, every smoke ran 3-7 times
-//    slower and fixed timeouts failed (test-suite review). The slots are files in one directory every session and every
-//    user of the machine sees; a slot whose process is gone (by PID and start time on Linux; elsewhere by PID, or no
-//    refresh for 10 minutes) is taken back. No-op on CI, where each smoke has its own runner. Call it before
-//    chromium.launch(); the slot is given back when the process ends. A holder's children run in its slot (REEFID_SLOT,
-//    below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
+//    none starts while the machine is already saturated (1-minute load average above LOAD x the cores: 8 on 4 cores),
+//    and none starts with less than MIN_FREE_GB (5 GB) free on the repository's disk: it refuses, with what to clean.
+//    Several agent sessions share one machine, and an overloaded one slows every smoke until fixed timeouts fail.
+//    The slots are files in one directory every session and every user of the machine sees; a slot whose process is
+//    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. No-op on CI,
+//    where each smoke has its own runner. Call it before chromium.launch(); the slot is given back when the process
+//    ends. A holder's children run in its slot (REEFID_SLOT, below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
 //
-// 1b. Heavy work other than Playwright takes the same slots (Pierre, 2026-11-05: "the automatic lock of the unit tests"):
+// 1b. Heavy work other than Playwright takes the same slots:
 //    node tests/run.js [node --test options] [files]   a full unit-test run (default: every tests/*.test.js); a single
 //                                                       file stays unlocked: node --test tests/x.test.js (the fast tier)
 //    node tests/slot.js [--name N] -- cmd [args]        any command, run once it holds a slot
@@ -27,7 +25,7 @@
 //
 // 2. parts(all, groups) and widths(def): what a smoke runs, from the environment (default: everything).
 //    SMOKE_ONLY=a,b   only these parts (pages.smoke.js: main, overlays, basics, credits, visit, tips, signin, replay);
-//                     PAGES_ONLY=x, the older name, still works.
+//                     PAGES_ONLY=x does the same.
 //    SMOKE_PART=name  one group of parts, for CI shards (pages.smoke.js: main, overlays, rest, more; fish.smoke.js: main,
 //                     fresh; admin.smoke.js: main, actions, more); tests/smokeparts.test.js fails when a group has no job in smokes.yml.
 //    SMOKE_W=390      only these viewport widths in a smoke's width loop (pages.smoke.js main, admin.smoke.js).
@@ -45,7 +43,7 @@ const DIR =
   cores = () => os.cpus().length || 1,
   LOAD = 2, // the load budget of every heavy run: wait while the 1-minute load average is above LOAD x the cores (rule W24)
   maxLoad = () => LOAD * cores(),
-  // Free disk a heavy run needs before it starts (Pierre, 2026-11-05: the disk is small and every agent shares it).
+  // Free disk a heavy run needs before it starts (the disk is small and every agent shares it).
   MIN_FREE_GB = 5,
   ROOT = path.join(__dirname, '..'),
   {spawn, spawnSync} = require('child_process');
@@ -62,8 +60,8 @@ function started(pid) {
 }
 
 // A slot's record, one line: "pid start user time name\n" (start '-' without /proc). Written to a file of its own,
-// then linked into place, so a slot file always holds a whole record (Codex review #450: a file created empty, then
-// written, read as a dead holder's by a waiter, let two holders run).
+// then linked into place, so a slot file always holds a whole record (a file created empty, then written, could be read
+// as a dead holder's by a waiter and let two holders run).
 const user = () => {
     try {
       return os.userInfo().username || 'uid' + process.getuid();
@@ -210,7 +208,7 @@ async function holdFor(name, o) {
 async function slot(name, o = {}) {
   if (process.env.CI || held()) return () => {};
   if (o.pid && !o.locked) return holdFor(name, o);
-  // Checked before each try, so a run that waited never starts on a disk that filled up meanwhile (Codex review #608).
+  // Checked before each try, so a run that waited never starts on a disk that filled up meanwhile.
   const roomy = () => {
     const disk = diskOk();
     if (disk.ok) return;
@@ -223,7 +221,7 @@ async function slot(name, o = {}) {
   const n = Math.max(1, +process.env.SMOKE_SLOTS || Math.floor(cores() / 2)),
     t0 = Date.now();
   // Every user of the machine takes and takes back slots here: the directory is writable by all and not sticky, so a
-  // dead holder's slot is taken back whoever it belonged to (Codex review #450).
+  // dead holder's slot is taken back whoever it belonged to.
   try {
     fs.mkdirSync(DIR, {recursive: true});
     fs.chmodSync(DIR, 0o777);
@@ -338,7 +336,7 @@ function partial(all, run, def, ws) {
 // Runs cmd args once this process holds a slot, with the slot handed down (REEFID_SLOT, and REEFID_SLOT_WRAP = this pid
 // so a guarded tool run directly by it never re-runs itself), and gives the slot back when cmd ends. Ctrl-C or a kill
 // reaches cmd first; this process then ends with cmd's code (or its signal). If the process that started this one ends
-// (a guarded tool killed by its own PID), cmd is stopped too and the slot given back (Codex review #608).
+// (a guarded tool killed by its own PID), cmd is stopped too and the slot given back.
 async function run(cmd, args, name) {
   const free = await slot(name, {signals: false}),
     child = spawn(cmd, args, {stdio: 'inherit', env: {...process.env, REEFID_SLOT_WRAP: String(process.pid)}}),
@@ -392,7 +390,7 @@ function guard(name) {
 // (a laptop: nothing to protect, and the runner's command line cannot be read). Blocks (the file has not started yet) and
 // then gives the file's own children the slot (REEFID_SLOT), so a test that runs a guarded tool never waits for it.
 // The files a `node --test` command line names (the argv after --test): a script (.js .cjs .mjs .ts), or a glob. The value
-// of an option that takes one (--test-reporter-destination report.log, --import x.js) is none (Codex review #1007);
+// of an option that takes one (--test-reporter-destination report.log, --import x.js) is none;
 // a directory or a name without a script extension is not counted: the runner finds the files in it.
 const WITH_VALUE =
   /^(-r|--require|--import|--loader|--experimental-loader|--env-file|--test-reporter|--test-reporter-destination|--test-name-pattern|--test-skip-pattern|--test-concurrency|--test-timeout|--test-shard|--test-isolation)$/;

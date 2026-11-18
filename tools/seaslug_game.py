@@ -32,7 +32,9 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     name, tools/seaslug_worms.json genera), look, dlook, lsrc}: look, the other genera
     a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
     those only iNaturalist's identifications show (data look-alikes: the players' answers can drop them), lsrc each
-    one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D);
+    one's sources [{t, u}] (genus_looks; Pierre, 2026-11-17, Q390 D); apart and apsrc, the declared pairs' tell-apart
+    lines and their sources by the other genus's id (tools/seaslug_cues.json apart, seaslug_cues.apart_of), on a genus
+    some pair line describes the other genus for;
   - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
     differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
     tools/seaslugs.json rank), group (the iNaturalist order: Nudibranchia, Sacoglossa...), star (the stars set, Q369 (c),

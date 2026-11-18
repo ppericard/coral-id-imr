@@ -36,7 +36,9 @@ test('every line has a source: each ref a key of src and where in it, each sourc
     assert.match(s.u, HOSTS, `${k}: ${s.u}`);
   }
   const used = new Set();
-  for (const [n, x] of [...Object.entries(M.genera), ...Object.entries(M.families)])
+  // the marks, and the genus pairs' tell-apart lines (apart: tests/tellapart.test.js)
+  const pairLines = Object.entries(M.apart || {}).map(([k, P]) => [k, {marks: Object.values(P)}]);
+  for (const [n, x] of [...Object.entries(M.genera), ...Object.entries(M.families), ...pairLines])
     for (const [words, rr] of x.marks) {
       assert.ok(rr.length, `${n}: '${words}' has no source`);
       for (const [key, where] of rr) {
