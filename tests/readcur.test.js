@@ -120,6 +120,30 @@ test('read_cur: no field read anew from a judgement that is not sure, nor on a p
   assert.deepStrictEqual(readCur({fish: F}, cand, sug, by('2026-11-19')), {fish: F});
 });
 
+test('read_cur: tags read anew bring the judge crop when the photo has none; his phase choice stops the source juvenile flag', () => {
+  const c = [0.2, 0.1, 0.8, 0.9],
+    F = {
+      add: {f1: 's1', f2: 's1', fj: 's1'},
+      tags: {f1: 'p1g0sl1', f2: 'p1g0sl1', fj: 'p1g1sl1'},
+      ease: {f1: 2, f2: 2, fj: 2},
+      crop: {f2: [0, 0, 1, 1]}, // his Full photo
+      phase: {fj: ''}, // his No phase
+      auto: {[old]: {f1: 'ate', f2: 'ate', fj: 'ate'}}
+    },
+    sug = {f1: {jt: 'p1g0sl1', e: 4, k: 'best', c}, f2: {jt: 'p1g0sl1', e: 4, k: 'best', c}, fj: {jt: 'p1g1sl1', e: 3, k: 'best'}},
+    out = readCur({fish: F}, cand, sug, by('2026-11-19')).fish;
+  assert.deepStrictEqual([out.crop.f1, out.crop.f2], [c, [0, 0, 1, 1]]);
+  assert.deepStrictEqual([out.tags.fj, out.ease.fj, out.phase.fj], ['p1g1sl1', 3, '']);
+  // the surprise-card trimmer reads a photo brought back as the auto-sort's, as an add of its own (wink_trim)
+  assert.deepStrictEqual(
+    py(
+      `import fish_game as G\nprint(json.dumps([bool(G.AUTO_ADD.match(c)) for c in json.loads(sys.argv[1])]))`,
+      '["bte", "a", "-b", "?a", "r"]'
+    ),
+    [true, true, false, false, false]
+  );
+});
+
 test("curplay: the players' copy reads the curation as the build does", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'readcur-'));
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));

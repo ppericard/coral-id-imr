@@ -333,6 +333,10 @@ test('fishRun brings back at target as a candidate; Undo sets aside again; b cou
     fishCompare(X).map(x => [x.f, x.a, x.p, x.how]),
     [[c, 'add', 'reject', 'fix']]
   );
+  // He moved it to another species since (Not this) and added it there: Undo leaves that choice in play.
+  const M = fishAdd(fishNotThis(G, c, 's2', 's1'), c, 's2', saved),
+    MU = fishUndo(M, c, 's1');
+  assert.deepStrictEqual([MU.add[c], c in (MU.seen || {})], ['s2', false]);
   // He changes the crop it wrote: his own, so an Undo leaves it.
   const O = {...fishOwn(G, c, 'crop'), crop: {...G.crop, [c]: [0, 0, 1, 1]}};
   assert.deepStrictEqual(fishUndo(O, c, 's1').crop[c], [0, 0, 1, 1]);

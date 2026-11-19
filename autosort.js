@@ -298,8 +298,9 @@
       drop('add', v => v === sid);
       (x.d.w || []).forEach(k => drop(k));
     }
-    // A photo it brought back (b) is set aside again, as its own reject had left it.
-    if (x.d.kind === 'b') N.seen = {...(N.seen || {}), [f]: 1};
+    // A photo it brought back (b) is set aside again, as its own reject had left it, unless the admin moved it to another
+    // species since (Not this): that choice, and an add there, stay his.
+    if (x.d.kind === 'b' && !(N.out || {})[f]) N.seen = {...(N.seen || {}), [f]: 1};
     N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
     return N;
   }

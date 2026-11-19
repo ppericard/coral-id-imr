@@ -357,12 +357,12 @@ def cand_out(j):
     return j.get('k') == 'dup' or (bool(TAGS.match(jt)) and (jt[6] in 'xk' or 'a' in jt[7:]))
 
 
-def copy_of(p, j):
-    """autosort.js fishCopy with no value of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
+def copy_of(p, j, mine=False):
+    """autosort.js fishCopy with no tags of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
     the pass's, with the source's life stage (p st) when the pass gives no phase: the j flag for a juvenile, else its
-    phase word."""
+    phase word; never when he chose the photo's phase himself (mine: No phase included)."""
     tags, ph = j.get('jt'), j.get('ph') or None
-    if PHASE_WORD.get(ph) or not TAGS.match(tags or '') or 'j' in tags[7:]:
+    if mine or PHASE_WORD.get(ph) or not TAGS.match(tags or '') or 'j' in tags[7:]:
         return tags, ph
     src = phase(p or {}, '', {}, {})
     if src == 'juvenile':
@@ -412,11 +412,16 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
             continue
         p, sid = rec[f]
         sure = cand_sure(j) or cand_out(j)
-        tags, ph = copy_of(p, j)
+        w = m.group(3)
+        tags, ph = copy_of(p, j, f in (F.get('phase') or {}) and 'p' not in w)
         new = {'tags': tags, 'ease': j.get('e'), 'phase': ph, 'crop': j.get('c')}
+        # The crop goes with the code (judging/FISH.md "A crop that saves a photo"): tags read anew bring the judge's
+        # crop along when the photo has none (a crop of his stands).
+        if 't' in w and 'c' not in w and f not in (F.get('crop') or {}) and j.get('c'):
+            w += 'c'
         # A sure judgement only (an unsure one, or other species not sorted yet, waits for him), and never on a photo
         # whose re-judge proposal he answered Keep mine (kept).
-        for x in (m.group(3) if sure and f not in (F.get('kept') or {}) else ''):
+        for x in (w if sure and f not in (F.get('kept') or {}) else ''):
             k = WROTE[x]
             if (N.get(k) or {}).get(f) != new[k] and (new[k] is not None or k in ('crop', 'phase')):
                 put(k, f, new[k])
@@ -575,7 +580,9 @@ def tier(fish):
 # A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
 # photos in play, its very good reference photos, in the game data as in the admin's target (autosort.js FISHT.wink).
 WINK_KEEP = 5
-AUTO_ADD = re.compile(r'^a')  # autosort.js fish log code: an add the auto-sort applied itself (never a Check, ?a, nor undone, -a)
+# autosort.js fish log code: an add the auto-sort applied itself, or a photo it brought back (b); never a Check (?a) nor
+# undone (-a, -b)
+AUTO_ADD = re.compile(r'^[ab]')
 
 
 def wink_species(fish):
