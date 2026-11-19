@@ -203,6 +203,16 @@ test('the files must say their subject, or --subject does', () => {
   assert.strictEqual(L.compare(b, a, {subject: 'coral'}).subject, 'coral');
 });
 
+test('a file cut by the budget is marked in the report (rule L11, tools/checkbudget.js)', () => {
+  const cut = {cut: true, budgetMin: 40, elapsedMin: 40, planned: 20, done: 14},
+    R = L.compare(before, {...after, cut}),
+    text = L.report(R);
+  assert.deepStrictEqual(R.cut, [{side: 'after', ...cut}]);
+  assert.match(text, /\*\*CUT \(after\): the run stopped at its 40-minute budget with 14 of 20 runs\.\*\*/);
+  assert.deepStrictEqual(L.compare(before, after).cut, []);
+  assert.doesNotMatch(L.report(L.compare(before, after)), /CUT/);
+});
+
 test('the command line prints the Markdown report', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'learncmp-')),
     fb = path.join(dir, 'b.json'),
