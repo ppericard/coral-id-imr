@@ -23,6 +23,9 @@ const LAB_ICONS = {
   gallery:
     '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
   idkey: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5"/>',
+  // A fish under a magnifier (the Fish ID Key).
+  fishkey:
+    '<circle cx="10" cy="10" r="7"/><path d="m20.5 20.5-5.5-5.5M6 10c1.2-1.6 2.6-2.4 4-2.4s2.6.8 3.4 2.4c-.8 1.6-2 2.4-3.4 2.4S7.2 11.6 6 10zM6 10l-1.5-1.2M6 10l-1.5 1.2"/>',
   type: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   pairs: '<rect x="3" y="6" width="10" height="14" rx="2"/><path d="M9 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6"/>',
   // Two photos side by side with an equals sign between them.
@@ -40,6 +43,7 @@ const LAB = {
   list: [],
   files: [
     'idkey',
+    'fishkey',
     'basics',
     'fishbasics',
     'map',

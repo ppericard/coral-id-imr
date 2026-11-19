@@ -4198,6 +4198,108 @@ async function basicsFit(b, base) {
   return fails;
 }
 
+// The Fish ID Key for EventMeasure (proto/fishkey.js), in the Lab, opened while the corals are on screen: every species of
+// the IMR reference PDF in rows, the index of families, nothing wider than the screen; the search filters at once (a
+// WoRMS name finds the PDF's species, a word nothing has shows the empty line), its state in the address (a link with
+// q= opens filtered); a family in the index scrolls to it; a thumbnail enlarges its species' photos; leaving the page
+// lets "/" open Genera again. At 390 and 1280 px. Photos are not fetched (every other host is aborted). Returns the
+// failures.
+async function fishKeyCheck(b, base) {
+  const fails = [],
+    F = require('../fish.json'),
+    pdf = F.species.filter(s => s.pdf),
+    moved = pdf.find(s => s.now && s.now !== s.name);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const W = `Fish ID Key ${w}px:`,
+      c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base + '#tools/fishkey');
+    await p.waitForSelector('.fksp', {timeout: 30000}).catch(() => fails.push(`${W} no species rows`));
+    const r0 = await p.evaluate(() => ({
+      rows: document.querySelectorAll('.fksp').length,
+      fams: document.querySelectorAll('[data-jump]').length,
+      wide: document.documentElement.scrollWidth > innerWidth,
+      subj: SUBJ.id,
+      count: (document.querySelector('.fkcount') || {}).textContent
+    }));
+    if (r0.rows !== pdf.length || !r0.fams || r0.wide || r0.count !== `${pdf.length} species`)
+      fails.push(`${W} ${JSON.stringify(r0)}, expected ${pdf.length} rows`);
+    // A WoRMS name finds the PDF's species, its address keeps the search.
+    await p.fill('#fkq', moved.now);
+    const r1 = await p.evaluate(() => ({
+      shown: [...document.querySelectorAll('.fksp:not([hidden]) .fkname')].map(x => x.textContent),
+      hash: location.hash,
+      empty: !document.querySelector('.fkempty').hidden
+    }));
+    if (!r1.shown.includes(moved.name) || r1.empty || !/q=/.test(decodeURIComponent(r1.hash))) fails.push(`${W} search ${moved.now}: ${JSON.stringify(r1)}`);
+    await p.fill('#fkq', 'zzqx');
+    const r2 = await p.evaluate(() => ({
+      shown: document.querySelectorAll('.fksp:not([hidden])').length,
+      empty: !document.querySelector('.fkempty').hidden
+    }));
+    if (r2.shown || !r2.empty) fails.push(`${W} a search nothing matches: ${JSON.stringify(r2)}`);
+    // A link with q= opens filtered.
+    await p.goto(base + '#tools/fishkey/q=' + encodeURIComponent(moved.name.split(' ')[0]));
+    await p.waitForSelector('.fksp', {timeout: 30000}).catch(() => {});
+    const r3 = await p.evaluate(() => ({
+      q: document.getElementById('fkq').value,
+      shown: document.querySelectorAll('.fksp:not([hidden])').length,
+      all: document.querySelectorAll('.fksp').length
+    }));
+    if (!r3.q || !r3.shown || r3.shown >= r3.all) fails.push(`${W} a link with a search: ${JSON.stringify(r3)}`);
+    // The index: the last family, cleared search, scrolled to.
+    await p.evaluate(() => {
+      const d = document.querySelector('.fkidx');
+      d.open = true;
+      const L = document.querySelectorAll('[data-jump]');
+      L[L.length - 1].click();
+    });
+    await p.waitForTimeout(300);
+    const r4 = await p.evaluate(() => {
+      const L = document.querySelectorAll('[data-jump]'),
+        id = L[L.length - 1].dataset.jump,
+        el = document.querySelector(`[data-fam="${CSS.escape(id)}"]`),
+        t = el.getBoundingClientRect().top;
+      return {q: document.getElementById('fkq').value, top: t >= 0 && t < innerHeight, hash: location.hash};
+    });
+    if (r4.q || !r4.top || !/f=/.test(decodeURIComponent(r4.hash))) fails.push(`${W} the index: ${JSON.stringify(r4)}`);
+    // A thumbnail opens the lightbox on its species' photos.
+    const th = await p.$('.fksp:not([hidden]) .fkth[data-z]');
+    if (!th) fails.push(`${W} no thumbnail`);
+    else {
+      await th.scrollIntoViewIfNeeded();
+      await th.click();
+      const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden);
+      if (!lb) fails.push(`${W} a thumbnail does not enlarge`);
+      await p.keyboard.press('Escape');
+    }
+    // "/" focuses the search here; once the page is left, it opens Genera again (the key's listener gone).
+    await p.evaluate(() => document.activeElement && document.activeElement.blur());
+    await p.keyboard.press('/');
+    const foc = await p.evaluate(() => document.activeElement && document.activeElement.id);
+    if (foc !== 'fkq') fails.push(`${W} "/" does not focus the search (${foc})`);
+    await p.evaluate(() => (location.hash = 'progress'));
+    await p.waitForFunction(() => window.ROUTED === 'progress', null, {timeout: 10000}).catch(() => {});
+    await p.keyboard.press('/');
+    await p.waitForFunction(() => window.ROUTED === 'genera', null, {timeout: 10000}).catch(() => fails.push(`${W} "/" after leaving`));
+    if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
 // Fish basics (proto/fishbasics.js), the fish twin of Coral basics on the same engine: the first Learn
 // tab on the fish, the "0" block of the families page with its six-stop trail, the Home line and the first-launch offer for
 // "new", every step and view drawn and fitting the screen (rule U2: the drawing at most 45% of the height, nothing wider
@@ -5628,7 +5730,8 @@ async function installCheck(b, base) {
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
 // (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
-// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
+// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck);
+// fishkey: the Fish ID Key in the Lab (fishKeyCheck).
 const PARTS = [
     'main',
     'overlays',
@@ -5645,7 +5748,8 @@ const PARTS = [
     'signin',
     'replay',
     'notices',
-    'install'
+    'install',
+    'fishkey'
   ],
   WIDTHS = [390, 1280];
 
@@ -5654,7 +5758,7 @@ const PARTS = [
       main: ['main', 'tips', 'onepath', 'names', 'newplayer'],
       overlays: ['overlays'],
       more: ['relief', 'start', 'signin', 'replay', 'notices'],
-      rest: ['basics', 'credits', 'visit', 'subjtour', 'install']
+      rest: ['basics', 'credits', 'visit', 'subjtour', 'install', 'fishkey']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -6517,6 +6621,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);
   if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
+  if (run.has('fishkey')) for (const f of await fishKeyCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);

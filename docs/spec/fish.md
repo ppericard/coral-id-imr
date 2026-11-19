@@ -151,7 +151,7 @@ Rule C8 (the same scientific rigour for everyone, Pierre included), defined once
 rank (the PDF cheatsheet's 24 most sighted first, then PDF order), `cmi` the commonness index within its entry (0-1),
 `sec` the PDF section (`photoTaxon`: [fish-photos.md › Photo taxon](fish-photos.md#photo-taxon)). A species not confirmed in the Philippines,
 or a PDF species whose family is in no circle, is out of the game (`out` says why, no `circle`) but stays in
-`fish.json`: a future Fish ID Key for EventMeasure must hold every species of the PDF, unfiltered (ROADMAP).
+`fish.json`: the Fish ID Key for EventMeasure holds every species of the PDF, unfiltered ([below](#the-fish-id-key-lab)).
 
 ## Curated common names
 
@@ -400,6 +400,18 @@ order's first (ROADMAP "The Tree tab").
   first needs each genus's distinct observers near the centre written at build (`presence.json` holds the coral
   species' presence in the Philippines, `ok`, `rg`, not counts near the centre; `tools/coral_presence.py` already asks
   iNaturalist for the counts around the centre and would keep them).
+
+## The Fish ID Key (Lab)
+
+`proto/fishkey.js`, `#tools/fishkey` (ROADMAP "Fish ID Key for EventMeasure"; in the Lab until Pierre's OK, rule U13:
+Identify on the fish keeps "coming soon"): every species with `pdf`, out of the game too, nothing else; under the key's
+groups (rule S3), then the family (its names, and its PDF section when the PDF names it otherwise), then the genus, in
+this file's order; a PDF species with no family record last, under its PDF section. A row: the cover by the game's
+rule (`app.js` `seenCover`; a tap enlarges its photos), the PDF name, WoRMS's beside it when it differs (rule S2), the
+common name, the PDF page, its sheet. One search: every word typed starts a word of its PDF, WoRMS or synonym names,
+common names, genus, family or PDF section. State in the address (`f=`, `q=`); data through `app.js` `treeHome` /
+`treeLoad`; its subject declares `UNITS` `emkey` (rule S1). Checked by `tests/fishkey.test.js` and the pages smoke's
+`fishkey` part.
 
 ## Rebuild
 
