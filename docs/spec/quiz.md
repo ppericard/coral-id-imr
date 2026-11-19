@@ -21,8 +21,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 - **Find the X** (`|f`): scored as 4 choices, the photo tapped the unit given (rule L2).
 - **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`
   `confTerm`).
-- **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked is
-  skipped (`live.js` `liveLog`); rule L4 lets it count without opening the unit: not built yet.
+- **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
+  counts and keeps the unit closed until its card (rule L4; `model.js` `introLive`).
 - **Surprise card** (`wink`): counts nowhere.
 - **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?, Odd one out](basics.md#the-lab-protolabjs)
   too) and Memory.
