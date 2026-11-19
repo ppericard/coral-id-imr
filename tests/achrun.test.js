@@ -83,7 +83,10 @@ test('achRunIn: the photo quiz only; quiz.js passes the game to achAfter, a slip
   for (const cur of NEUTRAL) assert.strictEqual(T.achRunIn(cur), false, cur);
   const quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8');
   assert.match(quiz, /const CUSTOM_H = 'quiz-custom\|play';/, 'the custom quiz hash this test stubs');
-  assert.match(quiz, /achAfter\(\s*good,\s*ph\.filter\(p => p !== unseen\),\s*cur\s*\)/, 'answer() passes cur');
+  // The one recorder (quiz.js recordAnswer, which answer() and live.js liveLog call) passes the photos seen and cur.
+  assert.match(quiz, /achAfter\(good, seenPh, cur\)/, 'recordAnswer() passes cur');
+  assert.match(quiz, /recordAnswer\(\{\n\s+cur,/, 'answer() passes its cur');
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'live.js'), 'utf8'), /recordAnswer\(\{\n\s+cur: 'live',/, 'liveLog passes live');
   // planPhoto's duel slipped into the photo quiz is asked under the quiz's own cur (so it counts as a Quiz answer).
   assert.match(quiz, /\[cur, t, shuffle\(pair\.slice\(\)\), `Look-alikes: /, 'a slipped-in duel keeps cur');
 });

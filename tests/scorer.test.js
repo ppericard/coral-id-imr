@@ -113,6 +113,9 @@ function session(seed, n) {
       // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
       genusDiff: t => pgd[t] || 0
     };
+    // The recalls quiz.js answer hands quiz.js recordAnswer: a comeback question's, else 1.
+    env.R = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1;
+    env.Rc = warm && !good && GEN[c] ? env.recallAt(c) : 1;
     vm.createContext(env);
     st(target);
     const q = vm.runInContext(QSRC + '\nq;', env),
@@ -145,7 +148,13 @@ function same(R, P, why) {
 }
 
 test('quiz.js answer scores through core.js scoreAnswer and logs its scoring record', () => {
-  const ans = block(quiz, 'function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {', '\n}\n', {file: 'quiz.js'});
+  // The one recorder (quiz.js recordAnswer), which quiz.js answer and live.js liveLog both call.
+  const game = block(quiz, 'function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {', '\n}\n', {file: 'quiz.js'}),
+    live = block(fs.readFileSync(path.join(__dirname, '..', 'live.js'), 'utf8'), 'function liveLog(S, o) {', '\n}\n', {file: 'live.js'});
+  assert.ok(game.includes('recordAnswer({') && live.includes('recordAnswer({'));
+  for (const x of ['scoreAnswer(', 'logAnswer(', 'holdStep('])
+    assert.ok(!game.includes(x) && !live.includes(x), `quiz.js answer or live.js liveLog calls ${x} itself`);
+  const ans = block(quiz, 'function recordAnswer({', '\n}\n', {file: 'quiz.js'});
   assert.ok(ans.includes('const res = scoreAnswer(P, q)'));
   assert.ok(ans.includes('sc: scoreLog(q, res)'));
   assert.ok(ans.includes('e: Math.round(100 * res.e) / 100'));
