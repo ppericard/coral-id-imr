@@ -46,9 +46,18 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   not its `rank` (the sea slugs' `genus`; `core.js` `unitRankOf`), logged with each answer; a tree subject's top rank,
   the family, is what the admin reads as its tree's;
 - `renamed` (the fish: `FISH_RENAMED`, old unit ids to new), `typeDrop` (the fish: a word a typed name may leave out);
-- `replay` (the corals: the subject of the first replay, asked as `rv`, and of the sheet's opening hold; an answer row
-  with no subject is theirs) and `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
+- `replay` (the corals: the subject of the first replay, asked as `rv`; an answer row with no subject is theirs) and
+  `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
   [Sync and replay per subject](#sync-and-replay-per-subject));
+- the features `replay` used to switch, each now named (one-engine step 2, rule S1), all the corals' today: `hold` (the
+  sheet's opening hold counts its answers), `offsets` (the sheet's photo memory and format offsets are fitted on its
+  answers: `model.js` `pmem`, `pfmt`), `anonBase` (signing in adds only what was played since its first answer
+  signed out, `ANONB`), `pulse` (the one-tap question), `sorry` (the apology card), `recalcNote` (the
+  recalculation notes, shown in that subject). `hold` and `offsets` stay on `replay`'s subject while the sheet
+  computes them for it alone (`tests/subject-neutral.test.js` checks each against `replay`);
+- `gate` (the fish and the sea slugs, one shared value `TREE_GATE`): a tree subject's circle thresholds, `c3`
+  circle 3's (circle 1's Entries component at `entries` 0.55, or with no global score its plain mean at `mean` 0.5;
+  `app.js` `treeC3`, read by `treeGate` and the circle-3 offer);
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
   its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics)), `stats` (the sea slugs': the script
   from which the app reads theirs), `calib` (the draw's calibration), `analyses` (its Analyses report), `score` (the
@@ -73,7 +82,7 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
 The code every tree subject runs through (the fish, the sea slugs) is named `tree*`: `core.js` `treeGen`, `treePhotos`,
 `treeReplayGen`, `treeSheets`…; `app.js` `TREEU` (the units of the tree in force, as `DATA` is the corals'), `TREERAW`,
 `treeBuild`, `treeGenera`; `learn.js` `treeGenus`, `treeTiles`…. `fish*` names stay for what only the fish have (the
-IMR fish presentation, FishBase, the winks, `core.js` `FISH_RVS` and `FISH_ACH`, the circle-3 offer `app.js` `FISH_C3`)
+IMR fish presentation, FishBase, the winks, `core.js` `FISH_RVS` and `FISH_ACH`)
 and, for now, for the admin's own names. `tests/treenames.test.js` holds the old and new names and fails when a retired
 one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their units a flat list in `data.json`, read by
 `app.js` `build` and `structSeen`); the engine asks that field, never a pool file's name.
@@ -186,7 +195,7 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   absent key), and the sheet keeps the saved copy's keys of a subject the saving app does not know (`core.js`
   `keepSubjectKeys`). `syncSummary` (the leaderboard %, "By genus") is the first board subject's, the corals', whatever
   the subject on screen; each other board's units travel beside it (`boards`, `boardUnits`; the fish send their score
-  tree). Signing in to a known account: the corals add only the delta since the device's first anonymous answer
+  tree). Signing in to a known account: the corals (`SUBJECTS` `anonBase`) add only the delta since the device's first anonymous answer
   (`ANONB`); another subject adds everything on the device (`mergeProgress({}, here, sheet)`). Sign-out clears every
   subject's keys. `core.js` `mergeUsers` (the admin's account merge) merges each subject's progress and opt-ins on its
   own. Every subject's answers are logged to the sheet's Answers tab with their subject
@@ -199,8 +208,8 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
   are replayed from their own answers with their own rules versions and keys (`SUBJECTS` `replayed`, `FISH_RVS`,
   `SEASLUG_RVS`; `reefid-sync-fish-rv`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). The
-  sheet's opening hold is the corals' (`sync.js` `holdAdopt`, as that subject), and so are the one-tap question and the
-  apology card (`pulseDue`, `sorryNotice` wait for `SUBJ.replay`). At sign-in every subject takes the account's copy as
+  sheet's opening hold is the corals' (`SUBJECTS` `hold`; `sync.js` `holdAdopt`, as that subject), and so are the
+  one-tap question and the apology card (`pulseDue`, `sorryNotice` wait for `SUBJ.pulse`, `SUBJ.sorry`). At sign-in every subject takes the account's copy as
   its merge baseline, played on the device or not. A wink is decided before a question is taken or chosen
   (`quizPhoto`), so planned questions and the Again / duel spacing wait.
 - **Sheets across subjects**: a genus sheet or comparison (`#learn/genus/…`, `#cmp-…`) opened with a subject that has

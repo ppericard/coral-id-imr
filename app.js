@@ -2039,24 +2039,27 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // multi-coral (tools/apply_bonus.py).
 
 // Fish circles (docs/FISH_PATH.md): 1, the IMR course's families; 2, now and then on the SVS videos; 3, what divers look
-// for around Dauin; all count, open or not. treeGate: circle 2 once every circle-1 family was asked, circle 3 at FISH_C3
-// and a yes (UNITS fish opens). FISH_C3: circle 1's Entries component (treeScore by[1].entries) at 55%, which simulated
-// players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without that score, the mean.
-const FISH_C3 = {entries: 0.55, mean: 0.5};
-const fishC3 = () => {
+// for around Dauin; all count, open or not. treeGate: circle 2 once every circle-1 family was asked, circle 3 at treeC3
+// and a yes (UNITS fish opens). treeC3: the circle-3 threshold of the tree subject in force (TREE_AT, whose TREEU it
+// reads; core.js SUBJECTS gate c3), circle 1's Entries component (treeScore by[1].entries), or without that score its
+// plain mean; never for a subject that has none.
+const treeC3 = () => {
+  const G = (SUBJECTS.find(x => x.id === TREE_AT) || {}).gate,
+    c3 = G && G.c3;
+  if (!c3) return false;
   const h = headScore();
-  return h ? ((h.by[1] || {}).entries || 0) >= FISH_C3.entries : progPct(TREEU.c1) >= 100 * FISH_C3.mean;
+  return h ? ((h.by[1] || {}).entries || 0) >= c3.entries : progPct(TREEU.c1) >= 100 * c3.mean;
 };
 const treeGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
   const c1 = TREEU ? TREEU.c1 : [];
-  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!TREEU && fishC3();
+  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!TREEU && treeC3();
 };
 // Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
 // c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3
 // declined (My progress), only once its offer will not come back (c3back: null); all, else (photos, names, exams left).
-// o: c3 circle-3 families not met, c3due fishC3, c3row offered in My progress, c3back the offer comes once more, wait
+// o: c3 circle-3 families not met, c3due treeC3, c3row offered in My progress, c3back the offer comes once more, wait
 // families with no photo yet, sci names on, sciDue their offer due, sciLeft a genus not met. Pure (tests call it):
 // {k, kick, title, lines}, or null (no card now).
 const fishNextOf = o => {
@@ -2159,7 +2162,7 @@ const TREE_UNITS = {
   core: () => (TREEU ? TREEU.c1 : []),
   // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH, SEASLUG_ACH).
   circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : []),
-  // Circle 2 once every circle-1 unit was asked, circle 3 at FISH_C3 (treeGate).
+  // Circle 2 once every circle-1 unit was asked, circle 3 at its gate (treeGate, treeC3).
   gate: treeGate,
   // The species a photo shows (its sp, by the name treeGenera spn gives it), for the answer log (speciesShown).
   species: p => (TREEU && TREEU.spn && p && p.sp && TREEU.spn[p.sp]) || '',
@@ -2364,13 +2367,13 @@ const UNITS = {
       TREERAW && TREERAW.game && S && S.replayed && S.replayed.vars
         ? S.replayed.vars(TREEF || TREERAW.f, [TREERAW.f, TREERAW.ph, TREERAW.gm, CUR], S)
         : null,
-    // Circle 3, the families beyond the IMR course: offered at the FISH_C3 threshold instead of opening by itself; once on,
+    // Circle 3, the families beyond the IMR course: offered at the subject's circle-3 threshold (treeC3) instead of opening by itself; once on,
     // its families open one at a time like any other. They count in the % either way.
     opens: [
       {
         k: 'beyond',
         units: () => (TREEU ? TREEU.c3 : []),
-        due: () => !!TREEU && fishC3(),
+        due: () => !!TREEU && treeC3(),
         kick: 'Beyond the IMR course',
         title: () => 'More fish families, beyond the IMR course?',
         body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',

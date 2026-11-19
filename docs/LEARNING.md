@@ -639,8 +639,8 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
   forms) and the look-alikes come in as a family is learned. One photo per question.
 - **Circles** (fish.json, a family's best species' circle; `app.js` `treeGate`): 1, the families the IMR course teaches;
   2, open once every circle-1 family has been asked; 3, the families beyond the course, offered by a card once circle 1
-  reaches `FISH_C3` (its Entries component at 55%, or, without the global score, the plain mean at 50%:
-  `app.js` `FISH_C3 = {entries: 0.55, mean: 0.5}`), open on the player's yes (or in My progress any time), offered again
+  reaches its gate (its Entries component at 55%, or, without the global score, the plain mean at 50%:
+  `core.js` `SUBJECTS` `gate`, `TREE_GATE = {c3: {entries: 0.55, mean: 0.5}}`; `app.js` `treeC3`), open on the player's yes (or in My progress any time), offered again
   `OPEN_AGAIN` (200) answers after a "Not now", then never. Every circle counts in the progress, open or not.
 - **Winks**: an unmistakable fish (a whale shark) as a rare surprise card in the photo quiz, its name among 3 absurd
   choices: never counted anywhere (logged with the mode `WINK_MODE`, which every reader of the log leaves out). Wink i is

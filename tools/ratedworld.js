@@ -245,7 +245,7 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {})
   ctx.Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
   const tree = U.tree,
     headScore = () => (tree ? C.treeScore(ctx.P, tree, SUBJ.score) : null),
-    fishC3 = () => ((headScore().by[1] || {}).entries || 0) >= 0.55, // app.js FISH_C3.entries
+    fishC3 = () => ((headScore().by[1] || {}).entries || 0) >= 0.55, // core.js SUBJECTS gate c3.entries
     imr = () => ctx.imrSaid(),
     // The opt-in set's units in play (app.js UNITS sets): the fish scientific genera, from their family's Advanced
     // (Open Water for an IMR genus of an IMR player, without the offer: sciOpen); the coral bonus genera once on.

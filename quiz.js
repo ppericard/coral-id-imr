@@ -827,9 +827,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // a comeback question takes its genus's recall as it is now.
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
-  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
-  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+  // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
+  // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does, and the mix-up is counted.
@@ -1697,8 +1697,8 @@ const pulseSess = (v, now = Date.now()) =>
   v.n >= PULSE.SESS_N &&
   now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
-  // Its answers describe the subject the sheet replays (core.js SUBJECTS replay: the corals; the fish beta asks nothing).
-  if (!SUBJ.replay) return false;
+  // Asked in the subjects it is on for (core.js SUBJECTS pulse: the corals; the others ask nothing).
+  if (!SUBJ.pulse) return false;
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
     st = pulseSt(),

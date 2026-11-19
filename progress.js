@@ -1324,7 +1324,10 @@ Object.defineProperty(window, 'CARDS_SAID', {
 });
 function recalcNotice() {
   if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
-  if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
+  // The recalculations announced (RECALC) are one subject's (core.js SUBJECTS recalcNote: the corals): shown in it.
+  const RS = SUBJECTS.find(x => x.recalcNote);
+  if (!RS) return void (window.RECALC_SAID = 'none');
+  if (RS !== SUBJ) return inSubject(RS.id, recalcNotice);
   // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
   const said = d => (window.RECALC_SAID = d);
   // The last note seen: here (KEY) or on another device of the account (core.js TOLD 'recalc:<id>'), the later one.
@@ -1571,7 +1574,8 @@ function rvNotice() {
 // (reefid-sorry) and, signed in, on the account's others (core.js TOLD 'sorry'); leaving the page closes it unseen.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
-  if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
+  // The apology is about one subject's opening (core.js SUBJECTS sorry: the corals): it waits until the player is on it.
+  if (!SUBJ.sorry) return;
   if (noticeLater('sorry', sorryNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
