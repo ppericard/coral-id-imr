@@ -535,4 +535,4 @@ its 480 px photo once R2 has failed, a tile having no online original), `quiz.js
 ## Photos kept for the exam
 
 No file holds fish photos out of play: each player's own reserve takes a few observations of a unit out of that player's
-practice for their mastery exam, the same for every subject ([model.md › The exam's reserve](model.md#the-exams-reserve)).
+practice for their mastery exam, the same for every subject ([reserve.md](reserve.md)).

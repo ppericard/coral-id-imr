@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The per-player reserve (docs/decisions/2026-11-18-per-player-reserve.md): core.js reserveOf, reserveSplit, heldOf,
+// The per-player reserve (docs/decisions/2026-11-19-per-player-reserve.md): core.js reserveOf, reserveSplit, heldOf,
 // resHash, reserveId; model.js examSet and genusDiff on the held lists; the |h log token on the exam's answers; the
 // sheet's replay deciding alike (rules D8, D9). Every subject, one rule (rule S1); which photos may be reserved by their
 // qualities, never by their route or source (rule P1). docs/LEARNING.md "The reserve in the game".

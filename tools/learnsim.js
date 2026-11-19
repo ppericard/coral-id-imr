@@ -539,6 +539,8 @@ function play(cfg) {
   rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list; one slot in an older app)
   twoAt = -Infinity;
   twoPair = '';
+  // The session's window of photos shown (model.js SEENQ): start-up's question went into it, unseeded.
+  if (typeof SEENQ !== 'undefined') SEENQ = [];
   store.set(INTRO.OFFER.KEY, null);
   // --openall: the app's expectation of each answer (the e the opening hold gets).
   let lastE = null;

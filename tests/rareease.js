@@ -14,6 +14,8 @@ const code = [
   // The format offsets of the subject in play (pfmt: the sheet's PFMT for the corals, none for the fish).
   cut(src, 'const PFMT0 = ', '\n// Progress saved before the photo memory', {file: 'model.js'}),
   cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'}),
+  // The session's window of photos shown (model.js SEENQ) spans the game's recent answers.
+  cut(src, 'const RECENT = ', '\n', {file: 'model.js'}),
   // The mastery exam's draw and its rule (examSet, examPassed above it; EXAM, TYPED: tests/phasepath.test.js).
   cut(src, '// The next exam question of genus n', '\n}\n', {through: 1, file: 'model.js'}),
   cut(src, 'const EXAM = {', '\n', {file: 'model.js'}),
@@ -113,7 +115,7 @@ function engine(
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, RARE, rareCap, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, seenAdd, RARE, rareCap, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));

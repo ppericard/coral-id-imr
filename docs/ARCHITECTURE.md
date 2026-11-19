@@ -88,7 +88,7 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   - **Learned**, the **silent mastery exam**, **No time between sessions anywhere**, **Progress scale**, the **mastery
     levels**: [model.md › Progress and mastery](spec/model.md#progress-and-mastery),
     [Progress scale](spec/model.md#progress-scale-and-mastery-levels).
-  - **The exam's reserve** (each player's own, every subject): [model.md › The exam's reserve](spec/model.md#the-exams-reserve).
+  - **The exam's reserve** (each player's own, every subject): [reserve.md](spec/reserve.md).
   - **Which genus next**: [model.md › Which unit next](spec/model.md#which-unit-next).
   - **Continuous difficulty**, **Answer choices**, **Confusion scores**, **Personal path**, **Online calibration**,
     **Juveniles and colour phases on their unit's mastery**, **The mimicry class**, **One colony per question**,
