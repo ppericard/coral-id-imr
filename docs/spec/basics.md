@@ -17,12 +17,13 @@ section each remaining prototype is meant for is in ROADMAP, the module registry
 
 The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
-`pairs` (Memory), `samediff` (Same or different?, below) and `idkey` (the Coral ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups
-(`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account, ach, toast), each opened through `app.js`
-`cardShow` with sample copy and nothing recorded (the sign-in card, the achievement toast and the note are the real
-ones). A prototype marked `admin: true` (the cards gallery) is listed in the hub in the admin's browser only
-(`IS_ADMIN`); its link works for anyone. The Tools section is hidden on phones but for the header's hammer icon. Its
-files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried again, `labLoad`).
+`pairs` (Memory), `samediff` (Same or different?, below) and `idkey` (the Coral ID Key). `cards` is not a tool but the
+live gallery of the app's cards and pop-ups (`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account,
+ach, toast), each opened through `app.js` `cardShow` with sample copy and nothing recorded (the sign-in card, the
+achievement toast and the note are the real ones). A prototype marked `admin: true` (the cards gallery) is listed in the
+hub in the admin's browser only (`IS_ADMIN`); its link works for anyone. The Tools section is hidden on phones but for the
+header's hammer icon. Its files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried
+again, `labLoad`).
 
 `samediff` ([decision](../decisions/2026-11-19-same-or-different-lab.md); the one Lab tool that follows the subject on
 screen) shows two photos, one unit's or a declared look-alike pair's: Same or Different, untimed, counted nowhere.

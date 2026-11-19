@@ -1,4 +1,4 @@
-# Same or different?: a Lab prototype on the subject on screen, declared pairs only, untimed, no effect on progress
+# Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress
 
 Date: 2026-11-19. PR: #1241. Rules or docs touched: L4, S1, U2, U13, C3, P4, P5; docs/spec/basics.md "The Lab",
 docs/spec/quiz.md "What each mode counts", ROADMAP "Game modes".
