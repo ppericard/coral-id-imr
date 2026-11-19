@@ -81,7 +81,9 @@ written with `tools/datajson.py`.
 - **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
   SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
   SubagentStart gives the Manila time and main's core line. `--report [--since HH:MM]`, `--expect [REF]`;
-  `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main.
+  `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main, and
+  names the docs past their size mark (read from `tests/docs.test.js` `DOC_MARKS`;
+  [decision](../decisions/2026-11-19-doc-size-marks.md)).
 - **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
   it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
   holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
