@@ -56,7 +56,6 @@ const FLAGS = [
     "the sheet's first replay path and opening hold, the pooled statistics read in the app, the sign-in baseline, the one-tap question and the apology card",
     ONE_ENGINE
   ],
-  ['tiers', "IMR's and Pierre's own photos weigh more in the draw (app.js isCore)", 'Corals: remove the photo source priority'],
   ['achFeats', "the feats (runs, Sharp eye, corallites) kept by this subject's answers only (progress.js)", ONE_ENGINE]
 ];
 
