@@ -778,7 +778,7 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
     ctx = {ASUBJ: null};
   vm.createContext(ctx);
   vm.runInContext(
-    block(ad, 'const fuRanks = (S = ASUBJ) =>', "// The rubric's tags in words", {file: 'admin.js'}) +
+    block(ad, 'const fuRanks = (S = ASUBJ) =>', '// The rubric a subject declares', {file: 'admin.js'}) +
       '\nthis.ranks = fuRanks; this.rankOf = fuRankOf;',
     ctx
   );

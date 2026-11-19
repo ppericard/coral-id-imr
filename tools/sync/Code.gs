@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 198 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 199 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 198;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 199;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4332,6 +4332,82 @@ const CORE_ = (function () { const module = {exports: {}};
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
+  // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
+  // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
+  // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
+  // [value, label, words, more]: the label on the Tags row's button, words how a photo's tags say it ('' for a value that
+  // makes no photo harder: its good views), more {tip: the button's tooltip, full: the words the Candidates' judged line
+  // says where the short line says none, said: a value the tools write that no button offers}. phase is the phase row. What
+  // every subject shares is written once here (the count and its words take the subject's noun: one, many); the subject
+  // declares what differs: own[0] (the views), own[2] (the light) and own.flags (the ones Pierre may set). names, each
+  // position's name on its Tags row.
+  const treeRubric = (one, many, own) => ({
+    names: ['View', 'Whole', 'Light', 'Colour loss', 'Clarity', 'Size', 'Count'],
+    0: own[0],
+    1: [
+      ['1', 'Whole'],
+      ['0', 'Partial', 'partial']
+    ],
+    2: own[2],
+    3: [
+      ['0', 'No loss'],
+      ['1', 'Slight', 'slight colour loss'],
+      ['2', 'Strong', 'strong colour loss'],
+      ['3', 'Mono', 'monochrome']
+    ],
+    4: [
+      ['s', 'Sharp'],
+      ['m', 'Soft', 'soft'],
+      ['b', 'Blurred', 'blurred']
+    ],
+    5: [
+      ['l', 'Large', '', {full: 'large'}],
+      ['m', 'Medium', '', {full: 'medium'}],
+      ['s', 'Small', 'small']
+    ],
+    // The labels say the problem is several species on one photo; the codes are judging/FISH.md's. Other species in two: o in
+    // play, k out of play (rule P3); the legacy m (not sorted yet: as k) is read, never offered.
+    6: [
+      ['1', `One ${one}`, '', {tip: `One ${one} (others, if any, tiny and far)`}],
+      ['s', 'Same species', 'several of its kind', {tip: `Several ${many} of the same species, the subject obvious (a pair, a school)`}],
+      [
+        'o',
+        'Other species, no risk',
+        'other species in view, no confusion',
+        {tip: "Other species in view, none could be taken for the subject at the game's level (stays in play)"}
+      ],
+      [
+        'k',
+        'Other species, confusable',
+        'other species in view, confusable',
+        {tip: 'Other species in view, one could be taken for the subject (on a photo in play: out of play, rule P3)'}
+      ],
+      [
+        'x',
+        'Unclear',
+        'subject not obvious',
+        {tip: `Unclear: which ${one} is asked about is not obvious (on a photo in play: out of play)`}
+      ],
+      ['m', '', 'other species in view, not sorted', {said: true}]
+    ],
+    // Watermark (w: a visible watermark or text on the photo): Home skips the photo, the games keep it; his tap sets it or
+    // takes it off like any tag. a, p and r are the tools' (the tool adds p and r itself).
+    flags: [
+      ...own.flags,
+      ['a', '', 'out of water or a screen', {said: true}],
+      ['p', '', '', {full: 'phase entry', said: true}],
+      ['r', '', '', {full: 'reference photo', said: true}]
+    ],
+    // The IMR phase words (judging/FISH.md "phase"), '' = none (an adult, or a juvenile, which is the j flag).
+    phase: [
+      ['', 'No phase'],
+      ['subadult', 'Subadult'],
+      ['intermediate', 'Intermediate'],
+      ['terminal', 'Terminal'],
+      ['female', 'Female'],
+      ['male', 'Male']
+    ]
+  });
   const SUBJECTS = [
     {
       id: 'coral',
@@ -4583,6 +4659,27 @@ const CORE_ = (function () { const module = {exports: {}};
         // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
         // the candidates judged sure that the game does not take in by itself.
         autosort: true,
+        // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
+        // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
+        tags: treeRubric('fish', 'fish', {
+          0: [
+            ['p', 'Profile', '', {full: 'profile'}],
+            ['o', 'Oblique', 'oblique'],
+            ['h', 'Head-on', 'head-on'],
+            ['t', 'Tail', 'tail view'],
+            ['d', 'Above', 'from above']
+          ],
+          2: [
+            ['g', 'Good light'],
+            ['d', 'Dim', 'dim light'],
+            ['n', 'Night', 'night livery']
+          ],
+          flags: [
+            ['j', 'Juvenile', '', {full: 'juvenile'}],
+            ['c', 'Camouflage', 'camouflage'],
+            ['w', 'Watermark', 'watermark']
+          ]
+        }),
         // To do › All lists the reports, flags and errors with its photo work (todo), never the corals' photo sections;
         // Points, the fish points of points.json.
         todo: ['photos'],
@@ -4763,29 +4860,29 @@ const CORE_ = (function () { const module = {exports: {}};
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
         target: 12,
-        // tags: its rubric's rows where they differ from the fish's (judging/SEASLUG.md "Tags"; admin-fish.js FROWS), by
-        // the code's position: [value, name, words], words how a photo's tags say it ('' for a value that makes no photo
-        // harder: its good views); flags, the ones Pierre may set (the fish's j c w, and f, features hidden).
-        tags: {
+        // tags: its rubric (judging/SEASLUG.md "Tags"), as treeRubric lays it out: its six views (the dorsal, lateral and
+        // oblique are the good ones: said by the judged line only), its light without night livery, and the flags Pierre
+        // may set (the fish's j c w, and f, features hidden).
+        tags: treeRubric('sea slug', 'sea slugs', {
           0: [
-            ['d', 'Dorsal', ''],
-            ['p', 'Lateral', ''],
-            ['o', 'Oblique', ''],
+            ['d', 'Dorsal', '', {full: 'dorsal'}],
+            ['p', 'Lateral', '', {full: 'lateral'}],
+            ['o', 'Oblique', '', {full: 'oblique'}],
             ['h', 'Head-on', 'head-on'],
             ['t', 'Rear', 'from behind'],
             ['v', 'Ventral', 'ventral']
           ],
           2: [
-            ['g', 'Good light', ''],
+            ['g', 'Good light'],
             ['d', 'Dim', 'dim light']
           ],
           flags: [
-            ['j', 'Juvenile', 'juvenile'],
+            ['j', 'Juvenile', '', {full: 'juvenile'}],
             ['c', 'Camouflage', 'camouflage'],
             ['w', 'Watermark', 'watermark'],
             ['f', 'Features hidden', 'features hidden']
           ]
-        },
+        }),
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js): every genus against every genus, live from its answers, the genera in their family's

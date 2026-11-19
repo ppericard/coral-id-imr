@@ -23,7 +23,8 @@ seaslug`).
    repository; delete it after. `--only t28,t29` limits the sheets to some entries, `--todo` to the photos not judged
    yet (a new photo after a rebuild, a new entry).
 2. Open every sheet and judge every photo on it. Open a photo on its own (`<dir>/img/<f>.jpg`) whenever the sheet does
-   not settle a tag.
+   not settle a tag. In doubt, look at it full size: the 1,600 px R2 file, or the original if smaller (Pierre,
+   2026-11-19 20:57; [the tag-doubt pass](../docs/decisions/2026-11-19-fish-full-size-look.md)).
 3. Judge what the photo shows, not the species: the same species can be easy on one photo and hopeless on another.
    The species name is a hint for the juvenile tag only (a juvenile is told by its colours against the adult's), when
    no life stage was recorded (**the observer's prevails**, below).
@@ -48,7 +49,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `o` other species in view, no risk of taking one for the subject (below, "Other species: the split"); `k` other species in view, one of which could be taken for the subject (confusion possible); `x` the subject is not obvious (which fish?; divers or another animal fill the frame). `m` ("other kinds of fish too", before 2026-11-09) is read as not sorted yet, never typed again |
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
-| | `a` | **not a live fish seen in the water**: out of water (a fish on a net, in a hand, dead), a photo of a screen, a capture from a video player (its interface is not a `w`) |
+| | `a` | **not a live fish seen in the water**: out of water (a fish on a net, in a hand, dead), a photo of a screen or a print, an aquarium, a capture from a video player (its interface is not a `w`) |
 | | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
@@ -418,7 +419,7 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
 tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
 prior difficulty, the players' answers refine it), and other species with no risk of confusion (count `o`) as one
 fish; `dup`, an unclear subject (count `x`), other species one could take for the subject (count `k`: rule P3, as for the
-reference photos) or not a live fish seen in the water (flag `a`: out of the water, a screen, a video capture) → stays out; the legacy `m` (not sorted) stays out and waits. Pierre, 2026-11-06 15:16 and
+reference photos) or not a live fish seen in the water (flag `a`: out of the water, a screen or print, an aquarium, a video capture) → stays out; the legacy `m` (not sorted) stays out and waits. Pierre, 2026-11-06 15:16 and
 16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
 hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
 is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
