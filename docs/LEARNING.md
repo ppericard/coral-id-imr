@@ -173,7 +173,12 @@ e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the
 the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
 subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
 Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
-means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the
+means what the game scored, wherever it is replayed. **A smaller fault** (Q394 A, Pierre, 2026-11-17: a common name
+typed where a species' scientific name is asked, or its genus alone) is a miss whose steps are weighed down: the record
+says its kind (`z`: `cn`, `g`), `core.js` `PART` its size (half, a quarter: starting values, read on the real answers
+later), and `partOf` scales the miss's bar likelihood (a tempered one), its moving average and its two Elo steps (the
+unit and the level); its counts and recent results take a miss, so it is never a gain. The kind is logged, not the size,
+so a new size is one rules version and the whole log replays with it. What only the game knows (the exam, the cards, the
 hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
 `liveLog`).
 
@@ -347,8 +352,11 @@ while `OPEN.K` units met are shaky). Only units open now take a place: one close
 `model.js` `OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200}`.
 
 **Opening pace** (`model.js` `openRecent`, `openPace`): no new unit while one opened on a card in the last `OPEN.WIN`
-answers has not been asked yet, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15 answers at
-most, whatever `openChance` says. A unit opened on its card and not asked yet is asked as soon as it is ready.
+answers has not been asked since its card, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15
+answers at most, whatever `openChance` says. A unit opened on its card and not asked since is asked as soon as it is
+ready (`openDue`). "Asked since its card" (`askedOpen`: an answer at or after the card's time) is what every reader
+waiting for a card's question reads (the pace, readiness, the fish circle 2, the bonus offer, the all-met card): answers
+given before the card (a live game's, those before a card that reopens a unit) are evidence, never its question.
 
 ### A unit stuck shaky
 
@@ -420,7 +428,8 @@ it shows.
 Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
 drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
 and opens none (rule L4); wrong choices may name any unit, as the quiz's do. A live game asks the trainer's set; its
-answers on units not unlocked are skipped (rule L4 lets them count, opening nothing: not built yet).
+answers on units not unlocked count and open nothing (rule L4): the unit is marked closed (`model.js` `introLive`: the
+mark of One at a time with no time) until the path opens it on its card, with its answers.
 
 ### The first-launch question
 
@@ -459,8 +468,8 @@ some recall, and the first answers after it measure how much.
   `recallOf`). **Stability** S, in days: from `FSRS.S0` to `FSRS.S1`, log-linear in x = σ(ability − genus offset) (1
   once learned), times `FSRS.G` for each further day the unit was answered right (`s.dd`: spaced days count, not answers
   in one sitting; `model.js` `stability`). `model.js` `FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5}`.
-- **Rust**: the right answers the break is expected to have cost, summed over the units answered (`model.js`
-  `rustOf`, `rustNow`). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
+- **Rust**: the right answers the break is expected to have cost, summed over the units answered and not closed
+  (`model.js` `rustOf`, `rustNow`, `cbPlay`: a live game's units before their card start no comeback). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
   left rust.
 - **Its questions** (`model.js` `comebackOf`): units answered right, the surest half until one is right in this
   comeback, then the most rusted half; the player's usual choices; photos aimed at ability + ln R; no card, duel, exam
