@@ -572,6 +572,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
           dropPlans();
           SHOWNQ = null;
           question('quiz', nM, ch, '', {shown: [pM]});
+          // answer.js: a chosen wrong answer (the unit of the species resembled, or another), never any answer
           const bt = document.querySelector(`#view [data-c="${CSS.escape(c)}"]`);
           if (bt) bt.click();
           const l = document.querySelector('#after .fbline');
