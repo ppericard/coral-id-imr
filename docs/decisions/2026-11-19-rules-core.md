@@ -1,7 +1,8 @@
 # The rules core: AGENTS.md cut to what every task holds, the index to docs/rules/, S1 and L6 merged
 
 Date: 2026-11-19 (Manila). PR: #1217. Rules or docs touched: AGENTS.md, `docs/rules/` (README, every header, S1, L6,
-U7, D2, W1, W6, W7, W19, W22, W25, W27; W2, W5 and W20 retired), `docs/spec/photos.md`, `tests/docs.test.js`.
+D2, W1, W6, W7, W19, W22, W25, W27; W2, W5 and W20 retired), `docs/spec/photos.md`, `docs/DESIGN.md`,
+`tests/docs.test.js`.
 
 ## Context
 
@@ -28,10 +29,15 @@ review (#1206) asked whether each rule still earns its place and found what was 
   exception comme un choix facile à corriger, et l'écrit dans la PR avec sa raison. Une exception qui touche la
   progression des joueurs ou le format des données passe par Pierre.»): S1 takes this text; L6 keeps its corals part
   and points to S1.
-- **U7** (10:12, «ok»): the levels each subject teaches are set on its What I learn card, never as more ⚙ rows
-  (2026-11-18: «On ne peut pas continuer à empiler des settings dans le menu déroulant»).
-- **W20 retired** (10:12, «ok»): its text moves word for word to `docs/spec/photos.md` "No more candidates is no more
-  candidates"; a decision on where photos come from, not a rule on shipping.
+- **The levels on each subject's card: design guidance, not a rule.** At 10:12 he said «ok» to a new line in U7 (the
+  levels each subject teaches are set on its What I learn card, never as more ⚙ rows; 2026-11-18: «On ne peut pas
+  continuer à empiler des settings dans le menu déroulant»); at 14:42: «Ok. Mais à nouveau on fait une règle dure pour
+  un truc qui est juste du bon sens de design...». The line goes to `docs/DESIGN.md` (My progress), U7 stays as it was.
+- **W20 retired** (10:12, «ok»; 14:42, «Je sais même plus à quoi elle sert cette règle»): its text moves word for word
+  to `docs/spec/photos.md` "No more candidates is no more candidates"; a decision on where photos come from, not a rule
+  on shipping.
+- **No agent cap** (the rules audit's decision 1, 2026-11-18 evening; 14:42, «oui»): W27 keeps "no two open PRs on the
+  same sensitive file; two Codex rounds, then cut".
 - **Editing, the integrator's call**: W2 into W7, W5 into W19 (their IDs retired); "tu" into W1; `needs-pierre` into W6;
   the data-access and reports details beside D2; the questions' details beside W7; the threshold detail into W25; the
   Projects mode and the pre-rewrite clones item deleted (rules audit decision 3, 2026-11-18 evening); the agent cap

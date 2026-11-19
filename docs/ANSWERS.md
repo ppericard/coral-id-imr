@@ -1185,7 +1185,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   ID retires. Applied: `docs/spec/photos.md` "No more candidates is no more candidates" (#1217).
 - **10:12, U7's new line (#1206).** «ok»: the levels each subject teaches are set on its What I learn card, never as
   more ⚙ rows (his words of 2026-11-18: «On ne peut pas continuer à empiler des settings dans le menu déroulant»).
-  Applied: rules/ui.md U7 (#1217).
+  Applied: `docs/DESIGN.md` (My progress), as design guidance (#1217).
 - **10:12, the rules core (#1200 adjusted by #1206).** «ok»: about 153 lines; the order of work is the integrator's,
   integrators run in auto mode, no GitHub chores for Pierre, security alerts count like Codex findings; no product rule
   deleted or hardened; a trial before the core replaces AGENTS.md. Applied: AGENTS.md (#1217).

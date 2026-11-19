@@ -60,7 +60,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **U4** Exactly 3 size classes, mobile-first; touch by media, never width.
 - **U5** No third-party scripts; a new host goes into the CSP.
 - **U6** No range sliders (swipeable photo strips are fine); visual beats text.
-- **U7** Settings removed on purpose stay removed; a subject's levels are set on its What I learn card, never as more ⚙ rows.
+- **U7** Settings removed on purpose stay removed.
 - **U8** Never hardcode the number of units.
 - **U9** Sign-in never on My progress.
 - **U10** Greet by first name only (`firstName()`).
