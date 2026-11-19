@@ -650,6 +650,34 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 6. The Look-alikes deck and Compare (learn.js viewLookalikes, viewCompare, Q437) on the sea slugs' declared pairs, as the
+  // fish's run them: tests/lookalikes.check.js, at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s6')) return;
+        sessionStorage.setItem('s6', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./lookalikes.check.js')(p, w, fails, 'sea slugs');
+    }
+    check(!errs.length, '6: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   await b.close();
   server.close();
   if (fails.length) {

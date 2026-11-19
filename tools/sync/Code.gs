@@ -4333,7 +4333,6 @@ const CORE_ = (function () { const module = {exports: {}};
   // opens them is docs/reviews/2026-11-19-modes-every-subject.md. Memory pairs a colony with its corallites, two views of
   // one unit, and these subjects have one view (SUBJECTS views).
   const CLOSED_TREE = {
-    cmp: 'Not opened yet: the Look-alikes deck and Compare read the coral views and sources (ROADMAP "Every game mode for every subject")',
     'quiz-custom':
       'Not opened yet: the selection is saved under the coral key and grouped by the IMR lecture (ROADMAP "Every game mode for every subject")',
     pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
@@ -4596,7 +4595,7 @@ const CORE_ = (function () { const module = {exports: {}};
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-duel'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -4806,7 +4805,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'quiz', 'quiz-duel'],
+      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-duel'],
       closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
@@ -6339,6 +6338,12 @@ const CORE_ = (function () { const module = {exports: {}};
     const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur,
       c = P && P.content;
     return isObj(c) ? c : {};
+  };
+  // The admin's look-alike picks of subject S ({"a|b": {v, a, b, hide}}, curation.json mont: at the top for the corals,
+  // under the subject's own key for the others: SUBJECTS admin.cur), {} with none: the Look-alikes deck reads them.
+  const montOf = (cur, S) => {
+    const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur;
+    return (isObj(P) && isObj(P.mont) && P.mont) || {};
   };
   // A rank's records by id ({id: {rec, i, at}}: i its place in the list, or its key in a map; at the path of the list or
   // map), from its declaration D. D.at is a path (a.b: a field inside one) or a list of them, read in order: an id met
@@ -11626,6 +11631,7 @@ const CORE_ = (function () { const module = {exports: {}};
     renamedId,
     sheetIdOf,
     contentOf,
+    montOf,
     contentNodes,
     contentSlot,
     contentVal,

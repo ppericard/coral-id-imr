@@ -58,6 +58,15 @@ const subjHas = (S, k) => {
   const t = sectionOf(k),
     m = k.startsWith('g-') ? 'sheet' : modeOf(k);
   if (m === 'sheet') return S.pages.includes(m) && sheetIdOf(S, k.slice(2)) != null;
+  // A comparison is S's only when both its units are S's (a coral pair with Fish chosen is the corals': like a sheet).
+  if (k.startsWith('cmp-'))
+    return (
+      S.pages.includes(m) &&
+      k
+        .slice(4)
+        .split('|')
+        .every(n => sheetIdOf(S, n) != null)
+    );
   return t === 'identify' ? UNITS[S.id].identify === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
 };
 const hr = (k, S = SUBJ) => {
@@ -1462,7 +1471,8 @@ document.addEventListener('keydown', e => {
   document.getElementById('subjb').focus();
 });
 // A Learn or Practice page the subject lacks (SUBJECTS pages) opens its section's first page for it; Identify opens the
-// subject's own tool (UNITS identify); the Tools are the corals' whatever the subject.
+// subject's own tool (UNITS identify); the Tools are the corals' whatever the subject. A comparison of another subject's
+// units is a page the subject lacks, as a sheet of another subject's unit is.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
@@ -1470,7 +1480,7 @@ const subjPage = h => {
   if (m === 'sheet' && subjHas(SUBJ, h)) return h;
   if (
     (tab !== 'learn' && tab !== 'practice') ||
-    (m !== 'sheet' && SUBJ.pages.includes(m)) ||
+    (m !== 'sheet' && SUBJ.pages.includes(m) && !(h.startsWith('cmp-') && !subjHas(SUBJ, h))) ||
     !(m === 'sheet' || MODES[tab].some(x => x[0] === m))
   )
     return h;
@@ -2189,6 +2199,13 @@ const TREE_UNITS = {
   sheet: id => viewFishSheet(id),
   bar: id => treeBar(id)
 };
+// What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared
+// pairs are the ones a source names (UNITS pairs: each carries its source line, lsrc), a unit's tips are its own marks or
+// cues under their own label (tipsLabel; a unit with none shows no tips: its summary there is its species, not a clue), and
+// its line is the one its record gives (fam); no criteria box.
+const treeDeck = () => UNITS[SUBJ.id].pairs(),
+  treeInGame = n => !!(TREEU && TREEU.gen[n]),
+  treeCmp = {clues: g => !!g.qt, tag: () => '', line: g => esc(g.fam || ''), more: () => ''};
 const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
@@ -2252,6 +2269,23 @@ const UNITS = {
             .map(a => [a, b])
         )
     ],
+    // The Look-alikes deck (learn.js classics): the pairs a source compares in so many words, the IMR lecture or the book's
+    // text (model.js isClassic); the others stay on the genus sheets and in duels. inGame: a unit Compare may show.
+    // cmp: what the deck and Compare say of a unit: clues (whether its tips are clues: a genus's summary is), tag (after
+    // its name), line (under it), more (behind a fold, only where the unit has it: the Coral ID Key criteria), and src, the
+    // sources the deck names in its ? text.
+    deck: () => pairs().filter(([a, b]) => isClassic(a, b)),
+    inGame: n => gameGenus(n),
+    cmp: {
+      src: 'the IMR lecture or the Coral Finder book',
+      clues: () => true,
+      tag: (n, g) => (isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'),
+      line: g => `${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}`,
+      more: g =>
+        (g.crit || []).length
+          ? `<details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details>`
+          : ''
+    },
     winks: () => [],
     // The tile photos of unit n (Find the X, quiz.js planPhoto): none, so the corals never play it (coral photos do not
     // read as small thumbnails).
@@ -2427,6 +2461,10 @@ const UNITS = {
       Object.values(TREEU ? TREEU.gen : {})
         .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
         .flatMap(g => g.look.filter(o => TREEU.gen[o] && (g.id < o || !TREEU.gen[o].look.includes(g.id))).map(o => [g.id, o])),
+    // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
+    deck: treeDeck,
+    inGame: treeInGame,
+    cmp: {...treeCmp, src: 'the IMR fish presentation'},
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (docs/ARCHITECTURE.md "Subjects").
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
     // The tile photos of unit n (Find the X, quiz.js planPhoto): its game photos that have
@@ -2585,6 +2623,10 @@ const UNITS = {
         .flatMap(g =>
           (g.decl || []).filter(o => TREEU.gen[o] && (g.id < o || !(TREEU.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
         ),
+    // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
+    deck: treeDeck,
+    inGame: treeInGame,
+    cmp: {...treeCmp, src: 'a specialist source (the Sea Slug Forum, Nudi Pixel, the papers)'},
     winks: () => [],
     tiles: () => [],
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?
@@ -3011,8 +3053,8 @@ function ctxBar(h) {
       <span class="pn"><a href="${esc(hr('g-' + prev))}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="${esc(hr('g-' + next))}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && GX(a) && GX(b) && gameGenus(a) && gameGenus(b))
-    return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="${esc(hr('cmp'))}">Look-alikes</a>`;
+  if (a && GX(a) && GX(b) && UNITS[SUBJ.id].inGame(a) && UNITS[SUBJ.id].inGame(b))
+    return `${back}<h2 class="ctx-t ctx-pair"><span>${uname(a)} or ${uname(b)}?</span></h2><a class="ctx-l" href="${esc(hr('cmp'))}">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h) {

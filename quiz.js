@@ -1045,7 +1045,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
   // pair comes back as a duel" is counted when More is opened (fbMoreBind), so a sheet nobody opens keeps its three tellings.
   const vs = C
     ? // The answer's own tips, said as such ("Why not X:" read as the reasons the photo is not X).
-      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt ? (C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : '') : esrcTag(C, 'sum')}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${again && againLeft() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt ? (C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : '') : esrcTag(C, 'sum')}${SUBJ.pages.includes('cmp') && UNITS[SUBJ.id].inGame(target) && UNITS[SUBJ.id].inGame(c) ? ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>` : ''}</p>${again && againLeft() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling. A unit's
   // English name given as information (app.js vernFirst, UNITS vern: the sea slugs') follows its
@@ -1133,6 +1133,19 @@ function mimMarks(m, t) {
 // typed), only one that says something of the unit shown; else its first ID tip, "X: …" with its source; else none.
 // Never a line made by comparing trait tags (rule C2). A miss that mixed up the two species of a mimicry pair (mim, its
 // entry: model.js mimMix) gives that pair's marks instead (mimMarks), when it has some.
+// The source a unit's tips carry (rule C2): their label's own words ("ID tips (IMR)" gives IMR, "ID marks (Sea Slug Forum)" the
+// forum) and, with an edit of them, the content editor's source; '' for a unit with no tips.
+const tipsBy = g =>
+  g.qt && g.qt.length
+    ? [
+        String(tipsLabel(g))
+          .replace(/^ID (tips|marks)\s*/, '')
+          .replace(/^\((.*)\)$/, '$1'),
+        (g.qsrc || {}).t
+      ]
+        .filter(Boolean)
+        .join('; ')
+    : '';
 function fbLine(target, c, good, chs = [], mim = null) {
   const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
   const M = !good && mim ? mimMarks(mim, target) : null;
@@ -1149,10 +1162,7 @@ function fbLine(target, c, good, chs = [], mim = null) {
   if (P) return say(esc(P.t), P.s);
   const g = GX(target);
   if (!g.qt || !g.qt.length) return '';
-  const lab = String(tipsLabel(g))
-    .replace(/^ID (tips|marks)\s*/, '')
-    .replace(/^\((.*)\)$/, '$1');
-  return say(`${uname(target)}: ${glossAll([g.qt[0]])[0]}`, [lab, (g.qsrc || {}).t].filter(Boolean).join('; '));
+  return say(`${uname(target)}: ${glossAll([g.qt[0]])[0]}`, tipsBy(g));
 }
 // The feedback sheet's own tally (core.js PAGES.FB, sync.js fbTally): the answers
 // whose sheet was shown, those where More was opened, the seconds it stayed on screen and the taps on a link inside it, four
