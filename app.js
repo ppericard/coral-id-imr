@@ -2193,8 +2193,30 @@ const TREE_UNITS = {
   sheet: id => viewFishSheet(id),
   bar: id => treeBar(id)
 };
+// The units of L (a list) by their parent of rank rk (a genus's family: UNITS listBy), as [[parent or '', its units in L's
+// order]] in the subject's tree order, the units with no such parent last. The Genera page (learn.js byRank) and the
+// custom quiz (quiz.js cqByFamily) group the same way.
+const unitsByParent = (L, rk) => {
+  const up = n => {
+      const p = GX(n).parent;
+      return p && GX(p) && (rankOf(p) || unitRankOf(SUBJ)) === rk ? p : '';
+    },
+    at = Object.keys(TREEU.gen),
+    by = new Map();
+  L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
+  return [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity));
+};
 const UNITS = {
   coral: {
+    // The custom quiz's groups (quiz.js viewCustom; the other two views are the same for every subject): by, the first
+    // view's name; about, what it shows; src, where the look-alikes of the My mix-ups view's first look come from; groups,
+    // the groups of the units in play, [{k, t: title (HTML), sub, mark (HTML), L}] (quiz.js cqByIMR, cqByKey, cqByFamily).
+    cq: {
+      by: 'IMR groups',
+      about: 'the IMR lecture’s groups (the genera to tell apart)',
+      src: 'the IMR lecture and the Coral Finder book',
+      groups: play => cqByIMR(play)
+    },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
@@ -2440,6 +2462,13 @@ const UNITS = {
       ];
     },
     namesKey: () => sciNow().length,
+    // The custom quiz's groups (as the corals' cq): the identification groups of the regional key.
+    cq: {
+      by: 'ID groups',
+      about: 'the identification groups of the regional fish ID key (the families to tell apart)',
+      src: 'the IMR fish presentation',
+      groups: play => cqByKey(play)
+    },
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
       Object.values(TREEU ? TREEU.gen : {})
@@ -2468,7 +2497,7 @@ const UNITS = {
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
         ? duelLede('the look-alikes the IMR fish presentation names')
-        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>`
+        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
     }
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
@@ -2600,6 +2629,13 @@ const UNITS = {
     // so (treeTypeOther), never right, as a fish genus's common name never is (treeGenera names).
     vern: id => treeVern(id),
     names: () => treeTypeNames(TREEU ? TREEU.gen : {}, SUBJ.typeDrop, []),
+    // The custom quiz's groups (as the corals' cq): the genera by their families.
+    cq: {
+      by: 'Families',
+      about: 'the genera by their families (the genera of one family are the ones to tell apart)',
+      src: 'a specialist source',
+      groups: play => cqByFamily(play)
+    },
     // The look-alike pairs a specialist source names (seaslug.json genus look: the Sea Slug Forum, Nudi Pixel, the papers;
     // decl), each pair once: the duels. A genus's other sibling genera stay its traps (app.js
     // treeGenera look); the pairs only iNaturalist shows are data look-alikes (model.js dataSeed, dataLooks).
@@ -2643,7 +2679,7 @@ const UNITS = {
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
         ? duelLede('the look-alikes a specialist source names')
-        : `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>`
+        : `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>${customPlayLede(cur)}`
     }
   <p class="lede">A genus fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the genus’s scientific name. <b>Photos</b>: from iNaturalist, the easiest first, whoever took them.</p>`,
     // No opt-in set: its genera are its units from the start (core.js SUBJECTS unitRank).

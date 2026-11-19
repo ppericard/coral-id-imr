@@ -65,7 +65,8 @@ answers that are scored exactly like those of the same page for the corals.
    - Tests: `tests/subjects.test.js` (every mode open or closed with its reason, a pair's address round-trips with
      tree ids, a Duel-tab answer is a two-choice contrast for any ids).
    - Feature, S: comparable to #1095, #1161, #1171, #1222, #1242: median 1.8 h (range 64 min-3.9 h).
-2. **The custom quiz for every subject.**
+2. **The custom quiz for every subject** (done, #1277: the first view's groups are one `UNITS` member, `cq`; the fish's
+   groups are the ID key's, a species in its family's; the sea slugs' are their families).
    - The key per subject: `subjKey(SUBJ.id, 'custom')`, which is the corals' `reefid-sync-coral-custom` already, so
      the corals' saved selections stay. `sync.js` merges the latest selection and clears it at sign-out for each subject
      (`mergeSubject`, rule D7).

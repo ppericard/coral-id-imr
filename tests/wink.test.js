@@ -122,7 +122,7 @@ test("an account merge keeps both accounts' surprises met; sign-out clears the k
   assert.strictEqual(key in C.mergeUsers({}, {}), false, 'no key when neither has one');
   const sync = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
     so = cut(sync, 'function signOutClear(', '\n}\n', {file: 'sync.js'});
-  assert.match(so, /'start', 'wink'\]\.map\(k => subjKey\(S\.id, k\)\)/, 'signOutClear removes reefid-sync-<subject>-wink');
+  assert.match(so, /'start', 'wink', 'custom'\]\.map\(k => subjKey\(S\.id, k\)\)/, 'signOutClear removes reefid-sync-<subject>-wink');
 });
 
 // The wink's photo: a surprise card never shows a bad photo, only one of its 2-3 most beautiful.

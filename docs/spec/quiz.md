@@ -159,22 +159,34 @@ definition and its source, then a link into Coral basics ([basics.md](basics.md#
 The Quiz on the units the player picks (`model.js` `CUSTOM`, `customOf`, `customDraw`, `customChoices`; `quiz.js`
 `quizCustom`, `viewCustom`, `CUSTOM_H`, `photoQuiz`, `modeBase`, `cbIn`; LEARNING.md "Custom quiz").
 
+**Every subject has it** (Pierre, 2026-11-19, Q437): `SUBJECTS` `pages` `quiz-custom` for the corals, the fish and the sea
+slugs, one engine. Its words are the subject's (`SUBJ.one`, `SUBJ.many`), the names `uname` / `unameT` (a tile's
+label, the search, the quick picks' menu and the count read them; the search also reads a unit's English names, `vernOf`),
+and what differs is declared in one place, `app.js` `UNITS` `cq` `{by, about, src, groups}`: the first view's name and
+what it shows, where the first look-alikes of My mix-ups come from, and its groups (`quiz.js` `cqByIMR`, `cqByKey`,
+`cqByFamily`): the corals' IMR lecture groups, the fish's ID-key groups (`TREEU.groups`; a species or a scientific genus
+in its family's group), the sea slugs' families (`unitsByParent`, as the Genera page groups them). The ? text adds
+`customPlayLede` to each subject's help.
+
 **The selection screen** (`#practice/custom`): every unit in play (the slate, and the bonus genera when on: `pool()`) as
-a small photo with its name, in three views (a switch, `reefid-custom-view2`, this device; the older key
-`reefid-custom-view` is dropped once): IMR groups by default (the lecture's groups, in IMR order, All / None per group),
+a small photo with its name, in three views (a switch, `reefid-custom-view2`, this device, kept across subjects; the older key
+`reefid-custom-view` is dropped once): the subject's groups by default (the corals': the lecture's groups, in IMR order,
+All / None per group),
 My mix-ups (the player's own confusions in clusters, most confused first, with their counts: `model.js` `mixEdges`,
 `mixClusters`; the declared look-alikes, `lookEdges`, before any mix-up, with a line saying so) and Progress (To
 review, Learning, Not seen yet, Learned); never A–Z or by growth form. A search box, quick picks that replace the
 selection (My weakest, Recently missed, Look-alikes of …), Clear all, the count with the units picked named under it,
-and Start (at least `CUSTOM.MIN` = 2). The selection is saved at each change in `reefid-sync-coral-custom` = `{g, t}` (a
-`reefid-sync` key: it travels with the progress, `sync.js` `mergeSaved` takes another device's when newer, sign-out
-clears it) and preselected next time.
+and Start (at least `CUSTOM.MIN` = 2). The selection is saved at each change in `reefid-sync-<subject>-custom` = `{g, t}`
+(`CUSTOM.KEY`, `subjKey(id, 'custom')`: the corals' `reefid-sync-coral-custom` it always was, so their saved selections
+stay; a `reefid-sync` key: it travels with the progress, `sync.js` `mergeSavedIn` takes each subject's from another device
+when newer, `signOutClear` clears every subject's) and preselected next time. A sheet script older than the app needs
+nothing: it stores every `reefid-sync` key as sent (rule D4).
 
 **The quiz** (`#practice/custom/play`; without a valid selection it goes back to the selection screen): `quizPhoto(cur)`
 / `planPhoto(cur)` with the selection, the same question screen. `planPhoto('quiz-custom|play')` draws the unit among
 the selection with the usual `weight()` and no opening path (no first cards, no opening chance, `openChance`, no hold,
 no visit floor; a unit not met yet is asked with its card, `introShow(L, true, 'c', false)`: ready at once, no Open all
-box), and the wrong choices from the selection first (`distractors` on it), topped up from the other units in play only
+box), and the wrong choices from the selection first (`distractors` on it, `wide` off: a ranked unit's rank-wide fallback is the photo quiz's), topped up from the other units in play only
 under 4; the unit a photo of the mimicry class resembles is its trap only when selected ([model.md](model.md)). Again
 (its selected unit), duels slipped in (pairs of the selection), typed questions, calibration and the comeback (only
 with 2 or more selected units answered right, else left to the photo quiz: `cbIn`) work as in the photo quiz; the offers
