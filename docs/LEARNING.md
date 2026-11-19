@@ -1228,7 +1228,7 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   split into several checks, or Pierre decides otherwise (a constant, `MAX_MIN`).
 - **A budget is per run; a paired check is two runs.** Before and after each get their own 40 minutes: on this machine
   an agent running both arms for one check gives each `--budget 20` so that the check's total stays within the cap. The
-  workflow does not yet (ROADMAP "learncheck.yml under the 40-minute cap").
+  workflow does it itself: one deadline for the whole check ("On a GitHub runner").
 
 **Progressive, with valid statistics.** A large expected effect needs no high sensitivity: a check starts with the
 level's fewest seeds and adds seeds only when a result lands near a margin (unclear), by the rule declared before
@@ -1268,7 +1268,7 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 - Not in the rated world: the Again after a miss, the duels slipped into the quiz, the comeback and breaks, the
   surprise cards.
 - `tools/learncmp.js` has the primary's sign-flip test, the guardrails' paired bounds and Holm over the profiles; the
-  level 3 tests (Dunnett, TOST) are not in it. It reads a file cut by the budget and says so ("The cap" above).
+  level 3 tests (Dunnett, TOST) are not in it. It reads a file cut by the budget and says so ("The cap" above); for an arm cut before any run finished (no run, only `cut`: the file the tool writes, or the workflow's stub) it reads no primary, whatever its kind (population ones included), and says it was not read.
 
 **The two worlds.**
 
@@ -1449,16 +1449,26 @@ right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the one
 
 **On a GitHub runner** (the checks too long for the shared machine, level 3 among them, which also needs Pierre's go):
 Actions › "Learning check (tier 2)" › Run workflow (`.github/workflows/learncheck.yml`, manual dispatch only; the job's
-limit is 6 hours). **The workflow does not yet carry the cap or the go** (ROADMAP "learncheck.yml under the 40-minute
-cap"): it passes no `--budget` and checks no go, so each learnsim run keeps the tool's own 40-minute budget (a paired check
-is two to four runs), and `--pierre-go` can only come through `args`, to each arm alike; until it is aligned, start a
-level-3 check only with Pierre's go. With the version with the change (`after`: its branch), the one to compare it with (`before`, `main`
-by default), the subject, the world (`both`, `app` or `rated`), the seeds, the questions (app world) and
-answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only) and the world it is read in when both run
-(`primary_world`; the other world reports its guardrails), the looks and
-any other learnsim option (`--profiles beginner,expert --dist tail`; `--budget MIN` can go here). It runs learnsim on both versions with the same
-seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its report in the run's summary;
-it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
+limit is 90 minutes: the setup, the 40 of compute, the report). **The workflow carries the cap and the go itself**, not
+left to the compared checkouts (rule L11; Pierre, Q405 and Q415): a check is 40 minutes of compute **in total**, however
+many runs (two arms, one or both worlds: two or four runs). One deadline is set before the first run; each run gets
+the equal share of it (10 minutes a run with both worlds, 20 with one) or the `budget` input (minutes per run, `runs x
+budget` at most 40, refused otherwise), less where the deadline is nearer; learnsim's `--budget` stops a minute before
+the hard limit, and `timeout` ends the run at that limit whatever its checkout does (an older `before` ignores
+`--budget`), never past the deadline. A run that leaves no file (killed, or cut before its first job) gets a stub marked
+cut with no runs, which `tools/learncmp.js` reads: it compares what exists and says the primary was not read, never
+reading the cut as no effect. A run that overruns takes the next one's time, never the cap. Under 2 minutes left, the
+run is not started. A check that does not fit (the defaults, fish in both worlds, are an hour) is split, one world at a
+time, or narrowed, never lowered below the figures above. **Level 3** (over 20 seeds, or over 10,000 answers when the
+rated world runs) needs `pierre_go`, the reference of Pierre's go (a Q number or message, and the date): the first step
+refuses without it, before either checkout is read, and `args` cannot carry `--seeds`, `--questions`, `--budget`,
+`--per-job`, `--pierre-go`, `--world`, `--subject` or `--out`. With the version with the change (`after`: its branch),
+the one to compare it with (`before`, `main` by default), the subject, the world (`both`, `app` or `rated`), the seeds,
+the questions (app world) and answers (rated world), the primary declared before running (`hard@300:down`, empty for
+guardrails only) and the world it is read in when both run (`primary_world`; the other world reports its guardrails),
+the looks, the budget, the go and any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim
+on both versions with the same seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its
+report in the run's summary; it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
 -f primary=hard@300:down`. Inputs are checked against narrow patterns before any command reads them.
 
 **Figures.** The anchor's figures and the speeds measured, **The score's shape** (the fish global score in the rated

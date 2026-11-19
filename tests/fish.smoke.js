@@ -731,6 +731,41 @@ async function customQuiz(b, base, errs) {
   }
   return fails;
 }
+// (18) The Look-alikes deck and Compare on the fish (learn.js viewLookalikes, viewCompare; Q437): the IMR presentation's declared
+// family pairs, each with its source, one photo a side, one screen; tests/lookalikes.check.js, at 390 and 1280 px.
+async function lookAlikes(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-la')) {
+        sessionStorage.setItem('fish-la', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`look-alikes: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./lookalikes.check.js')(q, w, fails, 'fish');
+  }
+  await c.close();
+  return fails.map(m => `look-alikes: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3679,6 +3714,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const lg = run.has('main') ? await labGames(b, base, errs) : [];
   // (17) The custom quiz: customQuiz, above.
   const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
+  // (18) The Look-alikes deck and Compare: lookAlikes, above.
+  const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -4022,6 +4059,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...mx,
     ...lg,
     ...cqz,
+    ...la,
     ...cold,
     ...grp,
     ...all,

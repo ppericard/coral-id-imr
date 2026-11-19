@@ -370,7 +370,16 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
             return {cp, ...p, p: signFlip(d).p};
           });
       });
-  let prim = null;
+  let prim = null,
+    primarySkipped = null;
+  // An arm cut by the budget before any run finished (`cut`, no runs, no seeds: the file learnsim writes, or the
+  // workflow's stub for a run killed at its limit) leaves no pair for any primary, population ones included: the
+  // primary is not read, and the report says why. An arm with no `cut` mark and no shared seed still throws below.
+  const emptyCut = [['before', B], ['after', A]].filter(([, F]) => F.cut && !(F.runs || []).length && !(F.pop || []).length).map(([side]) => side);
+  if (primary && emptyCut.length) {
+    primarySkipped = {m: primary.at[0], cp: primary.at[1], dir: primary.dir, sides: emptyCut};
+    primary = null;
+  }
   if (primary && MEASURES[primary.at[0]].kind === 'pop') {
     const [m, cp] = primary.at,
       dir = primary.dir === 'up' ? 1 : -1,
@@ -447,7 +456,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
   );
   // A file stopped by the 40-minute budget (tools/checkbudget.js, rule L11): its `cut`, kept to say so in the report.
   const cut = [['before', B.cut], ['after', A.cut]].filter(([, c]) => c).map(([side, c]) => ({side, ...c}));
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks, watch, cut};
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, primarySkipped, pops, seeds, breaks, watch, cut};
 }
 
 // The report, Markdown ready for a PR.
@@ -463,6 +472,12 @@ function report(R, nameB = 'before', nameA = 'after') {
       `**CUT (${c.side}): the run stopped at its ${c.budgetMin}-minute budget with ${c.done} of ${c.planned} runs.** Only the ${R.pairs} complete pairs are compared: a clear result stands, but a result short of the level's seeds is "the measure cannot tell", never read as no effect (rule L11).`
     )
   );
+  if (R.primarySkipped) {
+    const S = R.primarySkipped;
+    L.push(
+      `**Primary ${key(S.m, S.cp)}, ${S.dir}, not read: the ${S.sides.join(' and ')} arm was cut before any run finished, so no pair exists.** The measure cannot tell (rule L11): never read as no effect.`
+    );
+  }
   if (R.differ.length) L.push(`Settings that differ: ${R.differ.join('; ')}`);
   if (R.only.length) L.push(`Runs in one file only, left out: ${R.only.join(', ')}`);
   if (R.primary && R.primary.pop) {
