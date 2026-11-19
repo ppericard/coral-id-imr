@@ -323,7 +323,10 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   it put in stays a proposal: in play, its copy as it was. Tags read anew bring the judge's crop when the photo has
   none (the crop goes with the code); his phase choice (No phase included) stops the source's juvenile flag; a photo he
   moved with Not this is his, skipped whole; an Undo of `b` on such a photo leaves it where he put it. A value with no log is his, or cannot be told from his,
-  and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next").
+  and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next"), but for whether
+  a photo is a juvenile (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy
+  (`autosort.js` `fishJuv`), as the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his
+  confirmation in both.
 
 ## The Fish Candidates page
 

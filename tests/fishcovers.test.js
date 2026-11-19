@@ -1029,3 +1029,18 @@ test('real data: the default covers are of the most seen species with a referenc
   });
   assert.ok(n > 50, `${n} units checked`);
 });
+
+// Tags the auto-sort copied are no choice of the admin's (Pierre, 2026-11-19 20:57): the game record's phase, which the
+// build reads from the newer judgement (tools/fish_game.py read_cur), says whether a photo is a juvenile, as the app's
+// juvP reads it; his own tags or phase stand. So his ★ cover on a photo the newer judgement calls a juvenile waits for
+// his confirmation, in the admin as in the app (the f:Boxfishes cover after #1259).
+test('fishJuv: the auto-sort copy of tags reads the game record, his own tags stand', () => {
+  const rec = {f: 'fx', sp: 's1', jt: 'o1g0sl1j', ph: 'juvenile'},
+    adult = {f: 'fx', sp: 's1', jt: 'p1g1sm1'},
+    auto = {tags: {fx: 'p1g1sm1'}, ease: {fx: 4}, add: {fx: 's1'}, auto: {'2026-11-04': {fx: 'ate'}}},
+    his = {...auto, auto: {'2026-11-04': {fx: 'ae'}}};
+  assert.strictEqual(A.fishJuv(rec, null, auto), true, 'the copy is read anew: a juvenile');
+  assert.strictEqual(A.fishJuv(adult, null, {...auto, tags: {fx: 'p1g1sm1j'}}), false, 'the record says adult');
+  assert.strictEqual(A.fishJuv(rec, null, his), false, 'his own tags stand');
+  assert.strictEqual(A.fishJuv(rec, null, {tags: {fx: 'p1g1sm1'}}), false, 'no log: his');
+});
