@@ -221,7 +221,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed', 'seenAdd'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -345,6 +345,8 @@ function question(M, ctx, G, t, {list, cards = [], start = false}) {
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : k < 4 ? (k >= 3 ? 'k3' : 'k2') : 'k4',
     cov = cards.includes(t) ? G[t].cover : null,
     set = ex || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
+  // Shown: its photos join the session's window (quiz.js question, model.js SEENQ); one question at a time here, no queue.
+  M.seenAdd([null, t, ch, '', set]);
   return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set};
 }
 // quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back.

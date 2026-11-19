@@ -256,6 +256,9 @@ The photos of a question on unit n come from `model.js` `photoSet`:
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
+- **No photo twice in a few questions.** A colony shown or planned in the session's last `RECENT` (10) questions waits
+  while the unit has another to show (`model.js` `SEENQ`, `seenAdd`, `leastRecent`, read by `photoSet` and `examSet`;
+  never leaving only colonies the draw holds back). In memory only. How and why: docs/decisions/2026-11-19-no-photo-twice.md.
 - **Online calibration.** A photo with few answers from all the players is drawn more often, × (1 + `CAL.B` /
   (1 + answers / `CAL.N`)) (`model.js` `calBonus`), multiplying the targeting, never replacing it. A share `CAL.RATE` of
   the questions on a unit the player holds (met, not shaky), never in a comeback, are calibration questions: one view
@@ -945,9 +948,10 @@ below (the corals and the fish) are in the notebook.
 
 ### Confusions
 
-`conf` holds per pair of units (A before B alphabetically) [offered together, mixed up], counted on the trusted answers
-that logged their choices: each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
-answer given (`core.js` `confusionOf` counts the same, and also by direction for the admin). The app turns them into
+`conf` holds per pair of units (A before B) [offered together, mixed up], counted on the trusted answers (`core.js`
+`confAdd`): each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the answer given; a
+typed answer naming another unit is one offer and one mix-up. `core.js` `confusionOf` counts the same, and by
+direction (choices only) for the admin. The app turns them into
 confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js` `pooledConf`,
 `core.js` `confScore`: "What a question shows", "Known mix-ups").
 
@@ -1021,13 +1025,8 @@ draw of `main`) against the set, on the same seeds):
   never shown), before and after.
 
 **What the check found.**
-- **The run as declared measured nothing**: `--truth gen` tells the app that every photo has 20 answers (learnsim's
-  `PSTAT` of that world), so no member is under its goal and the factor is 1 everywhere; both files were identical. The
-  same check without `--truth gen` (the learner reads the app's own photo difficulty, learnsim's default; the sheet's
-  real counts) is the one below.
-- **Two earlier variants, dropped**: ×2 on every unit (share 4.17% → 5.94%, but the beginner met 2.4 fewer genera at
-  300 and reached its first Open Water 44 answers later) and held units only (share 5.21%, the beginner's true
-  knowledge at 300 down 0.023 on seeds 6-20). Both breached a guardrail; the built version is below.
+- **The run as declared** (`--truth gen`) and **two earlier variants** are in the notebook: "The calibration set: the
+  declared run and the dropped variants". The built version is below.
 - **Built version, the four profiles × 5 seeds** (seeds 1-5, 600 questions): members' share 4.17% → 5.35% (19 of 20
   up; beginner +1.5 points, strong RA +1.4, lecture RA +1.1, expert +0.7); questions showing each member, pooled over
   the 20 runs: minimum 1 → 3, quartiles 7 / 9 / 12 → 8 / 11 / 17, total 500 → 642, none never shown either way. Colony
@@ -1539,7 +1538,7 @@ exam are the app's own. Only the planner is written there, as `quiz.js` `planPho
 the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
 `distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
 every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
-`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+`confTerm`), the last two observations held back (`s.ro`), the session's window (`seenAdd`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
 photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
@@ -1658,7 +1657,7 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 (the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
 photo exposure. The measures learncmp reads (`--list` prints them; any may be the primary): the ones above (`know`,
 `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`, `unitsOW`, `unitsAdv`, `plateau`, `c3`, `hardAns`,
-`perPhoto`, `right`, `prog`, `thErr`), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
+`perPhoto`, `right`, `prog`, `thErr`), `near` (repeats within 9 questions), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
 `spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), the phase
 photos' shares (`phEarly`, `phLate`, `phEasy`, `phOther`, `phAns`), the measures after a break (`learnsim --breaks`:
 `cbLen`, `cbLong`, `cbRight`, `afterRight`, `held`, `holdAfter`, `open15`, read per break and per profile with their

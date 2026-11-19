@@ -1,4 +1,5 @@
-<!-- AGENTS.md "Working mode": the integrator merges only when "Choices I made" is empty and every check is green. -->
+<!-- AGENTS.md "Working mode": the integrator merges only when "Choices I made" is None and every check is green;
+tools/train.py checks the two sections below "Choices I made" and "Players see". -->
 
 ## What and why
 
@@ -14,7 +15,13 @@ None
 
 ## Players see or play differently?
 
-<!-- No / Yes: what changes for players (Pierre is told in one line after the merge). -->
+<!-- "No", or "Yes:" then one item per change players will see, each in one sentence with its source (AGENTS.md "What
+players will see comes from Pierre"; tools/train.py refuses an item without one):
+- Pierre's words, quoted verbatim and dated: "(Pierre, 2026-11-18: «Je pensais qu'on gardait des photos pour la fin»)";
+  a paraphrase is not a source; or
+- "integrator's call, easy to correct" (a layout, a wording, a default: AGENTS.md "Easy to correct afterwards").
+If none of his decisions says it and it is not easy to correct, ask him one question before building it.
+Pierre is told in one line after the merge. -->
 
 ## Tests
 

@@ -6,6 +6,9 @@ subject, with only small per-subject parameters. Rule S1 already says "One engin
 how to make each difference shared code or a stated `SUBJECTS` parameter, an order of small PRs, and a rule wording
 for Pierre.
 
+**Status (2026-11-19):** answered. Item 7 is settled by rule P1 and #942 A (remove the source boost, no `rep` tag); S1's
+wording is the one Pierre OK'd at 06:58, not §4's (see §4).
+
 **Short answer.** The shared learning model is already one engine: the draw, Elo, the exam, typed questions, the
 unlock order and the look-alike traps. Most of the divergence runs through one corals-only flag, `SUBJECTS.replay`
 (the sheet's replay, the pooled statistics, the opening hold, the sign-in baseline), plus a few one-subject features
@@ -29,7 +32,7 @@ D6's silent recalculation).
 | 4 | `FISH_C3` {entries 0.55, mean 0.5} is hardcoded and read by `treeGate` for the fish **and** the sea slugs | `app.js` ~2046-2056, ~2553 | value hardcoded for one subject | A named parameter, `SUBJECTS.gate: {c3: {entries, mean}}`; fish and sea slugs keep today's values; corals none | No (same values) |
 | 5 | The starred-genus rule reads the coral file directly (`starWaits(DATA, …)`); `starRefs` keys on the coral-only fields `n` and `ig` | `model.js` ~783; `core.js` ~4945-4965 | subject-shaped data in the engine | The build writes a field (e.g. `after: [unit ids]`) and the engine reads `GX(n).after` for every subject (a plain swap of `DATA` for `GX` would wrongly star tree units) | No; tests show the coral opening order unchanged |
 | 6 | The leaderboard: the first board subject reads the "By genus" tab and the old Progress column; the others read `boardUnits_` and the tree; `syncSummary` serves the first board subject only | `Code.gs` ~2596-2625, ~2451; `sync.js` ~70-75 | duplicated logic | One board path per subject; "By genus" kept as the corals' stated legacy, or one tab per subject | Ranks only (rule D8), not progress |
-| 7 | `isCore`: IMR's and Pierre's own photos weigh x1.3 in the draw, corals only (`tiers`) | `app.js` ~1476; `model.js` ~165 | one-subject feature | Pierre decides: it picks photos by source, which may clash with rule P1; drop it, or turn it into the data's reference flag (the fish's `rep`) | No (the draw only) |
+| 7 | `isCore`: IMR's and Pierre's own photos weigh x1.3 in the draw, corals only (`tiers`) | `app.js` ~1476; `model.js` ~165 | one-subject feature | Settled by rule P1 (no source priority anywhere) and #942 A (a reference comes from the photo's own qualities, not a tag): remove the source boost, add no `rep` tag (Pierre, 2026-11-19 06:50) | No (the draw only) |
 | 8 | The fallback card after the first-launch question is on for the corals only (`startFb: false` elsewhere), because `CHOICE` was calibrated on corals | `model.js` ~1052; `app.js` ~2324, ~2547 | stated parameter (temporary) | Per-subject `start` values once calibrated, then on for every subject | Possibly (the prior): D5 then |
 | 9 | The fish and sea slug `UNITS` entries repeat about 15 members word for word (`slate`, `core`, `circles`, `gen`, `st`, `gate`, `species`, `photo`, `norm`, `typeOther`, `pairs`, `list`, `sheet`, `bar`) | `app.js` ~2325-2421 vs ~2552-2608 | duplicated logic | One shared tree base spread into both; per subject only words and real differences | No |
 | 10 | `tests/subject-neutral.test.js` scans neither `Code.gs` nor `tools/`, and cannot see proxy flags (`replay`, `flat`, `achFeats`, `tiers`) | `tests/subject-neutral.test.js` ~13-16 | test gap | Scan `Code.gs` too; a field true for exactly one subject must be listed with its ROADMAP row, as today's exceptions are | No |
@@ -67,12 +70,19 @@ subject test; the end state is every subject doing the same thing.
    and rule L12; wait for enough answers, as #1148 recommends.
 9. `Code.gs`: one replay path and one board path for every subject (1.3, 6): a sheet version, a replay-equivalence check
    on the log, D5 only if a number moves.
-10. `isCore` / `tiers` (7) after Pierre's answer; `startFb` (8) after a calibration.
+10. Remove `isCore` / `tiers` (7) with the corals' other source boosts (ROADMAP "Corals: remove the photo source
+    priority"); `startFb` (8) after a calibration.
 
 Steps 1 to 6 move nobody's progress and are easy to correct; step 7 moves the achievements record; steps 8 and 9 may
 move progress (rule D5) and get the checks of rules L11 and L12.
 
-## 4. Proposed rule wording (for Pierre's OK)
+## 4. Proposed rule wording (superseded)
+
+Pierre refused this wording as too conservative (2026-11-19 06:50: "On pourrait envisager des bouts de codes
+spécifiques (des 'patch') ou des features activées seulement pour une matière") and OK'd another at 06:58, recorded in
+[ANSWERS.md](../ANSWERS.md) (2026-11-19, "rule S1's wording"): a difference between subjects is declared and named in
+one place, whatever its form (data, a parameter, a feature switched on for some subjects, or a patch). The proposal as
+it was:
 
 It amends S1's first sentence rather than adding a rule; S1's beta and group part stays.
 

@@ -15,7 +15,9 @@ const code = [
   cut(src, 'const PICKD = {', '// The next exam question of genus n', {file: 'model.js'}),
   cut(src, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
   cut(src, 'const PMEM0 = memOf();', '\n// Per-format offsets', {file: 'model.js'}),
-  cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'})
+  cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'}),
+  // The session's window of photos shown (model.js SEENQ) spans the game's recent answers.
+  cut(src, 'const RECENT = ', '\n', {file: 'model.js'})
 ].join('\n');
 
 let seed = 777;

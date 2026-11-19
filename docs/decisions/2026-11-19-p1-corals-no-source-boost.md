@@ -24,6 +24,10 @@ avait déjà fait des choix."):
 - #942 A (2026-11-17): "reference" is "déduit des caractéristiques de la photo, pas un tag": no tag or flag replaces the
   source ranking.
 
+The merge (2026-11-19 10:05, Q427 A, docs/ANSWERS.md: «ok»), on the level-2 check: one breach, the strong RA's shown
+score at 1,000 answers with heavy tails, 71.3 → 70.2 against a −1 margin; the true knowledge unchanged, no progress
+value moved; the same kind of cost as #1093's, accepted (Q426 A).
+
 What stays, as P1 allows: an IMR lecture photo is never rated Poor automatically (always evaluated); the licence is the
 last tie-break (`rightsRank`); Pierre's own photos are always included in the fish and sea slug pools, never boosted.
 Kept too, being about whether an identification is trusted or a suggestion Pierre clicks, not about placement: an extra

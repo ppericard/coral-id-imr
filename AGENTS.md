@@ -16,13 +16,15 @@ where things are: the documentation map of [`README.md`](README.md); what lives 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
 Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
-sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied:
+sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied, and set its end on
+2026-11-19 ("La journée démarre à partir de mon premier message après 4h du mat"; "ok pour cette phrase"):
 
-> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing; everything else goes on
-> as normal, agents included.**
+> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
+> after 04:00; everything else goes on as normal, agents included.**
 
 - The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
-  never a guess. Before 17:30 nothing is different.
+  never a guess. His day starts with his first message after 04:00, not at a fixed hour (Pierre, 2026-11-19); until
+  17:30 nothing else is different.
 - "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
   Pierre" (number, context, question, recommendation, PR) for the morning.
 
@@ -59,6 +61,13 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   c'est du micro management… je ne devrais pas à choisir", Pierre, 2026-11-14). After a merge that changes what players
   meet or how the game behaves, tell Pierre in one line what went live (information, not a question); he corrects
   afterwards if he wants.
+- **What players will see comes from Pierre; how it is built is the agents'.** Before building anything players see,
+  the PR says it in one sentence with Pierre's words quoted verbatim and dated (a paraphrase is not a source), or marks
+  it "integrator's call" when it is easy to correct. If none of his decisions says it, ask him one question instead of
+  guessing. Everything else (names, keys, formats, implementation, tests, process) is decided without showing him.
+  Enforced: the PR template's "Players see" section, checked by `tools/train.py`. *Source:* Pierre, 2026-11-18 ("ok,
+  lance les quatre"), after summaries had built what he had not asked (the exam probes, "Apart") while he was asked
+  implementation details.
 - **Costly to undo: the PR waits for Pierre.** A choice whose effects cannot simply be taken back (a data format or a
   structure other code will follow, a migration, a change whose effect on players' records or progress cannot be
   reverted, content the IMR owns) goes to him as a question (below); the integrator merges once he has answered, his
@@ -81,7 +90,9 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   through shell commands that embed code (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code): such
   commands can trip the session's safety checks and ask Pierre to approve something he cannot judge. A script an agent
   needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
-  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???").
+  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???"). Enforced:
+  `tools/guard_bash.py`, a PreToolUse hook, refuses these commands at once with the way out, for every agent of a
+  session; `.claude/settings.json` allows a few read-only commands that recur (git status, ls, wc, the project's report tools).
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
@@ -247,7 +258,8 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 6. `Code.gs` or `core.js` changed: rules D3-D5 (a `tools/sync/changes/` file, never `VERSION`). Tests never reach the
    real sheet (rule D1).
 7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
-8. PR from the template, Decisions filled; rebase on `origin/main` before each push (rule W18).
+8. PR from the template, Decisions filled; to bring it up to date, merge `origin/main` into it, never rebase or
+   force-push (rule W18).
 9. `@codex review` after each push; fix or answer every finding; never re-run a failed job (rule W23).
 
 ## Review guidelines
