@@ -173,7 +173,12 @@ e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the
 the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
 subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
 Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
-means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the
+means what the game scored, wherever it is replayed. **A smaller fault** (Q394 A, Pierre, 2026-11-17: a common name
+typed where a species' scientific name is asked, or its genus alone) is a miss whose steps are weighed down: the record
+says its kind (`z`: `cn`, `g`), `core.js` `PART` its size (half, a quarter: starting values, read on the real answers
+later), and `partOf` scales the miss's bar likelihood (a tempered one), its moving average and its two Elo steps (the
+unit and the level); its counts and recent results take a miss, so it is never a gain. The kind is logged, not the size,
+so a new size is one rules version and the whole log replays with it. What only the game knows (the exam, the cards, the
 hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
 `liveLog`).
 

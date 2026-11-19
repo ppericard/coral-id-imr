@@ -88,7 +88,9 @@ was kept.
 - **Subject**, **Rank**, **Taxon shown**, **Taxon answered**, **Species shown**: below, "Every subject's answers".
   `readAnswers` indexes 17-21 (`core.js` `LOG_SUBJ` 17).
 - **Scoring**: what the app scored the answer with, `core.js` `scoreRec` as JSON (photo difficulty, memory, mix-ups
-  term, look-alike test, recalls, the corallites hint revealed after the answer, the format's offset `o`); read by its
+  term, look-alike test, recalls, the corallites hint revealed after the answer, the format's offset `o`, the kind of a
+  smaller fault `z`: `cn` a common name typed for a species' scientific name, `g` its genus alone, `core.js` `PART`,
+  Q394 A; a miss weighed half or a quarter, never a gain); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
 - **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.
@@ -457,6 +459,16 @@ app's `treeGen` and `treeGenera` build them (`tests/fishreplay.test.js`), cached
 `seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
 corals' only); every fish answer is logged with its scoring record and replays as the game scored it.
 
+**The species by their scientific names** (v198; the app opens them from `SCI_SHEET`, rule D4;
+docs/reviews/2026-11-18-species-step2-plan.md): both subjects' units also hold one unit per species under a genus
+unit, `sci:` and the species id in letters and digits (`core.js` `LEVELS`, `spUnitId`, `treeSpUnits` `'sci'`:
+`sci:s091`, `sci:xgoniobranchussp5`), with the other scientific species of its family as its look-alikes, its family's
+line, and its genus as the unit it starts from (`from`), so a wrong pick of one counts against the species given (rule
+L2) and nothing moves its genus, its family or its common-name unit. The Answers tab's patterns take such a key as
+they are; a smaller fault's kind rides in the scoring record (`z`, above). `tests/scisheet.test.js` saves such answers
+to the in-memory sheet and checks the replays it serves; the app's own units gain them in its app PR, so
+`tests/fishreplay.test.js` compares every other unit with the app's until then.
+
 - **Asked per subject** by the rules version the app applied to it (each subject its own list: the corals' `RVS`, the
   fish's `FISH_RVS`, `core.js` `rvsOf`, `rvOf`, so a fish replay never makes a coral device take its replay again):
   `POST {…, rvs: {fish: rv}}`, `GET ?…&rv_fish=N`, an anonymous send with `sreset` and `sstart` ({subject: the device's
@@ -488,9 +500,10 @@ corals' only); every fish answer is logged with its scoring record and replays a
 
 A subject with `SUBJECTS` `structure` (the fish) has its units made from its first pool file with `curation.json`'s
 circles and pairs laid over it by `core.js` `contentApply` (`subjRpl_`; the curation read from GitHub, its structure
-entries kept as `scur1:fish` with their fingerprint `structFp`, the units and the stamp as `sgen4:fish:<fingerprint>`,
-6 hours, so `fish.json` is read again only when the entries change; the cache names `sgen4`, `stree3` and `svar2` are
-bumped when what they hold changes, so no cache of an older script is read, as `sgen3` and `stree2` were). The 15-minute
+entries kept as `scur1:fish` with their fingerprint `structFp`, the units and the stamp as `sgen5:fish:<fingerprint>`,
+6 hours, so `fish.json` is read again only when the entries change; the cache names `sgen5`, `stree4` and `svar2` are
+bumped when what they hold changes, so no cache of an older script is read, as `sgen4` and `stree3` were before the
+scientific species; the units are about 560 KB for the fish and 100 KB for the sea slugs, in parts). The 15-minute
 trigger reads the curation again before the leaderboard's replays (`subjStRefresh_`), and a device whose units hold a
 stamp the sheet does not (`stn`, `sn_fish`) makes it read it at once, at most once a minute (`subjStSeen_`).
 
@@ -512,8 +525,10 @@ the circles' parts of the score and the path move in the app (`tests/structure.t
 
 **The leaderboard's tree.** With the units, `subjRpl_` makes the subject's score tree (`SUBJECTS` `replayed` `tree`:
 the fish's `core.js` `treeBoardTree`, `treeScoreTree` over `treeGen`'s families and `treeReplayGen`'s genera, the app's
-own `UNITS` tree; with the species level, the app's species tree `treeSp`, `treeScoreTree` on) from the same file and
-curation, checked as a tree an app sends (`boardTreeOk_`) and kept as `stree3:fish:<fingerprint>` (made again when it
+own `UNITS` tree; with the species level, the app's species tree `treeSp`, `treeScoreTree` on; with the scientific
+species, `treeScoreTree` `sci`: each species its own entry with its `sci:` unit in the scientific place, about 33,600
+characters and 662 entries, a player with none answered at the same %) from the same file and
+curation, checked as a tree an app sends (`boardTreeOk_`) and kept as `stree4:fish:<fingerprint>` (made again when it
 is missing beside cached units). `board_` ranks by it, from the cache only (`subjTreeKept_`), so the board's weights per
 family and circle follow a circle Publish within the trigger's 15 minutes, whether a device saves or not, and a device
 still on the old units cannot send the old tree back into force. When it is not cached, the board takes the tree the
@@ -604,7 +619,7 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
 
 - The sea slugs' pool is `seaslug.json`, `seaslug-game.json` and their part of `curation.json` (`SUBJECTS` `seaslug`
   `pool`, read by `core.js` `POOLS` `entries` through each file's role, `pool` `as`, and the subject's own curation
-  part, `treeCur`), their genera the units; cached as `pool3seaslug` (about 110 KB, in parts).
+  part, `treeCur`), their genera the units; cached as `pool4seaslug` (about 110 KB, in parts).
 - The `?stats=1` reply names the subject it rates (`s`). **The app reads the sea slugs' own** (`SUBJECTS` `stats`: the
   script version that serves them; `sync.js` `loadOwnStats`, asked for the subject on screen with the corals' every 10
   minutes and when the player switches to it, kept only from that script and only from a reply naming that subject,
@@ -625,7 +640,7 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
   the device's record and the sheet's replay stay equal (`tests/fishstats.test.js`). FISH_PATH.md's confusion views
   (family to family, species to family, shrunk to the family's) are not built.
 - **Quota with three subjects**: one fold per subject per 15-minute run (a run reads the new rows only, a rebuild the
-  whole Answers tab 2,000 rows at a time, 60 s at most a run), one `pool3` entry per subject in the script cache (the
+  whole Answers tab 2,000 rows at a time, 60 s at most a run), one `pool4` entry per subject in the script cache (the
   corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, each in parts under 100 KB), and one more
   `?stats=1` request every 10 minutes per device playing the sea slugs or the fish (served from the snapshot's cache; the
   fish's reply is about 125 KB on 2026-11-18, about 40 KB more with each photo's unit from v189, growing with the
