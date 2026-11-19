@@ -70,7 +70,7 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
 - **Learn › Basics** (`#learn/basics`, `#fish/learn/basics`): Coral basics and Fish basics, step 0 of the Learn path,
   the first Learn tab ("Basics" on phones): [basics.md](basics.md).
 - **Learn › Genera** (`#learn/genera`): the genera grid (lecture-group order by default, a slate order toggle), Photos
-  or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-two-contents)). Lecture group
+  or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-one-content-per-subject)). Lecture group
   titles are `.gtitle`. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
   sentence (`plainLine()`); once the player has seen the genus, a line at the top gives their level on it and what it
   still needs (`myProg()`, the same text as the My progress tooltip).

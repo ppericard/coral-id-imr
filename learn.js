@@ -68,6 +68,28 @@ const BASICS_AT = [
   [200, 212],
   [86, 212]
 ];
+// Sea slug basics' trail (proto/seaslugbasics.js steps), the same component: four stops, two along the top and two back
+// along the bottom (Flaps under Cerata), in the colours --bt1…--bt4.
+const BASICS_TRAIL_S = [
+  [
+    'dorid',
+    'A dorid',
+    '<path d="M3 18c0-4.5 4-7.5 9-7.5s9 3 9 7.5z"/><path d="M7 10.5V6M10 10V5.5M16 10.5l-2-3.5M16 10.5V6.5M16 10.5l2-3.5"/>'
+  ],
+  ['cerata', 'Cerata', '<path d="M3 18h18"/><path d="M6.5 18v-5M9.5 18v-7M12.5 18v-7.5M15.5 18v-7M18.5 18v-5"/>'],
+  ['others', 'Flaps / shields', '<path d="M3 17.5h18"/><path d="M5.5 17.5c2-7.5 10.5-9.5 13.5 0"/><path d="M5 9.5 3.5 6M7.5 9 7 5.5"/>'],
+  [
+    'groups',
+    'Groups',
+    '<rect x="3.5" y="4" width="7" height="7" rx="1.5"/><rect x="13.5" y="4" width="7" height="7" rx="1.5"/><rect x="3.5" y="13" width="7" height="7" rx="1.5"/><rect x="13.5" y="13" width="7" height="7" rx="1.5"/>'
+  ]
+];
+const BASICS_AT_S = [
+  [80, 76],
+  [320, 76],
+  [320, 212],
+  [80, 212]
+];
 // Fish basics' trail (proto/fishbasics.js steps), the same component: six stops, three along the top
 // and three back along the bottom (Tails under Fins), in the colours --bt1…--bt6.
 const BASICS_TRAIL_F = [

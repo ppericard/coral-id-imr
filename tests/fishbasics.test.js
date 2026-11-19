@@ -45,9 +45,20 @@ function load() {
     ZOOMI: '<i></i>',
     zoom: () => {}
   };
-  vm.runInNewContext(read('proto/fishbasics.js'), ctx);
+  // The engine's shared pieces first (proto/basics.js BASICS_KIT), as the page loads them before the module.
+  vm.createContext(ctx);
+  vm.runInContext(kitSrc(), ctx);
+  vm.runInContext(read('proto/fishbasics.js'), ctx);
   assert.strictEqual(added.length, 1, 'one module registered');
   return added[0];
+}
+// proto/basics.js's BASICS_KIT, alone: it reads only the page's helpers the stubs give (tests/seaslugbasics.test.js too).
+function kitSrc() {
+  const s = read('proto/basics.js'),
+    a = s.indexOf('const BASICS_KIT'),
+    b = s.indexOf('// end of BASICS_KIT');
+  assert.ok(a > 0 && b > a, 'the kit is in proto/basics.js');
+  return s.slice(a, b) + '\nthis.BASICS_KIT = BASICS_KIT;';
 }
 
 test('Fish basics: the module, its steps and the offers share one set of ids', () => {

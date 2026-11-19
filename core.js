@@ -894,8 +894,11 @@
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'quiz', 'quiz-duel'],
-      closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
+      // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
+      // (reefid-seaslug-basics) and done feat.
+      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-duel'],
+      closed: CLOSED_TREE,
+      basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
       // contentApply (app.js treeBuild and the sheet's replay alike): a family's and a genus's ID marks

@@ -72,7 +72,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   [the pages](spec/front-end.md#the-pages).
   - **About and credits**, **Delete my account**, **Quiz**: [front-end.md › The pages](spec/front-end.md#the-pages).
   - **Custom quiz**: [quiz.md › Custom quiz](spec/quiz.md#custom-quiz).
-  - **Coral basics**, **Fish basics**, **One engine, two contents**: [basics.md](spec/basics.md#one-engine-two-contents).
+  - **Coral basics**, **Fish basics**, **Sea slug basics**, **One engine, one content per subject**:
+    [basics.md](spec/basics.md#one-engine-one-content-per-subject).
   - **Achievements**, **Contributions**, **Your feedback helped**, **Never again and again**, **Never for an account the
     admin deleted**: [achievements.md](spec/achievements.md#achievements),
     [Your feedback helped](spec/achievements.md#your-feedback-helped).

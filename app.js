@@ -2543,6 +2543,21 @@ const UNITS = {
     ...TREE_UNITS,
     // No key of its own: the "coming soon" key page, in its words (door).
     identify: 'fishkey',
+    // Its basics module's words (as the fish's: proto/seaslugbasics.js, learn.js BASICS_TRAIL_S). offer is for the
+    // first-launch answer "new" and lo, all for the "lower" card: the sea slugs have neither yet (no first-launch
+    // question, startFb false), so only the Home line, the Learn card and the tab read it.
+    basics: {
+      mod: 'seaslugbasics',
+      name: 'Sea slug basics',
+      ask: 'New to sea slugs?',
+      kick: 'New to sea slugs',
+      offer:
+        'Four short steps, about 5 minutes: a dorid part by part, the aeolids’ cerata, the other sea slugs, the groups. Then the quiz.',
+      lo: 'Sea slug basics shows the parts the ID marks name: rhinophores, gills, cerata, flaps. About 5 minutes.',
+      all: 'It shows the parts the ID marks name: rhinophores, gills, cerata, flaps.',
+      card: 'Rhinophores, gills, cerata, flaps: the parts the ID marks name, on drawings and real photos.',
+      trail: () => ({stops: BASICS_TRAIL_S, at: BASICS_AT_S, turn: 1})
+    },
     door: {
       need: 'a sea slug you photographed on a dive',
       before: 'your next dive',
