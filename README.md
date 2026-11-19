@@ -1,110 +1,124 @@
 # IMR Reef ID
 
-A web app that teaches the **coral genera and reef fish of Dauin, Philippines** to the Research Assistants (RAs) of the
-Institute for Marine Research (IMR), who label survey photos in ReefCloud (corals) and survey videos in EventMeasure
-(fish). Live: <https://ppericard.github.io/coral-id-imr/>. Alpha; fish in beta, open to every player since 2026-11-06.
+A free identification trainer for the Research Assistants (RAs) of the Institute for Marine Research (IMR) in Dauin,
+Philippines, and for anyone learning reef identification. It teaches **corals** (the genera of IMR's survey slate),
+**reef fish** and, in beta, **sea slugs**, with real photos and a quiz that adapts to each player. Most players are on
+phones, often on a slow line.
 
-**Players**: just open the live site. **Developers and AI agents**: read [AGENTS.md](AGENTS.md) first (the rules, who
-merges, how a change ships), then [docs/HANDOVER.md](docs/HANDOVER.md).
+**Live: <https://ppericard.github.io/coral-id-imr/>** (no account needed).
 
-## What's inside
+## What it does
 
-One path for both subjects (corals, fish), switched at the top of Home:
+- **Subjects.** Corals, fish, sea slugs (beta). One engine teaches all three; each keeps its own progress.
+- **Quiz.** Practice that adapts to you: it picks the next photo and the answer choices from your answers, and opens new
+  things as you master the old. Questions come as photo to name (choices, or typed), "Again: A or B?", look-alike
+  duels and, for fish, "Find the X" (name to photos). A silent exam decides when something is learned. No level selector.
+- **Learn.** Corals: Coral basics, the Genera page, a sheet per genus (three photo views, IMR lecture notes,
+  look-alikes), Look-alikes; fish: Fish basics (what to look at first: body shape, groups, fins, tails, markings), then a list and a
+  sheet for each unit, from family down; sea slugs: a list and a sheet for each unit. Corals also have a custom quiz,
+  look-alike duels and a memory game.
+- **Identify.** The Coral ID Key: tap the clues you see, get a ranked shortlist. (A fish key is not built yet.)
+- **Live mode.** A trainer and a class answer the same photo questions together (`#live`).
+- **Progress and boards.** My progress per unit, achievements, a leaderboard per subject, and staff and cohort boards.
+  Signing in (a name and a 4-digit code) saves progress across devices; leaderboards can be switched off.
+- **Offline.** A service worker keeps the app and the photos you viewed; it installs to a home screen.
+- **Admin** (`admin.html`, Pierre only): photo curation, content, players, reports, analyses. `admin.html?demo` shows it
+  on made-up data.
 
-- **Learn**: corals: Coral basics, the Genera page, a sheet per genus (three photo views, IMR lecture notes, look-alikes),
-  Look-alikes; fish: the families, a sheet per family, genus and species.
-- **Practice**: an adaptive photo quiz with typed answers slipped in; corals also Custom quiz, Look-alike duels, Memory.
-- **Identify**: the Coral ID Key (tap the clues you see, get a ranked shortlist); the Fish ID Key is coming.
-- **Progress**: My progress per unit, the public leaderboard (🏆, one per subject, opt-out) and achievements.
-- **Admin** (`admin.html`, Pierre only): photo curation, players, reports, analyses, for every subject.
+## How it is built
 
-## How it works
+```
+phone / browser  ── static site on GitHub Pages (plain HTML, CSS, JS; scripts minified at deploy)
+   │   ├── photos ──────────────> Cloudflare R2 (falls back to the photo's online original)
+   │   └── answers, progress ───> Google Apps Script (tools/sync/Code.gs) ──> Google Sheet
+admin.html ── Pierre's choices ──> curation.json on main ──> GitHub Actions fetch the approved photos
+```
 
-Plain HTML, CSS and JavaScript: no build step, no package manager. The content is JSON (`data.json` for corals,
-`fish.json` and its photo files for fish). Photos are served from Cloudflare R2 (`core.js` `PHOTO_BASE`); when R2 fails,
-a photo falls back to its online original (iNaturalist, FishBase) or to `img/`. A service worker (`sw.js`) keeps the app
-working offline. Signed-in progress syncs to a Google Sheet through an Apps Script, [`tools/sync/Code.gs`](tools/sync/Code.gs),
-which updates itself from `main`. Pierre's choices are made in the admin; **Publish** commits `curation.json` to `main`,
-and the Candidate photos workflow then fetches the approved photos. The deploy stamps the version numbers (`?v=`, the
-Lab's `LAB_V`, `sw.js` `V`): never edit them. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+No framework, no package manager, no build step while developing: the repository's files are what a local server
+shows. The deploy (`pages.yml`) stamps version numbers and minifies the staged copy. Content is JSON (`data.json` for
+corals, `fish.json` and `seaslug.json` with their photo files). The Apps Script updates itself from the `release` branch, which only the merge train moves.
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PAGES.md](docs/PAGES.md).
 
-## Run locally
+## Run it locally
 
 ```sh
-python3 -m http.server 8000
-# app: http://localhost:8000 · admin on made-up data: http://localhost:8000/admin.html?demo
+python3 -m http.server 8000     # app: http://localhost:8000   admin on made-up data: http://localhost:8000/admin.html?demo
 ```
+
+A local copy reads the live photos (R2) and the read-only photo statistics, but never signs in, saves or sends answers:
+`app.js` `LOCAL` turns the sheet off (the error "local copy: the sheet is off"), so tests answer it with `window.SHEET_STUB`.
 
 ## Test
 
-As CI runs them ([checks.yml](.github/workflows/checks.yml) and [smokes.yml](.github/workflows/smokes.yml), which a docs-only PR skips: Node 26, Python 3.15, Playwright 1.65.1; no `package.json`):
+CI ([checks.yml](.github/workflows/checks.yml), [smokes.yml](.github/workflows/smokes.yml); Node 26, Python 3.15,
+Playwright 1.65.1; no `package.json`) runs what you can run by hand:
 
 ```sh
+node tests/run.js                 # all unit tests (tests/*.test.js), through the machine slot
+node tests/pages.smoke.js         # Playwright smokes, one file each: pages, draw, fish, seaslug, admin, live, net, profiles, staged
+python3 tools/check_versions.py   # also: tools/datajson.py --check, tools/sync_core.py --check
 npx --yes prettier@3.10.1 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
-node tests/run.js                        # the unit tests, in the machine slot
-node tests/pages.smoke.js                # Playwright smokes: pages, draw, fish, admin, profiles, net
-python3 tools/check_versions.py
-python3 tools/stack_check.py --check
-python3 tools/datajson.py --check
 ```
 
-## Repository layout
+Every heavy run (a Playwright smoke, a full unit run) first takes a slot from `tests/slot.js`, so several agents can share
+one machine; wrap any other heavy command as `node tests/slot.js -- <command>`. A docs-only PR skips the smokes.
 
-| Path | What |
+## How the project is worked on
+
+Pierre Pericard owns it and works with AI coding agents. One **integrator** (the main agent of a session) starts
+subagents, each on its own branch and PR, and merges them through a green **merge train** (`tools/train.py`) under a
+written contract. Pierre's standing rules have stable IDs. [CONTRIBUTING.md](CONTRIBUTING.md) says how a change is
+made. Start with [AGENTS.md](AGENTS.md) (the constitution), then
+[docs/INTEGRATOR.md](docs/INTEGRATOR.md) for the integrator, and the [docs/rules/](docs/rules/README.md) file your task
+touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
+
+## Documentation map
+
+| Document | What it is |
 |---|---|
-| `index.html`, `app.js`, `core.js`, `*.js`, `*.css` | The app; `core.js` holds the pure functions shared with the admin and the sheet script |
-| `admin.html`, `admin*.js` | Pierre's back-office |
-| `*.json` | Content, Pierre's curation (`curation.json`) and machine suggestions |
-| `img/`, `fonts/` | The photos with no other backup; the self-hosted fonts |
-| `proto/` | Lab prototypes and graduated tools (the Coral ID Key) |
-| `tools/` | Build, import and analysis scripts; `tools/sync/` the sheet script |
-| `tests/` | Unit tests (`*.test.js`) and Playwright smokes (`*.smoke.js`) |
-| `judging/` | The photo-judging package for an outside agent |
-| `docs/` | The documentation below |
-
-## Docs
-
-- [AGENTS.md](AGENTS.md): the constitution: Rule 0, the merge contract, the index of the rules.
-- [docs/HANDOVER.md](docs/HANDOVER.md): where things are, what lives outside GitHub, the one-time setups.
-- [docs/INTEGRATOR.md](docs/INTEGRATOR.md): how the integrator runs the work day to day.
-- [docs/STATUS.md](docs/STATUS.md): where things stand now.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): files, data, admin, sync, photos, deploy.
-- [docs/LEARNING.md](docs/LEARNING.md): the learning model and the research behind it.
-- [docs/FISH_PATH.md](docs/FISH_PATH.md): the fish naming path.
-- [docs/ROADMAP.md](docs/ROADMAP.md): deferred ideas, open questions, declined ideas.
-- [docs/PAGES.md](docs/PAGES.md): GitHub Pages setup and recovery.
-- [docs/SECURITY.md](docs/SECURITY.md): what is exposed and what protects it.
-- [docs/FORMATS.md](docs/FORMATS.md): the question formats adopted, and why.
-- [docs/DESIGN.md](docs/DESIGN.md): design tokens and components.
-- [docs/rules/](docs/rules/README.md): Pierre's standing rules, one file per theme.
-- [judging/FISH.md](judging/FISH.md): the fish photo-judging rubric.
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How a change is made here: the rules, a branch, the tests, the PR, the merge train, decision records |
+| [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
+| [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
+| [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
+| [docs/ANSWERS.md](docs/ANSWERS.md) | Pierre's answers, append-only: search it before asking him anything |
+| [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
+| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; setting up, the sheet script's redeploy and what lives outside GitHub |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
+| [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
+| [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/spec/](docs/spec/sync.md) | The map of the system (files, data, admin, sync, photos, deploy), read in a few minutes; the specification of each part it points to, one file per part (the front end, the sync, the data, the admin, the subjects, the photos, the tools, the deploy…) |
+| [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
+| [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
+| [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
+| [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
+| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history (with [the learning notebook](docs/archive/learning-notebook.md), the studies behind LEARNING.md) |
+| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos (`judging/PROMPT.md`: what to paste) |
+| [privacy.html](privacy.html) | The privacy notice players see |
 
 ## Content and rights
 
-**Code and compiled data.** © 2026 Pierre Pericard, all rights reserved (see [LICENSE](LICENSE)). No open-source
-licence is granted. Much of the code was written with AI coding assistants under his direction.
+**Code and compiled data.** © 2026 Pierre Pericard, all rights reserved for now ([LICENSE](LICENSE)). No open-source licence is
+granted; the repository is public so the app can be served and its source read. Much of the code was written with AI
+coding assistants under his direction.
 
-**Photos.** Every photo keeps its author and licence, shown in the app (enlarge a photo) and recorded in the data files
-(`a` credit, `lic` licence, `o` source page).
+**Photos.** Every photo keeps its author and licence, shown in the app (enlarge a photo, and About and credits) and
+recorded in the data files (`a` credit, `lic` licence, `o` source page).
 - **Pierre Pericard's own photos** (iNaturalist user `ppericard`): © Pierre Pericard.
 - **Other iNaturalist observers**: © their authors, under the licence each chose: CC0, CC BY or CC BY-NC. No share-alike
   or no-derivatives photos are used. Some photos are cropped.
-- **FishBase** (fish only): © their authors, CC BY-NC 4.0 as FishBase states it.
-- **IMR Lecture 6 photos** (corals only): used for IMR's internal training. Their rights are uncertain, as many were
-  not taken by IMR. 86 of them come from [Corals of the World](https://www.coralsoftheworld.org/) and are credited to
-  their photographers with a link to the page that credits them, under its
-  [terms](https://www.coralsoftheworld.org/page/terms-of-use/) (personal, non-commercial or academic use with citation;
-  all other rights reserved). The sources of the others are not known yet. Not for reuse.
-  The fish side uses no IMR lecture photos.
-- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used; its crops were removed on
-  2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own
-  drawings.
+- **FishBase** (fish): © their authors, CC BY-NC 4.0 as FishBase states it.
+- **IMR Lecture 6 photos** (corals): used for IMR's internal training; their rights are uncertain, as many were not taken
+  by IMR. Some come from [Corals of the World](https://www.coralsoftheworld.org/), credited to their photographers under
+  its [terms](https://www.coralsoftheworld.org/page/terms-of-use/) (personal, non-commercial or academic use with
+  citation; all other rights reserved). Not for reuse. Fish and sea slugs use no IMR lecture photos.
 
 **Text and data.** The coral genus list, ID tips and lecture notes come from IMR Lecture 6; the fish cues, look-alikes
 and IMR names from IMR's fish presentation and reference list (© IMR, used in the app for IMR's training, not for
-reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach, cited).
-Taxonomy follows the World Register of Marine Species (WoRMS, cited). Size and depth facts come from Reef Life Survey
-and FishBase, cited per species. Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).
+reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach). The
+other books, guides and papers behind a tip or a look-alike are cited where they are used.
+Taxonomy follows the World Register of Marine Species (WoRMS). Size and depth facts come from Reef Life Survey and
+FishBase, cited per species. Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).
 
 **Reuse.** Nothing here is offered for reuse. A Creative Commons photo can be reused under its own licence from its
 original source, not from this repository. Rights holders: open an issue to change a credit or have a photo removed.

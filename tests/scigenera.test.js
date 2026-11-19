@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
-// everyone once a family is at Advanced, a family's genera from its Advanced (Pierre, 2026-11-08, back from Q205's Open
-// Water); for a player at IMR, the genera the IMR course names alone come without the offer from their family's Open
-// Water (Q219), Naso only of the surgeonfishes (Q220); a photo of another genus keeps its family as the answer (Q221).
+// The fish scientific genera (app.js treeGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
+// everyone once a family is at Advanced, a family's genera from its Advanced; for a player at IMR, the genera the IMR
+// course names alone come without the offer from their family's Open Water, Naso only of the surgeonfishes; a photo of
+// another genus keeps its family as the answer.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -17,26 +17,27 @@ const F = json('fish.json'),
   PH = json('fish-photos.json'),
   APP = src('app.js');
 
-// fishGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
-// core.js, as the app has it (the card photo, Q270; the fish score's tree, #730; the species units)
+// treeGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
+// core.js, as the app has it (the card photo, the fish score's tree, the species units)
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
 vm.runInContext(
   [
     block(src('model.js'), 'const LV_AT = ', '\n', {through: 1, file: 'model.js'}),
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(APP, 'function sciOpen(L, score, met, imr, hand) {', '\n}\n', {through: 1, file: 'app.js'}),
-    'this.fishGenera = fishGenera; this.sciOpen = sciOpen; this.LV_AT = LV_AT;'
+    'this.treeGenera = treeGenera; this.sciOpen = sciOpen; this.LV_AT = LV_AT;'
   ].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, C.fishGameRead(json('fish-game.json')).photos, null)), F); // the photos in play
+const X = ctx.treeGenera(C.treeGen(F, C.treePhotos(PH.photos, C.treeGameRead(json('fish-game.json')).photos, null)), F); // the photos in play
 ctx.GX = n => X.gen[n];
 const fam = n => X.gen[n].parent,
   // scores: family -> score; met: the genera already met
@@ -203,4 +204,66 @@ test('Q240: turned on by hand before Advanced, a family’s genera from its Open
 test('Q238: the IMR families first for anyone who ever answered imr (openPick reads imrSaid)', () => {
   const pick = block(src('model.js'), 'function openPick(', '\n}\n', {file: 'model.js'});
   assert.ok(pick.includes('if (imrSaid()) {') && !pick.includes("c === 'imr'"));
+});
+
+// The genera of circles 2 and 3 (docs/FISH_PATH.md "Levels"): every circle's genera (core.js treeGenSets), each as
+// circle 1's: in
+// its family's circle, its sibling genera as look-alikes, its family's line, opened at its family's Advanced, counted in
+// the score's tree; a surprise card's genus none.
+test('every circle: the genera of circles 2 and 3 are units as circle 1’s are', () => {
+  const sp = new Map(F.species.map(s => [s.id, s])),
+    want = c =>
+      F.families
+        .filter(f => f.circle === c && !f.wink)
+        .flatMap(f => f.genera.filter(id => F.genera.find(g => g.id === id).species.some(s => sp.has(s)))),
+    of = c => plain(X.sci.filter(n => X.gen[n].circle === c));
+  [1, 2, 3].forEach(c => assert.deepStrictEqual(of(c), want(c), 'circle ' + c));
+  assert.deepStrictEqual([of(1).length, of(2).length, of(3).length], [130, 5, 102]);
+  assert.ok(!X.gen['g:Rhincodon'] && !X.gen['g:Alopias'], 'a surprise card’s genus: none');
+  // a circle-2 species' genus, as a circle-1 one: its record, its sibling genus the trap, its family's line and circle
+  const g = X.gen['g:Aeoliscus'],
+    s = F.species.find(x => x.genus === 'g:Aeoliscus');
+  assert.ok(s && s.circle === 2);
+  assert.deepStrictEqual(plain([g.rank, g.parent, g.circle, g.look, g.species, g.names[0]]), [
+    'genus',
+    'f:Shrimpfishes',
+    2,
+    ['g:Centriscus'],
+    [s.id],
+    'Aeoliscus'
+  ]);
+  assert.ok(g.fam.startsWith('Shrimpfishes') && g.plain && /^ID marks/.test(g.tl) && g.qt.length && typeof g.sum === 'string');
+  assert.ok(g.views.wide.every(p => p.sp === s.id));
+  assert.strictEqual(X.gen['g:Centriscus'].look[0], 'g:Aeoliscus');
+  // opens as circle 1's: from its family's Advanced (never an IMR genus: no IMR sub-entry outside circle 1)
+  assert.deepStrictEqual(open({'f:Shrimpfishes': 0.6}, true), {auto: [], units: []});
+  assert.deepStrictEqual(open({'f:Shrimpfishes': 0.8}, true).units, ['g:Aeoliscus', 'g:Centriscus']);
+  assert.ok(X.sci.filter(n => X.gen[n].circle > 1).every(n => !X.gen[n].imrg));
+  // counts in the score's tree: its species' entry carries it, and a genus learnt credits half their scientific names
+  const K = C.subjectOf('fish').score;
+  [X.tree, X.treeSp].forEach(T => {
+    assert.ok(T.s.some(e => e[1] === 'g:Aeoliscus' && e[4] === 2));
+    const base = Object.fromEntries(T.f.map(([u]) => [u, {mx: 1}])),
+      a = C.treeScore(base, T, K),
+      b = C.treeScore({...base, 'g:Aeoliscus': {mx: 1}}, T, K);
+    assert.ok(b.raw > a.raw && b.by[2].S > a.by[2].S && b.by[1].S === a.by[1].S);
+  });
+});
+
+// Rule D4: the genera of circles 2 and 3 open, and are offered as choices, only once the sheet replays them (sync.js
+// generaOn, GENERA_SHEET); before, circle 1's alone; every one where sync.js is not loaded.
+test('the gate: the genera of circles 2 and 3 from the sheet that replays them (rule D4)', () => {
+  const now = on => {
+    const c = {TREEU: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
+    vm.createContext(c);
+    vm.runInContext(block(APP, 'const sciNow = ', ': [];\n', {through: 1, file: 'app.js'}).replace('const sciNow', 'this.sciNow'), c);
+    return plain(c.sciNow());
+  };
+  assert.deepStrictEqual(now(true), plain(X.sci));
+  assert.deepStrictEqual(now(undefined), plain(X.sci));
+  assert.deepStrictEqual(now(false), plain(X.sci.filter(n => X.gen[n].circle === 1)));
+  const set = block(APP, "k: 'sci',", 'page: false', {file: 'app.js'});
+  assert.ok(/all: \(\) => sciNow\(\)/.test(set) && (set.match(/sciOpen\(sciNow\(\)/g) || []).length === 2, 'the set reads it');
+  const S = src('sync.js');
+  assert.ok(/const GENERA_SHEET = \d+;/.test(S) && S.includes('const generaOn = () => sheetV() >= GENERA_SHEET;'));
 });

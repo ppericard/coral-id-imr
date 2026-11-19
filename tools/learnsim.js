@@ -1,179 +1,78 @@
-// Learning-outcome simulation (independent review of 2026-11-02, item 1: "make the simulation measure learning and
-// noise"). tests/profiles.smoke.js checks the pacing of the path (genera met, traps, genera ready for their exam) on one
-// seed; this tool measures what simulated players really learn, and how far the app's own estimates are from that
-// truth, over many seeds, so a change to the algorithm can be judged on outcomes with a spread. Not run by CI (minutes,
-// numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
+// Learning-outcome simulation: measures what simulated players really learn in the real photo quiz, and how far the
+// app's own estimates are from that truth, over many seeds, so a change to the algorithm is judged on outcomes with a
+// spread. Not in CI. docs/LEARNING.md "Learning-outcome simulation"; tests/profiles.smoke.js checks the path's pacing.
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json|live] [--truth truth.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall N] [--back keep|one]
-//                          [--rt off] [--rtapp off] [--rtlog answers.json]
+//                          [--rt off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
+//                          [--set calibration-set.json|none]
 //                          [--beyond yes|no]
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
-// --ach (2026-11-06, the fish achievements, rule L8: each one's timing checked with the real game): the answer at which
-// each achievement of the record first came, median per profile over the runs.
-// --beyond (2026-11-08, the fish achievements of circle 3): how the player answers the card that offers a part of the
-// slate by choice (quiz.js openOfferShow: fish circle 3, Q204): yes opens it, no keeps it closed; without it, as before
-// (the card left unanswered).
-// --subject fish (2026-11-06, Q186: the fish draw's learning outcomes, rules L11-L12): the player plays the fish subject
-// (its slate of IMR entries, its photos and calibration); the coral-only measures (Millepora, bonus genera) stay empty.
-// --photos FILE serves that file as fish-photos.json (another pool, e.g. a branch's); --calib merges fields over the
-// subject's draw calibration (core.js SUBJECTS calib) before the run: '{"u":1,"pool":1e9}' gives back the fish draw of
-// before Q186 (model.js CAL.U, the whole floor for every observation).
+// --ach: the answer at which each achievement first came, median per profile (rule L8).
+// --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
+// it the card is left unanswered.
+// --subject fish: plays the fish subject; the coral-only measures (Millepora, bonus genera) stay empty. --photos FILE
+// serves FILE as fish-photos.json; --calib merges fields over the subject's draw calibration (core.js SUBJECTS calib):
+// '{"u":1,"pool":1e9}' puts the whole floor on every observation (model.js CAL.U).
+// --learner field|exemplar, --tau (0 to 1, the field learner's transfer): the learners below; default item.
+// --custom N: plays the Quiz until N genera are unlocked, then --drill questions in the custom quiz on those N (quiz.js
+// quizCustom, model.js customOf), then the Quiz again; adds a row at the end of the drill and the selection's own bars.
+// --choice new|imr|know|auto: the first-launch answer (model.js START; auto: beginner new, lecture RA imr, the others
+// know). --fallback keep|accept: the answer to the card that comes when the answers do not fit the choice (core.js
+// CHOICE.AT, model.js startDue). --vars (calibration only): other values for a choice's variables (core.js CHOICE opts).
+// Per run: the first 20 answers' mean surprise (right - e), right %, the global level then, and the fallback card.
+// --openall N: opens all genera at question N (introAll, as My progress's button; a file run with 'offer' reads the
+// same). --back keep|one answers the back card that may follow (model.js backDue). Per run: when all were opened, when
+// the back card showed, and after Open all each answer's e against the learner's true chance and its answers.
+// --breaks: the app runs on a virtual clock (10 s an answer); after the first session the player leaves for each break
+// in turn (each from the same state, the generators seeded again), forgets, and plays until the comeback is over
+// (questions flagged warm), then --after questions more. Forgetting: know falls back towards the profile's starting
+// know on the FSRS curve, know' = k0 + (know - k0) (1 + 19/81 t / S)^-0.5, S = LEARNER.S0 days x LEARNER.G for each
+// further day the genus was answered right (the learner's model, not the app's).
 //
-// --learner field (2026-11-05, the progress and set-size study; docs/LEARNING.md "Field learner"): a learner whose
-// confusions grow with the number of genera it holds in mind and with how much they look alike (below, "The field
-// learner"); --tau its transfer, 0 to 1. Without it, the learner of before (item), unchanged.
-// --custom N (2026-11-05, the Custom-8 scenario): the player plays the Quiz until N genera are unlocked, picks those N in
-// the custom quiz (quiz.js quizCustom, model.js customOf), plays --drill questions there, then goes back to the Quiz for
-// the rest of --questions. The measures are those of every run, plus a row at the end of the drill and the selection's
-// own bars against its true whole-slate success.
+// Each run (profile x seed) opens a fresh browser context and seeds the app's Math.random and the learner's own
+// generator from the seed: runs are reproducible, and two versions compare on paired seeds. It drives the real quiz as
+// profiles.smoke.js does; the app's algorithm runs untouched, only the player is simulated. A run is one synchronous
+// page.evaluate, so localStorage lives in the page's own memory (tools/memstorage.js): the browser's storage traffic
+// would queue in the renderer until it crashed on long runs.
 //
-// --choice (2026-11-03, the first-launch question, model.js START): the answer the simulated player gives before its
-// first question: new (default: the variables of today's default player), imr, know, or auto (beginner new, lecture RA
-// imr, strong RA and expert know). --fallback: how the player answers the one-time card that comes when the answers
-// do not fit the choice at a checkpoint (core.js CHOICE.AT, model.js startDue): keep (default) or accept (the first
-// option it offers). Per run: the first 20 answers' mean surprise (right - the app's expected success), right %, the
-// global level then,
-// and the fallback card (answer, direction lo / hi). --vars (calibration only): other values for a choice's variables
-// (core.js CHOICE opts), e.g. '{"know":{"p":1.5}}'.
-// --openall N (optional; without it the player never opens all): opens all genera at question N (introAll, as My
-// progress's button). 'offer', which accepted the card that offered it, went with that card (Pierre, 2026-11-12, Q337);
-// a file run with it before is read the same. The back card that may follow (model.js backDue) is answered --back: 'keep'
-// (default: Keep them all, so its timing is measured and nothing changes) or 'one' (One at a time). Per run: the answer
-// at which all were opened, the answer since then at which the back card showed, and after Open all the app's expected
-// success (each answer's e) against the learner's true chance and its answers: on the genera opened at once, at their
-// first question and over the first 30 answers after Open all, and on the genera met before (the starting ability of a
-// genus never answered, core.js playerStart, against what the learner really knows).
+// The item learner (constants in LEARNER):
+// - know[g]: the chance to recognise genus g on a photo of average difficulty with all its views. It recognises the genus
+//   shown t with p = sigmoid(logit(know[t]) - d - 0.5 x single view), d the mean difficulty of the photos shown: the
+//   app's photoDiff (--stats, else 0), or with --truth each photo's true difficulty, independent of the app's estimate
+//   (truth.json: {photos: {file: difficulty}, gd: {genus: difficulty of a photo not listed}}). Recognised = right.
+// - Otherwise it picks a choice c with weight (1 + LOOK x s(t, c)) x (1 - ELIM x know[c] for a wrong c); s(t, t) = 1,
+//   s(t, c) = min(1, pooledConf(t, c) / CONF.LOOK): about 1 for a declared look-alike, 0.4 same family, 0.1 otherwise.
+// - Feedback teaches: know[t] += RATE x (1 - know[t]) after a right answer, x MISS after a miss; the genus wrongly picked
+//   gains RATE x PICKED; a first-meeting card teaches like one right answer. No forgetting except across --breaks.
+// - Photo memory: each photo shown keeps [seen, right]; recognising adds LEARNER.MEM[bucket] logits (new, seen never
+//   right, right once, right 2+), averaged over the photos shown. It helps on that photo only, and the hard reference
+//   question ignores it (docs/LEARNING.md "Photo memory"). --mem 0 turns it off; --mem a,b,c,d sets the four offsets.
+// - Response time: log t = log T0 - B x right - C x logit(pTrue) + SD x N(0, 1), from a generator of its own, rounded to
+//   the tenth and handed to the app's question clock (QCLOCK) before the click; B and C make tools/abilityeval.js --rtfit
+//   give back the real answers' measures (docs/LEARNING.md "Response time"). No zoom. --rt off: no seconds. --rtlog: the
+//   app's answer log of every run (readAnswers rows, player profile:seed, with pTrue and the time noise).
 //
-// --breaks (optional; without it nothing changes): the app runs on a virtual clock (10 s an answer), and after the
-// --questions of the first session the player leaves for each break in turn (each from the same state, the generators
-// seeded again per break, so the breaks and two versions of the app compare on the same seeds), forgets (below) and
-// comes back: the second session runs until the comeback is over (questions flagged warm: the comeback after a break,
-// or before it the fixed 10-question gentle restart, which the tool starts at every second session), then --after
-// questions more. Per break: the comeback's length, the answers during which no genus could open (the floor), the
-// success during the comeback and in the --after questions after it, how often the opening hold was on during them,
-// the app's rust at the start and the learner's true loss.
-// Forgetting learner (with --breaks): know[g] falls back towards the profile's starting know (prior knowledge, stable)
-// over the break on the FSRS curve, know' = k0 + (know - k0) (1 + 19/81 t / S)^-0.5, S = LEARNER.S0 days x LEARNER.G for
-// each further day the genus was answered right (spaced successes); our learner, not the app's model (the app reads S
-// from the Elo ability and the days answered right).
-//
-// Long runs (2026-11-08, #734: every run of 4,500 or 8,000 answers ended in "Target crashed"): a run is one synchronous
-// page.evaluate, so the page's event loop never turns until it ends, and every localStorage write (the app writes its
-// answer log twice an answer, about 300,000 characters each) left messages queued in the renderer, about 1.5 MB an answer,
-// until it died. The page's localStorage is now kept in its own memory (tools/memstorage.js): the same values and quota
-// for the app, nothing sent, nothing queued: about 1.1 GB at 8,000 answers (9.6 GB at 3,500 before, then the crash).
-// Each run (profile x seed) opens a fresh browser context (empty storage), seeds the app's Math.random and a separate
-// learner random generator from the seed (runs are reproducible, and the same seeds before and after a change give
-// paired comparisons), then drives the real photo quiz as profiles.smoke.js does: quizPhoto(), the first-meeting cards
-// read through, a click on one of the [data-c] choices. The app's own algorithm (draw, photos, traps, duels, Again, exam,
-// Elo, knowledge model, progress) runs untouched; only the player is simulated.
-//
-// The learner (kept simple on purpose; every constant is in LEARNER below):
-// - know[g]: the chance to recognise genus g on a photo of average difficulty with all its views. On a question it
-//   recognises the genus shown t with p = sigmoid(logit(know[t]) - d - 0.5 x single view), d the mean photoDiff of the
-//   photos shown (the app's own photo difficulty, photoDiff: --stats, or 0 for every photo without it), as in
-//   profiles.smoke.js; or, with --truth, each photo's true difficulty from that file, independent of the app's estimate
-//   (2026-11-03, the hierarchical photo Elo: a change to the app's photo difficulty must not change the learner's world
-//   too). truth.json: {photos: {file: difficulty}, gd: {genus: difficulty of a photo not listed}}. Recognised = right.
-// - Otherwise it picks among the choices by how much each looks like the photo: weight 1 + LOOK x s(t, c), with
-//   s(t, t) = 1 and s(t, c) = min(1, pooledConf(t, c) / CONF.LOOK) for another genus (the app's own confusion prior and
-//   pooled mix-ups: about 1 for a declared look-alike, 0.4 same family, 0.27 shared growth form, 0.1 otherwise), times
-//   (1 - ELIM x know[c]) for a wrong choice c (a genus it knows well is ruled out). So an unrecognised photo goes to the
-//   target about half the time among easy choices, a quarter among 3 look-alikes, and a wrong answer falls on the
-//   look-alikes.
-// - After each answer, feedback teaches: know[t] += RATE x (1 - know[t]) after a right answer, x MISS after a miss
-//   (the side-by-side montage shows the difference); the genus wrongly picked gains RATE x PICKED (its photo is in the
-//   montage). A first-meeting card teaches like one right answer. No forgetting, except across --breaks (above).
-// - Photo memory (2026-11-03, Pierre: in a genus with few photos the same ones come back, and players learn the photos
-//   rather than the genus): the learner remembers each photo it was shown when answering, [seen, right]. Recognising
-//   adds LEARNER.MEM[bucket] logits, averaged over the photos shown: new 0, seen but never right 0.4, right once 1.5,
-//   right twice or more 2 (our assumption, close to what about 550 real photo-quiz answers showed against the app's
-//   logged expectation: 83% right on photos new to the player where 76% was expected, 85% / 72% seen never right, 95% /
-//   76% right once, 9 of 9 right twice or more; docs/LEARNING.md "Photo memory"). Memory helps on that photo only: it
-//   teaches nothing more about the genus, and the hard reference question below (a photo never seen) ignores it, so
-//   what memory adds to the answers is exactly what the app must not count as knowledge. --mem 0 turns it off (the
-//   learner before 2026-11-03); --mem 0,0.4,1.5,2 sets the four offsets.
-//
-// - Response time (2026-11-04, docs/LEARNING.md "Response time"): the learner takes t seconds to answer, log t =
-//   log T0 - B x right - C x logit(pTrue) + SD x N(0, 1), pTrue its true chance on the question (below), drawn from a
-//   generator of its own (the answers and the app's draws are the same whatever the time model), rounded to the tenth
-//   as the app logs it (quiz.js qclockRead), and handed to the app's question clock (QCLOCK) before the click. B and C
-//   are set so that the simulated logs replayed by tools/abilityeval.js --rtfit give back the two measures of the real
-//   answers (PR #431: -0.88 per unit of z on the answer itself, -0.39 on the next answer on the genus after a right one);
-//   T0 only sets the scale (z is against the player's own median). No zoom: the learner never enlarges a photo (too
-//   few real answers to model it yet). The app weighs a right answer's steps by its time once the sync script replays
-//   it (core.js RT_SHEET): the tool says so to the app (the sheet version it last saw, reefid-sheet-v); --rtapp off keeps
-//   the app as before that script (every weight 1); --rt off gives no seconds at all (the learner before 2026-11-04).
-//   --rtlog writes the app's own answer log of every run (readAnswers rows, player = profile:seed, then the learner's
-//   pTrue and its time noise) for tools/abilityeval.js.
-//
-// The field learner (--learner field; every constant in LEARNER.FIELD). The item learner above recognises a genus whatever
-// the competitors: drilling 8 genera raises know as drilling 40 would (docs/LEARNING.md "Field learner"). This one keeps
-// know[g] (the same teaching) and adds a contrast skill x per pair of genera, learned only when the pair is contrasted:
-// both among a question's choices (RATE x PAIR), or side by side in the montage after a miss (RATE x MISS); a typed
-// question contrasts nothing but its montage. A question on genus t among the set V (its choices, or for a typed one the
-// genera the learner has met: the names it holds in mind) is answered right with the Luce choice
+// The field learner (--learner field; LEARNER.FIELD; docs/LEARNING.md "Field learner") keeps know[g] and adds a contrast
+// skill x per pair of genera, learned only when the pair is contrasted: both among a question's choices (RATE x PAIR),
+// or side by side in the montage after a miss (RATE x MISS). A question on t among V (its choices, or for a typed one the
+// genera met) is right with the Luce choice
 //   P = 1 / (1 + exp(d + 0.5 x single view - photo memory) x sum over c in V, c != t of r(t, c)),
 //   r(t, c) = (1 + LOOK s(t, c)) (1 - ELIM know[c] g) / (1 + LOOK) x (1 - know[t])^(A g),  g = tau + (1 - tau) x(t, c),
-// with s the item learner's look (pooledConf), so the odds of taking t for c grow with their pooled confusion, and every
-// genus held in mind adds its own: more names, more errors (set size), even unrelated ones. g is the share of what the
-// learner knows of t (in log odds) that works against c: tau (transfer) of it with no contrast at all, all of it once the
-// pair was contrasted many times. Wrong, it names c with chance proportional to r(t, c) (typed: "I don't know" half the
-// time, as the item learner). x starts at min(know0) of the two genera (prior knowledge was learned in the field). A: with
-// every pair contrasted at know 0.5 and 4 easy choices, P 0.75 as for the item learner; an expert (0.93) about 0.85
-// against the slate.
-// Truth (both learners, docs/LEARNING.md): pOpen(t), the learner's success on an average photo of t with every slate genus
-// a possible answer (its own choice rule over the 40: Luce for the field learner, the item learner's guess otherwise).
+// so every genus held in mind adds errors (set size). Wrong, it names c in proportion to r(t, c) (typed: "I don't know"
+// half the time). x starts at the lower know0 of the pair. A: P 0.75 with every pair contrasted at know 0.5 among 4 easy
+// choices, as the item learner. Truth (every learner): pOpen(t), the success on an average photo of t with every slate
+// genus a possible answer.
 //
-// Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
-// - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
-//   genera met (cards or asked).
-// - thErr / thBias: mean |theta - logit(know)| and mean (theta - logit(know)) over the genera met, theta = ability(g),
-//   the app's Elo estimate (the learner's own model has the same scale: theta = logit(know) means a perfect estimate;
-//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5). level: the app's global level
-//   (P['~level'].th).
-// - progGap: mean (genScore(g) - know[g]) over the genera met: > 0 the progress bar over-claims, < 0 it under-claims;
-//   prog / know%: the app's progress over the slate (progPct) next to 100 x knowSlate.
-// - met, learned (s.mx), right % over the questions since the previous checkpoint.
-// - open/15: the most genera opened on their own cards (the path's pace, the first cards left out) in any 15
-//   consecutive questions so far (2026-11-04: a strong player was opened 7 genera in 16 answers).
-// - look: true chance to tell a declared look-alike pair apart (IMR lecture / Coral Finder, `look`, both genera on the
-//   slate), in a 2-choice question on an average photo, both directions averaged, over every declared pair.
-// - refTrue: genera whose true success on the hard reference question is 0.9 or more (one photo alone, photo
-//   difficulty +1 and the single-view 0.5, 4 choices: the genus and its 3 most confusable slate genera by pooledConf).
-// - exam: genera that entered the mastery exam so far (examOn true, or an exam question shown), and refEntry, their
-//   mean true success on the hard reference question at the moment they entered; refLearned, the same when learned.
-// - Per run: when Millepora was met and first asked, when the bonus genera were offered (every slate genus met; the
-//   simulated player accepts, "Add them"), and the share of the questions on bonus genera after that.
-// - Per run, openings after a miss (model.js openRight, 2026-11-03): the genera opened on their own cards, those on the
-//   question right after a miss (0 with the rule), the questions where that rule alone held the opening (with the chance
-//   openChance would have opened one), and the questions from each spell of them to the next opening.
-// - Per run, metAt: the question at which each genus was first met (card or asked); printed as the median question per
-//   profile for the genera of --met (a genus not met counts as later than the last question, shown ">N").
-// - By photo count (photo memory): the slate genera with few game photos (FEW, 14 or fewer) against those with many
-//   (MANY, 20 or more), at each checkpoint: questions so far showing a photo the learner had already been shown (rep%),
-//   right % on all of them and on those repeats, mean progress bar against true know (prog-know) and Elo against
-//   logit(know) (th-lk) over the genera met, genera learned; and, per genus that entered the exam or was learned, the
-//   true reference success then (ref@exam, ref@learn) and the question it happened.
-// - Per run, in --out only (2026-11-06, photo exposure, Q187-Q190): expo, each question's [genus, colony (observation),
-//   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
-//   answers per photo (docs/LEARNING.md "Photo exposure"); preOW (2026-11-08), each question's [under Open Water, the
-//   lowest judged ease shown] (docs/LEARNING.md "Rarely under ease 4 before Open Water").
-// - The levels and the score (2026-11-08, rule L11's measures, docs/LEARNING.md "Validating a learning change"): at each
-//   checkpoint, kinds, per kind of unit (the subject's rank for its slate: genus, family; app.js rankOf for a set's units,
-//   the fish scientific genera; bonus for the corals' bonus genera), its units, those met, at Open Water and at Advanced
-//   (LV_AT), the judge's D* and E = bar - D* over those met; score, the shown score (model.js headPct) and, for a subject
-//   with a global score, its components (core.js treeScore: entries, genera, common, scientific, S, credit, raw; by
-//   circle); plateau, the longest stretch of answers so far without a new high of the shown score. Per run: owAt and
-//   advAt, the answer at which each unit first reached Open Water and Advanced; kinds, each unit's kind; c3, the answer
-//   at which circle 3 was offered (the card) and first met. tools/learncmp.js reads them, with the photo exposure (expo,
-//   preOW above).
+// Measures: at each checkpoint (50, 100, 200, 300, then every 300 questions), mean +- sd over the seeds, the true
+// knowledge against the app's estimates (each table's legend, printed with it, defines its columns); per run, the
+// timings (metAt, owAt, advAt, the bonus offer, openings after a miss) and, in --out only, the photo exposure (expo, pool,
+// preOW: docs/LEARNING.md "Photo exposure"). tools/learncmp.js reads them.
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -182,16 +81,15 @@ const {chromium} = require('playwright');
 const {memStorage} = require('./memstorage.js');
 const ROOT = path.join(__dirname, '..');
 
-// Profiles (2026-11-08, rule L11): tools/learnprof.js, the same list for both subjects and both worlds, by lecture group,
-// family, circle or commonness rather than data order; loaded in the page too (an init script), where its knownUnits
-// reads the app's own units. The default list: every profile with a part for the subject (the corals: beginner, lecture
-// RA, strong RA, expert; the fish: and the casual diver).
+// Profiles: tools/learnprof.js, the same list for both subjects and both worlds; also loaded in the page (an init
+// script), where knownUnits reads the app's own units. Default: every profile with a part for the subject.
 const {PROFILES, defaults: DEFAULT_PROFILES, profOf} = require('./learnprof.js');
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
 // MEM: the photo memory above (logits added to recognising, by bucket: new, seen never right, right once, right 2+).
-// FEW / MANY: the photo-count groups of the measures by photo count (game photos of the genus).
+// REF_D, REF_OK: the hard reference question (one photo, difficulty + REF_D, single view, 4 choices: the genus and its 3
+// most confusable slate genera) and the true success that passes it. FEW / MANY: the photo-count groups (game photos).
 const LEARNER = {
   LOOK: 3,
   ELIM: 0.5,
@@ -212,26 +110,21 @@ const LEARNER = {
   FIELD: {A: 1.6, PAIR: 1},
   // A Learned genus counts as rightly learned when its true whole-slate success pOpen is PREC or more (precision of Learned).
   PREC: 0.8,
-  // The exemplar learner (--learner exemplar; 2026-11-06, the third world of the judge, docs/LEARNING.md "The judge"): a
-  // summed-similarity exemplar model after the GCM (Nosofsky 1986, JEP:General 115:39), with a background (guessing)
-  // term. Every photo shown with its answer is stored as an exemplar of the genus shown, and the montage of a miss stores
-  // one typical photo of the genus given; prior knowledge know gives w0 = know / (1 - know) typical exemplars. A photo of
-  // difficulty d sits at atypicality r = R sig(d) (+ the single-view offset); its similarity to an exemplar of genus c is
-  // exp(-K sqrt(D_tc^2 + r^2 + r_e^2)) (the very same photo: exp(-K D_tc)), D_tc = D (1.1 - s(t, c)), s the item
-  // learner's look (1 for a declared look-alike, about 0.1 otherwise). With S_c the summed similarity to c's exemplars,
-  // P(t) = S_t / (sum over V of S_c + B), and the background share B / (...) is a guess among V (the choices, or the
-  // names held when typing). Four constants, chosen by a small grid (scratch gcmgrid.js) so that, open against the slate:
-  // 13 exemplars of every genus give 0.85 on an average photo, 0.68 on a hard one (d 2), 0.91 on an easy one; 6 each
-  // 0.77; one exemplar of the genus alone 0.43 (0.56 among 4 choices). Unlike the field learner, a genus nobody stored
-  // does not compete: a drilled genus is named right among the slate (0.96), the GCM's own prediction.
+  // The exemplar learner (--learner exemplar; docs/LEARNING.md "The judge"): a summed-similarity exemplar model after the
+  // GCM (Nosofsky 1986, JEP:General 115:39) with a background (guessing) term. Every photo shown is stored as an exemplar
+  // of the genus shown, a miss's montage stores one typical photo of the genus given, and prior know gives
+  // w0 = know / (1 - know) typical exemplars. A photo of difficulty d sits at atypicality r = R sig(d) (+ the single-view
+  // offset); its similarity to an exemplar of c is exp(-K sqrt(D_tc^2 + r^2 + r_e^2)) (the very same photo: exp(-K D_tc)),
+  // D_tc = D (1.1 - s(t, c)). P(t) = S_t / (sum over V of S_c + B), S_c the summed similarity to c's exemplars; the
+  // background share is a guess among V. The four constants give, against the slate, 0.85 on an average photo with 13
+  // exemplars of every genus, 0.68 on a hard one (d 2), 0.91 on an easy one. A genus nobody stored does not compete.
   EX: {K: 8, R: 0.6, D: 8, B: 0.03}
 };
-// The judge (2026-11-06, Pierre Q127, docs/reviews/2026-11-06-progress-metric-research.md): the domain score D*(g) = the
-// learner's true success naming a photo of g alone (one view), with no choices (every slate genus a possible answer for
-// the field and exemplar learners; recognition alone for the item learner), averaged over g's theoretical photo
-// distribution N(mu_g, SD^2) (Gauss-Hermite, 7 points). SD: the spread of photo difficulty within a genus (an assumption:
-// easy to hard about +-1.5 logits); NOISE: the app's error on a photo's difficulty with --truth gen. GH: the 7-point
-// Gauss-Hermite rule for e^(-x^2), [node, weight / sqrt(pi)] (the nodes times sqrt(2) for a standard normal).
+// The judge (docs/reviews/2026-11-06-progress-metric-research.md): the domain score D*(g) = the learner's true success
+// naming a photo of g alone (one view) with no choices (every slate genus a possible answer for the field and exemplar
+// learners; recognition alone for the item learner), averaged over g's photo distribution N(mu_g, SD^2). SD: the spread
+// of photo difficulty within a genus (an assumption); NOISE: the app's error on a photo's difficulty with --truth gen.
+// GH: the 7-point Gauss-Hermite rule for e^(-x^2), [node, weight / sqrt(pi)] (nodes times sqrt(2) for a standard normal).
 const JUDGE = {SD: 0.8, NOISE: 0.3, GH: [[-2.651961, 0.000548], [-1.673552, 0.030757], [-0.816288, 0.240123], [0, 0.457143], [0.816288, 0.240123], [1.673552, 0.030757], [2.651961, 0.000548]]};
 
 const arg = (k, d) => {
@@ -270,7 +163,6 @@ const SEEDS = Number(arg('seeds', 5)),
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
-  RTAPP = arg('rtapp', 'on') !== 'off',
   RTLOG = arg('rtlog', null),
   LEARN = arg('learner', arg('world', 'app') === 'rated' ? 'count' : 'item'), // the rated world's: count (tools/ratedworld.js)
   TAU = Number(arg('tau', 0.5)),
@@ -278,8 +170,11 @@ const SEEDS = Number(arg('seeds', 5)),
   DRILL = Number(arg('drill', 200)),
   SUBJECT = arg('subject', 'coral'),
   PHOTOS = arg('photos', null),
+  // --set FILE serves that file as calibration-set.json (model.js CALSET, setBonus), none an empty set: the draw as
+  // without the calibration set, for a paired comparison on the same tree (docs/LEARNING.md "The calibration set").
+  CSETF = arg('set', null),
   CALIBX = JSON.parse(arg('calib', '{}')),
-  // --world rated (2026-11-08, rule L11): the rated world in Node (tools/ratedworld.js) instead of the app in Chromium;
+  // --world rated (rule L11): the rated world in Node (tools/ratedworld.js) instead of the app in Chromium;
   // --dist its photo distribution (normal, tail: 15% of the photos 1.5 harder, t3), --app what the app knows (truth: every
   // photo and unit rated; own: its judged-ease prior alone). --questions counts its answers.
   WORLD = arg('world', 'app'),
@@ -288,12 +183,12 @@ const SEEDS = Number(arg('seeds', 5)),
   // --coralsd: the corals' genus spread in the rated world (default tools/ratedworld.js RATED.CORAL_GD, 0.286; 0.37 the
   // sensitivity variant).
   CORALSD = Number(arg('coralsd', 0)) || null,
-  // --app sheet (2026-11-09, Q315 level 2): the rated world's players, one per profile, play one world in turn and the
+  // --app sheet: the rated world's players, one per profile, play one world in turn and the
   // app reads the sheet's photo Elo replayed on their own log (tools/ratedworld.js runPop); --times the case of the
   // simulated seconds (rho25, rho0, views, fast), --every the rounds between two refreshes of the ratings served.
   TIMESK = arg('times', 'rho25'),
   EVERY = Number(arg('every', 25)),
-  // --gap (Q324): the knowledge-gap term of the simulated seconds, log seconds per logit of the learner's true ability -
+  // --gap: the knowledge-gap term of the simulated seconds, log seconds per logit of the learner's true ability -
   // difficulty on the question (the real log: -0.22, LEARNING.md "Response time: genus and photo"); 0 by default.
   GAPX = Number(arg('gap', 0));
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
@@ -330,21 +225,19 @@ const CPS = [
   )
 ].sort((a, b) => a - b);
 // Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, fmt, v}), to rate the photos as live
-// players do; without it every photo's difficulty is 0 (no sheet), as in CI (the Easy/Medium/Hard sets before 2026-11-03).
-// --stats live reads them from the sheet at start (read-only, the GET the app makes) with av=learnsim: a ?stats=1 read
-// without an app version is logged by the sheet as an app from before 2026-11-03 (Code.gs v25 'old'; 2026-11-05: the
-// integrator's own curl and, most likely, the files saved for --stats on 11-03 made the only 'old' rows). Fetch a file
-// by hand the same way: curl "<SYNC_URL>?stats=1&av=tool" (tests/statsav.test.js checks the repo's own reads).
+// players do; without it every photo's difficulty is 0, as in CI. --stats live reads them from the sheet at start
+// (read-only, the GET the app makes) with av=learnsim: a ?stats=1 read without an app version is logged by the sheet as
+// an old app. Fetch a file by hand the same way: curl "<SYNC_URL>?stats=1&av=tool" (tests/statsav.test.js).
 let STATS_JSON = STATS && STATS !== 'live' ? JSON.parse(fs.readFileSync(STATS, 'utf8')) : null;
 const liveStats = () =>
   fetch(/const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'))[1] + '?stats=1&av=learnsim').then(r =>
     r.json()
   );
-// --truth gen[:SD[:NOISE]] (2026-11-06, the judge): no file; every photo's true difficulty is drawn from its genus's
+// --truth gen[:SD[:NOISE]]: no file; every photo's true difficulty is drawn from its genus's
 // theoretical distribution N(mu_g, SD^2) (mu_g the genus offset of --stats gd, else 0; SD default JUDGE.SD), from a hash
 // of its file name, so a photo keeps it across runs and seeds; the app is told an estimate of it (the true value plus
 // N(0, NOISE^2), default JUDGE.NOISE, as if 20 trusted answers had rated it). The domain score D* reads the same
-// distribution. --truth file.json: as before ({photos, gd}); its sd (or JUDGE.SD) is the spread.
+// distribution. --truth file.json: {photos, gd}; its sd (or JUDGE.SD) is the spread.
 const TRUTH_GEN = TRUTH && /^gen(:|$)/.test(TRUTH) ? TRUTH.split(':').slice(1).map(Number) : null;
 const TRUTH_JSON = TRUTH && !TRUTH_GEN ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
 
@@ -361,8 +254,13 @@ const TYPES = {
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     own = PHOTOS && u === '/fish-photos.json',
-    f = own ? path.resolve(PHOTOS) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!own && !f.startsWith(ROOT)) {
+    cset = CSETF && u === '/calibration-set.json';
+  if (cset && CSETF === 'none') {
+    res.writeHead(200, {'Content-Type': TYPES['.json']});
+    return res.end('{}');
+  }
+  const f = own ? path.resolve(PHOTOS) : cset ? path.resolve(CSETF) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (!own && !cset && !f.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end();
   }
@@ -423,14 +321,14 @@ function play(cfg) {
   if (tg) {
     // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
     const ps = {};
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the exam's photos keep their own difficulty
+    // whether withheld or not
     [...slateGenera(), ...BON].forEach(g =>
-      VIEWS.forEach(([v]) =>
-        gamePics(g, v).forEach(p => {
-          const d = muOf(g) + TSD * probit(hashU(p.f, 1));
-          GEN_D[p.f] = d;
-          ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
-        })
-      )
+      [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].forEach(p => {
+        const d = muOf(g) + TSD * probit(hashU(p.f, 1));
+        GEN_D[p.f] = d;
+        ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
+      })
     );
     PSTAT = ps;
   }
@@ -441,7 +339,8 @@ function play(cfg) {
   const distOf = g => {
     if (tg) return [muOf(g), TSD];
     if (truth) return [(truth.gd || {})[g] || 0, TSD];
-    const ds = VIEWS.flatMap(([v]) => gamePics(g, v).map(p => photoDiff(g, p)));
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the population is the unit's whole set
+    const ds = [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => photoDiff(g, p));
     if (!ds.length) return [0, J.SD];
     const m = ds.reduce((a, x) => a + x, 0) / ds.length;
     return [m, Math.sqrt(ds.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, ds.length - 1)) || J.SD];
@@ -485,8 +384,7 @@ function play(cfg) {
   SL.forEach(g => (know[g] = knows.has(g) ? prof.hi : prof.lo));
   BON.forEach(g => (know[g] = prof.lo));
   // The units of the subject's opt-in sets (app.js UNITS sets: the fish scientific genera), learned like any unit from the
-  // profile's low start (2026-11-08, the fish achievements on genera): before, they were never taught (not in know), so
-  // their questions stayed at chance, the genera stayed shaky and held the openings of the families.
+  // profile's low start: untaught, they would stay at chance and hold the openings of their families.
   if (typeof SETS === 'function')
     SETS()
       .flatMap(S => (S.all ? S.all() : S.units()))
@@ -572,19 +470,19 @@ function play(cfg) {
       S = S0.map(x => x + EXC.B / V.length);
     return {p: S[V.indexOf(t)] / tot, S};
   };
-  // A question's true chance by the learner's own rule (pRight for the item learner, as before).
+  // A question's true chance by the learner's own rule (pRight for the item learner).
   const pCh = (t, ch, d, single) => (field ? pField(t, ch, d, single) : exem ? pEx(t, ch, d, single).p : pRight(t, ch, d, single));
   // The judge's domain score D*(t): success naming a photo of t alone (one view) with no choices, over t's theoretical
   // photo distribution (distOf). Item learner: recognition alone (no guess); field and exemplar: every slate genus a
   // possible answer.
-  // The possible answers for a unit outside the slate (a fish scientific genus, a coral bonus genus: the per-kind measures,
-  // Codex review #783): the units of its own kind, itself included; a slate unit keeps the slate.
+  // The possible answers for a unit outside the slate (a fish scientific genus, a coral bonus genus: the per-kind
+  // measures): the units of its own kind, itself included; a slate unit keeps the slate.
   const vocabOf = t => (SL.includes(t) ? SL : [...new Set([t, ...UALL.filter(g => kindOf(g) === kindOf(t))])]);
   const dOne = (t, d) => (field ? pField(t, vocabOf(t), d, true) : exem ? pEx(t, vocabOf(t), d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
   const dStar = t => {
     const [mu, sd] = distOf(t);
     // GH holds the physicists' Gauss-Hermite nodes (weight e^(-x^2)) with weights over sqrt(pi): a standard normal z is
-    // sqrt(2) x (Codex review #624).
+    // sqrt(2) x.
     return J.GH.reduce((a, [x, w]) => a + w * dOne(t, mu + sd * Math.SQRT2 * x), 0);
   };
   // The truth the field measures read: success on an average photo of t with every slate genus a possible answer.
@@ -595,16 +493,17 @@ function play(cfg) {
     bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
-  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
-    // Photo exposure (2026-11-06, Q187-Q190): each question's unit, colony (observation) and photos shown, and the game
-    // photos of each unit with their colony, for the repeat rate, the photos never shown and the answers per photo.
+  const NPH = Object.fromEntries(
+      SL.map(g => [g, new Set([...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => p.f)).size])
+    ),
+    // Photo exposure: each question's unit, colony (observation) and photos shown, and the game photos of each unit with
+    // their colony, for the repeat rate, the photos never shown and the answers per photo.
     okey = p => p.o || p.f,
     expo = [],
-    // Before Open Water (2026-11-08, model.js RARE): each question's [1 if its unit was under Open Water when drawn, else
-    // 0; the lowest judged ease of its photos, 0 for none], for the share of photos under ease 4 before Open Water; then
-    // (2026-11-15, juveniles and colour phases) 1 if a photo shown had a judged phase (core.js phaseOf), the answers its
-    // unit had before it, and the variant kind shown (core.js VAR_KINDS index: 0 none, 1 an early-class juvenile, 2
-    // another, 3 a late-class one, 4 a sex or colour phase; model.js varKind; Q391 a).
+    // Before Open Water (model.js RARE): each question's [1 if its unit was under Open Water when drawn, else 0; the
+    // lowest judged ease of its photos, 0 for none; 1 if a photo shown had a judged phase (core.js phaseOf); the answers
+    // its unit had before it; the variant kind shown (core.js VAR_KINDS index: 0 none, 1 an early-class juvenile, 2
+    // another, 3 a late-class one, 4 a sex or colour phase; model.js varKind)].
     preOW = [],
     POOL = Object.fromEntries(
       SL.concat(BONUS).map(g => [
@@ -624,17 +523,17 @@ function play(cfg) {
   P = {};
   INTROS = {};
   HOLDS = 0;
-  const old = typeof CB === 'undefined'; // before the comeback replaced the gentle restart (warmLeft)
+  const old = typeof CB === 'undefined'; // an app with the gentle restart (warmLeft) instead of the comeback
   if (old) warmLeft = 0;
   else CB = {r: 0, t: 0, ok: 0, f: 0};
   // The planner's history too: start-up's own planNext drew with unseeded randomness and left recent genera damped
-  // (weight x 0.1), so the same seed gave different runs (Codex review #365).
+  // (weight x 0.1), so the same seed would give different runs.
   dropPlans();
   NEXTQ = null;
   SHOWNQ = null;
   last = null;
   lastQs = [];
-  rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list since 2026-11-04; one slot before)
+  rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list; one slot in an older app)
   twoAt = -Infinity;
   twoPair = '';
   store.set(INTRO.OFFER.KEY, null);
@@ -649,9 +548,9 @@ function play(cfg) {
   const early = {n: 0, s: 0, ok: 0, lvl: null, fb: null, tr: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
-  // An opening only after a right answer (model.js openRight, 2026-11-03): the questions where it alone held the path's
-  // opening (every other condition met, a genus left to open), with the chance openChance would then have opened one.
-  // planPhoto asks it last, so a false here is that rule's. Main before the rule has no openRight: nothing recorded.
+  // An opening only after a right answer (model.js openRight): the questions where it alone held the path's opening
+  // (every other condition met, a genus left to open), with the chance openChance would then have opened one. planPhoto
+  // asks it last, so a false here is that rule's. An app without openRight records nothing.
   const blocked = new Map();
   if (typeof openRight === 'function') {
     const or0 = openRight;
@@ -672,6 +571,7 @@ function play(cfg) {
   let blk = {n: 0, ok: 0},
     opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
+    nHo = 0,
     nDuel = 0,
     nFind = 0, // Find the X questions (quiz.js FIND: fish only)
     nAgain = 0,
@@ -688,7 +588,7 @@ function play(cfg) {
     achQ.length = 0;
     achBusy = false;
     document.querySelectorAll('.unlock:not(.intro)').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-    // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
+    // Through the real planner: the questions planned ahead stay after a right answer, as in the app.
     // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
     if (openall && oa.at === null && i + 1 >= Number(openall)) {
       oa.set = introLeft();
@@ -738,8 +638,8 @@ function play(cfg) {
       b.click();
       if (k === 49) throw new Error('a first-meeting card does not close: ' + (b.closest('.unlock') || {}).className);
     }
-    // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
-    // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
+    // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen.
+    // Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
     const typed = !!document.querySelector('#view .tyform'),
       [, t, , , set] = window.__q,
@@ -889,15 +789,15 @@ function play(cfg) {
       selBar: sel ? mean(sel.map(genScore)) : null,
       selOpen: sel ? mean(sel.map(g => po[g])) : null,
       selOver: sel ? over(sel) : null,
-      // Per genus (2026-11-06, for the over of a group of genera: those the profile knows, the custom selection): the
-      // truth pOpen and the bar shown, the genera met only.
+      // Per genus, for the over of a group of genera (those the profile knows, the custom selection): the truth pOpen
+      // and the bar shown, the genera met only.
       po: Object.fromEntries(met.map(g => [g, Math.round(po[g] * 1000) / 1000])),
       // The judge's domain score (dStar), the genera met.
       ds: Object.fromEntries(met.map(g => [g, Math.round(dStar(g) * 1000) / 1000])),
       gs: Object.fromEntries(met.map(g => [g, Math.round(genScore(g) * 1000) / 1000]))
     };
   };
-  // The levels and the score (2026-11-08, rule L11's measures; docs/LEARNING.md "Validating a learning change"): every
+  // The levels and the score (rule L11's measures; docs/LEARNING.md "Validating a learning change"): every
   // unit of the game by kind (the subject's own rank for its slate, app.js rankOf for a set's units, the corals' bonus
   // genera apart), the answer at which each first reached Open Water and Advanced (LV_AT), the shown score after every
   // answer (headPct: the fish global score, else the units' mean) for its plateaus, and when circle 3 came (offered, met).
@@ -1001,6 +901,8 @@ function play(cfg) {
       if (early.n === 20) early.lvl = (P[LEVEL] || {}).th;
     }
     if (set.exam) nEx++;
+    // a held-out photo shown (model.js examSet: an exam question on one; logged |h)
+    if ((set.shown || []).some(p => p && p.ho)) nHo++;
     if (q.auto) nDuel++;
     if (q.findx) nFind++;
     if (q.again) nAgain++;
@@ -1067,6 +969,7 @@ function play(cfg) {
         refEntry: mean(en.map(e => e.ref)),
         refLearned: mean(le.map(e => e.ref)),
         examQs: nEx,
+        heldQs: nHo,
         duels: nDuel,
         finds: nFind,
         agains: nAgain,
@@ -1114,7 +1017,7 @@ function play(cfg) {
         know: {...know},
         LS: JSON.stringify(LS),
         LM: JSON.stringify(LM),
-        X: JSON.stringify(X), // the field learner's pair skills (Codex review #619: they leaked from one break to the next)
+        X: JSON.stringify(X), // the field learner's pair skills, so none leaks from one break to the next
         T,
         last,
         lastQs: [...lastQs],
@@ -1139,7 +1042,7 @@ function play(cfg) {
       // The field learner's pair skills too (they do not fade across a break either: a limit, as the photo memory).
       Object.keys(X).forEach(k => delete X[k]);
       Object.assign(X, JSON.parse(snap.X));
-      // The exemplar learner's memory too (Codex review #624: each break starts from the same first session).
+      // The exemplar learner's memory too (each break starts from the same first session).
       Object.keys(EXS).forEach(k => delete EXS[k]);
       Object.assign(EXS, JSON.parse(snap.EXS));
       dropPlans();
@@ -1176,7 +1079,7 @@ function play(cfg) {
         inHeld = true;
       for (let i = 0; i < 200 && r.after < after; i++) {
         const {q, good} = ask(q0 => {
-          // Openings held: during the gentle restart before (no card), the floor or the comeback now (noOpen).
+          // Openings held: during the gentle restart (an older app: no card), or the floor or the comeback (noOpen).
           if (r.rust0 === null) r.rust0 = old ? null : CB.r;
           if (inHeld && (old ? !!q0.warm : noOpen())) r.held++;
           else inHeld = false;
@@ -1242,15 +1145,14 @@ async function run(browser, base, name, seed) {
     r => r.abort()
   );
   // localStorage in the page's own memory, before anything writes to it (tools/memstorage.js: a run is one long
-  // evaluate, and the browser's storage queued about 1.5 MB an answer in the renderer until it crashed, #734).
+  // evaluate, and the browser's storage would queue about 1.5 MB an answer in the renderer until it crashed).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
-  await ctx.addInitScript(([st, rtapp, sv, subj]) => {
+  await ctx.addInitScript(([st, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
-    // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
-    // the app weighs its steps by it; --rtapp off: an older one.
-    if (rtapp) localStorage.setItem('reefid-sheet-v', String(sv));
+    // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js SHEET_FLOOR).
+    localStorage.setItem('reefid-sheet-v', String(sv));
     localStorage.setItem(`reefid-sync-${subj}-start`, '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
@@ -1262,12 +1164,12 @@ async function run(browser, base, name, seed) {
           conf: st.conf || {},
           ...(st.mem ? {mem: st.mem} : {}),
           ...(st.gd ? {gd: st.gd} : {}),
-          // The per-format offsets (?stats=1 fmt, sheet v77; 2026-11-09): the app reads them as the live game does
-          // (model.js PFMT, core.js fmtsOf from a sheet that reports v >= FMT_SHEET); before, every offset was 0 here.
+          // The per-format offsets (?stats=1 fmt): the app reads them as the live game does
+          // (model.js PFMT, core.js fmtsOf).
           ...(st.fmt ? {fmt: st.fmt} : {})
         })
       );
-  }, [STATS_JSON, RTAPP, SHEETV, SUBJECT]);
+  }, [STATS_JSON, SHEETV, SUBJECT]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
@@ -1695,7 +1597,7 @@ function openTable(runs) {
       };
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
   }
-  // --ach (2026-11-06, the fish achievements' timing, rule L8): per achievement of the subject, the median answer at which
+  // --ach (rule L8): per achievement of the subject, the median answer at which
   // it came over every run (a run without it counting as after QN), and in how many runs.
   if (ACHT)
     for (const name of NAMES) {

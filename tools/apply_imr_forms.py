@@ -1,5 +1,5 @@
 # Switches photo growth forms to the 7 IMR Lecture 6 growth forms (slides 3-10; the classic AIMS lifeforms,
-# English, Wilkinson & Baker 1997), as Pierre chose on 2026-10-31. Writes into forms.json:
+# English, Wilkinson & Baker 1997). Writes into forms.json:
 #   "forms"  the 7 forms (single source for the admin, the site and the judging package)
 #   "cf"     which IMR forms illustrate each Coral Finder front-page box (L = the polyps flag, not a form)
 #   "gf"     first guesses {photo: letter + optional "p" (polyps or vesicles extended)}

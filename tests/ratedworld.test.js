@@ -9,7 +9,7 @@ const RW = require('../tools/ratedworld.js'),
 const X = RW.fishUnits(),
   mean = v => v.reduce((a, x) => a + x, 0) / v.length,
   sd = v => {
-    // the mean once, not at each value (it was quadratic: 7 s on the world's 5,000 photos)
+    // the mean once, not at each value (that is quadratic: 7 s on the world's 5,000 photos)
     const m = mean(v);
     return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1));
   };
@@ -44,7 +44,22 @@ test('the world of a seed: the distributions LEARNING.md states, the same world 
   assert.ok(Math.abs(sd(pi) - RW.RATED.PI) < 0.15, String(sd(pi)));
 });
 
-// The species level (2026-11-15): the species units as the app builds them, drawn after everything else so a world
+// Units added (the genera of circles 2 and 3) never move another draw: each genus and species on a stream of
+// its own, so two versions of the app with other units play the same photos and the same other units (the arms pair).
+test('the world of a seed: a genus or species added or taken away moves no other draw', () => {
+  const U = RW.unitsOf('fish'),
+    half = U.extra.filter((n, i) => i % 2),
+    W = RW.world(U, 2),
+    W0 = RW.world({...U, extra: half, sp: U.sp.slice(0, 100)}, 2);
+  assert.deepStrictEqual(W0.eps, W.eps);
+  assert.deepStrictEqual(W0.ease, W.ease);
+  Object.keys(W0.mu).forEach(n => assert.strictEqual(W0.mu[n], W.mu[n], n));
+  // a genus's own offset around its family's, as RATED states
+  const off = U.extra.map(n => W.mu[n] - W.mu[U.rec(n).parent] - ((U.rec(n).look || []).length ? RW.RATED.SIB : 0));
+  assert.ok(Math.abs(sd(off) - RW.RATED.SUB) < 0.05 && Math.abs(mean(off)) < 0.06, `${mean(off)} ${sd(off)}`);
+});
+
+// The species level: the species units as the app builds them, drawn after everything else so a world
 // without them is the same; a species opens only once its family is at Advanced, in its family's order; its record names
 // the family it starts from (core.js abilityOf from, passed to scoreAnswer as quiz.js answer does).
 test('the species units: the worlds of before unchanged, opened from their family’s Advanced, in its order', () => {
@@ -70,7 +85,7 @@ test('the species units: the worlds of before unchanged, opened from their famil
   assert.strictEqual(r.kinds[U.sp[0]], 'species');
 });
 
-// The rank share (model.js SHARE; Pierre, 2026-11-16, Q382): the units hanging from the families (their scientific genera
+// The rank share (model.js SHARE): the units hanging from the families (their scientific genera
 // and species) take at most m^POW of the drawn questions, m the share of the families in play at their threshold, and
 // one more opens only while their share of the draw is under it. On the app's own model.js, in the rated world's engine.
 test('the rank share: the cap from the families at Advanced, the draw scaled to it, the openings held at it', () => {
@@ -111,7 +126,7 @@ test('the rank share: the cap from the families at Advanced, the draw scaled to 
   assert.strictEqual(S.sharesNow().cap[''], 1);
   assert.deepStrictEqual(S.shareW([fam, spOf[0]], [0.2, 1]), [0.2, 1]);
   assert.strictEqual(S.shareRoom(spOf[1]), true);
-  // A unit's own threshold (shareAt, its data; Q384: a level or a unit whose juveniles come early): only the first family
+  // A unit's own threshold (shareAt, its data: a level or a unit whose juveniles come early): only the first family
   // mastered, the next ones with a threshold of 0 count at once, the others wait for their Advanced.
   inPlay.forEach(n => delete ctx.P[n]);
   ctx.P[fam] = {mx: 1};
@@ -124,7 +139,7 @@ test('the rank share: the cap from the families at Advanced, the draw scaled to 
   assert.ok(M.LV_AT[1] === 0.8);
 });
 
-// The corals: no unit hangs from another, so the draw is the one of before (the same weights, not a copy scaled).
+// The corals: no unit hangs from another, so the draw keeps its own weights (the same weights, not a copy scaled).
 test('the rank share: a list where nothing hangs from another is drawn as before', () => {
   const vm = require('vm'),
     U = RW.unitsOf('coral'),
@@ -135,7 +150,7 @@ test('the rank share: a list where nothing hangs from another is drawn as before
 });
 
 // A unit whose parent is no unit of the game hangs from nothing (the sea slugs' genera, the units of their circles, name a
-// family that is only their structure, #1020): never held, even with no unit of its parent's rank mastered.
+// family that is only their structure): never held, even with no unit of its parent's rank mastered.
 test('the rank share: a unit whose parent is not a unit of the game is never held', () => {
   const vm = require('vm'),
     {ctx} = RW.engine(X, RW.world(X, 5), {app: 'truth'}),
@@ -152,8 +167,8 @@ test('the rank share: a unit whose parent is not a unit of the game is never hel
   delete G(b).parent;
 });
 
-// Pierre's decisions that put scientific genera in the families' phase stay as they were (app.js shareFree): an IMR
-// player's IMR genera (Q219) and the set turned on by hand early (Q240) are never held by the share.
+// The scientific genera put in the families' phase (app.js shareFree): an IMR player's IMR genera and the set turned on
+// by hand early are never held by the share.
 test('the rank share leaves alone an IMR player’s IMR genera and the scientific names turned on by hand early', () => {
   const vm = require('vm'),
     {ctx, M} = RW.engine(X, RW.world(X, 3), {app: 'truth'}),
@@ -180,7 +195,7 @@ test('the rank share leaves alone an IMR player’s IMR genera and the scientifi
   assert.strictEqual(w1[1], 1);
   assert.ok(w1[2] < 0.01, String(w1));
   assert.strictEqual(S.shareRoom(imr), true);
-  // Turned on by hand early (Q240): every genus of the set in play is free.
+  // Turned on by hand early: every genus of the set in play is free.
   ctx.Q.sciH = true;
   tick();
   assert.ok(S.sharesNow().free.has(other));
@@ -243,7 +258,7 @@ test('the item learner: its gain depends on the answer; the count learner learns
   assert.strictEqual(RW.ITEM.PICKED, 0.5);
 });
 
-// Codex review #787: the question as quiz.js planPhoto builds it (k from the traps, the hold's ease and the mix-ups in the
+// The question as quiz.js planPhoto builds it (k from the traps, the hold's ease and the mix-ups in the
 // photo's aim), and the recent observations quiz.js answer records.
 test('the question: every choice counts from 2 traps, the hold and the mix-ups aim the photo lower', () => {
   const calls = {},
@@ -290,7 +305,7 @@ test('the last two observations shown are recorded, as photoSet reads them', () 
   assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
 });
 
-// Codex review #789: the judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
+// The judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
 test('D* over the game photos only; a typed miss on a slate genus may name a bonus genus', () => {
   const U = RW.unitsOf('coral'),
     {ctx, G} = RW.engine(U, RW.world(U, 1)),
@@ -307,7 +322,7 @@ test('D* over the game photos only; a typed miss on a slate genus may name a bon
   assert.deepStrictEqual(fo, [F.slate[1]]); // a family's typed miss names a family, never a genus
 });
 
-// --app sheet (Q315 level 2): the sheet's photo Elo replayed on a population's own log and served to every player.
+// --app sheet: the sheet's photo Elo replayed on a population's own log and served to every player.
 test('the sheet mode: a population logs its answers with seconds, the ratings it serves are learned from them', () => {
   const U = RW.unitsOf('coral'),
     W = RW.world(U, 3),
@@ -319,8 +334,8 @@ test('the sheet mode: a population logs its answers with seconds, the ratings it
   assert.throws(() => RW.timeWorld(U, W, 3, 'nope'));
   const q = {ph: [Object.keys(TW.beta)[0]], ok: 1, typed: false};
   assert.strictEqual(RW.secOf(TW, 3, 0, 7, q), RW.secOf(TW, 3, 0, 7, q), 'the same answer, the same seconds');
-  // Q324: the knowledge-gap term (--gap): a question the learner knows better (a larger true logit) is answered faster;
-  // without it (gap 0) the seconds are those of before, the noise drawn the same.
+  // The knowledge-gap term (--gap): a question the learner knows better (a larger true logit) is answered faster;
+  // without it (gap 0) the seconds are unchanged, the noise drawn the same.
   const TG = RW.timeWorld(U, W, 3, 'rho25', {gap: -0.22});
   assert.strictEqual(TG.gap, -0.22);
   assert.ok(RW.secOf(TG, 3, 0, 7, {...q, gap: 3}) < RW.secOf(TG, 3, 0, 7, {...q, gap: -1}));
@@ -344,7 +359,7 @@ test('the sheet mode: a population logs its answers with seconds, the ratings it
   assert.strictEqual(c.pop.gap, -0.22);
   const at = a.pop.at[0];
   assert.ok(at.q === 30 && at.photos > 10 && at.err > 0 && at.gdErr > 0, JSON.stringify(at));
-  // The sheet's rating reads no seconds today: the times' case and gap leave the answers as they are.
+  // The sheet's rating reads no seconds: the times' case and gap leave the answers as they are.
   assert.deepStrictEqual(
     c.runs.map(r => r.expo),
     a.runs.map(r => r.expo)

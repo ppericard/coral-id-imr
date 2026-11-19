@@ -1,23 +1,23 @@
 require('./slot.js').testGuard();
-// The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330; core.js replayedOf, replayBase, replayAdopted;
-// rules version 10, fish rules version 2, no card): the replay's record of a unit and its answer count win over the
-// device's, also when the device holds more answers there (they were counted twice: a save whose reply was lost, then
-// another device's save, PR #824), and a unit the log has no answer on loses the answers the device counts on it. No
-// exception for answers played before the log began, no floor. The fixtures are the patterns found on the real sheet on
-// 2026-11-09 (counts only, made-up names): a whole record doubled, small excesses on some units, fish only, and the fish
-// answers from before the fish log. Nothing leaves this process (rule D1).
+// The log is the only reference (rule D9; core.js replayedOf, replayBase, replayAdopted; rules version 10, fish rules
+// version 2, no card): the replay's record of a unit and its answer count win over the device's, also when the device
+// holds more answers there (counted twice: a save whose reply was lost, then another device's save), and a unit the log
+// has no answer on loses the answers the device counts on it. No exception for answers played before the log began, no
+// floor. The fixtures are patterns found on the real sheet (counts only, made-up names): a whole record doubled, small
+// excesses on some units, fish only, and the fish answers from before the fish log. Nothing leaves this process
+// (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js');
-const {page, LIGHT, withData, loadCodeGs} = require('./syncpage.js');
+const {page, SV, withData, loadCodeGs} = require('./syncpage.js');
 
 const DATA = require('../data.json'),
   GEN = {...((DATA.x && DATA.x.gen) || {}), ...DATA.gen},
-  FGEN = C.fishReplayGen(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'))),
+  FGEN = C.treeReplayGen(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'))),
   CORAL = Date.UTC(2026, 10, 1, 9, 47), // the coral log's first answer
-  FISH = Date.UTC(2026, 10, 6, 5, 7), // the fish log's first answer (sheet v60)
+  TREEU = Date.UTC(2026, 10, 6, 5, 7), // the fish log's first answer
   H = 3600000;
 const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora', 'Favites', 'Fungia', 'Goniopora', 'Turbinaria', 'Pavona', 'Galaxea'];
 const FU = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses', 'f:Groupers'];
@@ -87,15 +87,14 @@ test('small excesses on some units (one to three answers counted twice): correct
 });
 
 test('fish only: the fish replay wins, the answers from before the fish log dropped, no floor', () => {
-  const A = Array.from({length: 20}, (_, i) => ans('f' + i, FU[i % 5], i % 3 !== 2, FISH + 30 * H + i * 30000, FU)),
+  const A = Array.from({length: 20}, (_, i) => ans('f' + i, FU[i % 5], i % 3 !== 2, TREEU + 30 * H + i * 30000, FU)),
     rep = replay(A, FGEN),
     once = C.replayedOf(rep, {}, C.rvOf('fish')),
     saved = inflate(once, (u, r) => (u === 'f:Damselfishes' || u === 'f:Wrasses' ? [(r.ok || 0) + 2, r.ko || 0] : null));
   assert.deepStrictEqual(counts(C.replayAdopted(rep.P, saved, C.rvOf('fish'))), counts(once));
-  // Played before the fish log began (the first logged fish answer in the log's first minute, as on 2026-11-06): its 17
-  // answers from before are in no log, so they go (Q330: the log is the only reference), four on each of four families,
-  // one on a fifth.
-  const B = Array.from({length: 20}, (_, i) => ans('p' + i, FU[i % 5], i % 3 !== 2, FISH + 30000 + i * 60000, FU)),
+  // Played before the fish log began (the first logged fish answer in the log's first minute): its 17 answers from
+  // before are in no log, so they go (the log is the only reference), four on each of four families, one on a fifth.
+  const B = Array.from({length: 20}, (_, i) => ans('p' + i, FU[i % 5], i % 3 !== 2, TREEU + 30000 + i * 60000, FU)),
     pre = replay(B, FGEN),
     early = C.replayedOf(pre, {}, C.rvOf('fish')),
     extra = {'f:Damselfishes': 4, 'f:Butterflyfishes': 4, 'f:Angelfishes': 4, 'f:Wrasses': 4, 'f:Groupers': 1},
@@ -124,7 +123,7 @@ test('a unit the log has no answer on: its answers on the device go; a unit with
   assert.strictEqual(total(M), 6);
 });
 
-// Codex review of #840: a player with no answer in the log at all (an empty replay) keeps no unit with answers and no
+// A player with no answer in the log at all (an empty replay) keeps no unit with answers and no
 // ability; the level's count keeps main's rule (the larger).
 test('an empty replay: every unit with answers goes, the ability too; the level count kept', () => {
   const M = C.replayAdopted({}, {'~level': {ok: 17, ko: 0, th: 2, vr: 0.1}, Acropora: {ok: 17, ko: 0, h: '11111'}}, 2);
@@ -132,7 +131,7 @@ test('an empty replay: every unit with answers goes, the ability too; the level 
   assert.deepStrictEqual([M[C.LEVEL].ok, M[C.LEVEL].th, M[C.LEVEL].vr], [17, undefined, undefined]);
 });
 
-// Codex review of #840 (round 2): when the sheet sent no level (an empty log), the merge baseline's level is the shared
+// When the sheet sent no level (an empty log), the merge baseline's level is the shared
 // copy's, never the adopted one, which holds this device's unsent answers: the next merge keeps every answer once.
 test("an empty replay with an unsent answer: the baseline's level is the shared copy's, the next merge counts each answer once", () => {
   const shared = {'~level': {ok: 3, ko: 0, th: 1}},
@@ -146,7 +145,7 @@ test("an empty replay with an unsent answer: the baseline's level is the shared 
   assert.strictEqual(n(merged[C.LEVEL]), 5, 'every answer once');
 });
 
-// Codex review of #840 (round 3): a unit whose shared answers are not in the log is discarded from the merge baseline
+// A unit whose shared answers are not in the log is discarded from the merge baseline
 // too, so this device's unsent answer on it survives the next merge with a device that already adopted.
 test("a unit absent from the log: no baseline record, this device's unsent answer survives the next merge", () => {
   const rec = {'~level': {ok: 1, ko: 0, th: 1}, Porites: {ok: 1, ko: 0, h: '1'}},
@@ -159,7 +158,7 @@ test("a unit absent from the log: no baseline record, this device's unsent answe
   assert.strictEqual(n(merged.Acropora), 1, 'the unsent answer is kept once');
 });
 
-// Codex review of #840 (round 4), the level as one rule: over a doubled save every progress field of the level (ability,
+// The level as one rule: over a doubled save every progress field of the level (ability,
 // typed opportunities, answer times) is the log's, in the record adopted and in its merge baseline; only the plain count
 // (the checkpoints' clock) keeps the larger, until claude/level-count-from-log.
 test("the level over a doubled save: the log's ability, typed opportunities and times; only the count kept", () => {
@@ -176,7 +175,7 @@ test("the level over a doubled save: the log's ability, typed opportunities and 
   }
 });
 
-// Codex review of #840 (round 5): an empty log, the same rule: the baseline keeps the shared clock only, so two devices'
+// An empty log, the same rule: the baseline keeps the shared clock only, so two devices'
 // new typed answers both survive the next merge.
 test("an empty log: the baseline's level keeps the count only, no typed opportunities or times from the old save", () => {
   const shared = {'~level': {ok: 20, ko: 0, th: 1, tyk: {f: 20}, rt: {n: 20, s: 60}}},
@@ -207,7 +206,7 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
     const fish = rnd() < 0.4,
       U = fish ? FU : G,
       gen = fish ? FGEN : GEN,
-      t0 = (fish ? FISH : CORAL) + int(200 * H),
+      t0 = (fish ? TREEU : CORAL) + int(200 * H),
       A = Array.from({length: 3 + int(30)}, (_, i) => ans('q' + k + 'x' + i, U[int(U.length)], rnd() < 0.7, t0 + i * 45000, U)),
       rep = replay(A, gen),
       once = C.replayedOf(rep, {}, 1),
@@ -239,7 +238,7 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
 // holds a whole record twice under rules version 9: once the script replays rules version 10, the device's own progress
 // takes the log's counts on every unit, its unsent answer on top, its next save puts them on the sheet, and no card.
 test('a device holding its record twice under the rules before: the next sync takes the log, its unsent answer on top, no card', async () => {
-  for (const v of [LIGHT - 1, LIGHT]) {
+  for (const v of [SV]) {
     const s = loadCodeGs(withData()),
       A = Array.from({length: 12}, (_, i) => ans('d' + v + 'x' + i, G[i % 4], i % 3 !== 2, CORAL + 48 * H + i * 60000)),
       rep = replay(A, GEN),
@@ -268,8 +267,8 @@ test('a device holding its record twice under the rules before: the next sync ta
 });
 
 // A replay of a rules version newer than the app's own (core.js rvOf) is never adopted: an app that does not know the
-// version cannot hold what it brings, and once marked applied it would never take it again (2026-11-09: devices on an
-// app from before rules version 9 adopted its replay without the domain-score bar).
+// version cannot hold what it brings, and once marked applied it would never take it again (an app from before rules
+// version 9 would adopt its replay without the domain-score bar).
 test('a replay of a rules version the app does not know yet: not adopted, the version not marked applied', async () => {
   const s = loadCodeGs(withData()),
     A = [0, 1, 2].map(i => ans('n' + i, G[i], 1, CORAL + 48 * H + i * 60000));

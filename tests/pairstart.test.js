@@ -2,7 +2,7 @@
 require('./slot.js').testGuard();
 // Pairs' and the Heatmap's start of a fish pair is the game's (fish admin at parity, Pierre 2026-11-08: the admin's
 // Starts as left out the key group and the species): admin.js pairPrior over fishUnitRec, on the registry the admin reads
-// (reports.js repReg), against model.js confPrior over the units the game builds (core.js fishGen, app.js fishGenera,
+// (reports.js repReg), against model.js confPrior over the units the game builds (core.js treeGen, app.js treeGenera,
 // app.js imrFormsOf), on the real fish.json, for every pair of units of one rank (a question's choices are of its rank).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -21,23 +21,23 @@ const F = json('fish.json'),
   APP = src('app.js'),
   MODEL = src('model.js');
 
-// The game: fishGenera over fishGen (the photos in play), and confPrior with isLook, dataSeed and imrFormsOf as the app
+// The game: treeGenera over treeGen (the photos in play), and confPrior with isLook, dataSeed and imrFormsOf as the app
 // has them (no curation: the content overlay is not read by the admin's registry either).
 const ctx = {DOM: {EX: 0.9}, CONF: C.CONF, DATA: {key: [], course: {}, gen: {}}};
-['easyCover', 'fishScoreTree', 'fishSpUnits', 'rankWeights'].forEach(k => (ctx[k] = C[k]));
+['easyCover', 'treeScoreTree', 'treeSpUnits', 'treeGenSets', 'rankWeights'].forEach(k => (ctx[k] = C[k]));
 vm.createContext(ctx);
 vm.runInContext(
   [
-    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(APP, 'const imrFormsOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
     block(MODEL, 'const isLook = (t, n) =>', '\n', {through: 1, file: 'model.js'}),
     block(MODEL, 'const confPrior = (t, n, look) =>', 'function pooledConf(', {file: 'model.js'}),
     block(MODEL, 'function dataSeed(a, b) {', '\n}\n', {through: 1, file: 'model.js'}),
-    'this.fishGenera = fishGenera; this.confPrior = confPrior; this.isLook = isLook;'
+    'this.treeGenera = treeGenera; this.confPrior = confPrior; this.isLook = isLook;'
   ].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, C.fishGameRead(GM).photos, null)), F);
+const X = ctx.treeGenera(C.treeGen(F, C.treePhotos(PH.photos, C.treeGameRead(GM).photos, null)), F);
 ctx.GX = n => X.gen[n];
 
 // The admin: admin.js pairPrior and fishUnitRec (between `// answerlog: begin` / `end`) on reports.js repReg.
@@ -72,7 +72,7 @@ test('every pair of fish genera and of fish species starts on Pairs as in the ga
     assert.ok(L.length > 20, r);
     assert.deepStrictEqual(bad.slice(0, 5), [], r);
   });
-  // two species of one family start as look-alikes (core.js fishSpUnits look), as the game declares them
+  // two species of one family start as look-alikes (core.js treeSpUnits look), as the game declares them
   const [s1, s2] = X.spl.filter(id => X.gen[id].parent === X.gen[X.spl[0]].parent);
   assert.ok(s2, 'a family with two species units');
   assert.deepStrictEqual(pairPrior(s1, s2, rec(s1), rec(s2)), ['Look-alike', C.CONF.LOOK]);

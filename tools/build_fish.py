@@ -106,6 +106,7 @@ import urllib.request
 from pathlib import Path
 
 import fish_commonness
+import fish_inforce
 import fish_names
 from instance import fish_source  # the source as the build reads it: fish_source.json with the instance's layer
 
@@ -118,14 +119,16 @@ GROOTS = ROOT / "tools" / "fish_genus_roots.json"  # the genus name roots, from 
 GMARKS = ROOT / "tools" / "fish_genus_marks.json"  # the genera's own presentation and ID marks, sourced (genus_marks)
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
+LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
 OUT = ROOT / "fish.json"
+CUR = ROOT / "curation.json"  # read only, for show_rootless: the content editor's circle edits
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
 
 WORMS = "https://www.marinespecies.org/rest/"
 INAT = "https://api.inaturalist.org/v1/"
 PH = "place_id=6873"
-PIERRE = "ppericard"  # his observations: usable photos (rule S2); one observer like anyone for presence (2026-11-04)
+PIERRE = "ppericard"  # his observations: usable photos (rule S2); one observer like anyone for presence
 CHORDATA = 2  # iNaturalist
 INAT_RANKS = {"class", "subclass", "infraclass", "superorder", "order", "suborder", "infraorder", "superfamily", "family",
               "subfamily", "supertribe", "tribe", "subtribe", "genus", "subgenus", "species"}
@@ -236,7 +239,7 @@ def inat_taxon(name, rank, alt=()):
     for k, n in enumerate([name, *alt]):
         exact = []
         # The search, then the autocomplete when the search misses a short name (Foa fo: its search returns 30 "foam"
-        # taxa, 2026-11-08); a name the search finds is never asked twice.
+        # taxa); a name the search finds is never asked twice.
         for ep in ("taxa?q=", "taxa/autocomplete?q="):
             rs = (NET.get(f"{INAT}{ep}{q(n)}&per_page=30") or {}).get("results") or []
             rs = [r for r in rs if CHORDATA in (r.get("ancestor_ids") or [])]
@@ -261,7 +264,7 @@ def inat_count(tid, where, grade="research"):
     return (NET.get(f"{INAT}observations?taxon_id={tid}{g}&{where}&per_page=0") or {}).get("total_results", 0)
 
 
-# The presence counts of every species, asked together before the species loop (rule C7; #784): {(taxon, where, grade): observations, ("u", taxon, where): distinct Research Grade observers}, each
+# The presence counts of every species, asked together before the species loop (rule C7): {(taxon, where, grade): observations, ("u", taxon, where): distinct Research Grade observers}, each
 # what the one-species request (inat_count, observers) answers; what is not in it is asked alone, as before.
 PRE = {}
 COUNTS = ((f"user_login={PIERRE}", ""), (PH, "research"), (DAUIN, "research"), (DAUIN, "needs_id"))
@@ -337,8 +340,8 @@ def presence(tid, imr=False, names=()):
     return p
 
 
-# A species off the IMR list (src dauin or wink) or of a circle-3 node must be confirmed near Dauin (Pierre, 2026-11-03;
-# since Q214, 2026-11-08, it takes its family's circle, the near-Dauin bar unchanged), by the same rule.
+# A species off the IMR list (src dauin or wink) or of a circle-3 node must be confirmed near Dauin, by the same rule; it
+# takes its family's circle.
 NEAR_OUT = "not confirmed near Dauin"
 
 
@@ -377,7 +380,7 @@ def update_near(path=OUT):
         p.pop("nearBy", None)
         p.update(near_fields(s["inat"], p, "pdf" in s))
         # National presence depends on near (rule C8): recompute it from the stored rg and chk, asking the national
-        # observers when the rule needs them; a species no longer confirmed leaves the game (Codex review #496). A species
+        # observers when the rule needs them; a species not confirmed any more leaves the game. A species
         # newly confirmed comes in with a full build (its circle comes from the source).
         if "rg" in p:
             u = p.get("phU")
@@ -686,8 +689,7 @@ def add_families(o, key, declared=()):
             r["apart"] = ap
         if x.get("src"):
             r["msrc"] = x["src"]
-    # The species' size and depth (tools/fish_facts.json, tools/fish_facts.py: Reef Life Survey, else FishBase; Pierre,
-    # Q6): size {len (cm), lt (the length type when not total length), src}, depth {m [shallow, deep], src}, src
+    # The species' size and depth (tools/fish_facts.json, tools/fish_facts.py: Reef Life Survey, else FishBase): size {len (cm), lt (the length type when not total length), src}, depth {m [shallow, deep], src}, src
     # {t, u} naming the page each value comes from.
     facts = json.loads(FACTS.read_text(encoding="utf-8")) if FACTS.exists() else {}
     def fsrc(x, k):
@@ -704,13 +706,12 @@ def add_families(o, key, declared=()):
             s["size"] = {"len": x["len"], **({"lt": x["lt"]} if x.get("lt") else {}), "src": fsrc(x, "lsrc")}
         if x.get("dep"):
             s["depth"] = {"m": x["dep"], "src": fsrc(x, "dsrc")}
-    # The species' curated common names (tools/fish_common.json, tools/fish_common.py; Pierre, 2026-11-04: 1 to 3 per
-    # species, never more; published as selected, Pierre, 2026-11-08, Q313): cn, one list per name, the name shown first,
-    # then its other spellings, accepted when typed (Pearl-scaled / Pearlscale angelfish; a PDF slip's own form); the main
-    # name first (Pierre, 2026-11-15, Q376 (a): iNaturalist's default, else FishBase's main name), so an app that reads
-    # cn[0] alone shows it. cni: the place in cn of the IMR name (the PDF's or the IMR presentation's), shown first to a
-    # player at IMR; cnr: the regional standard names (Q376 (c)), the same shape as cn, accepted when typed, never shown.
-    # Both additive: an older app ignores them. A game species no reference names has none (Q247). Every source stays in
+    # The species' curated common names (tools/fish_common.json, tools/fish_common.py: 1 to 3 per species, published as
+    # selected): cn, one list per name, the name shown first, then its other spellings, accepted when typed (Pearl-scaled
+    # / Pearlscale angelfish; a PDF slip's own form); the main name (iNaturalist's default, else FishBase's) first, so an
+    # app that reads cn[0] alone shows it. cni: the place in cn of the IMR name (the PDF's or the IMR presentation's),
+    # shown first to a player at IMR; cnr: the regional standard names, the same shape as cn, accepted when typed, never
+    # shown. Both additive: an older app ignores them. A game species no reference names has none. Every source stays in
     # tools/fish_common.json.
     cnames = json.loads(CNAMES.read_text(encoding="utf-8")).get("species", {}) if CNAMES.exists() else {}
     for s in o["species"]:
@@ -729,21 +730,22 @@ def add_families(o, key, declared=()):
             if c.get("regional"):
                 s["cnr"] = [[n["name"], *n.get("alt", [])] for n in c["regional"]]
     o["families"] = out
-    # The genus common names (tools/fish_genus_names.json; Pierre, 2026-11-07: "some genera have common names. They
-    # should be present somewhere"): common (the name) and csrc (its source, in words), checked against the data.
+    # The genus common names (tools/fish_genus_names.json): common (the name) and csrc (its source, in words), checked
+    # against the data.
     gnames = dict(json.loads(GNAMES.read_text(encoding="utf-8")).get("genera", {})) if GNAMES.exists() else {}
-    # The genus name roots (tools/fish_genus_roots.json; Pierre, 2026-11-14, Q124 d): root, checked (genus_root); every
+    # The genus name roots (tools/fish_genus_roots.json): root, checked (genus_root); every
     # circle-1 genus has one or a reason in skip.
     groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
-    # The genera's own presentation and ID marks (tools/fish_genus_marks.json; Pierre, 2026-11-08): plain, marks, msrc, mby,
-    # checked (genus_marks); every circle-1 genus of a family done has marks, IMR cues or a reason in none.
+    # The genera's own presentation and ID marks (tools/fish_genus_marks.json): plain, marks, msrc, mby, checked
+    # (genus_marks); every genus of a family in play (any circle, the surprise cards' families aside: the content comes
+    # before the genera of circles 2 and 3 open) has IMR cues, or a presentation and marks or a reason in none.
     gmk = json.loads(GMARKS.read_text(encoding="utf-8")) if GMARKS.exists() else {}
     if gmk and set(gmk) - {"about", "src", "families", "genera", "none"}:
         sys.exit("tools/fish_genus_marks.json: keys about, src, families, genera and none only")
-    # (the families done are the key in force's ids: another key's are left aside, as tools/fish_sheets.json's; the test
-    # tests/genusmarks.test.js checks them against fish.json)
-    mks, mnone, mdone = dict(gmk.get("genera", {})), gmk.get("none", {}), set(gmk.get("families", [])) & set(fams)
+    # (families, the families done, are the key in force's ids: another key's are left aside, as tools/fish_sheets.json's;
+    # tests/genusmarks.test.js checks them against fish.json, every family in play listed)
+    mks, mnone = dict(gmk.get("genera", {})), gmk.get("none", {})
     msrc_used = set()
     go = []
     for g, x in gens.items():
@@ -758,7 +760,7 @@ def add_families(o, key, declared=()):
         if gn:
             r["common"], r["csrc"] = gn["common"], genus_csrc(x["id"], gn, r, u, [sp[i] for i in x["species"]], sp, fams[x["family"]])
             if gn["from"] == "species":
-                r["cinf"] = 1  # inferred from its species' names, no reference names the genus (Q376 (d)): flagged on the sheet
+                r["cinf"] = 1  # inferred from its species' names, no reference names the genus: flagged on the sheet
         rt = rts.pop(g, None)
         if rt and g in rskip:
             sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
@@ -772,8 +774,10 @@ def add_families(o, key, declared=()):
         elif g in mnone:
             if not str(mnone[g]).strip() or r.get("cues"):
                 sys.exit(f"tools/fish_genus_marks.json: none {g}: a reason, and never for a genus with IMR cues")
-        elif r["circle"] == 1 and x["family"] in mdone and not r.get("cues"):
-            sys.exit(f"tools/fish_genus_marks.json: circle-1 genus {g} of a family done has neither marks nor a reason in none")
+        elif not r.get("cues") and not by[x["family"]].get("wink"):
+            sys.exit(f"tools/fish_genus_marks.json: genus {g} of a family in play has neither marks nor a reason in none")
+        if not r.get("cues") and not by[x["family"]].get("wink") and not r.get("plain"):
+            sys.exit(f"tools/fish_genus_marks.json: genus {g} of a family in play has no presentation (plain)")
         r["species"] = x["species"]
         go.append(r)
     if gnames:
@@ -787,10 +791,84 @@ def add_families(o, key, declared=()):
     if set(gmk.get("src", {})) - msrc_used:
         sys.exit(f"tools/fish_genus_marks.json: sources never used: {', '.join(sorted(set(gmk['src']) - msrc_used))}")
     o["genera"] = go
-    # The name index's kind words (tools/fish_names.py; Pierre, 2026-11-09, Q319, Q320): the head words of the species'
+    # The name index's kind words (tools/fish_names.py): the head words of the species'
     # names shown and the families whose species carry them, fish.json vn.
     fish_names.apply(o, {"keys": [key] if key else []})
+    lookalikes(o)
     return o
+
+
+def lookalikes(o, path=None):
+    """The species look-alike pairs and the species whose look varies by region (tools/fish_lookalikes.json, hand-kept,
+    every statement with its source and quote), checked and written into fish.json: o["lookalikes"], each {id, a, b, kind,
+    st, says [{t, u}], marks [{side, t, src [{t, u}]}]}, read by app.js mimLay (the draw's mimicry class, model.js
+    mimOf, and its card, quiz.js mimShow); and each regional species' region {why, src [{t, u}]}, which keeps its photos
+    taken outside the region off the cards. A mark is our words, short, with no digit (a count is never a photo cue) and
+    never the word mimic (a resemblance is a source's claim, said in its own quote). Both species are in the game."""
+    p = Path(path) if path else LOOKS
+    src = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    if set(src) - {"about", "src", "pairs", "regional"}:
+        sys.exit(f"{p.name}: keys about, src, pairs and regional only")
+    S, used = src.get("src", {}), set()
+    sp = {s["id"]: s for s in o["species"]}
+
+    def refs(where, L, quoted=True):
+        if not L:
+            sys.exit(f"{p.name} {where}: no source")
+        out = []
+        for x in L:
+            k = x["src"] if isinstance(x, dict) else x
+            if k not in S:
+                sys.exit(f"{p.name} {where}: unknown source {k}")
+            if quoted and isinstance(x, dict) and not str(x.get("q", "")).strip():
+                sys.exit(f"{p.name} {where}: a source with no quote")
+            used.add(k)
+            out.append({"t": S[k]["t"], **({"u": S[k]["u"]} if S[k].get("u") else {})})
+        return out
+
+    pairs, ids = [], set()
+    for r in src.get("pairs", []):
+        i = r.get("id")
+        if not i or i in ids:
+            sys.exit(f"{p.name}: pair id {i!r} missing or twice")
+        ids.add(i)
+        for k in ("a", "b"):
+            if r.get(k) not in sp or "circle" not in sp[r[k]]:
+                sys.exit(f"{p.name} {i}: {k} {r.get(k)} is not a species in the game")
+        if r["a"] == r["b"] or r.get("kind") not in ("resembles", "confused"):
+            sys.exit(f"{p.name} {i}: two different species and a kind, resembles or confused")
+        st = r.get("st") or {}
+        if set(st) != {"a", "b"} or set(st.values()) - {"juvenile", "all"}:
+            sys.exit(f"{p.name} {i}: st gives juvenile or all for a and b")
+        if r["kind"] == "resembles" and not r.get("says"):
+            sys.exit(f"{p.name} {i}: a resemblance needs the sources that state it (says)")
+        says = refs(f"{i} says", r.get("says", []))
+        marks = []
+        for m in r.get("marks", []):
+            t = str(m.get("t", "")).strip()
+            if m.get("side") not in ("a", "b") or not t or len(t) > 80:
+                sys.exit(f"{p.name} {i}: a mark has a side, a or b, and words of at most 80 characters")
+            if re.search(r"\d", t) or re.search(r"mimic", t, re.I):
+                sys.exit(f"{p.name} {i}: mark '{t}': no digit, never the word mimic")
+            if not str(m.get("q", "")).strip():
+                sys.exit(f"{p.name} {i}: mark '{t}': the quote it rests on")
+            marks.append({"side": m["side"], "t": t, "src": refs(f"{i} mark", m.get("src"), False)})
+        if not marks:
+            sys.exit(f"{p.name} {i}: at least one sourced mark")
+        pairs.append({"id": i, "a": r["a"], "b": r["b"], "kind": r["kind"], "st": {"a": st["a"], "b": st["b"]},
+                      "says": says, "marks": marks})
+    for s in o["species"]:
+        s.pop("region", None)
+    for sid, x in (src.get("regional") or {}).items():
+        if sid not in sp or not str(x.get("why", "")).strip():
+            sys.exit(f"{p.name} regional {sid}: a species of fish.json and why")
+        sp[sid]["region"] = {"why": x["why"].strip(), "src": refs(f"regional {sid}", x.get("src"))}
+    if set(S) - used:
+        sys.exit(f"{p.name}: sources never used: {', '.join(sorted(set(S) - used))}")
+    if pairs:
+        o["lookalikes"] = pairs
+    else:
+        o.pop("lookalikes", None)
 
 
 def genus_csrc(gid, gn, r, u, mine, sp, fam):
@@ -813,8 +891,8 @@ def genus_csrc(gid, gn, r, u, mine, sp, fam):
         return "IMR fish presentation" + (f", slide{'s' if len(sl) > 1 else ''} " + ", ".join(map(str, sl)) if sl else "") + f" ({u['name']})"
     if gn["from"] == "species":
         w = gn["word"]
-        # of "listed": the species' listed names (fish.json cn, the form shown of each; Pierre, 2026-11-15, Q376 (d):
-        # Cephalopholis, whose IMR names say grouper and whose FishBase names say hind), else their own (common).
+        # of "listed": the species' listed names (fish.json cn, the form shown of each: Cephalopholis, whose IMR names
+        # say grouper and whose FishBase names say hind), else their own (common).
         listed = gn.get("of") == "listed"
 
         def has(s):
@@ -828,7 +906,7 @@ def genus_csrc(gid, gn, r, u, mine, sp, fam):
             return f"Inferred from its species' listed common names (FishBase, iNaturalist): {n} here have one ending in “{w}”"
         return f"Inferred from its species' common names (IMR reference list, FishBase): {n} here end in “{w}”"
     if gn["from"] == "inat":
-        # iNaturalist's default English name of the genus (Q376 (d): Centropyge, Dendrochirus, Dascyllus), as read on the
+        # iNaturalist's default English name of the genus (Centropyge, Dendrochirus, Dascyllus), as read on the
         # date given, in sentence case.
         if set(gn) != {"common", "from", "inat", "as", "read"} or norm(gn["common"]) != norm(gn["as"]):
             sys.exit(f"tools/fish_genus_names.json {gid}: from inat takes common, inat (the taxon id), as (its name there) and read")
@@ -962,8 +1040,8 @@ def relay(o, src):
     moved = [f"{t['id']} {t['name']}: {t.get('circle')} in fish.json, {by[t['id']].get('circle', 1)} in the layer"
              for t in o["teach"] if t["id"] in by and t.get("circle") != by[t["id"]].get("circle", 1)]
     # A node fish.json leaves out (every species out: build() keeps such a node only in circle 1) is checked only in
-    # circle 3: in circle 1 the build would keep it, in circle 2 its species no longer all need near (needs_near), and
-    # fish.json does not say which circle it was built in (Codex review #984).
+    # circle 3: in circle 1 the build would keep it, in circle 2 its species do not all need near (needs_near), and
+    # fish.json does not say which circle it was built in.
     kept = {t["id"] for t in o["teach"]}
     moved += [f"{t['id']} {t['name']}: not in fish.json (every species out), circle {t.get('circle', 1)} in the layer"
               for t in src["teach"] if t["id"] not in kept and t.get("circle", 1) != 3]
@@ -1012,6 +1090,7 @@ def regroup(src_path, check, lay_path=None):
     print(f"regrouped {OUT.relative_to(ROOT)} with key {key['id'] if key else '(none)'}")
     for w in waiting:
         print("  waiting on Pierre: " + w)
+    show_rootless(o)
 
 
 def commonness(check):
@@ -1066,7 +1145,7 @@ def dumps(o):
 
 
 def main():
-    global NET
+    global NET, GMARKS, CUR
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1075,9 +1154,19 @@ def main():
     ap.add_argument("--regroup", action="store_true")
     ap.add_argument("--commonness", action="store_true", help="only re-apply the commonness index and order to fish.json")
     ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
+    ap.add_argument("--rootless", action="store_true", help="only print the genera a circle edit brings into circle 1 with no name root")
+    ap.add_argument("--curation", help=argparse.SUPPRESS)  # tests: another curation.json
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
+    ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     a = ap.parse_args()
+    if a.marks:
+        GMARKS = Path(a.marks)
+    if a.curation:
+        CUR = Path(a.curation)
+    if a.rootless:
+        show_rootless(json.loads(OUT.read_text(encoding="utf-8")))
+        return
     if a.regroup:
         regroup(Path(a.src) if a.src else SRC, a.check, Path(a.layer) if a.layer else None)
         return
@@ -1112,9 +1201,22 @@ def main():
     show_missing(fish_commonness.apply(out))
     add_families(out, key_in_force(src), src.get("look", []))
     show(out, report)
+    show_rootless(out)
     if not a.dry:
         write(out)
         print(f"wrote {OUT.relative_to(ROOT)}")
+
+
+def show_rootless(o):
+    """The genera the content editor's circle edits (curation.json, read, never written) bring into circle 1 with no
+    name root: the build requires one only of the base's circle-1 genera (add_families), so these show none on their
+    sheet. Each says its skip reason when tools/fish_genus_roots.json has one."""
+    cur = json.loads(CUR.read_text(encoding="utf-8")) if CUR.exists() else {}
+    skip = json.loads(GROOTS.read_text(encoding="utf-8")).get("skip", {}) if GROOTS.exists() else {}
+    rl = fish_inforce.rootless(o, cur, skip)
+    print(f"genera a circle edit brings into circle 1 with no name root: {len(rl)}")
+    for name, fam, why in rl:
+        print(f"  {name} ({fam}): " + (f"skipped, {why}" if why else "no root and no reason in skip"))
 
 
 def build(src, report):
@@ -1158,8 +1260,8 @@ def build(src, report):
                 sys.exit(f"two teaching nodes hold the same reference node: {best[1]['id']} {t['id']}")
         return best[1] if best else None
 
-    # Species. The name shown and expected is the PDF's (EventMeasure's: a fixed pick list that may lag WoRMS, Pierre,
-    # 2026-11-03); the WoRMS accepted name goes beside it (`now`), and either is accepted when typed.
+    # Species. The name shown and expected is the PDF's (EventMeasure's: a fixed pick list that may lag WoRMS; rule S2);
+    # the WoRMS accepted name goes beside it (`now`), and either is accepted when typed.
     genus_chain = {}
 
     def pdf_genus(g, worms_genus):
@@ -1195,7 +1297,7 @@ def build(src, report):
         if s.get("check"):
             report["typo"].append(f"{s['id']} {s['name']}: {s['check']}")
         aid = acc["AphiaID"]
-        if aid in seen:  # two PDF species, one WoRMS species: both kept, each under its PDF name (Pierre, 2026-11-03)
+        if aid in seen:  # two PDF species, one WoRMS species: both kept, each under its PDF name
             report["lumped"].append(f"{s['id']} {s['name']} and {seen[aid]['s']['id']} {seen[aid]['s']['name']}: one WoRMS species, {now}")
         anc = add_chain(aid)
         gc = pdf_genus(name.split()[0], tree[anc[1]]["name"] if tree[anc[1]]["rank"] == "Genus" else None)
@@ -1250,7 +1352,7 @@ def build(src, report):
             # Not on iNaturalist: only the IMR list can confirm it (near Dauin, so in the Philippines).
             x["present"] = {"dauin": 0, "dauinNI": 0, "dauinU": 0, "near": bool(imr), "nearBy": imr, "rg": 0, "chk": False,
                             "ph": bool(imr), "phBy": ["near"] if imr else []}
-        # Off the IMR list or in circle 3: only once confirmed near Dauin (Pierre, 2026-11-03), by the same rule (near_dauin).
+        # Off the IMR list or in circle 3: only once confirmed near Dauin, by the same rule (near_dauin).
         c3 = needs_near(s.get("src"), (x["t"] or {}).get("circle", 1))
         if c3 and not x["out"] and x["present"]["ph"] and not x["present"]["near"]:
             x["out"].append(NEAR_OUT)
@@ -1273,8 +1375,7 @@ def build(src, report):
             o["now"] = x["now"]
         o.update({"common": s.get("common", ""), "ref": x["aid"], "inat": x["inat"]})
         if not x["out"]:
-            # Its family's circle, whatever its source (Pierre, 2026-11-08, Q214: "the circle holds families, so every
-            # species of the family"); until then a dauin or wink species was always circle 3.
+            # Its family's circle, whatever its source: a circle holds families, so every species of the family.
             o["circle"] = x["t"].get("circle", 1)
         else:
             o["out"] = "; ".join(x["out"])
@@ -1287,7 +1388,7 @@ def build(src, report):
                 o[k] = s[k]
         if x["check"]:
             o["check"] = "; ".join(x["check"])
-        if s.get("photoTaxon"):  # its candidate photos from another iNaturalist taxon (Q354 b); name and inat stay its own
+        if s.get("photoTaxon"):  # its candidate photos from another iNaturalist taxon; name and inat stay its own
             o["photoTaxon"] = s["photoTaxon"]
         out_sp.append(o)
         x["r"] = r
@@ -1388,14 +1489,14 @@ def write(o):
 
 
 def render(o):
-    # centre: the instance's (tools/instance.json, Q339), whatever the mode, so no writer drops it
+    # centre: the instance's (tools/instance.json), whatever the mode, so no writer drops it
     lines = ["{", f'"v":{o["v"]},', f'"centre":{dumps(CENTRE)},', f'"start":{dumps(o.get("start", []))},']
     if o.get("key"):  # the key in force, one group per line
         k = o["key"]
         lines.append('"key":' + dumps({x: k[x] for x in k if x != "groups"})[:-1] + ',"groups":[')
         lines.append(",\n".join(dumps(g) for g in k["groups"]))
         lines.append("]},")
-    for k in ("teach", "families", "genera", "species"):
+    for k in ("teach", "families", "genera", "species", "lookalikes"):
         if k not in o:
             continue
         lines.append(f'"{k}":[')

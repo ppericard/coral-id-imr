@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// A surprise card's answer (quiz.js winkShow, winkAnswer; Pierre, 2026-11-08: "il faut l'enregistrer bien sûr") is
+// A surprise card's answer (quiz.js winkShow, winkAnswer) is
 // logged like every other answer, marked by its mode (core.js WINK_MODE), and no reader of the log counts it: the app's
 // own readers of its queue, core.js subjRows / subjEntries (the admin's pages, the analyses, the evaluation tools), the
 // sheet's readers (Code.gs replayed_: hold, replay, photo ratings, confusions, the player list; answers_: readAnswers;
@@ -34,12 +34,16 @@ function page({signedIn = false} = {}) {
       LOG0: 'reefid-log0',
       ANONQ: 'reefid-anonq',
       anon: 0,
+      // core.js answerId (the attempt id); app.js contentVer (the content version of the units in force: quiz.js cvField)
+      answerId: C.answerId,
+      contentVer: S => (S.id === 'fish' ? 'cfish1' : ''),
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.anonSoon = () => ctx.anon++;
   vm.createContext(ctx);
   vm.runInContext(
-    cut(quiz, 'function logAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
+    cut(quiz, 'const cvField = () => {', '\n};\n', {file: 'quiz.js', through: 1}) +
+      cut(quiz, 'function logAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, 'function winkAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       '\nthis.M = {logAnswer, winkAnswer};',
     ctx
@@ -68,7 +72,8 @@ test('a wink answer: one entry, marked, with what was shown and answered, nothin
   assert.strictEqual(a.rt, 3.4);
   assert.strictEqual(a.zm, 1);
   assert.strictEqual(typeof a.tz, 'number');
-  assert.match(a.id, /^[a-z0-9]+$/);
+  assert.match(a.id, /^[a-z][a-z0-9]{15}$/, 'its attempt id (core.js answerId)');
+  assert.strictEqual(a.cv, 'cfish1', 'the content version of the units in force (quiz.js cvField)');
   for (const k of ['e', 'th', 'nw', 'sc', 'ty', 'tr']) assert.ok(!(k in a), `nothing scored: no ${k}`);
   assert.strictEqual(pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0}).ok, 1, 'the right one');
   assert.ok(!('rt' in pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0})), 'no seconds when the photo never came in');
@@ -98,7 +103,7 @@ test('a wink answer takes the normal answer path: the account queue, or LOG0 and
   );
 });
 
-test('core: the marker, the subject readers and the send gate', () => {
+test('core: the marker and the subject readers', () => {
   const wk = {s: 'fish', m: 'wink', g: WALE},
     fq = {s: 'fish', m: 'quiz', g: 'f:Damselfishes'},
     cq = {m: 'quiz', g: 'Acropora'};
@@ -115,16 +120,8 @@ test('core: the marker, the subject readers and the send gate', () => {
   assert.deepStrictEqual(C.subjEntries([{...wk, s: ''}, cq]), [cq], 'never in the replayed one either');
   assert.deepStrictEqual(C.subjRows([wk, fq, cq].map(row), 'fish'), [row(fq)]);
   assert.deepStrictEqual(C.subjRows([{...wk, s: ''}, cq].map(row)), [row(cq)]);
-  // Sent only to a sheet whose readers leave it out (rule D4), whatever else the sheet takes.
-  assert.strictEqual(C.WINK_SHEET, 98);
-  assert.strictEqual(C.logOk(wk, 97), false);
-  assert.strictEqual(C.logOk(wk, undefined), false);
-  assert.strictEqual(C.logOk(wk, 98), true);
-  assert.strictEqual(C.logOk(cq, 0), true, 'the other answers as before');
-  assert.strictEqual(C.logOk(fq, 60), true);
-  assert.strictEqual(C.logOk(fq, 59), false);
-  const SV = Number(/const VERSION = (\d+);/.exec(read('tools/sync/Code.gs'))[1]);
-  assert.ok(SV >= C.WINK_SHEET, 'the script that leaves them out is the one in the repository');
+  // Sent as they come: the gate floor (core.js SHEET_FLOOR) is at the sheet version whose readers leave it out.
+  assert.ok(C.SHEET_FLOOR >= 98);
 });
 
 // The sheet: the same player's answers with and without a surprise card's, which every reader must give alike. The
@@ -226,13 +223,13 @@ test('the Activity tab counts no wink answer: its formula leaves them out, the o
     f(),
     /^=QUERY\(Answers!A:F, "select A, count\(E\), sum\(E\), max\(B\) where A is not null and \(F is null or F <> 'wink'\) group by A/
   );
-  // A tab made before v98 keeps its formula until a wink answer comes, then takes the new one.
+  // A tab made with the older formula keeps it until a wink answer comes, then takes the new one.
   s.sheets.Activity.rows[0][0] = {formula: run('ACTIVITY_V1')};
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [GAME[1]], at: 1});
   assert.strictEqual(f(), run('ACTIVITY_V1'), 'no wink: untouched');
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [WINKS[0]], at: 2});
   assert.strictEqual(f(), run('ACTIVITY'), 'replaced at the first wink answer');
-  // A formula Pierre wrote himself is his.
+  // A formula the admin wrote by hand is left alone.
   s.sheets.Activity.rows[0][0] = {formula: '=QUERY(Answers!A:B, "select A")'};
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [{...WINKS[0], id: 'w9'}], at: 3});
   assert.strictEqual(f(), '=QUERY(Answers!A:B, "select A")');

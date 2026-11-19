@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// Fish Home before fish-game.json (Pierre, 2026-11-09: "Fish Home shown before fish-game.json arrives"; the photos first
-// shown on Home may change): app.js fishHome brings fish.json and fish-photos.json, what start-up waits for (UNITS fish
+// Fish Home before fish-game.json (the photos first shown on Home may change): app.js fishHome brings fish.json and fish-photos.json, what start-up waits for (UNITS fish
 // home); fishLoad brings fish-game.json too, what tier 2 waits for (need), so the quiz and the Learn pages never open
-// on the stopgap's photos alone; a device whose service worker holds fish-game.json waits for it at start-up, as before.
+// on the stopgap's photos alone; a device whose service worker holds fish-game.json waits for it at start-up.
 // The blocks of app.js run in a vm with the files answered by hand.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -21,19 +20,19 @@ function app({cached = false} = {}) {
     window: {caches: {}},
     caches: {match: u => Promise.resolve(cached && /fish-game\.json/.test(u) ? {} : undefined)},
     domRecalcAll: () => builds.push('recalc'),
-    fishGameRead: require('../core.js').fishGameRead // the file's records whole (its short form)
+    treeGameRead: require('../core.js').treeGameRead // the file's records whole (its short form)
   };
   vm.createContext(ctx);
   // Two tree subjects (app.js UNITS get): the fish, in force, and a second one (the sea slugs' shape: no first photos).
   vm.runInContext(
-    "let DATA, FISH = null, FISHP = null, FISHH = null, FISHRAW = null, FISHF = null, FISHST = '', FISHON = false, TREE_AT = 'fish';\n" +
+    "let DATA, TREEU = null, TREEP = null, TREEH = null, TREERAW = null, TREEF = null, TREEST = '', TREEON = false, TREE_AT = 'fish';\n" +
       'const TREE_OF = {};\n' +
       "const UNITS = {fish: {get: {f: () => json('fish.json?v=6'), ph: () => json('fish-photos.json?v=6'), gm: () => json('fish-game.json?v=1')}}," +
       " two: {get: {f: () => json('two.json'), gm: () => json('two-game.json')}}, coral: {}};\n" +
-      'const fishBuild = () => (FISH = {at: TREE_AT, gm: Object.keys(FISHRAW.gm.photos).length}, this.builds.push(FISH.gm), FISH);\n' +
+      'const treeBuild = () => (TREEU = {at: TREE_AT, gm: Object.keys(TREERAW.gm.photos).length}, this.builds.push(TREEU.gm), TREEU);\n' +
       block(src, 'const treeOf = id =>', "// The fish units' photos in easyRank order", {file: 'app.js'}) +
       "\nthis.home = () => treeHome('fish').then(() => fishCached().then(c => c && treeLoad('fish')));" +
-      "\nthis.M = {fishHome: () => treeHome('fish'), fishLoad: () => treeLoad('fish'), treeLoad, treeAt, treeOf, treeWith, get FISHRAW() { return FISHRAW; }, get FISH() { return FISH; }, get AT() { return TREE_AT; }, setData: d => (DATA = d)};",
+      "\nthis.M = {fishHome: () => treeHome('fish'), fishLoad: () => treeLoad('fish'), treeLoad, treeAt, treeOf, treeWith, get TREERAW() { return TREERAW; }, get TREEU() { return TREEU; }, get AT() { return TREE_AT; }, setData: d => (DATA = d)};",
     Object.assign(ctx, {builds})
   );
   const send = (f, body) => waits[f](body);
@@ -56,8 +55,8 @@ test('start-up waits for fish.json and fish-photos.json only; fish-game.json com
   await tick();
   await tick();
   assert.ok(home, 'Home is not held by fish-game.json');
-  assert.strictEqual(Object.keys(A.M.FISHRAW.gm.photos).length, 0, 'the stopgap photos only, until fish-game.json');
-  assert.ok(!A.M.FISHRAW.full, 'partial (dataPartial: model.js domRecalcAll waits)');
+  assert.strictEqual(Object.keys(A.M.TREERAW.gm.photos).length, 0, 'the stopgap photos only, until fish-game.json');
+  assert.ok(!A.M.TREERAW.full, 'partial (dataPartial: model.js domRecalcAll waits)');
   // The start-up's build() comes next (data.json in); then tier 2 asks for the rest.
   A.M.setData({gen: {}});
   let full = false;
@@ -73,8 +72,8 @@ test('start-up waits for fish.json and fish-photos.json only; fish-game.json com
   await tick();
   await tick();
   assert.ok(full);
-  assert.deepStrictEqual(A.M.FISHRAW.gm, GM);
-  assert.ok(A.M.FISHRAW.full);
+  assert.deepStrictEqual(A.M.TREERAW.gm, GM);
+  assert.ok(A.M.TREERAW.full);
   assert.deepStrictEqual(A.builds, [1, 'recalc'], 'the units built again with the curated photos, then the one-time rebuild');
 });
 
@@ -92,7 +91,7 @@ test('a device whose worker holds fish-game.json waits for it at start-up, as be
   await tick();
   await tick();
   assert.ok(home);
-  assert.deepStrictEqual(A.M.FISHRAW.gm, GM);
+  assert.deepStrictEqual(A.M.TREERAW.gm, GM);
   assert.deepStrictEqual(A.builds, [], 'no build before data.json: start-up builds the units');
 });
 
@@ -111,7 +110,7 @@ test('fish.json missing: Home refuses the fish (start-up falls back on the coral
   assert.strictEqual(A.asked.filter(u => /^fish\.json/.test(u)).length, 2);
 });
 
-// A second tree subject (the sea slugs, 2026-11-15): its files may come while the fish are in force (setSubject loads
+// A second tree subject (the sea slugs): its files may come while the fish are in force (setSubject loads
 // before it switches); they go into its own state, never into the fish's globals, and its units are made once it comes
 // in force (treeAt); the fish's come back as they were.
 test('a second tree subject loads into its own state; treeAt swaps the trees in force', async () => {
@@ -124,7 +123,7 @@ test('a second tree subject loads into its own state; treeAt swaps the trees in 
   A.send('fish-game.json', GM);
   await tick();
   await tick();
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1});
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'fish', gm: 1});
   let two = null;
   A.M.treeLoad('two').then(x => (two = x));
   await tick();
@@ -134,26 +133,26 @@ test('a second tree subject loads into its own state; treeAt swaps the trees in 
   await tick();
   await tick();
   assert.strictEqual(two, null, 'not in force: no units made yet');
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1}, "the fish's units untouched");
-  assert.strictEqual(A.M.FISHRAW.f, FJ);
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'fish', gm: 1}, "the fish's units untouched");
+  assert.strictEqual(A.M.TREERAW.f, FJ);
   A.M.treeAt('two');
   assert.strictEqual(A.M.AT, 'two');
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'two', gm: 1}, 'made on coming in force');
-  assert.deepStrictEqual(J(A.M.FISHRAW.f), {families: [{id: 'f:B'}]});
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'two', gm: 1}, 'made on coming in force');
+  assert.deepStrictEqual(J(A.M.TREERAW.f), {families: [{id: 'f:B'}]});
   A.M.treeAt('coral');
   assert.strictEqual(A.M.AT, 'two', 'a subject with no tree leaves the one in force');
   // A tree read outside its subject (sync.js boardUnits: the fish leaderboard's tree with the sea slugs on screen).
   assert.strictEqual(
-    A.M.treeWith('fish', () => A.M.FISH.at),
+    A.M.treeWith('fish', () => A.M.TREEU.at),
     'fish'
   );
   assert.strictEqual(A.M.AT, 'two', 'and the one on screen back');
   A.M.treeAt('fish');
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1}, "the fish's back, not made again");
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'fish', gm: 1}, "the fish's back, not made again");
   assert.deepStrictEqual(J(A.builds), [1, 'recalc', 1], "the fish's load, its one-time rebuild, then the second's on coming in");
 });
 
-// Codex review #987: the fish's game file coming while another tree is in force (fish Home on its first photos, then the
+// The fish's game file coming while another tree is in force (fish Home on its first photos, then the
 // sea slugs, then back) remakes the fish units on coming back; a subject with no first photos refuses a game file that did
 // not come, so the next try asks again.
 test('a game file that comes off screen remakes the units on coming back; one with no fallback refuses a missing file', async () => {
@@ -167,7 +166,7 @@ test('a game file that comes off screen remakes the units on coming back; one wi
   await tick();
   A.M.treeAt('two');
   A.M.treeAt('fish');
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 0}, 'made on its first photos');
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'fish', gm: 0}, 'made on its first photos');
   A.M.treeAt('two');
   A.M.fishLoad();
   await tick();
@@ -175,7 +174,7 @@ test('a game file that comes off screen remakes the units on coming back; one wi
   await tick();
   await tick();
   A.M.treeAt('fish');
-  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1}, 'made again on its whole data');
+  assert.deepStrictEqual(J(A.M.TREEU), {at: 'fish', gm: 1}, 'made again on its whole data');
   let err = null;
   A.M.treeLoad('two').catch(e => (err = e));
   await tick();
@@ -189,7 +188,7 @@ test('a game file that comes off screen remakes the units on coming back; one wi
   assert.strictEqual(A.asked.filter(u => u === 'two-game.json').length, 2, 'the next try asks again');
 });
 
-// Codex review #820: model.js runs domRecalcAll when it loads, which can be while the fish units are on the stopgap's
+// model.js runs domRecalcAll when it loads, which can be while the fish units are on the stopgap's
 // photos only; an old record (s.pg) rebuilt then would keep a bar read from those photos. While dataPartial() holds it
 // does nothing; once the whole data is in, it rebuilds the record.
 test('domRecalcAll leaves an old record alone while the data is partial, and rebuilds it once whole', () => {
@@ -198,7 +197,6 @@ test('domRecalcAll leaves an old record alone while the data is partial, and reb
     saved = 0;
   const ctx = {
     SUBJ: {},
-    domRules: () => true,
     DATA: {gen: {}},
     dataPartial: () => partial,
     P: {'f:A': {pg: 0.4, ok: 6, ko: 2}},

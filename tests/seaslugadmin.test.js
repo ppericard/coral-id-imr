@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The sea slugs' admin at parity with the fish's (Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin,
-// c'est prévu aussi ?"): their Candidates (target and genus-level lists), their rubric's tag rows and words (core.js
+// The sea slugs' admin at parity with the fish's: their Candidates (target and genus-level lists), their rubric's tag rows and words (core.js
 // SUBJECTS seaslug admin tags; admin.js tagWords, admin-fish.js tagRows), the f flag kept (autosort.js fishTag), their
 // sheets' text slots (SUBJECTS seaslug content; core.js contentApply), an edited list keeping its lines' source numbers
 // only where a line is kept (core.js contentPut: rule C2), and their admin pages.
@@ -121,9 +120,8 @@ test("the sea slugs' sheet slots: declared at every rank of their tree, their ID
   // The note on a species: its enote.
   const Y = C.contentApply(SS, R, {seaslug: {content: {nodes: {s119434: {note: {v: 'A made-up note', was: null}}}}}});
   assert.strictEqual(Y.species.find(x => x.id === 's119434').enote, 'A made-up note');
-  // No structure: the genus look-alikes stay the build's (no replay change, rule D4).
-  assert.ok(!SS.structure);
-  assert.strictEqual(C.structApply(SS, R, {seaslug: {content: {pairs: {'g:Chromodoris|g:Phyllidia': {v: 1}}}}}), R);
+  // Their structure (the genus look-alike pairs) and their look-alike lines: tests/seaslugstruct.test.js.
+  assert.strictEqual(SS.structure.pairs.rank, 'genus');
 });
 
 test("fishSure: an egg-mass judgement (the sea slugs' egg rule) is set aside, never added", () => {

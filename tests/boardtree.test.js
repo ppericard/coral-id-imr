@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// The leaderboard tree kept in chunks, sent only when it changed (Pierre, 2026-11-15, Q375: "ok";
-// docs/reviews/2026-11-14-species-step1.md (c) A): Code.gs boardTreePut_, boardTreeGet_, boardUnitsSave_'s bt, boardLog_;
-// sync.js TREE_SHEET, boardUnits, treesSeen. The sync script runs on an in-memory sheet (tests/gas.js, whose script
-// properties throw over 9 kB as Apps Script's do), the app's own sync code on stubs (tests/syncpage.js): nothing leaves
-// this process (rule D1).
+// The leaderboard tree kept in chunks, sent only when it changed (docs/reviews/2026-11-14-species-step1.md (c) A):
+// Code.gs boardTreePut_, boardTreeGet_, boardUnitsSave_'s bt, boardLog_; sync.js TREE_SHEET, boardUnits, treesSeen.
+// The sync script runs on an in-memory sheet (tests/gas.js, whose script properties throw over 9 kB as Apps Script's
+// do), the app's own sync code on stubs (tests/syncpage.js): nothing leaves this process (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -23,7 +22,7 @@ const fish = P => ({
 const keys = s => Object.keys(s.props).filter(k => k.startsWith('BOARD_UNITS_fish@'));
 const logRows = s => (s.sheets['Deploy log'] ? s.sheets['Deploy log'].rows.slice(1).map(r => String(r[1])) : []);
 const fresh = s => Object.keys(s.cache).forEach(k => delete s.cache[k]);
-// A tree of at least `chars` characters, one entry and one unit per species (Q362), as the species level will send.
+// A tree of at least `chars` characters, one entry and one unit per species, as the species level will send.
 function bigTree(chars) {
   const f = Array.from({length: 60}, (_, i) => ['f:Family' + i, 1 + (i % 7), 1 + (i % 3)]),
     s = [];
@@ -73,12 +72,12 @@ test('the sheet: a 30,000-character tree is kept in chunks under the 9 kB limit,
   assert.deepStrictEqual(logRows(s), [], 'nothing logged');
 });
 
-// The species level's own tree (core.js fishScoreTree with the species on, one unit per species: s:s091): the sheet keeps
+// The species level's own tree (core.js treeScoreTree with the species on, one unit per species: s:s091): the sheet keeps
 // it, reads it back whole and ranks the board by treeScore over it, the species' common names counted.
 test('the sheet: the species level’s tree, on the real fish.json, is kept, read back and ranks the board', () => {
   const s = loadCodeGs(),
     F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
-    T = C.fishScoreTree(C.fishGen(F, {}), F, true),
+    T = C.treeScoreTree(C.treeGen(F, {}), F, true),
     units = T.s.flatMap(e => e[3] || []);
   assert.ok(units.length > 600 && units.every(u => /^s:s\d+$/.test(u)), units.length + ' species units');
   const r = save(s, {fish: T});

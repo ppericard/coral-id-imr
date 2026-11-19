@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Home's doors before the data (Pierre, 2026-11-02, ROADMAP "Load order, further steps" (a), reopened 2026-11-09):
+// Home's doors before the data (ROADMAP "Load order, further steps" (a)):
 // app.js beforeData draws the doors once Home's scripts have run, for a subject whose doors need none of its own files
 // (UNITS doorsFirst), and the loading bar for any other page, which asks for its tier at once; homeAgain draws Home again
 // once the data is in, keeping the scroll, the open ? help and the focus. home.js viewHome draws its doors without DATA,
@@ -166,6 +166,7 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
     store: {get: (k, d) => d},
     startKey: () => 'k',
     basicsDue: () => true,
+    basicsWords: () => ({ask: 'New to corals?'}), // app.js: the subject's basics words (UNITS basics)
     CHOICE: {ASK: 20},
     SUBJ: {id: 'coral', many: 'genera'},
     UNITS: {coral: {identify: 'idkey'}},

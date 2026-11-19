@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The pooled stats built incrementally (sheet v134; Q123 j, Pierre 2026-11-14): the trigger's fold (Code.gs statsFold_)
+// The pooled stats built incrementally: the trigger's fold (Code.gs statsFold_)
 // serves exactly what the whole log gives (stats_), run after run, at any number of rows a run, through every rebuild.
 // Against the in-memory sheet of tests/gas.js only: nothing leaves this process (rule D1).
 const test = require('node:test'),
@@ -119,7 +119,7 @@ const post = (s, p) =>
     ? s.post({anon: p.w.anon, anonAnswers: p.answers})
     : s.post({name: p.w.name, pin: p.w.pin, data: {}, summary: {}, answers: p.answers});
 
-// What ?stats=1 sends, from the whole log (stats_ as before v134), and from the snapshot.
+// What ?stats=1 sends, from the whole log (stats_), and from the snapshot.
 const PUB = ['ok', 'photos', 'conf', 'mem', 'memn', 'gd', 'fmt'];
 const pub = o => JSON.parse(JSON.stringify(Object.fromEntries(PUB.map(k => [k, o[k]]))));
 // sid: the subject (Code.gs statsSid_: the corals when none).
@@ -358,7 +358,7 @@ test('the 15-minute trigger folds and logs the build; ?stats=1 then serves the s
     assert.ok(++k < 50);
   }
   assert.ok(k > 1, 'several runs at 120 rows a run');
-  // ?stats=1 the corals' as before, &s=fish the fish's, each from its snapshot; a subject without photos: the corals'.
+  // ?stats=1 the corals', &s=fish the fish's, each from its snapshot; a subject without photos: the corals'.
   assert.deepStrictEqual(pub(s.get({stats: 1})), full(s));
   assert.ok(s.cache[run(s, 'statsCacheKey_()')], 'served from the snapshot, cached');
   assert.deepStrictEqual(pub(s.get({stats: 1, s: 'fish'})), full(s, 'fish'));
@@ -404,7 +404,7 @@ test('a tab as narrow as a new one gets the columns a longer snapshot needs', ()
   same(s, 'after the grid grew');
 });
 
-// Codex review #882: a delete between the fold's last check and its writes must not be undone by them. The writes are
+// A delete between the fold's last check and its writes must not be undone by them. The writes are
 // made under the script lock, which a delete holds: here the delete takes place just before the fold gets the lock.
 test('a delete just before the fold writes: nothing written, the account stays gone', () => {
   const s = load(),
@@ -442,7 +442,7 @@ test('a delete just before the fold writes: nothing written, the account stays g
   assert.ok(!fold(s, now).stale);
 });
 
-// v145 (the step #882 and #940 left next; Pierre, 2026-11-15, Q357): the other readers of stats_ read the snapshot too,
+// The other readers of stats_ read the snapshot too,
 // with exactly the numbers of the whole log, and make stats_ only when the snapshot is not served.
 // What readStats sends (the admin's reply, with ras, skip and chk), as it goes on the wire.
 const wire = o => JSON.parse(JSON.stringify(o));
@@ -583,7 +583,7 @@ test("the replays read the snapshot: each player's record and the admin's list a
   // The replay's units and the slate (data.json, cached as gen_ and slate_ read them: the units under the content
   // editor's pairs, none here, through subjRpl_'s cache, design note v2 step 8).
   s.cache['scur1:coral'] = JSON.stringify({fp: '', c: {}});
-  s.cache['sgen3:coral:'] = JSON.stringify({
+  s.cache['sgen4:coral:'] = JSON.stringify({
     gen: {
       Acropora: {look: ['Porites'], fam: 'Acroporidae'},
       Porites: {look: ['Acropora']},
@@ -606,7 +606,7 @@ test("the replays read the snapshot: each player's record and the admin's list a
     s.ctx.replayedAll_(users, {});
     return users.map(u => u.rp);
   };
-  // Both with the whole log (the switch off, as before), each read counted.
+  // Both with the whole log (the switch off), each read counted.
   const whole = () => {
     run(s, 'STATS.ON = false');
     delete s.cache.stats17;
@@ -646,7 +646,7 @@ test("the replays read the snapshot: each player's record and the admin's list a
   tab.rows[1] = keep;
   delete s.cache[run(s, 'statsCacheKey_()')];
   assert.deepStrictEqual(recs(), A);
-  // Another subject replays without pooled stats, as before.
+  // Another subject replays without pooled stats.
   assert.strictEqual(
     fullReads(s, () => s.ctx.rplMake_('ana', s.ctx.rplMine_('ana', 0, 'fish'), 0, null, 'fish')),
     0

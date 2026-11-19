@@ -1,10 +1,9 @@
 'use strict';
 require('./slot.js').testGuard();
-// Journey (admin-journey.js): the Cards list in time order (Pierre, 2026-11-05: rows of Nov 4 came before rows of Nov 2),
-// the untimed ones after; the start rows say "inferred" once and "Answered again" for the same answer given again; and
-// the word beside a unit outside the slate (Pierre, 2026-11-08: the fish genera were labelled "bonus", a coral word,
-// although they are the scientific-names step of the game). The blocks are cut with tests/block.js, which fails by name
-// when a marker moves.
+// Journey (admin-journey.js): the Cards list in time order, the untimed ones after; the start rows say "inferred" once
+// and "Answered again" for the same answer given again; and the word beside a unit outside the slate is the subject's
+// own (the fish genera are the scientific-names step of the game, never "bonus", a coral word). The blocks are cut
+// with tests/block.js, which fails by name when a marker moves.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -43,12 +42,12 @@ test('a family outside the slate of families (another circle) stays "bonus"', ()
   assert.strictEqual(jOffSlate('f:Batfishes', new Set(['f:Damselfishes'])), 'bonus');
 });
 
-// Journey details for every subject (fish admin at parity, after #876): the steps of a player's path (jSteps) and the
-// Games card by format (jGames), on the real SUBJECTS and made-up rows [id, time, shown, answered, right, mode, photos,
+// Journey details for every subject (the fish admin at parity with the corals'): the steps of a player's path (jSteps)
+// and the Games card by format (jGames), on the real SUBJECTS and made-up rows [id, time, shown, answered, right, mode, photos,
 // expected, ability, new photos, choices].
 const C = require('../core.js'),
   CORAL = C.SUBJECTS.find(S => !S.sheets),
-  FISH = C.SUBJECTS.find(S => S.sheets);
+  TREEU = C.SUBJECTS.find(S => S.sheets);
 const {jSteps, jStepWords} = new Function(cut('// jsteps: begin', '// jsteps: end') + '\nreturn {jSteps, jStepWords};')();
 const {logConds} = new Function(
   'fmtOf',
@@ -64,7 +63,7 @@ const jr = (shown, ok = 1, mode = 'quiz', choices = 'a b c d') => ['p1', ++tt, s
 test('jSteps: the first genus question and the first family of each later circle, once each, in answer order', () => {
   const rec = {'f:A': {circle: 1}, 'f:B': {circle: 2}, 'f:C': {circle: 3}, 'f:D': {circle: 2}},
     R = [jr('f:A'), jr('f:B'), jr('f:A'), jr('g:Chromis'), jr('f:D'), jr('f:C'), jr('g:Naso')],
-    S = jSteps(R, n => rec[n] || null, FISH);
+    S = jSteps(R, n => rec[n] || null, TREEU);
   assert.deepStrictEqual(
     S.map(([i, k, w, g]) => [i, k, w, g]),
     [
@@ -82,14 +81,14 @@ test('jSteps: the first genus question and the first family of each later circle
 });
 test("jSteps: the subject's own rank and the first circle are no step; the corals have none", () => {
   assert.deepStrictEqual(
-    jSteps([jr('f:A'), jr('f:E')], () => ({circle: 1}), FISH),
+    jSteps([jr('f:A'), jr('f:E')], () => ({circle: 1}), TREEU),
     []
   );
   assert.deepStrictEqual(
     jSteps([jr('Acropora'), jr('Porites')], () => ({look: []}), CORAL),
     []
   );
-  assert.strictEqual(jSteps([jr('g:Chromis')], () => null, FISH).length, 1, 'a unit with no record still counts its rank');
+  assert.strictEqual(jSteps([jr('g:Chromis')], () => null, TREEU).length, 1, 'a unit with no record still counts its rank');
 });
 
 test('jGames: the fish formats (Find the X too), the questions on each rank, no Custom quiz or Duel tab row', () => {
@@ -102,7 +101,7 @@ test('jGames: the fish formats (Find the X too), the questions on each rank, no 
       jr('f:A', 1, 'quiz|x'),
       jr('f:B', 0, 'quiz|f', 'f:B f:A f:C f:D')
     ],
-    G = jGames(R, FISH, logConds(R, FISH));
+    G = jGames(R, TREEU, logConds(R, TREEU));
   assert.deepStrictEqual(G, [
     ['Quiz', 2, 1],
     ['Again: A or B? (after a mix-up)', 1, 1],
@@ -125,8 +124,8 @@ test('jGames: the corals keep their rows, the Duel tab shown at 0, no rank rows'
   ]);
 });
 
-// jlocal: the Cards list in the player's own local time (Pierre's list of 2026-11-05, left from #554): the
-// offset of the answer nearest in time (sheet v44, readAnswers index 14, minutes east of UTC), and the time written at
+// jlocal: the Cards list in the player's own local time: the offset of the answer nearest in time (readAnswers index
+// 14, minutes east of UTC), and the time written at
 // that offset whatever the admin's own zone. Expected texts come from Intl in the real IANA zone, never typed by hand.
 const jlocalSrc = cut('// jlocal: begin', '// jlocal: end');
 const {jOffAt, jAtText, jUtcText} = new Function(jlocalSrc + '\nreturn {jOffAt, jAtText, jUtcText};')();
@@ -266,4 +265,33 @@ test('jUtcText: the offset in words', () => {
     'UTC+14',
     'UTC−12'
   ]);
+});
+
+// The opt-in choices in a player's saved quiz settings (app.js bonusSet, openNo), as the Journey lists them.
+const {jOptin} = new Function(cut('// joptin: begin', '// joptin: end') + '\nreturn {jOptin};')();
+
+test('jOptin: the fish opt-in choices of a saved copy: on, declined, never offered', () => {
+  const FISH = C.subjectOf('fish'),
+    q = {sci: true, sciT: 5000, sciH: true, beyond: false, beyondT: 9000, beyondN: 2, beyondA: 140};
+  // the current state with the time of the latest choice; the declines apart, with no time of their own (the time of the
+  // choice may be a later switch: Codex review #1166)
+  assert.deepStrictEqual(jOptin(q, FISH), [
+    [5000, 'Scientific names', 'on, by hand before it was due'],
+    [9000, 'Families beyond the IMR course', 'off'],
+    [null, 'Families beyond the IMR course', 'offer declined 2 times, the last after answer 140']
+  ]);
+  // on after an offer declined once, off by hand, an offer declined and never answered, nothing saved
+  assert.deepStrictEqual(jOptin({sci: true, sciT: 7, sciN: 1, sciA: 30}, FISH), [
+    [7, 'Scientific names', 'on'],
+    [null, 'Scientific names', 'offer declined once, the last after answer 30']
+  ]);
+  assert.deepStrictEqual(jOptin({sci: false, sciT: 7}, FISH), [[7, 'Scientific names', 'off']]);
+  assert.deepStrictEqual(jOptin({beyondN: 1, beyondA: 12}, FISH), [
+    [null, 'Families beyond the IMR course', 'offer declined once, the last after answer 12']
+  ]);
+  assert.deepStrictEqual(jOptin({}, FISH), []);
+  assert.deepStrictEqual(jOptin(null, FISH), []);
+  // the sets of the subject only: the corals' bonus genera, nothing of the fish's
+  assert.deepStrictEqual(jOptin(q, CORAL), []);
+  assert.deepStrictEqual(jOptin({bon: true, bonT: 1}, CORAL), [[1, 'Bonus genera', 'on']]);
 });

@@ -1,15 +1,12 @@
-/* ---------- Analyses (Pierre, 2026-11-04): multifactor analyses of the answer log, every 1000 answers ---------- */
-// "I love this kind of multifactor report… every 1000 new answers… a new section in the admin with several sub-pages,
-// with visualisations, reports, graphs, tables." The report is computed once, by a GitHub Action (tools/analyses.js,
-// analysis.js), and stored in the sync sheet (v35, analysesGet); this page only draws it, so it opens at once on a
-// phone. "Recompute here" (secondary, on any device: Pierre, 2026-11-05, "my phone is powerful") runs the same module in
-// a Web Worker on this page's own answer log, in this tab; its result stays in this tab. Loaded after admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, loadStats,
-// loadUsers, allPhotos, zoom, img, kpis). Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in
-// docs/LEARNING.md "Multifactor analyses"; the chart helpers in docs/DESIGN.md "Admin charts".
-const AN_V = 35; // sync script version with analysesGet (rule D4: before it, the page just has no stored report)
-// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet v113, ANALYSIS.AN_SUBJ_SHEET): ANREPS and
-// ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn), as every view reads them.
-let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
+/* ---------- Analyses: multifactor analyses of the answer log, every 1000 answers ---------- */
+// The report is computed once, by a GitHub Action (tools/analyses.js, analysis.js), and stored in the sync sheet
+// (analysesGet); this page only draws it, so it opens at once on a phone. "Recompute here" (secondary, on any device)
+// runs the same module in a Web Worker on this page's own answer log; its result stays in this tab. Loaded after
+// admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, loadStats, loadUsers, allPhotos, zoom, img, kpis).
+// Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in docs/LEARNING.md "Multifactor analyses";
+// the chart helpers in docs/DESIGN.md "Admin charts"; why: docs/decisions/2026-11-18-decisions-from-comments-3.md.
+// One report per subject: ANREPS and ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn).
+let ANREP = null, // {st: 'ok' | 'none' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
   ANWORK = null;
 const ANREPS = {},
@@ -42,12 +39,9 @@ function anLoad(S = ASUBJ) {
   return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN, subject: S.id})})
     .then(r => r.json())
     .then(j => {
-      // A script before v35 answers 'input' to an unknown POST: no stored report, nothing else changes (rule D4).
-      if (!j || (!j.ok && j.error === 'input') || (j.v && j.v < AN_V)) return put({st: 'old', v: j && j.v});
-      if (!j.ok) return put({st: 'err', err: j.error === 'token' ? 'Token refused' : 'Not available'});
-      // Another subject's report from the script that stores one per subject only (rule D4): an older one answers with the
-      // corals' report whatever the subject asked. Its answers are still counted (the status line).
-      const own = S.id === replaySubject() || (Number(j.v) >= ANALYSIS.AN_SUBJ_SHEET && j.subject === S.id);
+      if (!j || !j.ok) return put({st: 'err', err: j && j.error === 'token' ? 'Token refused' : 'Not available'});
+      // Another subject's report only when the reply names it. Its answers are still counted (the status line).
+      const own = S.id === replaySubject() || j.subject === S.id;
       if (!own) return put({st: 'none', rep: null, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: null});
       let rep = null;
       try {
@@ -55,22 +49,22 @@ function anLoad(S = ASUBJ) {
       } catch (e) {
         rep = null;
       }
-      // a report stored before 2026-11-05 also kept all its answers as one more point ("All 1933"): round milestones only
+      // an older stored report may keep all its answers as one more point ("All 1933"): round milestones only
       if (rep && rep.M.some(M => M % ANALYSIS.STEP === 0)) rep.M = rep.M.filter(M => M % ANALYSIS.STEP === 0);
-      // sheet v105: each subject's answers counted apart (counts); an older script's answers were every subject's rows
+      // counts: each subject's answers counted apart (an older script counts every subject's rows)
       return put({st: rep ? 'ok' : 'none', rep, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: j.stored});
     })
     .catch(() => put({st: 'err', err: 'Offline'}));
 }
 // A report with no point at all (Recompute here on an empty log: no milestone before 1000, no live point at 0) is no
-// report: the page says "No report yet" (Codex review #591).
+// report: the page says "No report yet".
 const anRep = () => {
   const rep = AN.src === 'local' && ANLOC && ANLOC.rep ? ANLOC.rep : ANREP && ANREP.rep;
   return rep && rep.M && rep.M.length ? rep : null;
 };
-// The milestones: round thousands only (Pierre, 2026-11-05: 1000, 2000, 3000, …; never shifted by the count of the first
-// report), without Recompute here's look at all the answers. The milestone shown: 'all' = the newest; 'now' = all the answers, a point only Recompute here adds
-// (analysis.js report live), never stored; else a milestone of the report.
+// The milestones: round thousands only (1000, 2000, 3000, …), without Recompute here's look at all the answers. The
+// milestone shown: 'all' = the newest; 'now' = all the answers, a point only Recompute here adds (analysis.js report
+// live), never stored; else a milestone of the report.
 const anRound = rep => rep.M.filter(M => M % ANALYSIS.STEP === 0);
 const anM = rep => {
   const L = anRound(rep);
@@ -84,8 +78,8 @@ const anMv = (rep, M) => (M === rep.live ? 'now' : M === anRound(rep).slice(-1)[
 /* ---------- Formatting ---------- */
 const anNum = (v, d = 2) => (v == null || !isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d));
 const anInt = v => (v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('en-US'));
-/* ---------- The plain reading (analysis.js plainOf; Pierre, 2026-11-04: "a non-statistician must understand it at a
-// glance"): each effect says what is compared, which way it goes and how much, as a chance of a right answer (or
+/* ---------- The plain reading (analysis.js plainOf), for a reader who is no statistician: each effect says what is
+// compared, which way it goes and how much, as a chance of a right answer (or
 // seconds, or a chance to stop) for a typical player and photo, with its likely range; one colour per reading. ---------- */
 const AN_TONE = {
   good: ['▲', 'Helps'],
@@ -110,7 +104,7 @@ const anRowOf = (a, key, e) => (key === 'fmt' ? (a.table || []).find(r => e.k.re
 const anPlain = (key, e, a) => ANALYSIS.plainOf(key, e, a, {row: anRowOf(a, key, e)});
 // The rank asked (analysis.js rankOfUnit; a subject whose ranks the models tell apart, a.rk0): the views that list units
 // draw each rank's apart, under "<Rank> questions" (words anWords leaves as they are), in analysis.js RANKS order. draw:
-// the list of one rank -> its HTML. A report without ranks (the corals) as before.
+// the list of one rank -> its HTML. A report without ranks (the corals): one list.
 const anRkWord = r => r[0].toUpperCase() + r.slice(1) + ' questions';
 const anRk = (a, L, draw) =>
   a && a.rk0 && (L || []).some(x => x.rk)
@@ -350,7 +344,7 @@ function bars(vals, o = {}) {
   return svg(w, h, o.title || 'Counts', s);
 }
 
-// Heatmap (the multifactor visualisation study of 2026-11-05): a grid of cells, each with a strength class (tokens only,
+// Heatmap (docs/reviews/2026-11-05-multifactor-viz-study.md): a grid of cells, each with a strength class (tokens only,
 // admin.css .an-h*), a hover title, and its value written in it when the cell is wide enough (o.tmin px). Row labels on
 // the left; column labels above, upright when they would not fit across, or numbered (o.num), or none when the cells are
 // too narrow (the columns then follow the rows' order); o.mark(i, j): an extra class for a cell (an outline); o.blocks:
@@ -536,7 +530,7 @@ const q0 = L => {
 };
 
 /* ---------- Page pieces ---------- */
-// Filters, sorting and folded cards (Pierre, 2026-11-04: "I can't scroll through everything"): remembered per page, in
+// Filters, sorting and folded cards (docs/ARCHITECTURE.md "Analyses"), so no page is a long scroll: remembered per page, in
 // this browser only (a viewer's convenience, AGENTS.md: browser storage never for shared state).
 const ANF = (() => {
   const v = store.get('reefid-admin-anf', {});
@@ -572,7 +566,7 @@ const anSeg = (lab, L, on, attr) =>
   `<span class="adm-qseg adm-sseg" role="group" aria-label="${lab}">${L.map(([v, l]) => `<button type="button" data-${attr}="${v}" aria-pressed="${on === v}">${l}</button>`).join('')}</span>`;
 // The bar of controls: show (all, clear, helps, hurts, not enough data), and the jump list.
 const anControls = () => `<div class="adm-an-ctl">${anSeg('Show', AN_FILTERS, anPref().f, 'anf')}</div>`;
-// Sorting (Pierre, 2026-11-05: "the order looks random"): every list of results (a chart, a table in words) has the same
+// Sorting (docs/ARCHITECTURE.md "Analyses"): every list of results (a chart, a table in words) has the same
 // control above it, one choice per page: by the signed change (the most negative or the most positive first, a result
 // with no clear effect or too early to tell among the others by its estimate), by topic (the Overview: a sub-heading per
 // analysis, by the signed change inside it, the analyses in the menu's order) or by name. Default: most negative first.
@@ -604,7 +598,7 @@ const anKeyOf = x => {
   if (!fin(P.base)) return [2, P.val];
   return [0, P.scale === 's' ? P.val / (P.base || 1) - 1 : P.val - P.base];
 };
-// Only the clear results by default (Pierre, 2026-11-05): the others (no clear effect, too early to tell) wait behind one
+// Only the clear results by default: the others (no clear effect, too early to tell) wait behind one
 // toggle per list, which shows them in the same chart or table, in the same order; its state kept per page and list.
 // Read from the verdict alone (P.v), so it follows whatever decides the verdicts. Show "Not enough data" opens them all.
 function anFold(L, id) {
@@ -753,12 +747,13 @@ function anSpark(rep, key, k) {
 }
 const anTable = (head, rows, cls = '') =>
   `<div class="adm-tscroll${cls === 'tall' ? ' tall' : ''}"><table class="adm-tbl${cls && cls !== 'tall' ? ' ' + cls : ''}"><thead><tr>${head.map(h => (h[0] === '#' ? `<th class="n">${h.slice(1)}</th>` : `<th>${h}</th>`)).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
-// The per-player lines of a stored report made before an account was removed (sheet v55: the next run refits it, AV 5
-// leaves those answers out): hidden once this browser knows who is still a player, the ids on Players and the devices
-// that never signed in (readAnswers anonymous 1). Pierre, 2026-11-05: a removed account is in no per-player result.
+// The per-player lines of a stored report made before an account was removed (the next run refits it without those
+// answers): hidden once this browser knows who is still a player, the ids on Players and the devices that never signed
+// in (readAnswers anonymous 1). A removed account is in no per-player result
+// (docs/reviews/2026-11-05-deleted-accounts-audit.md).
 let anAnsP = null; // the answer log asked for by the Analyses pages (once)
-// The answer log for anLive, read once at a time. The guard is cleared before the redraw (Codex review #600): a log
-// dropped while it was read (a delete or merge: sheetAgain('ans')) is then read again by that redraw.
+// The answer log for anLive, read once at a time. The guard is cleared before the redraw: a log dropped while it was
+// read (a delete or merge: sheetAgain('ans')) is then read again by that redraw.
 function anAnsLoad() {
   if (!TOKEN || ANS || anAnsP) return;
   anAnsP = loadStats().then(
@@ -785,7 +780,7 @@ function anWho(id, i) {
 }
 // The effects of one analysis: one bar chart per outcome (the change from the typical value, coloured by verdict, sorted
 // and filtered as the page asks), the spreads as the range a typical player, genus or photo falls in, then the same in
-// words, folded (Pierre, 2026-11-04: "very visual; text available but secondary").
+// words, folded: very visual, the text available but secondary (docs/ARCHITECTURE.md "Analyses").
 function anEffects(a, key) {
   const E = (a.effects || []).map(e => ({e, P: anPlain(key, e, a), S: anSpec(key, e)})),
     keep = E.filter(x => anKeep(x.P, x.e)),
@@ -897,7 +892,7 @@ function anThumbs(L, val) {
   }).join('')}</div>`;
 }
 
-/* ---------- Structure (the multifactor visualisation study of 2026-11-05; Pierre's Q70-Q77) ---------- */
+/* ---------- Structure (docs/reviews/2026-11-05-multifactor-viz-study.md) ---------- */
 const anWide = () => matchMedia('(min-width: 600px)').matches;
 // A correlation's strength class (diverging: the accent above 0, --bad below, three strengths past 0.2, 0.4, 0.6, 0.8).
 const anRc = r => {
@@ -905,7 +900,7 @@ const anRc = r => {
     k = a < 0.2 ? 0 : a < 0.4 ? 1 : a < 0.6 ? 2 : a < 0.8 ? 3 : 4;
   return {c: k ? (r > 0 ? 'an-hp' : 'an-hn') + k : 'an-h0', inv: k >= 3};
 };
-// A correlation without a signed number (the admin reads no raw signed number: Pierre, 2026-11-05, #601): its size and
+// A correlation without a signed number (the admin reads no raw signed number: docs/ARCHITECTURE.md): its size and
 // its direction in words (anRw, "0.82, opposite ways"), or behind ▲ (the same way) / ▼ (opposite ways) in a cell (anRs).
 const anR = r => (r == null || !isFinite(r) ? '–' : Math.abs(r).toFixed(2));
 const anRw = r => (r == null || !isFinite(r) ? '–' : `${anR(r)}, ${r < 0 ? 'opposite ways' : 'the same way'}`);
@@ -937,7 +932,7 @@ function anEnt(a, key) {
       (hard.length
         ? li(
             hard.map(
-              // the stable combination follows the sign (Codex review #592): estimates that trade off (r < 0) are sure in their
+              // the stable combination follows the sign: estimates that trade off (r < 0) are sure in their
               // sum, estimates that move together (r > 0) in their difference
               p =>
                 `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b>: hard to tell apart (correlation ${anRw(p.r)}); ${
@@ -1007,7 +1002,7 @@ function anEnt(a, key) {
       : '');
   return anCard('Effects hard to tell apart', words + charts + tab, 'wide', false);
 }
-// The mix-up map (study §2.11; analysis.js mixMap; Pierre's Q74): from tablet width up, the whole matrix (rows the genus
+// The mix-up map (study §2.11; analysis.js mixMap): from tablet width up, the whole matrix (rows the genus
 // shown, columns the genus answered, both in the dendrogram's order, the tree on top), each cell coloured by its rate
 // against a typical pair, the genus sheets' look-alikes outlined, each family a dashed block on the diagonal; on a
 // phone, the dendrogram as a list of genera (the tree on their left), each family a band that opens, on a tap, its own
@@ -1140,7 +1135,7 @@ function anMixMap(a) {
   return anCard('Mix-up map', words + tree + leg + block, 'wide');
 }
 
-// Player profiles (Pierre, 2026-11-05, Q70-Q74; analysis.js profiles): a descriptive map of how each player plays on
+// Player profiles (analysis.js profiles; docs/LEARNING.md): a descriptive map of how each player plays on
 // their last 300 answers, never named types. A heatmap of players × behaviours (the number in each cell: how far from the
 // players' average, in standard deviations; above in the accent, below in ink), rows ordered by Ward's tree (on their
 // left), columns by how the behaviours go together, rows under 100 answers greyed below the others; the groups and how
@@ -1167,7 +1162,7 @@ const anWhoHref = id => {
   const u = ((typeof USERS !== 'undefined' && USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
   return u ? '#players/list/journey/' + encodeURIComponent(u.name) : null;
 };
-// Why groups are not stable, from each check apart (Codex review #604): runs with one player left out that changed them,
+// Why groups are not stable, from each check apart: runs with one player left out that changed them,
 // and groups the bootstrap finds again under 0.75 on average.
 const anWhy = st => {
   const L = st.kept < st.runs ? ' These groups change when one player is left out.' : '',
@@ -1190,7 +1185,7 @@ function anProfiles(a) {
     desk = matchMedia('(min-width: 1024px)').matches,
     w = desk ? Math.floor((anW() - 12) / 2) : anW(),
     // beyond 3 SD the number says only that (a greyed row with few answers can sit far out)
-    // no signed number (#601): ▲ above the players' average, ▼ below; beyond 3 SD only that
+    // no signed number: ▲ above the players' average, ▼ below; beyond 3 SD only that
     zt = z => (z == null ? '–' : (z >= 0 ? '▲' : '▼') + (Math.abs(z) > 3 ? '>3' : Math.abs(z).toFixed(1))),
     side = (v, k) =>
       v == null || !isFinite(v) ? '–' : `${Math.abs(v).toFixed(2)} ${k ? (v >= 0 ? 'up' : 'down') : v >= 0 ? 'right' : 'left'}`;
@@ -1318,11 +1313,11 @@ function anWright(a) {
     hi = Math.max(...W.th.map(x => x[1])),
     lo = Math.min(...W.th.map(x => x[1])),
     // every player: from each player's own prediction on the genus when the report has them (x[4], x[5]: the lowest and
-    // highest; Codex review #830), else from the places on the scale
+    // highest), else from the places on the scale
     beyond = W.g.filter(x => (x[5] != null ? x[5] < 0 : x[1] > hi)).sort((p, q) => q[1] - p[1]),
     easy = W.g.filter(x => (x[4] != null ? x[4] > W.m : x[1] < lo - W.m)).sort((p, q) => p[1] - q[1]),
     it = L => L.map(x => `<i>${esc(x[0])}</i>`).join(' · '),
-    // no signed number (#601): a player's place as the chance of recognising a typical genus beyond guessing, a genus's
+    // no signed number: a player's place as the chance of recognising a typical genus beyond guessing, a genus's
     // difficulty as the chance the typical player recognises it beyond guessing, each with its likely range
     sg = v => 1 / (1 + Math.exp(-v)),
     mid = W.mid != null ? W.mid : q0(W.th.map(x => x[1])),
@@ -1357,7 +1352,7 @@ function anWright(a) {
     );
   return anCard('Players and genera on one scale', words + chart + tab, 'wide');
 }
-// A second skill? (study §2.4, §5 item 5; Pierre's Q77; analysis.js resOf): the genus × player residuals after the
+// A second skill? (study §2.4, §5 item 5; analysis.js resOf): the genus × player residuals after the
 // Learning model as a biplot (genera as points, players as arrows), the first axis's share of the spread against the
 // same share in logs simulated from the model, in words; descriptive, no verdict; a table of the places.
 function anSkill(a) {
@@ -1473,8 +1468,8 @@ const anRange = (x, f) => (x && x[0] != null ? `${f(x[0])} <small class="adm-an-
 const AN_IX_DRAW = {
   // what enlarging changes on each view, in points of right answers for a typical player and question
   view: (t, T) => {
-    // the change between the view's two predicted levels, its range the difference's at the un-enlarged level (Codex review
-    // #829: read at the typical chance, it contradicted the two levels shown beside it)
+    // the change between the view's two predicted levels, its range the difference's at the un-enlarged level (read at
+    // the typical chance, it would contradict the two levels shown beside it)
     const P = v => ANALYSIS.shiftP(T.p, T.g, v),
       chg = l => [P(l.on[0]) - P(l.off[0]), P(l.off[0] + l.d[1]) - P(l.off[0]), P(l.off[0] + l.d[2]) - P(l.off[0])],
       rows = t.lv.map(l => ({
@@ -1703,7 +1698,7 @@ function anChk(a, key) {
 }
 
 /* ---------- Views ---------- */
-// The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
+// The Overview, very visual: every result as a bar, one chart per outcome (a right answer, the time
 // to answer, ending a session, mixing up genera, the app's own estimate), sorted as the page asks, coloured by verdict, the
 // topic on a grey line under each name; the words, with a sparkline of each result over the milestones, and the
 // milestones, folded.
@@ -1735,7 +1730,7 @@ function anOverview(rep, R) {
       ...(grp && (!i || L[i - 1].k !== x.k) ? [`<tr class="an-grp"><th colspan="4" scope="colgroup">${link(x.k)}</th></tr>`] : []),
       `<tr><td class="an-c">${esc(x.P.name)}${grp ? '' : `<small class="adm-an-topic">${link(x.k)}</small>`}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-sp">${anSpark(rep, x.k, x.e.k)}</td><td class="an-v">${anPill(x.P, x.e)}</td></tr>`
     ]);
-  // Milestones as history (the stats study of 2026-11-05, §5.3): each is one more look at the same growing log, so no
+  // Milestones as history (docs/reviews/2026-11-05-stats-methods-study.md §5.3): each is one more look at the same growing log, so no
   // count of results "new since the previous milestone" and no chart of clear results over time.
   const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
@@ -1775,8 +1770,8 @@ function anView(key, rep, R) {
     ...(key === 'tdiff' && a.timed != null ? [['Timed answers', anInt(a.timed)]] : []),
     ...(key === 'tdiff' && a.photos ? [['Photos', anInt(a.photos)]] : [])
   ]);
-  // a compacted milestone (analysis.js compact) keeps only the counts of its profiles, never the players' rows (Codex
-  // review #604: the heatmap read 0 answers, 0 players and drew nothing): its counts and the compacted note
+  // a compacted milestone (analysis.js compact) keeps only the counts of its profiles, never the players' rows (the
+  // heatmap would draw nothing): its counts and the compacted note
   if (key === 'who' && a.lean)
     return (
       kpis(
@@ -1808,8 +1803,7 @@ function anView(key, rep, R) {
   const lean = a.lean ? AN_LEAN : '';
   const parts = [anEffects(a, key)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key), anChk(a, key));
-  // a compacted milestone keeps its interactions' verdicts (analysis.js compact): their cards, without the levels (Codex
-  // review #829)
+  // a compacted milestone keeps its interactions' verdicts (analysis.js compact): their cards, without the levels
   else parts.push(...(a.ix || []).map(t => anIx(a, t.k)));
   parts.push(anConv(rep, key));
   return head + lean + `<div class="adm-sgrid adm-an-grid">${parts.join('')}</div>`;
@@ -1825,7 +1819,7 @@ const AN_PART = {
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
 // The mix-up rate a pair's odds ratio is read on (Pairs most mixed up): its own rank's rate where the ranks are told
-// apart (analysis.js confusions rkp; Codex review #1058), else the pooled rate.
+// apart (analysis.js confusions rkp), else the pooled rate.
 const anPairP = (a, p) => (a && a.rkp && p && a.rkp[p.rk] != null ? a.rkp[p.rk] : anTyp(a).p);
 // A unit's seconds (Answer time's list by unit): from the reference rank's typical time where the units carry their
 // rank's effect (analysis.js rt s0: the fish's ranks told apart), else the typical answer's.
@@ -2040,7 +2034,7 @@ const ANV = {
             a.rk0 ? '#Against a typical pair of its rank' : '#Against a typical pair'
           ],
           PL.map(p => {
-            // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
+            // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio
             const fr = u => ANALYSIS.freqRatio(anPairP(a, p), u),
               v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
             return `<tr><td>${p.k
@@ -2178,7 +2172,7 @@ const anYr = V => {
     ? {ymin: Math.max(0, Math.floor((Math.min(...L) - 0.1) * 10) / 10), ymax: Math.min(1, Math.ceil((Math.max(...L) + 0.1) * 10) / 10)}
     : {};
 };
-// Sessions in figures (analysis.js sessDesc; the study of 2026-11-04): counts and means, in words.
+// Sessions in figures (analysis.js sessDesc): counts and means, in words.
 const anOf = (k, n) => (n ? `${k} of ${n} (${pc(k / n)})` : '–');
 function anSessDesc(d) {
   d = {...d, table: anLive(d.table, 'p')};
@@ -2315,10 +2309,9 @@ function anSessDesc(d) {
   ];
 }
 
-// The report's subject (the analyses are one subject's: the corals' so far) and its answers in the log now, counted as
-// the sheet's head and the Action count them (core.js subjCounts; Pierre, 2026-11-08: every 1000 answers of that
-// subject, the fish answers apart): the head's count from sheet v105, else the answer log this page reads once it is
-// in, else null (not known yet).
+// The report's subject and its answers in the log now, counted as the sheet's head and the Action count them (core.js
+// subjCounts: every 1000 answers of that subject, each subject's apart): the head's count, else the answer log this page
+// reads once it is in, else null (not known yet).
 const anSubj = rep => subjectOf((rep && rep.subject) || (ANREP && ANREP.stored && ANREP.stored.subject) || replaySubject());
 const anCount = S => {
   if (ANREP && ANREP.counts) return Number(ANREP.counts[S.id]) || 0;
@@ -2344,8 +2337,16 @@ function anWords(root, S) {
   const W = S.analyses || {},
     pre = Object.values(S.sheets || {});
   if (!W.one && !pre.length) return;
-  const rx = pre.length ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):[A-Z][A-Za-z]*(?: [a-z]+)?`, 'g') : null,
-    name = id => (typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id] ? FISHA.gen[id].name : id.replace(/^[a-z]+:/, '')),
+  const rx = pre.length
+      ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):(?:[A-Z][A-Za-z]*(?: [a-z]+)?|s\\d+)`, 'g')
+      : null,
+    // a fish species unit (s:s091) by its scientific name (the registry's spu), as admin.js repUnit names it
+    name = id =>
+      typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id]
+        ? FISHA.gen[id].name
+        : typeof FISHA !== 'undefined' && FISHA && FISHA.spu && FISHA.spu[id]
+          ? FISHA.spu[id].name
+          : id.replace(/^[a-z]+:/, ''),
     say = t => {
       let o = rx ? t.replace(rx, name) : t;
       if (W.one)
@@ -2387,7 +2388,7 @@ function renderAnalyses() {
     return;
   }
   if (TOKEN && !USERS) loadUsers().then(() => anPage(cur) && ANREP && render());
-  // The answer log too: anLive tells the devices never signed in from the removed accounts with it (Codex review #600).
+  // The answer log too: anLive tells the devices never signed in from the removed accounts with it.
   anAnsLoad();
   const rep = anRep(),
     key = anKey(cur);
@@ -2506,7 +2507,7 @@ function anBind() {
   const re = $v.querySelector('[data-anre]');
   if (re) re.onclick = () => anRecompute();
 }
-// Recompute here (secondary, on any device, phones included: Pierre, 2026-11-05): the same module in a Web Worker on this
+// Recompute here (secondary, on any device, phones included): the same module in a Web Worker on this
 // page's answer log, so the page stays responsive while it runs and the button shows its progress; the stored report's
 // milestones are reused when their answers are the same. Kept in this tab only, never sent anywhere.
 function anRecompute() {
@@ -2518,7 +2519,7 @@ function anRecompute() {
   render();
   const go = () => {
     // without the players and devices left out of the statistics (analysis.js leftOut, as the stored report; the player
-    // list's ids when loaded, the freshest after a Leave out, else the log's; Codex review #801)
+    // list's ids when loaded, the freshest after a Leave out, else the log's)
     const ex = (typeof USERS !== 'undefined' && USERS && Array.isArray(USERS.excluded) && USERS.excluded) || (ANS && ANS.excluded) || [],
       rows = ANALYSIS.leftOut(subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id), ex);
     // its photo features (tools/analyses.js metaOf): the corals' from the data and the draft; a tree subject's judged ones
@@ -2567,7 +2568,7 @@ function anRecompute() {
   ]).then(go);
 }
 // A tree subject's game file (core.js SUBJECTS admin files gm: fish-game.json, seaslug-game.json), its records whole
-// (core.js fishGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
+// (core.js treeGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
 const ANGAME = {},
   ANGAMEP = {};
 const anGame = S =>
@@ -2578,7 +2579,7 @@ const anGame = S =>
         fetch(S.admin.files.gm, {cache: 'no-cache'})
           .then(r => (r.ok ? r.json() : {}))
           .catch(() => ({}))
-          .then(G => (ANGAME[S.id] = fishGameRead(G) || {})));
+          .then(G => (ANGAME[S.id] = treeGameRead(G) || {})));
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
 addEventListener('resize', () => {
@@ -2609,5 +2610,6 @@ Object.assign(HELP, {
   'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
   'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. <b>Slope</b>, the player's own learning slope (the Learning model's, fitted on these answers): the extra right answers twice as many answers on a genus bring, for a typical question. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
-// Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
-if (typeof DATA !== 'undefined' && DATA && anPage(cur)) render();
+// Opened straight on an Analyses address: admin.js drew a placeholder before this file was in. (cur is null while admin.js
+// start still awaits the draft store, after DATA: it renders then itself.)
+if (typeof DATA !== 'undefined' && DATA && cur && anPage(cur)) render();

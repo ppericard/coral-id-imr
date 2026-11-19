@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The fish genera's own presentation and ID marks (Pierre, 2026-11-08: each genus needs a short presentation and its ID
+// The fish genera's own presentation and ID marks (each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card
-// (app.js fishGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
+// (app.js treeGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
 // apart (rule C1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -67,13 +67,66 @@ test('built into fish.json as written: plain, marks, and each line pointing at i
     if (!M.genera[r.name]) for (const k of ['plain', 'marks', 'msrc', 'mby']) assert.ok(!(k in r), `${r.name}: ${k}`);
 });
 
-test('the families done: every circle-1 genus has IMR cues, its own marks or a reason; never marks beside IMR cues', () => {
-  assert.ok(M.families.length, 'at least one family done');
-  for (const id of M.families) {
-    const L = F.genera.filter(g => g.family === id && g.circle === 1);
-    assert.ok(L.length, id);
-    for (const g of L) assert.ok((g.cues || []).length || (g.marks || []).length || M.none[g.name], `${id}: ${g.name}`);
+test('every genus in play, any circle, has IMR cues or a presentation and its marks or a reason; never marks beside IMR cues', () => {
+  // In play: every family but the surprise cards' (wink); circles 2 and 3 too (the content comes first,
+  // before their genera open as units).
+  const play = F.families.filter(f => !f.wink);
+  for (const f of play) {
+    const L = F.genera.filter(g => g.family === f.id);
+    assert.ok(L.length, f.id);
+    for (const g of L) {
+      if ((g.cues || []).length) continue;
+      assert.ok(M.families.includes(f.id), `${f.id}: not in families done`);
+      assert.ok(g.plain, `${f.id}: ${g.name} has no presentation`);
+      assert.ok((g.marks || []).length || M.none[g.name], `${f.id}: ${g.name} has neither marks nor a reason`);
+    }
   }
+  for (const id of M.families)
+    assert.ok(
+      play.some(f => f.id === id),
+      `${id}: not a family in play`
+    );
+  assert.ok(
+    F.genera.some(g => g.circle === 3 && g.plain),
+    'circle 3 is covered'
+  );
+  // The surprise cards' genera need nothing (whale shark, thresher sharks).
+  for (const f of F.families.filter(f => f.wink))
+    for (const g of F.genera.filter(g => g.family === f.id)) assert.ok(!M.genera[g.name] && !M.none[g.name], g.name);
+});
+
+test('the build stops on a genus in play of any circle without its presentation, or without marks or a reason', () => {
+  const {spawnSync} = require('child_process'),
+    os = require('os');
+  const run = m => {
+    const tmp = path.join(os.tmpdir(), `genusmarks.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(m));
+    try {
+      const r = spawnSync('python3', [path.join(ROOT, 'tools/build_fish.py'), '--regroup', '--check', '--marks', tmp], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      });
+      return {status: r.status, out: r.stdout + r.stderr};
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  };
+  assert.strictEqual(run(M).status, 0, 'the file as it is passes');
+  // A circle-3 genus with neither (Gobiodon), and a circle-2 one with a reason but no presentation (Aulostomus).
+  const a = JSON.parse(JSON.stringify(M));
+  delete a.genera.Gobiodon;
+  for (const k of Object.keys(a.src)) if (!Object.values(a.genera).some(x => JSON.stringify(x).includes(`"${k}"`))) delete a.src[k];
+  let r = run(a);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /genus Gobiodon of a family in play has neither marks nor a reason in none/);
+  assert.strictEqual(FG.Gobiodon.circle, 3);
+  const b = JSON.parse(JSON.stringify(M));
+  delete b.genera.Aulostomus;
+  for (const k of Object.keys(b.src)) if (!Object.values(b.genera).some(x => JSON.stringify(x).includes(`"${k}"`))) delete b.src[k];
+  r = run(b);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /genus Aulostomus of a family in play has no presentation/);
+  assert.strictEqual(FG.Aulostomus.circle, 2);
   for (const g of F.genera) assert.ok(!((g.cues || []).length && (g.marks || g.plain)), `${g.name}: IMR cues and our marks together`);
   for (const [g, why] of Object.entries(M.none)) assert.ok(FG[g] && typeof why === 'string' && why.trim(), g);
 });
@@ -106,21 +159,22 @@ test('a tip is short and seen on a photo; a species named is one of its own game
   );
 });
 
-// fishGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
+// treeGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
 const ctx = {
   DOM: {EX: 0.9},
   easyCover: C.easyCover,
-  fishScoreTree: C.fishScoreTree,
-  fishSpUnits: C.fishSpUnits,
+  treeScoreTree: C.treeScoreTree,
+  treeSpUnits: C.treeSpUnits,
+  treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
 vm.runInContext(
-  [block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.fishGenera = fishGenera;'].join('\n'),
+  [block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.treeGenera = treeGenera;'].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(
-  C.fishGen(F, C.fishPhotos(json('fish-photos.json').photos, C.fishGameRead(json('fish-game.json')).photos, null)),
+const X = ctx.treeGenera(
+  C.treeGen(F, C.treePhotos(json('fish-photos.json').photos, C.treeGameRead(json('fish-game.json')).photos, null)),
   F
 );
 
@@ -146,9 +200,9 @@ test('the genus card: its marks under a label naming their sources, its presenta
 });
 
 test('the sheet: genMarks on the one sheet the genus opens, each line with its source numbers', () => {
-  const T = C.fishTree(F);
+  const T = C.treeSheets(F);
   const c2 = {
-    fishGo: id =>
+    treeGo: id =>
       T.go(
         C.sheetIdOf(
           C.SUBJECTS.find(s => s.sheets),
@@ -190,9 +244,9 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   assert.ok(c2.genMarks(FG.Gomphosus, 's:Gomphosus varius').includes(FG.Gomphosus.marks[0]));
   assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus: its IMR cues only');
   for (const [fn, at] of [
-    ['function fishGenus(g) {', '${genMarks(g, g.id)}'],
+    ['function treeGenus(g) {', '${genMarks(g, g.id)}'],
     ['function fishSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],
-    ['function fishFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
+    ['function treeFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
   ])
     assert.ok(block(LEARN, fn, '\n}\n').includes(at), fn);
 });

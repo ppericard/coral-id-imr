@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Find the X (ROADMAP "Game modes"; Pierre, 2026-11-03, Q321 D1, 2026-11-09): one name, four photos, fish only, slipped
+// Find the X (ROADMAP "Game modes"): one name, four photos, fish only, slipped
 // into the photo quiz like the duels (quiz.js FIND, planFind, planPhoto), logged with its own mode |f and scored as a
 // 4-choice quiz answer. quiz.js planFind runs in a vm with model.js distractors (its own code) and the game around them
 // stubbed; the scoring through quiz.js answer's own question (scoreIn) and core.js scoreAnswer, replayed from the log.
@@ -99,7 +99,7 @@ test('the draw share: about FIND.P of the questions that could be one', () => {
 });
 
 test('never on a unit not met, never with a unit not met, never without 3 other met units with a tile', () => {
-  // t not met: no question, and no random number drawn (the draw goes on as before).
+  // t not met: no question, and no random number drawn (the draw goes on unchanged).
   let W = planner({met: 'BCDEF'.split(''), P: 1});
   assert.strictEqual(W.plan('A'), null);
   assert.strictEqual(W.rnd.n, 0, 'nothing drawn for a unit not met');
@@ -200,6 +200,7 @@ test('logged with its own mode: quiz|f (custom quiz quiz|s|f), never |kN, |d or 
         nc: 4,
         tq: null,
         exq: false,
+        ph: [],
         ...o
       })
     );
@@ -244,6 +245,7 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       k: 4,
       chs,
       seenPh: ph,
+      mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
       unseen: null,
       ph,
       solo: 0.5,
@@ -261,12 +263,10 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       pgLook: (t, L) => L.some(x => GEN[t].look.includes(x)),
       recallAt: () => 1,
       startP: () => 0,
-      rtOn: () => true,
       mq: mode,
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => ({}), // model.js pfmt: no offsets for the fish
-      domRules: () => true,
       genusDiff: () => 0
     };
     vm.createContext(env);
@@ -306,7 +306,7 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
 });
 
 test('the tiles: the fish data holds families with tiles enough for the format to come up', () => {
-  const gm = C.fishGameRead(JSON.parse(read('fish-game.json'))),
+  const gm = C.treeGameRead(JSON.parse(read('fish-game.json'))),
     byFam = {};
   const F = JSON.parse(read('fish.json')),
     famOf = new Map();
@@ -369,7 +369,7 @@ test("the preload: a Find the X fetches its four tiles, never its question's pho
   ctx.AWAY = true;
   assert.strictEqual(JSON.stringify(ctx.pfUrls(q)), JSON.stringify(set.find.map(x => `img:${x.p.f}:s`)));
   ctx.AWAY = false;
-  // Any other question as before: its photos at 480 px then full size, then the views shown after the answer.
+  // Any other question: its photos at 480 px then full size, then the views shown after the answer.
   const plainQ = ['quiz', 'B', ['B', 'C', 'D'], 'Which B?', {shown: [{f: 'b1'}], reveal: [{f: 'b2'}]}];
   assert.strictEqual(JSON.stringify(ctx.pfUrls(plainQ)), JSON.stringify(['img:b1:s', 'full:b1:1', 'img:b2:s', 'full:b2:2']));
 });

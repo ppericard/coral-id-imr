@@ -1,8 +1,9 @@
 {
 "_doc": [
-  "The IMR instance's coral layer (tools/instance.json layer.coral; design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5): what IMR's Lecture 6 says about the slate's genera. data.json carries a copy where it always had them, laid on by tools/datajson.py (tools/instance.py coral_compose): edit this file, then run python3 tools/datajson.py; an edit made in data.json instead is refused by dump(), and python3 tools/datajson.py --check fails until the two agree. The content editor's edits are not here: curation.json content, laid over at load (rule A1). Layout: tools/instance.py layer_dumps (one genus per line).",
+  "The IMR instance's coral layer (tools/instance.json layer.coral; design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5): what IMR's Lecture 6 says about the slate's genera. data.json carries a copy where it always had them, laid on by tools/datajson.py (tools/instance.py coral_compose): edit this file, then run python3 tools/datajson.py; an edit made in data.json instead is refused by dump(), and python3 tools/datajson.py --check fails until the two agree. The content editor's edits are not here: curation.json content, laid over at load (rule A1). Layout: tools/instance.py layer_dumps (one genus, one pair per line).",
   "imrg: the 11 IMR lecture groups [{n, t}] (data.json imrg).",
-  "gen: {genus (data.json gen): {ig: its IMR lecture group (0: none, the starred genera), imr: the IMR lecture notes, verbatim, review slides and instructor's notes included, mn: the mnemonic ('' when none)}}. A genus data.json gen does not hold stops the build."
+  "gen: {genus (data.json gen): {ig: its IMR lecture group (0: none, the starred genera), imr: the IMR lecture notes, verbatim, review slides and instructor's notes included, mn: the mnemonic ('' when none)}}. A genus data.json gen does not hold stops the build.",
+  "pairs: the IMR lecture's look-alike pairs, {\"A|B\" (two genera of data.json gen, sorted): {src: the pair's lsrc line, the same on both genera (\"IMR Lecture 6: ...\", the lecture's words; \"Same IMR lecture group: ...\", its groups), look: {genus: the other genus's place in that genus's data.json look; a genus whose look does not list the other is left out}}}. data.json carries them in look (at those places) and in lsrc (in gen order). The Coral Finder's pairs, the one cited as \"IMR Lecture 6 and Coral Finder\" included, stay in data.json alone. One line per pair."
 ],
 "imrg": [{"n": 1, "t": "Small, raised, separate-walled corallites"}, {"n": 2, "t": "Small, separate-walled, submerged corallites"}, {"n": 3, "t": "Small, shared-walled, submerged corallites"}, {"n": 4, "t": "Large, raised, rounded corallites"}, {"n": 5, "t": "Meandering ridges / valleys"}, {"n": 6, "t": "Polyps extended by day"}, {"n": 7, "t": "Irregular / angular corallites"}, {"n": 8, "t": "Solitary"}, {"n": 9, "t": "Massive / thick, rounded corallites with separate walls"}, {"n": 10, "t": "Massive / thick, rounded corallites with shared AND separate walls"}, {"n": 11, "t": "Massive / thick, rounded corallites with shared walls"}],
 "gen": {
@@ -17,7 +18,7 @@
 "Astreopora": {"ig": 4, "imr": ["Massive.", "Cylindrical corallites standing out from the surface.", "Septa poorly developed, so corallites look like holes."], "mn": ""},
 "Galaxea": {"ig": 4, "imr": ["Spiky, star-like corallites with blade-like septa.", "Tentacles sit outside the septa."], "mn": ""},
 "Turbinaria": {"ig": 4, "imr": ["Smooth coenosteum between corallites.", "Thin plates, regular colony, flowery polyps.", "Corallites 2-3 mm."], "mn": ""},
-"Mycedium": {"ig": 4, "imr": ["Large nose-shaped corallites facing out towards the colony edge.", "Polyps have large mouths and no tentacles (they use slime)."], "mn": "\"My sea god\"."},
+"Mycedium": {"ig": 4, "imr": ["Large nose-shaped corallites facing out towards the colony edge.", "Polyps have large mouths and no tentacles (they use slime)."], "mn": "\"Mycelium\", or \"My sea god\"."},
 "Lobophyllia": {"ig": 5, "imr": ["Large, fleshy corallites that look isolated from each other.", "Large, spiky septal teeth.", "Separate or shared walls; shared walls often have a groove along the top."], "mn": ""},
 "Pavona": {"ig": 5, "imr": ["Club-like or leafy colonies, with corallites on both sides.", "Septo-costae flow between corallites: smooth, star-like look.", "Corallites in parallel rows; ridges meander around several mouths."], "mn": "A star in the pavement (Hollywood Walk of Fame)."},
 "Pachyseris": {"ig": 5, "imr": ["Valleys with parallel ridges.", "Finely ribbed septa.", "Leafy, laminar growth."], "mn": "A series of packed rows."},
@@ -45,5 +46,20 @@
 "Merulina": {"ig": 0, "imr": [], "mn": ""},
 "Cyphastrea": {"ig": 0, "imr": [], "mn": ""},
 "Halomitra": {"ig": 0, "imr": [], "mn": ""}
+},
+"pairs": {
+"Astrea|Favites": {"src": "IMR Lecture 6: Favites \"could be confused for Astrea\"", "look": {"Astrea": 2, "Favites": 2}},
+"Ctenactis|Lobactis": {"src": "Same IMR lecture group: 8. Solitary", "look": {"Ctenactis": 1, "Lobactis": 1}},
+"Dipsastraea|Favites": {"src": "IMR Lecture 6: Dipsastraea vs Favites budding", "look": {"Dipsastraea": 0, "Favites": 0}},
+"Echinopora|Galaxea": {"src": "Same IMR lecture group: 4. Large, raised, rounded corallites", "look": {"Galaxea": 0}},
+"Fungia|Lobactis": {"src": "IMR Lecture 6: septal teeth vs the striations of Fungia", "look": {"Fungia": 2, "Lobactis": 0}},
+"Galaxea|Tubastraea": {"src": "Same IMR lecture group: 4. Large, raised, rounded corallites", "look": {"Galaxea": 1}},
+"Leptoria|Pavona": {"src": "Same IMR lecture group: 5. Meandering ridges / valleys", "look": {"Pavona": 1}},
+"Leptoria|Platygyra": {"src": "IMR Lecture 6: Leptoria \"could be confused for Platygyra\"", "look": {"Leptoria": 0, "Platygyra": 0}},
+"Lobophyllia|Platygyra": {"src": "Same IMR lecture group: 5. Meandering ridges / valleys", "look": {"Lobophyllia": 0, "Platygyra": 2}},
+"Montipora|Porites": {"src": "IMR Lecture 6: Montipora \"can be confused for Porites\"", "look": {"Montipora": 0, "Porites": 0}},
+"Pavona|Platygyra": {"src": "Same IMR lecture group: 5. Meandering ridges / valleys", "look": {"Pavona": 2}},
+"Pocillopora|Stylophora": {"src": "IMR Lecture 6: Stylophora smooth from afar, unlike Pocillopora", "look": {"Pocillopora": 0, "Stylophora": 1}},
+"Tubastraea|Turbinaria": {"src": "Same IMR lecture group: 4. Large, raised, rounded corallites", "look": {"Tubastraea": 1}}
 }
 }

@@ -7,15 +7,16 @@ first photo (judging/FISH.md "Reference photos"; core.js easyRank ranks the refe
 photos). Before this file a cover was tagged only when it happened to be among the fetched candidates (2 game photos).
 
 For every game species (fish.json species of a level-1 entry, not `out`; its taxon the one its candidates come from,
-tools/fetch_fish.py photo_taxon: its photoTaxon when it has one, Q354 b), every circle-1 genus (app.js fishGenera: the
-first word of a circle-1 species' name) and every entry's family (fish.json teach fam), in this order:
+tools/fetch_fish.py photo_taxon: its photoTaxon when it has one, Q354 b), every genus the game has as a unit (game_genera,
+as core.js fishGenSets: every genus of a family in play, a surprise card's excepted, with species of a circle, in every
+circle since Pierre, 2026-11-18; circle 1's alone before) and every entry's family (fish.json teach fam), in this order:
   1. iNaturalist: the taxon's cover, then the other photos its taxon page shows (taxon_photos, iNaturalist's order),
      for a species all of them, for a genus or a family the first, that pass every game photo rule on the observation that holds it (the rules of tools/fetch_fish.py:
      Research Grade at the species level, licence CC0, CC BY or CC BY-NC, never share-alike or ND, not captive, not
      annotated Dead, hosted on iNaturalist's open-data host, and in the Indo-West Pacific box `IWP`: a species
      confirmed near Dauin takes its photos from anywhere there, ARCHITECTURE "Fish photos"; every game species is
      confirmed in the Philippines, rule C8). For a genus or a family, the observation must be of a game species of
-     that entry (the photo joins that entry's photos with that species). Every photo of a species' taxon page whose
+     that entry (for a genus, one of its species of a circle; the photo joins that entry's photos with that species). Every photo of a species' taxon page whose
      licence the rules accept is looked at (Pierre, 2026-11-08, Q229: "if we take just the very first one, or one, we
      can miss very beautiful photos"; Q231: never ND, "we cannot crop them", nor all rights reserved): its observation
      is found among the taxon's 200 most faved Research Grade observations in the box, else its 200 most faved
@@ -39,8 +40,12 @@ Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the obse
 (trimmed) in tools/.cache/fish_refs.json (git-ignored), and each photo's observation found by its id window too: a rerun
 is offline. Taxa 30 a request; one or two observation searches per taxon with a usable reference photo (the faved 200
 in the box, then anywhere while a photo is missing), then one or two id-window searches per photo still missing.
-Usage: python3 tools/fish_refs.py [--offline | --refresh] [--only t01,t02]
+Usage: python3 tools/fish_refs.py [--offline | --refresh] [--only t01,t02] [--genera]
        python3 tools/fish_refs.py --relabel   (after a change to region(): the away list's regions again, offline)
+--genera: incremental, the genus units with no reference photo in tools/fish_refs.json yet (a genus the game newly has,
+or one none passed the rules for last time) and nothing else: no species or family taxon asked, every other photo and the
+away list kept as they are, the new ones added (add_genera). About three requests a genus with a usable photo (its taxon,
+the faved 200 in the box and anywhere) plus the id windows of a photo still missing.
 """
 import argparse
 import bisect
@@ -53,7 +58,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_fish as ff  # noqa: E402  (the cached, paced Net; IWP, in_iwp, OK)
 import fetch_fishbase as fbase  # noqa: E402  (FishBase's rules and records)
-from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
+from fish_inforce import CIRCLES, in_force  # noqa: E402  (the circles in force: the content editor's)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tools" / "fish_refs.json"
@@ -64,8 +69,7 @@ BOX = "&".join(f"{k}={v}" for k, v in ff.IWP.items())
 DAUIN = (9.19, 123.26)
 SPECIES_RANKS = ("species", "subspecies", "variety")
 DEAD = (17, 19)
-# No cap per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement
-# the weaker ones on iNaturalist"): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
+# No cap per species (a maximum of good photos, to complement the weaker ones on iNaturalist): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
 # rules is listed; the judging decides which play (tools/fish_game.py ref_play).
 INAT_MAX = FB_MAX = None
 # iNaturalist API v2 observation fields the rules read (a v1 reply of 200 observations weighs about 12 MB).
@@ -173,11 +177,12 @@ def passes(o, want):
     return verdict(o, want) == "ok"
 
 
-# The rough regions of an observation outside the box (the order matters: the first that holds), for Pierre's Q230.
+# The rough regions of an observation outside the box (the order matters: the first that holds), for the photos
+# listed under `away` (never taken) while the question of photos outside the box is open.
 # Longitudes east of 180 are negative (the dateline at -180): Fiji, Samoa and Tonga straddle it. The Maldives come before
 # the Arabian Sea, whose box reaches 78 E (a northern Maldives atoll read "Arabian Sea"), and India's east coast is the
 # Bay of Bengal; New Zealand, the Cook, Line and Marshall Islands have boxes of their own before what is left of the
-# central Pacific (they all read "Fiji, Samoa, central Pacific" until 2026-11-14). After a change: --relabel.
+# central Pacific. After a change: --relabel.
 def region(o):
     ll = ll_of(o)
     if not ll or len(ll) != 2:
@@ -223,14 +228,14 @@ def region(o):
     return "Atlantic, Mediterranean, elsewhere"
 
 
-# The observation that holds a taxon photo (Pierre, 2026-11-08, Q229: every photo of the taxon page, not only those whose
-# observation is among the faved 200 in the box). iNaturalist has no search by photo id, but photo ids and observation
+# The observation that holds a taxon photo (every photo of the taxon page, not only those whose observation is among the
+# faved 200 in the box). iNaturalist has no search by photo id, but photo ids and observation
 # ids both grow with time: the photo's observation id is estimated from the nearest (photo id, observation id) pairs the
 # faved searches returned (est), then the taxon's observations are read in a narrow id window around it, then a wider
-# one (a photo added long after its observation was made). Measured on the 1,140 pairs of tools/fish_refs.json before
-# this change: half within 2,000 ids of the estimate, about 90% within 300,000.
+# one (a photo added long after its observation was made). Measured on 1,140 known pairs: half within 2,000 ids of the
+# estimate, about 90% within 300,000.
 WIN = (30_000, 500_000)
-WIN_PAGES = 5  # pages of 200 read per window at most (id_above the last one read; Codex review #731)
+WIN_PAGES = 5  # pages of 200 read per window at most (id_above the last one read)
 NEAR = 4  # known pairs taken on each side of a photo id
 
 
@@ -262,7 +267,7 @@ def obs_of(net, taxon, pid, A):
     e, o = est(A, pid), None
     for m in WIN if e is not None else ():
         above = max(0, e - m)
-        for _ in range(WIN_PAGES):  # a window of more than 200 observations is read on (Codex review #731)
+        for _ in range(WIN_PAGES):  # a window of more than 200 observations is read on
             url = (ff.API + f"taxon_id={taxon}&photos=true&id_above={above}&id_below={e + m}"
                    f"&order_by=id&order=asc&per_page=200&fields={FIELDS}")
             r = net.fetch(url, keep_win) or {}
@@ -345,35 +350,55 @@ def fb_objs(s, fb, n=FB_MAX):
     return out
 
 
-def build(net, F, only=(), live=None):
-    """live: fish.json with the circles in force (tools/fish_inforce.py), which choose the circle-1 genera; the species
-    photographed stay fish.json's (F), so a family the content editor takes out of the game keeps its reference photos for
-    the day it comes back."""
+def game_genera(live):
+    """{species id: its genus's name} for the species of the genera the game has as units (core.js fishGenSets, read by
+    app.js fishGenera): every genus of a family in play (not a surprise card's, a wink family, whose species are never
+    asked) holding species of a circle, whatever its circle (Pierre, 2026-11-18: the scientific genera of circles 2 and 3
+    too), each with its species of a circle, all read in force (live)."""
+    sp = {s["id"]: s for s in live.get("species") or []}
+    gens = {g["id"]: g for g in live.get("genera") or []}
+    out = {}
+    for f in live.get("families") or []:
+        if f.get("wink"):
+            continue
+        for gid in f.get("genera") or []:
+            G = gens.get(gid)
+            for i in (G or {}).get("species") or []:
+                if (sp.get(i) or {}).get("circle") in CIRCLES:
+                    out[i] = G["name"]
+    return out
+
+
+def build(net, F, only=(), live=None, done=None):
+    """live: fish.json with the circles in force (tools/fish_inforce.py), which choose the genera the game has (game_genera);
+    the species photographed stay fish.json's (F), so a family the content editor takes out of the game keeps its
+    reference photos for the day it comes back. done: None for every unit; else the genus units only, those whose name is
+    not in done (the --genera run: the genera with no reference photo yet), no family or species photo."""
     sp = {s["id"]: s for s in F["species"]}
     entries = [t for t in F["teach"] if t.get("level") == 1 and (not only or t["id"] in only)]
     game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and ff.photo_taxon(sp[i])] for t in entries}
-    tc = {t["id"]: t.get("circle") for t in (live or F)["teach"]}
-    sc = {s["id"]: s.get("circle") for s in (live or F)["species"]}
-    gen = {}  # entry id -> {genus name: [species]}, app.js fishGenera: circle-1 entries, circle-1 species (in force)
+    gof = game_genera(live or F)
+    gen = {}  # entry id -> {genus name: [its game species]}: the game's genus units (game_genera), every circle's
     for t in entries:
-        if tc.get(t["id"]) == 1:
-            for s in game[t["id"]]:
-                if sc.get(s["id"]) == 1:
-                    gen.setdefault(t["id"], {}).setdefault(s["name"].split()[0], []).append(s)
+        for s in game[t["id"]]:
+            g = gof.get(s["id"])
+            if g and (done is None or g not in done):
+                gen.setdefault(t["id"], {}).setdefault(g, []).append(s)
     names = {}
     for t in entries:
-        if t.get("fam"):
+        if t.get("fam") and done is None:
             names[(t["fam"], "family")] = None
     for G in gen.values():
         for g in G:
             names[(g, "genus")] = None
     for k in names:
         names[k] = find(net, *k)
-    T = taxa(net, [ff.photo_taxon(s) for L in game.values() for s in L] + [v for v in names.values() if v])
+    own = [ff.photo_taxon(s) for L in game.values() for s in L] if done is None else []
+    T = taxa(net, own + [v for v in names.values() if v])
     # The faved 200 of every taxon with a usable photo first: their (photo id, observation id) pairs place the other
     # photos' observations (obs_of).
     A = anchors([held(net, t) for t in sorted(T) if any(usable(p) for p in T[t]["photos"])])
-    FB = fbase.load_src().get("species", {})
+    FB = fbase.load_src().get("species", {}) if done is None else {}
     # A sheet-only photo (fish-photos.json sheet: a species iNaturalist files under another one) never becomes a game photo.
     fp = ROOT / "fish-photos.json"
     sheet = {p["f"] for L in (json.loads(fp.read_text(encoding="utf-8")).get("sheet") or {}).values() for p in L} if fp.exists() else set()
@@ -384,7 +409,7 @@ def build(net, F, only=(), live=None):
         if obj["f"] in sheet:
             return
         # One photo once (two species iNaturalist lumps can share a cover): kept under the first species that took it. Two
-        # photos of one observation are both listed: the game takes the second once judged no duplicate (Q218).
+        # photos of one observation are both listed: the game takes the second once judged no duplicate.
         old = next((x for L in out.values() for x in L if x["f"] == obj["f"]), None)
         if old:
             old["for"] = sorted(set(old["for"]) | {unit})
@@ -394,7 +419,7 @@ def build(net, F, only=(), live=None):
     for t in entries:
         tid, L = t["id"], game[t["id"]]
         by_inat = {ff.photo_taxon(s): s for s in L}
-        fam = names.get((t.get("fam"), "family"))
+        fam = names.get((t.get("fam"), "family")) if done is None else None
         if fam:
             stats["family"][1] += 1
             got = pick(net, T, fam, set(by_inat), 1, A)
@@ -408,7 +433,7 @@ def build(net, F, only=(), live=None):
             if got:
                 stats["genus"][0] += 1
                 put(tid, inat_obj(*got[0], by_inat[got[0][1]["sp"]]["id"]), "g:" + g)
-        for s in L:
+        for s in L if done is None else ():
             stats["species"] += 1
             far, seen = [], []
             got = pick(net, T, ff.photo_taxon(s), {ff.photo_taxon(s)}, INAT_MAX, A, far, seen)
@@ -448,6 +473,31 @@ def relabel(doc):
     return n
 
 
+def has_genus(photos):
+    """The genus names that already have a reference photo (a "g:<genus>" unit) in fish_refs.json's photos."""
+    return {u[2:] for L in photos.values() for p in L for u in p.get("for") or [] if u.startswith("g:")}
+
+
+def add_genera(photos, new):
+    """photos (fish_refs.json's, by species) with the genus photos of a --genera run (new, by species) added, the rest
+    untouched: a photo already listed takes the genus among its units; another goes before its species' own photos,
+    after its family and genus ones, where a full run puts it (build: family, genus, then species)."""
+    out = {k: [dict(p) for p in L] for k, L in photos.items()}
+    at = {p["f"]: p for L in out.values() for p in L}
+    for sid, L in new.items():
+        for p in L:
+            if p["f"] in at:
+                at[p["f"]]["for"] = sorted(set(at[p["f"]]["for"]) | set(p["for"]))
+                continue
+            M = out.setdefault(sid, [])
+            i = 0
+            while i < len(M) and any(u.startswith(("fam:", "g:")) for u in M[i].get("for") or []):
+                i += 1
+            M.insert(i, p)
+            at[p["f"]] = p
+    return out
+
+
 def write(doc, out=None):
     dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
     lines = ["{", f'"_doc":{dump(doc["_doc"])},']
@@ -466,6 +516,7 @@ def main():
     g.add_argument("--refresh", action="store_true")
     g.add_argument("--relabel", action="store_true")
     ap.add_argument("--only", default="")
+    ap.add_argument("--genera", action="store_true", help="only the genera with no reference photo yet, the rest kept")
     a = ap.parse_args()
     if a.relabel:
         doc = json.loads(OUT.read_text(encoding="utf-8"))
@@ -478,19 +529,34 @@ def main():
     cur = ROOT / "curation.json"
     live = in_force(F, json.loads(cur.read_text(encoding="utf-8")) if cur.exists() else {})
     only = set(filter(None, a.only.split(",")))
+    order = [s["id"] for s in F["species"]]
+    by = lambda k: order.index(k) if k in order else 1e9  # noqa: E731
+    if a.genera:
+        # Incremental: the genus units with no reference photo in the file yet (a genus the game newly has, or one none
+        # passed the rules for last time), every other photo and the away list kept as they are.
+        doc = json.loads(OUT.read_text(encoding="utf-8"))
+        try:
+            new, _, st = build(net, F, only, live, done=has_genus(doc["photos"]))
+        finally:
+            net.save()
+        was = sum(len(v) for v in doc["photos"].values())
+        photos = add_genera(doc["photos"], new)
+        doc["photos"] = {k: photos[k] for k in sorted(photos, key=by)}
+        write(doc)
+        print(f"genera without a reference photo looked up: {st['genus'][1]}, found {st['genus'][0]}; "
+              f"photos {was} -> {sum(len(v) for v in photos.values())}")
+        return
     try:
         photos, away, st = build(net, F, only, live)
     finally:
         net.save()
-    order = [s["id"] for s in F["species"]]
     prev = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() and only else {}
     old, old_away = prev.get("photos", {}), prev.get("away", {})
     # An --only run keeps the other species and replaces those of its entries, emptied first, so a species that lost
-    # every reference photo loses its old ones too (Codex review #660).
+    # every reference photo loses its old ones too.
     mine = {sid for t in F["teach"] if t.get("level") == 1 and t["id"] in only for sid in t.get("species", [])}
     photos = {**{k: v for k, v in old.items() if k not in mine}, **photos}
     away = {**{k: v for k, v in old_away.items() if k not in mine}, **away}
-    by = lambda k: order.index(k) if k in order else 1e9  # noqa: E731
     write({"_doc": ["Reference photos of the fish units (tools/fish_refs.py, judging/FISH.md \"Reference photos\"): fish.json species id -> "
                     "photo objects (fish-photos.json's shape, plus rep, from and for: the units each represents: species ids, "
                     "g:<genus>, fam:<family>). tools/fish_judge.py adds a photo to the game photos of the entry that holds its species "

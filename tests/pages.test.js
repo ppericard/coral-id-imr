@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Pages opened in a visit (core.js PAGES, sheet v30 'pages'): the tally the app keeps and the summary it sends.
+// Pages opened in a visit (core.js PAGES, the sheet's 'pages'): the tally the app keeps and the summary it sends.
 // node --test tests/
 const test = require('node:test'),
   assert = require('node:assert');
@@ -25,8 +25,7 @@ test('page names: the address without its things, genus sheets, look-alikes, hom
   assert.strictEqual(N('x'.repeat(60)), 'other');
 });
 
-// A fish page is told apart from a coral one (fish UX study, 2026-11-04: the fish quiz was logged as 'quiz'): drawn with
-// Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
+// A fish page is told apart from a coral one: drawn with Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
 test('page names carry the subject on screen: fish.<page>, the corals plain', () => {
   const N = C.pageName,
     F = C.subjectOf('fish').pv;
@@ -137,6 +136,135 @@ test('pagesClean (the sheet side): known shapes only, numbers clamped, no free t
   assert.strictEqual(Object.keys(C.pagesClean({g: many}).g).length, C.PAGES.GEN);
 });
 
+// The summary the app sends (sync.js pagesSend): the screen, rounded, inside it once the sheet keeps it (VIEWPORT_SHEET,
+// rule D4); before, the summary without it. No other field is added.
+test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summary without it before', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
+    N = Number(/const VIEWPORT_SHEET = (\d+);/.exec(src)[1]),
+    run = v => {
+      const sent = [],
+        ctx = {
+          window: {innerWidth: 393, innerHeight: 659.5, devicePixelRatio: 2.625, navigator: {userAgent: 'secret UA'}},
+          viewportOf: C.viewportOf,
+          pagesTake: () => ({r: {'practice.quiz': [1, 30]}, g: {}}),
+          PV: {},
+          PVI: 'visit0001',
+          answersSoFar: () => 12,
+          pvOwner: () => 'a:dev0000001',
+          ev: (k, o) => sent.push([k, o]),
+          // The gate and the script version the app last saw, as sync.js has them (sheetV: 0 before any reply).
+          VIEWPORT_SHEET: N,
+          sheetV: () => Number(v) || 0
+        };
+      vm.createContext(ctx);
+      vm.runInContext(
+        block(src, 'const viewportOn = ', '\nfunction pagesSend() {', {file: 'sync.js'}) +
+          block(src, 'function pagesSend() {', '\n}\n', {through: 1, file: 'sync.js'}) +
+          '\npagesSend();',
+        ctx
+      );
+      return sent;
+    };
+  const base = {vi: 'visit0001', na: 12, r: {'practice.quiz': [1, 30]}, g: {}, o: 'a:dev0000001'};
+  assert.deepStrictEqual(plain(run(N)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
+  assert.deepStrictEqual(plain(run(N + 3)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
+  assert.deepStrictEqual(plain(run(N - 1)), [['pages', base]], 'an older script: the summary as before');
+  // No gate on the Pages tab: a summary is always sent, without the screen below VIEWPORT_SHEET, also before any reply
+  // (no version known yet).
+  assert.deepStrictEqual(plain(run(1)), [['pages', base]], 'an old script: the summary, no screen');
+  assert.deepStrictEqual(plain(run(undefined)), [['pages', base]], 'no version yet: the summary, no screen');
+  // What the sheet keeps of it is what was sent (pagesClean takes the app's rounded values as they are).
+  const [[, sent]] = run(N);
+  assert.deepStrictEqual(plain(C.pagesClean(sent)).vp, sent.vp);
+  assert.ok(!/secret UA/.test(JSON.stringify(sent)), 'no user agent in the summary');
+});
+
+// The screen of a summary (core.js VIEWPORT, viewportOf): coarse, so it adds no fingerprint.
+test('viewportOf: the CSS viewport to 10 px, the pixel ratio to one decimal, the orientation, the band of the exact short side', () => {
+  const V = C.viewportOf;
+  assert.deepStrictEqual(V(360, 800, 3), {w: 360, h: 800, d: 3, o: 'p', b: 0});
+  assert.deepStrictEqual(V(412, 783, 2.625), {w: 410, h: 780, d: 2.6, o: 'p', b: 2});
+  assert.deepStrictEqual(V(375.5, 667.4, 2), {w: 380, h: 670, d: 2, o: 'p', b: 1});
+  // The band is taken from the exact width, not the rounded one: the 10 px grid cannot keep the edges.
+  assert.strictEqual(V(393, 659, 3).w, 390);
+  assert.strictEqual(V(393, 659, 3).b, 2, 'a 393 px phone is in 391-414, though shown as 390');
+  assert.strictEqual(V(390, 664, 3).b, 1);
+  assert.strictEqual(V(361, 700, 2).b, 1, '361 is above 360, though it rounds to 360');
+  assert.strictEqual(V(414, 800, 3).b, 2);
+  assert.strictEqual(V(415, 800, 3).b, 3);
+  assert.strictEqual(V(600, 960, 2).b, 3);
+  assert.strictEqual(V(601, 960, 2).b, 4);
+  // Held sideways: landscape, the band of the short side.
+  assert.deepStrictEqual(V(800, 360, 3), {w: 800, h: 360, d: 3, o: 'l', b: 0});
+  assert.deepStrictEqual(V(1440, 789, 1.1), {w: 1440, h: 790, d: 1.1, o: 'l', b: 4});
+  // Clamped: an absurd window or ratio says no more than the edges.
+  assert.deepStrictEqual(V(1e6, 50000, 99), {w: 10000, h: 10000, d: 8, o: 'l', b: 4});
+  assert.strictEqual(V(320, 480, 0.01).d, 0.5);
+  // Not a screen: nothing.
+  for (const bad of [
+    [0, 800, 3],
+    [360, -1, 3],
+    [360, 800, 0],
+    [NaN, 800, 3],
+    [Infinity, 800, 3],
+    ['x', 800, 3],
+    [undefined, undefined, undefined]
+  ])
+    assert.strictEqual(V(...bad), null, JSON.stringify(bad));
+  // Every value it sends sits on its grid: few distinct values whatever the device.
+  for (let w = 300; w < 1500; w += 7)
+    for (const d of [1, 1.25, 1.5, 1.75, 2, 2.625, 2.75, 3, 3.5]) {
+      const v = V(w, w * 1.7 + 3, d);
+      assert.ok(v.w % 10 === 0 && v.h % 10 === 0 && Math.abs(v.d * 10 - Math.round(v.d * 10)) < 1e-9, JSON.stringify(v));
+      assert.deepStrictEqual(Object.keys(v), ['w', 'h', 'd', 'o', 'b']);
+    }
+});
+
+test('pagesClean keeps the screen only as viewportOf makes it: rounded and clamped again, a band that agrees, nothing else', () => {
+  const clean = vp => plain(C.pagesClean({vi: 'ab12cd34', r: {quiz: [1, 5]}, g: {}, vp}));
+  // As the app sends it: kept as it is.
+  assert.deepStrictEqual(clean({w: 390, h: 660, d: 3, o: 'p', b: 2}).vp, {w: 390, h: 660, d: 3, o: 'p', b: 2});
+  // A tampered or older device: exact values rounded, extra fields and free text dropped.
+  assert.deepStrictEqual(clean({w: 393.7, h: 851.2, d: 2.6251, o: 'p', b: 2, ua: 'Mozilla/5.0 …', id: 'x'}).vp, {
+    w: 390,
+    h: 850,
+    d: 2.6,
+    o: 'p',
+    b: 2
+  });
+  assert.deepStrictEqual(clean({w: 99999, h: 99999, d: 1000, o: 'p', b: 4}).vp, {w: 10000, h: 10000, d: 8, o: 'p', b: 4});
+  // The band must agree with the rounded short side (390 covers 385-394: band 1 or 2), else it is taken from it.
+  assert.strictEqual(clean({w: 390, h: 660, d: 3, o: 'p', b: 1}).vp.b, 1);
+  assert.strictEqual(clean({w: 390, h: 660, d: 3, o: 'p', b: 0}).vp.b, 1, 'a band the size cannot have');
+  assert.strictEqual(clean({w: 390, h: 660, d: 3, o: 'p', b: 9}).vp.b, 1);
+  assert.strictEqual(clean({w: 390, h: 660, d: 3, o: 'p', b: 1.5}).vp.b, 1);
+  assert.strictEqual(clean({w: 390, h: 660, d: 3, o: 'p'}).vp.b, 1, 'no band: from the rounded short side');
+  assert.strictEqual(clean({w: 1280, h: 720, d: 1, o: 'l', b: 0}).vp.b, 4);
+  // The orientation from a fixed list, else from the size.
+  assert.strictEqual(clean({w: 800, h: 360, d: 3, o: '<b>'}).vp.o, 'l');
+  assert.strictEqual(clean({w: 800, h: 360, d: 3, o: 'l', b: 0}).vp.o, 'l');
+  // Not a screen: no vp at all (an older app's summary is cleaned as it always was).
+  for (const bad of [
+    undefined,
+    null,
+    'big',
+    [360, 800, 3],
+    {},
+    {w: 360},
+    {w: 360, h: 800},
+    {w: 0, h: 800, d: 3},
+    {w: '=1+1', h: 800, d: 3}
+  ])
+    assert.ok(!('vp' in clean(bad)), JSON.stringify(bad));
+  assert.deepStrictEqual(clean(undefined), {r: {quiz: [1, 5]}, g: {}, vi: 'ab12cd34'});
+  // The prototype stays out of it.
+  assert.ok(!('vp' in clean(JSON.parse('{"__proto__": {"w": 360, "h": 800, "d": 3}}'))));
+});
+
 test('a queued summary is sent only under the player it was queued for (Codex review #423)', () => {
   const pg = (id, o) => ({id, k: 'pages', o, r: {quiz: [1, 1]}, g: {}}),
     q = [{id: 'e1', k: 'err', msg: 'x'}, pg('p1', 'n:ana'), pg('p2', 'a:dev0000001'), pg('p3', 'n:ana'), pg('p4'), {id: 'e2', k: 'load'}];
@@ -167,4 +295,172 @@ test('a queued summary is sent only under the player it was queued for (Codex re
   );
   assert.strictEqual(C.pagesOwner({name: 'Ana', pin: '1234'}, 'x'), 'n:ana');
   assert.strictEqual(C.pagesOwner(null, 'dev0000001'), 'a:dev0000001');
+});
+
+// The feedback sheet's tally: four numbers a visit in the summary the app already sends: answers whose feedback was
+// shown, those where More was opened, the seconds it stayed on screen (each answer's capped) and the taps on a link
+// inside it. Counts only; no new event, no gate (an older sheet script drops the field, as it drops any field it does
+// not know).
+test('the feedback sheet tally: four numbers a visit, counted once, sent with the summary, started again', () => {
+  const S = C.pagesNew();
+  assert.deepStrictEqual(C.PAGES.FB, ['shown', 'more', 'sec', 'link']);
+  C.pagesOpen(S, 'quiz', 0);
+  // a summary taken, the page in view going on counting (the app sends one when it is hidden or left, then goes on)
+  const take = t => {
+    const x = C.pagesTake(S, t);
+    C.pagesResume(S, t);
+    return x;
+  };
+  assert.strictEqual(take(1000).fb, undefined, 'no feedback seen: the summary has no fb');
+  ['shown', 'shown', 'shown', 'more', 'link'].forEach(k => C.pagesFb(S, k));
+  C.pagesFb(S, 'sec', 2.4);
+  C.pagesFb(S, 'sec', 5);
+  const sum = take(2000);
+  assert.deepStrictEqual(plain(sum.fb), [3, 1, 7, 1]);
+  // the next summary starts again from nothing
+  assert.strictEqual(take(3000).fb, undefined);
+  C.pagesFb(S, 'shown');
+  assert.deepStrictEqual(plain(take(4000).fb), [1, 0, 0, 0]);
+  // each answer's seconds are capped; a zero, a negative, a non-number and an unknown kind count nothing
+  C.pagesFb(S, 'sec', 9999);
+  C.pagesFb(S, 'sec', 0);
+  C.pagesFb(S, 'sec', -4);
+  C.pagesFb(S, 'sec', 'x');
+  C.pagesFb(S, 'nothing');
+  assert.deepStrictEqual(plain(take(5000).fb), [0, 0, C.PAGES.FBSEC, 0]);
+  // with no page open there is no summary to carry the numbers: they wait for the next one, none lost
+  const T = C.pagesNew();
+  C.pagesFb(T, 'shown');
+  assert.strictEqual(C.pagesTake(T, 1000), null);
+  C.pagesOpen(T, 'quiz', 2000);
+  assert.deepStrictEqual(plain(C.pagesTake(T, 3000).fb), [1, 0, 0, 0]);
+});
+
+test('pagesClean keeps the feedback tally only as four clamped numbers, nothing else', () => {
+  const clean = fb => C.pagesClean({r: {quiz: [1, 1]}, fb}).fb;
+  assert.deepStrictEqual(plain(clean([12, 3, 90, 2])), [12, 3, 90, 2]);
+  assert.deepStrictEqual(plain(clean([12.6, 3.2, 90.5, '2'])), [13, 3, 91, 2]);
+  assert.deepStrictEqual(plain(clean([1e9, -5, 1e9, 'x'])), [C.PAGES.FBMAX, 0, C.PAGES.MAXS, 0]);
+  // not four numbers, all zero, free text, an object: nothing
+  [[1, 2, 3], [1, 2, 3, 4, 5], [0, 0, 0, 0], 'x', {shown: 1}, null, undefined, 7].forEach(x =>
+    assert.strictEqual(clean(x), undefined, JSON.stringify(x))
+  );
+  // the summary the app takes is what the sheet keeps
+  const S = C.pagesNew();
+  C.pagesOpen(S, 'quiz', 0);
+  C.pagesFb(S, 'shown');
+  C.pagesFb(S, 'more');
+  const sum = C.pagesTake(S, 1000);
+  assert.deepStrictEqual(plain(C.pagesClean(sum).fb), plain(sum.fb));
+  assert.ok(JSON.stringify(sum).length < 3000, 'small');
+});
+
+// The quiz counts it: the sheet drawn, More opened once an answer, the seconds when it leaves, a link tapped (quiz.js fbShown,
+// fbMoreBind, fbEnd; sync.js fbTally; the page smoke tests/pages.smoke.js runs it in the app).
+test('quiz.js counts the sheet shown, More once an answer, its seconds capped, and leaves nothing else', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8');
+  const counts = [],
+    el = {hidden: true, attrs: {}, text: 'More'},
+    btn = {
+      setAttribute: (k, v) => (el.attrs[k] = v),
+      set textContent(v) {
+        el.text = v;
+      },
+      get textContent() {
+        return el.text;
+      }
+    },
+    panel = {
+      get hidden() {
+        return el.hidden;
+      },
+      set hidden(v) {
+        el.hidden = v;
+      },
+      querySelector: () => (el.again ? {} : null)
+    },
+    listeners = [],
+    visible = [];
+  let now = 1e6,
+    told = 0;
+  const ctx = {
+    PAGES: C.PAGES,
+    Date: {now: () => now},
+    fbTally: (k, n) => counts.push([k, n]),
+    isStacked: () => false,
+    fitStage: () => {},
+    againTold: () => told++,
+    document: {
+      visibilityState: 'visible',
+      addEventListener: (t, f) => t === 'visibilitychange' && visible.push(f),
+      getElementById: id => ({fbmbtn: btn, fbmore: panel, after: {addEventListener: (t, f) => listeners.push(f)}})[id]
+    }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(quiz, 'let FBS = null;', '// More / Less on the sheet', {file: 'quiz.js'}) +
+      block(quiz, 'function fbMoreBind() {', '\n}\n', {through: 1, file: 'quiz.js'}) +
+      '\nthis.M = {fbShown, fbEnd, fbMoreBind};',
+    ctx
+  );
+  const {fbShown, fbEnd, fbMoreBind} = ctx.M;
+  // an answer: shown, More opened twice (counted once, the duel line told once), 10.4 s, left
+  el.again = true;
+  fbShown();
+  fbMoreBind();
+  btn.onclick();
+  assert.deepStrictEqual([el.hidden, el.attrs['aria-expanded'], el.text], [false, 'true', 'Less']);
+  btn.onclick();
+  assert.deepStrictEqual([el.hidden, el.attrs['aria-expanded'], el.text], [true, 'false', 'More']);
+  btn.onclick();
+  now += 10400;
+  fbEnd();
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['more', undefined],
+    ['sec', 10]
+  ]);
+  assert.strictEqual(told, 1, 'the duel line is told once, when More is first opened');
+  // a link of the app tapped inside the sheet; an outside link or a non-link counts nothing
+  listeners[0]({target: {closest: s => (s === 'a[href^="#"]' ? {} : null)}});
+  listeners[0]({target: {closest: () => null}});
+  assert.strictEqual(counts.filter(c => c[0] === 'link').length, 1);
+  // a sheet that never leaves counts at most FBSEC; a second answer ends the first (its seconds counted once)
+  counts.length = 0;
+  fbShown();
+  now += 500 * 1000;
+  fbShown();
+  now += 3000;
+  fbEnd(false);
+  now += 3000;
+  fbEnd();
+  fbEnd(); // nothing on screen: nothing counted
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['sec', C.PAGES.FBSEC],
+    ['shown', undefined],
+    ['sec', 3],
+    ['sec', 3]
+  ]);
+  // The app hidden stops the clock: 2 s read, 5 minutes in the background, 1 s more: 3 s, not 120
+  counts.length = 0;
+  fbShown();
+  now += 2000;
+  ctx.document.visibilityState = 'hidden';
+  visible[0](); // the app is hidden: the seconds so far are counted, the clock stops
+  now += 300 * 1000;
+  fbEnd(false); // a summary taken meanwhile (pagesSend) adds nothing
+  ctx.document.visibilityState = 'visible';
+  visible[0](); // back: the clock starts again
+  now += 1000;
+  fbEnd();
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['sec', 2],
+    ['sec', 1]
+  ]);
 });

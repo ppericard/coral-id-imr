@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// A live Players › Activity (Pierre, 2026-11-08: "Les deux"): (1) the sheet's light read (Code.gs live_, POST readLive:
+// A live Players › Activity, both parts: (1) the sheet's light read (Code.gs live_, POST readLive:
 // the Answers tab's last rows and each player's last answer time), which the admin re-reads every minute while Activity
 // is open and in view (admin.js liveArm, liveRead, liveMerge); (2) a device not signed in sends its answers about 3 s
 // after each answer, as a signed-in player's (sync.js anonSoon), its queue and the sheet's caps unchanged. Nothing leaves
@@ -184,7 +184,7 @@ test('liveMerge: a deleted, merged or archived account never stays in the log he
 // ---- the admin's timer ----
 
 // admin.js's live block run on stubs: the page (cur), its visibility, the clock (timers run by hand), the sheet replies.
-function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows = [row('A', 1)], reply} = {}) {
+function liveAdmin({v = C.SHEET_FLOOR, rows = [row('A', 1)], reply} = {}) {
   const timers = [],
     calls = [],
     ctx = {
@@ -223,7 +223,7 @@ function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows
   vm.runInContext(
     'const SHEET_READS = {}, SHEET_GEN = {};\n' +
       block(admin, 'function sheetRead(k, go) {', '\nfunction sheetAgain(', {file: 'admin.js'}) +
-      block(admin, 'const LIVE_SHEET = ', "document.addEventListener('visibilitychange', liveArm);", {file: 'admin.js', through: 1}) +
+      block(admin, 'const LIVE_READ = ', "document.addEventListener('visibilitychange', liveArm);", {file: 'admin.js', through: 1}) +
       '\nthis.L = {liveArm, liveRead, LIVE_READ};',
     ctx
   );
@@ -272,10 +272,8 @@ test('Activity: a light read every minute while open and in view; none hidden; a
   assert.strictEqual(a.calls.length, 3);
 });
 
-test('Activity: no light read before LIVE_SHEET, without the token or while the whole log is read', async () => {
+test('Activity: no light read without the token or while the whole log is read', async () => {
   for (const [label, prep] of [
-    ['an older script', a => (a.ctx.ANS.v -= 1)],
-    ['no reply version', a => delete a.ctx.ANS.v],
     ['no token', a => (a.ctx.TOKEN = null)],
     ['an old log', a => (a.ctx.ANS = {old: true, v: 999, rows: []})]
   ]) {
@@ -303,7 +301,7 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
   assert.deepStrictEqual([b.ctx.reads, b.ctx.users], [1, 1], 'the whole log and the player list (Codex review #775)');
   assert.strictEqual(b.ctx.ANS, held, 'shown until the whole log is in');
   // The whole log read but not the player list (after a delete or an archive): the list is asked again at each light
-  // read until it is in, though nothing else calls for it (Codex review #775).
+  // read until it is in, though nothing else calls for it.
   const ul = liveAdmin({
     reply: n =>
       n === 1 ? {ok: true, rows: [row('B', 50)], last: {B: 50}, n: 80, k: 50} : {ok: true, rows: [row('A', 1)], last: {A: 1}, n: 1, k: 1}
@@ -328,7 +326,7 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
   assert.strictEqual(e.ctx.ANS, he, 'not replaced by an unreadable log');
   e.L.liveArm();
   assert.strictEqual(e.pending().at(-1).at - e.ctx.now, 60000, 'and the timer still runs');
-  // An unfolded session's saved copy follows its player's new answers (Codex review #775).
+  // An unfolded session's saved copy follows its player's new answers.
   const f = liveAdmin({reply: () => ({ok: true, rows: [row('A', 1), row('A', 9)], last: {A: 9}, n: 2, k: 2})});
   f.ctx.PSAVED.Ana = {by: {}};
   await f.L.liveRead();
@@ -340,7 +338,7 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
   await new Promise(r => setImmediate(r));
   assert.strictEqual(c.ctx.users, 1);
   // The list could not be read (offline): the last good one kept, and asked again at the next light read, though it
-  // brings no new answer, until it holds the new player (Codex review #775).
+  // brings no new answer, until it holds the new player.
   const g = liveAdmin({reply: () => ({ok: true, rows: [row('A', 1), row('N', 8)], last: {A: 1, N: 8}, n: 2, k: 2})}),
     U0 = g.ctx.USERS;
   g.ctx.usersFail = true;
@@ -384,7 +382,6 @@ function anonApp(q = []) {
       sent: 0,
       store: {get: (k, d) => (k === 'reefid-anonq' ? q : d)},
       ANONQ: 'reefid-anonq',
-      logOk: () => true,
       sheetV: () => 108,
       setTimeout: (f, ms) => (timers.push({f, ms}), timers.length),
       clearTimeout: id => id && (timers[id - 1].cleared = true)
@@ -424,7 +421,7 @@ test('sync.js anonSoon: one send about 3 s after each answer, whatever the queue
 });
 
 test("sync.js: a device not signed in sends each answer on its own, and the sheet's caps still hold", async () => {
-  // The send itself (sendAnon) as before: the queue, at most 100 a request, a refused send kept for the next answer.
+  // The send itself (sendAnon): the queue, at most 100 a request, a refused send kept for the next answer.
   const s = loadCodeGs();
   for (let i = 0; i < 5; i++) assert.ok(s.post({anon: 'abcdefghij', anonAnswers: [ans('c' + i, i)], av: '1-x'}).log);
   assert.strictEqual(s.sheets.Answers.getLastRow(), 6, 'five requests, five rows');

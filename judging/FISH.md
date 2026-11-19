@@ -129,7 +129,8 @@ candidates after a new tag. Where the source is FishBase, the photo page (`o`) g
 **The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
 species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
 FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
-iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every circle-1 genus and every
+iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every genus the game has (every circle's, as `app.js` `treeGenera` has them; circle 1's alone until
+2026-11-18; `--genera`: only the genera with no reference photo yet, the rest kept) and every
 entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: all
 of them for a species, Pierre, 2026-11-08, Q229; the first for a genus or a family) that pass the game photo rules on
 their observation (Research Grade, CC0 / CC BY / CC BY-NC, never ND, Q231, the Indo-West Pacific box, not captive or dead;
@@ -238,12 +239,12 @@ choices per family in the app" has the details.
   Pierre's ★ covers, and none has tags he set himself.
 - **Every band-kind photo has now been looked at.**
 - **The third pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of what Home can show.
-  - The set was computed with the app's own code. `fishBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
+  - The set was computed with the app's own code. `treeBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
     with `fish-game.json` in and on a first launch (`fish-photos.json` alone). The ratings re-sort only within each of
     `easyRank`'s two groups (reference-level photos first, then the others). So for each photo, an order favouring it
     was built (it first in its group, the photos that would beat it last), and `tilePhoto` was run on that order.
   - What Home can show is every photo `tilePhoto` returns that way, plus every band-kind photo (`landPool`). From that
-    were taken out the photos the first two passes looked at (by `core.js` `fishPid`): the tagged ones, every band-kind
+    were taken out the photos the first two passes looked at (by `core.js` `treePid`): the tagged ones, every band-kind
     photo of `fish-game.json` at #961's merge, and #956's Home draws (cover, card photo, `tilePhoto`, `landPool`)
     rebuilt at its merge in both orders.
   - New photos since #961: none. No photo entered `fish-game.json` since then, and `fish_game.py --plan` has none
@@ -278,6 +279,12 @@ choices per family in the app" has the details.
     No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
 - **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
   pools, or new code that lets Home show other photos.
+- **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
+  `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
+  photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
+  (nothing to download: the flag is its only change).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
@@ -390,7 +397,7 @@ reference photos) or a fish out of the water (flag `a`) → stays out; the legac
 16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
 hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
 is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
-with Not this leaves the game at once, `core.js` `fishIn`). The admin's auto-sort still puts the same sure judgements
+with Not this leaves the game at once, `core.js` `treePhotoIn`). The admin's auto-sort still puts the same sure judgements
 into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
 agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
 while a wrong sure decision costs the players.
@@ -400,7 +407,7 @@ while a wrong sure decision costs the players.
 Pierre, 2026-11-09 (Q323): of the photos with other kinds of fish he had accepted, some show them with no risk of
 confusing them with the main fish, others where the confusion is real. The one code `m` became two, and both automatic
 routes follow the same rule (`autosort.js` `fishSure`, `tools/fish_game.py` `judged_sure`, through `core.js`
-`FISH_COUNT`; `tests/otherspecies.test.js`):
+`TREE_COUNT`; `tests/otherspecies.test.js`):
 
 - `o` **no confusion risk** (in play): the other fish could not be taken for the main one at the level the game asks
   (its family, or its genus for a circle-1 species, whose genus is a unit too): it is clearly not the subject (much

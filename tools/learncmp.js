@@ -1,7 +1,7 @@
 // The paired comparison of two learnsim runs (rule L11; docs/LEARNING.md "Validating a learning change"): reads two
 // tools/learnsim.js --out files made on the same seeds (before and after a change), pairs their runs by (profile, seed)
 // and judges every guardrail of LEARNING.md's table at the checkpoints both files reach, and the primary measure the PR
-// declared before running. It replaces the per-PR scratch scripts. Offline, reads two files, writes nothing but --json.
+// declared before running. Offline, reads two files, writes nothing but --json.
 //
 //   node tools/learncmp.js before.json after.json [--primary hard@300:down] [--cost met@100:-3,know@300:-0.03]
 //                          [--looks 1] [--subject coral|fish] [--json out.json]
@@ -12,14 +12,14 @@
 // before divided by its profile's root mean square difference (so a profile with a large spread does not outweigh the
 // others; a scale that a sign flip leaves unchanged keeps the test exact: the statistics study §3.2 standardises by the
 // profile's spread), T their sum, p two-sided over every sign pattern up to 20 pairs, else 100,000 draws from a fixed
-// seed (as the study and #729 read it). Clear when p <= 0.05 / looks and T goes the declared way. Only then, per profile:
+// seed. Clear when p <= 0.05 / looks and T goes the declared way. Only then, per profile:
 // the paired t's two-sided p, Holm over the profiles.
 // --cost MEASURE@CHECKPOINT:BOUND,...: a cost the change is expected to bring, declared before running (rule L11): that
 // guardrail is judged against the accepted bound (signed, on the side of harm) instead of its margin, and says so.
 // --looks K: the looks declared before running (rule L11, progressive): each look reads the one-sided bound at
 // 1 - 0.10 / K and the primary at 0.05 / K (Bonferroni). Default 1: 90% bounds, the primary at 0.05.
 // --subject: only for files written before learnsim recorded it (the corals' units met keep their margin of 2 genera).
-// Breaks (learnsim --breaks, 2026-11-15): the measures of kind 'break' (cbLen, cbLong, cbRight, afterRight, held,
+// Breaks (learnsim --breaks): the measures of kind 'break' (cbLen, cbLong, cbRight, afterRight, held,
 // holdAfter, open15) are read after each break both files took, per profile, with their one-sided bounds either side
 // (no margin is set for them); one of them may be the primary (--primary cbLen@1d:down).
 //
@@ -74,20 +74,20 @@ const perPhoto = (run, cp) => {
   return u ? n / u : null;
 };
 // The share of answers 1..cp on the fish scientific genera (kind genus in a run whose slate is families: learnsim kinds),
-// the measure of Q208's "families met first" (2026-11-09); none for the corals, whose slate units are genera.
+// the measure of "families met first"; none for the corals, whose slate units are genera.
 const genShare = (run, cp) => {
   const K = run.kinds || {},
     E = (run.expo || []).slice(0, cp);
   return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'genus').length / E.length : null;
 };
-// The photo variants on their unit's mastery (Q391 a, 2026-11-17; model.js varKind, varF): learnsim preOW's third,
+// The photo variants on their unit's mastery (model.js varKind, varF): learnsim preOW's third,
 // fourth and fifth fields, 1 if a photo shown had a judged phase, the answers its unit had before the question, and the
 // variant kind shown (0 none, 1 an early-class juvenile, 2 another juvenile, 3 a late-class one, 4 a sex or colour phase;
 // model.js VAR_KINDS). phEarly: the share of questions with a phase photo among those asked in a unit's first PHN
 // answers; phLate: the same once the unit had 2 PHN answers or more; phAns: the questions that showed one, 1..cp;
 // phEasy and phOther: phEarly for the early-class juveniles, and for every other variant (the levels study's criteria 2
-// and 3, docs/reviews/2026-11-17-levels-and-shares-study.md §6). None for a file written before these fields or with no
-// phase photo anywhere in the run.
+// and 3, docs/reviews/2026-11-17-levels-and-shares-study.md §6). None for a file without these fields or with no phase
+// photo anywhere in the run.
 const PHN = 10;
 const phRows = (run, cp, n = 4) => {
   const P = (run.preOW || []).slice(0, cp);
@@ -106,7 +106,7 @@ const phEarly = (run, cp) => phShare(run, cp, m => m < PHN),
     const P = phRows(run, cp);
     return P ? P.filter(x => x[2]).length : null;
   };
-// The fish species level (2026-11-15, #892): the families at Advanced (kind family: the slate's), the measure of "the
+// The fish species level: the families at Advanced (kind family: the slate's), the measure of "the
 // families' pace not slowed" while species share the draw; the share of answers 1..cp on the species units. None for the
 // corals (no unit of either kind).
 const famAdv = (run, cp) => {
@@ -137,7 +137,7 @@ const brkGet = f => (r, b) => {
 };
 // Every measure learncmp reads, each a function of (run, checkpoint) giving a number or null. kind: 'row' at a learnsim
 // checkpoint, 'window' over the questions 1..checkpoint, 'run' over the whole run (checkpoint 'run'), 'break' after a
-// learnsim --breaks break (checkpoint its name: 1d, 3d, 1w...; 2026-11-15, the comeback's tolerance, Q367). dg: digits.
+// learnsim --breaks break (checkpoint its name: 1d, 3d, 1w...). dg: digits.
 const MEASURES = {
   know: {
     label: 'True knowledge (D*, or knowSlate in the app world)',
@@ -150,6 +150,8 @@ const MEASURES = {
   },
   over: {label: 'E = bar - D*, units met', kind: 'row', dg: 3, get: (r, cp) => overOf((rowAt(r, cp) || {}).f)},
   met: {label: 'Units met', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).met ?? null},
+  // Units learned (s.mx: the mastery exam passed; learnsim and the rated world's rows).
+  learned: {label: 'Units learned (exam passed)', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).learned ?? null},
   hard: {label: 'Share under ease 4 before Open Water', kind: 'window', dg: 3, get: hardShare},
   right: {label: 'Right % since the previous checkpoint', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).right ?? null},
   prog: {label: "The app's progress %", kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).prog ?? null},
@@ -181,7 +183,7 @@ const MEASURES = {
   cbRight: {label: 'Right % during the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.cbLen ? (100 * x.cbOk) / x.cbLen : null))},
   afterRight: {label: 'Right % in the questions after the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.after ? (100 * x.afterOk) / x.after : null))},
   held: {label: 'Answers with no genus opening after the break (floor, comeback)', kind: 'break', dg: 1, get: brkGet(x => x.held)},
-  // Counts over a window after the comeback: none when the window was cut (Codex review #951: learnsim stops a break at
+  // Counts over a window after the comeback: none when the window was cut (learnsim stops a break at
   // BRK_CAP questions in all, so a long comeback can leave fewer answers after it, and a count over less time is no pair).
   holdAfter: {label: 'Answers after the comeback with the opening hold on', kind: 'break', dg: 2, get: brkGet(x => (cut(x) ? null : x.holdAfter))},
   open15: {
@@ -203,7 +205,7 @@ function popAt(p, cp, k) {
   return a && num(a[k]) ? a[k] : null;
 }
 // LEARNING.md "Guardrails and margins": harm -1 when lower is worse, +1 when higher is; the margin is abs, or rel times
-// the before mean when larger ("the larger"); coralAbs: the corals' own margin (units met: 2 genera, as before).
+// the before mean when larger ("the larger"); coralRel: the corals' own rel (units met: 2 genera, no relative margin).
 const GUARDRAILS = [
   {m: 'know', cps: [300, 600, 1000, 3000], harm: -1, abs: 0.02},
   {m: 'over', cps: [300, 600, 1000, 3000], harm: 1, abs: 0.03},
@@ -213,8 +215,8 @@ const GUARDRAILS = [
   {m: 'plateau', cps: ['run'], harm: 1, abs: 0, rel: 0.2},
   {m: 'hard', cps: [300, 1000], harm: 1, abs: 0.05},
   {m: 'met', cps: [100, 300], harm: -1, abs: 2, rel: 0.05, coralRel: 0},
-  // The fish families' pace at Advanced (2026-11-15, the species level, #892: "the families' Advanced pace is not
-  // slowed"), with the margin of the units at Open Water; not measured for the corals.
+  // The fish families' pace at Advanced (not slowed by the species level), with the margin of the units at Open Water;
+  // not measured for the corals.
   {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05}
 ];
 // Also measured, no margin (exploratory unless a PR declares bounds for them before running): the right rate, the shares
@@ -307,8 +309,8 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
   const guardrails = GUARDRAILS.map(G => {
     const M = MEASURES[G.m],
       cps = G.cps.filter(cp => reach(B, G.m, cp) && reach(A, G.m, cp));
-    // A checkpoint counts as measured only where some profile has a valid pair (Codex review #782: a measure every run
-    // gives null for, coral photos with no judged ease or a file without preOW, is not measured, never "held").
+    // A checkpoint counts as measured only where some profile has a valid pair: a measure every run gives null for
+    // (coral photos with no judged ease, a file without preOW) is not measured, never "held".
     const at = (M.get ? cps : [])
       .map(cp => {
         const cost = costs[key(G.m, cp)],

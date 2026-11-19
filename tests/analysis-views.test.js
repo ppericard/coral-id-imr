@@ -31,8 +31,8 @@ test('Recompute here: the Web Worker computes the new views, and a stored report
   assert.ok(last.A.rt.ent && last.A.photo.ent, 'effects hard to tell apart');
 });
 
-// Sheet v55 (Pierre, 2026-11-05, Q86): the answers a deleted account left (anonymous flag 2) stay in the pooled fits but
-// are in no per-player result and no count of players (Codex review #600: the Sessions model rows kept the marker too).
+// The answers a deleted account left (anonymous flag 2) stay in the pooled fits but are in no per-player result and no
+// count of players (the Sessions model rows included).
 test('a deleted account (flag 2) is in no per-player list and no count of players', () => {
   const R = A.rng(7),
     G = ['A', 'B', 'C', 'D'],
@@ -67,7 +67,7 @@ test('a deleted account (flag 2) is in no per-player list and no count of player
   assert.ok(!c.player.some(x => x.k === 'gone'), 'not in the mix-ups per player');
   assert.strictEqual(c.players, 4);
   assert.strictEqual(s.players, 4, 'not counted in the Sessions model');
-  // the pooled models still fit with two clusters when one of them is a deleted account (Codex review #600)
+  // the pooled models still fit with two clusters when one of them is a deleted account
   const two = A.prep(rows.filter(r => r[0] === 'p0' || r[0] === 'gone'));
   assert.ok(!A.rt(two, 0, 1).thin, 'answer time fitted');
   assert.strictEqual(A.rt(two, 0, 1).players, 1);
@@ -80,7 +80,7 @@ test('a deleted account (flag 2) is in no per-player list and no count of player
   assert.ok(!l.genus || l.genus.every(g => g.players <= 4), 'not in the players per genus');
 });
 
-/* ---------- Player profiles (Pierre, 2026-11-05: Q70-Q73) ---------- */
+/* ---------- Player profiles ---------- */
 test('eigSym: eigenvalues in decreasing order, orthonormal vectors, S v = λ v', () => {
   const R = A.rng(9),
     n = 6,
@@ -216,7 +216,7 @@ test('profiles: fewer than 3 players with 100 answers is not enough; each player
   assert.ok(rep.A.who && rep.A.who.who.length === 11 && rep.A.who.effects.length === 0);
 });
 
-// Codex review #604: three fixes in the profiles, each with a test that failed before it.
+// The profiles: their features, their stability and their map.
 test('profiles: misses in a row are counted within a session, not across the break', () => {
   // two-answer sessions, both answers wrong: within a session the second miss is the one that ends it
   const rows = [];
@@ -244,7 +244,7 @@ test('profiles: stable only when every leave-one-out run keeps every group; the 
   });
 });
 
-// Codex review #604, second pass: the window's cut session and the bootstrap's multiplicities.
+// The window's cut session and the bootstrap's multiplicities.
 test('profiles: a session cut by the 300-answer window is not a session length; a bootstrap draw keeps its multiplicities', () => {
   // two complete sessions of 200 answers: the window holds the last 100 of the first and the whole second
   const rows = [];
@@ -264,8 +264,7 @@ test('profiles: a session cut by the 300-answer window is not a session length; 
   ]);
 });
 
-// Codex review #604, third pass: with 3 profiled players no leave-one-out run can be grouped; that is no evidence, not
-// instability.
+// With 3 profiled players no leave-one-out run can be grouped; that is no evidence, not instability.
 test('profiles: with 3 players the stability is unknown, never "not stable"', () => {
   const rows = styleLog().filter(r => /^(eve0|eve1|morn0)$/.test(r[0])),
     r = A.profiles(A.prep(rows), 0, 1);
@@ -278,7 +277,7 @@ test('profiles: with 3 players the stability is unknown, never "not stable"', ()
   assert.strictEqual(ten.stab.runs, 10);
 });
 
-// Codex review #604, fourth pass: the page names the check that failed (left out one player, or drawn again).
+// The page names the check that failed (left out one player, or drawn again).
 test('admin: why groups are not stable names each failing check apart', () => {
   const vm = require('vm'),
     src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
@@ -290,7 +289,7 @@ test('admin: why groups are not stable names each failing check apart', () => {
   assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, null], at: 0.75}), '');
 });
 
-// Sheet v55 (Q86): a deleted account's answers (anonymous flag 2) make no profile.
+// A deleted account's answers (anonymous flag 2) make no profile.
 test('profiles: a deleted account has no row', () => {
   const rows = styleLog().map(r => (r[0] === 'eve0' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
     r = A.profiles(A.prep(rows), 0, 1);
@@ -358,7 +357,7 @@ test('a second skill? planted: the first residual axis stands out and splits the
   }
 });
 
-// Sheet v55 (Q86): a deleted account is never a player on the Wright map or an arrow of the residual map.
+// A deleted account is never a player on the Wright map or an arrow of the residual map.
 test('Wright map and residuals: a deleted account is no player', () => {
   const {rows} = skillLog(0, 2),
     R2 = rows.map(r => (r[0] === 'p3' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
@@ -367,8 +366,7 @@ test('Wright map and residuals: a deleted account is no player', () => {
   assert.ok(!L.res.p.some(x => x[0] === 'p3') && L.res.p.length === 9);
 });
 
-// Codex review #620: a place's likely range carries the intercept's and the slope's uncertainty, not the random effect's
-// alone.
+// A place's likely range carries the intercept's and the slope's uncertainty, not the random effect's alone.
 test('Wright map: each place’s uncertainty includes the fixed effects (intercept, slope, covariance)', () => {
   const D = [0, 1, 2, 3].map(n => ({p: 'p', g: 'g', n, gone: 0})),
     F = [
@@ -391,7 +389,7 @@ test('Wright map: each place’s uncertainty includes the fixed effects (interce
   near(W.th[0][1], 0.5 + 0.4 * l + 0.2, 1e-3, 'player place');
 });
 
-// Codex review #604 (comment 4479472198): players with the same value of a behaviour, a value whose floating-point mean
+// Players with the same value of a behaviour, a value whose floating-point mean
 // is not exact (log 40), have no spread in it; the rounding left in the mean must not become ±1 SD for every player.
 test('profiles: a behaviour every player shares reads 0 SD, never the rounding of its mean', () => {
   const V = Object.fromEntries('abcdefg'.split('').map(k => [k, A.PROF_F.map(() => Math.log(40))]));
@@ -414,7 +412,7 @@ test('profiles: a behaviour every player shares reads 0 SD, never the rounding o
   assert.deepStrictEqual(r.pca.var, [0, 0]);
 });
 
-// Codex review #604 (comment 4479472191): a milestone compacted to the sheet's cap keeps only its profiles' counts; the
+// A milestone compacted to the sheet's cap keeps only its profiles' counts; the
 // page shows those counts and the compacted note, never an empty heatmap reading 0 answers and 0 players.
 test('admin: a compacted milestone shows its profiles’ counts, not an empty heatmap', () => {
   const vm = require('vm'),
@@ -438,8 +436,8 @@ test('admin: a compacted milestone shows its profiles’ counts, not an empty he
   assert.match(vm.runInContext("anView('who', REP, REP.R[1000])", ctx), /<b>2<\/b><span>Players/);
 });
 
-// Time and difficulty (Pierre, 2026-11-08: "a slow answer, even a right one, or a photo enlarged, means the photo was
-// harder"): before each answer, the earlier answers of OTHER players on its photo, their right answers' speed against
+// Time and difficulty (a slow answer, even a right one, or a photo enlarged, means the photo was harder): before each
+// answer, the earlier answers of OTHER players on its photo, their right answers' speed against
 // their own median (from their 10th timed answer; typed and enlarged answers out of it) and their enlarging against
 // their own habit, each shrunk by TD_K answers' worth.
 test('time and difficulty: others’ earlier answers on the photo only, shrunk; a player’s median from the 10th timed answer', () => {

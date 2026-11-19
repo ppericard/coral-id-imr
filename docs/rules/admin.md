@@ -46,7 +46,7 @@ action, Activity who plays and how much, Analyses what we learn. Today's groups,
 
 ### A4
 
-**One subject switch** (Corals | Fish) in the admin header covers every page; a subject's pages are named in `core.js`
+**One subject switch** (one segment per subject in `core.js` `SUBJECTS`: Corals | Fish | Sea slugs) in the admin header covers every page; a subject's pages are named in `core.js`
 `SUBJECTS` `admin`; a subject's pages sit under its prefix (`#fish/…`), the corals' have none. Addresses follow the
 header: `#<group>/<tab>/<view>` in the words on screen (ARCHITECTURE.md "Admin back-office"); an old address is not
 kept (rule W3, no alias).
