@@ -2875,7 +2875,7 @@ async function startSmoke(b, base) {
       const c = [...document.querySelectorAll('#azgrid .lcard')],
         a = c[0].querySelector('a.tipsheet'),
         r = c[0].getBoundingClientRect(),
-        cmp = c.map(x => x.querySelector('a[href^="#cmp-"]')).find(Boolean);
+        cmp = c.map(x => x.querySelector('a[href*="compare/"]')).find(Boolean);
       a.scrollIntoView({block: 'center'});
       // a point near the card's right edge, far from the name, is the sheet's link
       const r2 = c[0].getBoundingClientRect(),
