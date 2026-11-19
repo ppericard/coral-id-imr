@@ -159,7 +159,10 @@ test('the fish units from the players copy: the same photos in play, covers and 
   const src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = {
       treeGen: C.treeGen,
-      treeHeld: C.treeHeld,
+      // no player id here (no SYNC, no anonId): no reserve, every photo in its unit's views
+      reserveId: C.reserveId,
+      reserveOf: C.reserveOf,
+      reserveSplit: C.reserveSplit,
       treePhotos: C.treePhotos,
       easyRank: C.easyRank,
       easyCover: C.easyCover,

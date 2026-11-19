@@ -16,8 +16,8 @@ This script:
     contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
     --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
     for the crops; --refs: the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) instead;
-  - one judgement per photo (Pierre, 2026-11-15): cand_judgements, one_judgement and one_check, the single judgement of a
-    photo that is both a reference photo and a candidate (its candidate's judging file; tools/judging_fish.py one);
+  - one judgement per photo (Pierre, 2026-11-15): cand_judgements, one_judgement, one_crops and one_check, the single
+    judgement of a photo that is both a reference photo and a candidate (its candidate's judging file; tools/judging_fish.py one);
   - with --boxes DIR: the box pass (judging/FISH.md "The fish's box"): the photos in play (fish-game.json) whose tags pass
     the tile rule (tools/fish_game.py tile_tags) and that have no box yet, the easiest first, one per observation, at most
     --n per entry (--only limits the entries), on sheets of 9 at 420 x 315 px with a 10 x 10 grid; the judge writes each
@@ -129,6 +129,8 @@ def cand_judgements(root=ROOT):
                 continue
             j = {"f": f, "sid": p.stem, "code": x["code"], "keep": x.get("keep"),
                  "unsure": [u for u in x.get("unsure") or [] if u != "bb"]}  # a doubt on the box only withholds the tile
+            if x.get("crop") and list(x["crop"]) != [0, 0, 1, 1]:
+                j["crop"] = list(x["crop"])  # its code is read on the photo as cropped (one_crops)
             k = G.pid(f)
             if k in out:
                 out[k].setdefault("also", []).append(j)
@@ -158,6 +160,21 @@ def one_judgement(codes, keep, cj):
         if j.get("keep") in ("best", "alt", "dup"):
             keep[f] = j["keep"]
     return codes, keep
+
+
+def one_crops(codes, crops, cj):
+    """tools/fish_judge.json crops (a copy) with the single judgement's crop: a reference photo of codes that is also a
+    candidate takes its candidate judgement's crop when that gives one (cj: cand_judgements), since a code with a crop is
+    read on the photo as cropped (judging/FISH.md "A proposed crop": a crop that takes out a fish one could confuse with
+    the subject lets the photo play, Pierre, 2026-11-19, Q430), so the crop goes wherever the code goes. A candidate
+    judgement with no crop leaves the reference copy's own (the earlier passes' crops)."""
+    import fish_game as G
+    out = dict(crops or {})
+    for f in codes or {}:
+        j = cj.get(G.pid(f))
+        if j and j.get("crop"):
+            out[f] = j["crop"]
+    return out
 
 
 def one_check(J, cj):

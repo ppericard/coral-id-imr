@@ -54,7 +54,7 @@ from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fish_judge import RUBRICS, cap, juv_early  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
-from fish_game import box_ok  # noqa: E402  the fish's box, as the tile tool reads it
+from fish_game import box_in, box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = lambda *a: os.path.join(ROOT, *a)  # noqa: E731
@@ -328,14 +328,17 @@ def check(sid):
         if len(x.get("note", "")) > 140:
             E.append(f"{at}: note longer than 140 characters")
         c = x.get("crop")
-        if c is not None and not (isinstance(c, list) and len(c) == 4 and all(isinstance(v, (int, float)) for v in c)
-                                  and 0 <= c[0] < c[2] <= 1 and 0 <= c[1] < c[3] <= 1):
+        c_ok = c is not None and box_ok(c)
+        if c is not None and not c_ok:
             E.append(f"{at}: crop must be [left, top, right, bottom] fractions of the photo, 0 <= left < right <= 1, "
                      "0 <= top < bottom <= 1")
         b = x.get("bb")
         if b is not None and not box_ok(b):
             E.append(f"{at}: bb must be the fish's box [left, top, right, bottom], fractions of the photo, 0 <= left < right <= 1, "
                      "0 <= top < bottom <= 1")
+        elif b is not None and c_ok and not box_in(b, c):
+            # The code is read on the photo as cropped (judging/FISH.md "A proposed crop"): the crop keeps the fish whole.
+            E.append(f"{at}: the crop cuts the fish's box bb: a crop keeps the whole fish (judging/FISH.md \"A proposed crop\")")
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")

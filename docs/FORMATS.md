@@ -68,9 +68,9 @@ or evaluated, and why. It does not describe the earlier design itself. The decis
   proposal, set by simulation: non-linear per species (a credit for the common names only, a larger one for the scientific name only, the
   whole species for both, the genus a partial credit inside the scientific one), never an additive split.
 
-- **A transfer check on photos never seen.** The true measure of learning is accuracy on photos the player has never seen, so a fixed set
-  is kept out of practice. Fish come first, corals later (ROADMAP "A held-out photo set"). The mastery exam already uses photos the player
-  has not seen, but not a fixed set kept apart.
+- **A transfer check on photos never seen.** The true measure of learning is accuracy on photos the player has never seen, so each player
+  has a reserve of photos kept out of their practice, in every subject, which their mastery exam asks first (ROADMAP "A held-out photo
+  set", LEARNING.md "The reserve in the game").
 
 Some principles were reached independently in both designs, so there was nothing to import:
 

@@ -66,13 +66,15 @@ written with `tools/datajson.py`.
   code runs), pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each PR at its tested head in
   order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
-- **`guard_bash.py`**: the Bash guard, a PreToolUse hook (`.claude/settings.json`, main's copy given with `python3 -I -c`
-  so the hook's JSON stays on stdin): refuses at once, with the way out, a shell command carrying code or editing in
-  place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`, `bash -c`, code piped into an interpreter), for every
-  agent of the session. Quoted text is not read as a command; a
-  command substitution is (the shell runs it inside double quotes), and so is the body of a `cat <<EOF` heredoc with a
-  bare delimiter, which the shell expands; `git show origin/main:tools/X.py | python3 -I -` stays allowed; any error lets
-  the command through. `--check 'CMD'` for a try by hand; `tests/guard_bash.test.js`.
+- **The session hooks** (`.claude/settings.json`) run main's copy of their tool, never the checkout's; with no
+  `origin/main` ref they fetch it (`+refs/heads/main:refs/remotes/origin/main`, about 1 s once), else the guards refuse
+  with that fix and the brief says it (`tests/hooks.test.js`).
+- **`guard_bash.py`**: the Bash guard (PreToolUse, given with `-c`: the JSON stays on stdin): refuses at once, with the
+  way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`,
+  `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
+  substitution is, and so is the body of a `cat <<EOF` heredoc with a bare delimiter, which the shell expands;
+  `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through.
+  `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
@@ -303,12 +305,6 @@ The fish content and photos themselves: [fish.md](fish.md), [fish-photos.md](fis
   `--check`, the import into `suggest.json` `fish`. `--subject seaslug` runs the same pass on the sea slugs' candidates
   (`seaslug-cand.json`) and rubric (`judging/SEASLUG.md`; `fish_judge.py` `RUBRICS`), files
   `judging/seaslug/<taxon id>.json`, imported into `suggest.json` `seaslug`.
-- **`holdout.py`** → `fish-holdout.json`: the fish held-out set
-  ([fish-photos.md](fish-photos.md#the-held-out-set-fish-holdoutjson-toolsholdoutpy)): writes the file from
-  `fish-game.json`, `fish.json` and the file itself (sticky); `--check` (CI: the file is what a run writes), `--stats`
-  (the exam units, families and scientific genera, that reach 15 held out, hold fewer, hold none; the
-  species under 8 in practice); `FLOOR`, `RATIO`, `GENUS_KEEP` the variants' parameters, `--fresh` (a draw from nothing,
-  never once the wiring ships). Run by the photo workflow after `fetch_approved.py`; `tests/holdout.test.js`.
 - **`fish_draw_sim.js`**: the fish draw's easy share in the real app: `model.js` `photoSet` drawn per entry and stage of
   a player's level, the share of photos under ease 4 (`--photos FILE`, `--calib JSON`, `--entries`, `--draws`;
   Playwright, in the machine slot); [LEARNING.md](../LEARNING.md) "The fish draw in big pools".

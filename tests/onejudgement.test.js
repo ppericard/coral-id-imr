@@ -139,6 +139,32 @@ JF.cmd_one(${args.includes('--check') ? 'True' : 'False'}, ${JSON.stringify(dir)
   }
 });
 
+// A code with a crop is read on the photo as cropped (judging/FISH.md "A proposed crop"; Pierre, 2026-11-19, Q430: a crop
+// that takes out a fish one could confuse with the subject lets the photo play), so the candidate judgement's crop goes
+// with its code onto the reference route (tools/fish_judge.py one_crops); a candidate judgement with none leaves the
+// reference copy's own crop, and a reference photo with no candidate judgement keeps its own.
+test("the candidate judgement's crop goes with its code: a reference photo in play by itself is cut by it", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'one-crop-'));
+  try {
+    world(dir, {...JUDGE, crops: {fi1: [0.1, 0, 1, 1], fi2: [0, 0.2, 1, 1], fi5: [0, 0, 0.9, 0.9]}});
+    const f = path.join(dir, 'judging', 'fish', 's001.json'),
+      J = JSON.parse(fs.readFileSync(f, 'utf8'));
+    // 1: a fish one could confuse at the right edge, cut out: the cropped photo is one fish (count 1).
+    J.photos['fish-s001-cand-1'].crop = [0, 0, 0.6, 1];
+    fs.writeFileSync(f, JSON.stringify(J));
+    const out = py(
+      `import fish_game as G
+fish, cur, cand, sug, refs, codes, crops, keep = G.inputs(${JSON.stringify(dir)})
+todo, _, _ = G.plan(fish, cur, cand, sug, {'photos': {}}, refs, codes, crops, rkeep=keep)
+print(json.dumps({'crops': crops, 'todo': {r['f']: c for r, c, _ in todo}}))`
+    );
+    assert.deepStrictEqual(out.crops, {fi1: [0, 0, 0.6, 1], fi2: [0, 0.2, 1, 1], fi5: [0, 0, 0.9, 0.9]});
+    assert.deepStrictEqual(out.todo, {fi1: [0, 0, 0.6, 1], fi2: [0, 0.2, 1, 1], fi5: [0, 0, 0.9, 0.9], fi6: null});
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('two candidate judgements of one photo that disagree are a divergence, never settled by the tool', () => {
   const out = py(`import fish_judge as FJ
 cj = {'i7': {'f': 'fish-s001-cand-7', 'code': 'p1g0sl14', 'keep': 'best', 'unsure': [],
