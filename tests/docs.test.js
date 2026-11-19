@@ -566,7 +566,7 @@ const DOC_BUDGET = {
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
-  'docs/LEARNING.md': [175, 320],
+  'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],
@@ -603,6 +603,7 @@ const DOC_BUDGET = {
   'docs/spec/seaslugs.md': [12, 130],
   'docs/spec/tools.md': [47, 130],
   'docs/spec/analyses.md': [26, 130],
+  'docs/spec/analyses-method.md': [34, 130], // moved from LEARNING.md, 2026-11-19
   'docs/spec/loading.md': [16, 130],
   'docs/spec/site.md': [7, 130],
   'docs/spec/storage.md': [11, 240],
