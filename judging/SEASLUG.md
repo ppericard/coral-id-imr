@@ -113,13 +113,13 @@ The fish's scale, the same five levels:
 - **3 medium**: two mild shortfalls, or one strong one: a head-on, rear or ventral view, part of the animal cut or hidden,
   curled up, a strong colour loss, the animal small, camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
-  animal, a juvenile.
+  animal.
 - **1 very hard**: the animal is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
-**Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): a juvenile (`j`), an
-unclear subject (`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong
-colour loss (`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps,
-but a dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `w` and `f` cap nothing.
+**Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): an unclear subject
+(`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong colour loss
+(`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps, but a
+dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `j`, `w` and `f` cap nothing.
 
 ## Juveniles
 
@@ -129,8 +129,8 @@ what the photo shows: the young animal's colours or shape. The observer's Life S
 sources note §1.2 checked all 97 circle-1 "Juvenile" annotations: every one shows the animal). *H. lacer*'s juvenile is
 the documented case (a translucent white to pale pink body, a violet-blue edge, magenta or purple spots, orange
 rhinophores and gills: the sources note §1.2 and §1.5); a juvenile that looks like a small adult is tagged all the same.
-The juvenile cap holds for every sea slug juvenile (at most 2), as for a fish juvenile of no early class: no juvenile class
-exists for sea slugs yet. The `j` tag stays on every photo.
+A juvenile is judged on the photo and caps nothing, as the fish's (Q435; one rule for every subject, S1:
+[the decision](../docs/decisions/2026-11-19-fish-juvenile-no-cap.md)). The `j` tag stays on every photo.
 
 ## Egg masses (the egg rule, #970's filter 2)
 

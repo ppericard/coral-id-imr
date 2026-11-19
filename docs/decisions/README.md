@@ -70,6 +70,7 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
 | 2026-11-19 | [The duel achievement counts a right Again like a right duel](2026-11-19-duel-ach-again.md) | #1227 |
 | 2026-11-19 | [The fish genus page's "Don't confuse with" lists sourced pairs only](2026-11-19-fish-genus-dont-confuse.md) | #1171 |
+| 2026-11-19 | [Juveniles (fish and sea slugs): no ease cap; the judged ease is the starting point](2026-11-19-fish-juvenile-no-cap.md) | #1237 |
 | 2026-11-19 | [The fish juveniles sourced per species: a class label for the analyses and a line on the species sheet](2026-11-19-fish-juveniles-sourced.md) | #1235 |
 | 2026-11-19 | [The fish read their own pooled statistics in the app, merged with no further simulation](2026-11-19-fish-own-stats.md) | #1148 |
 | 2026-11-19 | [Fish reference photos: one judgement, the level read from the photo](2026-11-19-fish-reference-from-photo.md) | #1045 |
@@ -98,7 +99,6 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING](2026-11-19-rules-wordings.md) | #1190 |
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
-| 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
 
 Older decisions are still in the notebook's "Decision log"
 ([docs/archive/learning-notebook.md](../archive/learning-notebook.md); LEARNING.md "Decision log" points there), the
