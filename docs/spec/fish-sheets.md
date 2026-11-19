@@ -39,7 +39,8 @@ the one "No photo yet" drawing (`NOFISH`, `.nofish`).
 ## The genus page
 
 `treeGenus`, `#fish/learn/genus/<name>`: the genus, its common name when it has one, its family and IMR entry name; my
-progress once met; the IMR sub-entry's cues, else its ID marks and presentation; the species WoRMS now puts in another
+progress once met; the IMR sub-entry's cues verbatim, then its own ID marks when it has some (as the family sheet
+shows a family's under IMR's), else its ID marks and presentation; the species WoRMS now puts in another
 genus; every species with the filter; "Don't confuse with": sourced pairs only: the sibling genera IMR gives cues for
 (`treeGenusSibs`), then the look-alikes a source names and those players mix it up with, each with its source
 (`treeGenusLooks`). A sibling genus that has only our own ID marks is not listed (Pierre, 2026-11-19 05:13 Manila, Q418
@@ -110,10 +111,15 @@ has none, and the species accounts) and FishBase species pages (where the guide 
 feature FishBase gives for the genus's only game species, or for each of them); only features seen on a photo, never a
 count.
 
+**A genus IMR gives cues for** may take 1 to 3 marks on the same terms, faithful to its cues (rule C1; a source that
+differs goes to `points.json`, rule C5), never a presentation nor a reason in `none`.
+
 `add_families` (`genus_marks`) builds them into `fish.json` genera (`plain`, `marks`, `msrc` each source once, `mby`
-{plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues (rule C1:
-they stay apart), a mark with a number, a line too long, a species named that is not one of its own, or a genus in play
-of any circle without a presentation, or with neither marks nor a reason (`--marks`, a hidden flag, points the build at
-another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks a genus unit's tips (`qt`) under "ID
-marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
-`learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `treeRoot`).
+{plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues given a
+presentation, no marks or a reason, a mark with a number, a line too long, a species named that is not one of its own,
+or a genus in play without IMR cues and without a presentation, or with neither marks nor a reason (`--marks`, a hidden
+flag, points the build at another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks of a genus
+without IMR cues its unit's tips (`qt`) under "ID marks (FAO species guide, FishBase)" (`tl`) and the presentation its
+card's plain sentence (`plain`, `plainLine`); a genus with IMR cues keeps them as its tips, as a family does. `learn.js`
+`genMarks` shows presentation and marks, each line with its sources' numbers, on the one sheet the genus opens (as
+`treeRoot`), under the IMR cues' box when it has one.

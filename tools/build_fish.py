@@ -739,7 +739,8 @@ def add_families(o, key, declared=()):
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
     # The genera's own presentation and ID marks (tools/fish_genus_marks.json): plain, marks, msrc, mby, checked
     # (genus_marks); every genus of a family in play (any circle, the surprise cards' families aside: the content comes
-    # before the genera of circles 2 and 3 open) has IMR cues, or a presentation and marks or a reason in none.
+    # before the genera of circles 2 and 3 open) has IMR cues, or a presentation and marks or a reason in none; a genus
+    # with IMR cues may take marks too, never a reason in none.
     gmk = json.loads(GMARKS.read_text(encoding="utf-8")) if GMARKS.exists() else {}
     if gmk and set(gmk) - {"about", "src", "families", "genera", "none"}:
         sys.exit("tools/fish_genus_marks.json: keys about, src, families, genera and none only")
@@ -953,15 +954,16 @@ def genus_marks(name, x, r, none, src, used, mine):
     """A genus's own presentation and ID marks (tools/fish_genus_marks.json; Pierre, 2026-11-08) as fish.json fields:
     plain (one or two sentences), marks (1 to 3 visible features), msrc (each source once, {t, u}: the source's t, then
     where in it) and mby ({plain: [msrc indexes], marks: [[msrc indexes] per mark]}). The build stops on anything else
-    (rules C1, C2, C3, C6): a genus with IMR cues, a line without a source, marks and a reason in none together, a mark
-    with a number (a count is never a photo cue), a line too long for a tip, a species named that is not one of its own."""
+    (rules C1, C2, C3, C6): a line without a source, marks and a reason in none together, a mark with a number (a count is
+    never a photo cue), a line too long for a tip, a species named that is not one of its own; a genus with IMR cues takes
+    marks only (shown under its IMR cues, as a family's: its cues present it, no plain)."""
     def bad(why):
         sys.exit(f"tools/fish_genus_marks.json {name}: {why}")
-    if r.get("cues"):
-        bad("has IMR cues: the IMR cues stay apart (rule C1)")
     if set(x) - {"plain", "marks"} or not (x.get("plain") or x.get("marks")):
         bad("keys plain and marks only, one of them given")
     marks = x.get("marks") or []
+    if r.get("cues") and (x.get("plain") or not marks):
+        bad("has IMR cues: marks only, 1 to 3, no plain (its IMR cues present it)")
     if marks and none:
         bad("both marks and a reason in none")
     if not marks and not none:

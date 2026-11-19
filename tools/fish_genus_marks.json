@@ -1,5 +1,5 @@
 {
-  "about": "The fish genera's own presentation and ID marks, for every genus in play the IMR fish presentation gives no cues for, in every circle, the surprise cards' families aside (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players; circles 2 and 3 since 2026-11-18, \"d'abord le contenu\"). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done, every family in play (each of its genera without IMR cues is in genera with a presentation, and with marks or in none with its reason; the build stops otherwise). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, nor a feature seen only in the hand; a species named is one of the genus's game species (rule C6). Most lines come from the FAO species identification guide for the Western Central Pacific (Carpenter and Niem, eds, vols 3 and 4, 1999, vols 5 and 6, 2001: each family's key to the genera, or its key to the species where it has none, and its species accounts), the rest from FishBase species pages; a genus the guide names otherwise says so (as Xyrichtys, as Pseudaluteres, as Dendrochirus brachypterus, as Apogon cyanosoma, as Trachinocephalus myops, as Dasyatis kuhlii, as Doryrhamphus (Dunckerocampus), as Carangoides bajad and C. ferdau, as Pseudochromis porphyreus). Circles 2 and 3: where the guide splits the genera by counts only, or has no key, a visible feature that FishBase gives for the genus's only game species, or for each of its game species, stands as a mark (the sea slug cues' rule); the requiem sharks, whose FAO pages did not open, are from FishBase alone. The only genus of its family here gets a presentation only: the family's IMR cues and ID marks (tools/fish_sheets.json) tell it. none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues is never here: the IMR cues stay apart (rule C1). tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
+  "about": "The fish genera's own presentation and ID marks, for every genus in play the IMR fish presentation gives no cues for (and marks for some it gives cues for, below), in every circle, the surprise cards' families aside (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players; circles 2 and 3 since 2026-11-18, \"d'abord le contenu\"). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done, every family in play (each of its genera without IMR cues is in genera with a presentation, and with marks or in none with its reason; the build stops otherwise). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, nor a feature seen only in the hand; a species named is one of the genus's game species (rule C6). Most lines come from the FAO species identification guide for the Western Central Pacific (Carpenter and Niem, eds, vols 3 and 4, 1999, vols 5 and 6, 2001: each family's key to the genera, or its key to the species where it has none, and its species accounts), the rest from FishBase species pages; a genus the guide names otherwise says so (as Xyrichtys, as Pseudaluteres, as Dendrochirus brachypterus, as Apogon cyanosoma, as Trachinocephalus myops, as Dasyatis kuhlii, as Doryrhamphus (Dunckerocampus), as Carangoides bajad and C. ferdau, as Pseudochromis porphyreus). Circles 2 and 3: where the guide splits the genera by counts only, or has no key, a visible feature that FishBase gives for the genus's only game species, or for each of its game species, stands as a mark (the sea slug cues' rule); the requiem sharks, whose FAO pages did not open, are from FishBase alone. The only genus of its family here gets a presentation only: the family's IMR cues and ID marks (tools/fish_sheets.json) tell it. none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues may have 1 to 3 marks (no plain, never in none), from the same sources, faithful to its IMR cues and never contradicting them (rule C1; a source that differs goes to points.json, rule C5), shown under the IMR cues as a family's marks are (integrator's call on Pierre's \"Mouais bof\", 2026-11-19, to keeping them apart); one with no mark seen on a photo in the sources is simply left out. tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
   "src": {
     "fao-lab": {
       "t": "FAO species guide, Labridae (Westneat 2001), key to the genera",
@@ -117,6 +117,8 @@
       "t": "FAO species guide, Zanclidae (Randall 2001)",
       "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"
     },
+    "fao-aca": {"t": "FAO species guide, Acanthuridae (Randall 2001)", "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"},
+    "fao-aca30": {"t": "FAO species guide, Acanthuridae (Randall 2001)", "u": "https://www.fao.org/4/y0870e/y0870e30.pdf"},
     "fao-pin": {
       "t": "FAO species guide, Pinguipedidae (Randall 2001)",
       "u": "https://www.fao.org/4/y0870e/y0870e17.pdf"
@@ -195,6 +197,10 @@
     "fao-hol16": {"t": "FAO species guide, Holocentridae (Randall and Greenfield 1999)", "u": "https://www.fao.org/4/x2400e/x2400e16.pdf"},
     "fao-nem": {"t": "FAO species guide, Nemipteridae (Russell 2001)", "u": "https://www.fao.org/4/y0770e/y0770e28.pdf"},
     "fb-chrysiptera-rollandi": {"t": "FishBase, Chrysiptera rollandi", "u": "https://www.fishbase.se/summary/Chrysiptera-rollandi.html"},
+    "fb-dascyllus-aruanus": {"t": "FishBase, Dascyllus aruanus", "u": "https://www.fishbase.se/summary/Dascyllus-aruanus.html"},
+    "fb-dascyllus-melanurus": {"t": "FishBase, Dascyllus melanurus", "u": "https://www.fishbase.se/summary/Dascyllus-melanurus.html"},
+    "fb-dascyllus-reticulatus": {"t": "FishBase, Dascyllus reticulatus", "u": "https://www.fishbase.se/summary/Dascyllus-reticulatus.html"},
+    "fb-dascyllus-trimaculatus": {"t": "FishBase, Dascyllus trimaculatus", "u": "https://www.fishbase.se/summary/Dascyllus-trimaculatus.html"},
     "fb-abudefduf-vaigiensis": {"t": "FishBase, Abudefduf vaigiensis", "u": "https://www.fishbase.se/summary/Abudefduf-vaigiensis.html"},
     "fb-amblyglyphidodon-curacao": {"t": "FishBase, Amblyglyphidodon curacao", "u": "https://www.fishbase.se/summary/Amblyglyphidodon-curacao.html"},
     "fb-neoglyphidodon-melas": {"t": "FishBase, Neoglyphidodon melas", "u": "https://www.fishbase.se/summary/Neoglyphidodon-melas.html"},
@@ -951,6 +957,37 @@
         [["fao-zan", "Zanclus cornutus, p. 3651"]]
       ]
     },
+    "Zebrasoma": {
+      "marks": [
+        [
+          "Tall, sail-like dorsal and anal fins (Acanthurus: lower)",
+          [["fao-aca", "key to the genera, couplet 3, p. 3654"], ["fao-aca30", "Zebrasoma veliferum, p. 3683"]]
+        ],
+        [
+          "Snout drawn out, on a deep body",
+          [["fao-aca", "key to the species of Zebrasoma, couplet 2, p. 3664"], ["fao-aca30", "Zebrasoma veliferum, p. 3683"]]
+        ]
+      ]
+    },
+    "Acanthurus": {
+      "marks": [
+        ["Dorsal and anal fins fairly low (Zebrasoma: tall, sail-like)", [["fao-aca", "key to the genera, couplet 3, p. 3654"]]],
+        ["Tail base fairly deep (Naso: slender)", [["fao-aca", "key to the genera, couplet 1, p. 3654"]]]
+      ]
+    },
+    "Naso": {
+      "marks": [
+        ["Slender tail base (Acanthurus, Zebrasoma, Ctenochaetus: deeper)", [["fao-aca", "key to the genera, couplet 1, p. 3654"]]],
+        [
+          "Tail-base blades are fixed, keeled bony plates (Acanthurus: a folding spine)",
+          [["fao-aca", "family remarks, p. 3653"], ["fao-aca", "key to the genera, couplets 1 and 5, pp. 3654-3655"]]
+        ],
+        [
+          "Some with a horn or bump on the forehead (N. unicornis, N. brevirostris)",
+          [["fao-aca", "key to the species of Naso, couplets 1, 8 and 13, pp. 3661-3663"]]
+        ]
+      ]
+    },
     "Parapercis": {
       "plain": [
         "Sandperches rest on open sand or rubble near reefs, propped on their pelvic fins, and eat crabs, shrimps and small fishes; males keep harems.",
@@ -963,6 +1000,28 @@
         [["fb-chrysiptera-rollandi", "Size, Biology"]]
       ],
       "marks": [["Oval to slender body, less deep than Neoglyphidodon", [["fao-pom", "key to the genera, couplet 24, p. 3341"]]]]
+    },
+    "Dascyllus": {
+      "marks": [
+        [
+          "Short, deep body",
+          [
+            ["fb-dascyllus-aruanus", "Morphology"],
+            ["fb-dascyllus-melanurus", "Morphology"],
+            ["fb-dascyllus-reticulatus", "Morphology"],
+            ["fb-dascyllus-trimaculatus", "Morphology"]
+          ]
+        ],
+        [
+          "Black pelvic fins, clear pectoral fins",
+          [
+            ["fb-dascyllus-aruanus", "Morphology"],
+            ["fb-dascyllus-melanurus", "Morphology"],
+            ["fb-dascyllus-reticulatus", "Morphology"],
+            ["fb-dascyllus-trimaculatus", "Morphology"]
+          ]
+        ]
+      ]
     },
     "Abudefduf": {
       "plain": [
@@ -1031,6 +1090,12 @@
       ],
       "marks": [
         ["Dorsal spines about equal, none drawn out (Heniochus: a long filament)", [["fao-cha", "key to the genera, couplets 3 and 5, p. 3226"]]]
+      ]
+    },
+    "Heniochus": {
+      "marks": [
+        ["A front dorsal spine drawn out into a long filament (Chaetodon: none)", [["fao-cha", "key to the genera, couplets 3 and 5, p. 3226"]]],
+        ["Adults: small horns above the eyes, usually a hump on the nape", [["fao-cha", "key to the genera, couplet 5, p. 3226"]]]
       ]
     },
     "Forcipiger": {
