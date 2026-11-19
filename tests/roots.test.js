@@ -143,7 +143,7 @@ test('every fish genus root has its ETYFish source: each meaning and word verbat
     Object.keys(FR.genera).sort(),
     'fish.json roots are the tool file’s (build_fish.py --regroup)'
   );
-  assert.ok(rooted.length >= 60, `${rooted.length} fish roots`);
+  assert.ok(rooted.length >= 140, `${rooted.length} fish roots`);
   for (const n of rooted) {
     const r = FG[n].root,
       x = FR.genera[n];
@@ -171,9 +171,12 @@ test('every fish genus root has its ETYFish source: each meaning and word verbat
   }
 });
 
-test('every circle-1 fish genus has a root or a reason in skip, never both', () => {
-  for (const g of FISH.genera.filter(x => x.circle === 1))
-    assert.ok(g.name in FR.genera !== g.name in FR.skip, `${g.name}: a root or a reason`);
+test('every fish genus (circles 1-3) has a root or a reason in skip, never both', () => {
+  for (const g of FISH.genera) assert.ok(g.name in FR.genera !== g.name in FR.skip, `${g.name}: a root or a reason`);
+  assert.ok(
+    FISH.genera.some(g => g.circle === 3 && g.root) && FISH.genera.some(g => g.circle === 2 && g.root),
+    'circles 2 and 3 have roots'
+  );
   for (const n of Object.keys(FR.skip)) assert.ok(FG[n] && FR.skip[n].trim(), `skip ${n}`);
 });
 
@@ -191,6 +194,13 @@ test('rootLine for fish: a word-less meaning, another genus, a person honoured, 
   assert.match(
     line('Acanthurus'),
     /“thorn or spine” \(acanthus\) \+ “tail” \(oura\)\. It fits the ID tip “One scalpel on the tail base”\./
+  );
+  // Circles 2 and 3: a word-less part kept, the same shapes.
+  assert.match(line('Gymnothorax'), /<i>Gymno·thorax<\/i>: “bare or naked” \(gymnós\) \+ “breast or chest” \(thṓrax\)\./);
+  assert.match(line('Eurypegasus'), /<i>Eury·pegasus<\/i>: “wide” \(eury\)\./);
+  assert.match(
+    line('Koumansetta'),
+    /<i>Koumans·etta<\/i>: honours Frederik Petrus Koumans \+ “diminutive connoting endearment” \(-etta\)\./
   );
   const odon = names.filter(n => /odon$/.test(n)).length;
   assert.ok(line('Chaetodon').includes(` ${odon} genera among the fish end in -odon:`), line('Chaetodon'));

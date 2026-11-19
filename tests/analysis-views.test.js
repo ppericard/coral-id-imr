@@ -1,4 +1,5 @@
 require('./slot.js').testGuard();
+// @slow: the Analyses models fitted on synthetic logs for the views (profiles, Wright map, time and difficulty)
 // The Analyses module (analysis.js), continued: Recompute here, deleted accounts, the player profiles, the Wright map, time and difficulty (the first part, and why it is split: tests/analysis.test.js).
 const test = require('node:test'),
   assert = require('node:assert');

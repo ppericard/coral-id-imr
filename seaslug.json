@@ -1539,6 +1539,17 @@
       1
      ]
     ]
+   },
+   "apart": {
+    "g:Tubulophilinopsis": "Tubulophilinopsis: short, rounded tail lobes of equal size; a crest on the head shield"
+   },
+   "apsrc": {
+    "g:Tubulophilinopsis": [
+     {
+      "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183), diagnosis of the genus Tubulophilinopsis, p. 40",
+      "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+     }
+    ]
    }
   },
   {
@@ -1699,6 +1710,21 @@
      [
       0
      ]
+    ]
+   },
+   "apart": {
+    "g:Tyrannodoris": "Tyrannodoris: large, downward-pointing oral tentacles; no sense slit before the rhinophores"
+   },
+   "apsrc": {
+    "g:Tyrannodoris": [
+     {
+      "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81), the diagnosis of the genus Tyrannodoris, p. 18",
+      "u": "https://natuurtijdschriften.nl/pub/1000556"
+     },
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet, the oral tentacles of Roboastra, now Tyrannodoris luteolineata",
+      "u": "https://www.seaslugforum.net/find/robolute"
+     }
     ]
    }
   },
@@ -2772,6 +2798,21 @@
       2
      ]
     ]
+   },
+   "apart": {
+    "g:Chelidonura": "Chelidonura: long, pointed tail lobes, the left far longer than the right, as C. amoena"
+   },
+   "apsrc": {
+    "g:Chelidonura": [
+     {
+      "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet, Chelidonura's tails, against Philinopsis gardineri, now Tubulophilinopsis",
+      "u": "https://www.seaslugforum.net/find/philgard"
+     },
+     {
+      "t": "Willan and Cattaneo-Vietti 1995, New data on Chelidonura amoena (The Beagle 12), the external features of Chelidonura amoena, p. 11",
+      "u": "https://archive.org/details/biostor-242510"
+     }
+    ]
    }
   },
   {
@@ -3452,6 +3493,17 @@
      {
       "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
       "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   },
+   "apart": {
+    "g:Tambja": "Tambja: flattened, lobe-like oral tentacles; a sense slit before the rhinophores"
+   },
+   "apsrc": {
+    "g:Tambja": [
+     {
+      "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81), the definition of the genus Tambja, p. 17",
+      "u": "https://natuurtijdschriften.nl/pub/1000556"
      }
     ]
    }

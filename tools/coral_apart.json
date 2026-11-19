@@ -33,6 +33,10 @@
    "Astrea": ["round, crowded corallites; new ones bud between the large ones", [["imr", "slides 62, 63"], ["cf", "p. 23"]]],
    "Dipsastraea": ["oval corallites that divide in two; a colony not crowded", [["imr", "slide 61"], ["cf", "p. 23"]]]
   },
+  "Astrea|Cyphastrea": {
+   "Astrea": ["round corallites of 3-7 mm, crowded, small ones budding between", [["imr", "slides 62, 63"], ["cf", "p. 23"]]],
+   "Cyphastrea": ["small round cone corallites of 1-2 mm, each with its own wall", [["cf", "p. 25"]]]
+  },
   "Astrea|Favites": {
    "Astrea": ["each corallite has its own wall; the septa alternate in size", [["imr", "slides 62, 63"]]],
    "Favites": ["shared or separate walls; roundish corallites; an uneven surface", [["imr", "slide 65"]]]
@@ -52,6 +56,10 @@
   "Ctenactis|Lobactis": {
    "Ctenactis": ["a long, skateboard-like disc with a long mouth furrow", [["imr", "slide 52"], ["cf", "p. 65"]]],
    "Lobactis": ["an oval disc, tall tentacular lobes often green, blue or white", [["imr", "slide 53"], ["cf", "p. 64"]]]
+  },
+  "Cyphastrea|Echinopora": {
+   "Cyphastrea": ["small round cone corallites of 1-2 mm, each with its own wall", [["cf", "p. 45-46"]]],
+   "Echinopora": ["large corallites of 3-6 mm, their walls hidden by fine spines", [["imr", "slide 28"], ["cf", "p. 45-46"]]]
   },
   "Cyphastrea|Turbinaria": {
    "Cyphastrea": ["beads and small spines between the corallites", [["cf", "p. 45-46"]]],
@@ -227,11 +235,9 @@
   }
  },
  "none": {
-  "Acropora|Cyphastrea": "Corals of the World gives Cyphastrea decadia, the one Cyphastrea confirmed in the Philippines, Acropora-like axial corallites, and the Coral Finder line only says the tip corallite is undifferentiated: no feature read tells them apart on a photo",
-  "Anacropora|Montipora": "both have small, empty-looking corallites; Montipora's surface varies and no source read compares the two",
-  "Astrea|Cyphastrea": "the only difference read is corallite size (Coral Finder criteria), and Cyphastrea has no IMR notes; Corals of the World's Cyphastrea pages read are for species not confirmed in the Philippines (rule C6)",
-  "Astreopora|Turbinaria": "no source read says what Turbinaria's corallites look like beside Astreopora's hole-like ones; a line would be a guess",
-  "Cyphastrea|Echinopora": "both have beads and spines between the corallites; the only difference read is corallite size, from the Coral Finder criteria alone",
-  "Duncanopsammia|Goniopora": "both show large polyps by day; no source read compares the two"
+  "Acropora|Cyphastrea": "the sources disagree: Corals of the World gives Cyphastrea decadia, the one Cyphastrea confirmed in the Philippines (iNaturalist Research Grade there and the Corals of the World checklist, 2026-11-19), Acropora-like axial corallites, while the Coral Finder says Cyphastrea's tip corallite is undifferentiated; a discrepancy for Pierre (rule C5), not a line",
+  "Anacropora|Montipora": "both have small, empty-looking corallites; IMR and the Coral Finder give Anacropora a smooth surface but say Montipora's surface varies, so bumps are no sure difference, and no source read compares the two (Corals of the World's Anacropora forbesi page names only other Anacropora as similar, read 2026-11-19)",
+  "Astreopora|Turbinaria": "the sources describe different things on each side (Astreopora's corallites lined with spinules, Turbinaria's smooth surface between the corallites), so the contrast would be implied, not read; no source compares the two (Corals of the World's Astreopora myriophthalma page names only other Astreopora as similar, read 2026-11-19)",
+  "Duncanopsammia|Goniopora": "both show large polyps by day; the only difference read is the colony's form (plates against massive or columns), and no source gives Duncanopsammia's tentacles beside Goniopora's 24 (Corals of the World's Turbinaria peltata page, now D. peltata, compares it only with Turbinaria, read 2026-11-19)"
  }
 }

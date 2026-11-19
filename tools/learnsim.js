@@ -10,12 +10,14 @@
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none]
-//                          [--beyond yes|no]
+//                          [--beyond yes|no] [--spknow on|off]
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
 // --ach: the answer at which each achievement first came, median per profile (rule L8).
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
+// --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
+// sp), in both worlds: a paired run against a version without them passes it to both arms (an older learnsim ignores it).
 // --subject fish: plays the fish subject; the coral-only measures (Millepora, bonus genera) stay empty. --photos FILE
 // serves FILE as fish-photos.json; --calib merges fields over the subject's draw calibration (core.js SUBJECTS calib):
 // '{"u":1,"pool":1e9}' puts the whole floor on every observation (model.js CAL.U).
@@ -83,7 +85,18 @@ const ROOT = path.join(__dirname, '..');
 
 // Profiles: tools/learnprof.js, the same list for both subjects and both worlds; also loaded in the page (an init
 // script), where knownUnits reads the app's own units. Default: every profile with a part for the subject.
-const {PROFILES, defaults: DEFAULT_PROFILES, profOf} = require('./learnprof.js');
+const {PROFILES, defaults: DEFAULT_PROFILES, profOf: profOf0, choiceOf} = require('./learnprof.js');
+// --spknow off (above): the profile without its species.
+const SPKNOW = (() => {
+  const i = process.argv.indexOf('--spknow'),
+    v = i > 0 ? process.argv[i + 1] : 'on';
+  if (!['on', 'off'].includes(v)) throw new Error('--spknow on or off');
+  return v === 'on';
+})();
+const profOf = (n, subj) => {
+  const p = profOf0(n, subj);
+  return p && !SPKNOW ? {...p, sp: null} : p;
+};
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
@@ -159,7 +172,6 @@ const SEEDS = Number(arg('seeds', 5)),
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
-  AUTO = {beginner: 'new', casualDiver: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
@@ -388,16 +400,25 @@ function play(cfg) {
   BON.forEach(g => (know[g] = prof.lo));
   // The units of the subject's opt-in sets (app.js UNITS sets: the fish scientific genera), learned like any unit from the
   // profile's low start: untaught, they would stay at chance and hold the openings of their families.
-  if (typeof SETS === 'function')
-    SETS()
-      .flatMap(S => (S.all ? S.all() : S.units()))
-      .forEach(g => {
-        if (g in know) return;
-        // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js); a species by its
-        // common name (the species level) from the profile's low start, as the rated world (tools/ratedworld.js).
-        know[g] =
-          (GX(g) || {}).rank !== 'species' && LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg) ? prof.hi : prof.lo;
-      });
+  let spK = new Set(); // the species units the profile knows (tools/learnprof.js sp)
+  if (typeof SETS === 'function') {
+    const setU = [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))],
+      // The species units (the species level, by common name) in their families' order (app.js TREEU.spl), with the
+      // cheatsheet's rank (fish.json cs, TREEU.sps): the ones the profile knows (tools/learnprof.js sp), as the rated world.
+      SPS = (typeof TREEU === 'object' && TREEU && TREEU.sps) || {},
+      spL = setU.filter(g => (GX(g) || {}).rank === 'species').map(g => ({id: g, family: GX(g).parent, cs: (SPS[GX(g).sp] || {}).cs || 0}));
+    spK = LEARNPROF.knownSpecies(prof, knows, spL);
+    setU.forEach(g => {
+      if (g in know) return;
+      // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js); a species by sp.
+      know[g] =
+        (GX(g) || {}).rank === 'species'
+          ? LEARNPROF.spKnow(prof, spK, g)
+          : LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg)
+            ? prof.hi
+            : prof.lo;
+    });
+  }
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);
@@ -1107,6 +1128,7 @@ function play(cfg) {
   return {
     known: SL.filter(g => k0[g] >= 0.5), // the genera the profile knows from the start (the spotty profile's groups)
     knows: [...knows], // the slate units at the profile's hi (tools/learnprof.js)
+    spKnows: [...spK], // the species units at its sp.hi
     credit,
     rows,
     entry,
@@ -1204,7 +1226,7 @@ async function run(browser, base, name, seed) {
     truth: TRUTH_JSON,
     truthGen: TRUTH_GEN,
     judge: JUDGE,
-    choice: CHOICE === 'auto' ? AUTO[name] : CHOICE,
+    choice: CHOICE === 'auto' ? choiceOf(name) : CHOICE, // the profile's (tools/learnprof.js choice)
     fallback: FALLBACK,
     vars: VARS,
     learner: LEARN,
@@ -1546,7 +1568,7 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX, calib: CALIBX});
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX, calib: CALIBX, spknow: SPKNOW});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();
