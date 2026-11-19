@@ -806,9 +806,9 @@ const server = http.createServer((req, res) => {
         const t = (typeof qNow === 'function' && qNow() && qNow().g) || SHOWNQ[1],
           views = ((SHOWNQ && SHOWNQ[4] && SHOWNQ[4].shown) || []).map(x => x.view),
           has = n => views.some(v => ((GX(n).views || {})[v] || []).some(x => gamePhotoOk(n, x)));
-        return (
-          [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(b => b.dataset.c).find(n => n !== t && GX(n) && has(n)) || null
-        );
+        // answer.js: the choices read, to pick the wrong one; smokeAnswer gives it
+        const cs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(b => b.dataset.c);
+        return cs.find(n => n !== t && GX(n) && has(n)) || null;
       });
       const r = await p.evaluate(w => smokeAnswer(w === null ? false : w), wrong);
       const vs = await p.evaluate(() => !!document.querySelector('#view .qstage.qvs .qko img'));
