@@ -296,6 +296,8 @@ function qclockArm() {
   else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
 }
 function question(cur, target, choices, prompt, set, kq) {
+  // Its photos join the session's window (model.js SEENQ): not drawn again in the next questions while another is left.
+  seenAdd([cur, target, choices, prompt, set]);
   EXAMQ = set.exam ? target : null;
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
   const ph = set.shown,
@@ -1847,7 +1849,9 @@ const againTold = () => {
 // The next questions chosen ahead, their photos fetched meanwhile, so Next shows one at once on a slow line (decision:
 // docs/decisions/2026-11-18-decisions-from-app-comments.md): up to AHEAD in the photo quiz, one in the Duel tab. NEXTQ, the
 // first, holds the next (.next); one is used only under its planKey. A question with cards, an exam, a duel or an "Again"
-// ends the queue; a miss drops it, its planner state put back (snap); after a right answer the weights lag AHEAD - 1.
+// ends the queue; a miss drops it, its planner state put back (snap); after a right answer the weights lag AHEAD - 1. The
+// photos do not lag: the draw reads the questions queued here and those shown (model.js SEENQ), so a question planned
+// behind another on the unit never repeats its colony.
 const AHEAD = 3;
 let NEXTQ = null;
 // The genera in play, and the custom quiz's selection: a change of either drops the questions planned with the old ones.
