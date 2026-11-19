@@ -2278,6 +2278,9 @@ const UNITS = {
     ...TREE_UNITS,
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // emkey: its species are those of the Fish ID Key for EventMeasure, in the Lab (proto/fishkey.js) until Pierre's OK
+    // (rule U13): the IMR reference PDF's, from its own files (get).
+    emkey: true,
     // Its basics module's words (as the corals': proto/fishbasics.js, learn.js BASICS_TRAIL_F). lo and all are for the
     // "lower" card, off for the fish with their other level-change cards (startFb, below).
     basics: {
