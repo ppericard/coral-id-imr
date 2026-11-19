@@ -1,6 +1,6 @@
 # The custom quiz for every subject: one key per subject, the groups declared in `UNITS`
 
-Date: 2026-11-19. PR: #1266. Rules or docs touched: S1, D3, D4, D7; docs/spec/quiz.md "Custom quiz",
+Date: 2026-11-19. PR: #1277. Rules or docs touched: S1, D3, D4, D7; docs/spec/quiz.md "Custom quiz",
 docs/spec/subjects.md (`pages`), docs/spec/storage.md, ROADMAP "Every game mode for every subject", the plan
 `docs/reviews/2026-11-19-modes-every-subject.md` (PR 2).
 
