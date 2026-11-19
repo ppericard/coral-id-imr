@@ -945,9 +945,10 @@ below (the corals and the fish) are in the notebook.
 
 ### Confusions
 
-`conf` holds per pair of units (A before B alphabetically) [offered together, mixed up], counted on the trusted answers
-that logged their choices: each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
-answer given (`core.js` `confusionOf` counts the same, and also by direction for the admin). The app turns them into
+`conf` holds per pair of units (A before B) [offered together, mixed up], counted on the trusted answers (`core.js`
+`confAdd`): each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the answer given; a
+typed answer naming another unit is one offer and one mix-up. `core.js` `confusionOf` counts the same, and by
+direction (choices only) for the admin. The app turns them into
 confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js` `pooledConf`,
 `core.js` `confScore`: "What a question shows", "Known mix-ups").
 

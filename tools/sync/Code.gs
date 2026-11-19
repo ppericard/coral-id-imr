@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 190 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 191 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 190;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 191;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1055,9 +1055,10 @@ function abilities_(data){
 // answer's surprise, G by GENUS_K / (1 + its weighed answers / 10). photos serves the total (G + P); gd the offsets, the
 // prior of a photo nobody has answered yet (model.js photoDiff).
 // conf: per pair of genera (A before B alphabetically), how often one was shown with the other among the choices, and
-// how often the other was answered; only answers that logged their choices count. The app turns it into confusion
-// scores (core.js confScore); core.js confusionOf counts the same. core.js eloReplay replays the same rules for the
-// admin: keep them in step (tests/core.test.js compares them).
+// how often the other was answered, among the answers that logged their choices; a typed miss (|t, no choices: another
+// unit's name written from memory) counts as offered once and mixed up (core.js confAdd, the one rule of both). The app
+// turns it into confusion scores (core.js confScore); core.js confusionOf counts the same. core.js eloReplay replays the
+// same rules for the admin: keep them in step (tests/core.test.js compares them).
 // Who rates the photos and the confusions: players, devices that never signed in included, whose answers show they
 // really play: TRUST.N answers or more (per player, not per photo), right clearly above chance (one-sided z of at least
 // TRUST.Z against each question's guess rate). Bots and random clicking stay out; nobody's own progress, level or
@@ -1131,7 +1132,8 @@ function statsNew_(roster, sx, at, why, sid){
 // ability. The photo memory is kept per player and photo as its bucket (memBucket_), all the rule reads of [shown, right].
 function statsStep_(S, m, tr, ex, idx){
   const w = m[2], sg = m[3], sa = m[4], ok = m[5], mode = m[6], fs = m[7].split(/\s+/).filter(Boolean), ch = m[9];
-  if (tr) ch.split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = S.conf[k] = S.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
+  // The pairs by core.js confAdd, the one rule of the admin's confusionOf too: a typed miss counts as offered once and mixed up.
+  if (tr) CORE_.confAdd(S.conf, sg, sa, ok, mode, ch);
   // Each question format's offset is fitted on the trusted answers' points (core.js fmtPoint, fmtFit).
   if (tr && sg) { const p = CORE_.fmtPoint(mode, m[8], ch, ok); if (p) (S.L[p[0]] = S.L[p[0]] || []).push(p.slice(1)); }
   if (ex) S.skip.excluded++;
@@ -7171,22 +7173,39 @@ const CORE_ = (function () { const module = {exports: {}};
     return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
+  // One trusted answer added to the pooled pairs (conf: {"A|B": [offered together, mixed up]}, A before B alphabetically):
+  // the one rule of core.js confusionOf pair and Code.gs statsStep_ (?stats=1 conf). g the unit shown, a the unit
+  // answered, ok right, mode as logged, ch the units offered (space-separated). Each other unit offered beside g: one
+  // offer, and a mix-up when it was answered. A typed miss (TYPED_RE, no choices: the player wrote another unit's name
+  // from memory) is an unprompted mix-up: the pair counts as offered once and mixed up, as a player's own record counts a
+  // mix-up with no offer (pairConf); decision: docs/decisions/2026-11-18-typed-answers-rest.md. "I don't know" ('') and a
+  // right typed answer add nothing: no pair was in play.
+  function confAdd(conf, g, a, ok, mode, ch) {
+    if (!g) return;
+    const inc = (x, took) => {
+      const k = g < x ? g + '|' + x : x + '|' + g,
+        c = (conf[k] = conf[k] || [0, 0]);
+      c[0]++;
+      if (took) c[1]++;
+    };
+    const L = String(ch || '')
+      .split(/\s+/)
+      .filter(x => x && x !== g);
+    if (L.length) L.forEach(x => inc(x, !ok && a === x));
+    else if (!ok && a && a !== g && TYPED_RE.test(String(mode || ''))) inc(a, true);
+  }
   // Confusions between genera: from the answer log rows (as eloOf; row[10] = the genera offered, space-separated).
-  // pair["A|B"] (A before B alphabetically) = [offered together, mixed up]: one was shown with the other among the
-  // choices, and the other was answered. Same counts as Code.gs stats_ conf (tests check it). dir["shown|other"] =
-  // [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without their choices (the oldest
-  // rows): they can't be turned into a rate, only counted.
+  // pair["A|B"] (A before B alphabetically) = [offered together, mixed up], the pooled pairs the game plays with
+  // (confAdd): one was shown with the other among the choices and the other was answered, or the other was typed for it.
+  // Same counts as Code.gs stats_ conf (tests check it). dir["shown|other"] = [offered, answered] keeps the direction,
+  // from the choices only. old["shown|answered"] = mix-ups logged without their choices: the oldest rows (they can't be
+  // turned into a rate, only counted) and the typed ones (also in pair; admin.js noChoiceMixups tells the two apart).
   function confusionOf(rows) {
     const trust = trustOf(rows);
     rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_
     const pair = {},
       dir = {},
-      old = {},
-      inc = (O, k, took) => {
-        const c = (O[k] = O[k] || [0, 0]);
-        c[0]++;
-        if (took) c[1]++;
-      };
+      old = {};
     rows.forEach(r => {
       const g = r[2],
         a = r[3],
@@ -7195,14 +7214,16 @@ const CORE_ = (function () { const module = {exports: {}};
           .split(/\s+/)
           .filter(x => x && x !== g);
       if (!g) return;
+      confAdd(pair, g, a, ok, r[5], r[10]);
       if (!ch.length) {
         if (!ok && a && a !== g) old[g + '|' + a] = (old[g + '|' + a] || 0) + 1;
         return;
       }
       ch.forEach(x => {
-        const took = !ok && a === x;
-        inc(pair, g < x ? g + '|' + x : x + '|' + g, took);
-        inc(dir, g + '|' + x, took);
+        const k = g + '|' + x,
+          c = (dir[k] = dir[k] || [0, 0]);
+        c[0]++;
+        if (!ok && a === x) c[1]++;
       });
     });
     return {pair, dir, old};
@@ -9598,6 +9619,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
       // No card (rule D6): the progress is updated everywhere without telling the player.
       msg: null
+    },
+    {
+      v: 11,
+      at: '2026-11-19',
+      why: "Typed mix-ups in the pooled pairs (PR #1116; docs/decisions/2026-11-18-typed-answers-rest.md): a trusted player's typed answer that names another genus counts in the sheet's pooled pairs (conf) as offered once and mixed up (confAdd), so a row logged before its scoring record, whose mix-ups term and look-alike test the replay rebuilds from the pooled pairs, can replay differently; a row with its scoring record replays as before",
+      // No card (rule D6).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -11092,6 +11120,7 @@ const CORE_ = (function () { const module = {exports: {}};
     memOf,
     photoMemOf,
     memRecalc,
+    confAdd,
     confusionOf,
     CONF,
     confScore,
