@@ -4805,6 +4805,7 @@ async function sameDiffCheck(p, w, fails) {
     if (f0.out.length || f0.scroll > 1 || f0.photos.some(([x, y]) => x < 100 || y < 100))
       fails.push(`${at}, round ${k + 1} before the answer is not one screen: ${JSON.stringify(f0)}`);
     const chose = k % 2 ? 'diff' : 'same';
+    // answer.js: a Lab game, not a quiz question: its own keys, 1 for Same
     if (k === 2) await p.keyboard.press('1');
     else await p.click(`#view .sdq [data-sd="${chose}"]`);
     await p.waitForSelector('#view .sdq.done #next', {timeout: 5000}).catch(() => {});
@@ -5766,9 +5767,28 @@ const PARTS = [
       // No credits block on any page but Home: no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
-    errs.length = 0;
-    await sameDiffCheck(p, w, fails);
-    if (errs.length) fails.push(`${w}px Same or different?: ${errs.slice(0, 3).join(' | ')}`);
+    // Same or different? (Tools): in a context of its own that has seen the tour, whose overlay and room below the page
+    // would be in the way of the one-screen measures.
+    {
+      const cs = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'}),
+        es = [];
+      await cs.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await cs.addInitScript(() => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      });
+      const ps = await cs.newPage();
+      ps.on('pageerror', e => es.push(e.message));
+      await ps.goto(base);
+      await ps.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await sameDiffCheck(ps, w, fails);
+      if (es.length) fails.push(`${w}px Same or different?: ${es.slice(0, 3).join(' | ')}`);
+      await cs.close();
+    }
     // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
     // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open
     // gives the corals' page: tests/fish.smoke.js).
