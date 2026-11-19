@@ -99,7 +99,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
-      # Pillow (tools/requirements.txt, by hash): tests/fishgame.test.js runs the fish photo download on a fixture.
+      # Pillow and numpy (tools/requirements.txt, by hash): tests/fishgame.test.js runs the fish photo download on a
+      # fixture, tests/photomeasure.test.js the photo measures.
       - name: Python packages
         run: pip install --require-hashes -r tools/requirements.txt
       - name: Unit tests

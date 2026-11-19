@@ -217,16 +217,18 @@ as the index gives it). Method and biases: [FISH_PATH.md](../FISH_PATH.md) "Spec
 why}).
 
 - `tools/build_fish.py` `add_families` (`genus_root`) builds it on every rebuild (`--regroup` applies an edit offline)
-  and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, or a circle-1 genus has
-  neither a root nor a reason in `skip`. A fish part may have no word, or be another genus the entry names (fifth item
-  `genus`: "the genus *Pomacentrus*") or the person it says the name honours (`honours`). Only the circle-1 genera must
-  have a root or a reason. The genera a content editor's circle edit brings into circle 1 are not stopped on: the build
-  prints them with no root (`show_rootless`: after its reports, after `--regroup`, alone with `--rootless`), their `skip`
-  reason when there is one ([content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
+  and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, or a genus of any circle
+  (1-3, all of `fish.json`'s) has neither a root nor a reason in `skip`. A fish part may have no word, or be another
+  genus the entry names (fifth item `genus`: "the genus *Pomacentrus*") or the person it says the name honours
+  (`honours`). A genus with no root is never an omission: its `skip` line says why (the root is a guess or unknown, has
+  two meanings, names an old genus, points to another unit's IMR cue or reads against its own: rules C1, C2). The genera
+  a content editor's circle edit brings into circle 1 that have no root are listed by the build with that reason
+  (`show_rootless`: after its reports, after `--regroup`, alone with `--rootless`;
+  [content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
 - Shown by the same `rootLine` (counting the shared ending among every fish genus, "among the fish") through `learn.js`
   `treeRoot`, on the one sheet the genus opens (`treeSheets` `go`): its genus page, its one species' sheet, or its
   family's sheet when it is that family's only genus.
-- `tests/roots.test.js` (every meaning and word in the ETYFish entry, every circle-1 genus rooted or skipped),
+- `tests/roots.test.js` (every meaning and word in the ETYFish entry, every genus rooted or skipped),
   `tests/fish.smoke.js` (Zanclus's species sheet, Amphiprion's genus page).
 
 ## Identification groups: the regional key
