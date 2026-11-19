@@ -1,6 +1,6 @@
 # A fish photo with a look-alike near its edge plays once a crop takes it out
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: P3 (unchanged); judging/FISH.md "A proposed crop"; judging/SEASLUG.md
+Date: 2026-11-19. PR: #1223. Rules or docs touched: P3 (unchanged); judging/FISH.md "A proposed crop"; judging/SEASLUG.md
 "Candidates"; spec/fish-photos.md "The photos in play"; ROADMAP "Fish photo judging, next".
 
 ## Context

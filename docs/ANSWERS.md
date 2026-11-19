@@ -1179,3 +1179,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement
   (#1211); the integrator's answer, its call: a hook refuses an Agent launch without `model` and `effort`, every
   launch is logged, and the brief prints the day's distribution, `tools/agent_guard.py` (#1209).
+- **14:42, Q430, a fish photo saved by a crop.** B: «J'ai toujours dit de mettre en jeu les suggestions, surtout si
+  elles peuvent être corrigées à postériori, ce qui est le cas ici.» A photo with a fish one could confuse near its
+  edge enters play by itself, cropped, when the crop takes that fish wholly out and the subject stays whole and at
+  least medium; he undoes or adjusts it afterwards. Applied: judging/FISH.md "A proposed crop"
+  (docs/decisions/2026-11-19-fish-saving-crop.md, #1223).
