@@ -17,7 +17,7 @@ test('sameOn: the same view when the other side has it, else the view it opens f
     ADM_PAGES: [
       'inbox/todo/reports',
       'inbox/todo/health',
-      'photos/genera/live',
+      'photos/review/quality',
       'photos/families/live',
       'analyses/overview',
       'players/list'
@@ -26,14 +26,14 @@ test('sameOn: the same view when the other side has it, else the view it opens f
     shared: p => p === 'players/list',
     hasPage: (S, p) => !S.pages || S.pages.some(x => p === x || p.startsWith(x + '/')),
     homeOf: () => 'players/activity',
-    admRoute: (p, S) => (p === 'photos/genera' && S.id === 'fish' ? 'photos/families/live' : 'home:' + p)
+    admRoute: (p, S) => (p === 'photos/review' && S.id === 'fish' ? 'photos/families/live' : 'home:' + p)
   };
   vm.createContext(ctx);
   vm.runInContext(code + '\nthis.sameOn = sameOn;', ctx);
   // the same view
   assert.strictEqual(ctx.sameOn(FISH, 'inbox/todo/health'), 'inbox/todo/health');
   assert.strictEqual(ctx.sameOn(CORALS, 'analyses/overview'), 'analyses/overview');
-  // a thing on one side (a genus page) gives its view on the other, or the tab's own view there
-  assert.strictEqual(ctx.sameOn(FISH, 'photos/genera/live/Acropora'), 'photos/families/live');
+  // a page of one side only gives the view that side opens for the tab, or the tab's own view there
+  assert.strictEqual(ctx.sameOn(FISH, 'photos/review/quality/Acropora'), 'photos/families/live');
   assert.strictEqual(ctx.sameOn(FISH, 'inbox/todo/reports/x1'), 'inbox/todo/reports');
 });
