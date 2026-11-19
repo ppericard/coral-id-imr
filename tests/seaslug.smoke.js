@@ -606,6 +606,50 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 5. Matrix (proto/matrixgame.js, the Lab) on the sea slugs, as tests/fish.smoke.js matrixGame plays it on the fish: ten genera
+  // unlocked, the photos stubbed (its tiles are its choices); tests/matrixgame.check.js plays the rounds at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s5')) return;
+        sessionStorage.setItem('s5', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).length))
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `5: ${n} sea slug genera with a photo`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./matrixgame.check.js')(p, w, fails, 'sea slugs', 4);
+    }
+    check(!errs.length, '5: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   await b.close();
   server.close();
   if (fails.length) {
