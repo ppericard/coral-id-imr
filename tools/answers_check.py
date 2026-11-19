@@ -105,7 +105,7 @@ def answered(entries):
 def check_ledger(entries):
     """(failures, known): the entries from SINCE with no place applied, and the bad PR numbers after "Applied"."""
     fails, known, used = [], [], set()
-    closers = [t for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]
+    closers = [(n, t) for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]  # with their line: a closer closes only what precedes it
     for date, n, head, text in entries:
         if date < SINCE:
             continue
@@ -121,7 +121,10 @@ def check_ledger(entries):
             continue
         qs = QNUM.findall(head)
         start = needle(text)
-        if any((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c) for c in closers):
+        if any(
+            cn > n and ((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c))
+            for cn, c in closers
+        ):
             continue
         key = next((k for k in KNOWN if lab.startswith(k)), None)
         if key:

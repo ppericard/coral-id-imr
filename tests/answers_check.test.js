@@ -71,6 +71,23 @@ test('a later "Applied in #N" entry naming its question closes an entry; KNOWN h
     );
 });
 
+test('an "Applied in #N" entry closes only the entries before it: a later follow-up of the same question stays open', () => {
+  const first = ['- **06:00, Q904.** OK.', '- **Applied in #1190:** Q904 (rule W14).'];
+  const followUp = '- **07:00, Q904.** A follow-up, with no place.';
+  const bad = check({'docs/ANSWERS.md': ledger(...first, followUp)});
+  assert.strictEqual(bad.status, 1, bad.out);
+  assert.match(bad.out, /docs\/ANSWERS\.md:\d+ 2026-11-19 07:00, Q904\. A follow-up, with no place\.…: names no "Applied/);
+  assert.doesNotMatch(bad.out, /06:00, Q904/);
+  // The same for an unnumbered entry and a closer naming its time and first words.
+  const open = check({
+    'docs/ANSWERS.md': ledger("- **Applied in #1190:** 06:10, rule S1's wording.", '- **06:10, rule S1’s wording.** "ok".')
+  });
+  assert.strictEqual(open.status, 1, open.out);
+  // A later closer closes the follow-up too.
+  const closed = check({'docs/ANSWERS.md': ledger(...first, followUp, '- **Applied in #1191:** Q904, the follow-up (rule W15).')});
+  assert.strictEqual(closed.status, 0, closed.out);
+});
+
 test('every "#…" after "Applied" is a PR number', () => {
   for (const tail of ['Applied: #N.', 'Applied: this PR.', 'Applied: #12a.', 'Applied: the rule (#N).'])
     assert.strictEqual(check({'docs/ANSWERS.md': ledger('- **06:00, Q904.** OK. ' + tail)}).status, 1, tail);
