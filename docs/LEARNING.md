@@ -806,6 +806,19 @@ one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`), 
 the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
 tops out at 95%. On only once the sheet replays the species units (`sync.js` `SPECIES_SHEET`, rule D4).
 
+### Species by their scientific names (step 2)
+
+The fish and the sea slugs (`core.js` `SUBJECTS` `names`; docs/reviews/2026-11-18-species-step2-plan.md): one unit per
+species by its scientific name (`sci:s091`), a tree of its own beside the common names' (Pierre, 2026-11-18: "2 arbres
+pédagogiques indépendants"). It hangs from its genus (Q397): for each genus in play at Advanced, its species met and the
+next one in the genus's order open (`app.js` `sciPlay`), within the rank share at the genus level; a genus out of play
+brings none, their bars kept (Q402 A). A species never answered starts from its genus's ability; no exam yet (`noex`, Q395
+comes later). A question's choices and typed names stay among the scientific names (`app.js` `kindRank`). The display
+schedule on the unit's own bar: the common name under each scientific name below Open Water, the share of scientific
+names alone rising from 0 to 1 up to Advanced, then alone; typed, the usual typed share (`app.js` `sciShow`; starting
+values). Typed, the species' own common name or its genus alone is a smaller fault (Q394 A: `app.js` `sciPart`, `core.js`
+`PART`), never a gain. On only once the sheet replays them (`sync.js` `SCI_SHEET`, rule D4), both subjects.
+
 ### The rank share
 
 A unit that hangs from another (its record's `parent`: a fish genus or species from its family) may open and be asked,
@@ -846,8 +859,10 @@ own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the co
 ### Fish achievements, around the global score
 
 Learning milestones only, never time (rule L8), in each subject's own list (`core.js` `FISH_ACH`, `SEASLUG_ACH`; the
-corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 60%,
-the scientific genera, the species named by their common names. Only those that rest on learned marks (`core.js`
+corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 70%,
+the scientific genera, the species named by their common names, and by their scientific names (fspsci1 "Binomial";
+fboth25 "Bilingual", 25 species by both names; fdauin20 "Local legend", Dauin's top 20 of circle 1, Q261; at Advanced,
+Q262). Still to come: fpct100 (with the ultimate exam, Q395) and fbasics. Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
 their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 
