@@ -1,4 +1,5 @@
 require('./slot.js').testGuard();
+// @slow: the Analyses models fitted on synthetic fish logs with a rank effect planted
 // The rank asked in the Analyses' models (a rank effect in the models, not one report per rank): a fish question asks a family, a scientific genus or a species unit. On a synthetic
 // fish log with a rank effect planted (analysis.js synth rk), the models give it back; on the corals (one rank) nothing
 // changes.
