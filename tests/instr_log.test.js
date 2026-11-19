@@ -168,7 +168,8 @@ test('--report: per session and agent, what loaded and why; an empty log says th
   assert.match(out, /^ {2}main agent: 2 files loaded$/m);
   assert.match(out, / CLAUDE\.md \(session_start; [0-9a-f]{12}\)$/m);
   assert.match(out, / AGENTS\.md \(include; Core v1: what every agent holds in every task; [0-9a-f]{12}\)$/m);
-  assert.match(out, /^ {2}general-purpose agent-x1 \(SubagentStart given\): 1 file loaded$/m);
+  // A subagent's startup CLAUDE.md and imports fire no InstructionsLoaded (Claude Code 2.1.327): the line says so.
+  assert.match(out, /^ {2}general-purpose agent-x1 \(SubagentStart given\): 1 file loaded \(lazy loads only: .*not logged\)$/m);
   assert.match(out, /docs\/rules\/sheet\.md \(path_glob_match; on worktree w2: tools\/sync\/Code\.gs; globs \*\*\/tools\/sync\/\*\*\)$/m);
   assert.match(run(d, '--report', '--since', '2999-01-01T00:00:00'), /No record since then/);
 });
@@ -209,8 +210,9 @@ test(".claude/settings.json runs main's copy of the log on InstructionsLoaded, S
   for (const ev of ['InstructionsLoaded', 'SessionStart', 'SubagentStart']) {
     const cmd = (hooks[ev] || []).flatMap(h => h.hooks.map(x => x.command)).find(c => c.includes('tools/instr_log.py'));
     assert.ok(cmd, ev + ' runs tools/instr_log.py');
-    assert.match(cmd, /python3 -I -c "\$\(git show origin\/main:tools\/instr_log\.py 2>\/dev\/null\)"/, ev);
-    assert.match(cmd, /\|\| true$/, ev + ': never fails the session');
+    // Without origin/main the hook fetches it, or fails visibly: tests/hooks.test.js.
+    assert.match(cmd, /F=tools\/instr_log\.py; .*git show "origin\/main:\$F".*python3 -I -c "\$S"/, ev);
+    assert.ok(!/exit 2/.test(cmd), ev + ': never blocks the session');
   }
   const start = hooks.SessionStart.flatMap(h => h.hooks.map(x => x.command)).find(c => c.includes('instr_log'));
   assert.match(start, />\/dev\/null 2>&1/, "SessionStart's output would go into the session's context");

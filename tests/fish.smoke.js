@@ -1980,8 +1980,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const spq = await q.evaluate(() => {
       const t = SHOWNQ[1],
         f = ((SHOWNQ[4] || {}).shown || [])[0],
-        // a held-out photo too (model.js examSet: an exam question on one)
-        p = [...GX(t).views.wide, ...(GX(t).held || [])].find(x => f && x.f === f.f) || {},
+        // a reserved photo too (model.js examSet: an exam question on one; core.js heldOf)
+        p = [...GX(t).views.wide, ...heldOf(GX(t))].find(x => f && x.f === f.f) || {},
         s = TREEU.sps[p.sp] || {};
       return {
         sci: s.name || '',

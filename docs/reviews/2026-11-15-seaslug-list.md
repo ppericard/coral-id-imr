@@ -131,7 +131,7 @@ same way, that evening: §8.
     parva*; "leaf sheep", "sea sheep", "leaf slug" → *Costasiella kuroshimae*; "Pikachu" (title "Pikachu nudibranch")
     → *Thecacera pacifica*, and *T. pikachu* with it (Pierre, 2026-11-19, Q417: divers use it for more than one species;
     the source's `also`, [decision](../decisions/2026-11-19-pikachu-nickname.md)). *T. picta*, which local divers also
-    call Pikachu, is mentioned in the names with a note, never counted; a "Pikachu" with no species written would be
+    call Pikachu, is cited in the names as a cousin of the species called Pikachu, never counted; a "Pikachu" with no species written would be
     the genus *Thecacera*'s, which this species-level list does not count (no page is in that case), see the
     [literature scan](2026-11-17-seaslug-literature-scan.md) §6; "black-margined nudibranch" → *Doriprismatica atromarginata*.
   - Three nicknames are **not counted**, and are questions instead (§6): "Spanish dancer" (either *Hexabranchus*),

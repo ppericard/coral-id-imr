@@ -150,7 +150,8 @@ test("the session hooks run main's tools/brief.py, never the checked-out copy", 
     ['SessionStart', '--short'],
     ['UserPromptSubmit', '--time']
   ]) {
-    assert.match(cmd(ev), new RegExp('git show origin/main:tools/brief\\.py 2>/dev/null \\| python3 -I - ' + flag), ev);
+    // Without origin/main the hook fetches it, or says so with the Manila time: tests/hooks.test.js.
+    assert.match(cmd(ev), new RegExp('F=tools/brief\\.py; .*git show "origin/main:\\$F".*\\| python3 -I - ' + flag), ev);
     assert.ok(!/python3 [^|]*tools\/brief\.py/.test(cmd(ev)), ev + ' runs the checked-out tools/brief.py');
   }
 });
@@ -623,6 +624,7 @@ const DOC_BUDGET = {
   'docs/spec/basics.md': [14, 130],
   'docs/spec/front-end.md': [21, 130],
   'docs/spec/model.md': [23, 130],
+  'docs/spec/reserve.md': [5, 130],
   'docs/spec/quiz.md': [20, 130],
   'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
