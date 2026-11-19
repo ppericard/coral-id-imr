@@ -5,6 +5,7 @@ written by `tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |
 | 2026-11-18 | [Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits](2026-11-18-architecture-steps-3-4.md) | #1146 |
 | 2026-11-18 | [The coral calibration set: 50 photos drawn a little more often until each has 20 answers](2026-11-18-coral-calibration-set.md) | #1130 |
 | 2026-11-18 | [Decisions from the admin's code comments: kept here when the comments were cleaned](2026-11-18-decisions-from-admin-comments.md) | #1132 |
