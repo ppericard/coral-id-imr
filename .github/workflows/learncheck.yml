@@ -137,9 +137,19 @@ jobs:
             n=$([ "$w" = app ] && echo "$QUESTIONS" || echo "$ANSWERS")
             for side in before after; do
               echo "::group::$w world, $side"
+              # The budget is also enforced from outside the compared checkout: an older `before` ignores --budget. `timeout`
+              # (the budget and two minutes) ends the arm; exit 124 marks it cut, with no runs, so learncmp reports it.
+              rc=0
               # shellcheck disable=SC2086 # ARGS: several options, checked above
-              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
-                --seeds "$SEEDS" --questions "$n" --workers 4 --budget "$budget" ${PIERRE_GO:+--pierre-go "$PIERRE_GO"} $ARGS --out "$out/$w-$side.json")
+              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" timeout "$((budget * 60 + 120))" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
+                --seeds "$SEEDS" --questions "$n" --workers 4 --budget "$budget" ${PIERRE_GO:+--pierre-go "$PIERRE_GO"} $ARGS --out "$out/$w-$side.json") || rc=$?
+              if [ "$rc" -eq 124 ]; then
+                echo "::warning::$w world, $side: stopped by the ${budget}-minute budget (timeout); no runs kept"
+                printf '{"subject":"%s","seeds":%s,"runs":[],"cut":{"cut":true,"budgetMin":%s,"elapsedMin":%s,"planned":0,"done":0}}\n' \
+                  "$SUBJECT" "$SEEDS" "$budget" "$budget" > "$out/$w-$side.json"
+              elif [ "$rc" -ne 0 ]; then
+                exit "$rc"
+              fi
               echo "::endgroup::"
             done
           done

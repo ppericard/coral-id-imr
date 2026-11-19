@@ -284,6 +284,53 @@ test(
   }
 );
 
+test('a calibration that overruns the budget leaves a result marked cut, and a budget under the floor needs --per-job', async () => {
+  assert.strictEqual(CB.CALIBRATION_FLOOR_MIN, 1);
+  if (hasPlaywright) {
+    const r = tool(['--world', 'rated', '--budget', '0.5']);
+    assert.strictEqual(r.status, 2);
+    assert.match(r.stderr, /calibration run alone could overrun it; give --per-job/);
+  }
+  // The rated world, its clock already past the budget when the calibration (the one job) ends: the job is kept, nothing
+  // else runs, and the file says cut.
+  const R = require('../tools/ratedworld.js'),
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'checkbudget-cal-')),
+    out = path.join(dir, 'o.json'),
+    log = console.log,
+    err = console.error;
+  console.log = console.error = () => {};
+  try {
+    await R.main({
+      budget: new CB.Budget(1, {
+        now: (
+          t => () =>
+            (t += 61000)
+        )(0)
+      }),
+      subject: 'fish',
+      profiles: ['beginner'],
+      seeds: 1,
+      seed0: 0,
+      N: 50,
+      workers: 1,
+      dist: 'normal',
+      app: 'truth',
+      learner: 'count',
+      beyond: '',
+      out,
+      commit: null
+    });
+  } finally {
+    console.log = log;
+    console.error = err;
+  }
+  const f = JSON.parse(fs.readFileSync(out, 'utf8'));
+  assert.strictEqual(f.cut.cut, true);
+  assert.strictEqual(f.cut.planned, 1);
+  assert.strictEqual(f.runs.length, 1);
+  fs.rmSync(dir, {recursive: true});
+});
+
 test(
   'the rated world refuses a plan over the budget before it runs, and a cut leaves its mark in --out',
   {skip: !hasPlaywright && 'playwright is not installed'},

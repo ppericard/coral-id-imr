@@ -210,6 +210,12 @@ test('a file cut by the budget is marked in the report (rule L11, tools/checkbud
   assert.deepStrictEqual(R.cut, [{side: 'after', ...cut}]);
   assert.match(text, /\*\*CUT \(after\): the run stopped at its 40-minute budget with 14 of 20 runs\.\*\*/);
   assert.deepStrictEqual(L.compare(before, after).cut, []);
+  // an arm stopped with no run at all (the workflow's timeout): reported, and a declared primary is not read
+  const none = {subject: 'fish', runs: [], cut: {...cut, planned: 0, done: 0}},
+    N = L.compare(none, none, {primary: {at: ['hard', 300], dir: 'down'}});
+  assert.strictEqual(N.pairs, 0);
+  assert.strictEqual(N.primary, null);
+  assert.strictEqual(N.cut.length, 2);
   assert.doesNotMatch(L.report(L.compare(before, after)), /CUT/);
 });
 

@@ -1646,6 +1646,10 @@ function openTable(runs) {
     console.error(refusal);
     process.exit(2);
   }
+  if (PERJOB === null && BUDGET_MIN < CB.CALIBRATION_FLOOR_MIN) {
+    console.error(`--budget ${BUDGET_MIN}: under ${CB.CALIBRATION_FLOOR_MIN} minute, the calibration run alone could overrun it; give --per-job SEC (a job's measured time) or a larger budget.`);
+    process.exit(2);
+  }
   // A measured --per-job needs no calibration run: a plan over the budget is refused here, before the slot's queue.
   if (PERJOB !== null) {
     const perSeed = WORLD === 'rated' && APPK === 'sheet' ? 1 : NAMES.length, // the sheet's population: one job a seed
@@ -1690,6 +1694,7 @@ function openTable(runs) {
     perJob = CB.scaled(sec, n0, QN);
     source = `calibration: ${first.join(' seed ')}, ${n0} questions in ${sec.toFixed(1)} s`;
     if (n0 === QN) (runs.push(r0), jobs.shift());
+    if (budget.expired()) (budget.cut = true), (jobs.length = 0); // the calibration itself overran: nothing more runs, marked cut
   }
   const pl = CB.plan({budget, jobs: jobs.length, workers: WORKERS, perJobSec: perJob, P: NAMES.length, S: SEEDS, N: QN, source});
   console.error(pl.text);

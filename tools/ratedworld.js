@@ -911,6 +911,9 @@ async function main(o) {
     perJob = CB.scaled(sec, n0, o.N);
     source = `calibration: ${n0} answers in ${sec.toFixed(1)} s`;
     if (n0 === o.N) (take(r0), jobs.shift(), reused++);
+    // The calibration is synchronous and cannot be interrupted: when it overran the budget, nothing more runs and the
+    // result is marked cut (learnsim refuses a calibrated budget under CB.CALIBRATION_FLOOR_MIN to make it rare).
+    if (budget.expired()) (budget.cut = true), (jobs.length = 0);
   }
   const pl = CB.plan({budget, jobs: jobs.length, workers: o.workers, perJobSec: perJob, P: o.profiles.length, S: o.seeds, N: o.N, perSeed: pop ? 1 : o.profiles.length, lengthFlag: 'questions', source});
   console.error(pl.text);

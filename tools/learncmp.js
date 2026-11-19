@@ -368,6 +368,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
     prim = {m, cp, dir: primary.dir, label: M.label, alpha, pop: true, n: P.length, T, p: sf.p, exact: sf.exact, draws: sf.draws, way: d.filter(x => dir * x > 0).length, clear: sf.p <= alpha && dir * T > 0, ...paired(P.map(x => x.b), P.map(x => x.a), -dir, conf), per: []};
     primary = null;
   }
+  if (primary && !keys.length && (A.cut || B.cut)) primary = null; // an arm cut with no run (the budget): the report says so, no primary to read
   if (primary) {
     const [m, cp] = primary.at,
       dir = primary.dir === 'up' ? 1 : -1,

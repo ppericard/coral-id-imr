@@ -17,6 +17,10 @@ const MAX_MIN = 40;
 // reaches genera, species or the score's shape. Above either, the check is level 3.
 const LEVEL2 = {seeds: 20, answers: 10000};
 
+// The calibration run cannot be stopped once begun (a few seconds to a minute on a loaded machine): a budget under this
+// needs --per-job, so the calibration alone cannot overrun it.
+const CALIBRATION_FLOOR_MIN = 1;
+
 // --budget MIN: minutes of compute, more than 0 and at most MAX_MIN; absent, MAX_MIN.
 function parseBudget(v) {
   if (v === undefined || v === null) return MAX_MIN;
@@ -168,4 +172,4 @@ function level3Gate({reason, go, runner, subject, world, seeds, N}) {
   return null;
 }
 
-module.exports = {MAX_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, fitOptions, plan, runPool, cutInfo, cutBanner, level3Reason, level3Gate, dispatchCommand};
+module.exports = {MAX_MIN, CALIBRATION_FLOOR_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, fitOptions, plan, runPool, cutInfo, cutBanner, level3Reason, level3Gate, dispatchCommand};

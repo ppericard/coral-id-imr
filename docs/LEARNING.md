@@ -1195,6 +1195,10 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   seeds, a shorter run, fewer profiles. The estimate is a straight line, so it can under-estimate a long run (measured on
   a loaded 4-core machine, rated fish: 1,000 answers 11 s, 3,000 answers 56 s; corals 4 s and 13 s): the stop below is
   the cap, the estimate only spares a run that would be cut.
+- **The calibration cannot be stopped once begun**, so a budget under 1 minute needs `--per-job`; if the calibration
+  still ends past the budget, nothing more runs and the result is marked cut. In the workflow, `timeout` also ends each
+  arm at its budget plus 2 minutes (a `before` older than this change ignores `--budget`): the arm is then cut with no
+  runs, and `learncmp` says so.
 - **Stop cleanly.** At the budget the run stops sending jobs, ends the ones in flight (closes the browser, ends the
   threads) and prints and writes what it has, **marked cut**: a banner in the printout, `cut` and `budgetMin` in `--out`
   (`planned`, `done`, `elapsedMin`). Jobs go seed by seed, so a cut leaves whole seeds first. `tools/learncmp.js` repeats
