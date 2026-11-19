@@ -222,10 +222,11 @@ test('a live answer on a unit not opened: it counts and stays closed until its c
     M = model({P});
   M.introAdd(['A', 'B'], true); // the first cards
   M.ctx.n = 10;
-  // Live answers on E (never met): marked 'l', then scored into its record (here: its counts, as the scorer leaves them).
+  // Live answers on E (never met): the closed mark 'b' with no time, then scored into its record (here: its counts, as
+  // the scorer leaves them).
   M.introLive('E');
   P.E = {ok: 2, ko: 1};
-  assert.strictEqual(M.introMap().E[3], 'l');
+  assert.deepStrictEqual([...M.introMap().E], [10, 0, 0, 'b']);
   assert.ok(M.closed('E') && !M.introduced('E') && !M.introReady('E'));
   assert.ok(!M.unlocked(['A', 'B', 'C', 'D', 'E', 'F']).includes('E'), 'not in unlocked(): no other game draws it');
   assert.ok(M.introLeft().includes('E'), 'still among the units the path opens, one at a time');
@@ -234,9 +235,9 @@ test('a live answer on a unit not opened: it counts and stays closed until its c
   P.E = {ok: 5, ko: 1, th: 0.4};
   assert.ok(!M.introReady('E') && !M.unlocked(['E']).length);
   // Another live answer: no new mark; a unit already met or closed again by "One at a time" is never marked.
-  const t = M.introMap().E[2];
+  M.ctx.n = 12;
   M.introLive('E');
-  assert.strictEqual(M.introMap().E[2], t);
+  assert.strictEqual(M.introMap().E[0], 10);
   M.introLive('A');
   assert.strictEqual(M.introMap().A[3], 's');
   // Its card on the path: open and ready with the answers it had.
@@ -251,7 +252,7 @@ test('synced: a live mark never closes a unit opened on another device; any open
     B = model();
   A.introAdd(['A'], true);
   B.introAdd(['A'], true);
-  // B answered C in a live game (mark 'l'); A had shown C's card earlier: A keeps it open, B opens it.
+  // B answered C in a live game (the closed mark with no time); A had shown C's card earlier: A keeps it open, B opens it.
   A.introAdd(['C'], false);
   B.introLive('C');
   A.introMerge(JSON.stringify(B.introMap()), null);
@@ -265,6 +266,10 @@ test('synced: a live mark never closes a unit opened on another device; any open
   // A mark from a device that never met D closes D here too, until a card opens it.
   B.introLive('D');
   A.introMerge(JSON.stringify(B.introMap()), null);
-  assert.deepStrictEqual([A.introMap().D[1], A.introMap().D[3]], [0, 'l']);
+  assert.deepStrictEqual([A.introMap().D[1], A.introMap().D[2], A.introMap().D[3]], [0, 0, 'b']);
   assert.ok(A.closed('D') && !A.introduced('D'));
+  // One at a time's own closing (a timed 'b') still closes what it closes: the open-all units of a device (tests above).
+  // And Open all on this device opens D with the rest.
+  A.introAll('progress');
+  assert.ok(A.introduced('D') && A.introMap().D[3] === 'a');
 });
