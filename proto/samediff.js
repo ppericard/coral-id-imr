@@ -23,12 +23,11 @@ function sdPlan(units, pairs, apart, rnd = Math.random) {
 // observation `not`. The same view on both sides (a colony beside a close-up would give the answer away), and for Same a
 // second observation (rule P4: a one-photo question shows one observation, a multi-photo format different ones). Null when a
 // side has no photo to match, so the caller draws another plan.
-const sdKey = p => p.o || p.f;
 function sdPhotos(plan, photo) {
   const [a, b] = plan.units,
     p = photo(a, null);
   if (!p) return null;
-  const q = plan.same ? photo(a, {view: p.sdv, not: sdKey(p)}) : photo(b, {view: p.sdv});
+  const q = plan.same ? photo(a, {view: p.sdv, not: labObs(p)}) : photo(b, {view: p.sdv});
   return q ? [p, q] : null;
 }
 
@@ -42,21 +41,8 @@ LAB.add({
     return `Two photos: do they show the same ${SUBJ.one}, or two look-alike ${SUBJ.many}? Tap Same or Different, then see which is which. Untimed; nothing here counts toward your progress.`;
   },
   render(root) {
-    // The view a photo of unit n is in (the draw's views), '' when the game has none of it.
-    const view = (n, q) => ['wide', 'medium', 'macro'].find(v => gamePics(n, v).some(x => x.f === q.f)) || '';
-    // The last few photos shown, so Next never brings one back while another can be drawn.
-    const recent = [];
-    // A photo of unit n by the draw's own choice (photoSet: the photo the player's level aims for, as a duel's); of what it
-    // shows, the closest view (a close-up for a coral, the one photo of a fish). want narrows it (sdPhotos).
-    const photo = (n, want) => {
-      const fits = q => !want || ((!want.view || view(n, q) === want.view) && (!want.not || sdKey(q) !== want.not));
-      for (const keep of [q => fits(q) && !recent.includes(sdKey(q)), fits]) {
-        const s = photoSet(n, null, 0, 2, 'compare', keep).shown,
-          p = s[s.length - 1];
-        if (p) return {...p, sdv: view(n, p)};
-      }
-      return null;
-    };
+    // The photo source of the Lab's photo games (lab.js labShots): the draw's own choice, the last few shown left out.
+    const {photo, seen} = labShots();
     const round = () => {
       const units = unlocked(),
         pairs = UNITS[SUBJ.id].pairs();
@@ -74,7 +60,7 @@ LAB.add({
         root.innerHTML = `<p class="note">This game compares look-alike ${esc(SUBJ.many)} you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
         return;
       }
-      R.ph.forEach(p => (recent.push(sdKey(p)), recent.length > 8 && recent.shift()));
+      seen(R.ph);
       const unit = R.units.map(n => GX(n)),
         of = R.same ? [R.units[0], R.units[0]] : R.units,
         one = (unit[0] || {}).one || SUBJ.one;
@@ -119,35 +105,17 @@ LAB.add({
         // The verdict, then the one decisive line (rule C3, quiz.js fbLine: the pair's own line, else the first ID tip, with
         // its source); the ID tips of the unit or units and the credits behind More.
         const [a, b] = R.units,
-          said2 = R.same ? `the same ${esc(one)}: ${uname(a)}` : `${uname(a)} and ${uname(b)}`,
-          more = R.units
-            .map(n => {
-              const g = GX(n);
-              return g.qt || g.sum
-                ? `<div class="tipbox fbtips"><p class="label">${uname(n)} · ${tipsLabel(g)}</p>${tipsList(g, 'imrfb')}</div>`
-                : '';
-            })
-            .join(''),
-          files = R.ph.map(p => p.f).filter(Boolean);
-        q.classList.add('done');
-        q.querySelector('#after').innerHTML = `<div class="fb fbs">
-          <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '✓ Yes' : '✗ No'},</span> ${R.same ? '' : 'different: '}${said2}</h3>${fbLine(a, R.same ? a : b, R.same, [])}
-          <div class="fbmore" id="fbmore" hidden>${more}<p class="credit">${R.ph.map(credit).join('<br>')}</p>${repBtn({g: a, a: '', ph: files, m: 'samediff'})}</div>
-        </div>
-        <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
-        const mb = q.querySelector('#fbmbtn'),
-          mp = q.querySelector('#fbmore');
-        mb.onclick = () => {
-          mp.hidden = !mp.hidden;
-          mb.setAttribute('aria-expanded', String(!mp.hidden));
-          mb.textContent = mp.hidden ? 'More' : 'Less';
-          if (isStacked()) fit();
-        };
-        const nb = q.querySelector('#next');
-        nb.onclick = draw;
-        nb.focus({preventScroll: true});
-        if (isStacked()) window.scrollTo(0, 0);
-        fit();
+          said2 = R.same ? `the same ${esc(one)}: ${uname(a)}` : `${uname(a)} and ${uname(b)}`;
+        labSheet(q, {
+          good,
+          head: `${R.same ? '' : 'different: '}${said2}`,
+          line: fbLine(a, R.same ? a : b, R.same, []),
+          more: labTips(R.units),
+          photos: R.ph,
+          rep: {g: a, a: '', ph: R.ph.map(p => p.f).filter(Boolean), m: 'samediff'},
+          next: draw,
+          fit
+        });
       };
       q.querySelectorAll('[data-sd]').forEach(b => (b.onclick = () => go(b.dataset.sd)));
       q.querySelector('.qstage').onclick = e => {

@@ -2,8 +2,8 @@ require('./slot.js').testGuard();
 // The fish genera's own presentation and ID marks (each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card
-// (app.js treeGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; the IMR cues stay
-// apart (rule C1).
+// (app.js treeGenera) and the sheet the genus opens (learn.js genMarks). Every new line has a source; a genus with IMR
+// cues may take marks too, shown on its sheet under its IMR cues as a family's are, never in their place (rule C1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -20,9 +20,10 @@ const F = json('fish.json'),
   LEARN = src('learn.js');
 const FG = Object.fromEntries(F.genera.map(g => [g.name, g])),
   SP = Object.fromEntries(F.species.map(s => [s.id, s]));
-// The public sources the task allows (FishBase, Fishes of Australia, WoRMS, FAO's species identification guides, a
-// peer-reviewed revision by its DOI), each by https.
-const HOSTS = /^https:\/\/(www\.fishbase\.se|fishbase\.se|fishesofaustralia\.net\.au|www\.marinespecies\.org|www\.fao\.org|doi\.org)\//;
+// The public sources the task allows (FishBase, Fishes of Australia, Reef Life Survey, WoRMS, FAO's species
+// identification guides and catalogues, a peer-reviewed revision by its DOI), each by https.
+const HOSTS =
+  /^https:\/\/(www\.fishbase\.se|fishbase\.se|fishesofaustralia\.net\.au|reeflifesurvey\.com|www\.marinespecies\.org|www\.fao\.org|doi\.org)\//;
 
 test('every line of tools/fish_genus_marks.json has a source: plain and each mark, each ref a src key and where in it', () => {
   for (const [k, s] of Object.entries(M.src)) {
@@ -67,7 +68,7 @@ test('built into fish.json as written: plain, marks, and each line pointing at i
     if (!M.genera[r.name]) for (const k of ['plain', 'marks', 'msrc', 'mby']) assert.ok(!(k in r), `${r.name}: ${k}`);
 });
 
-test('every genus in play, any circle, has IMR cues or a presentation and its marks or a reason; never marks beside IMR cues', () => {
+test('every genus in play, any circle, has IMR cues or a presentation and its marks or a reason; an IMR genus marks at most', () => {
   // In play: every family but the surprise cards' (wink); circles 2 and 3 too (the content comes first,
   // before their genera open as units).
   const play = F.families.filter(f => !f.wink);
@@ -127,8 +128,52 @@ test('the build stops on a genus in play of any circle without its presentation,
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /genus Aulostomus of a family in play has no presentation/);
   assert.strictEqual(FG.Aulostomus.circle, 2);
-  for (const g of F.genera) assert.ok(!((g.cues || []).length && (g.marks || g.plain)), `${g.name}: IMR cues and our marks together`);
+  // A genus with IMR cues: marks only (its cues present it), never a presentation nor a reason in none.
+  for (const g of F.genera.filter(g => (g.cues || []).length)) {
+    assert.ok(!g.plain && !M.none[g.name], `${g.name}: IMR cues with a presentation or a reason`);
+    if (M.genera[g.name]) assert.ok(g.marks.length, g.name);
+  }
   for (const [g, why] of Object.entries(M.none)) assert.ok(FG[g] && typeof why === 'string' && why.trim(), g);
+});
+
+test('the build takes marks on a genus with IMR cues, and refuses a presentation, a reason or a count there', () => {
+  const {spawnSync} = require('child_process'),
+    os = require('os');
+  const run = m => {
+    const tmp = path.join(os.tmpdir(), `genusmarks.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(m));
+    try {
+      const r = spawnSync('python3', [path.join(ROOT, 'tools/build_fish.py'), '--regroup', '--check', '--marks', tmp], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      });
+      return {status: r.status, out: r.stdout + r.stderr};
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  };
+  // The real file holds marks for genera with IMR cues, and passes (the test above runs it as it is).
+  const imr = Object.keys(M.genera).filter(g => (FG[g].cues || []).length);
+  assert.ok(imr.includes('Naso') && imr.length >= 3, imr.join());
+  const fsrc = M.genera.Chaetodon.plain[1];
+  const bad = (edit, re) => {
+    const m = JSON.parse(JSON.stringify(M));
+    edit(m);
+    const r = run(m);
+    assert.notStrictEqual(r.status, 0, String(re));
+    assert.match(r.out, re);
+  };
+  // a presentation beside its IMR cues, or a presentation alone
+  bad(m => (m.genera.Naso.plain = ['Unicornfishes of reef slopes.', fsrc]), /Naso: has IMR cues: marks only/);
+  bad(m => (m.genera.Chromis = {plain: ['Plankton-feeding damselfishes.', fsrc]}), /Chromis: has IMR cues: marks only/);
+  // a reason in none
+  bad(m => (m.none.Chromis = 'no mark seen on a photo'), /none Chromis: a reason, and never for a genus with IMR cues/);
+  // the other checks hold for it as for any genus: a count, a line too long, a line without a source, a species not its own
+  bad(m => (m.genera.Naso.marks[0][0] = '2 keeled plates on the tail base'), /a count is never a photo cue/);
+  bad(m => (m.genera.Naso.marks[0][0] = 'A very long line '.repeat(6).trim()), /a line of at most 80 characters/);
+  bad(m => (m.genera.Naso.marks[0][1] = []), /has no source/);
+  bad(m => (m.genera.Naso.marks[1][0] = 'A horn on the forehead (N. tergus)'), /'N\. tergus' is not one of its game species/);
+  bad(m => m.genera.Naso.marks.push(...m.genera.Naso.marks), /at most 3 marks/);
 });
 
 test('a tip is short and seen on a photo; a species named is one of its own game species, found in the Philippines (C3, C6)', () => {
@@ -197,6 +242,11 @@ test('the genus card: its marks under a label naming their sources, its presenta
   assert.strictEqual(b.qt, null);
   assert.ok(b.plain && /^Its species here/.test(b.tl));
   assert.strictEqual(X.gen['g:Chromis'].tl.startsWith('ID tips (IMR, Chromis'), true);
+  // A genus with IMR cues and our marks (Naso) keeps its IMR cues as its tips, as a family with IMR cues does: the
+  // marks show on its sheet, under them.
+  assert.ok(FG.Naso.cues.length && FG.Naso.marks.length);
+  assert.deepStrictEqual([...X.gen['g:Naso'].qt], FG.Naso.cues);
+  assert.match(X.gen['g:Naso'].tl, /^ID tips \(IMR, Unicornfish/);
 });
 
 test('the sheet: genMarks on the one sheet the genus opens, each line with its source numbers', () => {
@@ -242,7 +292,13 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   assert.ok(e.includes('Source: Made-up source') && !e.includes('Sources:'));
   // A one-species genus: on its species' sheet (Gomphosus varius).
   assert.ok(c2.genMarks(FG.Gomphosus, 's:Gomphosus varius').includes(FG.Gomphosus.marks[0]));
-  assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus: its IMR cues only');
+  assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus without marks: its IMR cues only');
+  // An IMR genus with marks (Naso): its marks with their FAO sources, never labelled IMR's; its page prints the IMR
+  // cues' box first, then them.
+  const n = c2.genMarks(FG.Naso, 'g:Naso');
+  assert.ok(FG.Naso.marks.every(m => n.includes(m)) && n.includes('y0870e29.pdf') && !/IMR/.test(n));
+  const tg = block(LEARN, 'function treeGenus(g) {', '\n}\n');
+  assert.ok(tg.indexOf('ID tips (IMR') < tg.indexOf('${genMarks(g, g.id)}'), 'the IMR cues first, then the marks');
   for (const [fn, at] of [
     ['function treeGenus(g) {', '${genMarks(g, g.id)}'],
     ['function fishSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],

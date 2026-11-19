@@ -45,7 +45,11 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
   otherwise), `suggest.json` (re-import the PR's species over `main`'s file), the decisions index
-  (`python3 tools/decisions_index.py --fix`).
+  (`python3 tools/decisions_index.py --fix`; it also deletes the retired OLDER.md of the split index, which a branch may carry).
+- **A doc past its size mark** (`MARK` in the docs test, the brief's last line) is a warning, never a block: read the
+  doc against rule W19 (history, versions and duplicates out); if all of it belongs there, raise its mark in
+  `tests/docs.test.js` in the same PR. Never move content out of its doc to fit a number
+  ([decision](decisions/2026-11-19-doc-size-marks.md)).
 - **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).
 - **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: the waiter's own command
@@ -117,7 +121,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   ordinary code (a test fix, docs, bringing a PR up to date), the lightest one only for mechanical work that passed
   the sample test (data fetches, conversions); the strongest model for anything judged (learning, content, design,
   reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
-  resolution, one species) before looking, and judge the species under target first.
+  resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
+  in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
+- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
+  runs out, take the next decided ROADMAP rows the agents can move alone; never invent a study to fill the time.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
 - **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.

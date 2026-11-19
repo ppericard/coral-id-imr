@@ -1231,9 +1231,84 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
   tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
   bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
+- **15:40, fish genus marks beside IMR cues.** On the rule keeping our sourced marks away from a genus with IMR cues:
+  «Mouais bof». Decides (integrator's call): the genera IMR describes take our sourced marks under its cues, as the
+  families. Applied: spec/fish-sheets.md "Genus presentation and ID marks", decisions/2026-11-19-genus-marks-beside-imr-cues.md (#1231).
 - **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
   juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
   with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
+- **20:40, model and effort combinations.** «C'est pas forcément un écart à la règle de mettre Opus Medium sur des
+  tâches. C'est toi en fait qui s'est mis toute seule hein, la règle. Moi j'ai jamais dit que Opus c'était forcément en
+  high. [...] Il y a clairement d'autres combinaisons possibles. Il faut voir ce que Anthropic recommande». Applied:
+  docs/reviews/2026-11-19-model-effort-combinations.md (a study: a replacement for INTEGRATOR's table, for the
+  integrator; the AGENTS.md bullet's new wording, for Pierre's OK).
+- **20:34, Q437 (open Compare, pairs, the custom quiz and the duel to fish and sea slugs, in shared code).** «évidemment
+  oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est du code
+  commun». Every game mode opens to every subject, in shared code. Applied: the modes PR(s).
+- **20:34, Q438 (about 694 fish candidates the auto-sort rejected as `k`, confusion possible: a route back when a newer
+  judgement saves one by a crop, like any auto-sort proposal, undoable).** «OK pour ta recommandation». Applied: the
+  route-back PR.
+- **20:34, the doc size limits.** «Alors tu parles d'alléger la roadmap, en l'occurrence la roadmap, il faut augmenter
+  sa taille limite hein, s'il y a besoin. La roadmap, elle peut très bien devenir très longue. Ça serait dommage, enfin
+  en tout cas il ne faut pas que les infos qui sont censées dans la roadmap soient ailleurs. Ça n'est pas une bonne
+  réaction que de déplacer de l'historique vers les fiches de décision pour pouvoir recharger la roadmap. Là pour le
+  coup je suis pas d'accord, c'est pas la bonne stratégie. La roadmap elle n'a pas forcément de raison d'avoir une
+  taille limite si elle est bien tenue et que ça se retrouve pas, elle se retrouve pas avec un historique, avec des
+  versions, avec à l'intérieur. Si elle est bien tenue, elle n'a pas de raison d'avoir une taille limite. […] De
+  manière générale, les tailles limites, elles ne sont pas là pour être fixées, parce qu'elles ont été fixées de
+  manière complètement arbitraire. Donc, elles ne sont pas là pour empêcher de bien travailler. Elles sont là pour
+  lever des warnings en disant « Attention, on est en train de remplir ces documents-là, est-ce que vraiment on est sûr
+  qu'on veut les remplir ?» Et si vraiment on est sûr qu'on veut les remplir et qu'on les remplit proprement et qu'on
+  fait un job qui soit propre et qui est cohérent, sans venir juste remplir avec des trucs qui n'ont rien à faire
+  dedans, alors il faut augmenter les limites. Donc là, typiquement, à nouveau, l'index des décisions qui a dépassé sa
+  taille limite. La question, c'est est-ce que ça méritait de dépasser sa taille limite? Et la taille limite, comment
+  elle a été fixée? Je suis quasiment sûr que la taille limite, elle est fixée de manière purement arbitraire. […] Mais
+  le mécanisme, il a apparu parce qu'il y avait une raison, parce qu'il est venu compenser une faiblesse par ailleurs.
+  Donc il faut essayer de réfléchir à ça, à comprendre, mais en tout cas on ne peut pas juste dire de manière
+  arbitraire, ben, ces fichiers-là, ils ne dépasseront jamais cette taille-là, et puis même si il y a réellement des
+  choses à y mettre dedans, qui sont importantes à mettre dedans.» A doc's size limit is a warning mark, raised when
+  the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
+  `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
+  docs/decisions/2026-11-19-doc-size-marks.md).
+- **20:42-20:43, the night's work.** «t'es pas forcément obligé de tout lancer en parallèle [...] si dans la nuit t'as
+  plus assez de travail, il faut que tu ailles taper dans la roadmap et dans les trucs que tu peux avancer tout seul.
+  sans forcément lancer 30 agents en parallèle à chaque fois.» and «ça sert à rien d'imaginer des études juste pour
+  remplir le temps. [...] Moi, j'ai mon quota à surveiller quand même. Donc, tu fais les tâches qu'on a déterminées
+  ensemble.» A few agents at a time on decided work; then the next decided ROADMAP rows; no filler study. Applied:
+  INTEGRATOR "Working with Pierre" (A night's work).
+- **15:54, Q436 (the one-tap difficulty question for fish and sea slugs).** «Je ne comprends même pas pourquoi ça
+  n'est pas juste une fonctionnalité du moteur et qui marche donc déjà pour toutes les matières... Donc oui bien sur,
+  et il faut mutualiser le code tant que possible». The one-tap question runs for every subject, from the shared
+  engine, its answers kept per subject. Applied: #1226 (`quiz.js` `PULSE` for every subject, paced per subject; the
+  admin's tables read the subject on screen; LEARNING.md "What the players say about the difficulty").
+- **15:55, the coral-only cards.** «ça veut pas dire qu'il ne faut pas garder les templates. On ne sait jamais quand on
+  en aura besoin». The apology card and the recalculation notes are not extended to fish and sea slugs, but the cards
+  stay in the code as templates with no subject by default, tagged only when their text concerns one subject. Applied:
+  #1226 (`progress.js` `RECALC.L`, `sorryNotice` kept as an engine card).
+- **20:50, why his words were not recorded.** «je comprends pas qu'est-ce qui fait que notre système de travail n'a
+  pas permis le fait que tout le travail qu'on a fait ensemble avec l'autre agent ait été correctement enregistré
+  [...] à chaque fois que je dis quelque chose, ben en fait, c'est pas enregistré correctement.» Every answer reaches
+  ROADMAP or a PR, checked by a tool. Applied: #1264 (the recount written into ROADMAP's rows; `tools/answers_check.py`
+  fails an entry that names a ROADMAP item without applying it).
+- **20:55, the admin is slow to open on his phone.** «c'est pas ultra prioritaire, mais [...] la page admin sur mon
+  téléphone met de plus en plus de temps à s'ouvrir. [...] je crois que par défaut ça cherche à s'ouvrir sur activité,
+  mais globalement les pages dans admin, notamment la première fois que je me connecte depuis un moment [...] c'est
+  vraiment très long à charger.» A fix of something plainly broken, low priority. Applied: the admin load PR.
+- **20:57, agent proposals and his curation.** «ce que tu appelles macuration, si ça se trouve, c'est juste moi qui ai
+  cliqué sur un bouton pour valider une proposition [...] si tu penses que macuration entre guillemets n'est pas bonne,
+  [...] il faut que tu fasses une proposition qui intègre directement le jeu. Quitte à ce que je corrige a
+  posteriori.» Applied: with the 20:59 entry, rule A1's new wording, for his OK.
+- **20:57, photos in full size.** «fais attention aux photos, que les photos vues en petite résolution, on peut passer
+  à côté de problèmes, ou de qualité d'ailleurs, et donc effectivement, quand on a le doute, il ne faut pas hésiter à
+  les voir en plus haute résolution.» Applied: INTEGRATOR "The quota in practice"; the re-judge of the juveniles' tag
+  doubts in full size.
+- **20:59, rule A1 protects his own hand decisions.** «la fameuse règle A1, tu veux absolument pas toucher à ma
+  curation. Mais [...] ma curation, c'est pas, si ça se trouve, c'est juste des propositions d'agents IA et j'ai cliqué
+  OK pour tous et du coup tout est passé. Sauf si c'est quelque chose où j'ai fait à la main un par un, c'est pas
+  vraiment ma curation. [...] À vérifier, mais je pense que j'ai fait très peu de curation manuelle et j'ai pas fait
+  100 photos en curation manuelle.» A1 protects the choices he made by hand, one by one; accepted agent proposals can
+  be replaced by a better proposal that goes into the game, which he corrects afterwards. Applied: the counts of hand
+  and accepted curation (the Q438 PR); rule A1's new wording, for his OK.
