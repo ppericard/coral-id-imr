@@ -157,11 +157,15 @@
    "keep": "best"
   },
   "fish-s096-cand-490118737": {
-   "code": "p1g1sm1j2",
-   "keep": "best"
+   "code": "p1g1sl1ja3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "full size: likely aquarium: blue actinic light, particles before the lens, rockwork close behind"
   },
   "fish-s096-cand-303749887": {
-   "code": "o1g1sm1j2",
+   "code": "o1g1sm1j3",
    "keep": "best"
   },
   "fish-s096-cand-303749910": {
@@ -169,23 +173,23 @@
    "keep": "dup"
   },
   "fish-s096-cand-265235302": {
-   "code": "p1g0sm1j2",
+   "code": "p1g0sm1j4",
    "keep": "best"
   },
   "fish-s096-cand-597126992": {
-   "code": "p1g0sl1j2",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s096-cand-597126979": {
-   "code": "p1g0sl1j2",
+   "code": "p1g0mloj3",
    "keep": "alt"
   },
   "fish-s096-cand-740793543": {
-   "code": "p1g0sm1j2",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s096-cand-436396746": {
-   "code": "p1g1sm1j2",
+   "code": "p1g1sm1j3",
    "keep": "best"
   },
   "fish-s096-cand-436396899": {

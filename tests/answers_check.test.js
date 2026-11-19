@@ -114,3 +114,47 @@ test('a ROADMAP or reviews status waiting on an answered question fails; a study
   assert.match(shown.out, /^look +docs\/STATUS\.md:3: Q904 is listed open/m);
   assert.ok(!/Q905 is listed/.test(shown.out), shown.out);
 });
+
+test('from 2026-11-19 21:00, an entry naming a ROADMAP item says the ROADMAP or a PR after "Applied"', () => {
+  const roadmap =
+    '| Item | Source | Status |\n|---|---|---|\n' +
+    '| **Trace IMR lecture photos to their original source** (rule P1): left (d). | Pierre | Next |\n' +
+    '| **Modules** (a split): left. | thread | In progress |\n';
+  const run = (...entries) => check({'docs/ANSWERS.md': ledger(...entries), 'docs/ROADMAP.md': roadmap});
+  const title = 'trace IMR lecture photos to their original source';
+  for (const e of [
+    `- **21:10, Q906.** ${title}: B. Applied: ROADMAP "Trace IMR lecture photos to their original source".`,
+    `- **21:10, Q906.** ${title}: B. Applied: #1130.`,
+    '- **21:10, inventory C12.** A+D. Applied in #1131: the row.',
+    // A rule ID or a short title is not an item: "rule P1", "Modules" in prose.
+    '- **21:10, rule P1.** Modules stay shared. Applied: rules/photos.md P1.',
+    // Before 21:00 on 2026-11-19, or with no time that day, the entry was written before this check.
+    `- **20:45, Q907.** ${title}: B. Applied: STATUS.`,
+    `- **Q908.** ${title}: B. Applied: STATUS.`
+  ])
+    assert.strictEqual(run(e).status, 0, e + '\n' + run(e).out);
+  for (const e of [
+    `- **21:10, Q906.** ${title}: B. Applied: STATUS.`,
+    `- **21:10, Q906.** ${title}: B. Applied: STATUS; ROADMAP (to update).`,
+    '- **21:10, the inventory items C12, L3.** A+D. Applied: STATUS.',
+    `- **21:10, Q906.** ${title}: B, with no place.`
+  ]) {
+    const r = run(e);
+    assert.strictEqual(r.status, 1, e + '\n' + r.out);
+    assert.match(r.out, /names the ROADMAP item "(trace IMR|Trace IMR|inventory C12)/, r.out);
+  }
+  // Every later date is read, with or without a time.
+  const later = check({
+    'docs/ANSWERS.md': ledger() + '\n## 2026-11-20\n\n- **Q909.** Inventory F3: done. Applied: STATUS.\n',
+    'docs/ROADMAP.md': roadmap
+  });
+  assert.strictEqual(later.status, 1, later.out);
+  assert.match(later.out, /2026-11-20 Q909\. Inventory F3.*: names the ROADMAP item "inventory F3"/);
+  // An entry closed later, append-only, by an "Applied in #N" entry naming its question passes.
+  const closed = check({
+    'docs/ANSWERS.md':
+      ledger() + '\n## 2026-11-20\n\n- **09:00, Q999.** Inventory C12: yes.\n- **Applied in #1265:** Q999: ROADMAP updated.\n',
+    'docs/ROADMAP.md': roadmap
+  });
+  assert.strictEqual(closed.status, 0, closed.out);
+});

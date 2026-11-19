@@ -165,12 +165,16 @@
    "keep": "best"
   },
   "fish-s115-cand-378867291": {
-   "code": "p1g0ss1j2",
+   "code": "p1g0ss1j3",
    "keep": "best"
   },
   "fish-s115-cand-339080747": {
-   "code": "p1g0sl1j2",
-   "keep": "best"
+   "code": "p1g0ml1ja3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "full size: likely aquarium: plain grey backdrop, specks on the glass; soft"
   },
   "fish-s115-cand-469602506": {
    "code": "p1g0sl1j5",

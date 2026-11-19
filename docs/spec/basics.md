@@ -1,10 +1,9 @@
 # The Lab and the basics modules
 
 The Tools section (the Lab of prototypes, `proto/`) and the two basics modules that graduated from it into Learn, Coral
-basics and Fish basics. This is the specification of what the code does now; why each part was decided is in the PRs
-and [docs/decisions/](../decisions/README.md). The pages and addresses around them are in [front-end.md](front-end.md);
-the look of the Lab drawings is in [DESIGN.md](../DESIGN.md) "Lab drawings"; the fish module's place on the fish path
-is in [FISH_PATH.md](../FISH_PATH.md) "Fish basics".
+basics and Fish basics. Why each part was decided: [docs/decisions/](../decisions/README.md). The pages and addresses
+around them: [front-end.md](front-end.md); the look of the Lab drawings: [DESIGN.md](../DESIGN.md) "Lab drawings"; the
+fish module's place on the fish path: [FISH_PATH.md](../FISH_PATH.md) "Fish basics".
 
 ## The Lab (`proto/lab.js`)
 
@@ -17,21 +16,24 @@ section each remaining prototype is meant for is in ROADMAP, the module registry
 
 The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
-`pairs` (Memory), `samediff` (Same or different?), `oddone` (Odd one out) and `idkey` (the Coral ID Key). `cards` is not a
-tool but the live gallery of the app's cards and pop-ups (`#tools/cards/<kind>`: apology, update, feature, genus, tip,
-bonus, account, ach, toast), each opened through `app.js` `cardShow` with sample copy and nothing recorded (the sign-in
-card, the achievement toast and the note are the real ones). A prototype marked `admin: true` (the cards gallery) is listed in the
-hub in the admin's browser only (`IS_ADMIN`); its link works for anyone. The Tools section is hidden on phones but for the
-header's hammer icon. Its files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried
-again, `labLoad`).
+`pairs` (Memory), `samediff` (Same or different?), `oddone` (Odd one out), `matrixgame` (Matrix) and `idkey` (the Coral
+ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups (`#tools/cards/<kind>`: apology, update,
+feature, genus, tip, bonus, account, ach, toast), each opened through `app.js` `cardShow` with sample copy and nothing
+recorded (the sign-in card, the achievement toast and the note are the real ones). A prototype marked `admin: true` (the
+cards gallery) is listed in the hub in the admin's browser only (`IS_ADMIN`); its link works for anyone. The Tools section
+is hidden on phones but for the header's hammer icon. Its files are tier 5 of the load order (`proto/lab.js` with the
+prototypes; a failed one is tried again, `labLoad`).
 
-`samediff` and `oddone` (decisions: [Same or different?](../decisions/2026-11-19-same-or-different-lab.md), [Odd one
-out](../decisions/2026-11-19-odd-one-out-lab.md)) follow the subject on screen: untimed, counted nowhere, units from
-`unlocked()`, photos from `photoSet` in one view. `sdPlan` draws a declared pair (`UNITS` `pairs`; Different: its two
-units, Same: two observations of one); `ooPlan` a unit and its intruder, a declared look-alike when one is unlocked, else
-any other: three observations and one, framed alike. Same or different? uses the quiz's stage (`.q.sdq`), Odd one out Find
-the X's (`.qfind`, `.fxt`); both `fitStage`, `fbLine`, `repBtn` and `proto/lab.js` `labShots`, `labTips`, `labSheet`, and
-never call the quiz's recorders (`tests/oddone.test.js`).
+`samediff`, `oddone` and `matrixgame` (decisions: [Same or different?](../decisions/2026-11-19-same-or-different-lab.md),
+[Odd one out](../decisions/2026-11-19-odd-one-out-lab.md), [Matrix](../decisions/2026-11-19-matrix-lab.md)) follow the
+subject on screen: untimed, counted nowhere, units from `unlocked()`, photos from `photoSet` in one view. `sdPlan` draws a
+declared pair; `ooPlan` a unit and its intruder, a declared look-alike when one is unlocked: three observations and one,
+framed alike; `mxPlan` four units, from a declared pair outward, and a fifth name. Same or different? uses the quiz's stage
+(`.q.sdq`), the others Find the X's (`.qfind`, `.fxt`); all `fitStage`, `fbLine`, `repBtn` and `proto/lab.js` `labShots`,
+`labTips`, `labSheet`, and none calls the quiz's recorders (`tests/oddone.test.js`, `tests/matrixgame.test.js`).
+
+Matrix: a right pair names its tile and ticks its name, a wrong one is kept nowhere and the retry is free; its names are
+`data-n`, not `data-c` (`qAnswers` opens every `[data-c]`).
 
 A static mock-up for one of Pierre's decisions may also sit in `proto/` as a standalone `.html` page: not a Lab tool (not
 in `LAB.files`, not cached by the service worker, nothing links to it), borrowing the app's `app.css` (a relative link
@@ -121,14 +123,11 @@ fill it, at fit and at actual size; `ANN` keeps each photo's marks).
   Tabulate has two, both *Acropora*; a photo no longer in `data.json` drops out), each enlarged with its genus and
   credit.
 
-Every label was placed by looking at the photo (rule W11).
-
 **The words.** The words, their step (or Corallite anatomy card) and their plain line are one table in the first tier,
 `app.js` `BASICS_WORDS` (`basicsRoute`, `basicsListed`; the module's Words list and `window.BASICS` read it), so the
-glossary popup links the same way before and after the Tools tier is in: the popup of every underlined term (ID tips
-on genus sheets, first-meeting cards, quiz feedback, Genera cards; `app.js` `showGloss`, `basicsHref`) ends with a link
-to its step ("Coral basics: on a photo"), to Corallite anatomy, or to the Words list (none for a word Coral basics does
-not have).
+glossary popup links the same way before and after the Tools tier is in: the popup of every underlined term (`app.js`
+`showGloss`, `basicsHref`) ends with a link to its step ("Coral basics: on a photo"), to Corallite anatomy, or to the
+Words list (none for a word Coral basics does not have).
 
 **Tests**: `tests/pages.smoke.js` `basicsFit` (390×844 and 768×1024: the photos bounded by the screen, the source
 pill) and `basicsTeach` (390 and 1280 px: the septa, costae and centre points against the rim, the costae term, the

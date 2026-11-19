@@ -16,6 +16,18 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v199 (2026-11-19)
+
+The script's embedded copy of `core.js` now carries every tree subject's photo-judging rubric in `SUBJECTS` `admin.tags` (the fish declare theirs as the sea slugs already did, both laid out by `core.js` `treeRubric`), so the admin reads one declaration per subject instead of three copies in its own code. The sheet script itself reads nothing of it and behaves as before; the version only follows the rule that a `core.js` change travels in `Code.gs` (rule D3), Pierre's rule S1 and the one-engine study, 2026-11-19
+
+## v198 (2026-11-19)
+
+The species by their scientific names, the fish's and the sea slugs' (`docs/reviews/2026-11-18-species-step2-plan.md` §5, the sheet PR; Q397 and Q398, Pierre, 2026-11-18; Q394 A, Pierre, 2026-11-17): the embedded core.js has one levels table (`LEVELS`, `spUnitId`, `levelOf`) and makes one unit per species in play under its genus unit, `sci:` and the species id in letters and digits (`sci:s091`, `sci:xgoniobranchussp5`; `treeSpUnits` `'sci'`: the other scientific species of its family as its look-alikes, its genus the unit it starts from), which the replay's units of both subjects now hold (`treeReplayGen`), so the script replays an answer on one as the game scores it (a wrong pick counts against the species given, rule L2). A smaller fault (Q394 A: a common name typed for a species' scientific name, half a miss; its genus alone, a quarter; never a gain) is logged as its kind in the scoring record (`z`: `cn` or `g`, kept by `scoring_` through `scoreRec`) and weighed by the scorer (`PART`, `partOf`), so the replay reads it. The fish leaderboard's tree gives each species its own entry with its scientific unit (`treeBoardTree`, about 33,600 characters, 662 entries; a player with none answered keeps the same %). The photo check takes such a unit as its genus's, so its family's for the fish (`unitUp_`, `photoCheck_` walking up to three levels). Cache keys raised: `sgen5`, `stree4` (the replay's units, now about 560 KB for the fish and 100 KB for the sea slugs, and the tree), `pool4` (the pools with the new parents). New rules versions: fish 5 and sea slugs 2, every player replayed at once, silently (rules D5, D6, D8); a log with no such answer replays as before. The app opens these species only from this version (`SCI_SHEET`, rule D4), in its own PR
+
+## v197 (2026-11-19)
+
+The embedded `core.js` carries rules version 12 of the corals (`RVS`): a signed-in student's live answer on a unit the path has not opened now counts and is logged like any answer, the unit staying closed until its card (rule L4, Pierre, 2026-11-18: live answers "count without unlocking"; the modes audit, step 3); its answers before the card are evidence, never the card's question (`model.js` `askedOpen`). The replay of a log is unchanged; the new version makes every device take the replay once, with no card (rule D6)
+
 ## v196 (2026-11-19)
 
 One engine, step 2 (rule S1; `docs/decisions/2026-11-19-one-engine-named-fields.md`): the copy of `core.js` carries the features `SUBJECTS` `replay` used to switch for the sheet's subject as named fields, all the corals' as before (`hold`, `offsets`, `anonBase`), the tree subjects' circle-3 threshold as `gate`, and the engine's cards and notes their subject in their own data (`subjIn`, `noteRun`). The script's own code is unchanged and still computes the hold, the photo memory and the first replay for `replaySubject`; no number the sheet computes moves

@@ -16,6 +16,11 @@
    row whose status cell (the last) says "Waiting on Pierre", "for Pierre" or "Open question" and names that number.
    Shown, never failing: a line of a study (docs/reviews/*.md, history that keeps its words) with such a phrase and
    number, and a question of docs/STATUS.md "Questions for Pierre" (the integrator's file).
+3. The ROADMAP holds every decision: an entry from 2026-11-19 21:00 on (ROADMAP_SINCE; the head's time) that names a
+   ROADMAP item, a row's bold title of three words or more or an inventory ID ("inventory C12"), says after "Applied"
+   the ROADMAP or the PR that changed the row (#1234), and never "(to update)" or "(to do)" there; a later "Applied in
+   #N:" entry that closes it (as in 1) does as well. The entries before
+   were written before this check; the 2026-11-19 recount applied theirs (Pierre, 2026-11-19 20:45).
 Offline, standard library only.
 """
 import argparse
@@ -31,6 +36,9 @@ APPLIED = re.compile(r'\bApplied(?: in #\d+)?:|\bno doc change\b', re.I)
 WAITING = re.compile(r'waiting on pierre|waits? for pierre|for pierre|open question', re.I)
 QNUM = re.compile(r'\bQ(\d+)\b')
 WORDS = 3  # a closing entry names an unnumbered entry by its time and first three words (needle())
+ROADMAP_SINCE = ('2026-11-19', '21:00')  # check 3 reads the entries from this date and head time on
+INVENTORY = re.compile(r'\binventory(?: items?)? ([A-Z]\d{1,2})\b', re.I)  # "inventory C12", never "rule P1"
+TO_DO = re.compile(r'\([^()]*\bto (?:update|do|add)\b[^()]*\)', re.I)  # "ROADMAP (to update)" is not applied
 # Ledger entries of 2026-11-19 written before this check, with neither "Applied:" nor "no doc change". Key: the entry's
 # date and the start of its text, as the report prints it. Close one with a later "Applied in #N:" entry naming its Q
 # or its time and first words, then delete its line here.
@@ -102,10 +110,27 @@ def answered(entries):
     return out
 
 
+def closers_of(entries):
+    """The "Applied in #N:" entries, with their line: a closer closes only what precedes it."""
+    return [(n, t) for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]
+
+
+def closing(n, head, text, closers):
+    """The texts of the later "Applied in #N:" entries that close this one: naming its Q numbers, or its time and first
+    words."""
+    qs = QNUM.findall(head)
+    start = needle(text)
+    return [
+        c
+        for cn, c in closers
+        if cn > n and ((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c))
+    ]
+
+
 def check_ledger(entries):
     """(failures, known): the entries from SINCE with no place applied, and the bad PR numbers after "Applied"."""
     fails, known, used = [], [], set()
-    closers = [(n, t) for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]  # with their line: a closer closes only what precedes it
+    closers = closers_of(entries)
     for date, n, head, text in entries:
         if date < SINCE:
             continue
@@ -119,12 +144,7 @@ def check_ledger(entries):
             if bad:
                 fails.append('docs/ANSWERS.md:%d %s…: after "Applied", %s is not a PR number (#1234)' % (n, lab, ', '.join(bad)))
             continue
-        qs = QNUM.findall(head)
-        start = needle(text)
-        if any(
-            cn > n and ((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c))
-            for cn, c in closers
-        ):
+        if closing(n, head, text, closers):
             continue
         key = next((k for k in KNOWN if lab.startswith(k)), None)
         if key:
@@ -139,6 +159,49 @@ def check_ledger(entries):
         if k not in used:
             fails.append('tools/answers_check.py KNOWN "%s": no open ledger entry matches it any more: delete it' % k)
     return fails, known
+
+
+def roadmap_titles(root):
+    """The bold titles of the ROADMAP's rows and bullets with three words or more (a shorter one, "Modules", would match
+    ordinary prose)."""
+    p = os.path.join(root, 'docs', 'ROADMAP.md')
+    if not os.path.exists(p):
+        return []
+    out = []
+    with open(p, encoding='utf-8') as f:
+        for line in f:
+            m = re.match(r'(?:\| |- )\*\*(.+?)\*\*', line)
+            if m:
+                t = m.group(1).strip().rstrip(':').strip()
+                if len(t.split()) >= 3 and t not in out:
+                    out.append(t)
+    return out
+
+
+def check_roadmap(entries, titles):
+    """Failures: the entries from ROADMAP_SINCE that name a ROADMAP item and do not say the ROADMAP or a PR after
+    "Applied"."""
+    fails = []
+    closers = closers_of(entries)
+    ok = lambda tail: bool(tail) and re.search(r'\bROADMAP\b|#\d+', tail) and not TO_DO.search(tail)
+    for date, n, head, text in entries:
+        t = re.match(r'(\d\d:\d\d)\b', head)
+        if (date, t.group(1) if t else '') < ROADMAP_SINCE:
+            continue
+        low = text.lower()
+        named = [x for x in titles if re.search(r'(?<!\w)%s(?!\w)' % re.escape(x.lower()), low)]
+        named += ['inventory ' + i for i in INVENTORY.findall(text)]
+        if not named:
+            continue
+        m = APPLIED.search(text)
+        tail = text[m.start():] if m else ''
+        if ok(tail) or any(ok(c) for c in closing(n, head, text, closers)):  # applied there, or by a later closer
+            continue
+        fails.append(
+            'docs/ANSWERS.md:%d %s…: names the ROADMAP item %s; after "Applied" name the ROADMAP or the PR that changed '
+            'its row (#1234), never "(to update)"' % (n, label(date, text), ', '.join('"%s"' % x for x in named[:3]))
+        )
+    return fails
 
 
 def rows(path, rel):
@@ -214,7 +277,7 @@ def main(argv=None):
         entries = ledger(f.read())
     f1, known = check_ledger(entries)
     f2, warns = check_waiting(a.root, answered(entries))
-    fails = f1 + f2
+    fails = f1 + f2 + check_roadmap(entries, roadmap_titles(a.root))
     for title, items in (('FAIL', fails), ('known', known), ('look', warns)):
         for s in items:
             print('%-5s %s' % (title, s))
