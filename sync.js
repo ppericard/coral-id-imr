@@ -49,7 +49,7 @@ function loadStats() {
 // reply that names that subject (s) only; kept here and joined to the corals' (model.js OWN_STATS, statsJoin).
 const ownStatsAt = {};
 function loadOwnStats(S = SUBJ) {
-  if (!SYNC_URL || !S || S.replay || !S.stats || sheetV() < S.stats) return;
+  if (!SYNC_URL || !S || !S.stats || sheetV() < S.stats) return;
   ownStatsAt[S.id] = Date.now();
   fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
     .then(r => r.json())
@@ -299,10 +299,10 @@ function pendingFrom(q) {
 const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // cut: the reset time the request was sent with ('' for none). A reset made here meanwhile: the replay is not adopted
 // (nor its version marked); the next reply brings it from the new reset. A load needs none (mergeSaved returns first).
-// The sheet's opening hold (model.js holdSync) counts the corals' answers: taken as that subject (inSubject), with this
-// device's queued answers of that subject only (subjEntries).
+// The sheet's opening hold (model.js holdSync) counts the answers of one subject (SUBJECTS hold: the corals): taken as
+// that subject (inSubject), with this device's queued answers of that subject only (subjEntries).
 function holdAdopt(h, log, ids) {
-  const LS = SUBJECTS.find(x => x.replay);
+  const LS = SUBJECTS.find(x => x.hold);
   if (LS && LS !== SUBJ) return inSubject(LS.id, () => holdAdopt(h, log, ids));
   if (typeof holdSync === 'function') holdSync(h, subjEntries(log, SUBJ.id), ids);
 }
@@ -550,8 +550,8 @@ function mergeSubject(j, d, S, mine) {
     });
   } catch (e) {}
   // The opening hold from every answer the sheet has (model.js holdSync), with this device's unconfirmed ones added: the
-  // hold of the subject whose answers the sheet logs, never another's.
-  const holdIn = () => S.replay && holdAdopt(j.hold, SYNC.log, j.holdIds);
+  // hold of the subject it counts (SUBJECTS hold), never another's.
+  const holdIn = () => S.hold && holdAdopt(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
     introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
@@ -1551,10 +1551,11 @@ function signIn(name, pin, j) {
     if (typeof resSeen === 'function') resSeen();
     return;
   }
-  // Each subject on its own. The corals (SUBJECTS replay) add only the delta from ANONB, the progress before the first
+  // Each subject on its own. The corals (SUBJECTS anonBase) add only the delta from ANONB, the progress before the first
   // anonymous answer (an old sign-out's leftovers are in it); another subject adds all that is here (sign-out clears it).
   // anon: the corals' answers played here signed out (subjEntries: a fish answer in LOG0 is not one).
-  const anon = subjEntries(SYNC.log).length > 0,
+  const AB = SUBJECTS.find(x => x.anonBase),
+    anon = !!AB && subjEntries(SYNC.log, AB.id).length > 0,
     M = {};
   let mine = false;
   SUBJECTS.forEach((S, i) => {
@@ -1569,8 +1570,8 @@ function signIn(name, pin, j) {
     SYNC[S.base[0]] = R;
     // A subject never played on this device (not the first, the corals) takes the account's as it is (loadData below).
     if (i && !Object.keys(here).length) return;
-    if (!S.replay && Object.keys(here).length) mine = true;
-    M[pk] = S.replay ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
+    if (!S.anonBase && Object.keys(here).length) mine = true;
+    M[pk] = S.anonBase ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
   });
   try {
     localStorage.removeItem(ANONB);

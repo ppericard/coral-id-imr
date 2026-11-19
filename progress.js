@@ -1274,7 +1274,8 @@ function boardNotice() {
 // The announcement card of the notes in RECALC.L: the past progress recalculations and a new game mode (a new
 // recalculation is not announced: docs/rules/sheet.md). Once per device, to a player who already has answers, at the
 // first moment no tour or card is open; marked seen only by its button or Escape, so a card closed by leaving the page
-// comes back on the next one. A player who missed several notes sees them all on one card, latest first; KEY holds the
+// comes back on the next one. A player who missed several notes sees them on one card, latest first (those one subject
+// shows, core.js noteRun: a note's subj, else every subject); KEY holds the
 // id of the last note seen. Each note's kind (app.js CARD_KINDS: 'update', 'feature') gives the card its medallion: for
 // an update, the player's progress ring as it is now.
 const RECALC = {
@@ -1282,12 +1283,15 @@ const RECALC = {
   L: [
     {
       id: 'progress-moving-average-2026-11',
+      // subj: the subject a note speaks of (core.js subjIn): shown in it; a note without one shows in every subject.
+      subj: 'coral',
       kind: 'update',
       t: "We've improved how progress is measured",
       p: 'Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.'
     },
     {
       id: 'millepora-counts-2026-11',
+      subj: 'coral',
       kind: 'update',
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
@@ -1322,21 +1326,34 @@ Object.defineProperty(window, 'CARDS_SAID', {
   configurable: true,
   get: () => !!window.APP_READY && noticesReady() && !helloT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
 });
-function recalcNotice() {
+// visit: run inside another subject's visit (inSubject), for the notes about that subject; it returns RECALC_BACK when
+// the subject on screen is to look again (the visited subject's notes marked, the engine's after them left for it).
+const RECALC_BACK = 'back';
+function recalcNotice(visit = false) {
   if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
-  if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
   // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
   const said = d => (window.RECALC_SAID = d);
-  // The last note seen: here (KEY) or on another device of the account (core.js TOLD 'recalc:<id>'), the later one.
+  // The last note seen: here (KEY) or on another device of the account (core.js TOLD 'recalc:<id>'), the later one; the
+  // notes after it, the run one card shows (core.js noteRun): a note about one subject (its subj) in that subject, one
+  // without in the subject on screen. The notes after the run come on a next card.
   const L = RECALC.L,
-    last = L[L.length - 1].id,
     at = id => L.findIndex(x => x.id === id),
     seen = Math.max(at(store.get(RECALC.KEY, '')), ...L.filter(x => toldHas('recalc:' + x.id)).map(x => at(x.id))),
-    due = L.slice(seen + 1).reverse();
-  if (!due.length) return void said('none');
-  // Answers: the global count, or the units' own for progress saved before it existed.
+    run = noteRun(L.slice(seen + 1), SUBJ.id);
+  if (!run.L.length) return void said('none');
+  if (run.sid !== SUBJ.id) return inSubject(run.sid, () => recalcNotice(true)) === RECALC_BACK ? recalcNotice() : undefined;
+  const due = run.L.slice().reverse(),
+    last = due[0].id;
+  // Answers in that subject: the global count, or the units' own for progress saved before it existed. None, on screen:
+  // the run is marked seen unshown, and the next one, if any, is looked at. None in a visited subject: only its own notes
+  // at the run's head are marked, and the subject on screen looks again (the engine's notes after them are for it).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
-  if (!played) return void (store.set(RECALC.KEY, last), said('none'));
+  if (!played && !visit) return void (store.set(RECALC.KEY, last), recalcNotice());
+  if (!played) {
+    const k = run.L.findIndex(x => x.subj == null);
+    store.set(RECALC.KEY, run.L[(k < 0 ? run.L.length : k) - 1].id);
+    return RECALC_BACK;
+  }
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return void said('shown'); // already on screen
   if (document.querySelector('#tour, .unlock')) return void noticeAgain(recalcNotice, 2000);
@@ -1569,9 +1586,10 @@ function rvNotice() {
 // device (FIRST: the time and what sorryOf reads then), so playing on changes nothing. A card like recalcNotice's (kind
 // apology): it waits while the tour or another card is up; its button, Enter or Escape close it for good on this device
 // (reefid-sorry) and, signed in, on the account's others (core.js TOLD 'sorry'); leaving the page closes it unseen.
+// An engine card, in whatever subject is on screen: its window ended (SORRY.UNTIL), so it shows to nobody now, kept as a
+// template for a later apology.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
-  if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
   if (noticeLater('sorry', sorryNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
