@@ -33,7 +33,7 @@ others), each quote checked against the page they saved.
   Pierre's 15:35 words). One helper with the family sheet's juvenile note (rule S1).
 - **No effect on the game**: the build writes `fish.json` species `jv`; nothing in the draw, the ease or the judging
   reads it, which `tests/fishjuv.test.js` checks.
-- **Every contradiction between sources** found on the way goes to `points.json` (rule C5): eight points. The wrong
+- **Every contradiction between sources** found on the way goes to `points.json` (rule C5): nine points. The wrong
   Fishes of Australia link of the Damselfish entry's juvenile note (359, *Neoglyphidodon melas*) is now 349, *Dascyllus
   trimaculatus*.
 

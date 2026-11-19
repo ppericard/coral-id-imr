@@ -59,8 +59,7 @@ single-species genus row:
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
-- under the photos, "Juvenile:" and its sourced line, the sources numbered after it, when it has one
-  ([below](#juveniles-per-species));
+- "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
@@ -122,21 +121,7 @@ marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plai
 
 ## Juveniles per species
 
-`tools/fish_juveniles.json` (`classes` {off, finer, bold, like: the definition}, `species` {name: {cls, by, entry, line,
-differs, look, ease, src [{t, u, q}]}}, `none` [names]) holds what external sources say of the juvenile of each species
-with juvenile photos in the game (Pierre, 2026-11-19, Q435 and «Il faut sourcer tous les juvéniles qu'on peut»), read on
-2026-11-19 from FishBase, Fishes of Australia, Reef Life Survey, the Australian Museum and a few others, each line with
-its quote. `cls` is a per-species label for the analyses, the four classes of the
-[juvenile difficulty study](../decisions/2026-11-19-fish-juveniles-sourced.md): `by` source (the species' own sources
-rate it) or entry (its IMR entry's juvenile class, `entry`, in `tools/fish_source.json` `juv`). It is a file of its own
-because `juv` is per IMR entry and feeds the draw (`core.js` `varKindOf`) and the judging's caps (`tools/fish_judge.py`
-`juv_early`): the label stays out of the game by construction.
-
-`tools/build_fish.py` (`juveniles`) builds it into `fish.json` species `jv` {c, line, src [{t, u}], look (a species id)}
-and stops on a species not in the game, a class not one of the four, a class by source or a line without a quoted
-source, a class by entry that is not its entry's, a look-alike that is not a game species present in the Philippines, or
-a line naming a species of a game genus that is not one (rule C6; `--juveniles`, a hidden flag, points the build at
-another file for `tests/fishjuv.test.js`). The species sheet shows `line` under the photos, "Juvenile:" first, its
-sources numbered after it (`learn.js` `juvNote`, the same helper as the family sheet's juvenile note). Nothing in the
-draw, the ease or the judging reads `jv`: `tests/fishjuv.test.js` checks that no other file reads it and that
-`tools/fish_game.py` plans the same photos, eases and tags with it, without it or with every label changed.
+`tools/fish_juveniles.json`, each species' juvenile from external sources with their quotes, is built into `fish.json`
+species `jv` {c: off, finer, bold or like, line, src, look} by `tools/build_fish.py` `juveniles`, which checks it; the
+sheet shows `line` (`learn.js` `juvNote`). The class is a label for the analyses: nothing in the draw, the ease or the
+judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2026-11-19-fish-juveniles-sourced.md).

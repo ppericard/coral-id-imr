@@ -1939,6 +1939,18 @@ async function freshSeed(b, base, errs, seed, fresh) {
       !/Anemonefishes/.test(gc.chip)
     )
       ui.push(`${width}px genus common name: ${JSON.stringify(gc)}`);
+    // Its juvenile line (fish.json jv: tools/fish_juveniles.json), under the photos, its sources numbered and linked.
+    const jl = await q.evaluate(() => {
+      const p = document.querySelector('#view .fsheet .fjuv'),
+        ph = document.querySelector('#view .fsheet .fphotos');
+      return {
+        text: p ? p.textContent : '',
+        src: p ? [...p.querySelectorAll('a.srcn')].filter(a => /^https:\/\//.test(a.href)).length : 0,
+        after: !!(p && ph && ph.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING)
+      };
+    });
+    if (!/^Juvenile: Orange-yellow with vertical white bands/.test(jl.text) || jl.src < 1 || !jl.after)
+      ui.push(`${width}px the species sheet's juvenile line: ${JSON.stringify(jl)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.

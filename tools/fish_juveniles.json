@@ -894,7 +894,7 @@
    ]
   },
   "Ctenochaetus tominiensis": {
-   "line": "Forked tail.",
+   "line": "A forked tail, where the adult's is crescent-shaped.",
    "differs": "The tail is forked in juveniles, lunate in adults.",
    "src": [
     {
@@ -3385,7 +3385,7 @@
   "Thalassoma amblycephalum": {
    "cls": "bold",
    "by": "source",
-   "line": "Identified by its colour pattern and rounded snout.",
+   "line": "Easily identified by its colour pattern and rounded snout.",
    "differs": "Males become brightly coloured, the head usually green with a yellow band behind it.",
    "ease": "Juveniles easily identified by the color pattern and rounded snout.",
    "src": [
