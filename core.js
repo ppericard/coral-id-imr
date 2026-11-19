@@ -999,20 +999,17 @@
     return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
   }
   const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
-  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
-  // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
-  // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
-  // juvenile, camouflage or out of the water. 0 for a photo with no tags. Ties only: the ease ranks first (easyRank).
-  const REF = {rep: 8, good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
+  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): a point for each field-guide
+  // trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a juvenile,
+  // camouflage or out of the water. Read from what the photo shows, never from its route in: the flag r (a reference
+  // source shows it for the species) weighs nothing (docs/decisions/2026-11-19-fish-reference-from-photo.md). 0 for a
+  // photo with no tags. Ties only: the ease ranks first (easyRank).
+  const REF = {good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
   function refScore(jt) {
     const c = String(jt || '');
     if (c.length < 7) return 0;
     const fl = c.slice(7).replace(/\d+$/, '');
-    return (
-      (fl.includes('r') ? REF.rep : 0) +
-      REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) -
-      [...REF.bad].filter(x => fl.includes(x)).length
-    );
+    return REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) - [...REF.bad].filter(x => fl.includes(x)).length;
   }
   // The order a unit's photos are met in when the order matters (the card's photo, the list's first photos, the sheets):
   // the first photos a player sees are easy, near-reference ones, and the source never ranks (docs/LEARNING.md "Fish:
@@ -1027,16 +1024,15 @@
     for (const c of String(f)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
     return h;
   };
-  // Reference level: every photo of reference quality, whoever took it. A reference source's own photo (rep) judged very
-  // easy, or any photo judged ease 5 with the reference look in its tags (profile, whole, good light, true colours,
-  // sharp, large or medium, one fish or a school of it; no juvenile, camouflage or out of water).
+  // Reference level: every photo of reference quality, whoever took it, read from the photo alone (rule P1;
+  // docs/decisions/2026-11-19-fish-reference-from-photo.md): a photo judged very easy (ease 4 or 5) whose tags read the
+  // reference look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school of it; no
+  // juvenile, camouflage or out of water). The route it came in by (rep, the flag r) only lets it into the base first
+  // (tools/fish_game.py tier), never places it.
   const REF_LOOK = /^p1g0s[lm][1s]$/;
-  // In both cases one kind of fish (count 1 or s): never a photo with other species in view (o, k, the legacy m) or an
-  // unclear subject (x), rule P3 (o is in play, never a reference).
-  const refLevel = p =>
-    !!p &&
-    /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
-    (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
+  // The look's last letter is the count: one kind of fish (1 or s), never a photo with other species in view (o, k, the
+  // legacy m) or an unclear subject (x), rule P3 (o is in play, never a reference).
+  const refLevel = p => !!p && (p.e || 0) >= 4 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7));
   const refFirst = p => (refLevel(p) ? 0 : 1);
   // A photo's judged phase (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): its record's phase
   // word ph (juvenile, male, female, intermediate: tools/fish_game.py, as autosort.js fishPhase reads it), else 'juvenile' when its
