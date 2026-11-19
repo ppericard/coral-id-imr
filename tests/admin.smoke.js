@@ -8960,8 +8960,8 @@ async function sealPart(b, base, fails) {
       if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
       if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
       if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
-      // Source priority in a cell with fewer free slots than sure adds (rule P1, Codex review #400): Pierre's own
-      // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
+      // No source priority in a cell with fewer free slots than sure adds (rule P1, Pierre 2026-11-18): at the same
+      // place (Dauin), another observer's Good photo takes the last slot ahead of Pierre's own Fair one.
       const pri = await p.evaluate(() => {
         const free = m => cands(m).filter(x => !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
           n = [...GAME].find(m => free(m).length >= 2),
@@ -8972,7 +8972,7 @@ async function sealPart(b, base, fails) {
           cm = CELL_MAX;
         keep.forEach(([x]) => delete x.j);
         Object.assign(a, {j: {v: 'wide', q: 3, k: 'best', fm: 'B'}, own: false, imr: false, loc: 'dauin', o: 'test-obs-a'});
-        Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, o: 'test-obs-b'});
+        Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, loc: 'dauin', o: 'test-obs-b'});
         delete a.mf;
         delete b.mf;
         memoReset();
@@ -8985,7 +8985,7 @@ async function sealPart(b, base, fails) {
         memoReset();
         return r;
       });
-      if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
+      if (pri.mine || !pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
       // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
       // rated Good where the pass said Fair, form not given (so not compared).
       await go('photos/candidates');
