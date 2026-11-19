@@ -81,11 +81,21 @@ jobs:
             w: '1280'
             part: actions
             what: Admin demo test at 1280 px, actions (Analyses' Formats, sort and milestones, views remembered, To do, Hidden, the view filter; made-up data, nothing sent)
-          - name: admin 1280 more
+          - name: admin 1280 players
             smoke: admin
             w: '1280'
-            part: more
-            what: Admin demo test at 1280 px, players and photos (Players' actions, Candidates, the auto-sort, Publish; made-up data, nothing sent)
+            part: players
+            what: Admin demo test at 1280 px, players
+          - name: admin 1280 photos
+            smoke: admin
+            w: '1280'
+            part: photos
+            what: Admin demo test at 1280 px, photos
+          - name: admin 1280 seal
+            smoke: admin
+            w: '1280'
+            part: seal
+            what: Admin demo test at 1280 px, seal
           - name: profiles
             smoke: profiles
             what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
