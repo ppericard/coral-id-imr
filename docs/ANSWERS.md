@@ -1150,6 +1150,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Applied in #1199:** 08:53, the answers ledger as checked data (tools/answers_check.py, in the docs test).
 - **10:05, Q427 (#1195, rule P1 on the corals: no source boost; level 2 left one breach, the strong RA's shown score
   at 1,000 answers).** A, merge: «ok». Applied: #1195.
+- **10:56-10:58, the privacy page.** "Arrête d'être plus catholique que le pape... C'est des trucs internes ça...";
+  what stays after a deletion: "ok"; "ok, fais la version courte" (a half-page notice on the points the law asks for).
+  Applied: #1095 (docs/decisions/2026-11-19-privacy-short.md).
 - **10:08, the models measured.** "Du coup il faut peut-être monter dans les efforts ou les modèles et faire de
   nouveaux tests au lieu de default sur Opus high...". **10:09**, a question, not a decision: "Mais du coup qu'est-ce
   qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement

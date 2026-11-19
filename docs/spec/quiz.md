@@ -9,7 +9,8 @@ the specification of what the code does now; why each part was decided is in the
 
 ## What each mode counts
 
-Every counted answer, whatever its game, goes through one scorer (`core.js` `scoreAnswer`), one log row, the sheet's
+Every counted answer, whatever its game, goes through one recorder (`quiz.js` `recordAnswer`: the photo quiz's
+`answer` and `live.js` `liveLog` call it), one scorer (`core.js` `scoreAnswer`), one log row, the sheet's
 pass and the full replay (`core.js` `replayProgress`); the modes and suffixes logged: [sync.md](sync.md) "Mode". The
 differences and their reasons (sources, and those left to fix: [the modes audit](../reviews/2026-11-19-modes-audit.md)):
 
