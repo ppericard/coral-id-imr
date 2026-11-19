@@ -688,6 +688,17 @@ const gh = (path, opts = {}) =>
     if (!r.ok) throw new Error(j.message || `GitHub error ${r.status}`);
     return j;
   });
+// The text of a GitHub path in its raw media type (a blob comes as its own bytes, not as base64 inside JSON: 0.54 MB gzipped
+// for curation.json instead of 0.89 MB, and nothing to decode).
+const ghText = (path, opts = {}) =>
+  fetch(API + path, {
+    cache: 'no-store',
+    ...opts,
+    headers: {Accept: 'application/vnd.github.raw+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}
+  }).then(async r => {
+    if (!r.ok) throw new Error(`GitHub error ${r.status}`);
+    return r.text();
+  });
 const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
 // ghfile: begin
@@ -700,8 +711,49 @@ async function ghFile(path) {
     throw e;
   });
   if (!f) return null;
-  const b64 = f.content ? f.content : (await gh(`/git/blobs/${f.sha}`)).content;
-  return {text: fromB64(b64), sha: f.sha};
+  return {text: f.content ? fromB64(f.content) : await blobText(f.sha), sha: f.sha};
+}
+// Is this text the blob of that sha? A git blob's sha is the SHA-1 of "blob <bytes>\0" and the bytes. This text is the base
+// Publish merges on: a reply that is not the file (an error page, a JSON envelope) must never stand for it.
+const blobIs = async (text, sha) => {
+  const te = new TextEncoder(),
+    body = te.encode(text),
+    head = te.encode(`blob ${body.length}\0`),
+    all = new Uint8Array(head.length + body.length);
+  all.set(head);
+  all.set(body, head.length);
+  return crypto.subtle.digest('SHA-1', all).then(
+    d => [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join('') === sha,
+    () => false
+  );
+};
+// A blob never changes under its sha: its text is kept in the browser's Cache Storage under that sha (the latest only),
+// so the next visit and the next Publish skip the download (curation.json: 0.54 MB gzipped). Public data (curation.json is
+// on the site). Read raw and checked against the sha, kept and read back checked; the base64 reply when the raw one is
+// refused or not the blob. Any failure of the cache: the download, as before. Not in the demo.
+async function blobText(sha) {
+  const key = '/__blob/' + sha;
+  let c = null;
+  try {
+    c = typeof caches === 'object' && caches && !(typeof DEMO !== 'undefined' && DEMO) ? await caches.open('reefid-admin-blobs') : null;
+    const h = c && (await c.match(key));
+    if (h) {
+      const t = await h.text();
+      if (await blobIs(t, sha)) return t;
+      await c.delete(key);
+    }
+  } catch (e) {
+    c = null;
+  }
+  let text = await ghText(`/git/blobs/${sha}`).catch(() => null);
+  if (text === null || !(await blobIs(text, sha))) text = fromB64((await gh(`/git/blobs/${sha}`)).content);
+  try {
+    if (c) {
+      await Promise.all((await c.keys()).map(k => c.delete(k)));
+      await c.put(key, new Response(text, {headers: {'Content-Type': 'text/plain'}}));
+    }
+  } catch (e) {}
+  return text;
 }
 // ghfile: end
 async function checkToken() {
@@ -1455,7 +1507,7 @@ const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights); To do › Alerts (renderAlerts: the sheet's Alerts tab, about no subject).
 // Photo stats › Taxa (admin-taxa.js): the taxa out of play and why, from what the admin holds for each subject.
-const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts', 'photos/stats/taxa'];
+const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts', 'photos/stats/taxa', 'photos/stats/difficulty'];
 // A view with work of its own (options.live): had by a subject of its rank while live() says it has work, whatever
 // SUBJECTS admin pages lists; drawn by options.draw once on screen, work or not (render), so its last answer never
 // lands on "Not for … yet" (Photo review › Light proposals, admin-light.js; Cover proposals, admin-covers.js). draw()
@@ -2146,7 +2198,7 @@ function fishTile(p, o) {
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
+    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (renderFishUnits): st {num} for a featured photo; cover: the page node's cover in force; path: the
@@ -3083,7 +3135,7 @@ function renderFishCov() {
     ]
       .map(([k, t]) => `<button type="button" data-fishco="${k}" aria-pressed="${FISHCOV.order === k}">${t}</button>`)
       .join('')}</span><b>${R.length} ${lvs.find(x => x[0] === lv)[1].toLowerCase()}</b></div>
-    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference photos">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
+    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference level photos (ease 4-5 with the reference look)">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
     <tbody>${R.map(
       r =>
         `<tr data-id="${esc(r.id)}"><th scope="row">${name(r)}</th><td class="cov-c cov-${lvl(r)}">${r.of ? `${r.ok}/${r.of}` : `${r.obs}/${r.tgt}`}</td><td>${r.n}</td><td>${lv === 'fam' && r.easy < FISHEASY ? `<b class="warnc">${r.easy}/${FISHEASY}</b>` : r.easy}</td><td>${r.ref}</td><td class="adm-fph">${phases(r)}</td><td>${r.wait || ''}</td><td class="adm-fneed">${r.need.map(esc).join(' · ')}</td></tr>`
@@ -3607,6 +3659,13 @@ function render() {
   // Away from Tree, its node is forgotten: coming back (Back, a link) is a new address that shows its genus or species
   // again.
   if (!treeOf(cur)) TT_SEL = null;
+  // The suggestions are still on their way (the admin opened on a Players page): any other page waits for them, then draws.
+  if (SUG_LATE && !sugOwn(cur)) {
+    status(); // the header (tabs, count) follows the address while the page waits
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    sugLoad();
+    return;
+  }
   document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A view with work of its own, on screen for a subject of its rank (liveOf): drawn even with no work left. Opened from its
   // address, it can come before its script is in (as a journey, below).
@@ -3650,6 +3709,11 @@ function render() {
   // Opened from its address, the page can be drawn before admin-taxa.js is in (as a journey, above).
   if (cur === 'photos/stats/taxa')
     return typeof renderTaxa === 'function' ? renderTaxa() : addEventListener('load', () => render(), {once: true});
+  // Difficulty of a subject with ratings of its own reads them alone, never the answer log (diffOwn)
+  if (cur === 'photos/stats/difficulty' && ASUBJ.stats) {
+    status();
+    return statsPhotos();
+  }
   if (modeKey() === 'stats') return renderStats();
   if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
   // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js).
@@ -4174,7 +4238,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   fishtodo: `<p>Everything on the fish side that needs your eye, most urgent first: a red <b>Health</b> line when Health finds fish photos everyone misses or families or genera players are stuck on (nothing when all is well), the players' <b>reports</b> about fish (and those about no subject), the fish photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days, and last the fish <b>photos</b> work as counts, each opening its page: the <b>candidates</b> waiting in Candidates (the auto-sort's Checks apart, and those of a species at its target or set aside, as the swiper hides them), the open <b>cover proposals</b> and <b>light proposals</b> (Photo review), and Coverage's To do (under its All | IMR filter; a click opens Coverage › Games on those rows). The corals' photo sections (out of the presence rule, share-alike, Featured rated Poor, the judging agent's suggestions) have no fish counterpart here: the fish candidates already carry the pass's judgment. Each part works as in its own view: <b>Reports</b>, <b>Errors</b>, <b>Health</b>.</p>`,
-  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the sheet rates the corals' photos only, so there is no photo difficulty here yet). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
+  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
@@ -4205,7 +4269,8 @@ const HELP = {
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected. <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
     <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from; <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
-  fishpstats: `<p>General numbers on every fish photo, from the fish data and your draft (unpublished changes included) and the answers alone (the sheet rates the corals' photos only, so there is no photo difficulty here yet). <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (your adds, the sure candidates and the reference photos that enter by themselves). <b>Observations</b> = distinct iNaturalist observations, counted per species as on Coverage. <b>Families in play</b> = families with at least one photo in play (out of all of them when some have none).</p>
+  ownstatsph: `<p>Photo difficulty from the sheet's own statistics for this subject (the answers of players clearly above chance, each weighed by the player's experience), read as <b>recognised by N%</b> (below). A photo is rated at the rank each question asked (a family, a genus), so its difficulty carries that unit's offset; here each is read as a question of its unit's row (the offset swapped, as the app does), and a photo asked under both its ids counts once. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. One lane per unit, a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each unit reads for a typical photo of it, its offset (the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their unit</b>: the photos in play whose own part of the difficulty (the photo's difficulty minus the offset of the unit it was rated at) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first. Look at each: unclear, mislabelled, or the wrong species (Photo review). Per-photo ratings stay rough at this traffic, so the goal is the first 3 to 5 answers per photo.</p>`,
+  fishpstats: `<p>General numbers on every fish photo, from the fish data and your draft (unpublished changes included) and the answers alone (the photos' difficulty is on Photo stats › Difficulty). <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (your adds, the sure candidates and the reference photos that enter by themselves). <b>Observations</b> = distinct iNaturalist observations, counted per species as on Coverage. <b>Families in play</b> = families with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the fish data hold, each in one row (a photo added from its candidate and played under its game id counts once), so the rows add up to the total. <b>Not in games</b>: added for a species out of the game, or a game record no family plays. <b>Other species</b>: added, but tagged with another species one could take for it, or not sorted yet: never in play. <b>Removed</b>: taken out with Remove (candidates you turned down included). <b>Candidates</b> = waiting for a decision. <b>Not this</b>: sent to no species or to a species that has not taken it. <b>Excluded</b> = excluded for good.</p>
     <p><b>Median [middle half]</b>: half the families have fewer, half more; the brackets hold the middle half (25th to 75th percentile). <b>Per family</b> counts every family, one without any counting 0, then the photos in play per genus and per species over every genus and species of the game. The bars: how many families have each band of photos in play, from 0 (hover a bar for its families). <b>Circles</b>: the photos in play of each circle's families; <b>None</b> = its families without a photo in play, out of its families. <b>Sources</b>: the photos in play by where they come from; <b>Families</b> = families with at least one photo in play from that source. <b>Answers per photo</b>: every answer that showed the photo, family and genus questions alike, as Health and By difficulty count them (everyone's answers, yours included); under the table, the median of every photo in play, then of those answered at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per family</b>: its photos in play, those with ${RATE.MIN} answers or more, the least covered families first; <b>Missed</b>: its photos everyone misses, as Health counts them (open on Health). Nothing here changes anything.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their genus</b> (Pierre, 2026-11-06, Q192; the photo exposure study): the photos in play whose own part of the difficulty (the photo's difficulty minus its genus's offset) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first: where a typical photo of the genus is recognised 4 times in 5, such a photo is about 1 time in 2. Look at each: unclear, mislabelled, or the wrong view (Photo review). Per-photo ratings stay rough at this traffic (the study: about 50 answers rate one photo to ±0.5), so the goal is the first 3 to 5 answers per photo, enough for this flag; a photo shown with other views shares each answer with them, so it needs more answers to stand out.</p>
@@ -4225,7 +4290,7 @@ const HELP = {
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or select a photo (click it or Tab to it) and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has every tool of its page: a coral photo those of its genus page, a fish photo those of its family page (Feature, ★ Cover, Remove, Not this, Crop, Tags with its ease and tag rows, ×) and Open in Tree; on a fish photo in play, Count <i>Other species, confusable</i> or <i>Unclear</i> also takes it out of play (rule P3), one Undo step. A reason names the organism in its subject's words (Several fish species). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has every tool of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this, Feature, ★ Cover, Crop, Tags), those that take it out of play clearing the flag (Undo brings it back), and Done.</p><p>The last four parts are the corals' only (no fish counterpart: the fish candidates carry the pass's judgment in Candidates). Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
-  fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates (a photo already in play, your add or one that entered by itself, is not one), <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
+  fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference-level photos (ease 4-5 with the reference look, read from the photo whoever took it),<b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates (a photo already in play, your add or one that entered by itself, is not one), <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   lightprop: `<p>The light re-judge's proposals (rubric 6, Q308: a fish lit by a flash or a lamp on a dark background is good light, not a night shot): the photos you added whose tags and ease still hold the earlier judgement (<code>judging/fish-light-q308.json</code>). Each shows what would change, in words: struck through yours, in bold the re-judged value (light <b>g</b> good, <b>d</b> dim: the fish itself poorly lit, <b>n</b> night livery: a night colour pattern; the full codes in the tooltip). <b>One judgement per photo</b>, last: a photo judged twice (as a reference photo and as a candidate) whose two judgements disagreed was judged again once (<code>judging/fish-one-judgement.json</code>); where you added it with the earlier tags and ease, the new ones are proposed the same way. <b>Accept</b> writes the re-judged tags and ease into your draft (when they make one of your ★ covers a juvenile, it first asks whether to keep it as the cover anyway: yes keeps it, confirmed; no takes the tags and the cover is ignored until you confirm it on its Tree page); <b>Keep mine</b> keeps yours and the proposal goes; <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that photo's tags or ease elsewhere. The view leaves the switch once none is left.</p>`,
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
@@ -4257,7 +4322,19 @@ const candHelpOf = S =>
           : ''
       }The rest as below.</p>`
     : '';
-const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
+const REC_PAGES = new Set([
+  'journey',
+  'users',
+  'stats',
+  'statslog',
+  'statsph',
+  'ownstatsph',
+  'diff',
+  'health',
+  'statsneeds',
+  'cov',
+  'cand'
+]);
 function toggleHelp() {
   let h = $('admhelp');
   if (h) {
@@ -4273,7 +4350,7 @@ function toggleHelp() {
         : {
             'players/list': 'users',
             'players/groups': 'groups',
-            'photos/stats/difficulty': 'statsph',
+            'photos/stats/difficulty': ASUBJ.stats ? 'ownstatsph' : 'statsph',
             'photos/stats/overview': ASUBJ.sheets ? 'fishpstats' : 'pstats',
             'photos/stats/taxa': 'taxa',
             'analyses/difficulty/pairs': 'statsconf',
@@ -7686,6 +7763,44 @@ function download() {
 }
 
 /* ---------- Start ---------- */
+// The judging agent's suggestions (suggest.json: 3.5 MB, the largest file a Players page would wait for, 0.4 MB gzipped,
+// and the work of laying them over the candidates) are read by the photo pages, the Inbox count and the auto-sort, never
+// by a Players page (sugOwn: where the admin opens, Activity). An admin that opens there does not wait for them: start()
+// leaves the laying and the auto-sort in SUG_LATE, run once the sheet's reads are in (sugLater), or at once when a page
+// that reads them is asked for (render's gate: Loading… until then).
+const sugOwn = h => /^players\//.test(h),
+  landing = () => (([S, p]) => admRoute(p, S))(subjOfHash(hashNow())),
+  sugGet = () =>
+    fetch('suggest.json', {cache: 'no-cache'})
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+let SUG_LATE = null,
+  SUG_P = null;
+function sugLoad() {
+  if (!SUG_LATE) return Promise.resolve();
+  return (SUG_P =
+    SUG_P ||
+    sugGet().then(j => {
+      const run = SUG_LATE;
+      SUG_LATE = null;
+      SUG = j;
+      try {
+        run();
+      } finally {
+        memoReset();
+        sugOwn(cur) ? status() : render();
+      }
+    }));
+}
+// Once the sheet's reads are in (the page the admin opened on is drawn with them) and the page is idle.
+function sugLater() {
+  let n = 0;
+  const t = setInterval(() => {
+    if (Object.keys(SHEET_READS).length && ++n < 40) return;
+    clearInterval(t);
+    'requestIdleCallback' in window ? requestIdleCallback(sugLoad, {timeout: 3000}) : setTimeout(sugLoad, 500);
+  }, 250);
+}
 async function start() {
   const hd = document.querySelector('header');
   if (hd && window.ResizeObserver)
@@ -7715,6 +7830,9 @@ async function start() {
             console.warn(`${u} not loaded:`, e.message);
             return {};
           })).then(j => (j && j[k]) || {});
+  // The demo opens as before (the suggestions first) unless asked with ?demo&late: the smoke's steps start from a page
+  // whose auto-sort has run, and only tests/admin.smoke.js loadPart opens it late.
+  const late = sugOwn(landing()) && (!DEMO || /[?&]late\b/.test(location.search));
   let CJ;
   try {
     let PJ;
@@ -7724,9 +7842,9 @@ async function start() {
       side('forms.json', 'gf'),
       side('forms.json', 'gunsure'),
       side('picks.json', 'feat'),
-      fetch('suggest.json', {cache: 'no-cache'})
-        .then(r => (r.ok ? r.json() : {}))
-        .catch(() => ({})),
+      // The judging agent's suggestions (3.5 MB, 0.4 MB gzipped): a Players page does not read them, so it opens without them
+      // and they follow (sugLater); every other page waits for them as before.
+      late ? {} : sugGet(),
       loadSaved(),
       side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
       // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
@@ -7768,21 +7886,6 @@ async function start() {
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   // The judging agent's candidate pass (suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
   // older guess, its quality and growth form become the dashed first guesses, the rest orders the swiper (jw, candQueue).
-  const SC = (SUG && SUG.cand) || {};
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const j = SC[p.f];
-      if (!j) return;
-      p.j = j;
-      if (j.v) p.vg = j.v;
-      // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
-      if (j.q) AUTOQ[p.f] = j.q;
-      if (j.fm) {
-        AUTOF[p.f] = j.fm;
-        (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
-      }
-    });
   // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to the admin, with the reason.
   const SH = Object.values(DATA.cand)
     .flat()
@@ -7790,12 +7893,29 @@ async function start() {
     .map(p => METRICS[p.f][0])
     .sort((a, b) => a - b);
   MREF = SH.length ? {all: SH, lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null;
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const mf = p.j && metFlag(autoSure(p.j), p.j, METRICS[p.f], MREF);
-      if (mf) p.mf = mf;
-    });
+  const sugCands = () => {
+    const SC = (SUG && SUG.cand) || {};
+    Object.entries(DATA.cand).forEach(([n, L]) =>
+      L.forEach(p => {
+        const j = SC[p.f];
+        if (!j) return;
+        p.j = j;
+        if (j.v) p.vg = j.v;
+        // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
+        if (j.q) AUTOQ[p.f] = j.q;
+        if (j.fm) {
+          AUTOF[p.f] = j.fm;
+          (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
+        }
+        const mf = metFlag(autoSure(j), j, METRICS[p.f], MREF);
+        if (mf) p.mf = mf;
+        // Laid late, the registry below has copied the photo already: the copy the candidate's own genus made gets them too.
+        const c = PHOTOS[p.f];
+        if (c && c.genus === n) Object.assign(c, {j: p.j, ...(p.vg ? {vg: p.vg} : {}), ...(p.mf ? {mf: p.mf} : {})});
+      })
+    );
+  };
+  if (!late) sugCands();
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
   if (DATA.x) Object.assign(DATA.gen, DATA.x.gen);
@@ -7890,15 +8010,24 @@ async function start() {
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
   // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
   // Only for an admin who can publish (read-only shows the published curation as it is).
-  const ar = TOKEN && autoRun();
-  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-  // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
-  // which would share the line and the main thread with the first page. One Undo step.
-  const fishLater = () =>
-    fishAutoRun().then(R => {
-      if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
-    });
-  'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  const sugRun = () => {
+    const ar = TOKEN && autoRun();
+    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+    // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
+    // which would share the line and the main thread with the first page. One Undo step.
+    const fishLater = () =>
+      fishAutoRun().then(R => {
+        if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+      });
+    'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  };
+  // Opened on a Players page: the suggestions, their laying and the auto-sorts follow (sugLater), or sooner (render's gate).
+  if (late)
+    SUG_LATE = () => {
+      sugCands();
+      sugRun();
+    };
+  else sugRun();
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
@@ -8011,6 +8140,7 @@ async function start() {
     });
   new MutationObserver(fid).observe($v, {childList: true, subtree: true});
   render();
+  if (late) sugLater();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
@@ -8600,11 +8730,17 @@ function answersBy(PH, key) {
   });
   return O;
 }
-// A subject the sheet does not rate (fish admin at parity; the sheet's photo ratings, stats_, are the replayed subject's
-// only): its photos in play as Coverage › Games counts them (autosort.js fishCov over fuData: per family, genus and
-// species), its words from its data (SUBJECTS one, many, admin obs and origins, the circles of structure), and the
-// answers per photo from the answer log alone, as By difficulty and Health count them (photoAnswers over rowsOf, joined
-// by treePid). The family pages' data (fishLoad) and the answer log are read behind the page.
+// A tree subject's photos in play, each with its family {p, u}, as fishCov's rows count them: the species of the family not
+// out, and its genera's genus-level photos (gl). D: fuDataM().D; units: FISHC.units; sp: FISHC.species.
+const treePlayOf = (D, units, sp) =>
+  units.flatMap(u =>
+    [...u.species.filter(s => sp[s] && !sp[s].out), ...u.genera.map(g => g.id)].flatMap(s => (D.play[s] || []).map(p => ({p, u})))
+  );
+// A tree subject's Overview (fish admin at parity): its photos in play as Coverage › Games counts them (autosort.js fishCov
+// over fuData: per family, genus and species), its words from its data (SUBJECTS one, many, admin obs and origins, the
+// circles of structure), and the answers per photo from the answer log alone, as By difficulty and Health count them
+// (photoAnswers over rowsOf, joined by treePid); its photo ratings are Photo stats › Difficulty (diffOwn). The family pages'
+// data (fishLoad) and the answer log are read behind the page.
 function pstatsFish(S, here) {
   if (!ANS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
@@ -8624,11 +8760,8 @@ function pstatsFish(S, here) {
     F = D.F,
     sp = FISHC.species,
     C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
-    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out, and its
-    // genera's genus-level photos, gl)
-    play = FISHC.units.flatMap(u =>
-      [...u.species.filter(s => sp[s] && !sp[s].out), ...u.genera.map(g => g.id)].flatMap(s => (D.play[s] || []).map(p => ({p, u})))
-    ),
+    // its photos in play, each with its family
+    play = treePlayOf(D, FISHC.units, sp),
     PA = answersBy(photoAnswers(rowsOf(S)), treePid),
     ans = x => PA[treePid(x.p.f)];
   // Every photo the fish data hold, by state, each counted once (by treePid), in play first; then, the first that applies:
@@ -9212,13 +9345,18 @@ function sheetAgain(...kinds) {
   kinds.forEach(k => {
     sheetDrop(k);
     if (k === 'ans') ANS = null;
-    else if (k === 'stats') STATS = null;
-    else if (k === 'users') USERS = null;
+    else if (k === 'stats') {
+      STATS = null;
+      // a subject's own ratings are the same statistics (an excluded player or a deleted answer leaves them): read again
+      Object.keys(OWNST).forEach(id => sheetAgain('own:' + id));
+      Object.keys(DIFF_TRY).forEach(id => delete DIFF_TRY[id]);
+    } else if (k === 'users') USERS = null;
     else if (k === 'pages') PGS = null;
     else if (k === 'events') EVS = null;
     else if (k === 'alerts') ALS = null;
     else if (k === 'infra') INF = null;
     else if (k === 'reports') REPS = null;
+    else if (k.startsWith('own:')) delete OWNST[k.slice(4)];
   });
 }
 // The reads the landing page needs leave as soon as the token is known, in parallel with the token check and start()'s
@@ -9343,10 +9481,23 @@ const photoStats = () => STATS;
 // first: {...p, d, gd, r, a, n, ok} (difficulty, genus offset, residual, answers, weighed answers and right). None from
 // an older script (no gd).
 function farHarder(play) {
-  const S = photoStats() || {};
+  return farFrom(play, photoStats() || {}, GD, p => p.genus);
+}
+// farHarder for any subject: play the photos in play ({f, ...}), ST the sheet's photos, G its unit offsets {unit: [offset]},
+// unitOf(p) the unit whose offset p's difficulty carries (a coral photo's genus; a tree subject's photo is rated at the rank
+// each question asked: the unit the sheet names in its fifth element). Pure: tests/farharder.test.js.
+function farFrom(play, ST, G, unitOf) {
   return play
-    .filter(p => S[p.f] && GD[p.genus] && isFinite(GD[p.genus][0]) && nAns(S[p.f]) >= FAR.N)
-    .map(p => ({...p, d: S[p.f][0], gd: GD[p.genus][0], r: S[p.f][0] - GD[p.genus][0], a: nAns(S[p.f]), n: S[p.f][1], ok: S[p.f][2]}))
+    .filter(p => ST[p.f] && G[unitOf(p)] && isFinite(G[unitOf(p)][0]) && nAns(ST[p.f]) >= FAR.N)
+    .map(p => ({
+      ...p,
+      d: ST[p.f][0],
+      gd: G[unitOf(p)][0],
+      r: ST[p.f][0] - G[unitOf(p)][0],
+      a: nAns(ST[p.f]),
+      n: ST[p.f][1],
+      ok: ST[p.f][2]
+    }))
     .filter(p => p.r >= FAR.D - 1e-9)
     .sort((a, b) => b.r - a.r || b.a - a.a);
 }
@@ -11427,7 +11578,7 @@ function needsBody() {
 // (everyoneMisses) or a difficulty PH_FAR or more above the median of their genus's rated photos.
 // S: the subject whose photos they are (the one on screen; the Corals | Fish switch, rule A4): the corals' game photos
 // (allPhotos), another subject's as the admin reads them (fishAdmin: each fish photo with its family, genus = the family).
-// The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone. A
+// A fish photo is counted on its answers alone here (its rating is on Photo stats › Difficulty). A
 // fish photo already handled in the draft (fishRepTile's tools: × excluded, Not this, Removed) is out of the list before
 // it is sorted and cut: acting on the photos shown brings the next ones in.
 function healthBad(R, S = ASUBJ) {
@@ -11929,33 +12080,199 @@ function statsConf() {
     b.onclick = () => p && zoomOne({...p, genus: FISHA && FISHA.gen[p.genus] ? FISHA.gen[p.genus].name : ''});
   });
 }
+// Photo stats › Difficulty, one page for every subject whose photos the sheet rates (rule S1; fish admin at parity): each
+// subject's numbers in one shape M, drawn by diffHtml. The corals' come from the sheet's ?stats=1 (diffMain: their genera
+// and three views); a subject with ratings of its own (core.js SUBJECTS stats, ?stats=1&s=<id>) from those (diffOwn: its
+// photos by unit, its one view, the offsets of its units). M: {one, many (its unit's words), lanes [[key, title]] (its
+// views), srcs [[key, title]] (its photo origins), off {unit: [offset]} (the units' offsets: ?stats=1 gd), L [{f, u (its
+// row's unit), lane, src, d (difficulty), n, ok (weighed answers, right), a (answers)}] (the rated photos with SF.min
+// answers or more), far (farFrom's list), name(u), unit(u) (a row's unit as text, and linked), cell(p) (a photo in the
+// far table), attrs(p) (what a click on a dot opens), bind() (after drawing)}.
 function statsPhotos() {
+  const S = ASUBJ,
+    here = () => cur === 'photos/stats/difficulty' && ASUBJ === S,
+    M = S.stats ? diffOwn(S, here) : diffMain();
+  if (M) diffHtml(M);
+}
+// The corals' photos with their ratings: the sheet's ?stats=1 (STATS, GD), the photos in play for the far-harder list.
+function diffMain() {
   const PS = photoStats(),
-    L = allPhotos()
+    nm = g => `<i>${esc(g)}</i>`,
+    at = p => ` data-zf="${esc(p.f)}" data-g="${esc(p.genus)}"`;
+  return {
+    one: 'genus',
+    many: 'genera',
+    lanes: Object.entries(VIEW_T),
+    srcs: Object.entries(ORIGIN_T),
+    off: GD,
+    L: allPhotos()
       .filter(p => PS[p.f] && nAns(PS[p.f]) >= SF.min)
-      .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])}));
+      .map(p => ({...p, u: p.genus, lane: p.view, src: origin(p), d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])})),
+    far: farHarder(poolStats().play),
+    name: nm,
+    unit: g => `<a class="adm-gen" href="${esc(genusHref(g))}">${nm(g)}</a>`,
+    cell: p => `<button type="button" class="adm-link"${at(p)}><i>${esc(p.genus)}</i> ${esc(VIEW_T[p.view] || '')}</button>`,
+    attrs: at,
+    bind: () => {}
+  };
+}
+// A subject's own ratings (S.stats: the sheet script version that serves them, rule D4), read once (OWNST) as the app reads
+// them (sync.js loadOwnStats): a reply that names the subject (s) and comes from that version or later; an older script
+// answers &s= with the corals' ratings. ownRead(j, S): {photos: {f: [difficulty, weighed answers, weighed right, answers,
+// the unit whose offset the difficulty carries]}, gd: {unit: [offset, weighed answers]}, v}, or {old: true, v, err}.
+// Pure: tests/ownstats.test.js.
+const OWNST = {};
+function ownRead(j, S) {
+  if (!j) return {old: true, err: 'offline'};
+  if (!j.ok) return {old: true, v: j.v, err: 'script'};
+  if (j.s !== S.id || !(Number(j.v) >= S.stats)) return {old: true, v: j.v, err: 'script'};
+  return {photos: j.photos || {}, gd: j.gd || {}, v: j.v};
+}
+function loadOwnStats(S) {
+  return sheetRead('own:' + S.id, fresh =>
+    fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=admin`)
+      .then(r => r.json())
+      .catch(() => null)
+      .then(j => {
+        if (fresh()) OWNST[S.id] = ownRead(j, S);
+      })
+  );
+}
+// A subject's own ratings as the page reads them, one entry per photo, by key(f) (core.js treePid): the answers were logged
+// under a photo's game id, its candidate id or both (63 of the fish's 2,221 rated photos), so a photo rated under both has its
+// two ratings merged (difficulties weighed by their weighed answers, answers added). A served difficulty carries the offset
+// of the unit the photo was rated at (its fifth element, a family or a genus): each is taken to the unit of its row,
+// rowOf(k) (the registry's entry: its family), as the app does (model.js photoDiff swaps the offset), so the lanes of the
+// units compare like with like; with no offset known for one of the two units it stays as served. G: the sheet's unit offsets
+// {unit: [offset, answers]}. Returns {k: [difficulty, weighed answers, weighed right, answers, unit]}. Pure: tests/ownstats.test.js.
+function ownMerge(ST, G, key, rowOf) {
+  const M = Object.create(null),
+    base = (s, u) => {
+      const a = G[s[4]],
+        b = G[u];
+      return u && u !== s[4] && a && b && isFinite(a[0]) && isFinite(b[0])
+        ? [Math.round((s[0] - a[0] + b[0]) * 100) / 100, ...s.slice(1, 4), u]
+        : s;
+    };
+  Object.entries(ST || {}).forEach(([f, s0]) => {
+    const k = key(f),
+      s = base(s0.slice(0, 5), rowOf(k)),
+      x = M[k];
+    if (!x) {
+      M[k] = s;
+      return;
+    }
+    const w = (x[1] || 0) + (s[1] || 0);
+    M[k] = [
+      w ? Math.round(((x[0] * (x[1] || 0) + s[0] * (s[1] || 0)) / w) * 100) / 100 : x[0],
+      Math.round(w * 10) / 10,
+      Math.round(((x[2] || 0) + (s[2] || 0)) * 10) / 10,
+      nAns(x) + nAns(s),
+      x[4]
+    ];
+  });
+  return M;
+}
+// The rated photos, as diffHtml reads them: ST ownMerge's photos, ph the registry's by key ({k: {entry (its unit), ...}}),
+// those with min answers or more, each on its subject's one view (lane). Pure: tests/ownstats.test.js.
+function diffRows(ST, ph, min, lane) {
+  return Object.entries(ST || {})
+    .filter(([k, s]) => ph[k] && nAns(s) >= min)
+    .map(([k, s]) => ({f: k, u: ph[k].entry, lane, src: origin(ph[k]), d: s[0], n: s[1], ok: s[2], a: nAns(s)}));
+}
+const DIFF_TRY = {};
+function diffOwn(S, here) {
+  const tried = (DIFF_TRY[S.id] = DIFF_TRY[S.id] || {}),
+    wait = (k, load) => {
+      if (tried[k]) return false;
+      tried[k] = 1;
+      $v.innerHTML = '<p class="note">Loading…</p>';
+      Promise.resolve(load())
+        .catch(() => {})
+        .then(() => here() && render());
+      return true;
+    };
+  const say = t => {
+    $v.innerHTML = `<p class="warn">${t}</p>`;
+    return null;
+  };
+  const O = OWNST[S.id];
+  if (!O) return wait('stats', () => loadOwnStats(S)) ? null : say(`${esc(S.name)} photo ratings: not available.`);
+  if (O.old) {
+    // offline: asked again at the next visit
+    if (O.err !== 'script') {
+      delete OWNST[S.id];
+      delete tried.stats;
+    }
+    return say(
+      O.err === 'script'
+        ? `Sheet script v${esc(O.v || '?')}: ${esc(S.name)} ratings need v${S.stats}.`
+        : `${esc(S.name)} photo ratings: offline.`
+    );
+  }
+  const R = unitRegOf(S);
+  if (!R) return wait('reg', () => unitAdmin(S)) ? null : say(`${esc(S.name)} photos: not available.`);
+  if (!FISHC || !FISHC.plays) return wait('play', () => fishLoad(true)) ? null : say(`${esc(S.name)} photos: not available.`);
+  // the registry's photos by treePid (a photo held under its game id and its candidate id is one), the sheet's ratings the same
+  const ph = Object.create(null);
+  Object.values(R.ph).forEach(p => (ph[treePid(p.f)] = ph[treePid(p.f)] || p));
+  const ST = ownMerge(O.photos, O.gd, treePid, k => (ph[k] || {}).entry),
+    at = p => ` data-zo="${esc(p.f)}"`,
+    name = u => esc(R.gen[u] ? R.gen[u].name : String(u).replace(/^[a-z]:/, '')),
+    play = Object.create(null);
+  // the photos in play as Coverage › Games counts them, each once, in its registry unit
+  treePlayOf(fuDataM().D, FISHC.units, FISHC.species).forEach(x => {
+    const k = treePid(x.p.f);
+    play[k] = play[k] || {f: k, u: (ph[k] || {}).entry || x.u.id};
+  });
+  return {
+    one: S.one,
+    many: S.many,
+    lanes: [S.views[0]],
+    srcs: (S.admin.origins || []).map(([o, t]) => [o, t]),
+    off: O.gd,
+    L: diffRows(ST, ph, SF.min, S.views[0][0]),
+    far: farFrom(Object.values(play), ST, O.gd, p => (ST[p.f] || [])[4]),
+    name,
+    unit: u => repUnit(u, true, S),
+    cell: p => `<button type="button" class="adm-link"${at(p)}>${name(p.u)} <i>${esc((ph[p.f] || {}).t || '')}</i></button>`,
+    attrs: at,
+    // another subject's photos are enlarged alone, captioned with their unit's name
+    bind: () =>
+      $v.querySelectorAll('[data-zo]').forEach(b => {
+        const p = ph[b.dataset.zo];
+        b.onclick = () => p && zoomOne({...p, genus: R.gen[p.entry] ? R.gen[p.entry].name : ''});
+      })
+  };
+}
+function diffHtml(M) {
+  const L = M.L,
+    one = M.one,
+    Many = M.many[0].toUpperCase() + M.many.slice(1),
+    T = {lanes: Object.fromEntries(M.lanes), srcs: Object.fromEntries(M.srcs)},
+    FH = M.far;
   const head = `<div class="adm-shead">${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
   ])}<span class="note">answers</span></div>`;
-  // Far harder than their genus (farHarder), among the photos in play: the photo, its reading and its genus's, the gap.
-  // Its own threshold (FAR.N answers), so it shows whatever the answers filter, an empty one included.
-  const FH = farHarder(poolStats().play),
-    farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their genus <small>${FH.length}</small></h3>${
-      FH.length
-        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Photo</th><th title="Starting players who recognise it without guessing">Recognised</th><th title="A typical photo of its genus (genus offset)">Genus</th><th class="n" title="Its own part of the difficulty: logits above its genus">Gap</th><th class="n">Answers</th><th class="n">Right</th></tr></thead><tbody>${FH.map(
-            p =>
-              `<tr><td><button type="button" class="adm-link" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i> ${esc(VIEW_T[p.view] || '')}</button></td><td>${recBadge(p.d, {short: 1, raw: 'photo difficulty'})}</td><td>${recBadge(p.gd, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</td><td class="n">${rawNum(p.r)}</td><td class="n">${p.a}</td><td class="n">${pct(p.ok, p.n)}</td></tr>`
-          ).join('')}</tbody></table></div>`
-        : `<p class="note">None: no photo in play is ${FAR.D} logits or more above its genus after ${FAR.N}+ answers.</p>`
-    }</section>`;
+  // Far harder than their unit (farFrom), among the photos in play: the photo, its reading and its unit's, the gap. Its own
+  // threshold (FAR.N answers), so it shows whatever the answers filter, an empty one included.
+  const farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their ${one} <small>${FH.length}</small></h3>${
+    FH.length
+      ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Photo</th><th title="Starting players who recognise it without guessing">Recognised</th><th title="A typical photo of its ${one} (${one} offset)">${M.one[0].toUpperCase() + M.one.slice(1)}</th><th class="n" title="Its own part of the difficulty: logits above its ${one}">Gap</th><th class="n">Answers</th><th class="n">Right</th></tr></thead><tbody>${FH.map(
+          p =>
+            `<tr><td>${M.cell(p)}</td><td>${recBadge(p.d, {short: 1, raw: 'photo difficulty'})}</td><td>${recBadge(p.gd, {short: 1, of: `a typical photo of the ${one}`, raw: `${one} offset`})}</td><td class="n">${rawNum(p.r)}</td><td class="n">${p.a}</td><td class="n">${pct(p.ok, p.n)}</td></tr>`
+        ).join('')}</tbody></table></div>`
+      : `<p class="note">None: no photo in play is ${FAR.D} logits or more above its ${one} after ${FAR.N}+ answers.</p>`
+  }</section>`;
   if (!L.length) {
     $v.innerHTML =
       head +
       `<p class="note">${SF.min > 1 ? `No photo with ${SF.min}+ answers yet.` : 'No answers yet.'}</p>` +
       (FH.length ? `<div class="adm-sgrid">${farCard}</div>` : '');
     bindStats();
+    M.bind();
     return;
   }
   const ds = L.map(p => p.d).sort((a, b) => a - b),
@@ -11978,7 +12295,7 @@ function statsPhotos() {
   for (let b = lo; b <= hi; b++) H.push({b, v: {}});
   L.forEach(p => {
     const h = H[Math.floor(p.d * 10) - lo];
-    h.v[p.view] = (h.v[p.view] || 0) + 1;
+    h.v[p.lane] = (h.v[p.lane] || 0) + 1;
   });
   const hm = Math.max(...H.map(h => Object.values(h.v).reduce((t, x) => t + x, 0)));
   const group = key => {
@@ -11986,7 +12303,7 @@ function statsPhotos() {
     L.forEach(p => (O[key(p)] = O[key(p)] || []).push(p));
     return O;
   };
-  // A row's reading m: the median of its photos; a genus (off: its offset, ?stats=1 gd) reads for a typical photo of it,
+  // A row's reading m: the median of its photos; a unit (off: its offset, ?stats=1 gd) reads for a typical photo of it,
   // its difficulty offset, the median when the sheet serves none. Hardest first.
   const rowsOf = (O, T, off) =>
     Object.entries(O)
@@ -12006,21 +12323,24 @@ function statsPhotos() {
       })
       .sort((a, b) => b.m - a.m);
   const V = rowsOf(
-      group(p => p.view),
-      VIEW_T
+      group(p => p.lane),
+      T.lanes
     ),
-    S = rowsOf(group(origin), ORIGIN_T),
+    S = rowsOf(
+      group(p => p.src),
+      T.srcs
+    ),
     GN = rowsOf(
-      group(p => p.genus),
+      group(p => p.u),
       null,
-      GD
+      M.off
     ),
-    // A genus's reading, its raw values in the title.
+    // A unit's reading, its raw values in the title.
     genRec = (r, short) =>
       recBadge(r.m, {
         short,
-        of: 'a typical photo of the genus',
-        raw: r.o != null ? 'genus offset' : `median difficulty of its ${r.a.length} photo${r.a.length === 1 ? '' : 's'} here`,
+        of: `a typical photo of the ${one}`,
+        raw: r.o != null ? `${one} offset` : `median difficulty of its ${r.a.length} photo${r.a.length === 1 ? '' : 's'} here`,
         more: r.o != null ? `median of its ${r.a.length} photo${r.a.length === 1 ? '' : 's'} here ${rawNum(r.md)}` : ''
       });
   // Dot strip scale: the spread of the photos shown, at least -1..+1.
@@ -12032,13 +12352,13 @@ function statsPhotos() {
   // BOX_MIN photos, a box (quartiles) and whiskers (the farthest photos within 1.5 boxes), behind the dots. Fewer photos
   // get no box: quartiles of 2-4 values would look more precise than they are.
   const BOX_MIN = 5,
-    lanes = Object.keys(VIEW_T).filter(v => L.some(p => p.view === v)),
+    lanes = M.lanes.map(x => x[0]).filter(v => L.some(p => p.lane === v)),
     dot = p => {
       const k = Math.min(1, p.a / 10);
-      return `<button type="button" class="v-${p.view}" style="left:${X(p.d)};--s:${(7 + 5 * k).toFixed(1)}px;opacity:${(0.35 + 0.6 * k).toFixed(2)}" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} · recognised by ${recPct(p.d)} (difficulty ${rawNum(p.d)}) · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`;
+      return `<button type="button" class="v-${p.lane}" style="left:${X(p.d)};--s:${(7 + 5 * k).toFixed(1)}px;opacity:${(0.35 + 0.6 * k).toFixed(2)}"${M.attrs(p)} title="${esc(T.lanes[p.lane] || p.lane)} · recognised by ${recPct(p.d)} (difficulty ${rawNum(p.d)}) · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`;
     },
     lane = (a, v) => {
-      const P = a.filter(p => p.view === v);
+      const P = a.filter(p => p.lane === v);
       if (!P.length) return `<span class="adm-strip"><b style="left:${X(0)}"></b></span>`;
       const d = P.map(p => p.d).sort((x, y) => x - y),
         med = qtl(d, 0.5);
@@ -12051,15 +12371,14 @@ function statsPhotos() {
           hi = d.filter(x => x <= q3 + r).pop();
         box = `<u style="left:${X(lo)};right:calc(100% - ${X(hi)})"></u><s class="v-${v}" style="left:${X(q1)};right:calc(100% - ${X(q3)})"></s>`;
       }
-      return `<span class="adm-strip" title="${esc(VIEW_T[v])}: median photo recognised by ${recPct(med)} (difficulty ${rawNum(med)}), ${P.length} photo${P.length === 1 ? '' : 's'}"><b style="left:${X(0)}"></b>${box}${P.map(dot).join('')}<i class="v-${v}" style="left:${X(med)}"></i></span>`;
+      return `<span class="adm-strip" title="${esc(T.lanes[v])}: median photo recognised by ${recPct(med)} (difficulty ${rawNum(med)}), ${P.length} photo${P.length === 1 ? '' : 's'}"><b style="left:${X(0)}"></b>${box}${P.map(dot).join('')}<i class="v-${v}" style="left:${X(med)}"></i></span>`;
     },
     strip = a => `<span class="adm-lanes">${lanes.map(v => lane(a, v)).join('')}</span>`;
   const table = (Rw, first) =>
     `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th title="The median photo: starting players who recognise it without guessing">Recognised</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${recBadge(r.m, {short: 1, of: 'the median photo', raw: 'median difficulty'})}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
-  const legend = `<p class="adm-legend">${Object.keys(VIEW_T)
-    .filter(v => L.some(p => p.view === v))
-    .map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`)
-    .join('')}</p>`;
+  // a subject with one view has nothing to tell its views apart by: no legend, no Views card
+  const legend =
+    lanes.length > 1 ? `<p class="adm-legend">${lanes.map(v => `<span><i class="v-${v}"></i>${T.lanes[v]}</span>`).join('')}</p>` : '';
   $v.innerHTML =
     head +
     kpis([
@@ -12069,26 +12388,25 @@ function statsPhotos() {
         'Middle half, recognised by',
         `<span title="${esc(`Half the photos are between ${recPct(q3)} and ${recPct(q1)}: difficulty ${rawNum(q1)} to ${rawNum(q3)} (quartiles), spread (SD) ${sd.toFixed(2)}`)}">${recOf(q3)}–${recPct(q1)}</span>`
       ],
-      ['Hardest genus', `<i>${esc(GN[0].k)}</i> ${genRec(GN[0], 1)}`]
+      [`Hardest ${one}`, `${M.name(GN[0].k)} ${genRec(GN[0], 1)}`]
     ]) +
     `
     <div class="adm-sgrid">
     <section class="adm-scard"><h3>Distribution</h3><div class="adm-cols stack">${H.map(
       h =>
-        `<div title="${esc(`Recognised by ${recOf((h.b + 1) / 10)}–${recPct(h.b / 10)} · difficulty ${rawNum(h.b / 10)} to ${rawNum((h.b + 1) / 10)}`)}">${Object.keys(
-          VIEW_T
-        )
+        `<div title="${esc(`Recognised by ${recOf((h.b + 1) / 10)}–${recPct(h.b / 10)} · difficulty ${rawNum(h.b / 10)} to ${rawNum((h.b + 1) / 10)}`)}">${lanes
           .filter(v => h.v[v])
           .map(v => `<i class="v-${v}" style="height:${(100 * h.v[v]) / hm}%"></i>`)
           .join('')}</div>`
     ).join('')}</div>
 ${recScale(lo / 10, (hi + 1) / 10)}
       <p class="adm-axis"><span>${recPct(lo / 10)}</span><span>easier · recognised by · harder</span><span>${recPct((hi + 1) / 10)}</span></p>${legend}</section>
-    <section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>
+    ${lanes.length > 1 ? `<section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>` : ''}
     <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
-    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="${esc(genusHref(r.k))}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
+    <section class="adm-scard wide"><h3>${esc(Many)}</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div>${M.unit(r.k)}<span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
       ${recScale(x0, x1, 'strip')}<p class="adm-axis strip"><span>${recPct(x0)}</span><span>easier · recognised by · harder</span><span>${recPct(x1)}</span></p></section>
     ${farCard}
     </div>`;
   bindStats();
+  M.bind();
 }

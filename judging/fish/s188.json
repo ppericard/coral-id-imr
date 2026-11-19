@@ -186,8 +186,15 @@
    "keep": "dup"
   },
   "fish-s188-cand-327162354": {
-   "code": "p1g1slk3",
-   "keep": "best"
+   "code": "p1d1ml13",
+   "keep": "best",
+   "crop": [
+    0.21,
+    0.24,
+    0.85,
+    0.78
+   ],
+   "note": "crop: the wrasse, the surgeonfish and the fishes around leave the frame (Q430)"
   },
   "fish-s188-cand-327162368": {
    "code": "o1g1smm2",

@@ -85,5 +85,7 @@ The counts of `curation.json` (main of 2026-11-19 21:10 Manila; `node` on `autos
   another angle, on 2026-11-14 and 15; suggest.json's history), now a sure best or alt; none leaves play; and 351 records change (tags 242, ease 208, phase 39), each
   from a sure judgement; 100 of the ease changes are juveniles, re-rated by #1254 (the integrator counted 101 copies
   that differ).
-- The 694 `k` set aside now have a route: a crop that saves one brings it back by itself.
+- The 694 `k` set aside now have a route: a crop that saves one brings it back by itself. Their re-judge (#1272): 546
+  screened at 360 px (the 145 `dup` stay out), 161 leads seen at full size, 85 saved by a crop and back in play
+  cropped (`tools/fish_game.py --plan`: 94 to download, these 85 and the 9 above; nothing else enters or leaves).
 - The corals' games are built as before: their auto-sort's proposals (the (b) column) are not read anew here.

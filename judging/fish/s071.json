@@ -13,8 +13,21 @@
    "keep": "best"
   },
   "fish-s071-cand-558076408": {
-   "code": "p1g1ssk2",
-   "keep": "best"
+   "code": "p1g0sl14",
+   "keep": "best",
+   "crop": [
+    0.35,
+    0.15,
+    0.95,
+    0.55
+   ],
+   "bb": [
+    0.5,
+    0.3,
+    0.75,
+    0.55
+   ],
+   "note": "crop: the damselfish and the second clownfish below leave the frame (Q430)"
   },
   "fish-s071-cand-609638703": {
    "code": "d1g1sm12",
