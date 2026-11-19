@@ -966,7 +966,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     read = tq ? typeRead(tq.m, tq.text, tq.sp, target, tq.ps) : '',
     step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
-  // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
+  // apart, the sub-entries and phases), chosen by what the record holds (fbBody). A mix-up between the two species of a
+  // mimicry pair (model.js mimMix) gives the pair's marks: the photo shown taken for the other species' unit, or in a Find
+  // the X the photo tapped (of unit c) taken for the name asked. The feedback only: nothing logged or drawn reads it.
+  const mx = good ? null : tap ? mimMix(c, tap, target) : mimMix(target, seenPh[0], c);
   document.getElementById('after').innerHTML = fbBody(
     target,
     c,
@@ -978,7 +981,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     step,
     photoTaxon(seenPh, target),
     chs,
-    repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})
+    repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)}),
+    mx
   );
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -1023,11 +1027,16 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
 }
 // The answer's feedback, up to the report button: the verdict (step: the typed spelling step, typeStep), the photo's
 // taxon line (tx: app.js photoTaxon, taxonLine), the decisive line (fbLine), and behind More the ID tips, why the answer
-// is another unit (namesLine first), a genus's Coral ID Key criteria, a fish entry's sub-entries and phases.
-function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep = '') {
+// is another unit (namesLine first), a genus's Coral ID Key criteria, a fish entry's sub-entries and phases. mim: the
+// entry of the mimicry pair the answer mixed up (model.js mimMix), whose marks make the line (fbLine); its other marks
+// and the units' own pair line, which they replace there, open the More panel.
+function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep = '', mim = null) {
   const g = GX(target),
     fish = !!g.name,
-    C = !good && GX(c) ? GX(c) : null;
+    C = !good && GX(c) ? GX(c) : null,
+    M = C && mim ? mimMarks(mim, target) : null,
+    MP = M && pairText(target, c),
+    mims = M ? `${M.rest}${MP ? `<p class="vs">${esc(MP.t)}${MP.s ? ` <small class="esrc">(${esc(MP.s)})</small>` : ''}</p>` : ''}` : '';
   // Behind More: why the answer given is another unit. The pair's own line is the sheet's (fbLine). "This
   // pair comes back as a duel" is counted when More is opened (fbMoreBind), so a sheet nobody opens keeps its three tellings.
   const vs = C
@@ -1064,8 +1073,8 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
   // The short sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): the verdict, the species line, a typed
   // reading and the decisive line; the rest in the More panel, More and Next on one row.
   return `<div class="fb fbs">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs)}
-    <div class="fbmore" id="fbmore" hidden>${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}
+    <div class="fbmore" id="fbmore" hidden>${mims}${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
     ${more}${rep}</div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
@@ -1087,12 +1096,43 @@ function pairText(a, b) {
   const L = [pairLine(b, a), pairLine(a, b)].filter(Boolean);
   return L.length ? {t: L.map(x => x.t).join(' · '), s: [...new Set(L.flatMap(x => x.s.split('; ')).filter(Boolean))].join('; ')} : null;
 }
+// A mix-up between the two species of a mimicry pair (model.js mimMix; docs/LEARNING.md "The mimicry class"): the marks
+// that tell them apart (the pair's marks, each on its side with its sources, rule C2), split for the sheet (rule C3).
+// line: the first mark of each side, the photo's species first (t, the unit shown, on the class's side when it is one of
+// its units), "Name: mark · Name: mark", their sources small after it; rest: the pair's other marks, for the More panel,
+// as the pair's card lists them. Each species by the name the player sees first, as on the card (mimShow), followed by
+// "(juvenile)" when the pair names that side's juveniles as the ones that resemble (its st), so a mark of the young is
+// never read as the adult's. null for a pair with no marks.
+function mimMarks(m, t) {
+  const L = (m && m.pair && m.pair.marks) || [];
+  if (!L.length) return null;
+  const imr = imrSaid(),
+    st = m.pair.st || {},
+    nm = s => {
+      const x = s === 'a' ? m.na : m.nb;
+      return (cnFirst(x, imr) ? esc(cnFirst(x, imr)) : `<i>${esc(x.sci)}</i>`) + (st[s] === 'juvenile' ? ' (juvenile)' : '');
+    },
+    sides = m.u.includes(t) ? ['a', 'b'] : ['b', 'a'],
+    first = sides.map(s => L.find(k => k.side === s)).filter(Boolean),
+    rest = sides.flatMap(s => L.filter(k => k.side === s && !first.includes(k))),
+    one = (k, b) => (b ? `<b>${nm(k.side)}</b>` : nm(k.side)) + `: ${esc(k.t)}`,
+    src = [...new Map(first.flatMap(k => k.src || []).map(s => [s.t, s])).values()];
+  return {
+    line: `<p class="vs fbline">${first.map(k => one(k)).join(' · ')}${src.length ? ` <small class="esrc">(${mimSrc(src)})</small>` : ''}</p>`,
+    rest: rest.length
+      ? `<ul class="mimmarks">${rest.map(k => `<li>${one(k, 1)} <small>(${mimSrc(k.src)})</small></li>`).join('')}</ul>`
+      : ''
+  };
+}
 // The one decisive line of the feedback sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): a miss, the pair's
 // line for the units shown and answered; right, the line telling it from a look-alike among the choices (chs, empty when
 // typed), only one that says something of the unit shown; else its first ID tip, "X: …" with its source; else none.
-// Never a line made by comparing trait tags (rule C2).
-function fbLine(target, c, good, chs = []) {
+// Never a line made by comparing trait tags (rule C2). A miss that mixed up the two species of a mimicry pair (mim, its
+// entry: model.js mimMix) gives that pair's marks instead (mimMarks), when it has some.
+function fbLine(target, c, good, chs = [], mim = null) {
   const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
+  const M = !good && mim ? mimMarks(mim, target) : null;
+  if (M) return M.line;
   const P =
     !good && GX(c)
       ? pairText(target, c)

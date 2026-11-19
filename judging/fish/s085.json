@@ -193,12 +193,15 @@
    "keep": "best"
   },
   "fish-s085-cand-727288649": {
-   "code": "p1g0smk3",
+   "code": "p1g0sls5",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.03,
+    0.12,
+    0.48,
+    0.43
    ],
-   "note": "the most central fish is another Dascyllus, two humbugs behind: same genus, but the subject may be taken for it"
+   "note": "crop: the two humbugs only; the two-bar Dascyllus at the centre and right leaves the frame (Q430)"
   },
   "fish-s085-cand-429599984": {
    "code": "p1g0ss1j3",

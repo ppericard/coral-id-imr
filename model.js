@@ -402,6 +402,22 @@ const mimUnit = (t, p) => {
     u = m ? m.m.find(x => GX(x) && rankOf(x) === rankOf(t)) : null;
   return u && u !== t ? u : null;
 };
+// mimMix: the entry of the mimicry pair a wrong answer c mixed up on photo p of unit t (the answer's feedback shows its
+// marks, quiz.js fbLine): p of either species of the pair at the stage that resembles, c the other species' unit at t's
+// rank; null otherwise (a right answer, none, an ordinary miss, a pair inside one unit). Both ways: a photo of the class
+// taken for the species it resembles (mimUnit), or a photo of the species resembled (the other side of its duel and
+// Again) taken for the class's unit, a pair that names that species' juveniles first when the photo is one (the cleaner
+// wrasse's young, resembled by one blenny's young, all of it by another's). The feedback only: the draw and the scoring
+// read mimUnit.
+const mimMix = (t, p, c) => {
+  if (!p || !c || c === t || !GX(c) || rankOf(c) !== rankOf(t)) return null;
+  if (mimUnit(t, p) === c) return mimOf(t, p);
+  const juv = m => (m.pair.st || {}).b === 'juvenile',
+    L = ((GX(varHome(c)) || {}).mim || []).filter(
+      m => m.u.includes(c) && m.m.includes(t) && p.sp === m.pair.b && (!juv(m) || phaseOf(p) === 'juvenile')
+    );
+  return L.find(juv) || L[0] || null;
+};
 // Whether unit n's draw gives some photo keep accepts a weight now (varOf: the variants' and the class's ramps), so a
 // drill kept to such photos never shows one its unit still holds back (photoSet draws at random when all weigh 0).
 const drawHas = (n, keep) => {

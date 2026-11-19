@@ -618,7 +618,7 @@ function build() {
   DATAON = on;
   DATAST = on ? structStamp(S, RAW, CUR) : '';
   // An edited ID tip's source, shown under the tips wherever they are (tipsList qsrc; rule C2).
-  [d.gen, (d.x || {}).gen].forEach(G => Object.values(G || {}).forEach(g => g && g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
+  [d.gen, (d.x || {}).gen].forEach(G => Object.values(G || {}).forEach(tipsEdited));
   applyCuration(d, CUR);
   applyForms(d, CUR);
   applySlots(d, CUR, {picks: PICKS, autoq: AUTOQ});
@@ -2719,10 +2719,14 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
-// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera; a bonus genus's
+// ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
+// Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
 const tipsLabel = g =>
   g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
+// A genus whose tips the content editor replaced, with a source of his own: it shows under them (qsrc), and the heading
+// made for the genera the lecture skips (tl) stops naming the Coral Finder as their source.
+const tipsEdited = g => g && g.esrc && g.esrc.qt && ((g.qsrc = g.esrc.qt), g.tl && (g.tl = 'ID tips'));
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
