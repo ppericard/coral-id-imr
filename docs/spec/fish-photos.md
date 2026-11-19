@@ -261,8 +261,9 @@ given, never judged by the pass.
   animal filling the frame make the subject unclear (count `x`); the juvenile flag follows the life stage the observer
   or FishBase recorded (`st`), the judge's own view weighing much less ([the
   decision](../decisions/2026-11-19-fish-rubric-gold-set.md); `judging/FISH.md` "The gold set's corrections"). The import
-  applies the rubric's caps (strong blur, clarity `b`, at most 2 for the fish since then) and phase flag
-  (`tools/fish_judge.py` `cap`, `juv_early`) and writes `suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
+  applies the rubric's caps (strong blur, clarity `b`, at most 2 for the fish since then; a fish juvenile caps nothing
+  since Q435, [the decision](../decisions/2026-11-19-fish-juvenile-no-cap.md)) and phase flag
+  (`tools/fish_judge.py` `cap`) and writes `suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
   photos, so a photo keeps its tags when it moves from the candidates to the game.
 - **Sure decisions** (`autosort.js` `fishSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
   phase and crop, whatever the ease; dup, the subject not obvious (count `x`), other species one could take for the

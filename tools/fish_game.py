@@ -359,16 +359,14 @@ def ref_play(fish, refs, codes):
     play enters only once judged against its photos (in_play, keep)."""
     import fish_judge as J
     dim = {t['id'] for t in fish.get('teach') or [] if t.get('dimorph')}
-    juv = {t['id']: t.get('juv') for t in fish.get('teach') or []}
     of, _ = entries(fish)
-    names = {s['id']: (s.get('name'), s.get('now')) for s in fish.get('species') or []}
     out = []
     for sid, L in (refs or {}).items():
         t = of.get(sid)
         for r in L:
             if not t or r.get('f') not in codes or not r.get('src'):
                 continue
-            e, jt = J.cap(codes[r['f']], t in dim, J.juv_early(juv.get(t), names.get(sid, ())), r.get('rep'))
+            e, jt = J.cap(codes[r['f']], t in dim, r.get('rep'))
             q = {k: v for k, v in r.items() if k != 'for'}
             q.update(e=e, jt=jt)
             if judged_sure(jt, e):

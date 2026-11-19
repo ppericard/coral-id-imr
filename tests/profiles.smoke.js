@@ -54,6 +54,10 @@ const server = http.createServer((req, res) => {
   await ctx.addInitScript(() => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    // The player's id is the reserve's seed (core.js reserveOf: each player's own exam photos, out of the games): the app
+    // makes a random one with crypto, which Math.random below does not reach, so every run was another player with other
+    // photos in the games. A fixed one (JSON, as the app's store reads it) makes it the same player each run.
+    localStorage.setItem('reefid-anon-id', JSON.stringify('profsmoke1'));
     // Same draws every run: the app's own randomness is seeded too.
     let s = 12345;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -237,6 +241,11 @@ const server = http.createServer((req, res) => {
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
+      // A fresh player has no window of recent questions either (model.js SEENQ, NEXTQ: a colony shown in the last RECENT
+      // questions waits while the unit has another). The expert's last questions above leave theirs behind, and when it
+      // holds the colony of the photo measured here, that colony is never drawn, with or without calibration.
+      SEENQ = [];
+      NEXTQ = null;
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v)).length >= 8),
         L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v)))],
