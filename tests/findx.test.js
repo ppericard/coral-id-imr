@@ -25,7 +25,7 @@ const photosOf = (n, tiles = 2) => [
   {f: `${n}p1`, e: 3}
 ];
 // planFind with its world: met (introReady), the units with tiles, the random stream (counted: rnd.n).
-function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}} = {}) {
+function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, subj = 'fish'} = {}) {
   let s = seed;
   const rnd = () => (rnd.n++, (s = (s * 16807) % 2147483647) / 2147483647);
   rnd.n = 0;
@@ -38,11 +38,11 @@ function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}} = {
     shots = [];
   const ctx = {
     Math: M,
-    SUBJ: {id: 'fish'},
+    SUBJ: {id: subj},
     CONF: C.CONF,
     FIND: {P},
     GX: n => GEN[n],
-    UNITS: {fish: {tiles: n => GEN[n].views.wide.filter(p => p.xc)}},
+    UNITS: {[subj]: {tiles: n => GEN[n].views.wide.filter(p => p.xc)}},
     rankOf: n => rank[n] || '',
     rankUnits: () => [],
     introReady: n => met.includes(n),
@@ -127,14 +127,45 @@ test('never on a unit not met, never with a unit not met, never without 3 other 
   for (let i = 0; i < 50; i++) assert.ok(!W.plan('D')[2].includes('G'));
 });
 
+test('the sea slugs (Q437): the same engine, never on a unit not met, and without tiles a draw exactly as without the format', () => {
+  // Units with tiles, as the sea slugs get them once boxes are in: met ones only, the unit and three others.
+  let W = planner({subj: 'seaslug', met: ['A', 'B', 'D', 'E', 'F'], P: 1});
+  for (let i = 0; i < 100; i++) {
+    const q = W.plan('A');
+    assert.ok(q && q.findx, 'a Find the X');
+    assert.ok(
+      q[2].every(n => ['A', 'B', 'D', 'E', 'F'].includes(n)),
+      `only met units: ${q[2]}`
+    );
+  }
+  W = planner({subj: 'seaslug', met: 'BCDEF'.split(''), P: 1});
+  assert.strictEqual(W.plan('A'), null, 'a unit not met');
+  assert.strictEqual(W.rnd.n, 0);
+  // No tile in the subject (today's sea slugs): no question and no random number drawn.
+  W = planner({subj: 'seaslug', tiled: [], P: 1});
+  for (const n of UNITS) assert.strictEqual(W.plan(n), null);
+  assert.strictEqual(W.rnd.n, 0);
+});
+
 test('a subject with no tiles (the corals) draws exactly as before: no random number, no question', () => {
   const W = planner({tiled: [], P: 1});
   for (const n of UNITS) assert.strictEqual(W.plan(n), null);
   assert.strictEqual(W.rnd.n, 0);
-  // app.js: the corals' UNITS give no tiles; the fish's, the game photos with a tile (xc) only.
+  // app.js: the corals' UNITS give no tiles; the fish's and the sea slugs' are one declaration (S1), the game photos with a
+  // tile (xc) only.
   const units = cut(app, 'const UNITS = {', '\n};\n', {file: 'app.js'});
-  assert.match(units, /\n {4}tiles: \(\) => \[\],/);
-  assert.match(units, /\n {4}tiles: n => \(\(GX\(n\) \|\| \{views: \{\}\}\)\.views\.wide \|\| \[\]\)\.filter\(p => p && p\.xc\),/);
+  assert.strictEqual((units.match(/\n {4}tiles: \(\) => \[\],/g) || []).length, 1, 'the corals only');
+  assert.strictEqual((units.match(/\n {4}tiles: unitTiles,/g) || []).length, 2, 'the fish and the sea slugs, one declaration');
+  assert.match(app, /\nconst unitTiles = n => \(\(GX\(n\) \|\| \{views: \{\}\}\)\.views\.wide \|\| \[\]\)\.filter\(p => p && p\.xc\);/);
+  // What it does, run on a unit's views: the photos with a tile, none for a unit with none or an unknown one.
+  const ctx = {GX: n => ({a: {views: {wide: [{f: 'x', xc: [0, 0, 1, 1]}, {f: 'y'}, null]}}, b: {views: {}}})[n]};
+  vm.createContext(ctx);
+  vm.runInContext(cut(app, 'const unitTiles = n =>', ';\n', {through: 1, file: 'app.js'}) + 'this.unitTiles = unitTiles;', ctx);
+  assert.deepStrictEqual(
+    ctx.unitTiles('a').map(p => p.f),
+    ['x']
+  );
+  assert.strictEqual(JSON.stringify([ctx.unitTiles('b'), ctx.unitTiles('zz')]), '[[],[]]');
 });
 
 test('the question: one name, four photos of four units, the look-alikes first, every photo a tile', () => {
