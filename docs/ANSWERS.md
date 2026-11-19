@@ -73,3 +73,7 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   Applied: #1190.
 - **Applied in #1190:** S1's wording, Q409 (rule W19), Q414 (rule W14), Q415 (rules L11, L12); the Pikachu and Q408
   records.
+- **08:07 and 08:09, Rule 0.** On ending the quiet hours at 05:00: "non. La journée démarre à partir de mon premier
+  message après 4h du mat"; then "ok pour cette phrase" to: "After 17:30 (Manila time, read from the hook's line), the
+  integrator asks Pierre nothing until his first message after 04:00; everything else goes on as normal, agents
+  included." Applied: AGENTS.md Rule 0, `tools/brief.py` (#1191).

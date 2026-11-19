@@ -113,7 +113,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **Merge continuously**; keep few PRs open. He dislikes a long open list.
 - **Never ask him to click** anything the integrator can do: resolving Codex threads, marking PRs ready, retargeting,
   dispatching a workflow (`gh api -X POST …/actions/workflows/approved-photos.yml/dispatches -f ref=main`).
-- **Rule 0** (AGENTS.md, one sentence since 2026-11-15): after 17:30 Manila, ask him nothing; questions wait in STATUS.
+- **Rule 0** (AGENTS.md, one sentence): after 17:30 Manila, ask him nothing until his first message after 04:00;
+  questions wait in STATUS.
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
   The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
   2026-11-18: no morning report); the session-start summary of reports and events (AGENTS.md "Working mode") stands.
