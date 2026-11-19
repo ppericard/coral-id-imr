@@ -55,6 +55,7 @@ single-species genus row:
 - the scientific name first (the PDF name), its common name, "now … in WoRMS" when WoRMS renamed it;
 - its family and genus, "★ IMR most sighted #n", "On the IMR reference list" and "Confirmed near Dauin" or "Not
   confirmed near Dauin" (`present.near`, rule C8's words); its size and depth ([below](#size-and-depth));
+- its own ID marks, labelled a draft until Pierre validates them ([below](#species-id-marks));
 - its rank in its family by the commonness index (`cmi`);
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
@@ -62,8 +63,7 @@ single-species genus row:
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
-No photo: the drawing and those links. Not on a species sheet yet: ID marks of its own, phase sections, look-alike
-cues of its own.
+No photo: the drawing and those links. Not on a species sheet yet: phase sections, look-alike cues of its own.
 
 ## Family ID marks and behaviour, habitat, size lines
 
@@ -88,6 +88,25 @@ its type, the depth range; never its web pages), into `tools/fish_facts.json`; `
 `fish.json` species (`size` {len, lt, src}, `depth` {m, src}, each `src` the page the value comes from). The species
 sheet shows "Up to 10 cm · 1-36 m deep" with the source (`spFacts`; a length type other than total length in words), the
 family sheet the range of its species' largest sizes (`famSizes`); nothing is shown for a species neither source gives.
+
+## Species ID marks
+
+Every game species has 1 to 3 ID marks of its own, adults only, that tell it from the other game species of its genus
+on a photo, or a reason in `none` (the only species of its genus, no adult mark found yet, a names point in
+`points.json`). `tools/fish_species_marks.json` (`src` {key: {t, u}}: FishBase, Fishes of Australia, Reef Life Survey
+species pages; `species` {name: {marks [[words, refs]], look, ease}}, a ref `[src key, the page's words it rests on]`,
+each checked against the page text as read; `none` {name: why}; `draft`) is agent drafts until Pierre validates them.
+`look` (the look-alikes a source names, each a species of `fish.json` confirmed in the Philippines, rule C6) and `ease`
+(a source's words on how easy it is to tell) are kept there and not shown yet.
+
+`add_families` (`species_marks`) builds them into `fish.json` species (`marks`, `msrc` each source once, `mby` {marks:
+[[msrc indexes] per mark]}, `mdraft` 1 while the file says `draft`) and stops on a line without a source or the words it
+rests on, a mark with a number, a line over 80 characters, a species named that is not a game species of its genus, a
+look-alike not confirmed in the Philippines, or a game species with neither marks nor a reason (`--spmarks`, a hidden
+flag, points the build at another file for `tests/speciesmarks.test.js`). `learn.js` `marksBox`, the genus marks' box
+(`genMarks` opens it on the sheet a genus opens), shows them on the species sheet with each line's source numbers and,
+while `mdraft`, "Draft, not yet reviewed" beside the heading. The game's tips do not read them (a species unit's tips
+are its names).
 
 ## Genus common names
 
