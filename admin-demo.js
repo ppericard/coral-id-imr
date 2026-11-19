@@ -1258,6 +1258,16 @@
       fmt: fmtOffsetsOf(A)
     };
   }
+  // ?stats=1&s=<subject> (Code.gs statsSubjects_): a subject with ratings of its own (core.js SUBJECTS stats) from the script
+  // version that serves them, rated from its made-up answers (S.fana: the report's, on its units' photos), the reply naming
+  // its subject; an older script (?demo&v=N) answers with the corals' ratings, as the real one does.
+  function ownStats(id) {
+    const X = SUBJECTS.find(x => x.id === id),
+      L = S.fana[id];
+    if (!X || !X.stats || V < X.stats || !L) return stats();
+    const rows = L.map(r => [aid(r[0]), ...r.slice(1)]);
+    return {ok: true, s: id, photos: eloOf(rows), conf: {}, gd: genusOffsetsOf(rows)};
+  }
   function userList() {
     const by = {},
       // Code.gs users_ archived: the archives apart, read-only
@@ -1629,7 +1639,9 @@
         await new Promise(r => setTimeout(r, 1000));
       if ((opts.method || 'GET') !== 'POST') {
         const q = new URL(url).searchParams;
-        return ok(q.get('stats') ? stats() : q.get('answers') ? answers() : {ok: false, error: 'input'});
+        return ok(
+          q.get('stats') ? (q.get('s') ? ownStats(q.get('s')) : stats()) : q.get('answers') ? answers() : {ok: false, error: 'input'}
+        );
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});

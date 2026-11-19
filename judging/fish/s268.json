@@ -125,8 +125,15 @@
    "keep": "best"
   },
   "fish-s268-cand-618833132": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.35,
+    0.42
+   ],
+   "note": "crop: the spotted wrasse below leaves the frame (Q430)"
   },
   "fish-s268-cand-335479104": {
    "code": "p1g1sl14",
@@ -181,8 +188,21 @@
    "keep": "best"
   },
   "fish-s268-cand-626329391": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "p1g0sl15",
+   "keep": "best",
+   "crop": [
+    0.4,
+    0.1,
+    0.95,
+    0.6
+   ],
+   "bb": [
+    0.5,
+    0.25,
+    0.8,
+    0.45
+   ],
+   "note": "crop: the dark fish at left leaves the frame (Q430)"
   },
   "fish-s268-cand-610152693": {
    "code": "p1g1ms13",

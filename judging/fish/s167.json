@@ -149,8 +149,15 @@
    "keep": "best"
   },
   "fish-s167-cand-618216262": {
-   "code": "p0g1smk2",
-   "keep": "best"
+   "code": "p1d1mlo3",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.55,
+    0.5
+   ],
+   "note": "crop: the monocle bream at right leaves the frame; small damselfish below stay (o) (Q430)"
   },
   "fish-s167-cand-594617840": {
    "code": "p1g1sl14",

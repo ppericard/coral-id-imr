@@ -185,8 +185,15 @@
    "keep": "best"
   },
   "fish-s100-cand-592516988": {
-   "code": "o1g1ssk2",
-   "keep": "best"
+   "code": "o1g2mm12",
+   "keep": "best",
+   "crop": [
+    0.5,
+    0.4,
+    1.0,
+    0.9
+   ],
+   "note": "crop: the small damselfish above leaves the frame (Q430)"
   }
  }
 }
