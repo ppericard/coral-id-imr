@@ -29,8 +29,8 @@ the PRs.
 
 **Every circle on the path and in the progress**: `UNITS.fish` `slate` = the families of circles 1, 2 and 3, `core`
 = circle 1 (what Open all opens, `model.js` `introLeft`), `gate` = `treeGate` (`model.js` `mayOpen`): circle 2 may open
-once every circle-1 family has been met and asked; circle 3 once `treeC3` holds (`core.js` `SUBJECTS` `gate` `c3`: circle 1's Entries
-component of the global score at 55%, else, without that score, circle 1's plain mean at 50%) and the player said yes to
+once every circle-1 family has been met and asked; circle 3 once `treeC3` holds (`SUBJECTS` `gate` `c3`: circle 1's
+Entries component of the global score at 55%, else, without that score, circle 1's plain mean at 50%) and the player said yes to
 its card or in My progress (`UNITS.fish` `opens`, the `beyond` choice); then the usual weighted opening (`openPick`, the
 IMR-tagged families first for a player who answered "I'm at IMR"). There is no ⚙ row for the circles.
 
