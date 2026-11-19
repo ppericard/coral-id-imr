@@ -213,9 +213,9 @@ saved before `pg` is recomputed from its last 10 results (`pgOf`, as the sheet's
 look-alikes the player can be asked, or mixed up with it (`lookLeft`, `core.js` `looksLeft`), and its confusion-group
 partners are met (`matesLeft`). Then `EXAM.n` = 5 questions on it are slipped unannounced into the photo quiz
 (`quizPhoto` → `examSet`), at least `EXAM.gap` = 8 answers apart (`examReady`, counted in answers, never time), each as
-hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest of its view, the
-views taking turns, 3 look-alike traps (`s.ex = {k, v, at, ts}`, `ts` the time it began, which places it among the
-logged answers for the full replay); `TYPED.exam` of them typed ([quiz.md › Typed questions](quiz.md#typed-questions)).
+hard as the game gets: one photo alone, the player's [reserve](reserve.md) first, else never shown (else the least
+seen), the hardest of its view, the views taking turns, 3 look-alike traps (`s.ex = {k, v, at, ts}`, `ts` its start,
+for the full replay); `TYPED.exam` of them typed ([quiz.md › Typed questions](quiz.md#typed-questions)).
 All right, with a right answer on each variant group (`examPassed`): `s.mx = 1` and a pop-up. The exam's count is shown
 nowhere: only the unit's %, which creeps up from 95% (each exam question passed fills a fifth of what is left) and falls
 back on a miss. Any miss on the unit (exam or not) and any time it is given as the answer for another unit drops
