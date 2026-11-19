@@ -1,6 +1,6 @@
 # Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)
 
-Date: 2026-11-20. PR: #0. Rules or docs touched: S1, P1, P4, L4; docs/spec/seaslugs.md, docs/spec/fish-photos.md
+Date: 2026-11-20. PR: #1284. Rules or docs touched: S1, P1, P4, L4; docs/spec/seaslugs.md, docs/spec/fish-photos.md
 "The tiles", docs/LEARNING.md "Find the X", ROADMAP "Every game mode for every subject" and "Find the X",
 docs/reviews/2026-11-19-modes-every-subject.md (PR 6).
 
