@@ -197,6 +197,18 @@
    "t": "Korshunova et al. 2025, The endless forms are the most differentiated (Zool. J. Linn. Soc. 204)",
    "u": "https://doi.org/10.1093/zoolinnean/zlaf057"
   },
+  "ssf-noucroc": {
+   "t": "Sea Slug Forum, Rudman 1998, Noumea crocea fact sheet",
+   "u": "https://www.seaslugforum.net/find/noucroc"
+  },
+  "ssf-meximult": {
+   "t": "Sea Slug Forum, Rudman 1999, Mexichromis multituberculata fact sheet",
+   "u": "https://www.seaslugforum.net/find/meximult"
+  },
+  "ssf-pecttril": {
+   "t": "Sea Slug Forum, Rudman 1998, Pectenodoris trilineata fact sheet",
+   "u": "https://www.seaslugforum.net/find/pecttril"
+  },
   "gosl2004": {
    "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55)",
    "u": "https://archive.org/details/biostor-110161"
@@ -582,7 +594,7 @@
   "Tubulophilinopsis": {
    "marks": [
     [
-     "A rounded crest on top of the head, over its long tube-like mouth",
+     "A raised, rounded crest on top of the head shield",
      [
       ["zsm2018", "Tubulophilinopsis, diagnosis and etymology, p. 40"],
       ["ssf-philgard", "the crest of the tubular buccal bulb group, now Tubulophilinopsis"]
@@ -603,7 +615,7 @@
   "Armina": {
    "marks": [
     [
-     "A flat body narrowing to the rear, the back lined with long ridges",
+     "A flat body narrowing to the rear, the back with long ridges or pustules",
      [["av2004", "Introduction, p. 131: the features of the Arminidae"]]
     ],
     [
@@ -624,11 +636,11 @@
   "Plakobranchus": {
    "marks": [
     [
-     "Side flaps (parapodia) close over the back, hiding green ridges inside",
+     "In P. ocellatus, side flaps close over the back, hiding green ridges",
      [["ssf-placocel", "the parapodial flaps and their chloroplast ridges"]]
     ],
     [
-     "Often half buried in sand, in shallow lagoons and reef pools",
+     "P. ocellatus: often half buried in sand, in shallow lagoons and pools",
      [["ssf-placocel", "its habitat"]]
     ]
    ]
@@ -642,21 +654,38 @@
     ["Smooth rhinophores", [["kfm2025", "Eubranchidae, the diagnosis of the genus Longibranchus"]]]
    ]
   },
+  "Diversidoris": {
+   "marks": [
+    [
+     "D. crocea: the mantle edge has a lasting fold halfway along each side",
+     [["ssf-noucroc", "Noumea crocea, now Diversidoris crocea: the mantle skirt"]]
+    ]
+   ]
+  },
+  "Mexichromis": {
+   "marks": [
+    [
+     "M. multituberculata: tubercles scattered over the mantle",
+     [["ssf-meximult", "the mantle's tubercles"]]
+    ],
+    [
+     "M. trilineata is often found in groups on the blue sponge it eats",
+     [["ssf-pecttril", "Pectenodoris trilineata, now Mexichromis trilineata: its food sponge"]]
+    ]
+   ]
+  },
   "Bermudella": {
    "marks": [
     [
-     "Rhinophores with few, widely spaced plates (lamellae)",
+     "B. brunneomaculata: rhinophores with few, widely spaced plates",
      [
-      ["gosl2004", "character 11, p. 155"],
-      ["gosl2004", "Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella"]
+      ["gosl2004", "Okenia brunneomaculata, now Bermudella brunneomaculata, external morphology, p. 129"],
+      ["gosl2004", "character 11, the rhinophoral lamellae, p. 155"]
      ]
     ],
     [
-     "Translucent white with brown marks; feeds on bryozoans",
-     [
-      ["gosl2004", "Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella"],
-      ["gosl2004", "Okenia brunneomaculata, now Bermudella brunneomaculata, p. 129"]
-     ]
+     "B. brunneomaculata lives and feeds on bryozoans under large sponges",
+     [["gosl2004", "Okenia brunneomaculata, now Bermudella brunneomaculata, natural history, p. 129"]]
     ]
    ]
   }
@@ -724,8 +753,6 @@
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
-  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus",
-  "Diversidoris": "Johnson and Gosliner 2012 define it by its DNA; the one Sea Slug Forum sheet read is of D. aurantionodulosa, not a game species (rule C6); Rudman 1987's diagnosis not read",
-  "Mexichromis": "Johnson and Gosliner 2012 define it by its DNA; the Sea Slug Forum's M. multituberculata sheet gives the species' colours, Tibiriçá et al. 2017 its radula; no source read gives a feature of the genus"
+  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus"
  }
 }

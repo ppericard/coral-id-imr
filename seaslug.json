@@ -2210,7 +2210,23 @@
    "species": [
     "s467980"
    ],
-   "ref": 204234
+   "ref": 204234,
+   "marks": [
+    "D. crocea: the mantle edge has a lasting fold halfway along each side"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Noumea crocea fact sheet, Noumea crocea, now Diversidoris crocea: the mantle skirt",
+     "u": "https://www.seaslugforum.net/find/noucroc"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidiopsis",
@@ -2656,7 +2672,31 @@
     "s319772",
     "s469554"
    ],
-   "ref": 224364
+   "ref": 224364,
+   "marks": [
+    "M. multituberculata: tubercles scattered over the mantle",
+    "M. trilineata is often found in groups on the blue sponge it eats"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Mexichromis multituberculata fact sheet, the mantle's tubercles",
+     "u": "https://www.seaslugforum.net/find/meximult"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pectenodoris trilineata fact sheet, Pectenodoris trilineata, now Mexichromis trilineata: its food sponge",
+     "u": "https://www.seaslugforum.net/find/pecttril"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Cadlinella",
@@ -2706,7 +2746,7 @@
     ]
    },
    "marks": [
-    "A rounded crest on top of the head, over its long tube-like mouth",
+    "A raised, rounded crest on top of the head shield",
     "Eyes at the front of the head, each in a small pale ring",
     "Short, rounded tail lobes at the rear"
    ],
@@ -2841,7 +2881,7 @@
    ],
    "ref": 137677,
    "marks": [
-    "A flat body narrowing to the rear, the back lined with long ridges",
+    "A flat body narrowing to the rear, the back with long ridges or pustules",
     "Rhinophores set close together; the front edge of the mantle unbroken"
    ],
    "msrc": [
@@ -2910,8 +2950,8 @@
    ],
    "ref": 225419,
    "marks": [
-    "Side flaps (parapodia) close over the back, hiding green ridges inside",
-    "Often half buried in sand, in shallow lagoons and reef pools"
+    "In P. ocellatus, side flaps close over the back, hiding green ridges",
+    "P. ocellatus: often half buried in sand, in shallow lagoons and pools"
    ],
    "msrc": [
     {
@@ -2974,20 +3014,20 @@
    ],
    "ref": 138039,
    "marks": [
-    "Rhinophores with few, widely spaced plates (lamellae)",
-    "Translucent white with brown marks; feeds on bryozoans"
+    "B. brunneomaculata: rhinophores with few, widely spaced plates",
+    "B. brunneomaculata lives and feeds on bryozoans under large sponges"
    ],
    "msrc": [
     {
-     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), character 11, p. 155",
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, external morphology, p. 129",
      "u": "https://archive.org/details/biostor-110161"
     },
     {
-     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella",
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), character 11, the rhinophoral lamellae, p. 155",
      "u": "https://archive.org/details/biostor-110161"
     },
     {
-     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, p. 129",
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, natural history, p. 129",
      "u": "https://archive.org/details/biostor-110161"
     }
    ],
@@ -2998,7 +3038,6 @@
       1
      ],
      [
-      1,
       2
      ]
     ]
