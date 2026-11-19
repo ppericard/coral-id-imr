@@ -69,7 +69,7 @@ Newest first.
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
 | 2026-11-19 | [Rule wordings: one shared engine (S1), code comments (W19), the slow tier (W14), L11 over LEARNING](2026-11-19-rules-wordings.md) | #1190 |
 | 2026-11-19 | [The Coral Finder book is a source like any other, with no credit line of its own](2026-11-19-coral-finder-credit.md) | #1194 |
-| 2026-11-19 | [Your tricky pairs on My progress, no weight change](2026-11-19-tricky-pairs.md) | #1205 |
+| 2026-11-19 | [Your tricky pairs on My progress, no weight change](2026-11-19-tricky-pairs.md) | #1210 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
 | 2026-11-19 | [Pikachu: a nickname shared by T. pikachu and T. pacifica, T. picta mentioned](2026-11-19-pikachu-nickname.md) | #1190 |

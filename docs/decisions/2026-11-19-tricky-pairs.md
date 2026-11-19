@@ -1,6 +1,6 @@
 # Your tricky pairs on My progress: the player's own mix-ups, shown, with no weight change
 
-Date: 2026-11-19. PR: #1205. Rules or docs touched: S1, U1; docs/spec/front-end.md "The pages" (My progress),
+Date: 2026-11-19. PR: #1210. Rules or docs touched: S1, U1; docs/spec/front-end.md "The pages" (My progress),
 docs/spec/model.md (the personal path), DESIGN.md (My progress), ROADMAP "Name-similarity confusion".
 
 ## Context
