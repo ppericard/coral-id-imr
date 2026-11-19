@@ -90,11 +90,34 @@ test('read_cur and the admin route back: a reject of the auto-sort a newer sure 
 });
 
 test('read_cur: an add of the auto-sort a newer sure judgement sets aside leaves play; his own add stays', () => {
-  const F = {add: {f1: 's1', f2: 's1', f3: 's1'}, auto: {[old]: {f1: 'a', f3: 'a@t5a1kq'}}},
-    sug = {f1: {jt: 'p1g0slk', e: 4, k: 'best'}, f2: {jt: 'p1g0slk', e: 4, k: 'best'}, f3: {jt: 'p1g0sl1', e: 4, k: 'dup'}},
+  const k = {jt: 'p1g0slk', e: 4, k: 'best'},
+    T = {f1: 'p1g0sl1', f3: 'p1g0sl1', f4: 'p1g0sl1', f5: 'p1g0sl1'},
+    F0 = {add: {f1: 's1', f2: 's1', f3: 's1', f4: 's1', f5: 's1'}, tags: T, auto: {[old]: {f1: 'at', f3: 'at@t5a1kq', f4: 'at', f5: 'at'}}},
+    // f4: his Keep in play (Count: other species, no risk): the tags become his (autosort.js fishOwn), the add stays the run's
+    F = {...A.fishOwn(F0, 'f4', 'tags'), tags: {...T, f4: 'p1g0slo'}},
+    sug = {f1: k, f2: k, f3: {jt: 'p1g0sl1', e: 4, k: 'dup'}, f4: k, f5: {...k, u: ['code'], n: 'doubtful'}},
     out = readCur({fish: F}, cand, sug, by('2026-11-19')).fish;
+  assert.strictEqual(F.auto[old].f4, 'a');
+  // f1 only: f2 his own add, f3 corrected by him, f4 his Keep in play, f5 an unsure judgement (it waits for him)
   assert.deepStrictEqual(out.seen, {f1: 1});
   assert.deepStrictEqual(out.add, F.add, 'the add itself is never taken off: set aside, as his Reject would');
+  assert.deepStrictEqual([out.tags.f1, out.tags.f4, out.tags.f5], ['p1g0slk', 'p1g0slo', 'p1g0sl1']);
+});
+
+test('read_cur: no field read anew from a judgement that is not sure, nor on a photo he answered Keep mine', () => {
+  const F = {
+      add: {f1: 's1', f2: 's1', f3: 's1'},
+      tags: {f1: 'p1g0sl1', f2: 'p1g0sl1', f3: 'p1g0sl1'},
+      ease: {f1: 2, f2: 2, f3: 2},
+      kept: {f3: 'q308'},
+      auto: {[old]: {f1: 'ate', f2: 'ate', f3: 'ate'}}
+    },
+    sug = {
+      f1: {jt: 'p1g0slm', e: 4, k: 'best'}, // other species not sorted yet (m): not sure
+      f2: {jt: 'p1g1sl1', e: 4, k: 'best', u: ['code'], n: 'light?'},
+      f3: {jt: 'p1g1sl1', e: 4, k: 'best'}
+    };
+  assert.deepStrictEqual(readCur({fish: F}, cand, sug, by('2026-11-19')), {fish: F});
 });
 
 test("curplay: the players' copy reads the curation as the build does", () => {

@@ -469,13 +469,14 @@
       "kind": "content",
       "subj": "fish",
       "at": "2026-11-09",
-      "title": "Other species in view: confusion possible or not? (27 photos)",
+      "title": "Other species in view: confusion possible or not? (25 photos)",
       "q": "In each photo, could another fish be taken for the main one at the level the game asks (its family, or its genus for a circle-1 species)? Answer \"no risk\" (the photo plays) or \"confusable\" (it stays out).",
       "ctx": [
         "Q323 (2026-11-09): the old count \"other species in view\" (m) is split in two, no risk of confusion (o, in play) and confusion possible (k, out of play, rule P3). An agent sorted the 1,047 photos that carried m (judging/FISH.md \"Other species: the split\"); these 27 were doubtful.",
         "Meanwhile every one stays out of play (conservative). Photos 1-14 are photos you had in play (the auto-sort's adds): on their family page (Photos › Families) they now sit under \"Other species, out of play\"; Keep in play puts one back in one tap.",
-        "Photos 15-20 are stopgap or reference photos and 21-27 candidates still waiting: answer here and an agent applies it (tools/fish_judge.json, judging/fish).",
-        "The agent leaned \"no risk\" on 7 of them (photos 6, 7, 15, 17, 18, 23, 25), \"confusable\" on the others."
+        "Photos 15-20 are stopgap or reference photos and 21-25 candidates still waiting: answer here and an agent applies it (tools/fish_judge.json, judging/fish).",
+        "The agent leaned \"no risk\" on 6 of them (photos 6, 7, 15, 17, 18, 23), \"confusable\" on the others.",
+        "Two candidates left this point on 2026-11-19: a crop takes the other fish out of their frame, and they play cropped (Q430, #1240)."
       ],
       "ask": "No risk / confusable",
       "photos": [
@@ -632,20 +633,6 @@
           "a": "(c) Ben Costamagna, some rights reserved (CC BY)",
           "o": "https://www.inaturalist.org/observations/399879143",
           "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/733711413/original.jpg"
-        },
-        {
-          "f": "fish-s537-cand-349632216",
-          "t": "Chromis analis",
-          "a": "(c) portioid, some rights reserved (CC BY)",
-          "o": "https://www.inaturalist.org/observations/198376232",
-          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/349632216/original.jpg"
-        },
-        {
-          "f": "fish-s193-cand-551805479",
-          "t": "Scarus dimidiatus",
-          "a": "(c) Tim, some rights reserved (CC BY)",
-          "o": "https://www.inaturalist.org/observations/306013374",
-          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/551805479/original.jpg"
         },
         {
           "f": "fish-s208-cand-396367777",

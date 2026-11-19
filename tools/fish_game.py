@@ -380,12 +380,12 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
     curation.json itself is never written). What his log marks as the auto-sort's (autosort.js fishIdx: a photo's latest
     code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (suggest.json "fish", sug):
     - the fields it wrote (the code's letters: t tags, e ease, p phase, c crop; his own edit takes its letter off,
-      autosort.js fishOwn) read the pass's values (tags and phase as the auto-sort copies them: copy_of; a crop the pass no
-      longer gives leaves);
+      autosort.js fishOwn) read the pass's values when its judgement is sure (tags and phase as the auto-sort copies them:
+      copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal Keep mine (kept);
     - its keep, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by: suggest.json
       "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js fishBack) is in play again when the pass
-      now puts it in (cand_sure), unless he gave it tags or a crop; a photo it put in (a, b) is set aside when the pass now
-      sets it aside (cand_out).
+      now puts it in (cand_sure), unless he gave it tags or a crop; a photo it put in (a, b) with its tags still its copy
+      (t: his Keep in play gives them up) is set aside when the pass now sets it aside (cand_out).
     Everything else is his, or cannot be told from his (a value with no log: Q441's counts), and stands. Returns cur
     itself when nothing reads differently."""
     F = (cur or {}).get(key) or {}
@@ -411,9 +411,12 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
         if m.group(1) or not j or f not in rec:
             continue
         p, sid = rec[f]
+        sure = cand_sure(j) or cand_out(j)
         tags, ph = copy_of(p, j)
         new = {'tags': tags, 'ease': j.get('e'), 'phase': ph, 'crop': j.get('c')}
-        for x in m.group(3):
+        # A sure judgement only (an unsure one, or other species not sorted yet, waits for him), and never on a photo
+        # whose re-judge proposal he answered Keep mine (kept).
+        for x in (m.group(3) if sure and f not in (F.get('kept') or {}) else ''):
             k = WROTE[x]
             if (N.get(k) or {}).get(f) != new[k] and (new[k] is not None or k in ('crop', 'phase')):
                 put(k, f, new[k])
@@ -425,7 +428,7 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
         if m.group(2) == 'r' and seen == 1 and not add and not his and f not in (F.get('tags') or {}) \
                 and f not in (F.get('crop') or {}) and cand_sure(j):
             put('seen', f, None)
-        elif m.group(2) in 'ab' and add == sid and not seen and not his and cand_out(j):
+        elif m.group(2) in 'ab' and 't' in m.group(3) and add == sid and not seen and not his and cand_out(j):
             put('seen', f, 1)
     if N == F:
         return cur
