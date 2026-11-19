@@ -32,9 +32,9 @@ test('the code: w is a typed flag, in the order j c a w, before the tool-made p 
   assert.strictEqual(A.fishTag('p1g0sl1jwpr', 'w'), 'p1g0sl1jpr', 'his tap takes it off');
   assert.strictEqual(A.fishTag('p1g0sl1w', 0, 'o'), 'o1g0sl1w', 'a tag change keeps it (the code is valid)');
   const out = py(`from fish_judge import with_flag, cap, CODE
-print(json.dumps([with_flag('p1g0sl15', 'w'), with_flag('p1g0sl1jc3', 'w'), with_flag('p1g0sl1w5', 'w'), cap('p1g0sl1jw5', True, False, 'fishbase'), bool(CODE.match('p1g0sl1wj5'))]))`);
+print(json.dumps([with_flag('p1g0sl15', 'w'), with_flag('p1g0sl1jc3', 'w'), with_flag('p1g0sl1w5', 'w'), cap('p1g0sl1jw5', True, 'fishbase'), bool(CODE.match('p1g0sl1wj5'))]))`);
   // A typed flag out of order still reads (the data holds aj and cj); with_flag writes the rubric's order.
-  assert.deepStrictEqual(out, ['p1g0sl1w5', 'p1g0sl1jcw3', 'p1g0sl1w5', [2, 'p1g0sl1jwpr'], true]);
+  assert.deepStrictEqual(out, ['p1g0sl1w5', 'p1g0sl1jcw3', 'p1g0sl1w5', [5, 'p1g0sl1jwpr'], true]);
 });
 
 test('games unchanged: w caps nothing and moves no ease, reference level, order, tile or sure decision', () => {
