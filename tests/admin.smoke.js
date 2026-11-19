@@ -50,7 +50,7 @@ const server = http.createServer((req, res) => {
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 // SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both); SMOKE_PART / SMOKE_ONLY: some parts (below).
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
-// Hidden, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
+// the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
 // SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job

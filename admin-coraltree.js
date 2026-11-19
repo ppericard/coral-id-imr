@@ -179,11 +179,12 @@ const ctTagK = () => subjK('reefid-admin-tree-tag');
 // the view's first root, the first IMR lecture group or the first family), as the fish's (admin.js renderFishUnits): the
 // tree at the left (the WAI-ARIA tree, admin.js ttMount), the sticky bar with the path from the root, the genera's
 // select, All | IMR (the slate's genera) and Tag… (ctFilters), and the select of the node's children (the phone's way
-// down). A group or a family: its children's cards, each as its tree row. A genus: its genus page stays where its tools
-// are (Photos › Genera › Live, its address unchanged: genusHref); its Tree page shows its cover and why, what it needs and
-// its featured photos per view, each opening that page. Nothing is chosen on a Tree page: a cover is a genus's
-// (curation.json genera[<genus>].cover, ★ on its genus page); above the genera no cover is shown, the default rule of the
-// fish (most seen near the centre) needing observers per genus the coral data does not hold.
+// down). A group or a family: its children's cards, each as its tree row. A genus: its cover and why, what it needs and
+// every tool of the former Photos › Genera › Live page (admin-nodephotos.js coralLive: its photos per view, ★ Cover, Feature,
+// Remove, Not this, ×, Validated…), under its Structure and Sheet; a cover is a genus's (curation.json
+// genera[<genus>].cover); above the genera no cover is shown, the default rule of the fish (most seen near the centre)
+// needing observers per genus the coral data does not hold. Every node page ends with the shared Removed from the site and
+// Excluded lists of the genera under it (admin-nodephotos.js npLists).
 function renderCoralTree(id, view = TREE) {
   status();
   TT_VIEW = view;
