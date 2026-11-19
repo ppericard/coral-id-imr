@@ -1256,6 +1256,23 @@
         {"t": "Solitary Islands Underwater Research Group, Ctenochaetus binotatus", "u": "https://www.surg.org.au/species/ctenochaetus-binotatus-randall-1955/"},
         {"t": "FishBase, Ctenochaetus binotatus, morphology", "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6012&GenusName=Ctenochaetus&SpeciesName=binotatus"}
       ]
+    },
+    {
+      "id": "fish-naso-one-plate",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Unicornfishes: two scalpels, or one for some species?",
+      "q": "The IMR fish presentation (slide 14) tells the unicornfishes (Naso) by two scalpels on the tail base. The FAO species guide's key to Naso gives a single keeled plate on each side of the tail base for Naso minor, N. thynnoides and N. caeruleacauda, all three in the game. Should RAs expect one plate on these species, or does IMR count them otherwise?",
+      "ctx": [
+        "IMR cue for Naso (Unicornfish, slide 14): \"Two scalpels on the tail base\"; the app shows it as written (rule C1).",
+        "FAO species guide, Acanthuridae (Randall 2001), key to the species of Naso, couplet 1, p. 3661: \"A single keeled plate posteriorly on each side of caudal peduncle\" for N. minor, N. thynnoides and N. caeruleacauda; two keeled plates for the others (N. lituratus, N. unicornis, N. brevirostris, N. vlamingii, N. annulatus, N. hexacanthus, N. caesius). The family remarks (p. 3653) say \"1 or 2 fixed peduncular plates\" for the Nasinae.",
+        "The genus's own ID marks (tools/fish_genus_marks.json) name no number of plates, so nothing in the app changes until the answer."
+      ],
+      "src": [
+        {"t": "IMR fish presentation, slide 14"},
+        {"t": "FAO species guide, Acanthuridae (Randall 2001), key to the species of Naso, p. 3661", "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"}
+      ]
     }
   ]
 }
