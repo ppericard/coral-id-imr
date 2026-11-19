@@ -167,7 +167,7 @@ test('the game reads the per-format offsets only through pfmt (every browser fil
       .map(l => `${f}: ${l.trim()}`)
   );
   assert.deepStrictEqual(uses.sort(), [
-    'model.js: const pfmt = () => (SUBJ.replay ? PFMT : PFMT0);',
+    'model.js: const pfmt = () => (SUBJ.offsets ? PFMT : PFMT0);',
     "model.js: let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));",
     // The device's replay on top of the sheet's: the offsets only for the subject the sheet rates (S.replay), else none.
     'sync.js: PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf)',

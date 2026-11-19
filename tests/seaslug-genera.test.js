@@ -183,7 +183,8 @@ test('typed: a sea-slug genus question reads genera, and a family typed gets the
 });
 
 // The circles open as the fish's (app.js treeGate), counting genera: circle 2 once every circle-1 genus has been asked
-// (and met), circle 3 once circle 1's plain mean reaches FISH_C3 (the sea slugs have no score).
+// (and met), circle 3 once circle 1's plain mean reaches its own threshold (core.js SUBJECTS gate c3, app.js treeC3; the
+// sea slugs have no score).
 test('treeGate on the sea slugs’ genera: circle 2 after every circle-1 genus asked, circle 3 at 50% on circle 1', () => {
   const X = C.treeGen(F, photos(), undefined, 'genus'),
     st = {asked: new Set(), score: 0},
@@ -193,12 +194,13 @@ test('treeGate on the sea slugs’ genera: circle 2 after every circle-1 genus a
       asked: n => st.asked.has(n),
       introduced: n => st.asked.has(n),
       headScore: () => null,
+      SUBJECTS: C.SUBJECTS,
+      TREE_AT: SEA.id,
       progPct: L => (L === X.c1 ? Math.round(100 * st.score) : 0)
     };
   vm.createContext(g);
   vm.runInContext(
-    block(APP, 'const FISH_C3 = {', '\n// Every family in play met', {file: 'app.js'}) +
-      '\nthis.treeGate = treeGate; this.FISH_C3 = FISH_C3;',
+    block(APP, 'const treeC3 = () => {', '\n// Every family in play met', {file: 'app.js'}) + '\nthis.treeGate = treeGate;',
     g
   );
   const [a2, a3] = [X.c2[0], X.c3[0]];

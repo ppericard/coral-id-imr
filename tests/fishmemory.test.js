@@ -112,7 +112,7 @@ test('the game reads the photo memory offsets only through pmem (model.js, quiz.
   );
   assert.deepStrictEqual(uses, [
     "model.js: let PMEM = memOf((store.get('reefid-photo-stats', {}) || {}).mem);",
-    'model.js: const pmem = () => (SUBJ.replay ? PMEM : PMEM0);'
+    'model.js: const pmem = () => (SUBJ.offsets ? PMEM : PMEM0);'
   ]);
 });
 

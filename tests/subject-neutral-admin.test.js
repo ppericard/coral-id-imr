@@ -111,7 +111,7 @@ const COUNTS = {
     'analysis.js': 2
   },
   '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-fish.js': 1, 'admin-light.js': 2, 'admin.js': 25},
-  '.replay': {'admin-demo.js': 2, 'admin-journey.js': 1, 'admin-visits.js': 2, 'admin.js': 13, 'progress.js': 1},
+  '.replay': {'admin-demo.js': 2, 'admin-journey.js': 1, 'admin-visits.js': 2, 'admin.js': 13},
   '.hash test': {'admin.js': 3},
   FISHS: {'admin-covers.js': 3, 'admin-fish.js': 11, 'admin-taxa.js': 1, 'admin.js': 23},
   'DATA.gen': {
