@@ -1139,3 +1139,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **09:46, a review of the rules' substance.** "Est-ce que les règles ne méritent pas d'être revues globalement? Ya
+  aucune optimisation/amélioration possible?". Applied: the substance review (#1206); its answers go in with the
+  rules core.
+- **10:32-10:34, one code for every subject (the admin's Genera beside Tree).** 10:32: "A nouveau, le but est d'avoir
+  un code commun entre les matières, pas des codes pour chaque matière..."; 10:33: "Il faut juste identifier les
+  spécificités de chaque matières et voir comment les implémenter, soit avec des paramètres, soit avec des bouts de
+  codes spécialisés"; 10:34, on a brief that quoted 10:32 as a new order: "Ne prend pas mon message comme parole
+  d'évangile et seule règle. C'est déjà ce qu'on a écrit plein de fois et ya pleins de décisions qui vont dans ce
+  sens" (briefs cite rule S1 and the decisions, not his latest message). Applied: the admin and Learn study
+  (docs/reviews/2026-11-19-admin-one-engine.md), Genera folded into Tree.
+- **10:36, a gold set of fish photos for Pierre.** "Oui, tu peux me préparer un petit set de photos représentatives
+  que tu me demandes d'évaluer pour voir si je suis d'accord avec les pré-selection. Essaye de maximiser l'info que tu
+  peux en tirer". Applied: a review page in preparation; his answers score the judges (#1211).
