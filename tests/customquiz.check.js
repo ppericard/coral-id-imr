@@ -71,7 +71,9 @@ module.exports = async function customQuiz(p, base, fails, word, width) {
   }));
   if (!q.h.endsWith('/practice/custom/play')) bad(`the quiz is at ${q.h}`);
   if (!pick.includes(q.t)) bad(`the question is on ${q.t}, not one of ${pick}`);
-  if (q.L.length !== 4 || !q.L.every(n => q.ok.includes(n))) bad(`choices ${q.L}`);
+  // Four choices, or two: a duel of the picked pair slipped into the quiz (both picked).
+  const duel = q.L.length === 2 && q.L.every(n => pick.includes(n));
+  if (!(q.L.length === 4 || duel) || !q.L.every(n => q.ok.includes(n))) bad(`choices ${q.L}`);
   await p.evaluate(() => smokeAnswer(true));
   await p.waitForTimeout(300);
   const lg = await p.evaluate(() => JSON.stringify(SYNC ? SYNC.log : store.get(LOG0, [])).slice(-400));

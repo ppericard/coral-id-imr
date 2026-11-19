@@ -1984,16 +1984,16 @@ function customChoices(t, sel, play, traps, known) {
   if (own.length >= 3) return own;
   const got = own.filter(n => known(n) && confusable(t, n)).length;
   // Never a label twice across the two (choiceApart).
-  return choiceApart([
-    ...own,
-    ...distractors(
-      t,
-      play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
-      Math.max(0, traps - got),
-      known,
-      false // the units in play only: never a locked unit or one outside the game
-    )
-  ]).slice(0, 3);
+  const rest = play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
+    out = choiceApart([
+      ...own,
+      ...distractors(t, rest, Math.max(0, traps - got), known, false) // the units in play only
+    ]);
+  // Only when the whole pool in play of the rank is short does the photo quiz's rank-wide fallback fill the three.
+  return (out.length >= 3 ? out : choiceApart([...out, ...distractors(t, [...rest, ...out], Math.max(0, traps - got), known)], [t])).slice(
+    0,
+    3
+  );
 }
 // The custom quiz's "My mix-ups" view: the genera in play grouped by the player's own confusions, most confused first.
 // mixEdges: each pair of genera in play the player mixed up, weighed by how often, both ways (s.conf: the genus given

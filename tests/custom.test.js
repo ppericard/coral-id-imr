@@ -135,6 +135,12 @@ test('customChoices: a ranked unit (a fish species or genus) never gets a choice
           `traps ${traps}: ${c.join()}`
         );
       }
+    // A pool of the rank in play that is itself short (three units): the photo quiz's rank-wide fallback fills the three.
+    for (let i = 0; i < 20; i++) {
+      const c = M.customChoices('Ra', ['Ra', 'Rb'], [...PLAY, ...R.slice(0, 3)], 1, known);
+      assert.strictEqual(new Set(c).size, 3, c.join());
+      assert.ok(!c.includes('Ra'));
+    }
     // Under 4 picked the other units of the rank in play top it up, never one outside the game (Codex review: Re is not in
     // play here, though it is a unit of the rank).
     const inPlay = [...PLAY, ...R.slice(0, 4)];
