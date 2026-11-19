@@ -9237,8 +9237,12 @@ function sheetAgain(...kinds) {
   kinds.forEach(k => {
     sheetDrop(k);
     if (k === 'ans') ANS = null;
-    else if (k === 'stats') STATS = null;
-    else if (k === 'users') USERS = null;
+    else if (k === 'stats') {
+      STATS = null;
+      // a subject's own ratings are the same statistics (an excluded player or a deleted answer leaves them): read again
+      Object.keys(OWNST).forEach(id => sheetAgain('own:' + id));
+      Object.keys(DIFF_TRY).forEach(id => delete DIFF_TRY[id]);
+    } else if (k === 'users') USERS = null;
     else if (k === 'pages') PGS = null;
     else if (k === 'events') EVS = null;
     else if (k === 'alerts') ALS = null;

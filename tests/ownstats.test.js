@@ -99,6 +99,25 @@ test('ownMerge: a photo asked under its game id and its candidate id is one phot
   );
 });
 
+test('sheetAgain("stats"): a subject’s own ratings are the same statistics, read again with them (Codex review)', () => {
+  const ctx = {};
+  vm.runInNewContext(
+    [
+      'var STATS = {a: 1}, ANS = {}, USERS = {}, PGS, EVS, ALS, INF, REPS, dropped = [];',
+      'const OWNST = {fish: {photos: {}}, seaslug: {photos: {}}}, DIFF_TRY = {fish: {stats: 1, reg: 1}};',
+      'const sheetDrop = k => dropped.push(k);',
+      block(src, 'function sheetAgain(...kinds) {', '\n}\n', {file: 'admin.js', through: true}),
+      "sheetAgain('stats');",
+      'this.r = {stats: STATS, own: Object.keys(OWNST), tried: Object.keys(DIFF_TRY), dropped, ans: ANS};'
+    ].join('\n'),
+    ctx
+  );
+  const r = JSON.parse(JSON.stringify(ctx.r));
+  assert.deepStrictEqual([r.stats, r.own, r.tried], [null, [], []]);
+  assert.deepStrictEqual(r.dropped, ['stats', 'own:fish', 'own:seaslug'], 'a read of theirs on its way is dropped too');
+  assert.deepStrictEqual(r.ans, {}, 'the answer log is another read');
+});
+
 test('treePlayOf: the species of a family not out and its genera’s genus-level photos, each with its family', () => {
   const units = [
       {id: 'f:A', species: ['s1', 's2', 's3'], genera: [{id: 'g:X'}, {id: 'g:Y'}]},

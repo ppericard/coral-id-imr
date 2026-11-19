@@ -6452,7 +6452,12 @@ async function sealPart(b, base, fails) {
             far: !!v.querySelector('[data-pst="far"]'),
             coral: /Corallites|Colony|Close-up/i.test(v.innerText),
             help: (HELP.ownstatsph || '').length > 100,
-            wide: document.documentElement.scrollWidth - innerWidth
+            wide: document.documentElement.scrollWidth - innerWidth,
+            // what sticks out, when the page does (outside a table's own scroll box)
+            over: [...v.querySelectorAll('*')]
+              .filter(e => e.getBoundingClientRect().right > innerWidth + 0.5 && !e.closest('.adm-tscroll'))
+              .slice(0, 4)
+              .map(e => `${e.tagName}.${String(e.className).slice(0, 30)} ${Math.round(e.getBoundingClientRect().right - innerWidth)}`)
           };
         }, sj);
         if (
