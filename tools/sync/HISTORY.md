@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v200 (2026-11-19)
+
+Its copy of `core.js`: the fish and the sea slugs get the Duel tab (`SUBJECTS` `pages` `quiz-duel`), and every subject names the Learn and Practice pages it lacks with the reason (`SUBJECTS` `closed`, `CLOSED_TREE`). Nothing the script computes changes: a Duel-tab answer of any subject was already logged, scored and replayed as a two-choice contrast question (`kOf`, `contrastQ`), the fish's mode ids renamed with the row (`renameLogEntry`). Pierre, 2026-11-19 (Q437): every game mode opens to every subject, in shared code
+
 ## v199 (2026-11-19)
 
 The script's embedded copy of `core.js` now carries every tree subject's photo-judging rubric in `SUBJECTS` `admin.tags` (the fish declare theirs as the sea slugs already did, both laid out by `core.js` `treeRubric`), so the admin reads one declaration per subject instead of three copies in its own code. The sheet script itself reads nothing of it and behaves as before; the version only follows the rule that a `core.js` change travels in `Code.gs` (rule D3), Pierre's rule S1 and the one-engine study, 2026-11-19
