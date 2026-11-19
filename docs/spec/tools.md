@@ -98,7 +98,7 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
 - **`asked.py TERM…`** (`--any`): before any question, prints the entries of `docs/ANSWERS.md`, AGENTS.md, the rules
   and the decision records holding the terms (accents ignored), file:line; its last line goes under the question.
 - **`answers_check.py`** (`--check` in the docs test): each ledger entry from 2026-11-19 says "Applied: <doc or #PR>"
-  or "no doc change", or a later "Applied in #N:" entry names its Q or quotes its start (`KNOWN`: older ones); a
+  or "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words (`KNOWN`: older); a
   ROADMAP or reviews index status waiting on an answered Q fails; studies and STATUS are only reported.
 - **`decisions_index.py`** (`--fix`, `--check`): the decisions index from the records, by date then file name.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;

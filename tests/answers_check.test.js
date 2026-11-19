@@ -59,7 +59,7 @@ test('a later "Applied in #N" entry naming its question closes an entry; KNOWN h
   const open = check({'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".')});
   assert.match(open.out, /naming its Q, or its time and first words "06:10 rule s1's wording"/);
   const closed = check({
-    'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".', "- **Applied in #1190:** 06:10, Rule S1's wording (rule S1).")
+    'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".', "- **Applied in #1190:** 06:10, Rule S1's wording: rule S1.")
   });
   assert.strictEqual(closed.status, 0, closed.out);
   // Another time, or the words alone, close nothing; a word is matched whole.

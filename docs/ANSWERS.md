@@ -1141,3 +1141,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   before any question and the ledger check, a short core with topic files and guards, fewer index conflicts): «ça c'est
   une priorité. Parce qu'en attendant on continue de développer avec les anciennes règles». Applied: the integrator's
   order of work (#1198, #1117, #1199, the core proposal).
+- **Applied in #1188:** 07:05, OK to this ledger: AGENTS.md "Every answer reaches its doc, and the answers ledger" and
+  this file.
+- **Applied in #1190:** 06:50, rule S1's wording: rule S1 in `docs/rules/subjects.md` and AGENTS.md.
+- **Applied in #1198:** Q425, its first step: CLAUDE.md loads AGENTS.md (decision record `2026-11-19-rules-step1`).
+- **Applied in #1199:** 08:53, the answers ledger as checked data (tools/answers_check.py, in the docs test).

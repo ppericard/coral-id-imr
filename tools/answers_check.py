@@ -41,13 +41,9 @@ KNOWN = {
     '2026-11-19 06:50, Q410.': 'the names stay; "no doc change" not said',
     '2026-11-19 06:50, Q411.': 'not answered (the entry says so); its follow-up not placed',
     '2026-11-19 06:50 and 06:58, Q416': 'four follow-ups; where each is applied not said',
-    '2026-11-19 06:50, rule S1\'s wording.': 'named by the later "Applied in #1190" entry, which has no Q number to match',
     '2026-11-19 06:50, the source weight': 'where applied not said (open PR #1195 carries rule P1 into the corals\' code)',
     '2026-11-19 06:59. The rename': 'an answer already given plus a docs pass; where applied not said',
-    '2026-11-19 07:05. OK to this ledger': 'the ledger itself (decision record of #1188); not said in the entry',
     '2026-11-19 08:53, Q424': 'where applied not said',
-    '2026-11-19 08:53, Q425': 'names its first step (#1198) without "Applied:"',
-    '2026-11-19 08:53, the answers ledger as': 'carried out by #1199 (this check); not said in the entry',
     '2026-11-19 08:57, the order of work': 'names AGENTS.md "Questions to Pierre" without "Applied:"',
 }
 
@@ -82,7 +78,7 @@ def words(text):
     """The text as lower-case words, marks and punctuation dropped: "**06:50, rule S1’s wording.**" -> "06:50 rule
     s1's wording"."""
     text = text.lower().replace('’', "'")
-    return ' '.join(w.strip("'") for w in re.split(r"[^\w:']+", text) if w.strip("'"))
+    return ' '.join(w.strip("':") for w in re.split(r"[^\w:']+", text) if w.strip("':"))
 
 
 def needle(text):

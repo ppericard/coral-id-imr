@@ -23,7 +23,7 @@ and f1). The decisions index and the ledger are shared files every parallel PR a
 
 - `tools/asked.py` searches the ledger, AGENTS.md, the rules and the records; its last line goes under a question.
 - `tools/answers_check.py --check` runs in `tests/docs.test.js`: each ledger entry from 2026-11-19 names where it is
-  applied or says "no doc change", or a later "Applied in #N:" entry names its Q or quotes its start; the entries
+  applied or says "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words; the entries
   written before the check are listed in its `KNOWN`, which only shrinks.
   A docs/ROADMAP.md or docs/reviews/README.md status that waits on an answered question fails; studies and STATUS
   are reported only.
