@@ -257,7 +257,7 @@ test('a typed miss counts in the pooled pairs as offered once and mixed up, in c
     {'Acropora|Montipora': 1, 'Montipora|Acropora': 1},
     'the typed mix-ups stay among those with no choices'
   );
-  // confAdd alone: no unit shown, nothing; a miss with no choices and no |t (before v10) is no pair.
+  // confAdd alone: no unit shown, nothing; a miss with no choices and no |t (the oldest rows) is no pair.
   const O = {};
   confAdd(O, '', 'Acropora', 0, 'quiz|t', '');
   confAdd(O, 'Pavona', 'Acropora', 0, 'quiz', '');
