@@ -74,13 +74,27 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents
 (et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau"):
 
-| Task | Model | Effort |
-| --- | --- | --- |
-| Design, architecture, the learning engine, security, rule wording with consequences | Opus 5.5 (Fable 5.2 only where Opus at high effort measurably falls short) | high |
-| Ordinary code (game formats, admin pages, fixes, docs) | Sonnet 5.5 | medium to high |
-| Mechanical, repetitive work (framing, sorting photos, conversions) | Haiku 5.5, after the sample test against a strong model (Model choice by measurement) | low |
+The table below is #1257's (docs/reviews/2026-11-19-model-effort-combinations.md §4), its strategy approved by Pierre
+on 2026-11-20 05:39 («OK pour cette stratégie»):
 
-In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through.
+| Task | Model | Effort | Rests on |
+| --- | --- | --- | --- |
+| Photo judging (fish candidate pass; slugs and corals until measured) | Opus 5.5 | high | Measured (#1211): nothing lighter validated; gold set 2 tests Sonnet 5.5 high and Opus 5.5 medium; Haiku 5.5 out; 5% drift sample per batch |
+| Learning engine, design, architecture, security, independent reviews | Opus 5.5 (Fable 5.2 where Opus at higher effort measurably falls short) | high | Anthropic + judgement: verification and edge cases; costly to undo |
+| Rule wording | Opus 5.5 | high | Judgement: Pierre's scope kept; his OK is the check |
+| Sourcing research with verbatim quotes | Opus 5.5 | medium (high for a batch where a quote is not found word for word in its source) | Anthropic: research, fewer wrong citations; quote check by script |
+| Studies | Opus 5.5 | medium (high when it decides the engine, a data format or the architecture) | Anthropic: research figures |
+| UI prototypes | Sonnet 5.5 (Opus 5.5 medium for a new format or the shared engine) | high | Anthropic: coding figures; Pierre's taps |
+| CI or test fixes | Sonnet 5.5 (Opus 5.5 high for a flake one run did not explain) | high | Anthropic: bug fixes in existing code want `high` |
+| Ordinary code (game formats, admin pages) | Sonnet 5.5 | high (medium for a small, fully specified change) | Anthropic: `medium` 7-15 points lower on coding |
+| Bringing PRs up to date, docs | Sonnet 5.5 (Opus 5.5 medium for a conflict in the engine, `core.js`, `Code.gs`) | medium | Judgement: well specified, checked by tests and Codex |
+| Mechanical data conversion | A script where a rule can be written; else Haiku 5.5 after the sample test | medium | Anthropic: Haiku for checkable outputs, skips checks at `low` |
+
+Each launch names one level, never a range (in Claude Code a launch without one runs at the session's level on the
+session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at
+medium, Anthropic's starting point. A task that failed for want of thoroughness (stopped early, skipped a check, missed
+a file) is relaunched one effort level up; one that had its context, tried, and was still wrong, one model up. `xhigh`
+and `max` only where a gain is measured.
 `tools/agent_guard.py` (a PreToolUse hook) refuses a launch without both; `brief.py` prints the day's count by model
 and effort, `python3 tools/agent_guard.py --report` lists the launches.
 
@@ -131,8 +145,14 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **Merge continuously**; keep few PRs open. He dislikes a long open list.
 - **Never ask him to click** anything the integrator can do: resolving Codex threads, marking PRs ready, retargeting,
   dispatching a workflow (`gh api -X POST …/actions/workflows/approved-photos.yml/dispatches -f ref=main`).
+- **Never give him a command to run** (Pierre, 2026-11-20 05:39: «c'est jamais à moi de lancer une commande à la main
+  dans un terminal […] C'est à vous de bosser et de trouver une solution»). A step a subagent was refused is the
+  integrator's to judge: undoing an agent's own mistake in a checkout is the integrator's job, done at once; only a
+  step it may not take itself goes to him, as a yes/no question, never as a command.
 - **Rule 0** (AGENTS.md, one sentence): after 17:30 Manila, ask him nothing until his first message after 04:00;
-  questions wait in STATUS.
+  questions wait in STATUS. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
+  at every hour, and nothing stops at 04:00. A session restart kills the queue and the background waits, so a
+  check-in at most an hour apart, night and day, re-starts them (the scratchpad's queue script).
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
   The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
   2026-11-18: no morning report); the session-start summary of reports and events (AGENTS.md "Working mode") stands.
