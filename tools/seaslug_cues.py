@@ -159,6 +159,87 @@ def apply(cues, fams, gens, species):
     return done, list(none)
 
 
+SPKEYS = {'about', 'draft', 'src', 'species', 'none'}
+
+
+def species_apply(x, species):
+    """Lays tools/seaslug_species_marks.json (x; agent drafts until Pierre validates them) on the tree's species records:
+    marks (1 to 3), msrc (each source once, {t, u}: never the quote), mby ({marks: [[msrc indexes] per mark]}) and mdraft
+    (1 while x says draft), as a fish species' (tools/build_fish.py species_marks). Every species of the tree has marks or
+    a reason in none. Stops on anything else (rules C2, C3, C6): a mark without a source or without the page's words it
+    rests on, a mark with a number, a line too long, a species named that is not one of its genus's game species, an
+    unused source. Returns (species with marks, species in none)."""
+    for s in species:
+        for k in ('marks', 'msrc', 'mby', 'mdraft'):
+            s.pop(k, None)
+    if not x:
+        return [], []
+
+    def sbad(why):
+        raise CueError('tools/seaslug_species_marks.json: ' + why)
+
+    if set(x) - SPKEYS:
+        sbad('keys ' + ', '.join(sorted(SPKEYS)) + ' only')
+    S, used = x.get('src') or {}, set()
+    byname = {s['name']: s for s in species}
+    names = {}
+    for s in species:
+        names.setdefault(s['genus'], []).append(s['name'])
+    sp, none = x.get('species') or {}, x.get('none') or {}
+    for name, r in sp.items():
+        s = byname.get(name)
+        if not s:
+            sbad(f'{name}: not a species of the tree')
+        if name in none:
+            sbad(f'{name}: both marks and a reason in none')
+        if not isinstance(r, dict) or set(r) - {'marks'}:
+            sbad(f'{name}: the key marks only')
+        marks = r.get('marks') or []
+        if not 1 <= len(marks) <= 3 or any(not (isinstance(m, list) and len(m) == 2) for m in marks):
+            sbad(f'{name}: 1 to 3 marks, each [words, sources]')
+        g = name.split()[0]
+        msrc, by = [], []
+        for t, rr in marks:
+            if not isinstance(t, str) or not t.strip() or len(t) > LONGEST or t != ' '.join(t.split()):
+                sbad(f"{name}: '{t}': a line of at most {LONGEST} characters")
+            if re.search(r'\d', t):
+                sbad(f"{name}: '{t}': a mark with a number (a count is never a photo cue)")
+            for ini, ep in re.findall(r'\b([A-Z])\. ([a-z]+)', t):
+                if ini != g[0] or f'{g} {ep}' not in names.get(s['genus'], []):
+                    sbad(f"{name}: '{ini}. {ep}' is not a game species of {g} (rule C6)")
+            for full in re.findall(r'\b[A-Z][a-z]+ [a-z]+', t):
+                if full in byname and full not in names.get(s['genus'], []):
+                    sbad(f"{name}: '{full}' is not a game species of {g} (rule C6)")
+            if not rr:
+                sbad(f"{name}: '{t}' has no source")
+            ix = []
+            for q in rr:
+                if not (isinstance(q, list) and len(q) == 2 and q[0] in S and isinstance(q[1], str) and q[1].strip()):
+                    sbad(f"{name}: '{t}': a source is [a key of src, the page's words it rests on]")
+                e = S[q[0]]
+                if not str(e.get('t', '')).strip() or not str(e.get('u', '')).startswith('https://'):
+                    sbad(f'src {q[0]}: t and an https u')
+                used.add(q[0])
+                e = {'t': e['t'], 'u': e['u']}
+                if e not in msrc:
+                    msrc.append(e)
+                if msrc.index(e) not in ix:
+                    ix.append(msrc.index(e))
+            by.append(ix)
+        s['marks'], s['msrc'], s['mby'] = [m[0] for m in marks], msrc, {'marks': by}
+        if x.get('draft'):
+            s['mdraft'] = 1
+    for name, why in none.items():
+        if name not in byname or not isinstance(why, str) or not why.strip():
+            sbad(f'none {name}: a species of the tree and its reason')
+    lost = sorted(n for n in byname if n not in sp and n not in none)
+    if lost:
+        sbad('species with neither marks nor a reason in none: ' + ', '.join(lost))
+    if set(S) - used:
+        sbad('sources never used: ' + ', '.join(sorted(set(S) - used)))
+    return list(sp), list(none)
+
+
 def main():
     with open(CUES, encoding='utf-8') as fh:
         cues = json.load(fh)

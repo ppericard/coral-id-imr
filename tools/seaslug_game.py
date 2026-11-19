@@ -18,6 +18,7 @@ Inputs, all in the repository (no network but --r2's downloads):
   - tools/seaslug_lookalikes_cand.json (tools/seaslug_lookalikes.py): the look-alike survey's literature sets and genus
     pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D);
   - tools/seaslug_cues.json (checked by tools/seaslug_cues.py): the sourced ID marks of genera and families;
+  - tools/seaslug_species_marks.json (checked by tools/seaslug_cues.py species_apply): the species' own ID marks, drafts;
   - tools/seaslug_worms.json (tools/seaslug_worms.py, from WoRMS): the reference taxonomy, AphiaID -> {name, rank,
     parent} from the class down, and each genus's WoRMS AphiaID.
 
@@ -48,7 +49,9 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
     Q369 (d) stands: never a choice, no common-name branch).
   - on a genus or family tools/seaslug_cues.json gives ID marks: marks, msrc, mby, as a fish genus's (tools/seaslug_cues.py
-    apply; study §9 step 7): shown on its sheets and, a genus's, in the quiz feedback.
+    apply; study §9 step 7): shown on its sheets and, a genus's, in the quiz feedback; on a species
+    tools/seaslug_species_marks.json gives ID marks (agent drafts): marks, msrc, mby and mdraft, as a fish species'
+    (seaslug_cues.species_apply), shown on its sheet only.
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
     is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
@@ -293,7 +296,8 @@ def worms_ref(W, species, genera):
     return {k: {'name': N[k]['name'], 'rank': N[k]['rank'], 'parent': N[k]['parent']} for k in sorted(need, key=int)}
 
 
-def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None, worms=None):
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None, worms=None,
+          spmarks=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv, rotation)], the photos in play whose files R2 lacks or holds with
     another crop or rotation, circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
@@ -305,7 +309,8 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     (tools/fish_game.py in_play, record): what he removed, excluded or moved leaves, his adds enter, his crop, rotation,
     ease and tags are the record's. cues: tools/seaslug_cues.json, the sourced ID marks (seaslug_cues.apply), none
     without it. worms: tools/seaslug_worms.json, the reference taxonomy (ref, each genus's ref: worms_ref), none without
-    it."""
+    it. spmarks: tools/seaslug_species_marks.json, the species' sourced ID marks (seaslug_cues.species_apply), none
+    without it."""
     import fish_game as FG
     F = part(cur)
     top = set((cur or {}).get('exclude') or {})
@@ -387,6 +392,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         if f['name'] in tof:
             f['tgroup'] = tof[f['name']]
     seaslug_cues.apply(cues, fams, gens, species)
+    seaslug_cues.species_apply(spmarks, species)
     tree = {
         'v': V,
         'about': 'the sea-slug subject\'s tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)',
@@ -592,7 +598,8 @@ def inputs(root=ROOT):
             j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None, j('curation.json', {}),
             j(os.path.join('tools', 'seaslug_cues.json'), {}) or None,
-            j(os.path.join('tools', 'seaslug_worms.json'), {}) or None)
+            j(os.path.join('tools', 'seaslug_worms.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_species_marks.json'), {}) or None)
 
 
 def write(root, tree, game):
