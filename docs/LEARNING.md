@@ -1184,6 +1184,37 @@ and returns what it has. Level 3 never runs on this machine: only with Pierre's 
 GitHub runner" below), with its duration announced first. An unclear result is reported as "the measure cannot tell",
 never escalated automatically. A guardrail breached, or a cost not declared, goes to Pierre.
 
+The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js` in both worlds; Pierre, Q405 and Q415):
+
+- **One wall-clock budget, 40 minutes at every level and on every machine.** `--budget MIN` asks for less and never more.
+  The clock starts when the compute does (the machine slot held), calibration included.
+- **Plan, then run.** The run counts its jobs (profiles × seeds) and estimates their time on the workers: from one short
+  calibration run (the first job, at most 1,000 answers or 100 questions, its time scaled in a straight line to the full
+  length), or from `--per-job SEC`, a job's time at the full length measured before (its `seconds` in an earlier
+  `--out`, divided by the waves). Over the budget it **refuses to start** (exit 2) and says which options would fit: fewer
+  seeds, a shorter run, fewer profiles. The estimate is a straight line, so it can under-estimate a long run (measured on
+  a loaded 4-core machine, rated fish: 1,000 answers 11 s, 3,000 answers 56 s; corals 4 s and 13 s): the stop below is
+  the cap, the estimate only spares a run that would be cut.
+- **The calibration cannot be stopped once begun**, so a budget under 1 minute needs `--per-job`; if the calibration
+  still ends past the budget, nothing more runs and the result is marked cut.
+- **Stop cleanly.** At the budget the run stops sending jobs, ends the ones in flight (closes the browser, ends the
+  threads) and prints and writes what it has, **marked cut**: a banner in the printout, `cut` and `budgetMin` in `--out`
+  (`planned`, `done`, `elapsedMin`). Jobs go seed by seed, so a cut leaves whole seeds first. `tools/learncmp.js` repeats
+  the mark in its report and compares the complete pairs only. A cut result that is clear stands; one short of the level's
+  seeds is "the measure cannot tell", never read as no effect. A run cut before any job finished still writes its
+  `--out`, with the cut and no runs, and exits 3.
+- **Level 2's figures stay the minimum** (rule L11): the defaults are not lowered to fit. When they do not fit in 40
+  minutes, the check is split or its worlds narrowed to the ones the change touches, never shortened below them.
+- **Level 3** (more than 20 seeds, or more than 10,000 answers in the rated world: level 2's ceilings above) **refuses to
+  run** unless `--pierre-go "Q number or message, date"` (the reference of his go) is given **and**
+  `GITHUB_ACTIONS=true`. Anywhere else it prints the `gh workflow run learncheck.yml …` command that dispatches it, and
+  exits 2 before the slot or a browser. The 40-minute budget holds on
+  the runner too, so a level-3 design at the table's sizes (40 seeds of 30,000 answers) does not fit one run: it is
+  split into several checks, or Pierre decides otherwise (a constant, `MAX_MIN`).
+- **A budget is per run; a paired check is two runs.** Before and after each get their own 40 minutes: on this machine
+  an agent running both arms for one check gives each `--budget 20` so that the check's total stays within the cap. The
+  workflow does not yet (ROADMAP "learncheck.yml under the 40-minute cap").
+
 **Progressive, with valid statistics.** A large expected effect needs no high sensitivity: a check starts with the
 level's fewest seeds and adds seeds only when a result lands near a margin (unclear), by the rule declared before
 running (at level 2, the rated world 10 seeds, then 20; then "the measure cannot tell"). The error is split over the
@@ -1222,7 +1253,7 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 - Not in the rated world: the Again after a miss, the duels slipped into the quiz, the comeback and breaks, the
   surprise cards.
 - `tools/learncmp.js` has the primary's sign-flip test, the guardrails' paired bounds and Holm over the profiles; the
-  level 3 tests (Dunnett, TOST) are not in it.
+  level 3 tests (Dunnett, TOST) are not in it. It reads a file cut by the budget and says so ("The cap" above).
 
 **The two worlds.**
 
@@ -1403,11 +1434,14 @@ right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the one
 
 **On a GitHub runner** (the checks too long for the shared machine, level 3 among them, which also needs Pierre's go):
 Actions › "Learning check (tier 2)" › Run workflow (`.github/workflows/learncheck.yml`, manual dispatch only; the job's
-limit is 6 hours), with the version with the change (`after`: its branch), the one to compare it with (`before`, `main`
+limit is 6 hours). **The workflow does not yet carry the cap or the go** (ROADMAP "learncheck.yml under the 40-minute
+cap"): it passes no `--budget` and checks no go, so each learnsim run keeps the tool's own 40-minute budget (a paired check
+is two to four runs), and `--pierre-go` can only come through `args`, to each arm alike; until it is aligned, start a
+level-3 check only with Pierre's go. With the version with the change (`after`: its branch), the one to compare it with (`before`, `main`
 by default), the subject, the world (`both`, `app` or `rated`), the seeds, the questions (app world) and
 answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only) and the world it is read in when both run
 (`primary_world`; the other world reports its guardrails), the looks and
-any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim on both versions with the same
+any other learnsim option (`--profiles beginner,expert --dist tail`; `--budget MIN` can go here). It runs learnsim on both versions with the same
 seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its report in the run's summary;
 it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
 -f primary=hard@300:down`. Inputs are checked against narrow patterns before any command reads them.

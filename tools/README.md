@@ -140,7 +140,7 @@ Conventions that hold across them:
 | `seaslug_game.py` | Builds `seaslug.json`, `seaslug-game.json` from the list and the judged candidates |
 | `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `seaslug-cand.json`; species with no published name |
 | `seaslug_names.py`, `seaslug_names_src.json`, `seaslug_names.json` | English common names with their sources |
-| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family, and the declared genus pairs' tell-apart lines |
+| `seaslug_cues.py`, `seaslug_cues.json`, `seaslug_species_marks.json` | Sourced ID marks per family, genus and species, and the genus pairs' tell-apart lines |
 | `seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`, `seaslug_lookalikes_pull.json`, `seaslug_lookalikes_cand.json` | Look-alike candidates from iNaturalist and the literature |
 | `seaslug_worms.py`, `seaslug_worms.json`, `seaslug_groups.json` | The reference taxonomy from WoRMS and the hand-kept taxonomic groups |
 | `seaslug_lit.py`, `seaslug_lit_source.json`, `seaslug_lit.json` | The literature watch: new names and revisions, read by people only |
@@ -161,7 +161,8 @@ learning change" (rule L11).
 | `learnsim.js` | Simulates players in the real app; the base of every learning check. `memstorage.js` is its in-memory storage |
 | `learnprof.js` | The simulated players' profiles |
 | `ratedworld.js` | The rated synthetic world the app's engine also runs on |
-| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow runs it |
+| `checkbudget.js` | The checks' 40-minute budget (plan, refuse over it, stop and mark a cut run; `--budget`, `--per-job`) and level 3's gate (`--pierre-go`, GitHub runner only), shared by `learnsim.js` in both worlds (rule L11) |
+| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow runs it; it says so when a file was cut by the budget |
 | `abilityeval.js`, `fieldeval.js`, `fallbackeval.js`, `barjudge.js` | Score a rule against simulated runs or the answer log |
 | `realcheck.js`, `memreplay.js` | Check the model's estimates against the real answer log (rule L12) |
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
