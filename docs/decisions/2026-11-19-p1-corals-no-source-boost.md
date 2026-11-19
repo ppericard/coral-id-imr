@@ -15,7 +15,8 @@ Pierre to decide".
 
 ## Decision
 
-Pierre had decided it (2026-11-19: he had already answered this many times):
+Pierre had decided it (2026-11-19 06:50, docs/ANSWERS.md: "J'ai déjà répondu plein de fois à cette question!!!! On
+avait déjà fait des choix."):
 
 - Rule P1 as reworded on 2026-11-18: "No source priority. A photo is never forced or boosted for who took it, Pierre's
   own included … IMR lecture photos and his stay in the pool and come first only when they are themselves the easiest
