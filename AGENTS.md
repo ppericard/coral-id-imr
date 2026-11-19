@@ -16,13 +16,15 @@ where things are: the documentation map of [`README.md`](README.md); what lives 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
 Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
-sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied:
+sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied, and set its end on
+2026-11-19 ("La journée démarre à partir de mon premier message après 4h du mat"; "ok pour cette phrase"):
 
-> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing; everything else goes on
-> as normal, agents included.**
+> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
+> after 04:00; everything else goes on as normal, agents included.**
 
 - The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
-  never a guess. Before 17:30 nothing is different.
+  never a guess. His day starts with his first message after 04:00, not at a fixed hour (Pierre, 2026-11-19); until
+  17:30 nothing else is different.
 - "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
   Pierre" (number, context, question, recommendation, PR) for the morning.
 
@@ -188,7 +190,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One engine, never naming a subject.
+- **S1** One shared engine; a difference between subjects is declared and named in one place, never a hidden test on the subject.
 - **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
@@ -240,7 +242,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
    before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
    back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests but those tagged `slow`, in the machine slot: rule W24),
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
@@ -255,7 +257,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects is declared and named in one place (rule S1).
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).

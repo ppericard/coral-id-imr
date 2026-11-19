@@ -1,7 +1,8 @@
 # Groups that carry rights: one concept for groups and roles (design study, 2026-11-18)
 
 Status: a read-only design study. It changes no code, no sheet tab and no rule. Pierre's choices are the numbered
-questions in section 6; the integrator gives them Q numbers. Written against `main` at 955a089c, reading the
+questions in section 6; the integrator gives them Q numbers. **Answered on 2026-11-19 (Q408)**: 1-4, 7 and 8 as
+recommended (7 with a merge warning); 5 and 6 changed (section 6, "Pierre's answers"). Written against `main` at 955a089c, reading the
 "apart" setting as gone (#1113, open: no apart, the general board shows everyone).
 
 ## 0. The idea and the answer in short
@@ -470,3 +471,18 @@ Numbered for this study only; the integrator gives Q numbers to those that pass 
 8. **A confirm when giving rights.** Adding a player to a group with rights asks one confirm naming the rights ("Give
    X: Host live games?"). This is an exception to rule A2's one click with Undo, because it is about access.
    *Recommendation: yes.*
+
+### Pierre's answers (2026-11-19, Q408; ANSWERS.md)
+
+- **1-4 and 8: OK** (06:50), as recommended.
+- **7: OK** (06:50), with: "Une fusion de groupe devrait générer un warning, avec les modifications que ça entraine en
+  pratique sur les réglages et les droits." A merge warns first, listing what it changes in practice to the settings and
+  the rights.
+- **5: the alternative** (06:52, after "je suis pas fan de devoir créer un nouveau groupe de trainer chaque mois"): one
+  "Trainers" group gives the capacity; each cohort group carries its own list of trainers (members of "Trainers"); a
+  trainer follows and invites only the cohorts that list them; only an account with `grant` edits that list. No
+  trainers' group per cohort.
+- **6: Admin outside the groups** (06:58, after his doubt: "admin … c'est le seul rôle inter-instances"): groups carry
+  only an instance's rights (Managers, Curators, Trainers); Admin stays outside the groups, as the token plus a short
+  list of admin accounts kept apart, not editable from the Groups page, shown in the Audit. The migration makes no
+  "Platform admins" group.
