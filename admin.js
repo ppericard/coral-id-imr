@@ -1904,47 +1904,40 @@ const fuRankOf = (S, id) => {
   const R = fuRanks(S);
   return R.find(r => (S.sheets || {})[r] && String(id).startsWith(S.sheets[r])) || R[R.length - 1];
 };
-// The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
-// The sea slugs' own letters (judging/SEASLUG.md: v ventral, f features hidden; never in a fish code) read the same way.
-const FU_TAGS = [
-  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above', v: 'ventral'},
-  {0: 'partial'},
-  {d: 'dim light', n: 'night livery'},
-  {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
-  {m: 'soft', b: 'blurred'},
-  {s: 'small'},
-  {
-    s: 'several of its kind',
-    o: 'other species in view, no confusion',
-    k: 'other species in view, confusable',
-    m: 'other species in view, not sorted',
-    x: 'subject not obvious'
-  }
-];
-const FU_FLAGS = {c: 'camouflage', a: 'out of water or a screen', w: 'watermark', f: 'features hidden'};
-// A subject's words for the tags: base (one map per position, as FU_TAGS) and its flags', with the rows its SUBJECTS admin
-// tags replace ([value, name, words] by position; flags alike), words '' leaving a value unsaid. full: the Candidates'
-// judged line (admin-fish.js fishTagText), which names the good views too: a replaced row's empty words then its name.
-// juvenile (j) is never among the flags' words where base leaves it out (the phase says it: fishPhase).
-function tagWords(S, base, flags, full) {
-  const T = (S && S.admin && S.admin.tags) || {},
-    // full: a row whose good values the base names (the views: "profile") names them; else its empty words stay unsaid
-    all = i => full && T[i].some(([v, , x]) => !x && v in base[i]),
-    w =
-      i =>
-      ([v, n, x]) => [v, x || (all(i) ? n.toLowerCase() : '')];
-  return {
-    pos: base.map((m, i) => (T[i] ? Object.fromEntries(T[i].map(w(i))) : m)),
-    flags: {
-      ...flags,
-      ...Object.fromEntries((T.flags || []).filter(([k]) => k in flags || k !== 'j').map(([k, n, x]) => [k, x || n.toLowerCase()]))
-    }
-  };
+// The rubric a subject declares (SUBJECTS admin.tags, laid out by core.js treeRubric), read here and nowhere else: its Tags
+// rows (tagRows), the flags Pierre may set (tagFlags), and a photo's tags in words (tagText). Nothing here knows which
+// subject it reads: what differs between subjects is what each declares. A value or flag marked said is one the tools write
+// and no button offers.
+const tagList = (S, k) => ((S && S.admin && S.admin.tags) || {})[k] || [];
+const tagOffered = ([, , , m]) => !(m && m.said);
+// The Tags rows: [position, name, [[value, label, tooltip?]...]].
+const tagRows = S =>
+  ((S && S.admin && S.admin.tags && S.admin.tags.names) || []).map((n, i) => [
+    i,
+    n,
+    tagList(S, i)
+      .filter(tagOffered)
+      .map(([v, l, , m]) => [v, l, ...(m && m.tip ? [m.tip] : [])])
+  ]);
+// The flags' buttons: [letter, label].
+const tagFlags = S =>
+  tagList(S, 'flags')
+    .filter(tagOffered)
+    .map(([k, l]) => [k, l]);
+// A subject's words for its tags: one map per position and one for the flags, the letter to its words ('' = unsaid). The
+// short line says only what makes a photo harder; full, the Candidates' judged line, also what a value's `full` adds (the
+// good views and sizes, juvenile).
+function tagWords(S, full) {
+  const say = ([, , w, m]) => (full && m && m.full != null ? m.full : w || ''),
+    map = k => Object.fromEntries(tagList(S, k).map(e => [e[0], say(e)]));
+  return {pos: [0, 1, 2, 3, 4, 5, 6].map(map), flags: map('flags')};
 }
-const tagText = (jt, W) =>
-  !jt ? '' : [...W.pos.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => W.flags[c])].filter(Boolean).map(esc).join(' · ');
-// The tags of a photo of the tree subject in force (FISHS) in words: only what makes a photo harder.
-const fuTags = (jt, S = FISHS) => tagText(jt, tagWords(S, FU_TAGS, FU_FLAGS));
+// A photo's code in words, as subject S's rubric (the tree subject in force by default) says it.
+function tagText(jt, S = FISHS, full = false) {
+  if (!jt) return '';
+  const W = tagWords(S, full);
+  return [...W.pos.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => W.flags[c])].filter(Boolean).map(esc).join(' · ');
+}
 // A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
 const fuImr = u =>
   u.imr
@@ -2153,7 +2146,7 @@ function fishTile(p, o) {
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
+    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (renderFishUnits): st {num} for a featured photo; cover: the page node's cover in force; path: the
@@ -2935,7 +2928,7 @@ function renderFishUnits(id, view = TREE) {
       ? `<section class="adm-row adm-out" data-fother><h3>Other species, out of play <small>${K.length} photo${K.length > 1 ? 's' : ''}</small></h3>
     <div class="adm-grid">${K.map(
       p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}" data-fam="${esc(u.id)}"><button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">` : ''}</button>
-      <figcaption>${rightsTag(p)}<span class="adm-t"><i>${esc(fuName(p.sid))}</i> · ${fuTags(fuJt(F, p.f))}</span></figcaption>
+      <figcaption>${rightsTag(p)}<span class="adm-t"><i>${esc(fuName(p.sid))}</i> · ${tagText(fuJt(F, p.f))}</span></figcaption>
       <div class="adm-acts"><button type="button" data-fu="keepo" title="Other species in view, no risk of confusion: back in play">Keep in play</button><button type="button" data-fu="remove" title="Remove">Remove</button></div></figure>`
     ).join('')}</div></section>`
       : '';
@@ -3339,21 +3332,7 @@ function renderRights() {
 // letter). Guesses first: in each row, the photos with no value of the admin's in the draft first (a photo put in play
 // carries the pass's values, copied as its own: autosort.js fishAdd, fishRun). The agreement line: the draft's values
 // against the pass's over every photo in play (autosort.js fishAgree); what differs is the admin's correction.
-const FREV_PH = [
-  ['', 'No phase'],
-  ['subadult', 'Subadult'],
-  ['intermediate', 'Intermediate'],
-  ['terminal', 'Terminal'],
-  ['female', 'Female'],
-  ['male', 'Male']
-];
-const FREV_VIEW = [
-  ['p', 'Profile'],
-  ['o', 'Oblique'],
-  ['h', 'Head-on'],
-  ['t', 'Tail'],
-  ['d', 'Above']
-];
+// The phase and view rows are the subject's rubric's (tagList: SUBJECTS admin.tags phase, its position 0).
 let FREV = Object.assign({fam: '', guess: true}, store.get('reefid-admin-fishrev', {}));
 const frevRow = (name, at, opts, v, auto) =>
   `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
@@ -3415,7 +3394,7 @@ function renderFishReview(kind) {
             e != null ? String(e) : null,
             eAuto
           )
-        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', FREV_PH, ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', FREV_VIEW, code ? code[0] : null, tAuto)}`;
+        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', tagList(ASUBJ, 'phase'), ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', tagRows(ASUBJ)[0][2], code ? code[0] : null, tAuto)}`;
     return `<figure class="adm-tile${guess(p) ? ' adm-guess' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-frz aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
       <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, ASUBJ)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
       <div class="adm-acts adm-frev">${ctl}</div></figure>`;
@@ -4265,10 +4244,18 @@ const HELP = {
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 // The Candidates' help for a subject whose swiper differs from the fish's (core.js SUBJECTS admin): its own target, no
-// auto-sort (no Checks, no Auto line), its rubric's rows (admin-fish.js tagRows). '' for the fish.
+// auto-sort (no Checks, no Auto line), its rubric's rows (tagRows). '' for the fish.
 const candHelpOf = S =>
   S.admin.target > 0 || !S.admin.autosort
-    ? `<p><b>${esc(S.name)}</b>: ${S.admin.target > 0 ? `the target is ${S.admin.target} photos in play for each species and each genus-level list (a genus's own photos, "<i>Genus</i> sp."), the game's cap; ` : ''}${S.admin.autosort ? '' : 'no auto-sort, so no Checks and no Auto line: the sure photos the judging pass keeps enter the game by themselves, up to the cap; '}${S.admin.tags ? `the Tags rows are its rubric's (${(S.admin.tags[0] || []).map(x => esc(x[1])).join(', ')}${S.admin.tags.flags ? '; ' + S.admin.tags.flags.map(x => esc(x[1])).join(', ') : ''}). ` : ''}The rest as below.</p>`
+    ? `<p><b>${esc(S.name)}</b>: ${S.admin.target > 0 ? `the target is ${S.admin.target} photos in play for each species and each genus-level list (a genus's own photos, "<i>Genus</i> sp."), the game's cap; ` : ''}${S.admin.autosort ? '' : 'no auto-sort, so no Checks and no Auto line: the sure photos the judging pass keeps enter the game by themselves, up to the cap; '}${
+        S.admin.tags
+          ? `the Tags rows are its rubric's (${tagRows(S)[0][2]
+              .map(x => esc(x[1]))
+              .join(', ')}; ${tagFlags(S)
+              .map(x => esc(x[1]))
+              .join(', ')}). `
+          : ''
+      }The rest as below.</p>`
     : '';
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
 function toggleHelp() {
