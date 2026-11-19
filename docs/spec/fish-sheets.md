@@ -55,6 +55,7 @@ single-species genus row:
 - the scientific name first (the PDF name), its common name, "now … in WoRMS" when WoRMS renamed it;
 - its family and genus, "★ IMR most sighted #n", "On the IMR reference list" and "Confirmed near Dauin" or "Not
   confirmed near Dauin" (`present.near`, rule C8's words); its size and depth ([below](#size-and-depth));
+- its ID marks, as drafts (`marks`, `msrc`, `mby`, `mdraft`; [decision](../decisions/2026-11-19-fish-species-marks.md));
 - its rank in its family by the commonness index (`cmi`);
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
@@ -63,8 +64,7 @@ single-species genus row:
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
-No photo: the drawing and those links. Not on a species sheet yet: ID marks of its own, phase sections, look-alike
-cues of its own.
+No photo: the drawing and those links. Not on a species sheet yet: phase sections, look-alike cues of its own.
 
 ## Family ID marks and behaviour, habitat, size lines
 
@@ -83,8 +83,8 @@ first-meeting card, the families page and the cards show them where they show IM
 
 ## Size and depth
 
-`tools/fish_facts.py` reads each species' Reef Life Survey page ("Max Size", "Depth"; a generic User-Agent, one request
-every 1.2 s, cached in `tools/.cache/rls/`), then fills the gaps from the FishBase snapshot (`species.parquet`: Length and
+`tools/fish_facts.py` reads each species' Reef Life Survey page ("Max Size", "Depth"; paced, cached in
+`tools/.cache/rls/`), then fills the gaps from the FishBase snapshot (`species.parquet`: Length and
 its type, the depth range; never its web pages), into `tools/fish_facts.json`; `add_families` builds them into
 `fish.json` species (`size` {len, lt, src}, `depth` {m, src}, each `src` the page the value comes from). The species
 sheet shows "Up to 10 cm · 1-36 m deep" with the source (`spFacts`; a length type other than total length in words), the
