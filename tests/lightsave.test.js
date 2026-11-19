@@ -1,10 +1,10 @@
 require('./slot.js').testGuard();
-// Lighter saves on slow lines (sheet v116; sync.js syncOnce, sdSeen, sdSaved, lightBody, syncSoon; Code.gs doPost_,
+// Lighter saves on slow lines (sync.js syncOnce, sdSeen, sdSaved, lightBody, syncSoon; Code.gs doPost_,
 // load_, lightData_, hold_; core.js dataDelta, dataPatch, dataSum; docs/ROADMAP.md "Lighter saves on slow lines"): the
 // app's own sync code run in Node on stubs (tests/syncpage.js), against the sync script on an in-memory sheet
 // (tests/gas.js), with Node's own CompressionStream. Nothing leaves this process (rule D1). The merge guarantees are the
 // classic flow's: no answer lost or counted twice across devices, the replay, the hold, archived and removed accounts, an
-// older app on the same account. The classic flow (a load, then the whole data) went with its gate (core.js SHEET_FLOOR).
+// older app on the same account. The classic flow (a load, then the whole data) is gone with its gate (core.js SHEET_FLOOR).
 const test = require('node:test'),
   assert = require('node:assert'),
   zlib = require('zlib');
@@ -286,7 +286,7 @@ test('a save whose reply never came, though the sheet wrote it: the next sync lo
   }
 });
 
-// ROADMAP "A save whose reply is lost, then another device's save" (found 2026-11-08): the sheet wrote the save, its
+// ROADMAP "A save whose reply is lost, then another device's save": the sheet wrote the save, its
 // reply never came, another device saved over it; this device then no longer finds its own copy at its next load, and
 // the plain merge counted its answers twice (2 here, 4 on the sheet). Its fate unknown, the device asks for the replay of
 // the log (SYNC.lg, sync.js fateUnknown), which counts each answer once by its id.
@@ -343,8 +343,8 @@ test('property: light devices, an older app, refusals, failed requests and lost 
     let calm = false,
       k = 0;
     // A save refused (busy), a request that never reached the sheet (the line), and a reply lost after the sheet applied
-    // the request (a load or a save: logged and written, the device never told; until the fate of such a save was taken
-    // as unknown, 8 to 11 runs in 40 counted answers twice, in the classic flow as in the light one).
+    // the request (a load or a save: logged and written, the device never told; a save whose fate is not taken
+    // as unknown counts answers twice in 8 to 11 runs in 40, in the classic flow as in the light one).
     const chaos = {
       net: kind =>
         !calm && kind === 'post' && rnd() < 0.12
@@ -356,7 +356,7 @@ test('property: light devices, an older app, refusals, failed requests and lost 
     };
     const vs = MIX[run % MIX.length],
       devs = vs.map(v => page(s, {v, SYNC: acct(), ...chaos}));
-    // An app from before the light saves and the replay: it loads the copy, answers once, saves the whole of it.
+    // An older app without the light saves and the replay: it loads the copy, answers once, saves the whole of it.
     const older = () => {
       const j = s.get({name: 'Ana', pin: '1234'}),
         data = C.keysIn(j.data || {}),

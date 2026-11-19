@@ -1,6 +1,6 @@
 // Memory pairs: match each colony photo with the corallites of the same genus. Links the two scales in memory.
 // The np genera of a game: only those the player has unlocked (met: model.js unlocked, one progression path for every
-// game, Pierre 2026-11-04; until then genera not met filled the grid), fewer than np when fewer are unlocked. Look-alike
+// game, rule L4), fewer than np when fewer are unlocked. Look-alike
 // set: a seed and the genera that look like those already in, then the other genera unlocked. Pure (tests/pairs.test.js).
 function memoryGenera(names, np, look, met) {
   const order = shuffle(names.filter(met));
@@ -53,7 +53,7 @@ LAB.add({
         moves = 0,
         lock = false;
       // Game layout: card grid left, controls and result in the side column (desktop); on phones and tablets the controls
-      // shrink to one row above the grid and the status to one line, so the grid gets the screen (Pierre, phone).
+      // shrink to one row above the grid and the status to one line, so the grid gets the screen.
       root.innerHTML = `<div class="pgame pmem bleed"><div class="pgwrap"><div class="pgrid">${cards.map((c, i) => `<div class="pcard" role="button" tabindex="0" data-i="${i}" aria-label="Hidden card"><span class="pin"><span class="pback"></span><span class="pfront"><img src="${thumbSrc(c.n, c.v, document.documentElement.dataset.size === 'l' ? 'l' : 's')}" alt="${esc(c.n)}, ${c.v === 'wide' ? 'colony' : 'corallites'}"><small>${c.v === 'wide' ? 'Colony' : DATA.gen[c.n].levels === 2 ? 'Close-up' : 'Corallites'}</small><b><i>${esc(c.n)}</i></b></span></span></div>`).join('')}</div></div>
         <aside class="gside"><div class="seg" role="group" aria-label="Difficulty">${Object.entries(LEVELS)
           .map(

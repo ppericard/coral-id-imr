@@ -1,3 +1,28 @@
 {
- "dup": []
+ "dup": [
+  {
+   "genus": "Acropora",
+   "keep": "acropora-cand-269293624",
+   "f": [
+    "acropora-cand-269471136"
+   ],
+   "note": "near-identical"
+  },
+  {
+   "genus": "Plerogyra",
+   "keep": "plerogyra-medium-235455321",
+   "f": [
+    "plerogyra-cand-235458094"
+   ],
+   "note": "near-identical"
+  },
+  {
+   "genus": "Herpolitha",
+   "keep": "herpolitha-cand-262212977",
+   "f": [
+    "herpolitha-cand-489767286"
+   ],
+   "note": "near-identical"
+  }
+ ]
 }

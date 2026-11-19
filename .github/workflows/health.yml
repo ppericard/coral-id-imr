@@ -1,11 +1,11 @@
-# The hourly health check (Pierre, 2026-11-18 11:21, "lance 1, 2, 3 et 4"; docs/PAGES.md "Infrastructure health"): the live
+# The hourly health check (docs/PAGES.md "Infrastructure health"): the live
 # site answers (index.html and data.json with their stamps), the sync sheet script answers its public read-only request
 # and reports its VERSION, and the infrastructure numbers are measured (tools/health.py). A failed check fails the job, which
 # GitHub e-mails (to the account that last changed this schedule); the job then opens an issue labelled `health` unless
-# one is already open. The script takes a few seconds (2.4 s by hand against the live site, 2026-11-18); with the runner's
+# one is already open. The script takes a few seconds against the live site; with the runner's
 # checkout and Python setup a run is well under a minute. Read-only: the token below reads the repository and writes issues only;
 # no secret is given to the job (INFRA_TOKEN, which would add the sheet's cells, timings and the backup's age, is not
-# passed: an access decision for Pierre, docs/PAGES.md). The log of a public repository is public: tools/health.py prints
+# passed: an access decision for the admin, docs/PAGES.md). The log of a public repository is public: tools/health.py prints
 # statuses, versions and sizes only.
 name: Health
 on:

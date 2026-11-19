@@ -1,6 +1,6 @@
-# Objective photo metrics for the auto-sort (Pierre, 2026-11-03: "objective metrics to break ties"): sharpness, size and
-# colour cast of every photo, measured the same way on the site's photos and on the candidates. Used ONLY as tie-breakers
-# and sanity flags next to the judging pass and Pierre's own eye (admin.js autoPlan, metFlag), never to decide alone.
+# Objective photo metrics for the auto-sort, to break ties: sharpness, size and colour cast of every photo, measured the
+# same way on the site's photos and on the candidates. Used ONLY as tie-breakers and sanity flags next to the judging
+# pass and the admin's own eye (admin.js autoPlan, metFlag), never to decide alone.
 #
 #   python3 tools/photo_metrics.py             live photos (<f>-m.webp, 960 px: img/, or a copy from R2 kept in
 #                                              tools/.cache/r2/ for the photos that live there only) and every iNaturalist candidate
@@ -8,16 +8,16 @@
 #                                              into ~/.cache/coral-id-imr/metrics/, outside the repo)
 #   python3 tools/photo_metrics.py --live      live photos only (no iNaturalist download)
 #   python3 tools/photo_metrics.py --cand      candidates only
-#   python3 tools/photo_metrics.py --calib     how each metric ranks the photos Pierre rated (curation.json quality)
+#   python3 tools/photo_metrics.py --calib     how each metric ranks the photos the admin rated (curation.json quality)
 #   python3 tools/photo_metrics.py --prune     measures nothing: rewrites metrics.json without the photos gone for good
-#                                              (GONE: the Coral Finder book crops, removed on 2026-11-08)
+#                                              (GONE: the Coral Finder book crops)
 #
 # Writes metrics.json {"m": {f: [sharp, peak, px, cast]}} (admin only: players never download it); an existing entry is
 # kept unless the photo is measured again, so a partial run adds to the file.
 #   sharp  variance of the Laplacian of the grey image at 960 px on the long side, x 10^4 (the classic focus measure;
 #          the whole frame, so blue water or a soft background lowers it)
 #   peak   the same on the sharpest part: 85th percentile, over a 8 x 8 grid, of each tile's Laplacian variance over
-#          its contrast (Pierre's method: look at the sharpest part of the coral at 100%; tools/photo_quality.py's measure)
+#          its contrast (the admin's method: look at the sharpest part of the coral at 100%; tools/photo_quality.py's measure)
 #   px     long side in px of the largest file measured (1600 for a live photo, at most 1024 for a candidate): a value
 #          under 1000 means the original is that small (judging/BRIEF.md: "under 1000 px ... Poor")
 #   cast   colour cast in %: (max - min) of the mean R, G, B over their mean (0 = neutral grey world; underwater
@@ -35,8 +35,8 @@ import photos
 OUT = os.path.join(ROOT, 'metrics.json')
 CACHE = os.path.join(os.path.expanduser('~'), '.cache', 'coral-id-imr', 'metrics')
 W = 960
-# Photos that never come back, dropped at every write: the Coral Finder book crops (<genus>-cf-<page>-<tag>; Pierre,
-# 2026-11-08: they left the app and the repository, tools/apply_no_book.py).
+# Photos that never come back, dropped at every write: the Coral Finder book crops (<genus>-cf-<page>-<tag>), kept out
+# of the app and the repository (tools/apply_no_book.py).
 GONE = re.compile(r'^[a-z]+-cf-\d')
 
 

@@ -140,7 +140,7 @@ def run_fishbase(d):
                 r.pop("lt", None)
         sh, dp = row.get("DepthRangeShallow"), row.get("DepthRangeDeep")
         if r.get("dsrc") != "rls" and dp is not None:
-            r.update(dep=[None if sh is None else int(sh), int(dp)], dsrc="fishbase")  # no shallow limit given: None, never 0 (Codex review #696)
+            r.update(dep=[None if sh is None else int(sh), int(dp)], dsrc="fishbase")  # no shallow limit given: None, never 0
         o[s["id"]] = r
     dump(o)
     print(f"FishBase: {sum(1 for x in o.values() if x.get('lsrc') == 'fishbase')} sizes, {sum(1 for x in o.values() if x.get('dsrc') == 'fishbase')} depths")

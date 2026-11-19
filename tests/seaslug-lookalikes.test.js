@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// The sea slugs' look-alike candidates (tools/seaslug_lookalikes.py; Pierre, 2026-11-17: had we looked at the look-alikes
-// and confusion groups already published?): the parsing of the replies, the build's rules (rules C6, C8: a partner in the
-// subject or confirmed in the Philippines, the others apart; the floors; the literature, WoRMS and text sources; the
-// iNaturalist groups) on made-up data with a stubbed network, the committed file as the tool builds it, and only its genus
-// pairs in the game, through tools/seaslug_game.py genus_looks (Q390 D; the decided pairs stay in tools/seaslugs.json
+// The sea slugs' look-alike candidates, from the look-alikes and confusion groups already published
+// (tools/seaslug_lookalikes.py): the parsing of the replies, the build's rules (rules C6, C8: a partner in the subject
+// or confirmed in the Philippines, the others apart; the floors; the literature, WoRMS and text sources; the
+// iNaturalist groups) on made-up data with a stubbed network, the committed file as the tool builds it, and only its
+// genus pairs in the game, through tools/seaslug_game.py genus_looks (the decided pairs stay in tools/seaslugs.json
 // lookalikes).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -138,7 +138,7 @@ test('build: partners kept in the subject or confirmed (rules C6, C8), the other
   assert.deepStrictEqual(o.order.slice(0, 3), ['Aa one|Aa two', 'Aa|Ee', 'Aa one|Cc four'], 'the strongest first');
 });
 
-// A species of the tree with no name yet (seaslug.json inf, x: ids; Pierre, 2026-11-17, Q389 (2)) has no iNaturalist
+// A species of the tree with no name yet (seaslug.json inf, x: ids) has no iNaturalist
 // taxon: the build leaves it out of the iNaturalist parts and gives the same candidates.
 test('build: a tree species with no iNaturalist taxon (a species with no name yet) changes nothing', () => {
   const o = py(
@@ -208,6 +208,6 @@ test('the app never reads them; the game build takes their genus pairs (Q390 D);
   // tools/seaslug_game.py genus_looks (tests/seaslug-looks.test.js)
   assert.ok(read('tools/seaslug_game.py').includes("'seaslug_lookalikes_cand.json'"));
   const C = JSON.parse(read('tools/seaslug_lookalikes_cand.json'));
-  // every species of the tree with an iNaturalist taxon (a species with no name yet has none: Q389 (2))
+  // every species of the tree with an iNaturalist taxon (a species with no name yet has none)
   assert.ok(C.pairs.length > 0 && C.counts.asked.species === JSON.parse(read('seaslug.json')).species.filter(s => s.inat).length);
 });

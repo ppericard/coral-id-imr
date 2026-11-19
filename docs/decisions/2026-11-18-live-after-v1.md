@@ -1,6 +1,6 @@
 # Live mode after version 1: a QR code of our own on the lobby screen
 
-Date: 2026-11-18. PR: see the branch `claude/live-after-v1`. Docs touched: ROADMAP "Live mode, after version 1",
+Date: 2026-11-18. PR: #1114. Docs touched: ROADMAP "Live mode, after version 1",
 [the live design note](../reviews/2026-11-18-live-mode-design.md) "The lobby's QR code".
 
 ## Context

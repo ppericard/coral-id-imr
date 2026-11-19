@@ -88,31 +88,31 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from fetch_fish import PHASE_WORD, PHASES, is_wink  # noqa: E402  (the phase words, as autosort.js FPHW; a wink entry)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 import fish_short  # noqa: E402  (the file's short form: o and src)
-from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
+from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's)
 
 OUT_FILE = 'fish-game.json'
 V = 1
 PHOTOS_FILE = 'fish-photos.json'
-PHOTOS_V = 2  # 2: the first photos (records on R2) in place of the stopgap's remote ones (2026-11-15)
+PHOTOS_V = 2  # 2: the first photos are records on R2
 # The first photos per entry in fish-photos.json (first_photos): enough for Home's tiles and band before fish-game.json is
 # in, and a small game if it cannot come.
 FIRST = 8
 UA = {'User-Agent': 'coral-id-imr/1.0'}
-# Only these photo hosts (this runs in a GitHub Action that can write to main; code review 2026-11-01, L8).
+# Only these photo hosts (this runs in a GitHub Action that can write to main).
 HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org', 'www.fishbase.de', 'www.fishbase.se')
-# FishBase's hosts: www.fishbase.se, the mirror the candidates and reference photos name since 2026-11-06 (www.fishbase.de
-# answers 500 to browsers), and www.fishbase.de.
+# FishBase's hosts: www.fishbase.se, the mirror the candidates and reference photos name (www.fishbase.de answers 500 to
+# browsers), and www.fishbase.de.
 FB_HOSTS = ('www.fishbase.de', 'www.fishbase.se')
 FB_TRIES, FB_PAUSE = 4, 5.0  # FishBase answers 500 at times: up to 4 tries, 5 s, 10 s, 15 s apart
-# Pierre's minimum of very easy photos per circle-1 entry (2026-11-04: at least MIN photos of ease EASY or more; tools/
-# fish_judge.py WANT and EARLY), for --plan's count of the entries short of them.
+# The minimum of very easy photos per circle-1 entry (at least MIN photos of ease EASY or more; tools/fish_judge.py WANT
+# and EARLY), for --plan's count of the entries short of them.
 MIN, EASY = 5, 4
-# The average size of one photo's four files on R2 (a sample of 24 iNaturalist photos already there, 2026-11-05:
-# 226 + 93 + 32 + 10 KB), for --plan's volume estimate.
+# The average size of one photo's four files on R2 (a sample of 24 iNaturalist photos: 226 + 93 + 32 + 10 KB), for
+# --plan's volume estimate.
 KB_PER_PHOTO = 361
-# The tile (Pierre, 2026-11-09, Q321 D4): a TILE px square WebP at TILE_Q, the box plus MARGIN of its longer side on each
-# side; kept when the box's longer side fills at least FILL of the square and the box is at least RES px wide in the
-# original. TILE_KB: the size of one tile file, for --plan (a mean of 15.2 KB over the first 76 tiles, 2026-11-09).
+# The tile: a TILE px square WebP at TILE_Q, the box plus MARGIN of its longer side on each side; kept when the box's
+# longer side fills at least FILL of the square and the box is at least RES px wide in the original. TILE_KB: the size
+# of one tile file, for --plan (a mean of 15.2 KB over 76 tiles).
 TILE, TILE_Q, TILE_SUF, MARGIN, FILL, RES, TILE_KB = 360, 72, '-x', 0.10, 0.70, 320, 16
 FEATHER = 8  # px of the tile over which a photo edge fades into the blurred band past it (tile_write)
 
@@ -264,10 +264,9 @@ def entries(fish):
     return of, order
 
 
-# core.js FISH_COUNT (judging/FISH.md "Tags", count): the counts an automatic route may put in play (one fish, several of its
+# core.js TREE_COUNT (judging/FISH.md "Tags", count): the counts an automatic route may put in play (one fish, several of its
 # kind, other species in view with no risk of confusion) and the counts never in play, whatever the route (other species
-# one could take for the subject at the game's rank, rule P3; m, the code before the split, not sorted yet: as k until
-# sorted). Pierre, 2026-11-09, Q323.
+# one could take for the subject at the game's rank, rule P3; m, an older code not sorted yet: as k until sorted).
 PLAY_COUNT, OTHER_COUNT = '1so', 'km'
 
 
@@ -395,7 +394,7 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
         if not fish_on(F, f, sid) or f in top or pid(f) in {pid(x) for x in top} or f not in rec or not rec[f][0].get('src'):
             continue
         if other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')):
-            continue  # other species one could take for its subject, or not sorted yet: out (rule P3, Q323)
+            continue  # other species one could take for its subject, or not sorted yet: out (rule P3)
         put(sid, *rec[f], None)
     decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
     for s, L in ((cand or {}).get('cand') or {}).items():
@@ -408,9 +407,9 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
             if pid(r['f']) in gone or pid(r['f']) in have:
                 continue  # the same photo: out, always
             if (rkeep or {}).get(r['f']) == 'dup':
-                continue  # judged a duplicate of its observation's photos: out, whatever the order (Codex review #715)
+                continue  # judged a duplicate of its observation's photos: out, whatever the order
             if r.get('o') in obs and (rkeep or {}).get(r['f']) not in ('best', 'alt'):
-                continue  # another photo of its observation is in play: in once judged no duplicate of it (Q218)
+                continue  # another photo of its observation is in play: in once judged no duplicate of it
             put(sid, r, sid, 'ref')
     return out
 
@@ -481,8 +480,7 @@ def tier(fish):
 
 
 # A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
-# photos in play (Pierre, 2026-11-08: "4-5 very good reference photos"; 2026-11-15, Q372: the game data too, not only the
-# admin's Tree): autosort.js FISHT.wink, the admin's target for them.
+# photos in play, its very good reference photos, in the game data as in the admin's target (autosort.js FISHT.wink).
 WINK_KEEP = 5
 AUTO_ADD = re.compile(r'^a')  # autosort.js fish log code: an add the auto-sort applied itself (never a Check, ?a, nor undone, -a)
 
@@ -559,12 +557,12 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
     rows = [(sid, p, route, record(sid, p, F, sug, orig, species, route)) for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep)]
-    kept = {id(r) for r in wink_trim([x[3] for x in rows], fish, cur)}  # the surprise-only species: their WINK_KEEP best (Q372)
+    kept = {id(r) for r in wink_trim([x[3] for x in rows], fish, cur)}  # the surprise-only species: their WINK_KEEP best
     for sid, p, route, r in rows:
         if id(r) not in kept:
             continue
         c, o = crop_of(F, p['f']), old.get(p['f'])
-        mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
+        mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included
         if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')
         if not mine and route == 'ref':
@@ -619,7 +617,7 @@ def dumps(d):
     """One top-level key per line, one photo per line (a Publish changes a few lines, not the file)."""
     c = lambda v: json.dumps(v, ensure_ascii=False, separators=(',', ':'))
     head = [f'{c(k)}:{c(v)}' for k, v in d.items() if k != 'photos']
-    # Each record in the short form (tools/fish_short.py: o and src without their common prefixes; Pierre, 2026-11-09).
+    # Each record in the short form (tools/fish_short.py: o and src without their common prefixes).
     ents = [f'{c(t)}:[\n' + ',\n'.join(c(fish_short.short(p)) for p in L) + '\n]' for t, L in d['photos'].items()]
     return '{' + ',\n'.join(head + ['"photos":{' + (('\n' + ',\n'.join(ents) + '\n') if ents else '') + '}']) + '}\n'
 
@@ -693,9 +691,8 @@ def boxes_in(root=ROOT):
     return (load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}).get('boxes') or {}
 
 
-# At most this many downloads a run (the Candidate photos workflow; FISH_MAX or --max overrides): about 8,300 photos were in
-# play on 2026-11-06 (Q180, Q199), and the workflow's run of that day took 9 minutes for Pierre's 3,822 (about 7 a
-# second); past it, the rest come at the next runs, the reference photos and the starters first.
+# At most this many downloads a run (the Candidate photos workflow; FISH_MAX or --max overrides; about 7 a second):
+# past it, the rest come at the next runs, the reference photos and the starters first.
 MAX = int(os.environ.get('FISH_MAX', '5000'))
 
 
@@ -739,7 +736,7 @@ def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write
             print('failed:', x[0]['f'], e)
     # The tiles of photos already downloaded whose box is new or changed (plan: bb, no xc nor xn); one that fails loses
     # bb, so the next run tries again.
-    # FishBase's one at a time, after the rest, as the downloads above (Codex review #826).
+    # FishBase's one at a time, after the rest, as the downloads above.
     tl = [r for r in keep.values() if r.get('bb') and not ('xc' in r or 'xn' in r)]
     tfb = [r for r in tl if (urllib.parse.urlsplit(r['src']).hostname or '') in FB_HOSTS]
 
@@ -830,7 +827,7 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     from rights import rights_rank
     G = ((cur or {}).get('fish') or {}).get('genera') or {}
     covers = {pid(k['cover']) for k in G.values() if isinstance(k, dict) and k.get('cover')}
-    # His covers on a juvenile he confirmed (coverJ naming the cover's photo: autosort.js fishCoverJ; Pierre, 2026-11-15)
+    # His covers on a juvenile he confirmed (coverJ naming the cover's photo: autosort.js fishCoverJ)
     # come with the adults.
     jok = {pid(k['cover']) for k in G.values()
            if isinstance(k, dict) and k.get('cover') and k.get('coverJ') and pid(k['coverJ']) == pid(k['cover'])}

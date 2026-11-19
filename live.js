@@ -1,12 +1,12 @@
-// The live mode (Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): a trainer and a group of students
+// The live mode (docs/reviews/2026-11-18-live-mode-design.md): a trainer and a group of students
 // answer the same photo questions at the same time. The trainer's page (#live/host) builds each question with the game's
 // own engine (model.js photoSet, distractors: the look-alike traps) on the set it picked and sends it; the students'
 // pages (#live, #live?code=123456) show it and send their answer; the sync script relays and scores (Code.gs lv_).
 // Three parts: the pure helpers (tested: tests/liveclass.test.js), the channel (LIVE_CH: the one module that talks to the
 // script, polled; a WebSocket service could take its place without touching the screens) and the screens.
-// Signed-in students' answers count in their progress (Q393 c): logged like any game answer (quiz.js logAnswer), mode
+// Signed-in students' answers count in their progress: logged like any game answer (quiz.js logAnswer), mode
 // 'live', scored by the game's scorer (core.js scoreAnswer through scoreIn, as quiz.js answer does), on the units they have
-// unlocked only (rule L4: no game opens a unit). A nickname keeps nothing (Q393 e): its answers wait in this page's memory
+// unlocked only (rule L4: no game opens a unit). A nickname keeps nothing: its answers wait in this page's memory
 // and are logged only if the player signs in on the end screen.
 
 // pure: begin
@@ -387,7 +387,7 @@ function viewLive(h) {
   }
   liveJoin(code);
 }
-// The join screen (Q393 e): the code and a name; signed in, the first name and why it counts; not signed in, the nudge.
+// The join screen: the code and a name; signed in, the first name and why it counts; not signed in, the nudge.
 function liveJoin(code, msg = '') {
   LV = null;
   const name = SYNC ? firstName(SYNC.name) : '';
@@ -560,7 +560,7 @@ function liveMark(i, msg) {
 }
 // The answer of the question at (at.c) sent; at.st: 'out' while on its way, 'ok' accepted, 'no' refused for good (too
 // late), 'retry' not taken (no connection, the script busy): the next poll that finds the question open and no answer
-// accepted, sends it again (liveRecon; Codex review #1049).
+// accepted, sends it again (liveRecon).
 function liveSend(at) {
   at.st = 'out';
   liveMark(at.c, 'Sending…');
@@ -585,7 +585,7 @@ function liveRecon(j) {
 }
 // The student's answers the script accepted, once their right answer is out (lvView_ past: every question revealed since
 // the last reply, its reveal seen here or not): each kept in LV.pend (per tab, saved with hx in one step), then logged
-// at once when signed in (liveFlush), else kept for a sign-in at the end (Q393 e). Only the choice the script accepted,
+// at once when signed in (liveFlush), else kept for a sign-in at the end. Only the choice the script accepted,
 // never one it refused (too late); once per question. The answer time is this page's own when it is for that same choice.
 function liveCatch(j) {
   if (!LV) return;
@@ -605,7 +605,7 @@ function liveCatch(j) {
 }
 // The waiting answers logged, one drain at a time (a poll and the end screen never log one twice): each leaves LV.pend
 // only once logged, or left out on purpose (a unit not unlocked: rule L4); one that failed (no connection for its
-// subject's data) stays for the next try (Codex review #1049). Resolves how many were logged.
+// subject's data) stays for the next try. Resolves how many were logged.
 let LVF = null;
 function liveFlush() {
   if (LVF) return LVF;
@@ -870,7 +870,7 @@ function hostReply(j) {
   LHT = setTimeout(hostPoll, LIVE.HOST);
 }
 // The game's subject's data (UNITS load), before a question is built in it: the header's subject may be another one since
-// (switched, then the page reloaded: only the subject on screen is loaded at start-up; Codex review #1049). Resolves
+// (switched, then the page reloaded: only the subject on screen is loaded at start-up). Resolves
 // whether it came; a failed load is tried again at the next question.
 const hostData = () => {
   const S = LH && subjectOf(LH.s);
@@ -935,7 +935,7 @@ function hostDraw(j, key, last, msg) {
   if (j.ph === 'lobby') {
     const addr = (location.origin + location.pathname).replace(/^https?:\/\//, '') + hr('live');
     // The QR code opens the join form with the code filled in; the address and the code stay big beside it, for a phone
-    // that cannot scan. Never fatal: without it the lobby is as before.
+    // that cannot scan. Never fatal: without it the lobby shows the address and the code alone.
     let qr = '';
     try {
       const m = qrMake(location.origin + location.pathname + hr('live') + '?code=' + LH.code);

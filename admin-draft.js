@@ -1,10 +1,10 @@
-// IMR Reef ID: the admin's draft store (Pierre, 2026-11-18: "model B" of the sign-out seal; the design note
-// docs/reviews/2026-11-09-admin-signout-seal.md).
+// IMR Reef ID: the admin's draft store, "model B" of the sign-out seal (docs/ARCHITECTURE.md, docs/SECURITY.md; the
+// design note docs/reviews/2026-11-09-admin-signout-seal.md).
 // The whole unpublished draft lives in one IndexedDB object store, and every read-modify-write of it is one readwrite
 // transaction: a click's write (with the merge of another admin tab's clicks), Sign out's seal, a seal opened at unlock,
 // the one-time move from localStorage. The browser runs the readwrite transactions of one store one after another, across
-// tabs, and applies each all or nothing, so a seal can no longer be split by another tab's click, seal or unseal: each of
-// the six review rounds of #798 found such a split over localStorage, which has no transaction.
+// tabs, and applies each all or nothing, so a seal cannot be split by another tab's click, seal or unseal (localStorage,
+// which has no transaction, could not prevent such splits).
 // Records (keys of the one store):
 //   state     {gen, rev, bid, outs}: gen, the generation, one more at every sign-out (a tab of an older one has every write
 //             refused: its token was signed out, or the draft left with another token's seal); rev, the revision of the
@@ -146,7 +146,7 @@
       again: false,
       lost: false, // the last write failed (storage full, IndexedDB gone): beforeunload warns
       out: null, // the state that refused a write, or this tab's own sign-out: nothing is written any more
-      ready: false // load() done: before it, this tab knows no generation and writes nothing (Codex review #1078)
+      ready: false // load() done: before it, this tab knows no generation and writes nothing
     };
     const keep = (rev, j) => {
       T.revs[rev] = j;
@@ -166,8 +166,8 @@
       return m;
     }
     // A click's write, and the take-in of another tab's, in one transaction: the state read first; another generation
-    // refuses; the draft read only when another tab stored one since (most clicks parse nothing: performance pass,
-    // 2026-11-09), the base only when another tab published; then this tab's draft written if the store does not hold it.
+    // refuses; the draft read only when another tab stored one since (so most clicks parse nothing), the base only when
+    // another tab published; then this tab's draft written if the store does not hold it.
     function writeTx() {
       return ddbTx(o.db, 'readwrite', api =>
         api.get(['state'], ({state}) => {
@@ -223,7 +223,7 @@
             T.seen = r.rev;
             T.storedJ = r.j;
             T.bid = r.bid;
-            // A Publish or rebase made while this write was on its way stays to write (Codex review #1078).
+            // A Publish or rebase made while this write was on its way stays to write.
             if (r.bn === T.baseN) T.baseDirty = false;
             o.post({t: 'w'});
           }
@@ -244,11 +244,11 @@
     // What the store holds at the start, the token's seal opened into it: {old, base} (the plain draft and its base, as
     // stored), or {draft} when a seal was opened, join(plain, sealed) being the draft then written ({d, b} each, the
     // plain one null when there is none; join runs in the transaction, on the plain draft as it is then). The seal goes
-    // in the same transaction that writes the draft and its base (Codex review #798: a draft kept without its base, or
-    // a seal dropped that was not the one opened, lost work), so all of it is written or none.
+    // in the same transaction that writes the draft and its base (a draft kept without its base, or a seal dropped that
+    // was not the one opened, would lose work), so all of it is written or none.
     // since: for a session restored at a reload (admin.js), the generation it was opened in. If its token signed out after
     // that (in another tab: a discarded tab misses the sign out), it resolves {stale: true}, opening, writing and loading
-    // nothing (Codex review #1078: the seal opened without the password typed again); admin.js locks. A fresh unlock
+    // nothing (a seal is never opened without the password typed again); admin.js locks. A fresh unlock
     // passes none.
     T.load = async (join, since) => {
       const stale = S => since != null && !!T.K && (((S && S.outs) || {})[T.K.mark] || 0) > since;
@@ -330,7 +330,7 @@
       for (let i = 0; i < TRIES; i++) {
         const r = await T.sync();
         // This token signed out in another tab meanwhile: what this tab holds goes into that seal. Another token's sign out
-        // only moved the generation on: this tab's draft is written back in it, then sealed (Codex review #1078).
+        // only moved the generation on: this tab's draft is written back in it, then sealed.
         if (r.refused) {
           if (T.mine(r.refused)) return T.intoSeal();
           await T.carryOn(r.refused);
@@ -345,7 +345,7 @@
           taken.add(old.id);
           const p = await openRec(o.subtle, T.K, old).catch(() => null);
           if (p) {
-            // re-based on the published curation first, as an unlock does (Codex review #1078)
+            // re-based on the published curation first, as an unlock does
             const m = o.merge(
               o.saved(),
               o.draft(),
@@ -385,7 +385,7 @@
     // This tab's token signed out in another tab. What this tab holds that never reached the store (a click whose write
     // was refused or failed, a note flushed at the lock) goes into the token's seal: the seal opened, this tab's changes
     // merged on it against the draft this tab last stored, sealed again, written only if the seal is still the one read
-    // (Codex review #798: a note typed in another tab, two tabs of one token signing out at once). With no seal (a sign
+    // (a note typed in another tab, two tabs of one token signing out at once). With no seal (a sign
     // out with nothing to seal, or one an unlock opened since), a seal of those changes on the published curation.
     // Resolves {kept}.
     T.intoSeal = async () => {
@@ -396,9 +396,9 @@
         if (j === T.storedJ) return {kept: true}; // all of it was stored before the seal, which holds it
         // Only this tab's changes since it last stored are carried: onto the seal, or with no seal (a sign out with nothing
         // to seal, or one an unlock opened since) onto the published curation it is sealed with, never this tab's whole
-        // draft, which may hold a choice another tab undid since (Codex review #1078). Never onto the plain draft stored
-        // now: a session of the token unlocked again edits it, and a later merge of this seal on the published curation
-        // would take that copy's choices for changes, bringing back one that session undid since (Codex review #1078).
+        // draft, which may hold a choice another tab undid since. Never onto the plain draft stored now: a session of the
+        // token unlocked again edits it, and a later merge of this seal on the published curation would take that copy's
+        // choices for changes, bringing back one that session undid since.
         const v = await ddbRead(o.db, [k]),
           cur = v[k] || null,
           p = cur ? await openRec(o.subtle, T.K, cur) : null,
@@ -420,8 +420,7 @@
       throw new Error('the seal kept changing');
     };
     // After another token's sign-out (or when this tab's changes could not be sealed): this tab, still unlocked, writes
-    // its draft and its base in the new generation (Codex review #798: its own saved clicks must not leave with the
-    // other token's seal).
+    // its draft and its base in the new generation (its own saved clicks must not leave with the other token's seal).
     T.carryOn = S => {
       T.gen = (S && S.gen) || 0;
       T.out = null;

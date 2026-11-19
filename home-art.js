@@ -1,6 +1,5 @@
 // Schematic drawing of a corallite (wall, septa, columella) beside the "Coral anatomy terms" glossary link (app.js).
 // 160 × 90 viewBox; colours come from CSS classes in home.css so they follow the light/dark theme.
-// The drawings of the former Home cards were removed on 2026-11-04: nothing showed them any more.
 (function () {
   const C = (x, y, r, c = 'a') => `<circle cx="${x}" cy="${y}" r="${r}" class="${c}"/>`;
   const L = (x1, y1, x2, y2, c = 's') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${c}"/>`;

@@ -1,4 +1,4 @@
-// Response time, genus and photo (2026-11-04, docs/LEARNING.md "Response time: genus and photo"): the inputs of
+// Response time, genus and photo (docs/LEARNING.md "Response time: genus and photo"): the inputs of
 // tools/rtdecomp.py from the sheet's answer log, and the photo Elo replayed with the time as a weak signal on the photo's
 // step. Offline and read-only: reads a file, writes one file, sends nothing (the app page it opens is served from this
 // folder, every other request is aborted, and the app itself never reaches the sheet from a local copy: rule D1).
@@ -26,7 +26,7 @@ if (!SRC || !OUT) {
   process.exit(1);
 }
 const raw = JSON.parse(fs.readFileSync(SRC, 'utf8'));
-const vals = C.subjRows((raw.values || raw).filter(r => r && r[0] && r[0] !== 'Name')); // the corals' (sheet v60 Subject)
+const vals = C.subjRows((raw.values || raw).filter(r => r && r[0] && r[0] !== 'Name')); // the corals' (the rows' Subject)
 const ms = s => Date.parse(String(s).trim().replace(' ', 'T') + ':00+08:00');
 // core rows [name, ms, shown, answered, right, mode, photos, expected, ability, new photos, choices] + [seconds, enlarged];
 // the tab's order is not the time order (offline devices upload late): sorted by time, stable.
@@ -53,7 +53,7 @@ rows.forEach(r => r[11] !== '' && (timed[r[0]] = (timed[r[0]] || 0) + 1));
 const PLAYERS = Object.keys(timed)
   .filter(p => timed[p] >= 20)
   .sort((a, b) => timed[b] - timed[a]);
-// gd: the genus offsets (core.js genusOffsetsOf, the sheet's ?stats=1 gd), the app's genus difficulty since 2026-11-06 (Q133).
+// gd: the genus offsets (core.js genusOffsetsOf, the sheet's ?stats=1 gd), the app's genus difficulty.
 const statsOf = rs => ({photos: C.eloOf(rs), conf: C.confusionOf(rs).pair, mem: C.photoMemOf(rs).mem, gd: C.genusOffsetsOf(rs)});
 
 // ---- the photo Elo with time on the photo's step (a copy of core.js eloReplay with the time hook) ----
@@ -92,7 +92,7 @@ function photoReplay(rule) {
     let z = null;
     if (isT && tz.L.length >= 10) {
       const L = tz.L.slice().sort((x, y) => x - y);
-      // the median as tools/abilityeval.js median(): the two middle values averaged for an even count (Codex review #443)
+      // the median as tools/abilityeval.js median(): the two middle values averaged for an even count
       z = Math.log(Math.max(0.5, Number(r[11]))) - (L.length % 2 ? L[(L.length - 1) / 2] : (L[L.length / 2 - 1] + L[L.length / 2]) / 2);
     }
     out.push({y: ok, e: Math.min(1 - 1e-6, Math.max(1e-6, e)), tr: !!trust[r[0]], prevT: ph.some(p => p[4] > 0)});
@@ -180,7 +180,7 @@ for (const [name, rule] of Object.entries(RULES)) {
 const sets = {all: statsOf(rows)};
 PLAYERS.forEach(p => (sets['-' + p] = statsOf(rows.filter(r => r[0] !== p))));
 // Every pair left out too ('-p-q', p before q in PLAYERS): when player p is held out, the training rows of player q get
-// their features from the answers of neither (Codex review #443: else q's features hold p's outcomes).
+// their features from the answers of neither (else q's features hold p's outcomes).
 PLAYERS.forEach((p, i) =>
   PLAYERS.slice(i + 1).forEach(q => (sets['-' + p + '-' + q] = statsOf(rows.filter(r => r[0] !== p && r[0] !== q))))
 );
@@ -224,7 +224,7 @@ const server = http.createServer((req, res) => {
         .filter(n => GX(n))
         .forEach(n => {
           gd[n] = genusDiff(n);
-          // the two highest pooled confusion scores (genusDiff's confusion part until 2026-11-06, Q133; 0 since: openconf)
+          // the two highest pooled confusion scores (openconf; genusDiff has no confusion part)
           const cs = slateGenera()
             .filter(x => x !== n)
             .map(x => pooledConf(n, x))

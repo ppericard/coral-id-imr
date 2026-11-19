@@ -1,7 +1,6 @@
 require('./slot.js').testGuard();
-// The fish held-out photo set (tools/holdout.py; ROADMAP "A held-out photo set"; Pierre, 2026-11-16, Q385; 2026-11-18:
-// "Il en faut suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"):
-// 15 per exam unit (a family, a scientific genus), across its species in turn, never fewer than 8 left in practice per
+// The fish held-out photo set (tools/holdout.py; ROADMAP "A held-out photo set"): enough to retake the exam several
+// times, only where practice keeps enough photos: 15 per exam unit (a family, a scientific genus), across its species in turn, never fewer than 8 left in practice per
 // species; never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species; a whole
 // observation in or out (rule P4); a fixed hash order; sticky when photos are added. Made-up fixtures, then the committed
 // fish-holdout.json against the real files.
@@ -99,8 +98,7 @@ test('the families first, then each scientific genus topped up to 15', () => {
   assert.deepStrictEqual(H.s3, first(many('s3', 40, 1000), 8));
 });
 
-// One helper for every exam unit (holdout.py take; the integrator's option B on #1057, Pierre, 2026-11-18: "si et
-// seulement si on a assez de photos par ailleurs"): a unit takes only from species that keep 8 in practice after it.
+// One helper for every exam unit (holdout.py take): a unit takes only from species that keep 8 in practice after it.
 test('take(): a thin genus holds what it can, a rich genus reaches 15, a family across its species; never a species under 8', () => {
   const left = (G, H) =>
     Object.fromEntries(Object.entries(py('pool', G, FISH)).map(([sp, O]) => [sp, Object.keys(O).length - (H[sp] || []).length]));
@@ -130,9 +128,8 @@ test('take(): a thin genus holds what it can, a rich genus reaches 15, a family 
   assert.strictEqual(py('take', h, E, {a: 1, b: 4}, ['a', 'b']), 5);
 });
 
-// Learning first (Pierre, 2026-11-18 06:48: "Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): a
-// unit holds back only from a real surplus, what leaves it FLOOR (30) observations in practice; RATIO, the variant the
-// learning check did not keep, as a parameter.
+// Learning first (with too few photos, learning comes before the exam): a unit holds back only from a real surplus,
+// what leaves it FLOOR (30) observations in practice; RATIO, the variant the learning check did not keep, as a parameter.
 test('learning first: a unit holds back only above 30 observations in practice', () => {
   const on = G => held(G, null, {});
   assert.deepStrictEqual(on(game(many('s1', 30))), {}, 'a thin unit holds back nothing');
@@ -146,7 +143,7 @@ test('learning first: a unit holds back only above 30 observations in practice',
   assert.strictEqual(held(game(many('s1', 30)), null, {FLOOR: 0, RATIO: 2}).s1.length, 10);
 });
 
-// Codex review #1057: the observations held already obey the floor too (a unit whose practice shrank gives some back).
+// The observations held already obey the floor too (a unit whose practice shrank gives some back).
 test('sticky under the floor: a unit whose practice went under 30 gives the excess back, the last in hash order first', () => {
   const on = (G, prev = null) => held(G, prev, {}),
     all = many('s1', 45),

@@ -67,7 +67,8 @@ one machine; wrap any other heavy command as `node tests/slot.js -- <command>`. 
 
 Pierre Pericard owns it and works with AI coding agents. One **integrator** (the main agent of a session) starts
 subagents, each on its own branch and PR, and merges them through a green **merge train** (`tools/train.py`) under a
-written contract. Pierre's standing rules have stable IDs. Start with [AGENTS.md](AGENTS.md) (the constitution), then
+written contract. Pierre's standing rules have stable IDs. [CONTRIBUTING.md](CONTRIBUTING.md) says how a change is
+made. Start with [AGENTS.md](AGENTS.md) (the constitution), then
 [docs/INTEGRATOR.md](docs/INTEGRATOR.md) for the integrator, and the [docs/rules/](docs/rules/README.md) file your task
 touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 
@@ -75,18 +76,24 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 
 | Document | What it is |
 |---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How a change is made here: the rules, a branch, the tests, the PR, the merge train, decision records |
 | [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
+| [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
+| [docs/ANSWERS.md](docs/ANSWERS.md) | Pierre's answers, append-only: search it before asking him anything |
 | [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
-| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; where things are and what lives outside GitHub |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Files, data, admin, sync, photos, deploy |
+| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; setting up, the sheet script's redeploy and what lives outside GitHub |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
+| [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
+| [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/spec/](docs/spec/sync.md) | The map of the system (files, data, admin, sync, photos, deploy), read in a few minutes; the specification of each part it points to, one file per part (the front end, the sync, the data, the admin, the subjects, the photos, the tools, the deploy…) |
 | [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
 | [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
-| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history |
-| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos |
+| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history (with [the learning notebook](docs/archive/learning-notebook.md), the studies behind LEARNING.md) |
+| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos (`judging/PROMPT.md`: what to paste) |
 | [privacy.html](privacy.html) | The privacy notice players see |
 
 ## Content and rights
@@ -105,12 +112,11 @@ recorded in the data files (`a` credit, `lic` licence, `o` source page).
   by IMR. Some come from [Corals of the World](https://www.coralsoftheworld.org/), credited to their photographers under
   its [terms](https://www.coralsoftheworld.org/page/terms-of-use/) (personal, non-commercial or academic use with
   citation; all other rights reserved). Not for reuse. Fish and sea slugs use no IMR lecture photos.
-- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used. It stays a cited source (its pages,
-  criteria and look-alikes); the Coral ID Key's boxes are our own drawings.
 
 **Text and data.** The coral genus list, ID tips and lecture notes come from IMR Lecture 6; the fish cues, look-alikes
 and IMR names from IMR's fish presentation and reference list (© IMR, used in the app for IMR's training, not for
-reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach).
+reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach). The
+other books, guides and papers behind a tip or a look-alike are cited where they are used.
 Taxonomy follows the World Register of Marine Species (WoRMS). Size and depth facts come from Reef Life Survey and
 FishBase, cited per species. Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).
 

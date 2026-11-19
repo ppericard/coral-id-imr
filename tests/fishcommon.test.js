@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The curated common names of the fish species (Pierre, 2026-11-04: 1 to 3 per species, never more; published as
-// selected, Pierre, 2026-11-08, Q313; which name comes first, Pierre, 2026-11-15, Q376; docs/FISH_PATH.md "Common names"):
+// The curated common names of the fish species (1 to 3 per species, never more; published as selected; which name comes
+// first; docs/FISH_PATH.md "Common names"):
 // tools/fish_common.py selects them into tools/fish_common.json (every name with its sources), tools/build_fish.py writes
 // them into fish.json (species cn, the main name first; cni, the IMR name's place; cnr, the regional names), and the app
 // reads them through app.js cnList, cnFirst (the player's first name: the IMR name for a player at IMR, the main name for
@@ -83,7 +83,7 @@ test('every game species has 1 to 3 listed names, each with a source, none liste
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
 
-// Pierre, 2026-11-15, Q376 (a) B: iNaturalist's default English name first (FishBase's main name where iNaturalist has
+// iNaturalist's default English name first (FishBase's main name where iNaturalist has
 // none), for every player but an IMR one; the IMR name always listed, marked (cni).
 test('the main name first: iNaturalist’s default, else FishBase’s main name; the IMR name listed and marked, as written', () => {
   let inat = 0,
@@ -97,8 +97,8 @@ test('the main name first: iNaturalist’s default, else FishBase’s main name;
       im = r.inat && r.inat.main,
       fm = r.fb && r.fb.main;
     if (f.includes('inatMain')) inat++;
-    // iNaturalist's default is first whenever it exists, even when it is another species' name (Pierre, 2026-11-15, Q381:
-    // "the base name is the right one for everyone outside IMR"; Q319's ownership rule is gone).
+    // iNaturalist's default is first whenever it exists, even when it is another species' name (the base name is the
+    // right one for everyone outside IMR; no name belongs to one species only).
     else assert.ok(!im, `${s.name}: iNaturalist's default ${im} not first`);
     assert.ok(!(p.dropped || []).some(d => !d.regional), `${s.name}: a listed name dropped (Q381: nothing is dropped as shared)`);
     if (!f.includes('inatMain') && f.includes('fbMain')) fbm++;
@@ -143,7 +143,7 @@ test('the order: the main name, then the species’ own, then the most shared (i
   assert.deepStrictEqual(cnList(byName('Dascyllus reticulatus')), ['Reticulated damselfish', 'Reticulated dascyllus']);
 });
 
-// Q376 (a) B and (b) A: the player's first name, the IMR name for a player at IMR (model.js imrSaid), the main name for
+// The player's first name: the IMR name for a player at IMR (model.js imrSaid), the main name for
 // the others; a multiple-choice question shows it, always the same one (no rotation: the main name fills the unit).
 test('the name a player sees first and multiple choice shows: the IMR name at IMR, the main name for the others', () => {
   const s = byName('Dascyllus reticulatus');
@@ -166,7 +166,7 @@ test('the name a player sees first and multiple choice shows: the IMR name at IM
     assert.strictEqual(cnFirst(x, false), x.cn[0][0], x.name);
     assert.strictEqual(cnFirst(x, true), IMR(x) ? x.cn[x.cni][0] : x.cn[0][0], x.name);
   });
-  // Old app versions read cn[0][0] alone (fishTaxon before Q376): the main name, never a regional one.
+  // Old app versions read cn[0][0] alone (an older treeTaxon): the main name, never a regional one.
   GAME.filter(x => x.cnr).forEach(x => assert.ok(!x.cnr.flat().includes(x.cn[0][0]), x.name));
 });
 
@@ -178,8 +178,8 @@ test('typed: every listed and regional name and their spellings are accepted, as
     all(s).forEach(x => {
       const m = match(x),
         own = owners.get(norm(x));
-      // A name two species list (flagged shared in tools/fish_common.json: "Twospot wrasse") is right for both (Pierre,
-      // 2026-11-09, Q319: typeMatchIn shared).
+      // A name two species list (flagged shared in tools/fish_common.json: "Twospot wrasse") is right for both
+      // (typeMatchIn shared).
       if (new Set(own).size > 1)
         return assert.ok(m && m.shared && m.shared.includes(s.id) && C.typeVerdict(m, s.id) === 'exact', `${x}: both species`);
       assert.ok(m && m.g === s.id && m.exact, `${s.name}: ${x} not accepted`);
@@ -202,8 +202,7 @@ test('typed: every listed and regional name and their spellings are accepted, as
       });
   });
   assert.ok(other > 500, `${other} unlisted reference names checked`);
-  // Examples: the IMR name and the main name are both right (Q376 (a)); Lemon damsel's other name (Yellow damsel) is no
-  // answer.
+  // Examples: the IMR name and the main name are both right; Lemon damsel's other name (Yellow damsel) is no answer.
   assert.strictEqual(C.typeVerdict(match('Crescent wrasse'), 's256'), 'exact', 'the IMR name');
   assert.strictEqual(C.typeVerdict(match('Moon wrasse'), 's256'), 'exact', 'the main name');
   assert.strictEqual(C.typeVerdict(match('Yellow damsel'), 's119'), 'none');
@@ -212,7 +211,7 @@ test('typed: every listed and regional name and their spellings are accepted, as
   assert.strictEqual(C.typeVerdict(match('Lemon'), 's119'), 'none', 'no short form');
 });
 
-// Q376 (c): the regional standard names (iNaturalist's name under the Australia place: AS 5300 / Fishes of Australia)
+// The regional standard names (iNaturalist's name under the Australia place: AS 5300 / Fishes of Australia)
 // are accepted when typed, never shown: not in cn, so no page and no older app shows them.
 test('regional names: accepted when typed, never listed, never another species’ name', () => {
   const s = byName('Chromis ternatensis'),
@@ -236,12 +235,12 @@ test('regional names: accepted when typed, never listed, never another species�
   const pic = P[byName('Plectorhinchus picus').id];
   assert.ok(pic.dropped.some(x => x.regional && x.name === 'Painted sweetlips' && x.sharedWith.includes('Diagramma pictum')));
   assert.strictEqual(C.typeVerdict(match('Painted sweetlips'), byName('Diagramma pictum').id), 'exact');
-  // The family's typed answers read them too (core.js fishNameIndex: 'sp', a species of that family).
-  const idx = C.fishNameIndex(F, {});
+  // The family's typed answers read them too (core.js treeNameIndex: 'sp', a species of that family).
+  const idx = C.treeNameIndex(F, {});
   assert.ok(idx.some(x => x.x === 'Swallowtail puller' && x.g === s.family && x.vr === 'sp'));
 });
 
-// Two species may carry the same common name (Pierre, 2026-11-15, Q381, replacing Q319's ownership rule): the base name
+// Two species may carry the same common name: the base name
 // is iNaturalist's default for everyone outside IMR, even when it is another species' IMR name; a player at IMR keeps the
 // IMR name first; nothing is dropped; tools/fish_common.json lists every shared name, the app's cnAlso reads the same.
 const PAIRS = [
@@ -322,7 +321,7 @@ test('Q381: every shared name listed (tools/fish_common.json shared), the app re
       })
   );
   assert.deepStrictEqual([...app].sort(), [...file].sort());
-  // 11 names (Twotone / Two-tone wrasse one name), each on two species, on 2026-11-15.
+  // 11 names (Twotone / Two-tone wrasse one name), each on two species.
   const groups = new Set([...file].map(([k, v]) => [k.split('|')[0], ...v.split(',')].sort().join(',')));
   assert.strictEqual(groups.size, 11, [...groups].join(' '));
   // Players who see the same first name for two species (the multiple choice keeps them apart: model.js choiceApart).
@@ -384,7 +383,7 @@ test('match reads as typeMatchIn on every name: exact, close, shared, other and 
   assert.ok(texts.length > 100, String(texts.length));
 });
 
-// The species level's reading (Pierre, 2026-11-09, Q319): a name two species list is right for each of them; a kind word
+// The species level's reading: a name two species list is right for each of them; a kind word
 // of the name index (fish.json vn: razorfish, toby) is known, never a slip of a species' name.
 test('typed at species level: a shared listed name is right for each species, a kind word is known (fish.json vn)', () => {
   const N = cnTypeNames(GAME, F.vn),

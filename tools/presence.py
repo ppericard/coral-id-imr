@@ -31,10 +31,10 @@ from taxonomy import aliases  # the species rows of tools/taxonomy.json: former 
 
 NEAR_OBSERVERS = 2
 PH_OBSERVERS = 3
-LABEL_OBSERVERS = 3  # a species with no name yet: distinct observers whose observation carries its label (Q389 (2))
+LABEL_OBSERVERS = 3  # a species with no name yet: distinct observers whose observation carries its label
 CHECKLISTS = Path(__file__).resolve().parent / "presence_checklists.json"
-# The instance's centre (tools/instance.json centre; Pierre, 2026-11-13, Q339): "near" is within radiusKm of it. Today
-# Dauin, 40 km; the query is the same string as before (the reply caches are keyed by URL).
+# The instance's centre (tools/instance.json centre): "near" is within radiusKm of it, Dauin and 40 km for IMR; the
+# query string stays fixed for a given centre (the reply caches are keyed by URL).
 CENTRE = json.loads((Path(__file__).resolve().parent / "instance.json").read_text(encoding="utf-8"))["centre"]
 NEAR_AREA = f"lat={CENTRE['lat']}&lng={CENTRE['lon']}&radius={CENTRE['radiusKm']}"
 

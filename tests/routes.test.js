@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2): every
+// The app's addresses (docs/reviews/2026-11-05-url-scheme-study.md 3.2): every
 // page key and its address, both ways; the subject prefix; split before decoding; old and unknown addresses.
 // node --test tests/
 const test = require('node:test'),
@@ -35,7 +35,7 @@ const PAIRS = [
   ['board', 'leaderboard'],
   ['ach', 'leaderboard/achievements'],
   ['about', 'about'],
-  // Delete my account (#603), reached from About, and its state once deleted.
+  // Delete my account, reached from About, and its state once deleted.
   ['delete-account', 'about/delete-account'],
   ['delete-account|done', 'about/delete-account/done'],
   ['lab', 'tools'],
@@ -43,7 +43,7 @@ const PAIRS = [
   ['lab-anatomy|arr|plo', 'tools/anatomy/arr/plo'],
   ['lab-zoom|Acropora', 'tools/zoom/Acropora'],
   ['lab-cards|toast', 'tools/cards/toast'],
-  // The live mode (Q393): a student's join page, with the session code the trainer's lobby shows, and the trainer's page.
+  // The live mode: a student's join page, with the session code the trainer's lobby shows, and the trainer's page.
   ['live', 'live'],
   ['live|123456', 'live?code=123456'],
   ['live-host', 'live/host']
