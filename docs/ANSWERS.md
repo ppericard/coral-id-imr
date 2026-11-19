@@ -96,3 +96,6 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
 - **08:53, the answers ledger as checked data** (#1197 b3: a test that each answer reached its doc): "ok".
 - **08:53, two contradicting rules** (#1197): merge `origin/main`, never rebase or force-push (rules W18, AGENTS.md
   checklist); one open PR per agent (rule W22): "ok". Applied: #1198.
+- **08:57, the order of work.** "Mon seul input c'est quand j'ai besoin de mettre des choses en priorité": the
+  integrator sets the order of development and never asks Pierre "now or later"; Pierre steps in only to raise a
+  priority (AGENTS.md "Questions to Pierre": never the order).
