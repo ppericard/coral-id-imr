@@ -135,7 +135,12 @@ test('the page is untimed and changes no progress: it never calls the quiz recor
   assert.match(code, /\bunlocked\(\)/, 'the unlocked units (rule L4)');
   // The draw's own photo choice is the shared source's (proto/lab.js labShots; tests/oddone.test.js greps it for recorders).
   assert.match(code, /labShots\(/, "the draw's own photo choice, through the shared source");
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'proto', 'lab.js'), 'utf8'), /photoSet\(n, null, 0, 2, 'compare', keep\)/);
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'proto', 'lab.js'), 'utf8'), /photoSet\(n, null, 0, k, f, keep\)/);
+  // (a side by side is aimed as a duel's: two plausible choices, the 'compare' format, labShots' defaults)
+  assert.match(
+    fs.readFileSync(path.join(__dirname, '..', 'proto', 'lab.js'), 'utf8'),
+    /function labShots\(max = 8, k = 2, f = 'compare'\)/
+  );
 });
 
 test('registered: the Tools list, the service worker list and the hub icon', () => {
