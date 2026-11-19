@@ -273,8 +273,15 @@
    "keep": "best"
   },
   "fish-s619-cand-333097931": {
-   "code": "o1g1ssk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.3,
+    0.2,
+    0.75,
+    0.62
+   ],
+   "note": "crop: the dark wrasses below leave the frame (Q430)"
   },
   "fish-s619-cand-333097936": {
    "code": "o1g1ssk1",
