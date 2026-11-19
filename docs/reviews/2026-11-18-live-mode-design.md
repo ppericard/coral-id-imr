@@ -105,8 +105,10 @@ message, and nothing is lost but the game's points.
 - In the sheet: one Audit row per start (ids only). The answers of **signed-in** students are logged by their own device
   as any game answer (each kept in the page's tab until it is logged, and tried again at the next poll when its subject's
   data could not come: `live.js` `liveFlush`; Codex review #1049), through the usual sync (the account's queue), with mode `live`, scored by the same scorer
-  (`core.js` `scoreAnswer`, as `quiz.js` `answer` does) so the full replay counts them the same. Only for units the
-  student has unlocked (rule L4: no game opens a unit; a live answer on another unit counts in nothing).
+  (`core.js` `scoreAnswer`, as `quiz.js` `answer` does) so the full replay counts them the same. Version 1 logs them
+  only for units the student has unlocked; since 2026-11-18 rule L4 lets an answer on another unit count without
+  opening it (Pierre: live answers "count without unlocking"), not built yet ([modes audit](2026-11-19-modes-audit.md)
+  row 2).
 - A student not signed in keeps nothing: their answers wait in the page's tab (its session storage, so the reload of a
   sign-in loses none; Codex review #1049); if they sign in on the end screen ("Sign in to keep your 7 right answers in
   your progress") they are scored and logged then, else they are gone with the tab.
@@ -138,4 +140,5 @@ scan in the room is the real test. Decision record: [2026-11-18-live-after-v1](.
 - A trainer's view of each student by name after the game, cohorts (roles step 2), a session kept beyond the cache.
 - A WebSocket channel (the module is ready for it), sounds, music, animations beyond the countdown.
 - Typed answers, two-photo duels and Find the X in live questions.
-- Answers on units a student has not unlocked (rule L4 keeps them out; Pierre may want them counted).
+- Answers on units a student has not unlocked: decided since (rule L4, 2026-11-18: they count, opening nothing), not
+  built yet.
