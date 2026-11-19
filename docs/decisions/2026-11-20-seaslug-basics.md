@@ -25,8 +25,8 @@ Built on the shared engine (`proto/basics.js`), in the fish module's format, its
   out. No book or slide photo (P3).
 - **Sources** (rule C2), each line naming the one it rests on, the module's own `REF`; the sources' old group names
   (Notaspidea, Anaspidea) are said as theirs, the groups' names stay WoRMS's, nothing settled (C5). The genera named are
-  the game's; the four species the fact sheets read are about are in `tools/seaslugs.json` (C6, C8); no species is named on
-  screen.
+  the game's; no species is in a cue line; the only species on screen are the four in the source lines (the titles of the
+  fact sheets read), each in `tools/seaslugs.json` (C6, C8).
 - **Shared code** (S1): the pieces Fish basics had alone (a drawn check, a group's view and its photo check, the covers of a
   few units) move to `proto/basics.js` `BASICS_KIT`, and Fish basics and Sea slug basics both call them.
 - **Open for the sea slugs**: `SUBJECTS` `seaslug` `pages` starts with `basics`, the `closed` reason goes, its done feat is

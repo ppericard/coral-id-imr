@@ -697,8 +697,9 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
 
   // 7. Sea slug basics (proto/seaslugbasics.js; Q437), as pages.smoke.js fishBasicsCheck plays Fish basics: the first Learn
   // tab, the "0" block of the genera page with its four-stop trail, the Home line, every step and view drawn and fitting
-  // the screen (rule U2: the drawing at most 45% of a phone's height, 62% of a desktop's; the drawing, its photos and its
-  // sentence under 90% of a phone's height), the groups from seaslug.json taxa, the checks, done = every step seen in its
+  // the screen (rule U2: the drawing at most 45% of a phone's height, 62% of a desktop's; on a phone, from the picker to
+  // the end of the view's sentence and source, within the room between the header and the tab bar; the answered check
+  // too, as Fish basics'), the groups from seaslug.json taxa, the checks, done = every step seen in its
   // own record and feat (the corals' and the fish's untouched), the Tools page's line. Photos stubbed.
   for (const [w, h] of [
     [390, 844],
@@ -771,8 +772,12 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
             g = f && (f.querySelector(':scope > svg') || f.querySelector('.bx-gfam')),
             r = g && g.getBoundingClientRect(),
             fr = f && f.getBoundingClientRect(),
-            say = document.querySelector('.bx-wsay');
+            say = document.querySelector('.bx-wsay'),
+            top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight;
           return {
+            room: Math.round(tb - top),
             h: r ? Math.round(r.height) : 0,
             all:
               f && say
@@ -790,7 +795,8 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         check(m.h && m.say, `${W} ${st} view ${k}: nothing drawn ${JSON.stringify(m)}`);
         check(m.src, `${W} ${st} view ${k}: no source under its sentence (rule C2)`);
         if (st !== 'groups') check(m.h <= h * (w < 1000 ? 0.45 : 0.62) + 1, `${W} ${st} view ${k}: the drawing is ${m.h}px of ${h}`);
-        if (w < 1000) check(m.all <= h * 0.9, `${W} ${st} view ${k}: the picker, figure and sentence take ${m.all}px of ${h}`);
+        if (w < 1000)
+          check(m.all <= m.room, `${W} ${st} view ${k}: the picker, figure and sentence take ${m.all}px, only ${m.room}px on screen`);
         check(!m.wide, `${W} ${st} view ${k}: wider than the screen`);
         check(m.alt, `${W} ${st} view ${k}: a drawing without its text alternative`);
       }
@@ -803,10 +809,20 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       if (ck) {
         await p.click('.bx-q .choice >> nth=0');
         const m = await p.evaluate(() => {
-          const fb = document.querySelector('.bx-q .bx-fb');
-          return {text: fb.textContent.trim().length, rep: !!fb.querySelector('[data-rep]')};
+          const top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight,
+            sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+            fb = document.querySelector('.bx-q .bx-fb');
+          return {
+            check: Math.round(fb.getBoundingClientRect().bottom - sum.top),
+            room: Math.round(tb - top),
+            text: fb.textContent.trim().length,
+            rep: !!fb.querySelector('[data-rep]')
+          };
         });
         check(m.text && m.rep, `${W} ${st}: the answered check ${JSON.stringify(m)}`);
+        if (w < 1000) check(m.check <= m.room, `${W} ${st}: the answered check takes ${m.check}px, only ${m.room}px on screen`);
       }
     }
     // The groups are seaslug.json's taxa that hold genera of the slate, in their order.

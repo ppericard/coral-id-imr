@@ -67,7 +67,8 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   Cancel); POST `{selfDelete, dname, dpin}` (`Code.gs` `selfDelete_`: everything deleted, the Removed tombstone only; 3
   tries per name and 30 in all per 6 hours); then `signOutClear(true)` (the device signed out and cleared, with every
   report this account queued and the name typed for reports) and the `/done` page. Signed out: how to delete an account.
-- **Learn › Basics** (`#learn/basics`, `#fish/learn/basics`): Coral basics and Fish basics, step 0 of the Learn path,
+- **Learn › Basics** (`#learn/basics`, `#fish/learn/basics`, `#seaslug/learn/basics`): Coral basics, Fish basics and
+  Sea slug basics, step 0 of the Learn path,
   the first Learn tab ("Basics" on phones): [basics.md](basics.md).
 - **Learn › Genera** (`#learn/genera`): the genera grid (lecture-group order by default, a slate order toggle), Photos
   or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-one-content-per-subject)). Lecture group

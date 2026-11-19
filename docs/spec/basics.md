@@ -231,9 +231,11 @@ groups' photo check (`BASICS_KIT.groupCheck`).
 **Sources** (`REF`): the Sea Slug Forum's fact sheets (Rudman, Australian Museum) and Wikipedia's "Nudibranch" at a fixed
 revision, each line naming those it rests on; `official` gives a source's own line, verbatim, for a few words. The
 sources' old group names (Notaspidea, Anaspidea) are said as theirs; the groups' names are WoRMS's (rule C5). The genera
-named are the game's; no species is named on screen (rule C6).
+named are the game's; no species is in a cue line, the only species on screen being in the source lines, the titles of
+the fact sheets read, each a species of the game (rule C6).
 
 **Tests**: `tests/seaslugbasics.test.js` (content, sources, line lengths, the genera, wiring, Basics open) and
-`tests/seaslug.smoke.js` part 7 (390 and 1280 px: the card, the Home line, every view within 45% of a phone's height and
-the picker, figure and sentence within 90%, the groups from `taxa`, the checks, done, the corals' and the fish's records
+`tests/seaslug.smoke.js` part 7 (390 and 1280 px: the card, the Home line, every view's drawing within 45% of a phone's
+height, and on a phone the picker, figure and sentence with its source, and the answered check, each within the room
+between the header and the tab bar; the groups from `taxa`, the checks, done, the corals' and the fish's records
 untouched, the Tools page's line).

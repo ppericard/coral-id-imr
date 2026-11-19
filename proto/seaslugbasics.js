@@ -160,7 +160,8 @@
     shield: 'A headshield slug seen from the side',
     side: 'A side-gilled slug seen from its right side'
   };
-  const LAB = {
+  // Their labels (never named LAB: that is proto/lab.js's registry, read by the registration below).
+  const LABELS = {
     seahare: [
       ['parapodia', 230, 24, 'middle', [230, 28, 222, 54]],
       ['rhinophores', 72, 26, 'middle', [78, 30, 88, 50]],
@@ -182,7 +183,7 @@
     ]
   };
   const other = (k, on = [], lab = true) =>
-    svg('0 0 360 200', NAME[k] + (on.length ? ', ' + on.join(', ') + ' highlighted' : ''), OTHER[k](on) + (lab ? labs(LAB[k]) : ''));
+    svg('0 0 360 200', NAME[k] + (on.length ? ', ' + on.join(', ') + ' highlighted' : ''), OTHER[k](on) + (lab ? labs(LABELS[k]) : ''));
 
   /* ---------- the pickers' icons: the same drawings, small ---------- */
   const bxi = inner => `<svg viewBox="0 0 360 200" class="bxd bx-pi" aria-hidden="true">${inner}</svg>`;
@@ -310,9 +311,9 @@
           {
             id: 'gills',
             name: 'Gills',
-            say: 'Dorids carry a circlet of gills on the back, around the anus. Most can pull it into a pocket; Hexabranchus cannot.',
-            src: `${cite('torsion', 'dorigut', 'hexasang')}: “the dorid gill circlet”; its gills “do not have a gill pouch into which the gills can retract”.`,
-            gen: ['Hexabranchus', 'Nembrotha']
+            say: 'Dorids carry a circlet of gills on the back, around the anus. Hexabranchus, unusually, cannot pull its gills into a pouch.',
+            src: `${cite('torsion', 'dorigut', 'hexasang')}: “the dorid gill circlet”; Hexabranchus: “its gills do not have a gill pouch”.`,
+            gen: ['Hexabranchus', 'Hypselodoris']
           },
           () => dorid(['gills']),
           ICON.dorid(['gills'])

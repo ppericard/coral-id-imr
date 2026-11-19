@@ -131,7 +131,7 @@ test('Sea slug basics: every view draws, every line is short and sourced, every 
   const gills = M.steps[0].views.find(v => v.id === 'gills').fig();
   assert.match(gills, /bx-gfam bx-few/);
   assert.match(gills, /Hexabranchus/);
-  assert.ok(!/Nembrotha/.test(gills), 'a genus the game does not hold (here) drops out');
+  assert.ok(!/Hypselodoris/.test(gills), 'a genus the game does not hold (here) drops out');
   // The side-gilled slug is drawn facing right: the side seen is its right side, where its gill is.
   assert.match(M.steps[2].views.find(v => v.id === 'side').fig(), /scale\(-1 1\)/);
 });
@@ -270,8 +270,9 @@ test('Sea slug basics: what it names is the game’s and read (rules C2, C6), no
   const named = [...new Set([...lines.matchAll(/\b([A-Z][a-z]{3,})\b/g)].map(m => m[1]))].filter(w => !PLAIN.has(w) || GEN.has(w));
   named.forEach(w => assert.ok(GEN.has(w), `${w}: a genus of the game (rule C6)`));
   assert.ok(['Hexabranchus', 'Phyllidia', 'Phyllodesmium', 'Thuridilla', 'Chelidonura'].every(g => named.includes(g) || lines.includes(g)));
-  // No species named on screen; the fact sheets read about one species are about species of the game.
-  SPECIES.forEach(sp => assert.ok(!lines.includes(sp), `${sp}: no species named on screen`));
+  // No species in a cue line (the sentences, the names, the words); the only species on screen are in the source lines,
+  // the titles of the fact sheets read, each a species of the game.
+  SPECIES.forEach(sp => assert.ok(!lines.includes(sp), `${sp}: no species in a cue line`));
   ['Hexabranchus sanguineus', 'Thuridilla lineolata', 'Chelidonura amoena', 'Pleurobranchus forskalii'].forEach(sp => {
     assert.ok(Object.values(M.refs).some(r => r.t.includes(sp)));
     assert.ok(SPECIES.has(sp), `${sp}: a species of the game (rule C6)`);
@@ -279,6 +280,10 @@ test('Sea slug basics: what it names is the game’s and read (rules C2, C6), no
   assert.ok(!/imrl-|\.webp|<img src=/i.test(code), 'drawings and the game’s own photos only');
   assert.ok(!/\b(Dr\.?|Prof\.?)\s+[A-Z]/.test(src), 'no person');
   assert.ok(!/'seaslug'|"seaslug"/.test(src), 'no subject id literal (rule S1)');
+  // The late registration reads proto/lab.js's LAB (LAB.pending): no name of the module's own may hide it (Codex, #1286).
+  ['LAB', 'BASICS', 'BASICS_KIT', 'DATA', 'route'].forEach(n =>
+    assert.ok(!new RegExp(`(?:const|let|var|function)\\s+${n}\\b|[,{]\\s*${n}\\s*=`).test(code), `${n} is not redeclared`)
+  );
 });
 
 test('Sea slug basics: open for the sea slugs, its own record and feat, wired as the others', () => {

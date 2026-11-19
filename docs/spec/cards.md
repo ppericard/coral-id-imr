@@ -107,8 +107,8 @@ Each subject asks its own, in its own words (`core.js` `SUBJECTS` `start`: the q
 (`core.js` `startKey`: `reefid-sync-<subject>-start`, so the corals' answer stays the corals'), asked on the card before
 that subject's first quiz question, its fallback window counting that subject's answers. Everything in this section
 holds per subject. A subject offers its own basics module after "new" and on its "lower" card (Coral basics, Fish basics:
-`SUBJECTS` `pages` 'basics', `app.js` `basicsDue`, its words `UNITS` `basics`); a subject without one, the sea slugs,
-offers none and has no "lower" card. The fish's level-change cards, that one included, stay off
+`SUBJECTS` `pages` 'basics', `app.js` `basicsDue`, its words `UNITS` `basics`); the sea slugs have one (Sea slug basics)
+but no first-launch question and no level-change card, so they offer it only on Home's line and the Learn page. The fish's level-change cards, that one included, stay off
 (`UNITS` `startFb: false`). The fish answers are logged but not replayed, so the fish prior applies at once (`model.js` `startP`: no replay
 to wait for). The admin's player journey shows the corals' record only.
 
