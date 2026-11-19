@@ -23,7 +23,8 @@ admin's Journey).
 
 - the corals' (`ACH`): genera met; the genera at each mastery level (`lvStep`: 5/10/20 genera at Open Water or above,
   5/10/20 at Advanced, 5/10 at Divemaster; Instructor on 1/5/10/20/all; the ids of the former quarter rungs are kept, so
-  nothing earned is lost); overall progress 5-100%; runs of 10/25 right answers; the first duel won; right with the
+  nothing earned is lost); overall progress 5-100%; runs of 10/25 right answers; the first duel won (a 2-choice contrast: the Duel tab, a duel in the quiz or an Again,
+  `core.js` `contrastQ`); right with the
   corallites alone; right on a photo most players miss (`PSTAT`: half or fewer of its 5+ answers right) shown alone
   (Sharp eye); Elo 1100-1400 (the device's global level, from `ELO_MIN` = 200 answers); an IMR group fully learned; a
   bonus genus met; Coral basics done (every step seen: `proto/basics.js` calls `achBasics()`, which sets the feat
