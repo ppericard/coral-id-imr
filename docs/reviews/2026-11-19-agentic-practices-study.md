@@ -136,7 +136,7 @@ All *measured* on `fe0dbb1bb` unless marked. Tokens are bytes / 4, an **estimate
 | docs/rules/learning.md | 21.1 | 248 | 32 |
 | docs/rules/sheet.md | 14.0 | 165 | 25 |
 | docs/rules/photos.md | 9.7 | 113 | 25 |
-| the five other rule files | 25.6 | 344 | 46 |
+| the five other rule files | 24.3 | 344 | 46 |
 | STATUS + ANSWERS | 13.6 | 174 | 7 |
 
 - **Rules:** 87 rule IDs; the rules audit counts 172 rule items with the AGENTS.md bullets and INTEGRATOR's habits, and
@@ -152,14 +152,15 @@ All *measured* on `fe0dbb1bb` unless marked. Tokens are bytes / 4, an **estimate
   percentile 13.7 KB, so a PR body is itself a document an agent reads.
 - **Shared files touched by the 420 commits on `main` since 2026-11-12:** ROADMAP 156 (37 %), STATUS 33,
   `docs/decisions/README.md` 32 (it exists since 2026-11-18), INTEGRATOR 21, AGENTS 19, the rule files 21.
-- **Handovers:** 31 of the 348 PRs since 2026-11-12 are STATUS-only handovers (9 %).
+- **Handovers:** 31 of the 348 PRs since 2026-11-12 have a title starting with "STATUS" (9 %), mostly handovers.
 
 ### 3.3 Duplication: one rule, many homes
 
 Files under AGENTS, CLAUDE, README, INTEGRATOR, STATUS, ANSWERS, HANDOVER, ROADMAP, ARCHITECTURE, LEARNING, the rules
 and the specs that state each topic (a search, so it counts mentions, not only restatements):
 
-- the merge train: 11 files; how questions are numbered: 10 (INTEGRATOR restates AGENTS.md's paragraph nearly whole);
+- the merge train: 11 files; how questions are numbered: AGENTS.md and INTEGRATOR (*read*: INTEGRATOR restates
+  AGENTS.md's paragraph nearly whole);
   Rule 0 / 17:30: 6; the machine slot: 5; force-push: 5; the model and effort table: 2 in full (AGENTS.md and
   INTEGRATOR), plus W25 and STATUS by reference; `curation.json` written only by Publish: 30 files (mostly specs that
   describe it, which is fine).
@@ -180,8 +181,10 @@ and the specs that state each topic (a search, so it counts mentions, not only r
    decision 2 resolves it (§6), but W27 still says it.
 5. **The agent cap.** W27 holds "At most four agents that write code or run tests [...] Read-only studies [...] on
    top" with Pierre's "ok" of 2026-11-18; the ledger on #1193 records, as a paraphrase, his OK of the same evening to
-   the rules audit's decisions 1-5, whose decision 1 recommended "(a) delete the cap". Two records of his words
-   disagree; this study does not pick one (§7, question 4).
+   the rules audit's decisions 1-5, whose decision 1 recommended "(a) delete the cap". W27's wording merged at 13:44
+   (#1086), before that evening's answer. Two records of his words disagree; this study does not pick one (§7, note).
+6. **Rule over habit.** INTEGRATOR says "where [a rule] covers a habit below, the rule wins". By the repo's own
+   precedence, W18's `--force-with-lease` allowance held, and STATUS's "slip" on #1164 was a rule followed (item 1).
 
 ### 3.5 Which rules PRs cite
 
@@ -189,8 +192,8 @@ Count of PR descriptions since 2026-11-12 that name "rule X" (348 PRs; older PRs
 are useless because P1, D1… are also player pseudonyms and hex strings):
 
 - **Cited by 20 or more:** D3 66, L11 38, S1 36, D4 34, A1 31, C2 30, D1 23, C7 22, L12 22, P1 22, W19 21, D5 20.
-- **Cited by 1 or none:** W1, W2, W4, W10, W13, W18, W21, W22, W25 (process); L1, L3, L14, L15, P2, P3, P5, P6, U1,
-  U2, U5, U6, U9, U10, U11, U13, U14, S3 (product).
+- **Cited by 1 or none:** W1, W2, W4, W7, W10, W13, W15, W18, W20, W21, W22, W25 (process); L1, L3, L7, L8, L14,
+  L15, P2, P3, P5, P6, U1, U2, U5, U6, U7, U9, U10, U11, U13, U14, S3 (product).
 - **Reading (judgement):** a rule nobody cites is not therefore low-value. L14 (visual recognition first), L15 (ideal
   photos first) and U9 (sign-in never on My progress) are principles that shape everything and are rarely the subject of
   a PR; W13 and W21 are cited rarely because CI enforces them. The low-cited *process* rules are the candidates for one
@@ -198,21 +201,26 @@ are useless because P1, D1… are also player pseudonyms and hex strings):
 
 ### 3.6 Questions held in studies
 
-- 42 of the 64 dated studies have a heading about questions or decisions for Pierre; whether each is closed is written
-  only in the reviews README's last column, by hand.
+- 42 of the 63 other dated studies have a heading about questions or decisions for Pierre; whether each is closed is
+  written only in the reviews README's last column, by hand.
 - 31 PR descriptions since 2026-11-12 contain "Questions for Pierre".
-- STATUS lists 9 numbered questions open and "Still open: #1099 floor…; #1093 A/B; #1045 A/B; #1095 three points;
-  #1098 (a)-(f); #1041 §6": questions whose text lives only in PRs. #1186 counts 8 more recorded open elsewhere and
-  absent from STATUS.
+- **The open count is wrong on the same commit.** STATUS (written 05:20) lists 9 numbered questions open, and
+  `brief.py --short` prints "9 open", but ANSWERS.md on the same `main` records answers to Q407-Q410 and Q414-Q417 at
+  06:50: only Q411 is open. STATUS also keeps "Still open: #1099 floor…; #1093 A/B; #1045 A/B; #1095 three points;
+  #1098 (a)-(f); #1041 §6", questions whose text lives only in PRs; #1186 counts 8 more recorded open elsewhere and
+  absent from STATUS. This is what the integrator's proposed consistency check (f1) would catch.
 
 ### 3.7 Today's incidents, as evidence
 
 - **Re-asked:** the rename (answered 2026-11-18), the Pikachu nickname (answered 2026-11-17), the corals' photo source
   weight (rule P1, 2026-11-18). The ledger quotes Pierre at 06:50: «J'ai déjà répondu plein de fois à cette
   question!!!!» Each answer lived in STATUS (overwritten) or a PR description, not in the doc an agent reads.
-- **Approved, not applied:** the rules audit's decisions 1-5 and 8, OKed on the evening of 2026-11-18 (ledger on #1193:
-  "Applied: STATUS (#1122); #1117's study (to record)"), are in no rule a day later; #1117 itself is green and unmerged.
-  The same failure as the re-asks, one level up: a decision taken, waiting on the integrator's attention.
+- **Approved, mostly not applied:** the rules audit's decisions 1-5 and 8 were OKed on the evening of 2026-11-18
+  (ledger on #1193: "Applied: STATUS (#1122); #1117's study (to record)"). Checked on `main` the next morning: (5)
+  INTEGRATOR without dated handovers is applied (it holds habits only); (1) W27 still names four agents; (2) W27 still
+  says to ask back a short request; (3) W12, W14, W24 and D3 keep their how-to; (4) `tests/docs.test.js` has byte
+  budgets per file but no word budget; (8) `tests/slot.js` has no 40-minute cap. #1117 itself is green and unmerged. The
+  same failure as the re-asks, one level up: a decision taken, waiting on the integrator's attention.
 - **Shell rules broken** despite AGENTS.md (heredocs, `python -c`, `sed -i`): a prose rule about behaviour, with no
   guard until #1117's `tools/guard_bash.py` lands.
 - **Index conflicts:** `docs/decisions/README.md`, ROADMAP and now ANSWERS.md are appended to by most PRs; 25 PR
@@ -255,12 +263,18 @@ only. Options in one area can be combined.
 
 ### (a) A big edit of the rules
 
-- **a1. Apply what is approved, fix the contradictions [editing, plus Pierre's choice on the cap].** Apply the rules
-  audit's decisions 1-5 and 8 as he OKed them; one home per rule with a pointer elsewhere; resolve the five
-  contradictions of §3.4 (W18 to "merge, never rebase"; W22's two PRs; W7's places; W27's ask-back; the cap, once §7
-  question 4 is answered); delete the obsolete items the audit lists (Projects mode, pre-rewrite clones, Prettier 3.8.1,
-  stacked-PR notes). **Cost:** two or three docs PRs of size M-L: docs M median 9 min (#1190), docs L median 27 min, up
-  to 50 min (#1140). **Risk:** low; a wording Pierre approved could be shortened past his meaning (each cut keeps his
+- **a0. Load the constitution as it is [editing].** Replace CLAUDE.md's "Read AGENTS.md" with an `@AGENTS.md` import
+  (practice 3), and add an InstructionsLoaded hook that logs which instruction files load, to measure finding 1 rather
+  than infer it. **Cost:** docs S, 4 min median (#1111). **Risk:** every session and every subagent pays about 6,000
+  tokens (24 KB) whether it needs them or not, and the 263 lines stay at one level (diagnosis 2). **Buys:** the
+  smallest step that makes Rule 0 and the merge contract certain to be in context.
+- **a1. Apply what is approved, fix the contradictions [editing for the approved part and W7's places; substance for
+  W18 and W22].** Apply the rules audit's decisions 1-5 and 8 as he OKed them (the cap after the note of §7); one home
+  per rule with a pointer elsewhere; resolve the contradictions of §3.4: W7's places and W27's ask-back follow
+  decisions already taken, but removing W18's rebase and `--force-with-lease` allowance, or choosing between W22's two
+  PRs and W27's one, changes what a rule requires (§7, question 3); delete the obsolete items the audit lists (Projects
+  mode, pre-rewrite clones, Prettier 3.8.1, stacked-PR notes). **Cost:** two or three docs PRs of size M-L: docs M
+  median 9 min (#1190), docs L median 27 min, up to 50 min (#1140). **Risk:** low; a wording Pierre approved could be shortened past his meaning (each cut keeps his
   words in the record). **Buys:** about −45 % words (the audit's estimate), no contradiction left.
 - **a2. A tiered set: a short core always loaded, topic files on demand [editing; the choice of what is core is
   Pierre's].** A core of at most about 150 lines that loads by itself (an `@` import from CLAUDE.md, or the core moved
@@ -271,9 +285,11 @@ only. Options in one area can be combined.
   SubagentStart hook restates the core in every subagent. **Cost:** docs L plus tooling S-M (the docs test learns the
   new homes): docs L median 27 min (#1140), tooling S median 26 min (#916). **Risk:** a rule that sits in a
   path-scoped file is not seen by an agent that never opens a matching file (a rule that must hold everywhere belongs
-  in the core); Codex does not read `.claude/rules/`, so its review guidelines stay in AGENTS.md; one more mechanism to
-  keep working. **Buys:** the rules that matter in every session are actually in every session, at the start of the
-  context (practices 1, 3, 5, 8).
+  in the core); path-scoped rules load for a sibling worktree only when the session starts in it or moves there
+  (memory page), and every agent here works in a worktree of its own, so this needs a trial with the InstructionsLoaded
+  log of a0 before anything relies on it; Codex does not read `.claude/rules/`, so its review guidelines stay in
+  AGENTS.md; one more mechanism to keep working. **Buys:** the rules that matter in every session are actually in
+  every session, at the start of the context (practices 1, 3, 5, 8).
 - **a3. Guards first, prose shrinks [substance where a guard blocks something the prose only asked; approved in
   principle by audit decision 3].** Each "never" with a mechanical test gets a hook or a CI check, and its text becomes
   one line naming the guard. Candidates beyond #1117's Bash guard: `train.py` checks the Codex receipt on the head,
@@ -335,6 +351,13 @@ only. Options in one area can be combined.
   Codex, threads), or a merger subagent the integrator launches; the merge contract names who merges. **Cost:** docs M
   plus a new brief, 9 min (#1190) plus a trial day. **Risk:** two writers, coordination costs (practice 11), the merge
   contract's "one integrator" changes. **Buys:** no idle agents while trains run; the integrator's context lasts longer.
+- **c5. A context budget and check-ins that do not depend on memory [editing].** The integrator hands over on a
+  measure (its context past a set share, or a set number of merges) rather than by feel, and a PreCompact hook keeps the
+  running agents in the summary; a recurring check-in (a scheduled task in its session, as `send_later` does today by
+  habit) runs `brief.py` and names any agent idle or finished and not yet read, so no agent waits on the integrator.
+  **Cost:** tooling S, 26 min median (#916). **Risk:** check-ins cost quota while nothing moves (rule W25: one wake-up
+  per wait); a handover at the wrong moment splits a train. **Buys:** idle agents and a full context become visible
+  instead of discovered.
 
 ### (d) Subagent briefs, model and effort
 
@@ -388,7 +411,8 @@ only. Options in one area can be combined.
 - **g2. Specs as contracts, not prose copies of code [editing].** A spec keeps what the code cannot say (why, the data
   contract, the invariants); the rest is generated (`--help`, lists) or read from the code. **Cost:** a docs L PR per
   large spec, 27 min median (#1140). **Risk:** a spec that was the only readable description goes. **Buys:** fewer
-  copies to drift.
+  copies to drift. **Untested:** no spec was read for this study (only their sizes); a sample of two would say whether
+  they copy code or hold contracts.
 - **g3. Size budgets that bite [editing].** The docs test already budgets every living doc; add a word budget for the
   governing set (audit decision 4: 14,000 words, approved) and a budget for the always-loaded core in lines. **Cost:**
   tooling S, 4-7 min (#1003). **Risk:** a needed rule waits for a cut. **Buys:** the core cannot regrow.
@@ -404,7 +428,7 @@ Searched: `docs/ANSWERS.md` on `main` and on #1193's branch, the rules' *Source*
   per that record: (1) the agent cap, recommendation (a) delete it; (2) build the easy-to-correct reading of an
   ambiguous request and say which; (3) a tool-enforced rule becomes one line naming the tool; (4) a word budget of
   14,000 for AGENTS, the rules and INTEGRATOR; (5) INTEGRATOR without dated handovers; (8) the 40-minute cap enforced by
-  `tests/slot.js`. Not applied yet (§3.7).
+  `tests/slot.js`. Only (5) is applied on `main` (§3.7).
 - **Guards rather than prose:** «ok, lance les quatre» (Pierre, 2026-11-18, #1117).
 - **Allow rules:** «Par du principe que les intégrateurs tournent en mode auto»: no allowlist PR for read-only
   commands; a narrow allow rule only for a routine command the classifier refuses (2026-11-19 06:37, ledger).
@@ -418,33 +442,39 @@ Searched: `docs/ANSWERS.md` on `main` and on #1193's branch, the rules' *Source*
 Each with options and a recommendation. Which would be numbered (AGENTS.md's two tests) is said for each; the
 integrator assigns the numbers.
 
-1. **How deep the edit of the rules goes.** (A) apply what is approved and fix the contradictions (a1); (B) A, plus a
-   short core of at most about 150 lines that every agent and subagent gets by itself, the topic files loading when an
-   agent touches their files (a2), and guards for each "never" that can be checked (a3); (C) a rewrite from zero, every
-   rule re-approved (a4). **Recommendation: B**, in that order (a1 first, then the core, then guards one by one); C
-   costs you the most reading for the least gain. *Numbered: it commits the future and a rule's form.*
-2. **What the core holds.** The integrator drafts it from §4 and the rules audit, at most about 150 lines, and shows
-   you the list of what goes in before any wording: OK? **Recommendation: yes.** *Not numbered (a plain OK; the wording
-   comes to you later as usual).*
-3. **The integrator's three proposals, plus one.** `tools/asked.py` before any question, studies with no open
-   questions, the weekly check (f1); and the ledger kept as data with a check that each answer reached its doc within a
-   day (b3). **Recommendation: yes to all four.** *Not numbered if (f1) is asked as proposed; numbered if you want to
-   cite it later.*
-4. **The agent cap.** Your two records of 2026-11-18 differ: W27 says four agents that write code or run tests, studies
-   on top ("ok", the exact wording); the ledger records your OK of the evening to the rules audit's decision 1, whose
-   recommendation was to delete the cap (the machine's load is guarded by `tests/slot.js`). Which one holds? (a) no cap,
-   the slot guards the machine; (b) four, studies on top. **No recommendation from this study**: a confirmation of what
-   you meant. *Not numbered (a confirmation).*
+Already decided, so not asked: the rules audit's decisions 1-5 and 8 (§6) are applied first, whatever the answers
+below; the integrator's three proposals (f1) already wait for his OK and are not asked again here.
+
+1. **How far beyond what is approved the edit goes.** (A) nothing more: the approved decisions and the contradictions
+   (a1); (B) A, then a short core of at most about 150 lines that every agent and subagent gets by itself (a0 at once,
+   then a2 after a trial that shows the topic files really load in our worktrees), and a guard for each "never" that
+   can be checked (a3); the integrator shows you the list of what goes in the core before any wording; (C) a rewrite
+   from zero, every rule re-approved (a4). **Recommendation: B**, step by step; C costs you the most reading for the
+   least gain. *Numbered: it commits the future and the rules' form, and will be cited.*
+2. **The ledger as data.** Each answer kept as a small record (date, your words, what it decides, where it is applied)
+   with a check that fails when an answer has not reached its doc within a day (b3). **Recommendation: yes.** *Not
+   numbered (a confirmation of a decided rule's mechanics); numbered if you want to cite it later.*
+3. **Two of your rules contradict each other.** (a) Bringing a PR up to date: W18 says rebase and allows
+   `--force-with-lease` on one's own branch; INTEGRATOR and W26 say merge, never rebase, never force-push. (b) PRs per
+   agent: W22 says two at most, W27 says one. **Recommendation:** (a) merge, never rebase, no force-push of any kind;
+   (b) one PR per agent. *Not numbered (the wording of two rules already his; his OK goes in their Source lines).*
+
+**A note for the integrator, not a question:** the agent cap. W27's "four that write code or run tests, studies on top"
+merged at 13:44 on 2026-11-18 (#1086); the ledger records, as a paraphrase, Pierre's OK that evening to the rules
+audit's decisions 1-5, whose decision 1 recommended deleting the cap. The later record would win; the integrator checks
+the chat of that evening and asks Pierre only if it does not settle it.
 
 Not asked, the integrator's call (easy to correct): the union merge or generated indexes (e), the brief template (d1),
-committing the integrator's tools (c1), the recovery hooks (c2), archiving answered studies (g1).
+committing the integrator's tools (c1), the recovery hooks (c2), the check-ins (c5), archiving answered studies (g1).
 
 ## 8. What I checked and what I did not (rule W11)
 
 - **Read in full:** CLAUDE.md, AGENTS.md, INTEGRATOR, STATUS, ANSWERS (main), `docs/rules/ship.md`, the rules README,
   `.claude/settings.json`, the decisions README, the PR template, the rules audit (#1117's branch), #1117's, #1191's
   descriptions. **Skimmed:** the other rule files (sizes, IDs, long lines), the docs audit's summary, #1186's study,
-  #1193's ledger (searched, not read whole), the reviews README.
+  #1193's ledger (searched, not read whole), the reviews README, `tests/docs.test.js` (budgets), `tests/slot.js`
+  (no cap). **Not read:** the specs (sizes only), the README's documentation map, LEARNING, ROADMAP, FISH_PATH, the
+  other studies.
 - **Measured with scripts** (scratchpad, not committed): sizes, lines, never/always/must lines, mentions per topic,
   "rule X" citations in the 1,196 PR descriptions (REST API), commits per shared file since 2026-11-12. The citation
   count is a regular expression on "rule(s) X": it misses a rule named without the word "rule" and counts a rule named
@@ -462,8 +492,9 @@ committing the integrator's tools (c1), the recovery hooks (c2), archiving answe
 ## 9. Résumé pour Pierre
 
 - J'ai lu les règles, la doc et l'historique des PR, et les bonnes pratiques publiées (Anthropic, OpenAI, recherche).
-- Le constat le plus net : l'outil ne charge tout seul que CLAUDE.md (9 lignes). AGENTS.md, Rule 0 et l'index des
-  règles ne sont lus que si l'agent décide de les ouvrir ; un sous-agent ne les reçoit pas non plus.
+- Le constat le plus net (d'après la doc de Claude Code, vu dans une session) : l'outil ne charge tout seul que
+  CLAUDE.md (9 lignes). AGENTS.md, Rule 0 et l'index des règles ne sont lus que si l'agent décide de les ouvrir ; un
+  sous-agent ne les reçoit pas non plus.
 - Le volume : environ 172 règles, 267 lignes « jamais / toujours / doit », 23 000 tokens à lire pour l'intégrateur
   (47 000 avec le registre complet). La doc d'Anthropic vise moins de 200 lignes ; la recherche montre que le suivi
   baisse quand les consignes s'accumulent, et que le milieu est le moins lu.
@@ -471,10 +502,10 @@ committing the integrator's tools (c1), the recovery hooks (c2), archiving answe
   une au hasard.
 - Les règles qui tiennent sont celles qu'un outil vérifie ; celles qui rechutent (heredocs, attentes, noms) sont de la
   prose.
-- Tes décisions du 18 au soir sur l'audit des règles (1-5 et 8) ne sont dans aucune règle aujourd'hui : même
-  problème que les questions reposées, un cran plus haut.
+- Tes décisions du 18 au soir sur l'audit des règles (1-5 et 8) : ce matin, seule la 5 est appliquée. Même problème
+  que les questions reposées, un cran plus haut.
 - Options, de légère à radicale, pour chaque sujet (§5) : appliquer ce qui est décidé ; un noyau court chargé
   automatiquement + fichiers par thème + garde-fous ; ou une réécriture complète.
-- Ma recommandation : la voie du milieu (question 1, B), dans l'ordre. Rien n'est supprimé sans ton accord.
-- Quatre questions en §7 ; la 4 (le plafond d'agents) demande juste ce que tu voulais dire, deux traces se
-  contredisent.
+- Ma recommandation : la voie du milieu (question 1, B), pas à pas. Rien n'est supprimé sans ton accord.
+- Trois questions en §7 : jusqu'où aller, le registre des réponses en données vérifiées, et deux règles qui se
+  contredisent (rebase / force-push, PR par agent).
