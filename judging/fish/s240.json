@@ -169,8 +169,21 @@
    "keep": "best"
   },
   "fish-s240-cand-555852573": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1sl14",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.24,
+    0.65,
+    1.0
+   ],
+   "bb": [
+    0.0,
+    0.25,
+    0.6,
+    1.0
+   ],
+   "note": "crop: the checkerboard wrasse above leaves the frame (Q430)"
   },
   "fish-s240-cand-682554473": {
    "code": "p1d2sms2",
