@@ -597,7 +597,7 @@ function boardScopes(B) {
 }
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
-  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your groups' leaderboards come first; the members of some groups, the staff for one, are on their group's only. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your groups' leaderboards come first; this general one shows everyone, whatever their groups. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
   const S = boardSubj(),
     C = boardCached(S);
