@@ -42,3 +42,19 @@ Applied:
   *T. picta* gains it, as a nickname with a note ("often called so by divers here; not necessarily appropriate"),
   shown beside the name on the sheets (`learn.js` `vernName`). Its source is Pierre's own word (rule C2: the content
   editor's words carry a source), so that source has no page (`app.js` `vernSrcs` shows its title, not a link).
+
+## Follow-up, 2026-11-19 (14:50 Manila): T. picta as a cousin
+
+On that note Pierre asked: «Ou alors il faut le citer comme un cousin de l'espèce appelée Pikachu?»
+
+- *T. picta* is cited as a **cousin of the species called Pikachu**; it keeps no nickname of its own. The entry stays in
+  its names (so the divers' use is recorded, with Pierre as the source), without `nick`: the sheet reads "Pikachu (a
+  cousin of the species called Pikachu, T. pacifica and T. pikachu; divers here often call it so too)", where it read
+  "Pikachu (nickname: often called so by divers here; not necessarily appropriate)". His 06:58 point stays: divers here
+  often call it Pikachu too. The integrator's call, easy to correct (the wording is `note` in
+  `tools/seaslug_names_src.json`).
+- "Cousin" is accurate: WoRMS lists *T. picta* Baba, 1972 (AphiaID 527538), *T. pacifica* (Bergh, 1884) (420618) and
+  *T. pikachu* Pola et al., 2026 (1883897) as accepted species of the genus *Thecacera*, Polyceridae (REST
+  `AphiaRecordsByName`, read 2026-11-19; rule C2).
+- `learn.js` `vernName` shows a name's note with or without `nickname`. Nothing is counted differently (*T. picta* was
+  never counted).

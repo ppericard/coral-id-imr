@@ -744,7 +744,7 @@
       "ctx": [
         "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5); the game's choices stay scientific names.",
         "SEASLUG.WORLD's article: \"When a Japanese diver says \"Pikachu,\" this is the animal\" (T. pacifica); \"The internet nickname went straight into the scientific name\" (T. pikachu).",
-        "Answered by Pierre (2026-11-17 and 2026-11-19, Q417): the nickname is kept on both species, and T. picta, which local divers also call Pikachu, shows it with a note that it is not necessarily appropriate (docs/decisions/2026-11-19-pikachu-nickname.md). Applied; to mark Resolved in the admin."
+        "Answered by Pierre (2026-11-17 and 2026-11-19, Q417): the nickname is kept on both species, and T. picta, which local divers also call Pikachu, is cited as a cousin of the species called Pikachu (Pierre, 2026-11-19 14:50) (docs/decisions/2026-11-19-pikachu-nickname.md). Applied; to mark Resolved in the admin."
       ],
       "src": [
         {"t": "iNaturalist, Thecacera pacifica", "u": "https://www.inaturalist.org/taxa/142790"},
