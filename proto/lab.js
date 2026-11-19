@@ -28,6 +28,9 @@ const LAB_ICONS = {
   // Two photos side by side with an equals sign between them.
   samediff:
     '<rect x="2.5" y="5" width="8" height="14" rx="1.5"/><rect x="13.5" y="5" width="8" height="14" rx="1.5"/><path d="M10.5 10.5h3M10.5 13.5h3"/>',
+  // Three squares and a circle: three of a kind and the odd one out.
+  oddone:
+    '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><circle cx="17.25" cy="17.25" r="4.25"/>',
   // A card over a dimmed screen (the cards and pop-ups mock-up).
   cards:
     '<rect x="2.5" y="3.5" width="19" height="17" rx="2"/><rect x="6.5" y="7" width="11" height="10" rx="1.5"/><path d="M9 10.5h6M9 13.5h4"/>'
@@ -54,6 +57,7 @@ const LAB = {
     'type',
     'pairs',
     'samediff',
+    'oddone',
     'gallery',
     'cards'
   ],
@@ -153,6 +157,76 @@ const labHead = (title, lede) =>
   `<div class="crumbs"><a href="${esc(hr('lab'))}">Tools</a> › ${esc(title)}</div><h2>${esc(title)}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
 // Keep / trim votes, so the owner can tell which prototypes to keep.
 const labVotes = () => store.get('reefid-lab-votes', {}) || {};
+
+/* ---------- the Lab's photo games on the subject on screen (proto/samediff.js, proto/oddone.js) ----------
+   Untimed, nothing scored, logged or saved (rule U13: they graduate only with Pierre's OK), one engine for every subject
+   (rule S1): the units are the player's unlocked ones (model.js unlocked, rule L4), the photos the draw's own (model.js
+   photoSet, as the duels'), the feedback the quiz's (quiz.js fbLine). What both games share is here: the photo source, the
+   tips behind More and the short feedback sheet. None of it calls the quiz's recorders (tests/oddone.test.js greps for it). */
+// The observation a photo belongs to (rule P4: one observation is one colony or one fish), else its file.
+const labObs = p => p.o || p.f;
+// A source of game photos, each game its own (so its list of the photos shown last is its own): {photo, seen}. photo(n, want)
+// gives a photo of unit n by the draw's own choice (photoSet: the photo the player's level aims for, as a duel's; of what it
+// shows, the closest view: a close-up for a coral, the one photo of a fish) or null. want narrows it: {view, not, tile}: in
+// that view of the draw's, not of the observation or observations `not` (a key or a list), and, tile, only with (true) or
+// only without (false) the fish's square cut (xc), so the photos of one question are framed alike, whichever of them is
+// the odd one. A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
+// others can be drawn (the last `max`).
+function labShots(max = 8) {
+  const recent = [];
+  // The view a photo of unit n is in (the draw's views), '' when the game has none of it.
+  const view = (n, q) => ['wide', 'medium', 'macro'].find(v => gamePics(n, v).some(x => x.f === q.f)) || '';
+  const photo = (n, want) => {
+    const not = [].concat((want && want.not) || []),
+      fits = q =>
+        !want ||
+        ((!want.view || view(n, q) === want.view) &&
+          !not.includes(labObs(q)) &&
+          (want.tile === undefined || !!(q.xc && !q.r) === want.tile));
+    for (const keep of [q => fits(q) && !recent.includes(labObs(q)), fits]) {
+      const s = photoSet(n, null, 0, 2, 'compare', keep).shown,
+        p = s[s.length - 1];
+      if (p) return {...p, sdv: view(n, p)};
+    }
+    return null;
+  };
+  const seen = ps => ps.forEach(p => (recent.push(labObs(p)), recent.length > max && recent.shift()));
+  return {photo, seen};
+}
+// The ID tips of the units of a question, each in its box (behind More).
+const labTips = units =>
+  units
+    .map(n => {
+      const g = GX(n);
+      return g.qt || g.sum
+        ? `<div class="tipbox fbtips"><p class="label">${uname(n)} · ${tipsLabel(g)}</p>${tipsList(g, 'imrfb')}</div>`
+        : '';
+    })
+    .join('');
+// The short feedback sheet of a photo game in q (the quiz's own: .fb.fbs, #after, rule C3): o.good, the verdict; o.head, its
+// sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos and
+// the report button for o.rep (sync.js repBtn); o.next draws the next question; o.fit lays the stage out again.
+function labSheet(q, o) {
+  q.classList.add('done');
+  q.querySelector('#after').innerHTML = `<div class="fb fbs">
+    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}
+    <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p>${repBtn(o.rep)}</div>
+  </div>
+  <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
+  const mb = q.querySelector('#fbmbtn'),
+    mp = q.querySelector('#fbmore'),
+    nb = q.querySelector('#next');
+  mb.onclick = () => {
+    mp.hidden = !mp.hidden;
+    mb.setAttribute('aria-expanded', String(!mp.hidden));
+    mb.textContent = mp.hidden ? 'More' : 'Less';
+    if (isStacked()) o.fit();
+  };
+  nb.onclick = o.next;
+  nb.focus({preventScroll: true});
+  if (isStacked()) window.scrollTo(0, 0);
+  o.fit();
+}
 
 function viewLab(h) {
   // Lab pages use the full window width (see lab.css).
