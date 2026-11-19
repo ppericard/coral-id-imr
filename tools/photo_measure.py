@@ -216,24 +216,35 @@ class Pace:
             time.sleep(t - now)
 
 
-def fetch(f, base, src_dir, pace):
+class Late(Exception):
+    """The run's time budget is spent: the photo waits for the next run."""
+
+
+def fetch(f, base, src_dir, pace, stop=math.inf):
+    """Photo f's -m file as a PIL image; never starts a request or a retry past stop, nor waits on one beyond it."""
     from PIL import Image
     if src_dir:
         return Image.open(os.path.join(src_dir, f + SUF + '.webp'))
-    pace.wait()
     for i in range(3):
+        pace.wait()
+        left = stop - time.monotonic()
+        if left <= 1:
+            raise Late()
         try:
-            with urllib.request.urlopen(urllib.request.Request(f'{base}img/{f}{SUF}.webp', headers=UA), timeout=60) as r:
+            req = urllib.request.Request(f'{base}img/{f}{SUF}.webp', headers=UA)
+            with urllib.request.urlopen(req, timeout=min(60, left)) as r:
                 return Image.open(io.BytesIO(r.read()))
         except Exception:
-            if i == 2:
+            if i == 2 or stop - time.monotonic() <= 2 * (i + 1):
                 raise
             time.sleep(2 * (i + 1))
 
 
-def one(f, rec, base, src_dir, pace):
+def one(f, rec, base, src_dir, pace, stop=math.inf):
+    if time.monotonic() > stop:
+        raise Late()
     bb = box_in(rec.get('bb'), rec) if rec.get('bb') else None
-    m = measure(fetch(f, base, src_dir, pace), bb)
+    m = measure(fetch(f, base, src_dir, pace, stop), bb)
     t = tag(rec)
     if t:
         m['h'] = t
@@ -266,22 +277,25 @@ def run(a):
         return 0
     import photos as P
     base = '' if a.dir else P.photo_base()
-    pace, t0, done, fail, n = Pace(RATE), time.monotonic(), 0, 0, 0
-    stop = t0 + a.minutes * 60
+    pace, t0, done, fail, late, n = Pace(RATE), time.monotonic(), 0, 0, 0, 0
+    stop = t0 + a.minutes * 60  # checked before every photo and every request (rule L11's cap)
     with ThreadPoolExecutor(WORKERS) as ex:
         for i in range(0, len(fs), FLUSH):
             if time.monotonic() > stop:
-                print(f'stopped at the {a.minutes}-minute budget; run again to resume')
                 break
             chunk = fs[i:i + FLUSH]
 
             def job(f):
                 try:
-                    return f, one(f, photos[f][1], base, a.dir, pace)
+                    return f, one(f, photos[f][1], base, a.dir, pace, stop)
+                except Late:
+                    return f, None
                 except Exception as e:
                     return f, f'{type(e).__name__}: {e}'
             for f, m in ex.map(job, chunk):
-                if isinstance(m, str):
+                if m is None:
+                    late += 1
+                elif isinstance(m, str):
                     fail += 1
                     if fail <= 20: print(f'{f}: {m}')
                 else:
@@ -290,6 +304,8 @@ def run(a):
             dump(ms, a.out)
             n += len(chunk)
             print(f'{n}/{len(fs)} ({done} measured, {fail} failed, {time.monotonic() - t0:.0f} s)')
+    if done + fail < len(fs):
+        print(f'stopped at the {a.minutes}-minute budget, {len(fs) - done - fail} left; run again to resume')
     print(f'measured.json: {len(ms)} photos ({done} measured now, {fail} failed)')
     return 0
 

@@ -97,11 +97,13 @@ Image.fromarray(a).save(${JSON.stringify(path.join(img, 'fish-s001-cand-1-m.webp
 b = np.zeros((360, 480, 3), np.uint8); b[..., 2] = 200
 Image.fromarray(b).save(${JSON.stringify(path.join(img, 'fish-s001-cand-2-m.webp'))}, lossless=True)
 print(1)`);
-      const run = () =>
-        execFileSync('python3', ['tools/photo_measure.py', '--root', tmp, '--dir', img, '--out', out, '--subject', 'fish'], {
+      const run = (...more) =>
+        execFileSync('python3', ['tools/photo_measure.py', '--root', tmp, '--dir', img, '--out', out, '--subject', 'fish', ...more], {
           cwd: ROOT,
           encoding: 'utf8'
         });
+      assert.match(run('--minutes', '0'), /budget, 2 left/, 'a spent time budget measures nothing more');
+      assert.ok(!fs.existsSync(out));
       assert.match(run(), /2 game photos, 2 to measure/, 'a photo not downloaded yet (r) waits');
       let M = JSON.parse(fs.readFileSync(path.join(out), 'utf8'));
       assert.strictEqual(M.mv, 1);

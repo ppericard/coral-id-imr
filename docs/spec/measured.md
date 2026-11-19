@@ -12,9 +12,9 @@ photo's difficulty: the games correct nothing.
 - **Layout**: `{"v": 1, "mv": method version, "w": 960, "size": "-m", "about": …, "ms": {f: block}}`, one photo per
   line, sorted by `f`. The key `f` is the photo's file name: the key of the game files, of `analysis.js` `ph` and `fph`,
   and of an answer's photos (`a.ph`).
-- **What is measured**: the photo's `-m` file (from R2, or `img/`; at most 960 px on its long side, Pierre's crop
-  already cut), resampled to exactly 960 px on its long side so every value is on the same grid. A small original is
-  upsampled. Everything is computed on the gamma-encoded sRGB values in [0, 1].
+- **What is measured**: the photo's `-m` file (from R2, or a folder given with `--dir`; at most 960 px on its long
+  side, Pierre's crop already cut), resampled to exactly 960 px on its long side so every value is on the same grid.
+  A small original is upsampled. Everything is computed on the gamma-encoded sRGB values in [0, 1].
 
 ## A block
 
