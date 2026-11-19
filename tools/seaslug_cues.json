@@ -1,5 +1,5 @@
 {
- "about": "The sea slugs' own ID marks, by genus and by family (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7: family and genus sheets with sourced cues; Pierre, 2026-11-17: complete what is missing for the nudibranchs). Our own words, short and plain, never copied, written from public specialist sources: src, each {t, u}, t starting with the source's short name before its first comma (the quiz feedback's label names it). genera and families, by name: marks, 1 to 3 [visible feature that tells it from its family siblings and its look-alikes, its refs], a ref being [src key, where in it (a key couplet and page, or the species a fact sheet is about, by its name today)]. Only features seen on a photo from above or from the side, or the animal on its food: never a count, nor a feature seen only under the animal or in the hand; a species named is one of the genus's game species (rule C6). none: a circle-1 genus left without marks and why (no photo feature in the sources read): never a mark guessed. apart: the declared genus pairs' tell-apart lines (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md), {\"A|B\": {A: line, B: line}}, each side describing its own genus with its refs, one side only when no source read gives the other's; apartNone: the declared pairs left without a line, and why. tools/seaslug_cues.py checks them and puts marks, msrc and mby on seaslug.json's genera and families (tools/seaslug_game.py); app.js fishGenera shows a genus's marks in the quiz feedback, learn.js genMarks and fishMarks on the sheets. Sources consulted: docs/reviews/2026-11-18-seaslug-cues-sources.md.",
+ "about": "The sea slugs' own ID marks, by genus and by family (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7: family and genus sheets with sourced cues; Pierre, 2026-11-17: complete what is missing for the nudibranchs). Our own words, short and plain, never copied, written from public specialist sources: src, each {t, u}, t starting with the source's short name before its first comma (the quiz feedback's label names it). genera and families, by name: marks, 1 to 3 [visible feature that tells it from its family siblings and its look-alikes, its refs], a ref being [src key, where in it (a key couplet and page, or the species a fact sheet is about, by its name today)]. Only features seen on a photo from above or from the side, or the animal on its food: never a count, nor a feature seen only under the animal or in the hand; a species named is one of the genus's game species (rule C6). none: a genus left without marks and why (no photo feature in the sources read): never a mark guessed. apart: the declared genus pairs' tell-apart lines (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md), {\"A|B\": {A: line, B: line}}, each side describing its own genus with its refs, one side only when no source read gives the other's; apartNone: the declared pairs left without a line, and why. tools/seaslug_cues.py checks them and puts marks, msrc and mby on seaslug.json's genera and families (tools/seaslug_game.py); app.js fishGenera shows a genus's marks in the quiz feedback, learn.js genMarks and fishMarks on the sheets. Sources consulted: docs/reviews/2026-11-18-seaslug-cues-sources.md.",
  "src": {
   "brunck": {
    "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs",
@@ -109,6 +109,86 @@
    "t": "Gosliner 1995, The genus Thuridilla, with a revision of the Elysiidae (Proc. Calif. Acad. Sci. 49)",
    "u": "https://archive.org/details/biostor-3282"
   },
+  "carm2013": {
+   "t": "Carmona et al. 2013, A molecular phylogeny of Aeolidiidae (PLoS ONE 8)",
+   "u": "https://doi.org/10.1371/journal.pone.0063000"
+  },
+  "kbg2020": {
+   "t": "Korshunova et al. 2020, A synoptic review of the family Dendronotidae (Contributions to Zoology 90)",
+   "u": "https://doi.org/10.1163/18759866-BJA10014"
+  },
+  "kdg2024": {
+   "t": "Kim, Donohoo and Gosliner 2024, The soft-sediment Fionidae of the tropical Indo-Pacific (PeerJ 12)",
+   "u": "https://doi.org/10.7717/peerj.18517"
+  },
+  "ssf-astecesp": {
+   "t": "Sea Slug Forum, Rudman 2001, Asteronotus cespitosus fact sheet",
+   "u": "https://www.seaslugforum.net/find/astecesp"
+  },
+  "ssf-tripinte": {
+   "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet",
+   "u": "https://www.seaslugforum.net/find/tripinte"
+  },
+  "ssf-bornangu": {
+   "t": "Sea Slug Forum, Rudman 2000, Bornella anguilla fact sheet",
+   "u": "https://www.seaslugforum.net/find/bornangu"
+  },
+  "ssf-colpthom": {
+   "t": "Sea Slug Forum, Rudman 2000, Colpodaspis thompsoni fact sheet",
+   "u": "https://www.seaslugforum.net/find/colpthom"
+  },
+  "ssf-cratsimb": {
+   "t": "Sea Slug Forum, Rudman 2007, Cratena simba fact sheet",
+   "u": "https://www.seaslugforum.net/find/cratsimb"
+  },
+  "ssf-cyereleg": {
+   "t": "Sea Slug Forum, Rudman 1999, Cyerce elegans fact sheet",
+   "u": "https://www.seaslugforum.net/find/cyereleg"
+  },
+  "ssf-dendtube": {
+   "t": "Sea Slug Forum, Rudman 1999, Dendrodoris tuberculosa fact sheet",
+   "u": "https://www.seaslugforum.net/find/dendtube"
+  },
+  "ssf-gymn1867": {
+   "t": "Sea Slug Forum, Rudman 2000, comment on Gymnodoris citrina from Samoa",
+   "u": "https://www.seaslugforum.net/find/1867"
+  },
+  "ssf-notoward": {
+   "t": "Sea Slug Forum, Rudman 2000, Notobryon wardi fact sheet",
+   "u": "https://www.seaslugforum.net/find/notoward"
+  },
+  "ssf-notomino": {
+   "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet",
+   "u": "https://www.seaslugforum.net/find/notomino"
+  },
+  "ssf-notosere": {
+   "t": "Sea Slug Forum, Rudman 2000, Notodoris serenae fact sheet",
+   "u": "https://www.seaslugforum.net/find/notosere"
+  },
+  "ssf-platsang": {
+   "t": "Sea Slug Forum, Rudman 2007, Platydoris sanguinea fact sheet",
+   "u": "https://www.seaslugforum.net/find/platsang"
+  },
+  "ssf-scletube": {
+   "t": "Sea Slug Forum, Rudman 2002, Sclerodoris tuberculata fact sheet",
+   "u": "https://www.seaslugforum.net/find/scletube"
+  },
+  "ssf-stylstri": {
+   "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet",
+   "u": "https://www.seaslugforum.net/find/stylstri"
+  },
+  "ssf-bertmart": {
+   "t": "Sea Slug Forum, Rudman 1998, Berthella martensi fact sheet",
+   "u": "https://www.seaslugforum.net/find/bertmart"
+  },
+  "ssf-trappalm": {
+   "t": "Sea Slug Forum, Rudman 2008, Trapania palmula fact sheet",
+   "u": "https://www.seaslugforum.net/find/trappalm"
+  },
+  "ssf-trapscur": {
+   "t": "Sea Slug Forum, Rudman 2008, Trapania scurra fact sheet",
+   "u": "https://www.seaslugforum.net/find/trapscur"
+  },
   "zsm2018": {
    "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183)",
    "u": "https://doi.org/10.1093/zoolinnean/zlx064"
@@ -124,6 +204,102 @@
   "ssf-robolute": {
    "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet",
    "u": "https://www.seaslugforum.net/find/robolute"
+  },
+  "ssw-astecesp": {
+   "t": "SEASLUG.WORLD, Kimoto, Asteronotus cespitosus species page",
+   "u": "https://en.seaslug.world/species/asteronotus_cespitosus"
+  },
+  "ssw-ataginte": {
+   "t": "SEASLUG.WORLD, Kimoto, Atagema intecta species page",
+   "u": "https://en.seaslug.world/species/atagema_intecta"
+  },
+  "ssw-bornangu": {
+   "t": "SEASLUG.WORLD, Kimoto, Bornella anguilla species page",
+   "u": "https://en.seaslug.world/species/bornella_anguilla"
+  },
+  "ssw-cabaregi": {
+   "t": "SEASLUG.WORLD, Kimoto, Cabangus regius species page",
+   "u": "https://en.seaslug.world/species/cabangus_regius"
+  },
+  "ssw-dendtube": {
+   "t": "SEASLUG.WORLD, Kimoto, Dendrodoris tuberculosa species page",
+   "u": "https://en.seaslug.world/species/dendrodoris_tuberculosa"
+  },
+  "ssw-dermfuni": {
+   "t": "SEASLUG.WORLD, Kimoto, Dermatobranchus funiculus species page",
+   "u": "https://en.seaslug.world/species/dermatobranchus_funiculus"
+  },
+  "ssw-dermcaer": {
+   "t": "SEASLUG.WORLD, Kimoto, Dermatobranchus caeruleomaculatus species page",
+   "u": "https://en.seaslug.world/species/dermatobranchus_caeruleomaculatus"
+  },
+  "ssw-dotouss": {
+   "t": "SEASLUG.WORLD, Kimoto, Doto ussi species page",
+   "u": "https://en.seaslug.world/species/doto_ussi"
+  },
+  "ssw-euselun": {
+   "t": "SEASLUG.WORLD, Kimoto, Euselenops luniceps species page",
+   "u": "https://en.seaslug.world/species/euselenops_luniceps"
+  },
+  "ssw-janosavi": {
+   "t": "SEASLUG.WORLD, Kimoto, Janolus savinkini species page",
+   "u": "https://en.seaslug.world/species/janolus_savinkini"
+  },
+  "ssw-janoflav": {
+   "t": "SEASLUG.WORLD, Kimoto, Janolus flavoanulatus species page",
+   "u": "https://en.seaslug.world/species/janolus_flavoanulatus"
+  },
+  "ssw-marjtsur": {
+   "t": "SEASLUG.WORLD, Kimoto, Mariaglaja tsurugensis species page",
+   "u": "https://en.seaslug.world/species/mariaglaja_tsurugensis"
+  },
+  "ssw-mariarbo": {
+   "t": "SEASLUG.WORLD, Kimoto, Marioniopsis arborescens species page",
+   "u": "https://en.seaslug.world/species/marioniopsis_arborescens"
+  },
+  "ssw-murpadus": {
+   "t": "SEASLUG.WORLD, Kimoto, Murphydoris adusta species page",
+   "u": "https://en.seaslug.world/species/murphydoris_adusta"
+  },
+  "ssw-notoward": {
+   "t": "SEASLUG.WORLD, Kimoto, Notobryon wardi species page",
+   "u": "https://en.seaslug.world/species/notobryon_wardi"
+  },
+  "ssw-odonguam": {
+   "t": "SEASLUG.WORLD, Kimoto, Odontoglaja guamensis species page",
+   "u": "https://en.seaslug.world/species/odontoglaja_guamensis"
+  },
+  "ssw-pelalong": {
+   "t": "SEASLUG.WORLD, Kimoto, Pelagella longicornis species page",
+   "u": "https://en.seaslug.world/species/pelagella_longicornis"
+  },
+  "ssw-philspec": {
+   "t": "SEASLUG.WORLD, Kimoto, Philinopsis speciosa species page",
+   "u": "https://en.seaslug.world/species/philinopsis_speciosa"
+  },
+  "ssw-platsang": {
+   "t": "SEASLUG.WORLD, Kimoto, Platydoris sanguinea species page",
+   "u": "https://en.seaslug.world/species/platydoris_sanguinea"
+  },
+  "ssw-scletube": {
+   "t": "SEASLUG.WORLD, Kimoto, Sclerodoris tuberculata species page",
+   "u": "https://en.seaslug.world/species/sclerodoris_tuberculata"
+  },
+  "ssw-stylstri": {
+   "t": "SEASLUG.WORLD, Kimoto, Stylocheilus striatus species page",
+   "u": "https://en.seaslug.world/species/stylocheilus_striatus"
+  },
+  "ssw-tomomart": {
+   "t": "SEASLUG.WORLD, Kimoto, Tomoberthella martensi species page",
+   "u": "https://en.seaslug.world/species/tomoberthella_martensi"
+  },
+  "ssw-trapvitt": {
+   "t": "SEASLUG.WORLD, Kimoto, Trapania vitta species page",
+   "u": "https://en.seaslug.world/species/trapania_vitta"
+  },
+  "ssw-tyralute": {
+   "t": "SEASLUG.WORLD, Kimoto, Tyrannodoris luteolineata species page",
+   "u": "https://en.seaslug.world/species/tyrannodoris_luteolineata"
   },
   "wc2017": {
    "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81)",
@@ -377,6 +553,270 @@
      ]
     ]
    ]
+  },
+  "Asteronotus": {
+   "marks": [
+    [
+     "A ridge down the middle of the back, flanked by large knobs, as A. cespitosus",
+     [["ssw-astecesp", "Description"]]
+    ],
+    ["Can grow very large", [["ssf-astecesp", "its size"]]]
+   ]
+  },
+  "Atagema": {
+   "marks": [
+    [
+     "A raised, warty crest down the middle of the back, as A. intecta",
+     [["ssf-tripinte", "the dorsal crest"], ["ssw-ataginte", "Description"]]
+    ],
+    ["Rough skin, its tubercles tipped with spicules", [["ssf-tripinte", "the spiculate tubercles of A. intecta"]]]
+   ]
+  },
+  "Baeolidia": {
+   "marks": [
+    [
+     "Leaf-like cerata, as B. moebii",
+     [["carm2013", "Discussion, Baeolidia moebii (with B. major, its synonym)"]]
+    ]
+   ]
+  },
+  "Bornella": {
+   "marks": [
+    [
+     "Tall rhinophore sheaths, each with a sail-like flap behind, as B. anguilla",
+     [["ssw-bornangu", "Description"]]
+    ],
+    ["Paired processes along the back, with gills on their inner side", [["ssw-bornangu", "Description"]]],
+    [
+     "Most swim by bending side to side; B. anguilla swims like an eel",
+     [["ssf-bornangu", "swimming in the genus and in B. anguilla"]]
+    ]
+   ]
+  },
+  "Bulbaeolidia": {
+   "marks": [
+    ["Rhinophores with bulb-like swellings", [["carm2013", "Bulbaeolidia gen. nov., its features"]]],
+    [
+     "Club-shaped cerata in single rows, curving in towards the middle",
+     [["carm2013", "Bulbaeolidia gen. nov., its features"]]
+    ]
+   ]
+  },
+  "Cabangus": {
+   "marks": [
+    [
+     "Tree-like branched appendages in pairs along the back",
+     [["kbg2020", "diagnosis of the genus Cabangus"], ["ssw-cabaregi", "Remarks, the genus name"]]
+    ],
+    ["Branched appendages on the front edge of the head too", [["kbg2020", "diagnosis of the genus Cabangus"]]]
+   ]
+  },
+  "Colpodaspis": {
+   "marks": [
+    [
+     "A tiny snail-like slug, its shell hidden in the mantle, as C. thompsoni",
+     [["ssf-colpthom", "the shell and mantle"]]
+    ],
+    ["A long siphon on the right side of the mantle", [["ssf-colpthom", "the exhalant siphon"]]]
+   ]
+  },
+  "Cratena": {
+   "marks": [
+    ["Smooth rhinophores and oral tentacles, as C. simba", [["ssf-cratsimb", "the rhinophores and tentacles"]]],
+    [
+     "Front cerata in an arch on each side, the others in sloping rows",
+     [["ssf-cratsimb", "the arrangement of the cerata"]]
+    ]
+   ]
+  },
+  "Cyerce": {
+   "marks": [
+    [
+     "Large, flat, leaf-like cerata, easily shed when disturbed",
+     [["ssf-cyereleg", "the cerata of these sacoglossans"]]
+    ],
+    ["Rhinophores split in two and rolled, as C. elegans", [["ssf-cyereleg", "the head and rhinophores"]]]
+   ]
+  },
+  "Dendrodoris": {
+   "marks": [
+    [
+     "A large, soft body covered in clusters of knobs, as D. tuberculosa",
+     [["ssf-dendtube", "the tubercles"], ["ssw-dendtube", "Description"]]
+    ],
+    ["Rhinophore clubs that flare out like mushrooms, as D. tuberculosa", [["ssw-dendtube", "Description"]]]
+   ]
+  },
+  "Dermatobranchus": {
+   "marks": [
+    [
+     "Many lengthwise ridges along the back, as D. funiculus",
+     [["ssw-dermfuni", "Description"], ["ssw-dermcaer", "Description"]]
+    ],
+    [
+     "A broad oral veil in front of the head, its rim orange or yellow",
+     [["ssw-dermfuni", "Description"], ["ssw-dermcaer", "Description"]]
+    ],
+    [
+     "Rhinophores set wide apart, their clubs with lengthwise plates",
+     [["ssw-dermfuni", "Description"], ["ssw-dermcaer", "Description"]]
+    ]
+   ]
+  },
+  "Doto": {
+   "marks": [
+    ["Cerata covered in warts, as D. ussi", [["ssw-dotouss", "Description"]]],
+    ["Smooth rhinophores rising from cup-like sheaths", [["ssw-dotouss", "Description"]]]
+   ]
+  },
+  "Euselenops": {
+   "marks": [
+    [
+     "A wide half-moon oral veil fringed with papillae, as E. luniceps",
+     [["ssw-euselun", "Description and Etymology"]]
+    ],
+    ["The mantle drawn out behind into a slender siphon", [["ssw-euselun", "Description"]]],
+    ["Buries in sand by day and crawls out at night", [["ssw-euselun", "Remarks"]]]
+   ]
+  },
+  "Gymnodoris": {
+   "marks": [
+    ["A hunter that eats other sea slugs", [["ssf-gymn1867", "the gymnodorids' food"]]]
+   ]
+  },
+  "Janolus": {
+   "marks": [
+    [
+     "A frilled crest between the rhinophores, as J. savinkini",
+     [["ssw-janosavi", "Description, the caruncle"], ["ssw-janoflav", "Description, the caruncle"]]
+    ],
+    [
+     "Many swollen, pointed cerata over the back, as J. flavoanulatus",
+     [["ssw-janoflav", "Description"], ["ssw-janosavi", "Description"]]
+    ]
+   ]
+  },
+  "Mariaglaja": {
+   "marks": [
+    [
+     "Back shield in two lobes, the left long, the right short, as M. tsurugensis",
+     [["ssw-marjtsur", "Description, Mariaglaja tsurugensis"]]
+    ]
+   ]
+  },
+  "Marioniopsis": {
+   "marks": [
+    ["Tree-like gills along each side of the back, as M. arborescens", [["ssw-mariarbo", "Description"]]],
+    ["A front veil fringed with finger-like papillae", [["ssw-mariarbo", "Description"]]]
+   ]
+  },
+  "Murphydoris": {
+   "marks": [
+    ["A tiny, slender slug; M. adusta feeds on colonial sea squirts", [["ssw-murpadus", "Description and Remarks"]]]
+   ]
+  },
+  "Notobryon": {
+   "marks": [
+    ["A crest on the tail, waved like a paddle to swim", [["ssf-notoward", "the posterior crest of the genus"]]],
+    [
+     "Large lobes on the back, with feathery gills on their inner face",
+     [["ssf-notoward", "the mantle lobes"], ["ssw-notoward", "Description"]]
+    ],
+    ["Looks like the algae it lives among", [["ssw-notoward", "Description and Remarks"]]]
+   ]
+  },
+  "Notodoris": {
+   "marks": [
+    [
+     "Gills midway along the back, partly hidden behind large lobes",
+     [["ssf-notomino", "the gills"], ["ssf-notosere", "the extrabranchial appendages"]]
+    ],
+    ["Tough skin, stiffened by tiny spicules", [["ssf-notomino", "as in other species of Notodoris"]]],
+    ["Small, smooth, simple rhinophores", [["ssf-notomino", "as in other species of Notodoris"]]]
+   ]
+  },
+  "Odontoglaja": {
+   "marks": [
+    ["Covered in low pustules, as O. guamensis", [["ssw-odonguam", "Description"]]],
+    ["A long tail drawn out from the left of the back shield", [["ssw-odonguam", "Description"]]]
+   ]
+  },
+  "Pelagella": {
+   "marks": [
+    ["Very long rhinophores and oral tentacles, as P. longicornis", [["ssw-pelalong", "Description and Etymology"]]],
+    ["A raised rim around the mantle edge, and no papillae on the back", [["ssw-pelalong", "Description"]]]
+   ]
+  },
+  "Philinopsis": {
+   "marks": [
+    ["A smooth body, the head shield about half its length, as P. speciosa", [["ssw-philspec", "Description"]]]
+   ]
+  },
+  "Platydoris": {
+   "marks": [
+    ["A flat body with a broad, stiff mantle", [["ssf-platsang", "like all species of Platydoris"]]],
+    [
+     "A raised, lobed rim around the gills, as P. sanguinea",
+     [["ssf-platsang", "the gill pocket"], ["ssw-platsang", "Description"]]
+    ]
+   ]
+  },
+  "Sclerodoris": {
+   "marks": [
+    [
+     "A pit in the middle of the back, like a sponge's pore, as S. tuberculata",
+     [["ssf-scletube", "the dorsal pit"], ["ssw-scletube", "Description"]]
+    ]
+   ]
+  },
+  "Stylocheilus": {
+   "marks": [
+    [
+     "A small, slim sea hare, as S. striatus",
+     [["ssf-stylstri", "its shape"]]
+    ],
+    ["Branched papillae along the back, varied in size and shape", [["ssw-stylstri", "Description"]]],
+    ["Can gather in large numbers", [["ssf-stylstri", "its aggregations"]]]
+   ]
+  },
+  "Tenellia": {
+   "marks": [
+    [
+     "On rubble in soft sand or silt, as T. puti and T. bughaw",
+     [["kdg2024", "Natural history of Tenellia puti and T. bughaw"]]
+    ]
+   ]
+  },
+  "Tomoberthella": {
+   "marks": [
+    [
+     "Sheds parts of its mantle when disturbed, as T. martensi",
+     [["ssf-bertmart", "now Tomoberthella martensi"], ["ssw-tomomart", "Description"]]
+    ],
+    [
+     "Lines on the mantle mark where it breaks off",
+     [["ssf-bertmart", "the breakage ring, now Tomoberthella martensi"], ["ssw-tomomart", "Remarks"]]
+    ],
+    ["A flat oval body; its rolled rhinophores join at the base", [["ssw-tomomart", "Description"]]]
+   ]
+  },
+  "Trapania": {
+   "marks": [
+    [
+     "Finger-like processes beside the rhinophores and beside the gills",
+     [["ssf-trappalm", "the appendages"], ["ssf-trapscur", "the appendages"], ["ssw-trapvitt", "Description"]]
+    ],
+    ["Front corners of the foot drawn out into tentacles", [["ssw-trapvitt", "Description"]]]
+   ]
+  },
+  "Tyrannodoris": {
+   "marks": [
+    [
+     "Large oral tentacles that point down, as T. luteolineata",
+     [["ssf-robolute", "a typical feature of Roboastra, now Tyrannodoris luteolineata"]]
+    ],
+    ["A smooth body, highest at the gills, tapering to a long pointed tail", [["ssw-tyralute", "Description"]]]
+   ]
   }
  },
  "apart": {
@@ -466,6 +906,8 @@
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
-  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus"
+  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus",
+  "Taringa": "its one game species, T. halgerda, looks like a Halgerda: the Sea Slug Forum's and SEASLUG.WORLD's pages say only its anatomy places it in Taringa; no external feature of the genus was found",
+  "Verconia": "Johnson and Gosliner 2012 place its species by DNA; the game's V. alboannulata and V. norba share the pink, white-rimmed pattern of Rudman's Noumea purpurea colour group, which the Sea Slug Forum shows across several genera"
  }
 }

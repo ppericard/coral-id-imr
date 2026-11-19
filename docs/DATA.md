@@ -22,7 +22,7 @@ Everything else is written by a tool that a pull request runs and commits. A too
 | File | Holds | Written by | Read by |
 |---|---|---|---|
 | `curation.json` | Pierre's choices: cover and featured photos, hidden, moved and excluded photos, crops, rotations, growth forms, ratings, look-alike overrides, the fish and sea-slug parts, the content editor's edits, the state of each point and report | The admin's Publish only | The app (through `curation-play.json`), the admin, the sheet script |
-| `curation-play.json` | `curation.json` without what the app never reads. Not in git | `tools/curplay.py`, at deploy | The app, the service worker |
+| `curation-play.json` | `curation.json` without what the app never reads, its fish part read as the fish game's build reads it (the auto-sort's proposals read the newer judgement: `tools/fish_game.py` `read_cur`). Not in git | `tools/curplay.py`, at deploy | The app, the service worker |
 | `data.json` | The coral content: one record per genus (`gen`), the lecture photos (`course`), the Coral ID Key (`key`), glossary, traits, the extra Dauin genera (`x`) and the few candidates `curation.json` names | `tools/datajson.py` (the one writer, rule W16), through the `tools/apply_*.py` scripts and the fetch scripts | The app, the admin, the sheet script, the service worker |
 | `cand.json` | The coral candidate photos still waiting (same layout, top key `cand`) | The fetch scripts (`tools/fetch_local.py`, `tools/fetch_approved.py`), through `datajson.dump_all()` | The admin, the app's `?draft` preview |
 | `excluded.json` | Photos Pierre excluded, kept so Restore can put them back | `tools/excluded.py` | The admin, the fetch scripts |

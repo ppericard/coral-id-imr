@@ -613,7 +613,7 @@ const DOC_MARKS = {
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
   'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
-  'docs/ROADMAP.md': [128, 1600], // a row keeps what is left and the figures to decide on, however long (2026-11-19)
+  'docs/ROADMAP.md': [165, 10500], // a row keeps what is left and the figures to decide on, however long; raised when the row details came back into the rows (2026-11-19)
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [24, 210], // + the habit for a doc past its mark (2026-11-19)
   'docs/ANSWERS.md': [200, 200], // append-only ledger: it grows by an entry per answer, never cut
