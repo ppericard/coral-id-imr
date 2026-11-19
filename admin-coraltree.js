@@ -123,6 +123,10 @@
       {k: 'cand', grp: 'To do', t: 'Candidates waiting', on: n => g(n) && !!(c && c.waiting && c.waiting(n.id))},
       {k: 'draft', grp: 'To do', t: 'Draft', on: n => g(n) && dr.has(n.id)}
     );
+    // The photos taken off the site and the excluded ones, found by their genus (the former Hidden and Excluded views; the
+    // shared node-photos section's counts, admin-nodephotos.js npCount).
+    if (c && c.removed) out.push({k: 'removed', grp: 'Photos', t: 'Removed photos', on: n => g(n) && !!c.removed(n.id)});
+    if (c && c.excluded) out.push({k: 'excluded', grp: 'Photos', t: 'Excluded photos', on: n => g(n) && !!c.excluded(n.id)});
     return out;
   }
   const API = {ctLeaves, ctKeyOf, ctWormsOf, ctFilters};
@@ -175,11 +179,12 @@ const ctTagK = () => subjK('reefid-admin-tree-tag');
 // the view's first root, the first IMR lecture group or the first family), as the fish's (admin.js renderFishUnits): the
 // tree at the left (the WAI-ARIA tree, admin.js ttMount), the sticky bar with the path from the root, the genera's
 // select, All | IMR (the slate's genera) and Tag… (ctFilters), and the select of the node's children (the phone's way
-// down). A group or a family: its children's cards, each as its tree row. A genus: its genus page stays where its tools
-// are (Photos › Genera › Live, its address unchanged: genusHref); its Tree page shows its cover and why, what it needs and
-// its featured photos per view, each opening that page. Nothing is chosen on a Tree page: a cover is a genus's
-// (curation.json genera[<genus>].cover, ★ on its genus page); above the genera no cover is shown, the default rule of the
-// fish (most seen near the centre) needing observers per genus the coral data does not hold.
+// down). A group or a family: its children's cards, each as its tree row. A genus: its cover and why, what it needs and
+// every tool of the former Photos › Genera › Live page (admin-nodephotos.js coralLive: its photos per view, ★ Cover, Feature,
+// Remove, Not this, ×, Validated…), under its Structure and Sheet; a cover is a genus's (curation.json
+// genera[<genus>].cover); above the genera no cover is shown, the default rule of the fish (most seen near the centre)
+// needing observers per genus the coral data does not hold. Every node page ends with the shared Removed from the site and
+// Excluded lists of the genera under it (admin-nodephotos.js npLists).
 function renderCoralTree(id, view = TREE) {
   status();
   TT_VIEW = view;
@@ -200,7 +205,9 @@ function renderCoralTree(id, view = TREE) {
       rows: typeof pairRows === 'function' ? pairRows(ASUBJ, DATA, contentOf(DRAFT, ASUBJ)) : [],
       needs,
       waiting: m => pending(m).length,
-      draft: changed()
+      draft: changed(),
+      removed: npCount.removed,
+      excluded: npCount.excluded
     }),
     tag = FL.find(x => x.k === store.get(ctTagK(), '')),
     imrF = x => !!x.slate,
@@ -238,7 +245,7 @@ function renderCoralTree(id, view = TREE) {
       ? `<b class="warnc adm-ttprob" title="${esc(TV.problems.map(p => `${p.id}: ${p.why}`).join('\n'))}">${TV.problems.length} tree problem${TV.problems.length === 1 ? '' : 's'}</b>`
       : '',
     side = `<nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${opts}</select><div class="adm-list"><div class="adm-tree" role="tree" aria-label="${view === TREE_W ? 'WoRMS' : 'Key'}"></div></div></nav>`;
-  let bar, body;
+  let bar, body, live;
   if (!n.genus) {
     bar = `${crumbs}<b class="adm-sname">${ttName(n)}<small>${ttRank(n)}${R.gn(sel)} · ${R.ph(sel)}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${kidSel}${cw}${probs}`;
     body = `${stAdd}<div class="adm-tcards">${kids.map(x => `<a class="adm-tcard" href="${esc(tvHref(x))}" data-ttc="${esc(x)}">${R.row(TV.node.get(x))}</a>`).join('')}</div>`;
@@ -246,29 +253,22 @@ function renderCoralTree(id, view = TREE) {
     const m = sel,
       g = DATA.gen[m],
       c = coverOf(m),
-      e = entry(m),
-      nd = needs(m),
       nc = pending(m).length,
       why = c ? (c.picked ? 'Your ★ cover' : 'Default: no ★ cover picked (the genus page’s automatic one)') : 'No photo on the site';
-    bar = `${crumbs}${c ? `<a class="adm-sthumb${c.picked ? ' mine' : ''}" href="${esc(genusHref(m))}" title="Cover"><img src="${img(c, 1)}" alt="${esc(m)} cover"></a>` : ''}<b class="adm-sname"><i>${esc(m)}</i><small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${R.ph(m)}${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}<a class="chip adm-ctopen" href="${esc(genusHref(m))}">Genus page</a>${e.ok ? `<b class="adm-ctok${nd.length ? ' warnc' : ''}">${nd.length ? '! Validated, incomplete' : '✓ Validated'}</b>` : ''}${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${cw}${probs}<small class="adm-cvwhy">${esc(why)}</small>`;
+    // The genus's photos in play and their tools (the shared node-photos section's live part, admin-nodephotos.js: what
+    // Photos › Genera › Live was): the tools in the bar, the views' grids, Candidates and Not this genus in the body.
+    live = npOf().live(m);
+    bar = `${crumbs}${c ? `<button type="button" class="adm-sthumb${c.picked ? ' mine' : ''}" data-f="${esc(c.f)}" data-act="zoomcover" title="Cover"><img src="${img(c, 1)}" alt="${esc(m)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(m)}</i><small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${R.ph(m)}${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${live.bar}${cw}${probs}<small class="adm-cvwhy">${esc(why)}</small>`;
     // Its look-alike pairs and its sheet's text, above its photos (admin-content.js structBox, sheetBox).
     const stbox = typeof structBox === 'function' ? structBox(ASUBJ, DATA, m, x => x, tvHref) : '',
       sbox = typeof sheetBox === 'function' ? sheetBox(ASUBJ, DATA, m, x => x) : '';
-    body =
-      stAdd +
-      stbox +
-      sbox +
-      rows(m)
-        .map(([v]) => {
-          const r = rowOf(m, v),
-            all = r.feat.length + r.rest.length;
-          return `<section class="adm-row adm-ctview" data-ctv="${esc(v)}"><h3>${label(m, v)} <small>${all} photo${all === 1 ? '' : 's'} · ${r.feat.length}/${FEAT} featured</small></h3><div class="adm-ctfeat">${r.feat
-            .map(p => `<a href="${esc(genusHref(m))}" title="${esc(label(m, v))}"><img src="${img(p, 1)}" alt="" loading="lazy"></a>`)
-            .join('')}</div>${r.feat.length ? '' : '<p class="note">No featured photo.</p>'}</section>`;
-        })
-        .join('');
+    body = stAdd + stbox + sbox + live.body;
   }
+  // What was taken off the site and what was excluded under the node (the shared node-photos section, admin-nodephotos.js).
+  body += npLists(TV, sel, sel === TV.roots[0]);
   $v.innerHTML = `<div class="adm adm-treep">${side}<section class="adm-main"><div class="adm-filter adm-sticky">${bar}</div>${body}</section></div>`;
+  npBind($v);
+  if (live) live.bind($v);
   [$('gsel'), $v.querySelector('.adm-gsel2')].forEach(
     el => el && (el.onchange = ev => ev.target.value && (location.hash = tvHref(ev.target.value)))
   );

@@ -151,6 +151,39 @@ test('slot: an incomplete record is not taken back while recent; a reused PID is
   }
 });
 
+// A dead holder's slot is taken back and linked in the same pass: a pass that stalls (a loaded CI runner's disk or CPU) for
+// longer than the caller's timeout still ends with the slot, never with null after the reaping (the flake of the test
+// above: it timed out with the freed slot in front of it). The stall is a busy wait where a pass begins (the disk check).
+test('slot: a dead holder is taken back and replaced in one pass, however long that pass lasts', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),
+    env = {CI: undefined, SMOKE_SLOT_DIR: dir, SMOKE_SLOTS: '1', SMOKE_SLOT_POLL: '100'},
+    f = path.join(dir, 'slot0'),
+    statfs = fs.statfsSync,
+    la = os.loadavg;
+  try {
+    fs.writeFileSync(f, '999999999 1 someone 2026-01-01T00:00:00Z old\n'); // a holder that is gone
+    let stalled = false;
+    fs.statfsSync = (...a) => {
+      if (!stalled) {
+        stalled = true;
+        for (const t = Date.now(); Date.now() - t < 400;); // a stall of 4 times the timeout, before the first try
+      }
+      return statfs(...a);
+    };
+    os.loadavg = () => [0, 0, 0];
+    const free = await withEnv(env, () => fresh()('t', {timeout: 100}));
+    assert.ok(free, 'the slot of the dead holder is ours although the pass outlasted the timeout');
+    assert.ok(stalled, 'the stall happened');
+    assert.match(fs.readFileSync(f, 'utf8'), new RegExp(`^${process.pid} \\S+ \\S+ \\S+ t\\n$`));
+    free();
+    assert.deepStrictEqual(fs.readdirSync(dir), []);
+  } finally {
+    fs.statfsSync = statfs;
+    os.loadavg = la;
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 // Six processes racing for one slot never hold it two at a time.
 test('slot: one holder at a time when six processes race for the only slot', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),

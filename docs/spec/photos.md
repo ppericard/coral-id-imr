@@ -178,7 +178,7 @@ neither shown nor counted as waiting.
 Each record Pierre's exclusion removes is kept in **`excluded.json`** (`{photos: {f: {in, g, k, v, i, p}}}`: which list,
 genus, views or more, view, position and the record; one photo per line, written through `datajson.py`; seeded from git
 history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Restore** (admin
-Genera › Excluded) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
+Tree, genus page) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
 back marked `restored: 1`, which the share-alike drop spares (a share-alike one he restores stays a candidate he can
 add). A photo with no online original (an IMR lecture photo, whose file left `img/` with its exclusion) is held in
 `excluded.json` until its file is back: the workflow (whole history, `fetch-depth: 0`, `filter: blob:none`) runs

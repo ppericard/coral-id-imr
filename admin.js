@@ -266,8 +266,7 @@ let SHOWN_COVER = null,
   TOKEN = null,
   cur = null,
   AUTOQ = {},
-  AUTOF = {},
-  lastGenus = null;
+  AUTOF = {};
 // The tree subjects (core.js SUBJECTS with their own part of curation.json and sheets at several ranks, never named: rule
 // S1), and the one in force (FISHS, TK its part's key: SUBJECTS admin.cur): the one on screen when it is one, else the last
 // one on screen, as the app's tree in force (app.js treeAt; treeIn below). Photos › Tree, the photo tools (fishTile,
@@ -494,7 +493,7 @@ function importFlags() {
 }
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
 // which is a per-genus editorial choice, exclusion removes the photo from every genus, game and candidate list,
-// and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
+// and import scripts skip it so it never comes back. The Tree's Excluded lists (on a genus's page) show them, to restore one.
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
@@ -997,7 +996,7 @@ let SHOW = new Set(
   )
 );
 const shown = p => SHOW.has(origin(p));
-// View filter of the genus page: All, or one view's section alone, so the close-ups and corallites
+// View filter of a genus's Tree page (admin-nodephotos.js coralLive): All, or one view's section alone, so the close-ups and corallites
 // are reached without scrolling past every colony photo. Kept across genera and visits; on a genus without the saved
 // view (a 2-zoom genus has no Close-up row) the page shows All, and the choice stays for the next genus.
 let GVIEW = store.get('reefid-admin-gview', 'all');
@@ -1243,7 +1242,7 @@ const ACT = {
       if (k.cover === f) delete k.cover;
       if (k.add) delete k.add[f];
     });
-    toast('Excluded. Undo (Ctrl+Z) or the Excluded view brings it back.');
+    toast('Excluded. Undo (Ctrl+Z) or the genus’s Excluded list in the Tree brings it back.');
   },
   out: (n, f, v, to) =>
     edit(n, k => {
@@ -1404,8 +1403,7 @@ function status0() {
   return {parts, sug: sugCount(), over: overCap()};
 }
 function statusDraw({parts, sug, over}) {
-  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen(ADM0).length,
-    xn = Object.keys(DRAFT.exclude || {}).length;
+  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen(ADM0).length;
   OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
@@ -1415,8 +1413,7 @@ function statusDraw({parts, sug, over}) {
   $('undo').disabled = !HIST.length;
   $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
-  if (cur.startsWith(LIVE + '/') && DATA.gen[cur.slice(LIVE.length + 1)]) lastGenus = cur.slice(LIVE.length + 1);
-  navs(tn, xn);
+  navs(tn);
   fitModes();
 }
 // The header tabs must never be cut off: when they don't all fit on the line, the entry-point menu replaces them.
@@ -1431,7 +1428,7 @@ addEventListener('resize', () => fitModes());
 // A tab's views are in the segmented switch at the right of the tab row (#subnav, navs()); a group reopens the tab and
 // view used last in it (reefid-admin-nav-group), a tab its view used last (reefid-admin-nav-tab); phones: one menu.
 // Addresses: #<group>/<tab>/<view>, each segment the word on screen, computed from GROUPS; a tab with one view has no
-// view segment (#players/activity); a thing the page is about follows as a further segment (#photos/genera/live/<Genus>,
+// view segment (#players/activity); a thing the page is about follows as a further segment (#photos/tree/key/<Genus>,
 // #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after '?' (#inbox/coverage/games?look=all). A shorter
 // address (a group, a tab) opens its first view; an old or unknown one opens its group's first view, else the landing
 // page (rule W3: no table of old addresses).
@@ -1478,7 +1475,7 @@ const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'play
 const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
 // The page on screen as seen from subject S (the subject switch): its view (a thing a page is about, a genus, a family, a
 // point, belongs to one side, so the view it sits under), that view itself when S has it, else the view S opens for the
-// same tab or group (admRoute: a fish Photos › Tree for the corals' Photos › Genera).
+// same tab or group (admRoute: a fish Photos › Tree for a coral-only page).
 const sameOn = (S, p) => {
   const v = ADM_PAGES.filter(x => under(p, x)).sort((a, b) => b.length - a.length)[0] || p;
   if (hasPage(S, v) && !shared(v)) return v;
@@ -1505,10 +1502,9 @@ const todoHere = tn => (ASUBJ.admin.cur ? Object.keys(flagsOf(DRAFT)).length + r
 // screens only (admin.css .adm-sjn): a mini switch in the top bar, as the app's header.
 const subjSvg = S =>
   `<svg class="sji" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
-// A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
-const LIVE = 'photos/genera/live';
-const genusHref = g => '#' + LIVE + '/' + encodeURIComponent(g);
-const genusHash = () => '#' + ASUBJ.hash + LIVE + '/' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+// A genus's page: its node in the Tree's Key view, the genus as the last segment (a coral page: no subject prefix). The
+// corals' Photos › Genera tab is folded into the Tree (Pierre, 2026-11-19); admRoute reads its former addresses.
+const genusHref = g => '#' + TREE + '/' + encodeURIComponent(g);
 const GROUPS = [
   [
     'inbox',
@@ -1545,19 +1541,12 @@ const GROUPS = [
     'photos',
     'Photos',
     [
-      [
-        'genera',
-        'Genera',
-        [
-          ['live', 'Live'],
-          ['hidden', 'Hidden'],
-          ['excluded', 'Excluded']
-        ]
-      ],
       // The subject's classification as a tree (docs/ROADMAP.md "The Tree tab"), any depth, its nodes' pages at the
       // right, every subject's through its own adapter (the fish's: renderFishUnits, fuTreeOf, fuWormsOf; the corals':
-      // admin-coraltree.js renderCoralTree). Its views: Key (the identification key's tree) and WoRMS (the reference
-      // taxonomy's), one parent per classification.
+      // admin-coraltree.js renderCoralTree), the photo curation of a node page one shared section (admin-nodephotos.js:
+      // the photos in play, Removed from the site, Excluded). Its views: Key (the identification key's tree) and WoRMS (the
+      // reference taxonomy's), one parent per classification. The corals' former Photos › Genera tab (Live, Hidden, Excluded)
+      // is folded into it (Pierre, 2026-11-19).
       [
         'tree',
         'Tree',
@@ -1701,7 +1690,7 @@ const TREE = 'photos/tree/key',
   TREE_W = 'photos/tree/worms',
   // the Tree view an address sits under, else undefined
   treeOf = p => [TREE, TREE_W].find(x => under(p, x));
-const ADM_PARAM = [LIVE + '/', TREE + '/', TREE_W + '/', 'players/list/journey/', 'players/list/anon/', 'inbox/todo/points/'];
+const ADM_PARAM = [TREE + '/', TREE_W + '/', 'players/list/journey/', 'players/list/anon/', 'inbox/todo/points/'];
 // An address for the page cur names (cur is decoded): the thing after its page encoded again, so a '/' or '?' in a
 // player's name stays in it.
 const admAddr = p => {
@@ -1727,7 +1716,7 @@ const POINT_R = 'inbox/todo/points/',
   pointHash = (id, S = ASUBJ) => '#' + S.hash + POINT_R + encodeURIComponent(id);
 let ptFlush = () => {}; // a point's page: writes the note being typed to the draft (renderPoint)
 // The view on screen: the longest page address cur sits under.
-const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.length - a.length)[0] || LIVE;
+const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.length - a.length)[0] || TREE;
 // The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
 // that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
 // A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
@@ -1746,7 +1735,7 @@ function readHash() {
   if (cur !== p || (shared(cur) && pre)) history.replaceState(null, '', '#' + (shared(cur) ? '' : ASUBJ.hash) + admAddr(cur));
   store.set('reefid-admin-nav-subj', ASUBJ.id);
 }
-const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
+const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/tree');
 const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Key-only one; after
 // "Add anyway"): a warning on the To do tab and on the page that shows the cell: Game coverage for a game genus, Sheet &
@@ -1762,7 +1751,7 @@ const overCap = () => {
   );
   return {...o, n: o['inbox/coverage/games'] + o['inbox/coverage/sheets-id-key']};
 };
-function navs(tn, xn) {
+function navs(tn) {
   // The corals' cells over the cap (OVER) on the corals' side only.
   const OV = ASUBJ.admin.cur ? {n: 0} : OVER,
     th = todoHere(tn);
@@ -1779,8 +1768,7 @@ function navs(tn, xn) {
     seen[T[0]] = page;
     store.set(subjK('reefid-admin-nav-tab'), seen);
   }
-  const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h === LIVE ? genusHash() : '#' + (shared(h) ? '' : ASUBJ.hash) + h),
+  const href = h => '#' + (shared(h) ? '' : ASUBJ.hash) + h,
     // The subject's pages only: a view it has, a tab with one, a group with one.
     vOk = ([h]) => hasPage(ASUBJ, h),
     tOk = t => t[2].some(vOk),
@@ -1796,15 +1784,11 @@ function navs(tn, xn) {
     vcnt = h =>
       (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && th
         ? ` ${th}`
-        : h === 'photos/genera/excluded' && xn
-          ? ` ${xn}`
-          : h === 'photos/genera/hidden' && hn
-            ? ` ${hn}`
-            : h === 'inbox/todo/points' && ptOpen()
-              ? ` ${ptOpen()}`
-              : OV[h]
-                ? ` ⚠ ${OV[h]}`
-                : '',
+        : h === 'inbox/todo/points' && ptOpen()
+          ? ` ${ptOpen()}`
+          : OV[h]
+            ? ` ⚠ ${OV[h]}`
+            : '',
     tcnt = t => (t[0] === 'inbox/todo' && th ? ` (${th})` : t[0] === 'inbox/coverage' && OV.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
@@ -1883,8 +1867,6 @@ const modeKey = () =>
                 'photos/review/phase-framing': 'fishrev',
                 'photos/review/light-proposals': 'lightprop',
                 'photos/review/cover-proposals': 'coverprop',
-                'photos/genera/excluded': 'excluded',
-                'photos/genera/hidden': 'hidden',
                 'inbox/todo/all': ASUBJ.admin.cur ? 'fishtodo' : 'todo',
                 'inbox/todo/reports': 'triage',
                 'inbox/todo/errors': 'events',
@@ -3661,8 +3643,6 @@ function render() {
     return renderFishReview(cur === 'photos/review/ease' ? 'ease' : 'phase');
   if (cur === 'photos/review/quality') return renderQuality();
   if (cur === 'photos/review/growth-form') return renderForm();
-  if (cur === 'photos/genera/excluded') return renderExcluded();
-  if (cur === 'photos/genera/hidden') return renderHidden();
   if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
   if (cur === 'inbox/todo/errors') return renderEvents();
   if (cur === 'inbox/todo/alerts') return renderAlerts();
@@ -3698,165 +3678,6 @@ function render() {
   // Photos › Tree through the subject's adapter: a subject whose units are families (fish) its own; the corals'
   // (admin-coraltree.js) otherwise.
   if (treeOf(cur)) return (ASUBJ.rank === 'family' ? renderFishUnits : renderCoralTree)(cur.slice(treeOf(cur).length + 1), treeOf(cur));
-  const names = Object.keys(DATA.gen);
-  // A genus page (Photos › Genera › Live): the genus is the address's last segment; none or an unknown one, the first.
-  const gn = cur.slice(LIVE.length + 1);
-  const ch = changed(),
-    n = DATA.gen[gn] ? gn : names[0],
-    g = DATA.gen[n],
-    cv = coverOf(n),
-    k = entry(n);
-  SHOWN_COVER = cv && cv.f;
-  status();
-  $('preview').href = `./?draft#${routeOut('g-' + n)}`;
-  const side = names
-    .map(m => {
-      const c = coverOf(m),
-        e = DRAFT.genera[m] || {},
-        dirty = ch.includes(m),
-        h = (e.hide || []).length;
-      return `<a href="${esc(genusHref(m))}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} waiting` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
-    })
-    .join('');
-  const R = rows(n),
-    gv = R.some(([v]) => v === GVIEW) ? GVIEW : 'all',
-    one = gv !== 'all';
-  const body = R.filter(([v]) => !one || v === gv)
-    .map(([v]) => {
-      const r = rowOf(n, v),
-        out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
-      return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => (shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '')).join('')}${(sh =>
-        r.rest
-          .filter(shown)
-          .map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {}))
-          .join(''))(r.rest.filter(p => !p.multi && !p.extra).slice(0, SHEET - r.feat.length))}</div>
-      ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`;
-    })
-    .join('');
-  const P = unused(n),
-    Ps = P.filter(shown),
-    two = lv(n) === 2;
-  const candTile =
-    p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption>${srcTag(p)}${rejected(p.f) ? '<span class="adm-src rej" title="Rejected">rejected</span>' : ''}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(
-      ([w]) => !(two && w === 'medium')
-    )
-      .map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`)
-      .join('')}</span>${p.from ? '' : notThis(n)}</div></figure>`;
-  // Candidates: set apart from the views and folded by default; open or closed is remembered.
-  const candRow = P.length
-    ? `<details class="adm-row adm-cands"${store.get('reefid-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
-    <div class="adm-grid">${Ps.map(candTile).join('')}</div></details>`
-    : '';
-  const O = outOf(n),
-    outRow = O.length
-      ? `<section class="adm-row adm-out"><h3>Not this genus <small>${O.length} photo${O.length > 1 ? 's' : ''} taken out of <i>${esc(n)}</i></small></h3>
-    <div class="adm-grid">${O.map(
-      p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
-      <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
-      <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`
-    ).join('')}</div></section>`
-      : '';
-  const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  // One view shown: Candidates and Not this genus are not per view, so they hide too, with one line saying what is hidden.
-  const hidRow = one
-    ? (L =>
-        L.length
-          ? `<p class="note adm-gvnote">Hidden: ${L.join(' · ')} <button type="button" class="adm-link" data-gv="all">All views</button></p>`
-          : '')(
-        [
-          [P.length, 'candidate', 'candidates'],
-          [O.length, 'not this genus', 'not this genus']
-        ]
-          .filter(x => x[0])
-          .map(([c, a, b]) => `${c} ${c === 1 ? a : b}`)
-      )
-    : '';
-  const gvSeg = FB.views({key: 'gv', cur: gv, items: [['all', 'All'], ...R.map(([v]) => [v, label(n, v)])], seg: true});
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}${FB.origins({cnt})}</div>`;
-  $v.innerHTML = `<div class="adm">
-    <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
-    <section class="adm-main">
-      ${
-        missing(n).length
-          ? `<p class="warn"><b>${missing(n).length} choice${missing(n).length === 1 ? '' : 's'} name a photo that is no longer in the data</b>: ${missing(
-              n
-            )
-              .map(f => `<code>${esc(f)}</code>`)
-              .join(
-                ', '
-              )}. Kept but no longer applied. <button type="button" class="adm-link" data-forget>Forget them</button> (Undo brings them back), or ask Pierre.</p>`
-          : ''
-      }
-      ${filter}${hidRow}${body}${one ? '' : candRow + outRow}
-    </section></div>`;
-  bindBar($v, {redraw: render});
-  const okb = $v.querySelector('[data-ok]');
-  if (okb)
-    okb.onclick = () => {
-      const nd = needs(n);
-      if (!k.ok && nd.length) {
-        toast('Not ready: ' + nd.join(' · '));
-        return;
-      }
-      edit(n, k => {
-        if (k.ok) delete k.ok;
-        else k.ok = true;
-      });
-    };
-  // Forget choices naming photos no longer in the data: one click, one Undo step, only on this genus (never automatic).
-  const fg = $v.querySelector('[data-forget]');
-  if (fg)
-    fg.onclick = () => {
-      const gone = new Set(missing(n));
-      edit(n, k => {
-        if (gone.has(k.cover)) delete k.cover;
-        if (k.feat)
-          Object.keys(k.feat).forEach(v => {
-            k.feat[v] = k.feat[v].filter(f => !gone.has(f));
-            if (!k.feat[v].length) delete k.feat[v];
-          });
-        if (k.hide) {
-          k.hide = k.hide.filter(f => !gone.has(f));
-          if (!k.hide.length) delete k.hide;
-        }
-        ['move', 'add', 'out'].forEach(m => {
-          if (k[m]) {
-            gone.forEach(f => delete k[m][f]);
-            if (!Object.keys(k[m]).length) delete k[m];
-          }
-        });
-      });
-    };
-  $v.querySelectorAll('[data-lv]').forEach(
-    b =>
-      (b.onclick = () => {
-        const x = Number(b.dataset.lv);
-        edit(n, k => {
-          if (x === (DATA.gen[n].levels === 2 ? 2 : 3)) delete k.lv;
-          else k.lv = x;
-        });
-      })
-  );
-  $('gsel').onchange = e => {
-    location.hash = genusHref(e.target.value);
-  };
-  const g2 = $v.querySelector('.adm-gsel2');
-  if (g2)
-    g2.onchange = e => {
-      location.hash = genusHref(e.target.value);
-    };
-  const cd = $v.querySelector('.adm-cands');
-  if (cd) cd.ontoggle = () => store.set('reefid-admin-cands', cd.open);
-  bindTiles($v, () => n);
-  const c = $v.querySelector('.adm-g.cur');
-  if (c) c.scrollIntoView({block: 'nearest'});
-  bindQ();
-  bindF($v);
-  bindDrag(n);
 }
 // Actions of the genus photo tiles (genus page, and flagged photos in Triage): g(tile) gives the tile's genus.
 function bindTiles(scope, g) {
@@ -4377,7 +4198,6 @@ const HELP = {
   fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the sheet rates the corals' photos only, so there is no photo difficulty here yet). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
-  hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
@@ -4432,7 +4252,7 @@ const HELP = {
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
   fishmont: `<p>The look-alike pairs of families in force, one row each: the pairs the IMR course compares (its lines, from fish.json), less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b> (your draft's, as on the Tree). A withdrawn pair's photos stay chosen and come back with it. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in its Tree page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
   units: `<p><b>Key</b> | <b>WoRMS</b> (at the top right): the same species in two classifications, each with one parent per node. <b>WoRMS</b>: the reference taxonomy (WoRMS, from fish.json), its classes, orders, suborders, families, subfamilies, genera and species as WoRMS names and ranks them, which are not always the key's (Labridae holds the wrasses and the parrotfishes; Pycnochromis five of the key's Chromis). A species is the same page in both views (its photos, its ★ cover, its tools); the switch keeps it. A WoRMS taxon's page is read-only for now: its cover is the default by the rule (its species with a reference photo most seen near the centre), and its children's cards show theirs; ★ Cover on a WoRMS taxon waits for your decision on how to store it. A count of tree problems in the bar (a missing parent) says fish.json's taxonomy needs a refresh.</p><p><b>Key</b>: the key's classification as a tree at the left (Allen et al. 2015, the key in force): its groups, the book's families, their genera and species, each with its rank in grey, its species and photos in play. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. Every node opens a page of its own: a group, its families' cards; a family, a genus or a species, its photos in play. Above the bar, the path from the group (each step a link); in the bar, the select of the node's children (its genera, its species: the way down on a phone, where the tree is hidden) and the family select. The families: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. <b>Tag…</b> beside it shows only what carries one tag, combined with All / IMR, in both views: a <b>Circle</b>, the <b>Look-alikes</b> (every family in a pair the IMR course compares, or one pair), <b>Needs photos</b> (species under their target), <b>Needs work</b> (families not ready to validate), <b>Draft</b> (what changed since your last Publish); each option says how many species it shows, the tree, the family select, the cards and the drill-down follow it, and it is remembered in this browser. <b>Tag…</b> again shows everything. Each page's bar shows its cover in force and why: your ★, else the default (for a family or a genus, its species with a reference photo most seen near the centre, then your ★ cover of that species, else its easiest reference photo; for a species, its first photo: featured, then the easiest), with a link to Cover proposals when the rule picks another photo than yours. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (${FISHT.obs}, ${FISHT.top} for the PDF's most sighted, ${FISHT.wink} for a species met only on the surprise cards) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). A surprise-card species shows ${FISHT.wink} photos, its featured ones first, then the surprise card's own; <b>N more</b> shows the rest, still in play. <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the page's node: the family's on its page, the genus's on the genus's, the species' on the species'; each genus and species heading shows its cover in force, ringed when it is yours, and its name opens its page; a photo shows which covers it is; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets; a juvenile only once you confirm it: on a juvenile photo it asks first; a pick on one you have not confirmed is ignored and flagged, its page offers <b>Juvenile: confirm as cover?</b> (also while a Light proposal would tag your cover juvenile), and it is counted in the bar of every page: <b>N ★ covers now juvenile</b> opens one; a photo with a watermark is never a default cover, but your ★ on one stays yours: its page asks <b>Watermark: keep as cover?</b>, <b>Keep</b> records your answer, <b>Choose another</b> opens its Cover proposal (a photo without one), and Home skips it either way), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> (on the family's page) once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. A species whose candidates come from another iNaturalist taxon (the Pacific form iNaturalist splits off) says so under its name, here and on its Candidates card; its IMR name is kept. Each species heading counts its candidates still waiting; they are added in Candidates. Publish sends it all (curation.json fish).</p><p><b>Sheet</b> (above the photos, on a family, a genus or a species the app gives a sheet; not on a genus the app opens as its species or its family, a surprise-card family or a WoRMS taxon): every text of its sheet you may edit, as the content editor (Pierre, 2026-11-15, Q359), with the text players see. <b>IMR</b> marks the IMR course's words: editable, the original kept; the sheet keeps their label. <b>✎</b> opens the text (a list one line per item; an empty box hides it), with an optional <b>Source</b> and <b>Link</b> shown with it on the sheet; when you fill an empty text with no source, Save asks once (<b>Save without source</b> then saves). <b>⊘</b> hides it, <b>↺</b> brings the original back (<b>Original</b> shows it beside yours). When the built text changed after your edit (<b>Base changed</b>), players keep yours and the box shows the three: when you edited, now, yours; <b>Keep mine</b>, <b>Take the new</b> or <b>Edit</b>. <b>In the base</b>: the build now says what you wrote; <b>Remove</b> drops your copy. An edit that cannot apply (its node gone, a text the page no longer has, the wrong kind) shows its text with <b>Remove</b>. <b>N sheet edits to check</b> in the bar of every Tree page opens the first. One click each, Undo steps back; Publish sends them (curation.json fish content) and counts them per rank.</p><p><b>Structure</b> (above the Sheet, on a family's page; not a surprise-card family): its <b>Circle</b> and its <b>Look-alikes</b>, as the content editor (Pierre, 2026-11-15, Q359). <b>1</b>, <b>2</b>, <b>3</b> or <b>None</b> (off the game: its species leave the game and the score) sets the circle in force; <b>↺</b> brings the built one back (<b>Original</b> says which). Each look-alike pair of the family: <b>Withdraw</b> takes it out (traps, duels, the exam's comparisons and the progress's look-alike weight), <b>↺</b> brings it back; <b>Add a look-alike…</b> picks the other family, then an optional <b>Source</b> and <b>Link</b> (left empty, Save asks once; <b>Save without source</b> then saves); its words are each sheet's Look-alike line, which shows at once. In the <b>Tag…</b> filter, <b>Any look-alike</b> offers <b>+ Pair</b> (both families chosen), one pair its state and the same tools; the pairs you withdrew or added say so, and <b>No circle</b> lists the families you took off the game. A built value changed since your edit (<b>Base changed</b>): yours stays in force; <b>Keep mine</b> or <b>Take the new</b>. One click each, Undo steps back. Publish asks once, saying it changes every player's path and progress: each player's progress is recalculated from their answers (Q363), and the leaderboard follows. Where the units are genera and the pairs join genera, the Structure box is on each genus's page (a genus the app opens as its family or its one species included), with no Circle, and <b>Tag…</b> › <b>Any look-alike</b> lists the genus pairs; there, each look-alike line on the Sheet (<b>Look-alike: …</b>) is the list of the sources that name the pair, one a line, its words then <b>|</b> and its link.</p>`,
-  ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs and its featured photos per view. Its tools stay on its <b>Genus page</b> (Photos › Genera, the link in the bar and on each photo): ★ Cover, Feature, views, Validated. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
+  ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs, and all its photo tools (the former Photos › Genera tab, folded into the Tree, 19 Nov 2026): its photos per view with ★ Cover, Feature, Remove, Not this, × and the rest (see the notes below), Validated, and, when there are any, <b>Removed from the site</b> (<b>Put back</b> returns one) and <b>Excluded</b> (<b>Restore</b> puts one back; the ones that name no genus any more wait on the first page of the view). A group or a family lists those of its genera. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
@@ -4441,7 +4261,6 @@ const HELP = {
   statsstop: `<p>Where players stop and the genus sheets they open, from the answers already logged and the visits' summaries. Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
-  excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
   fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species, ${FISHT.wink} for a species met only on the surprise cards), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count: <i>One fish</i>, <i>Same species</i> (several of it), <i>Other species in view</i> (several species on one photo), <i>Unclear</i> (which fish is asked about?); hover a button for its meaning) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals, with ⟲ ⟳ to turn the photo. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
@@ -4485,7 +4304,7 @@ function toggleHelp() {
   let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
     if (tab === 'start') store.set('reefid-admin-started', true);
-    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + HELP[m] + (REC_PAGES.has(m) ? REC_HELP : '')}`;
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + HELP[m] + (m === 'ctree' ? HELP.genus : '') + (REC_PAGES.has(m) ? REC_HELP : '')}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
       b =>
@@ -4742,68 +4561,6 @@ function renderForm() {
   );
 }
 
-/* ---------- Excluded ---------- */
-function renderExcluded() {
-  status();
-  // A photo excluded and since removed from data.json: genus from its file name, thumbnail from iNaturalist when the name
-  // ends in an iNat photo id. The extension is unknown: try .jpg, then .jpeg, then .png.
-  const gone = f => {
-    const m = f.match(/^([a-z]+)-/),
-      id = (f.match(/-(\d{5,})$/) || [])[1],
-      gn = m && Object.keys(DATA.gen).find(x => x.toLowerCase() === m[1]);
-    // An IMR lecture photo (imrl-p<page>_…): genus and slide from another photo of the same lecture page (admin re-review).
-    const pg = (f.match(/^(imrl-p\d+_)/) || [])[1],
-      sib =
-        pg &&
-        Object.entries(DATA.course || {})
-          .flatMap(([g, L]) => L.map(p => ({...p, genus: g})))
-          .find(p => p.f.startsWith(pg));
-    return {f, genus: gn || (sib ? sib.genus : pg ? 'IMR lecture' : '?'), gone: true, inat: id, slide: sib && sib.slide};
-  };
-  const X = DRAFT.exclude || {},
-    list = Object.keys(X).map(f => (PHOTOS[f] ? {...PHOTOS[f], f} : gone(f)));
-  const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
-  $v.innerHTML = `<section class="adm-quality">
-    ${
-      list.length
-        ? `<div class="adm-grid adm-qgrid">${list
-            .map(
-              p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
-      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${!p.gone ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : p.inat ? `<img src="${io(p.inat)}.jpg" alt="" loading="lazy" data-ext="0">` : '<span class="none">no preview</span>'}</button>
-      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
-      <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`
-            )
-            .join('')}</div>`
-        : '<p class="note">No excluded photo.</p>'
-    }</section>`;
-  const set = (f, r) => {
-    DRAFT.exclude = {...(DRAFT.exclude || {})};
-    if (r) DRAFT.exclude[f] = r;
-    else delete DRAFT.exclude[f];
-    saveDraft();
-    renderExcluded();
-  };
-  $v.querySelectorAll('img[data-ext]').forEach(
-    im =>
-      (im.onerror = () => {
-        const i = Number(im.dataset.ext) + 1,
-          E = ['jpg', 'jpeg', 'png'];
-        if (i < E.length) {
-          im.dataset.ext = i;
-          im.src = im.src.replace(/\.\w+$/, '.' + E[i]);
-        } else im.replaceWith(Object.assign(document.createElement('span'), {className: 'none', textContent: 'no preview'}));
-      })
-  );
-  $v.querySelectorAll('[data-act="restore"]').forEach(b => (b.onclick = () => set(b.closest('[data-f]').dataset.f, null)));
-  $v.querySelectorAll('[data-act="zoomx"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]'),
-          p = PHOTOS[t.dataset.f];
-        if (p) zoomOne(p);
-      })
-  );
-}
 // Players' reports (app.js reportDialog): wrong answer (+ the genus they suggest), several corals, bad photo, other,
 // with a note and WHO sent it (some players are trusted more than others). Every admin can read them:
 // the sheet checks this page's GitHub token with GitHub (write access to the repo). Done = curation.json "seen" {'rep:id': 1},
@@ -5784,7 +5541,7 @@ function bindDecide(k) {
         QUIET = false;
       }
       render();
-      toast(`${L.length} excluded. Undo (Ctrl+Z) brings them back one at a time, or the Excluded view.`);
+      toast(`${L.length} excluded. Undo (Ctrl+Z) brings them back one at a time, or the Tree's Excluded lists.`);
     };
 }
 function renderTriage() {
@@ -9405,34 +9162,6 @@ function renderKcov() {
     tr =>
       (tr.onclick = e => {
         if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
-      })
-  );
-}
-
-/* ---------- Hidden: every photo removed from the site (Genera › Hidden) ---------- */
-// Photos taken off the site with Remove (curation.json genera[n].hide), every genus at once (a view of Genera next to
-// Excluded). Put back returns one to its view, as on its genus page; Undo steps back as everywhere.
-function renderHidden() {
-  status();
-  // A removed photo no longer in the data (the genus page marks it "⚠ check") is listed by name: Put back drops the entry.
-  const L = Object.keys(DATA.gen).flatMap(n => (entry(n).hide || []).map(f => [n, photos(n).find(p => p.f === f) || {f, gone: true}]));
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Removed from the site <small>${L.length}</small></h2></div>
-    ${
-      L.length
-        ? `<div class="adm-grid adm-qgrid">${L.map(
-            ([n, p]) => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-g="${esc(n)}">
-      ${p.gone ? '<span class="adm-ph"><span class="none">no longer in the data</span></span>' : `<button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(n)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`}
-      <figcaption><a class="adm-gen" href="${esc(genusHref(encodeURIComponent(n)))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
-      <div class="adm-acts"><button type="button" data-unhide>Put back</button></div></figure>`
-          ).join('')}</div>`
-        : '<p class="note">No photo removed.</p>'
-    }</section>`;
-  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
-  $v.querySelectorAll('[data-unhide]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        ACT.hide(t.dataset.g, t.dataset.f);
       })
   );
 }

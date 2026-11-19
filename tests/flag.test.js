@@ -25,7 +25,8 @@ const unitsOf = ctx => {
     coral = block(app, "    species: () => '',\n", end, {through: 1, file: 'app.js'}),
     // a tree subject's (the fish's, the sea slugs'): app.js treePhoto
     tree = block(app, 'function treePhoto(f) {', '\n}\n', {through: 1, file: 'app.js'}),
-    fish = block(app, '    species: p => (TREEU && TREEU.spn', '    photo: f => treePhoto(f),\n', {through: 1, file: 'app.js'});
+    // the tree subjects' shared members (app.js TREE_UNITS, spread into the fish's and the sea slugs' entries)
+    fish = block(app, '  species: p => (TREEU && TREEU.spn', '  photo: f => treePhoto(f),\n', {through: 1, file: 'app.js'});
   vm.createContext(ctx);
   vm.runInContext(`${tree}\nthis.U = {${CORAL.id}: {${coral}}, ${TREEU.id}: {${fish}}};`, ctx);
   return ctx.U;
