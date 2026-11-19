@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v196 (2026-11-19)
+
+One engine, step 2 (rule S1; `docs/decisions/2026-11-19-one-engine-named-fields.md`): the copy of `core.js` carries the features `SUBJECTS` `replay` used to switch for the sheet's subject as named fields, all the corals' as before (`hold`, `offsets`, `anonBase`), the tree subjects' circle-3 threshold as `gate`, and the engine's cards and notes their subject in their own data (`subjIn`, `noteRun`). The script's own code is unchanged and still computes the hold, the photo memory and the first replay for `replaySubject`; no number the sheet computes moves
+
 ## v195 (2026-11-19)
 
 A right "Again: A or B?" counts for the duel achievement as a right duel does: the embedded core.js `replayProgress` now sets a unit's `du` on any right 2-choice contrast of a look-alike pair (`core.js` `contrastQ`: the formats `duel`, `qduel` and `again` of a quiz answer, as `fmtOf` reads them), the Again included, where it took only the Duel tab (`quiz-duel`) and the duels slipped into the quiz (`|d`). The app's game does the same (`quiz.js` `recordAnswer`). Achievements only: `du` moves no progress, so no rules version (rule D5); a replay of a log with a right Again grants the duel achievement it now earns (docs/LEARNING.md "One contrast queue": the Again and the duels are one kind of question; rule L8; the modes audit, docs/reviews/2026-11-19-modes-audit.md row 11; Pierre, 2026-11-19: "Pourquoi on a des exceptions en fonction des modes de jeux????")

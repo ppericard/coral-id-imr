@@ -44,8 +44,6 @@ const ONE_ENGINE = 'One engine for every subject, what is left';
 // entry whose line is gone fails (the exception went: drop it), and so does one whose ROADMAP row is gone (the row was
 // done or dropped without the code): an exception never outlives its reason.
 const ALLOWED = [
-  // The recalculations announced so far were the corals' (the first subject): their pop-up is shown in that subject.
-  ['progress.js', 'if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice);', ONE_ENGINE],
   // The first board subject (the corals) keeps its cache key and reads the "By genus" tab; the others their units.
   [GS, "const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14'", ONE_ENGINE],
   [GS, 'first = S === CORE_.SUBJECTS.find(x => x.board)', ONE_ENGINE]
@@ -55,7 +53,15 @@ const FLAGS = [
   ['flat', "a flat subject: the corals' data.json, a flat list keyed by name, not a tree with ids (app.js build, GX)", ONE_ENGINE],
   [
     'replay',
-    "the sheet's first replay path and opening hold, the pooled statistics read in the app, the sign-in baseline, the one-tap question and the apology card",
+    "the sheet's first replay path (Code.gs answerRows_, the reply's unprefixed replay, RVS) and the subject of an unlabelled row",
+    ONE_ENGINE
+  ],
+  // One-engine step 2 split these out of replay, at its values (the audit's step 2; core.js SUBJECTS says each).
+  ['hold', "the sheet's opening hold counts its answers (Code.gs hold_), adopted as this subject (sync.js holdAdopt)", ONE_ENGINE],
+  ['offsets', "the sheet's photo memory and format offsets, fitted on its answers alone (Code.gs stats_; model.js pmem, pfmt)", ONE_ENGINE],
+  [
+    'anonBase',
+    'signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js signIn)',
     ONE_ENGINE
   ],
   ['achFeats', "the feats (runs, Sharp eye, corallites) kept by this subject's answers only (progress.js)", ONE_ENGINE],
@@ -82,13 +88,16 @@ const FLAGS = [
 // The checks, pure, so the planted cases below prove that each one bites.
 const lit = new RegExp(`(['"\`])(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\1`),
   idCmp = /\bSUBJ(?:\.id)?\s*[!=]==?\s*['"`]|['"`][^'"`]*['"`]\s*[!=]==?\s*SUBJ\.id\b|\bSUBJ\.id\s*[!=]==?\s*[A-Z_]+\.SUBJ\b/,
-  place = /[!=]==?\s*(?:CORE_\.)?SUBJECTS(?:\[|\.find\()|\bSUBJECTS(?:\[[^\]]+\]|\.find\([^)]*\))\s*[!=]==?/;
+  place = /[!=]==?\s*(?:CORE_\.)?SUBJECTS(?:\[|\.find\()|\bSUBJECTS(?:\[[^\]]+\]|\.find\([^)]*\))\s*[!=]==?/,
+  // A card's or a note's own data saying which subject it speaks of (subj: 'id' or a list; core.js subjIn) is a
+  // declaration, not a test: its value is left out of the literal check.
+  decl = /\bsubj:\s*(?:\[[^\]]*\]|'[^']*')/g;
 function scan(f, src, allowed = ALLOWED) {
   const bad = [];
   src.split('\n').forEach((line, i) => {
     const at = `${f}:${i + 1}: ${line.trim()}`;
     if (allowed.some(([af, l]) => af === f && line.includes(l)) || /^\s*(\/\/|\/?\*)/.test(line)) return; // comment lines may name a subject
-    if (lit.test(line)) bad.push('subject literal ' + at);
+    if (lit.test(line.replace(decl, 'subj: _'))) bad.push('subject literal ' + at);
     if (idCmp.test(line)) bad.push('subject id compared ' + at);
     if (place.test(line)) bad.push('subject tested by its place ' + at);
   });
@@ -139,8 +148,38 @@ test('rule S1: a SUBJECTS field true for one subject only is a listed flag, with
   assert.deepStrictEqual(flags(S, FLAGS, ROADMAP), []);
 });
 
+// One-engine step 2 (docs/reviews/2026-11-19-one-engine-audit.md §3): replay split into named fields at its own values, so
+// nobody's progress moves (no rules version, rule D5). hold and offsets stay on replay's subject while the sheet computes
+// them for it alone (Code.gs hold_ reads answerRows_, stats_ fits the photo memory on it); the app-only ones are on the
+// subjects replay was on until the audit's later step that spreads each changes this test with it.
+test('rule S1: the fields split out of replay keep its values (one-engine step 2)', () => {
+  const {SUBJECTS: S, replaySubject} = require('../core.js'),
+    on = k => S.filter(x => x[k] === true).map(x => x.id),
+    rp = on('replay');
+  assert.deepStrictEqual(rp, [replaySubject()]);
+  for (const k of ['hold', 'offsets']) assert.deepStrictEqual(on(k), rp, `${k}: the sheet computes it for replay's subject only`);
+  assert.deepStrictEqual(on('anonBase'), rp, "anonBase: at replay's values");
+  // the one-tap question, the apology and the notes are the engine's: no subject field switches them (Pierre, Q436)
+  for (const k of ['pulse', 'sorry', 'recalcNote'])
+    assert.ok(
+      S.every(x => !(k in x)),
+      `${k}: no SUBJECTS field`
+    );
+  // the replay subject's pooled statistics are the plain ?stats=1 reply: no stats gate (model.js statsJoin, sync.js
+  // loadOwnStats no longer ask replay)
+  for (const x of S) if (x.replay) assert.ok(!x.stats, `${x.id}: replay's subject with a stats gate`);
+  // the circle-3 threshold the tree subjects had in app.js, now each one's own (treeC3)
+  for (const x of S)
+    if (!x.flat) assert.deepStrictEqual(x.gate && x.gate.c3, {entries: 0.55, mean: 0.5}, `${x.id}: gate c3`);
+    else assert.ok(!x.gate, `${x.id}: a flat subject has no circles`);
+});
+
 test('rule S1: the checks catch what they are for (planted cases)', () => {
   const [a, b] = ids;
+  // a card's own subject is a declaration; the same literal elsewhere on its line still counts
+  assert.deepStrictEqual(scan('x.js', `  subj: '${a}',`), []);
+  assert.deepStrictEqual(scan('x.js', `{id: 'n1', subj: ['${a}', '${b}'], kind: 'update'},`), []);
+  assert.strictEqual(scan('x.js', `{subj: '${a}', go: SUBJ.id === '${b}'}`).length, 2);
   // a subject's name in the sync script's code, its id compared, a test by its place, the first board subject
   assert.strictEqual(scan(GS, `const t = sid === '${b}' ? 1 : 2;`).length, 1);
   assert.strictEqual(scan('x.js', `if (SUBJ.id === '${a}') go();`).length, 2, 'a literal and a comparison');

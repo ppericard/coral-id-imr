@@ -314,3 +314,29 @@ test('spacing: every out-of-game prompt PROMPT.GAP answers apart, never with the
   c.a = 5; // the count went back
   assert.strictEqual(Q.promptOk(), true);
 });
+
+// Every subject asks it (Pierre, 2026-11-19, Q436), each paced on its own answers (answersSoFar is the subject on
+// screen's), the session the device's: a prompt in one subject neither brings one at once nor holds one back in another
+// (Codex review #1226).
+test('every subject: its own pacing, one session for the device', () => {
+  const C = require('../core.js'),
+    Q = quiz(),
+    c = Q.ctx,
+    [A, B] = C.SUBJECTS;
+  c.sDev = name => C.subjDev(c.SUBJ.id, name);
+  const on = (S, a) => ((c.SUBJ = S), (c.a = a), Q.pulseDue());
+  // the first subject's record is where it always was
+  assert.strictEqual(C.subjDev(A.id, 'pulse'), Q.PULSEK);
+  for (let i = 0; i < Q.PULSE.SESS_N; i++) Q.pulseNote(c.t - Q.PULSE.SESS_MS - 60000 + i);
+  // A prompt at 200 answers in A; B, at 50 answers, paces on its own (its first prompt is due: 50 >= PULSE.FIRST)
+  c.store.set(C.subjDev(A.id, 'pulse'), {...c.store.get(Q.PULSEK, {}), at: 200, q: 'are', left: []});
+  assert.strictEqual(on(A, 210), false, 'A: 10 answers after its prompt');
+  assert.strictEqual(on(B, 50), true, "B: its own first, A's count not read");
+  c.store.set(C.subjDev(B.id, 'pulse'), {at: 50, q: 'fun', left: []});
+  assert.strictEqual(on(B, 60), false, 'B: 10 answers after its prompt');
+  assert.strictEqual(on(A, 200), false, "A: B's prompt does not bring one back at once");
+  assert.strictEqual(on(A, 200 + Q.PULSE.EVERY), true);
+  // the session is the device's, kept in the first subject's record with its pacing
+  assert.ok(c.store.get(Q.PULSEK, {}).v.n >= Q.PULSE.SESS_N && c.store.get(Q.PULSEK, {}).at === 200);
+  assert.ok(!('v' in c.store.get(C.subjDev(B.id, 'pulse'), {})));
+});
