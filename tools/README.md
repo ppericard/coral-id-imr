@@ -140,8 +140,7 @@ Conventions that hold across them:
 | `seaslug_game.py` | Builds `seaslug.json`, `seaslug-game.json` from the list and the judged candidates |
 | `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `seaslug-cand.json`; species with no published name |
 | `seaslug_names.py`, `seaslug_names_src.json`, `seaslug_names.json` | English common names with their sources |
-| `seaslug_cues.py`, `seaslug_cues.json` | Sourced ID marks per genus and family, and the declared genus pairs' tell-apart lines |
-| `seaslug_species_marks.json` | Sourced ID marks per species (agent drafts), checked and built by `seaslug_cues.py` `species_apply` |
+| `seaslug_cues.py`, `seaslug_cues.json`, `seaslug_species_marks.json` | Sourced ID marks per family, genus and species, and the genus pairs' tell-apart lines |
 | `seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`, `seaslug_lookalikes_pull.json`, `seaslug_lookalikes_cand.json` | Look-alike candidates from iNaturalist and the literature |
 | `seaslug_worms.py`, `seaslug_worms.json`, `seaslug_groups.json` | The reference taxonomy from WoRMS and the hand-kept taxonomic groups |
 | `seaslug_lit.py`, `seaslug_lit_source.json`, `seaslug_lit.json` | The literature watch: new names and revisions, read by people only |
