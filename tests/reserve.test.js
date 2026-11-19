@@ -121,7 +121,10 @@ test('reserveOf: never Pierre’s own, a reference-level photo, nor a card’s p
   const tags = {};
   for (let i = 0; i < 60; i++) tags[i] = [{own: true}, {imr: true}, {rep: 1, e: 3, jt: 'p1g0sl1x'}, {e: 5, jt: 'p1g0sl1x'}, {}, {}][i % 6];
   const X = world({s1: 100, s2: 12}, {s1: tags});
-  assert.ok(!C.refLevel(X.gen['g:A'].views.wide[2]) && C.refLevel(X.gen['g:A'].views.wide[3]), 'the fixture: 2 is not of reference level, 3 is');
+  assert.ok(
+    !C.refLevel(X.gen['g:A'].views.wide[2]) && C.refLevel(X.gen['g:A'].views.wide[3]),
+    'the fixture: 2 is not of reference level, 3 is'
+  );
   X.gen['f:A'].cover = 's1-4';
   X.gen['g:A'].featP = {s1: [X.gen['g:A'].views.wide[10]]};
   X.covers = {s1: X.gen['g:A'].views.wide[16]};
