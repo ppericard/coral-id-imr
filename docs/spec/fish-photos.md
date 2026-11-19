@@ -120,8 +120,8 @@ and copied as is into `fish.json` by `tools/build_fish.py`.
 
 ### Automatic refill
 
-When a fish unit runs short of candidates the tools fetch more on their own, until there are none left to find (rule
-W20; `fetch_fish.py --refill`, tests `tests/fishphotos.test.js`). The "Candidate photos" workflow's `fish` job, after
+When a fish unit runs short of candidates the tools fetch more on their own, until there are none left to find
+([photos spec](photos.md#no-more-candidates-is-no-more-candidates); `fetch_fish.py --refill`, tests `tests/fishphotos.test.js`). The "Candidate photos" workflow's `fish` job, after
 each Publish (and on manual dispatch), after the coral `photos` job, commits `fish-cand.json` and
 `tools/fish_refill.json`.
 
@@ -255,13 +255,19 @@ top-level `exclude` (by iNaturalist photo id) for its room count.
 given, never judged by the pass.
 
 - Per candidate: the rubric's code (view, whole, light, colour loss 0-3, clarity, size, count, the juvenile /
-  camouflage / out-of-water flags, ease 1-5), `keep` (best / alt / dup within its observation), an optional IMR sex or
-  colour `phase` and a proposed crop. The import applies the rubric's caps and phase flag (`tools/fish_judge.py` `cap`,
-  `juv_early`) and writes `suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
+  camouflage / not-a-live-fish-in-the-water flags, ease 1-5), `keep` (best / alt / dup within its observation), an
+  optional IMR sex or colour `phase` and a proposed crop. The flag `a` covers a fish out of the water and, since Pierre's
+  review of the gold set (2026-11-19), a photo of a screen or a capture from a video player; divers or another large
+  animal filling the frame make the subject unclear (count `x`); the juvenile flag follows the life stage the observer
+  or FishBase recorded (`st`), the judge's own view weighing much less ([the
+  decision](../decisions/2026-11-19-fish-rubric-gold-set.md); `judging/FISH.md` "The gold set's corrections"). The import
+  applies the rubric's caps (strong blur, clarity `b`, at most 2 for the fish since then) and phase flag
+  (`tools/fish_judge.py` `cap`, `juv_early`) and writes `suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
   photos, so a photo keeps its tags when it moves from the candidates to the game.
 - **Sure decisions** (`autosort.js` `fishSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
   phase and crop, whatever the ease; dup, the subject not obvious (count `x`), other species one could take for the
-  subject (count `k`) or out of the water (flag `a`) → reject; the legacy count `m` (other species, not sorted yet) →
+  subject (count `k`) or not a live fish seen in the water (flag `a`: out of the water, a screen, a video capture) →
+  reject; the legacy count `m` (other species, not sorted yet) →
   Pierre's, never added. They go through the coral auto-sort's path (the draft, the `auto` log, 1-in-20 Checks with
   `autoCheck`, agreement per field), and the sure adds are **in play by themselves**, hosted on R2 like his own adds
   ("The photos in play" below). `fetch_fish.py` `sure_out` mirrors the rejects for its room count
@@ -372,7 +378,8 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
      automatic route may put in play, `core.js` `TREE_COUNT.play`: one fish `1`, several of its kind `s`, or other
      species in view with no risk of confusion `o`; never `k`, other species one could take for the subject, nor the
      legacy `m` until sorted: rule P3) that he has not decided on (added, rejected, excluded, moved), with its judged
-     tags, ease and phase, the pass's proposed crop applied as the auto-sort would write it into his draft;
+     tags, ease and phase, the pass's proposed crop applied as the auto-sort would write it into his draft (flag `a`
+     covers a screen or a video capture too: never in play);
   2. the units' reference photos (`tools/fish_refs.json`) judged sure on the same rubric as a candidate, whatever their
      reference level: `tools/fish_judge.json` codes through `tools/fish_judge.py` `cap`, then `judged_sure` (a reference
      photo has no keep or unsure field: the reference-photo batches only write codes; other species one could take for

@@ -77,7 +77,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | Document | What it is |
 |---|---|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How a change is made here: the rules, a branch, the tests, the PR, the merge train, decision records |
-| [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
+| [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the rules every task holds; the index is in docs/rules/); the entry point for Claude Code |
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
 | [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
 | [docs/ANSWERS.md](docs/ANSWERS.md) | Pierre's answers, append-only: search it before asking him anything |

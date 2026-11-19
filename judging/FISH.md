@@ -25,9 +25,11 @@ seaslug`).
 2. Open every sheet and judge every photo on it. Open a photo on its own (`<dir>/img/<f>.jpg`) whenever the sheet does
    not settle a tag.
 3. Judge what the photo shows, not the species: the same species can be easy on one photo and hopeless on another.
-   The species name is a hint for the juvenile tag only (a juvenile is told by its colours against the adult's).
+   The species name is a hint for the juvenile tag only (a juvenile is told by its colours against the adult's), when
+   no life stage was recorded (**the observer's prevails**, below).
 4. Never invent: when a tag cannot be read, take the value that makes the photo harder (between two levels, take the
-   lower ease; the coral judging lesson: past mistakes were almost always one level too generous).
+   lower ease; the coral judging lesson: past mistakes were almost always one level too generous). Never to hold back a
+   photo whose tags are all read ("5 very easy").
 
 ## Tags (one code per photo)
 
@@ -37,16 +39,16 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 
 | Position | Tag | Values |
 | --- | --- | --- |
-| 1 | **view** | `p` profile (side view: the fish roughly parallel to the picture, its outline readable); `o` oblique (turned 20-60 degrees, or diagonal across the frame, the shape still readable); `h` head-on; `t` tail or rear view; `d` from above (dorsal) |
+| 1 | **view** | `p` profile (side view: the flank faces the camera, its pattern readable along it, even turned or seen a little from above, a school's fish too; cut or hidden, it is still `p`, with whole `0`); `o` oblique, only when the flank is foreshortened, its pattern not readable along it (turned well toward or away, or seen three-quarters from above, the back showing as much as the flank); `h` head-on; `t` tail or rear view; `d` from above (dorsal) |
 | 2 | **whole** | `1` the whole fish is in the frame and visible; `0` partial: cut by the frame (a heavy crop, a head close-up) or hidden by reef, coral or another fish so its shape cannot be read whole |
-| 3 | **light** | `g` good: the fish well lit, its true colours visible, **whatever the background** (a fish lit by a flash or a lamp on a dark or black background is good light); `d` dim: the fish itself poorly lit (in shade, under-exposed, dull), the background does not count; `n` night livery: the fish shows a night or resting colour pattern that differs from its day pattern (rare; below) |
-| 4 | **colour loss** | how much of the fish's colours the water took (Pierre, 2026-11-04: not a "cast", whose blue or green only follows the water and the light): `0` none; `1` slight (reds and yellows still visible); `2` strong (the warm colours mostly gone); `3` monochrome (only blue or green: deep water, low light) |
-| 5 | **clarity** | `s` sharp; `m` soft (some blur, haze, noise, the fish still clear); `b` blurred or murky (backscatter, milky water, motion blur that hides the pattern) |
-| 6 | **size** | `l` large (the fish spans a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth) |
-| 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `o` other species in view, no risk of taking one for the subject (below, "Other species: the split"); `k` other species in view, one of which could be taken for the subject (confusion possible); `x` the subject is not obvious (which fish is asked about?). `m` ("other kinds of fish too", before 2026-11-09) is read as not sorted yet, never typed again |
+| 3 | **light** | the light falling on the fish: `g` good: the fish well lit, its true colours visible, **whatever the background** (a fish lit by a flash or a lamp on a dark or black background is good light); `d` dim: the fish itself poorly or unevenly lit (in shade, under-exposed, dull, a lamp on part of it, burnt highlights), the background does not count; `n` night livery: the fish shows a night or resting colour pattern that differs from its day pattern (rare; below) |
+| 4 | **colour loss** | how much of the fish's colours the water took (Pierre, 2026-11-04: not a "cast", whose blue or green only follows the water and the light), read on the colours shown, retouched or not: `0` none; `1` slight (reds and yellows still visible); `2` strong (the warm colours mostly gone, or false after editing); `3` monochrome (only blue or green: deep water, low light) |
+| 5 | **clarity** | `s` sharp; `m` soft (a little blur, haze or noise, the fish's outline and pattern still crisp); `b` blurred or murky: the outline or pattern smeared (focus, motion, low resolution), even in clear water, or hidden by backscatter or milky water; between `m` and `b`, `b` |
+| 6 | **size** | the subject's span (a pair or a school of its kind: the group's; never another animal's): `l` large (a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth); between two, the smaller |
+| 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `o` other species in view, no risk of taking one for the subject (below, "Other species: the split"); `k` other species in view, one of which could be taken for the subject (confusion possible); `x` the subject is not obvious (which fish?; divers or another animal fill the frame). `m` ("other kinds of fish too", before 2026-11-09) is read as not sorted yet, never typed again |
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
-| | `a` | **out of water** (a fish on a net, in a hand, dead) |
+| | `a` | **not a live fish seen in the water**: out of water (a fish on a net, in a hand, dead), a photo of a screen, a capture from a video player (its interface is not a `w`) |
 | | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
@@ -63,6 +65,37 @@ and colour vision in reef fishes: past, present and future research directions",
 doi:10.1111/jfb.13849: its day and night pairs). A fish photographed at night in its day colours is `g` (or `d` when
 the fish itself is poorly lit).
 
+**The gold set's corrections** (Pierre, 2026-11-19, 30 judged photos reviewed one by one; his words per photo are in
+[the decision](../docs/decisions/2026-11-19-fish-rubric-gold-set.md)):
+
+- **Light** is the light falling on the fish, not the photo's contrast; a fish lit on part of it, or with burnt
+  highlights after the shadows were raised, is `d`. Low contrast is not blur nor murky water; where it goes is open
+  (Q429).
+- **Retouched colours** that look false (a fish turned orange-red) are lost colours, `1` near true, `2` plainly wrong;
+  a clean correction reads as what it shows. A retouch is a shortfall in the tags, never a doubt that keeps the photo
+  out, and is named only when the photo shows it.
+- **Strong blur** (outline or pattern smeared) is `b` even in clear water, and caps the ease at 2; it alone keeps no
+  photo out of play.
+- **Size**: a pair or a school of the subject's kind is sized as the group; a fish beside another animal, alone.
+- **Divers or another animal fill the frame** (a large jellyfish), the fish a small part of it: count `x`. A diver at
+  the margin, the fish plain, is not (a crop may take it out).
+- **Screens and video captures** (a screen's edge, moiré or reflections; a video player's interface): flag `a`.
+- **Other fish dark and poorly seen** beside a subject the eye sees first: `o`.
+- **Unchanged here**: contrast (Q429), the juvenile ease (Q431); crops: "A crop that saves a photo" (#1223).
+
+## The observer's life stage (2026-11-19)
+
+The life stage the observer recorded, or FishBase gives (`fish-cand.json` `st`; "iNat: juvenile" on the sheets), is the
+photo's: `j` when it says juvenile, no `j` when it says adult. The judge compares images, it does not settle biology
+(Pierre, 11:43: "Il peut émettre un avis, mais son avis pèse beaucoup moins qu'un observateur humain, sauf s'il a des
+preuves solides").
+
+- A look is not solid evidence ("plain orange-red, no clear juvenile marks"; "colours close to the adult's"): the code
+  follows the annotation, and a doubt about the stage alone is never `unsure`.
+- Solid evidence is something the photo plainly shows that the annotation cannot fit: the code departs from it only
+  with `unsure` naming `code` and the evidence in `note`, so the photo waits for Pierre.
+- With no annotation, the judge reads the stage from the photo.
+
 ## Ease: how easy for a beginner who has just seen the family's card
 
 Pierre's criteria (2026-11-04). Very easy first: good light, colourful, the fish clearly visible, in profile, the whole
@@ -72,7 +105,8 @@ phases differ (Parrotfish); the fish in its night livery, partial fish, head-on 
 several species in the frame.
 
 - **5 very easy**: profile, whole, good light (a flash on a dark background included), sharp, large or medium, one fish (or a school of it); colourful or with
-  its family's shape and pattern plain to see. A field-guide photo.
+  its family's shape and pattern plain to see. A field-guide photo. A photo that meets every one of these is 5:
+  no better photo is held in reserve, whatever the species (Pierre, 2026-11-19).
 - **4 easy**: as 5 with one mild shortfall: a slight oblique, dim light, a slight colour loss,
   a busy background, the fish medium-small, another kind of fish in the frame far from the subject.
 - **3 medium**: two mild shortfalls, or one strong one: a marked oblique, a head-on, tail or top view, part of the fish
@@ -81,8 +115,9 @@ several species in the frame.
   fish, a juvenile, a school in the blue.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
-**Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`) or a
-monochrome photo (colour loss `3`) is at most 2 (a juvenile: unless its entry or genus shows its juveniles early, below); camouflage (`c`), out of water (`a`), the night livery (`n`), a strong
+**Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`), a
+monochrome photo (colour loss `3`) or a strongly blurred one (clarity `b`, 2026-11-19) is at most 2
+(a juvenile: unless its entry or genus shows its juveniles early, below); camouflage (`c`), not a live fish seen in the water (`a`), the night livery (`n`), a strong
 colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
 5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
 
@@ -373,7 +408,7 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    12 photos fills sheets of its own): every photo of an observation is a candidate (Pierre, 2026-11-08; its first photo counts 1 against the species' cap, each
    further one half, Q226; a sure `dup` frees its room), so its
    near-duplicates are side by side for `keep` below; it prints tile number → photo, observation, source, licence and
-   the observer's iNaturalist annotation (`iNat: juvenile`...: a hint for the `j` flag, checked on the photo).
+   the observer's iNaturalist annotation (`iNat: juvenile`...: the photo's life stage, above).
    `python3 tools/judging_fish.py big <f>` gives the 1024 px photo, for a tag the tile does not settle and for a crop.
 2. Write `judging/fish/<species id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed (a candidate Pierre
    has decided on since its judgement stays in the file as judged: not checked again, imported unchanged, its `best`
@@ -399,14 +434,14 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
 tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
 prior difficulty, the players' answers refine it), and other species with no risk of confusion (count `o`) as one
 fish; `dup`, an unclear subject (count `x`), other species one could take for the subject (count `k`: rule P3, as for the
-reference photos) or a fish out of the water (flag `a`) → stays out; the legacy `m` (not sorted) stays out and waits. Pierre, 2026-11-06 15:16 and
+reference photos) or not a live fish seen in the water (flag `a`: out of the water, a screen, a video capture) → stays out; the legacy `m` (not sorted) stays out and waits. Pierre, 2026-11-06 15:16 and
 16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
 hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
 is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
 with Not this leaves the game at once, `core.js` `treePhotoIn`). The admin's auto-sort still puts the same sure judgements
 into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
 agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
-while a wrong sure decision costs the players.
+while a wrong sure decision costs the players. A doubt the rubric settles is not one: a recorded life stage, a retouch.
 
 ## Other species: the split (2026-11-09)
 
@@ -417,7 +452,7 @@ routes follow the same rule (`autosort.js` `fishSure`, `tools/fish_game.py` `jud
 
 - `o` **no confusion risk** (in play): the other fish could not be taken for the main one at the level the game asks
   (its family, or its genus for a circle-1 species, whose genus is a unit too): it is clearly not the subject (much
-  smaller, far, blurred, cut by the frame, half hidden), or it belongs to the same family and, for a circle-1 species, the
+  smaller, far, blurred, cut by the frame, half hidden, dark and poorly seen beside a subject the eye sees first), or it belongs to the same family and, for a circle-1 species, the
   same genus (the same answer).
 - `k` **confusion possible** (never in play, rule P3): another fish of a different family (or genus, at the genus level)
   is about as large, sharp and central as the main one, so a player could name it instead: two species side by side, a
@@ -445,33 +480,18 @@ under "Other species, out of play", where Keep in play sets `o` in one tap.
   beside each photo as a hint and corrected by eye; they agreed exactly on 58% of the photos and within one level on 98%.
   The tag is the eye's.
 
-## How the first pass went (2026-11-04)
+## Entries out of circle 1
 
-Circle 1 (648 photos) first: circles 2 and 3 and the winks are opt-in, met after the IMR entries, and were judged
-next (below). The first look gave view, whole, light (with a "cast" letter), clarity, size, count, flags and ease;
-Pierre then asked for colour loss in place of the cast and for crop proposals, so every photo was looked at a second
-time for those two and the light letter (rubric 2). Then (rubric 3) the phase flag stopped capping the ease, and the 11
-circle-1 entries under 5 very easy photos got more: 214 research-grade candidates of `fish-cand.json` (PR #463) looked at
-and judged the same way, 37 very easy ones added (`tools/fish_judge.json` `add`; the tool appends them to
-`fish-photos.json`, once per observation).
-
-Circles 2 and 3 and the winks (2026-11-04, later; ROADMAP "Fish photo judging, next"): the 475 photos of the 20
-entries out of circle 1 (Barracuda; the 17 circle-3 entries; the Whale shark and Thresher sharks winks) judged the same
-way on rubric 5, the small fish looked at again on a 10 x 10 grid for 48 crops. No juvenile class exists for these entries
-(`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families are rarely shown as the rubric's
-very easy photo: the morays, snake eels, garden eels and jawfishes live with most of their body in a hole (partial, at
-most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflaged, the rays and seamoths are mostly seen
-from above, the sharks in blue water; seven entries have no photo at 4 or 5 (they took their 3 easiest at the start
-under the `easyFirst` gate, gone since 2026-11-06). The rubric was applied as written (no family exception): a question for Pierre, put to
-him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
+No juvenile class exists for them (`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families
+are rarely shown as a very easy photo, the rubric applied as written (no family exception): morays, snake eels, garden
+eels and jawfishes live mostly in a hole (partial), frogfishes, scorpionfishes, stonefishes and seamoths are
+camouflaged, rays and seamoths mostly seen from above, sharks in blue water.
 
 ## The light re-judge (rubric 6, 2026-11-08)
 
-After Pierre's Q308 (above, "Light: the fish, not the background"), every photo coded `n` (727 distinct photos: game,
-reference and candidate photos) and every `d` photo with a dark background (495, picked by a dark border and then looked
-at one by one) were looked at again on sheets of 12 at 400 x 300 px: 1,062 codes changed (`n` to `g` 716, `d` to `g` 313,
-`n` to `d` 30, with the ease the light changed), 4 stopgap game photos keep `n` (two goatfish and two fusilier photos in a reddish night livery), and 37 judged candidates keep it too. The log,
-with each photo's old and new code, is `judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
+After Pierre's Q308 (above, "Light: the fish, not the background"), every `n` photo and every `d` photo on a dark
+background were looked at again (1,062 codes changed). The log, with each photo's old and new code, is
+`judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
 tags and ease `curation.json` still holds from the earlier judgement (`tools/fish_game.py` reads them first): a
 proposal for him, never written by a script (rule A1).
 
