@@ -1,5 +1,5 @@
 {
- "about": "The sea slugs' own ID marks, by genus and by family (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7: family and genus sheets with sourced cues; Pierre, 2026-11-17: complete what is missing for the nudibranchs). Our own words, short and plain, never copied, written from public specialist sources: src, each {t, u}, t starting with the source's short name before its first comma (the quiz feedback's label names it). genera and families, by name: marks, 1 to 3 [visible feature that tells it from its family siblings and its look-alikes, its refs], a ref being [src key, where in it (a key couplet and page, or the species a fact sheet is about, by its name today)]. Only features seen on a photo from above or from the side, or the animal on its food: never a count, nor a feature seen only under the animal or in the hand; a species named is one of the genus's game species (rule C6). none: a circle-1 genus left without marks and why (no photo feature in the sources read): never a mark guessed. apart: the declared genus pairs' tell-apart lines (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md), {\"A|B\": {A: line, B: line}}, each side describing its own genus with its refs, one side only when no source read gives the other's; apartNone: the declared pairs left without a line, and why. tools/seaslug_cues.py checks them and puts marks, msrc and mby on seaslug.json's genera and families (tools/seaslug_game.py); app.js fishGenera shows a genus's marks in the quiz feedback, learn.js genMarks and fishMarks on the sheets. Sources consulted: docs/reviews/2026-11-18-seaslug-cues-sources.md.",
+ "about": "The sea slugs' own ID marks, by genus and by family (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, step 7: family and genus sheets with sourced cues; Pierre, 2026-11-17: complete what is missing for the nudibranchs). Our own words, short and plain, never copied, written from public specialist sources: src, each {t, u}, t starting with the source's short name before its first comma (the quiz feedback's label names it). genera and families, by name: marks, 1 to 3 [visible feature that tells it from its family siblings and its look-alikes, its refs], a ref being [src key, where in it (a key couplet and page, or the species a fact sheet is about, by its name today)]. Only features seen on a photo from above or from the side, or the animal on its food: never a count, nor a feature seen only under the animal or in the hand; a species named is one of the genus's game species (rule C6). none: a genus left without marks and why (every circle-1 genus has marks or a reason) (no photo feature in the sources read): never a mark guessed. apart: the declared genus pairs' tell-apart lines (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md), {\"A|B\": {A: line, B: line}}, each side describing its own genus with its refs, one side only when no source read gives the other's; apartNone: the declared pairs left without a line, and why. tools/seaslug_cues.py checks them and puts marks, msrc and mby on seaslug.json's genera and families (tools/seaslug_game.py); app.js fishGenera shows a genus's marks in the quiz feedback, learn.js genMarks and fishMarks on the sheets. Sources consulted: docs/reviews/2026-11-18-seaslug-cues-sources.md.",
  "src": {
   "brunck": {
    "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs",
@@ -108,6 +108,98 @@
   "gosl1995": {
    "t": "Gosliner 1995, The genus Thuridilla, with a revision of the Elysiidae (Proc. Calif. Acad. Sci. 49)",
    "u": "https://archive.org/details/biostor-3282"
+  },
+  "ssf-favojap": {
+   "t": "Sea Slug Forum, Rudman 1998, Favorinus japonicus fact sheet",
+   "u": "https://www.seaslugforum.net/find/favojap"
+  },
+  "willan1983": {
+   "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6)",
+   "u": "https://archive.org/details/biostor-266362"
+  },
+  "ssf-dolaauri": {
+   "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet",
+   "u": "https://www.seaslugforum.net/find/dolaauri"
+  },
+  "ssf-aplysioidea": {
+   "t": "Sea Slug Forum, Rudman 2004, Aplysioidea (the sea hares)",
+   "u": "https://www.seaslugforum.net/find/aplysioidea"
+  },
+  "fg2004": {
+   "t": "Fahey and Gosliner 2004, A phylogenetic analysis of the Aegiridae (Proc. Calif. Acad. Sci. 55)",
+   "u": "https://archive.org/details/biostor-144012"
+  },
+  "ssf-ceratenu": {
+   "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet",
+   "u": "https://www.seaslugforum.net/find/ceratenu"
+  },
+  "ssf-ceratril": {
+   "t": "Sea Slug Forum, Rudman 1999, Ceratosoma trilobatum fact sheet",
+   "u": "https://www.seaslugforum.net/find/ceratril"
+  },
+  "gosl1996": {
+   "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49)",
+   "u": "https://archive.org/details/biostor-3280"
+  },
+  "ssf-cerasinu": {
+   "t": "Sea Slug Forum, Rudman 2007, Ceratosoma sinuatum fact sheet",
+   "u": "https://www.seaslugforum.net/find/cerasinu"
+  },
+  "mg2018": {
+   "t": "Matsuda and Gosliner 2018, Glossing over cryptic species: new Glossodoris and Doriprismatica (Zootaxa 4444)",
+   "u": "https://doi.org/10.11646/zootaxa.4444.5.1"
+  },
+  "gosl1989": {
+   "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32)",
+   "u": "https://archive.org/details/biostor-131922"
+  },
+  "ssf-saganigr": {
+   "t": "Sea Slug Forum, Rudman 1999, Sagaminopteron nigropunctatum fact sheet",
+   "u": "https://www.seaslugforum.net/find/saganigr"
+  },
+  "ssf-thorfurt": {
+   "t": "Sea Slug Forum, Rudman 1998, Thorunna furtiva fact sheet",
+   "u": "https://www.seaslugforum.net/find/thorfurt"
+  },
+  "ssf-thordani": {
+   "t": "Sea Slug Forum, Rudman 2003, Thorunna daniellae fact sheet",
+   "u": "https://www.seaslugforum.net/find/thordani"
+  },
+  "ssf-discboho": {
+   "t": "Sea Slug Forum, Rudman 1999, Discodoris boholiensis fact sheet",
+   "u": "https://www.seaslugforum.net/find/discboho"
+  },
+  "ssf-cadlorna": {
+   "t": "Sea Slug Forum, Rudman 1998, Cadlinella ornatissima fact sheet",
+   "u": "https://www.seaslugforum.net/find/cadlorna"
+  },
+  "zsm2018": {
+   "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183)",
+   "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+  },
+  "ssf-philgard": {
+   "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet",
+   "u": "https://www.seaslugforum.net/find/philgard"
+  },
+  "av2004": {
+   "t": "Ardila and Valdés 2004, The genus Armina in the southern Caribbean (The Nautilus 118)",
+   "u": "https://archive.org/details/biostor-101092"
+  },
+  "ssf-robograc": {
+   "t": "Sea Slug Forum, Rudman 2000, Roboastra gracilis fact sheet",
+   "u": "https://www.seaslugforum.net/find/robograc"
+  },
+  "ssf-placocel": {
+   "t": "Sea Slug Forum, Rudman 1998, Plakobranchus ocellatus fact sheet",
+   "u": "https://www.seaslugforum.net/find/placocel"
+  },
+  "kfm2025": {
+   "t": "Korshunova et al. 2025, The endless forms are the most differentiated (Zool. J. Linn. Soc. 204)",
+   "u": "https://doi.org/10.1093/zoolinnean/zlaf057"
+  },
+  "gosl2004": {
+   "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55)",
+   "u": "https://archive.org/details/biostor-110161"
   }
  },
  "families": {
@@ -357,6 +449,216 @@
      ]
     ]
    ]
+  },
+  "Favorinus": {
+   "marks": [
+    [
+     "Rhinophores never plain: with bulbs, rings of plates or large flanges",
+     [["willan1983", "Remarks, pp. 74-75: the rhinophores of every Favorinus"]]
+    ],
+    ["Cerata in groups, set in arches along the back", [["willan1983", "the genus Favorinus, p. 72"]]],
+    [
+     "Eats the eggs of other sea slugs, as F. japonicus and F. tsuruganus",
+     [
+      ["ssf-favojap", "on Aplysia egg masses, its colour from its food"],
+      ["willan1983", "note added in proof: F. tsuruganus eats nudibranch eggs"]
+     ]
+    ]
+   ]
+  },
+  "Dolabella": {
+   "marks": [
+    [
+     "The rear end is a sloping flat disc, fringed with small papillae",
+     [["ssf-dolaauri", "the back shield of Dolabella"]]
+    ],
+    [
+     "Mottled green and brown, well hidden in seagrass, sand or mud",
+     [["ssf-dolaauri", "the colour and habitat of Dolabella"]]
+    ]
+   ]
+  },
+  "Aplysia": {
+   "marks": [
+    [
+     "Two large flaps (parapodia) rise from the sides and wrap the body",
+     [["ssf-aplysioidea", "the parapodial lobes of the sea hares"]]
+    ],
+    [
+     "Ear-like rolled rhinophores; gives off purple ink when disturbed",
+     [["ssf-aplysioidea", "the head and the purple gland of the sea hares"]]
+    ],
+    ["Its rear end is not a flat disc, unlike Dolabella", [["ssf-dolaauri", "Dolabella's shape against Aplysia's"]]]
+   ]
+  },
+  "Aegires": {
+   "marks": [
+    ["A firm body covered in many blunt, stalked tubercles", [["fg2004", "genus Aegires, diagnosis, p. 618"]]],
+    [
+     "Rhinophores rise from tube-like sheaths rimmed with tubercles",
+     [["fg2004", "genus Aegires, diagnosis, p. 618"]]
+    ],
+    ["The gill is guarded by lobes that bear tubercles", [["fg2004", "genus Aegires, diagnosis, p. 618"]]]
+   ]
+  },
+  "Ceratosoma": {
+   "marks": [
+    [
+     "The rear of the mantle rises into a long, curved horn",
+     [
+      ["ssf-ceratenu", "the dorsal horn of most Ceratosoma"],
+      ["gosl1996", "character 6, the posterior protuberance, p. 123"]
+     ]
+    ],
+    [
+     "The mantle edge forms side lobes, as in C. tenue and C. trilobatum",
+     [
+      ["ssf-ceratenu", "the mantle lobes"],
+      ["ssf-ceratril", "the lateral lobe"],
+      ["gosl1996", "character 5, the mantle lobes, p. 123"]
+     ]
+    ]
+   ]
+  },
+  "Miamira": {
+   "marks": [
+    [
+     "A body covered in pustules or low tubercles, as M. alleni and M. sinuata",
+     [
+      ["gosl1996", "Ceratosoma alleni, now Miamira alleni, external morphology"],
+      ["ssf-cerasinu", "now Miamira sinuata, its tubercles"]
+     ]
+    ]
+   ]
+  },
+  "Glossodoris": {
+   "marks": [
+    [
+     "A broad body; the mantle edge keeps a row of lasting waves",
+     [
+      ["mg2018", "genus Glossodoris, diagnosis"],
+      ["mg2018", "Glossodoris buko, external morphology: the undulations of every Glossodoris"]
+     ]
+    ],
+    ["Its gill branches often stand in a double spiral", [["mg2018", "genus Glossodoris, diagnosis"]]]
+   ]
+  },
+  "Sagaminopteron": {
+   "marks": [
+    [
+     "Brightly coloured, or blends in with the sponge it feeds on",
+     [
+      ["gosl1989", "character 21, colour, p. 376"],
+      ["gosl1989", "Sagaminopteron psychedelicum, natural history: the genus feeds on sponges, p. 334"],
+      ["ssf-saganigr", "camouflaged on its sponge"]
+     ]
+    ],
+    ["A prominent crest on its siphon", [["gosl1989", "Discussion, the genus Sagaminopteron, p. 378"]]]
+   ]
+  },
+  "Thorunna": {
+   "marks": [
+    [
+     "Waves its gills in a steady rhythm, as T. furtiva and T. daniellae",
+     [["ssf-thorfurt", "the rhythmic waving of the gills"], ["ssf-thordani", "the gills wave rhythmically"]]
+    ]
+   ]
+  },
+  "Discodoris": {
+   "marks": [
+    [
+     "In D. boholiensis, a narrow ridge runs down the back to the gills",
+     [["ssf-discboho", "the narrow visceral ridge"]]
+    ],
+    [
+     "D. boholiensis: a wide, thin mantle skirt, often shed when disturbed",
+     [["ssf-discboho", "the mantle skirt"]]
+    ]
+   ]
+  },
+  "Cadlinella": {
+   "marks": [["C. ornatissima: a back studded with pink-tipped tubercles", [["ssf-cadlorna", "its tubercles"]]]]
+  },
+  "Tubulophilinopsis": {
+   "marks": [
+    [
+     "A rounded crest on top of the head, over its long tube-like mouth",
+     [
+      ["zsm2018", "Tubulophilinopsis, diagnosis and etymology, p. 40"],
+      ["ssf-philgard", "the crest of the tubular buccal bulb group, now Tubulophilinopsis"]
+     ]
+    ],
+    ["Eyes at the front of the head, each in a small pale ring", [["zsm2018", "Tubulophilinopsis, diagnosis, p. 40"]]],
+    ["Short, rounded tail lobes at the rear", [["zsm2018", "Tubulophilinopsis, diagnosis, p. 40"]]]
+   ]
+  },
+  "Samla": {
+   "marks": [
+    [
+     "Rhinophores ringed with stacked thin plates (perfoliate)",
+     [["kmb2017", "diagnoses of the family Samlidae and the genus Samla"]]
+    ]
+   ]
+  },
+  "Armina": {
+   "marks": [
+    [
+     "A flat body narrowing to the rear, the back lined with long ridges",
+     [["av2004", "Introduction, p. 131: the features of the Arminidae"]]
+    ],
+    [
+     "Rhinophores set close together; the front edge of the mantle unbroken",
+     [["av2004", "Introduction, p. 131: the features shared by Armina"]]
+    ]
+   ]
+  },
+  "Roboastra": {
+   "marks": [
+    [
+     "Large oral tentacles, rolled up at the front of the head",
+     [["ssf-robograc", "the oral tentacles of every Roboastra"]]
+    ],
+    ["Hunts and eats other sea slugs", [["ssf-robograc", "the food of the genus"]]]
+   ]
+  },
+  "Plakobranchus": {
+   "marks": [
+    [
+     "Side flaps (parapodia) close over the back, hiding green ridges inside",
+     [["ssf-placocel", "the parapodial flaps and their chloroplast ridges"]]
+    ],
+    [
+     "Often half buried in sand, in shallow lagoons and reef pools",
+     [["ssf-placocel", "its habitat"]]
+    ]
+   ]
+  },
+  "Longibranchus": {
+   "marks": [
+    [
+     "Cerata set singly, one behind the other, down each side",
+     [["kfm2025", "Eubranchidae, the diagnosis of the genus Longibranchus"]]
+    ],
+    ["Smooth rhinophores", [["kfm2025", "Eubranchidae, the diagnosis of the genus Longibranchus"]]]
+   ]
+  },
+  "Bermudella": {
+   "marks": [
+    [
+     "Rhinophores with few, widely spaced plates (lamellae)",
+     [
+      ["gosl2004", "character 11, p. 155"],
+      ["gosl2004", "Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella"]
+     ]
+    ],
+    [
+     "Translucent white with brown marks; feeds on bryozoans",
+     [
+      ["gosl2004", "Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella"],
+      ["gosl2004", "Okenia brunneomaculata, now Bermudella brunneomaculata, p. 129"]
+     ]
+    ]
+   ]
   }
  },
  "apart": {
@@ -422,6 +724,8 @@
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
-  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus"
+  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus",
+  "Diversidoris": "Johnson and Gosliner 2012 define it by its DNA; the one Sea Slug Forum sheet read is of D. aurantionodulosa, not a game species (rule C6); Rudman 1987's diagnosis not read",
+  "Mexichromis": "Johnson and Gosliner 2012 define it by its DNA; the Sea Slug Forum's M. multituberculata sheet gives the species' colours, Tibiriçá et al. 2017 its radula; no source read gives a feature of the genus"
  }
 }

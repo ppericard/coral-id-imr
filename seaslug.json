@@ -2129,6 +2129,43 @@
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Rhinophores never plain: with bulbs, rings of plates or large flanges",
+    "Cerata in groups, set in arches along the back",
+    "Eats the eggs of other sea slugs, as F. japonicus and F. tsuruganus"
+   ],
+   "msrc": [
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), Remarks, pp. 74-75: the rhinophores of every Favorinus",
+     "u": "https://archive.org/details/biostor-266362"
+    },
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), the genus Favorinus, p. 72",
+     "u": "https://archive.org/details/biostor-266362"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Favorinus japonicus fact sheet, on Aplysia egg masses, its colour from its food",
+     "u": "https://www.seaslugforum.net/find/favojap"
+    },
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), note added in proof: F. tsuruganus eats nudibranch eggs",
+     "u": "https://archive.org/details/biostor-266362"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2,
+      3
+     ]
+    ]
    }
   },
   {
@@ -2139,7 +2176,31 @@
    "species": [
     "s49860"
    ],
-   "ref": 204623
+   "ref": 204623,
+   "marks": [
+    "The rear end is a sloping flat disc, fringed with small papillae",
+    "Mottled green and brown, well hidden in seagrass, sand or mud"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, the back shield of Dolabella",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, the colour and habitat of Dolabella",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Diversidoris",
@@ -2251,6 +2312,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "A firm body covered in many blunt, stalked tubercles",
+    "Rhinophores rise from tube-like sheaths rimmed with tubercles",
+    "The gill is guarded by lobes that bear tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Fahey and Gosliner 2004, A phylogenetic analysis of the Aegiridae (Proc. Calif. Acad. Sci. 55), genus Aegires, diagnosis, p. 618",
+     "u": "https://archive.org/details/biostor-144012"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
    }
   },
   {
@@ -2263,7 +2348,46 @@
     "s120937",
     "s199474"
    ],
-   "ref": 204185
+   "ref": 204185,
+   "marks": [
+    "The rear of the mantle rises into a long, curved horn",
+    "The mantle edge forms side lobes, as in C. tenue and C. trilobatum"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet, the dorsal horn of most Ceratosoma",
+     "u": "https://www.seaslugforum.net/find/ceratenu"
+    },
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), character 6, the posterior protuberance, p. 123",
+     "u": "https://archive.org/details/biostor-3280"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet, the mantle lobes",
+     "u": "https://www.seaslugforum.net/find/ceratenu"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma trilobatum fact sheet, the lateral lobe",
+     "u": "https://www.seaslugforum.net/find/ceratril"
+    },
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), character 5, the mantle lobes, p. 123",
+     "u": "https://archive.org/details/biostor-3280"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      3,
+      4
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidiella",
@@ -2350,6 +2474,31 @@
     "inat": 50215,
     "worms": 137783,
     "wiki": "Glossodoris"
+   },
+   "marks": [
+    "A broad body; the mantle edge keeps a row of lasting waves",
+    "Its gill branches often stand in a double spiral"
+   ],
+   "msrc": [
+    {
+     "t": "Matsuda and Gosliner 2018, Glossing over cryptic species: new Glossodoris and Doriprismatica (Zootaxa 4444), genus Glossodoris, diagnosis",
+     "u": "https://doi.org/10.11646/zootaxa.4444.5.1"
+    },
+    {
+     "t": "Matsuda and Gosliner 2018, Glossing over cryptic species: new Glossodoris and Doriprismatica (Zootaxa 4444), Glossodoris buko, external morphology: the undulations of every Glossodoris",
+     "u": "https://doi.org/10.11646/zootaxa.4444.5.1"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
    }
   },
   {
@@ -2361,7 +2510,41 @@
     "s332450",
     "s607312"
    ],
-   "ref": 531565
+   "ref": 531565,
+   "marks": [
+    "Brightly coloured, or blends in with the sponge it feeds on",
+    "A prominent crest on its siphon"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), character 21, colour, p. 376",
+     "u": "https://archive.org/details/biostor-131922"
+    },
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), Sagaminopteron psychedelicum, natural history: the genus feeds on sponges, p. 334",
+     "u": "https://archive.org/details/biostor-131922"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Sagaminopteron nigropunctatum fact sheet, camouflaged on its sponge",
+     "u": "https://www.seaslugforum.net/find/saganigr"
+    },
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), Discussion, the genus Sagaminopteron, p. 378",
+     "u": "https://archive.org/details/biostor-131922"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1,
+      2
+     ],
+     [
+      3
+     ]
+    ]
+   }
   },
   {
    "id": "g:Thorunna",
@@ -2396,6 +2579,27 @@
      }
     ]
    },
+   "marks": [
+    "Waves its gills in a steady rhythm, as T. furtiva and T. daniellae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Thorunna furtiva fact sheet, the rhythmic waving of the gills",
+     "u": "https://www.seaslugforum.net/find/thorfurt"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Thorunna daniellae fact sheet, the gills wave rhythmically",
+     "u": "https://www.seaslugforum.net/find/thordani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
    "apart": {
     "g:Hexabranchus": "Hexabranchus: gills set one by one into the back, with no pocket to pull them into"
    },
@@ -2416,7 +2620,31 @@
    "species": [
     "s50442"
    ],
-   "ref": 137897
+   "ref": 137897,
+   "marks": [
+    "In D. boholiensis, a narrow ridge runs down the back to the gills",
+    "D. boholiensis: a wide, thin mantle skirt, often shed when disturbed"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Discodoris boholiensis fact sheet, the narrow visceral ridge",
+     "u": "https://www.seaslugforum.net/find/discboho"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Discodoris boholiensis fact sheet, the mantle skirt",
+     "u": "https://www.seaslugforum.net/find/discboho"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Mexichromis",
@@ -2438,7 +2666,23 @@
    "species": [
     "s60594"
    ],
-   "ref": 536916
+   "ref": 536916,
+   "marks": [
+    "C. ornatissima: a back studded with pink-tipped tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Cadlinella ornatissima fact sheet, its tubercles",
+     "u": "https://www.seaslugforum.net/find/cadlorna"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tubulophilinopsis",
@@ -2459,6 +2703,39 @@
       "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
       "u": "https://nudipixel.net/similarities"
      }
+    ]
+   },
+   "marks": [
+    "A rounded crest on top of the head, over its long tube-like mouth",
+    "Eyes at the front of the head, each in a small pale ring",
+    "Short, rounded tail lobes at the rear"
+   ],
+   "msrc": [
+    {
+     "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183), Tubulophilinopsis, diagnosis and etymology, p. 40",
+     "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet, the crest of the tubular buccal bulb group, now Tubulophilinopsis",
+     "u": "https://www.seaslugforum.net/find/philgard"
+    },
+    {
+     "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183), Tubulophilinopsis, diagnosis, p. 40",
+     "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2
+     ],
+     [
+      2
+     ]
     ]
    }
   },
@@ -2492,6 +2769,22 @@
    "dlook": [
     "g:Favorinus"
    ],
+   "marks": [
+    "Rhinophores ringed with stacked thin plates (perfoliate)"
+   ],
+   "msrc": [
+    {
+     "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717), diagnoses of the family Samlidae and the genus Samla",
+     "u": "https://doi.org/10.3897/zookeys.717.21885"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
    "apart": {
     "g:Coryphellina": "Coryphellina: rhinophores covered in small bumps (papillae)"
    },
@@ -2514,7 +2807,28 @@
     "s418465",
     "s471382"
    ],
-   "ref": 567581
+   "ref": 567581,
+   "marks": [
+    "A body covered in pustules or low tubercles, as M. alleni and M. sinuata"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), Ceratosoma alleni, now Miamira alleni, external morphology",
+     "u": "https://archive.org/details/biostor-3280"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Ceratosoma sinuatum fact sheet, now Miamira sinuata, its tubercles",
+     "u": "https://www.seaslugforum.net/find/cerasinu"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Armina",
@@ -2525,7 +2839,31 @@
     "s841162",
     "s841163"
    ],
-   "ref": 137677
+   "ref": 137677,
+   "marks": [
+    "A flat body narrowing to the rear, the back lined with long ridges",
+    "Rhinophores set close together; the front edge of the mantle unbroken"
+   ],
+   "msrc": [
+    {
+     "t": "Ardila and Valdés 2004, The genus Armina in the southern Caribbean (The Nautilus 118), Introduction, p. 131: the features of the Arminidae",
+     "u": "https://archive.org/details/biostor-101092"
+    },
+    {
+     "t": "Ardila and Valdés 2004, The genus Armina in the southern Caribbean (The Nautilus 118), Introduction, p. 131: the features shared by Armina",
+     "u": "https://archive.org/details/biostor-101092"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Roboastra",
@@ -2535,7 +2873,31 @@
    "species": [
     "s120982"
    ],
-   "ref": 138045
+   "ref": 138045,
+   "marks": [
+    "Large oral tentacles, rolled up at the front of the head",
+    "Hunts and eats other sea slugs"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Roboastra gracilis fact sheet, the oral tentacles of every Roboastra",
+     "u": "https://www.seaslugforum.net/find/robograc"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Roboastra gracilis fact sheet, the food of the genus",
+     "u": "https://www.seaslugforum.net/find/robograc"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Plakobranchus",
@@ -2546,7 +2908,31 @@
     "s723224",
     "s49121"
    ],
-   "ref": 225419
+   "ref": 225419,
+   "marks": [
+    "Side flaps (parapodia) close over the back, hiding green ridges inside",
+    "Often half buried in sand, in shallow lagoons and reef pools"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Plakobranchus ocellatus fact sheet, the parapodial flaps and their chloroplast ridges",
+     "u": "https://www.seaslugforum.net/find/placocel"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Plakobranchus ocellatus fact sheet, its habitat",
+     "u": "https://www.seaslugforum.net/find/placocel"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Longibranchus",
@@ -2556,7 +2942,27 @@
    "species": [
     "s1668619"
    ],
-   "ref": 1832555
+   "ref": 1832555,
+   "marks": [
+    "Cerata set singly, one behind the other, down each side",
+    "Smooth rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Korshunova et al. 2025, The endless forms are the most differentiated (Zool. J. Linn. Soc. 204), Eubranchidae, the diagnosis of the genus Longibranchus",
+     "u": "https://doi.org/10.1093/zoolinnean/zlaf057"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Bermudella",
@@ -2566,7 +2972,37 @@
    "species": [
     "s1521020"
    ],
-   "ref": 138039
+   "ref": 138039,
+   "marks": [
+    "Rhinophores with few, widely spaced plates (lamellae)",
+    "Translucent white with brown marks; feeds on bryozoans"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), character 11, p. 155",
+     "u": "https://archive.org/details/biostor-110161"
+    },
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Discussion, p. 158: the clade of Okenia zoobotryon, now Bermudella",
+     "u": "https://archive.org/details/biostor-110161"
+    },
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, p. 129",
+     "u": "https://archive.org/details/biostor-110161"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Aplysia",
@@ -2606,6 +3042,38 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "Two large flaps (parapodia) rise from the sides and wrap the body",
+    "Ear-like rolled rhinophores; gives off purple ink when disturbed",
+    "Its rear end is not a flat disc, unlike Dolabella"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2004, Aplysioidea (the sea hares), the parapodial lobes of the sea hares",
+     "u": "https://www.seaslugforum.net/find/aplysioidea"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2004, Aplysioidea (the sea hares), the head and the purple gland of the sea hares",
+     "u": "https://www.seaslugforum.net/find/aplysioidea"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, Dolabella's shape against Aplysia's",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2
+     ]
     ]
    }
   },
