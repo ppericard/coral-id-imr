@@ -4331,8 +4331,7 @@ const CORE_ = (function () { const module = {exports: {}};
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
   // opens them is docs/reviews/2026-11-19-modes-every-subject.md.
-  const CLOSED_TREE = {
-  };
+  const CLOSED_TREE = {};
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
   // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
   // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
