@@ -279,8 +279,8 @@ below.
   - **To do**, **Points to handle**: [admin-players.md › Inbox › To do](spec/admin-players.md#inbox--to-do).
   - **Coverage**, **Coverage › Games**, **Coverage › Sheets & ID Key**:
     [admin-photos.md › Coverage](spec/admin-photos.md#coverage).
-  - **Genera**, **Genus status**, **Needs**: [admin-photos.md › Photos › Genera](spec/admin-photos.md#photos--genera).
-  - **Tree**: [admin-tree.md](spec/admin-tree.md).
+  - **Genus status**, **Needs**: [admin-photos.md › A genus's page](spec/admin-photos.md#a-genuss-page-in-the-tree).
+  - **Tree** (the corals' genus pages included, the former Genera tab): [admin-tree.md](spec/admin-tree.md).
   - **Candidates**, **Auto-sort**: [admin-photos.md › Candidates](spec/admin-photos.md#candidates-the-corals),
     [the auto-sort](spec/admin-photos.md#the-auto-sort).
   - **Photo review**, **Growth form**, **Keys on Quality and Growth form**, **Photo rotation**:

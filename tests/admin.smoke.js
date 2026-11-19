@@ -1919,8 +1919,10 @@ async function sealPart(b, base, fails) {
               tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean)
             }));
           c = await lists();
-          if (c.rm.length || c.ex.length || !c.tags.includes('removed') || !c.tags.includes('excluded'))
-            fails.push(`${w}px Coral Tree: lists on a clean genus ${JSON.stringify(c)}`);
+          // (the real curation already excludes some of Acropora's photos: the list shows them, nothing else)
+          const ex0 = c.ex.length;
+          if (c.rm.length || !c.tags.includes('removed') || !c.tags.includes('excluded'))
+            fails.push(`${w}px Coral Tree: lists on a genus with nothing removed ${JSON.stringify(c.rm)}`);
           const f0 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
           await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="hide"]`);
           await settle();
@@ -1938,11 +1940,11 @@ async function sealPart(b, base, fails) {
           await p.click(`[data-drop] .adm-tile[data-f="${f1}"] [data-act="exclude"]`);
           await settle();
           c = await lists();
-          if (c.ex.join() !== f1) fails.push(`${w}px Coral Tree: × listed ${JSON.stringify(c)}`);
+          if (c.ex.length !== ex0 + 1 || !c.ex.includes(f1)) fails.push(`${w}px Coral Tree: × listed ${JSON.stringify(c.ex)}`);
           await p.click(`[data-np-sec="restore"] figure[data-f="${f1}"] [data-np="restore"]`);
           await settle();
           c = await lists();
-          if (c.ex.length) fails.push(`${w}px Coral Tree: Restore ${JSON.stringify(c)}`);
+          if (c.ex.length !== ex0 || c.ex.includes(f1)) fails.push(`${w}px Coral Tree: Restore ${JSON.stringify(c.ex)}`);
           if (once) {
             // Opened cold at a coral Tree address (a bookmark, a reload): the page draws, with no error.
             const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});

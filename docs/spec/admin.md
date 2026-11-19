@@ -29,7 +29,6 @@ over the cap).
 |---|---|---|
 | Inbox | To do | All `#inbox/todo/all` · Reports `#inbox/todo/reports` · Errors `#inbox/todo/errors` · Alerts `#inbox/todo/alerts` · Health `#inbox/todo/health` · Points `#inbox/todo/points` |
 | Inbox | Coverage | Games `#inbox/coverage/games` · Sheets & ID Key `#inbox/coverage/sheets-id-key` · Rights `#inbox/coverage/rights` |
-| Photos | Genera | Live `#photos/genera/live/<Genus>` · Hidden `#photos/genera/hidden` · Excluded `#photos/genera/excluded` |
 | Photos | Tree | Key `#photos/tree/key/<node id>` · WoRMS `#photos/tree/worms/<node id>` |
 | Photos | Candidates | `#photos/candidates` |
 | Photos | Photo review | Quality `#photos/review/quality` · Growth form `#photos/review/growth-form` · Ease `#fish/photos/review/ease` · Phase & framing `#fish/photos/review/phase-framing` · By difficulty `#photos/review/by-difficulty` · Light proposals `#fish/photos/review/light-proposals` · Cover proposals `#fish/photos/review/cover-proposals` |
@@ -67,15 +66,18 @@ the sections of a page (with their counts), a genus or a player (Journey).
 `#<group>/<tab>/<view>`, each segment the word on screen in lower case joined by `-` (a tab drops its group's word: Photo
 review → `review`), computed from `GROUPS` (`TABS`, `ADM_PAGES`). A tab with one view has no view segment
 (`#players/activity`), unless that view is named for the views to come (`#fish/photos/tree/key`). A thing a page is
-about follows as a last segment (`#photos/genera/live/<Genus>`, `#players/list/journey/<name>`,
+about follows as a last segment (`#photos/tree/key/<Genus>`, `#players/list/journey/<name>`,
 `#players/list/anon/<id>`, `#inbox/todo/points/<id>`; `ADM_PARAM`); a filter follows `?`
 (`#inbox/coverage/games?look=all`: Where to look open in full; `hashQuery`, split off before decoding). A subject other
 than the corals puts its prefix first (`#fish/inbox/todo/reports`: "One subject switch", below).
 
 `admRoute()` decides what an address shows: a shorter one (a group, a tab) opens its first view, an old or unknown one
 its group's first view, else the landing page, and the address is replaced in place (`readHash`). Old addresses (`#~…`,
-`#<Genus>`) are not translated (rule W3: there is no table of aliases). Links come from `GROUPS` (`navs()`) and
-`genusHref()`. With no address the admin opens on its landing page, Players › Activity `#players/activity`
+`#<Genus>`) are not translated (rule W3: there is no table of aliases), with one exception Pierre's layout call of
+2026-11-19 made: the former Photos › Genera addresses (`#photos/genera/live/<Genus>`, `…/hidden`, `…/excluded`) open the
+genus's Tree node (`#photos/tree/key/<Genus>`) or the Tree, one rule at the top of `admRoute()`, no table (the Genera tab
+is folded into the Tree: [admin-tree.md › The node pages' photo curation](admin-tree.md#the-node-pages-photo-curation-shared-by-every-subject)).
+Links come from `GROUPS` (`navs()`) and `genusHref()`. With no address the admin opens on its landing page, Players › Activity `#players/activity`
 (`homeOf`; Players › List for a subject without Activity).
 
 ### What it remembers
