@@ -121,12 +121,14 @@ id the tab already has (the Id column read once per send, under the script lock;
 met earlier in the same send (`newIds_`, which also counts it once against the caps), compared as the tab keeps it (its
 first 20 characters).
 
-**Mode** is the game, with suffixes: `|d` a duel slipped into the photo quiz; `|w` a question of the gentle restart
-(logged on one day only, left out of the hold); `|c` a comeback question after a break (its `e` recall-adjusted, counted
-in the hold); `|kN` the number of plausible choices (always last but `|t` and `|x`); `|t` a typed question (the player
-typed the unit: rated with no guess rate, `guess_` 0; Answered is the unit read, empty for "I don't know", the raw text
-in Typed; Choices empty); `|x` a mastery exam question. `wink` marks a surprise card's answer and `live` a live game's
-(below).
+**Mode** is the game: `quiz` the photo quiz, `quiz-duel` the Duel tab, `live` a live game's answer and `wink` a
+surprise card's (below); then the suffixes, in this order (`quiz.js` `answer`): `|s` the custom quiz (right after
+`quiz`, rated as the photo quiz); `|d` a duel slipped into the photo quiz; `|f` a Find the X (the photo tapped in
+`pa`); `|c` a comeback question after a break (its `e` recall-adjusted, counted in the hold); `|w` a question of the
+gentle restart (logged on one day only, left out of the hold); `|h` a held-out photo (asked by the exam only); `|kN` the
+number of plausible choices (always last but `|t` and `|x`); `|t` a typed question (the player typed the unit: rated
+with no guess rate, `guess_` 0; Answered is the unit read, empty for "I don't know", the raw text in Typed; Choices
+empty); `|x` a mastery exam question. What each mode counts: [quiz.md](quiz.md#what-each-mode-counts).
 
 ### Every subject's answers
 
