@@ -44,7 +44,7 @@ juvenile; `suggest.json` re-applied (`tools/judging_fish.py rep`, and `codes` fo
   class of 2026-11-18 (#1133), never on the cap. Which photos are drawn once released moves with their priors.
 - No rules version: the sheet's replay scores each answer with the difficulty logged then, never a photo's ease.
 
-## The re-rate (PR #REPLACE)
+## The re-rate (#1254)
 
 - **Which photos**: every in-play juvenile (`fish-game.json`, `seaslug-game.json`) whose single judgement was typed at
   ease 1 or 2, less the 155 another cap holds at 2 anyway (count `x`, colour loss `3`, clarity `b`): 2,289 fish (121 of
