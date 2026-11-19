@@ -16,13 +16,15 @@ where things are: the documentation map of [`README.md`](README.md); what lives 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
 Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
-sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied:
+sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied, and set its end on
+2026-11-19 ("La journée démarre à partir de mon premier message après 4h du mat"; "ok pour cette phrase"):
 
-> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing; everything else goes on
-> as normal, agents included.**
+> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
+> after 04:00; everything else goes on as normal, agents included.**
 
 - The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
-  never a guess. Before 17:30 nothing is different.
+  never a guess. His day starts with his first message after 04:00, not at a fixed hour (Pierre, 2026-11-19); until
+  17:30 nothing else is different.
 - "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
   Pierre" (number, context, question, recommendation, PR) for the morning.
 

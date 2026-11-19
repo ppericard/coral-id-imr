@@ -68,3 +68,7 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   fasses une passe globale sur la base de toutes mes décisions d'hier aujourd'hui ou avant, et met à jour la doc
   proprement en conséquence!"
 - **07:05.** OK to this ledger and its rule (AGENTS.md "Every answer reaches its doc, and the answers ledger").
+- **08:07 and 08:09, Rule 0.** On ending the quiet hours at 05:00: "non. La journée démarre à partir de mon premier
+  message après 4h du mat"; then "ok pour cette phrase" to: "After 17:30 (Manila time, read from the hook's line), the
+  integrator asks Pierre nothing until his first message after 04:00; everything else goes on as normal, agents
+  included." Applied: AGENTS.md Rule 0, `tools/brief.py` (#1191).
