@@ -1,6 +1,6 @@
 # Every game mode for every subject: the Duel tab first, a closed mode names its reason
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: S1, L4, L11, D5; docs/spec/subjects.md (`pages`, `closed`),
+Date: 2026-11-19. PR: #1265. Rules or docs touched: S1, L4, L11, D5; docs/spec/subjects.md (`pages`, `closed`),
 docs/spec/quiz.md "What each mode counts", docs/spec/cards.md "The Duel tab's relief card", ROADMAP "Every game mode for
 every subject".
 
