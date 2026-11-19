@@ -56,12 +56,12 @@ test('the IMR genera: those an IMR sub-entry names alone, Naso alone of the surg
   const imrg = plain(X.sci.filter(n => X.gen[n].imrg).sort());
   assert.deepStrictEqual(imrg, ['g:Amphiprion', 'g:Chromis', 'g:Dascyllus', 'g:Heniochus', 'g:Naso', 'g:Pomacentrus']);
   ['g:Acanthurus', 'g:Ctenochaetus', 'g:Zebrasoma'].forEach(n => assert.ok(X.gen[n].imrName && !X.gen[n].imrg, n));
-  // the first-meeting card: its IMR cues and slide (Anemonefish has no IMR cues: our sourced marks, tools/fish_genus_marks.json)
+  // the first-meeting card: its IMR cues and slide (Anemonefish has no cues: its species, with its slide)
   assert.strictEqual(X.gen['g:Chromis'].tl, 'ID tips (IMR, Chromis, slide 8)');
   assert.strictEqual(X.gen['g:Heniochus'].tl, 'ID tips (IMR, Bannerfish, slides 13, 23)');
-  assert.ok(X.gen['g:Amphiprion'].qt.length && X.gen['g:Amphiprion'].tl === 'ID marks (FishBase)');
-  // a genus with a presentation and no marks (tools/fish_genus_marks.json none: Parupeneus) keeps its species line
-  assert.ok(X.gen['g:Parupeneus'].tl === 'Its species here' && X.gen['g:Parupeneus'].plain);
+  assert.ok(!X.gen['g:Amphiprion'].qt && X.gen['g:Amphiprion'].tl === 'Its species here (IMR, Anemonefish, slide 22)');
+  // a genus with a presentation and no marks (tools/fish_genus_marks.json none: Abudefduf) keeps its species line
+  assert.ok(X.gen['g:Abudefduf'].tl === 'Its species here' && X.gen['g:Abudefduf'].plain);
 });
 
 test('everyone: a family’s genera from its Advanced, not its Open Water (Pierre, 2026-11-08)', () => {

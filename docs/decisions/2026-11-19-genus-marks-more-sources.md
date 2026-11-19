@@ -19,8 +19,10 @@ checked by script against the page as read, as in the species marks. A genus wit
 
 ## Consequences
 
-- 22 genera get marks; 23 stay in `none` with their updated reason.
+- 19 genera get marks; 26 stay in `none` with their updated reason. Every mark was checked against the game species
+  of its sibling genera: Amphiprion, Abudefduf and Mulloidichthys lost theirs (young Dascyllus trimaculatus in anemones,
+  barred Dascyllus, the yellow stripe of Parupeneus barberinus).
 - Several of the new marks are the look of a genus's only game species (as the circle 2-3 rule already allowed); the PR
   lists them apart, so they can be cut.
-- Chromis, Pomacentrus and Ctenochaetus (IMR cues) get none: the sources read give no shared photo feature that the
-  build could take before #1231.
+- Chromis, Pomacentrus and Ctenochaetus (IMR cues) get none: their Reef Life Survey pages give each species its own
+  pattern, with no shared photo feature beyond IMR's own cues.

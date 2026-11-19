@@ -367,18 +367,6 @@
     "rls-pomacanthus-navarchus": {"t": "Reef Life Survey, Pomacanthus navarchus", "u": "https://reeflifesurvey.com/species/pomacanthus-navarchus/"},
     "rls-pomacanthus-semicirculatus": {"t": "Reef Life Survey, Pomacanthus semicirculatus", "u": "https://reeflifesurvey.com/species/pomacanthus-semicirculatus/"},
     "rls-pomacanthus-sexstriatus": {"t": "Reef Life Survey, Pomacanthus sexstriatus", "u": "https://reeflifesurvey.com/species/pomacanthus-sexstriatus/"},
-    "fb-amphiprion-annamensis": {"t": "FishBase, Amphiprion annamensis", "u": "https://www.fishbase.se/summary/Amphiprion-annamensis.html"},
-    "fb-amphiprion-biaculeatus": {"t": "FishBase, Amphiprion biaculeatus", "u": "https://www.fishbase.se/summary/Amphiprion-biaculeatus.html"},
-    "fb-amphiprion-clarkii": {"t": "FishBase, Amphiprion clarkii", "u": "https://www.fishbase.se/summary/Amphiprion-clarkii.html"},
-    "fb-amphiprion-frenatus": {"t": "FishBase, Amphiprion frenatus", "u": "https://www.fishbase.se/summary/Amphiprion-frenatus.html"},
-    "fb-amphiprion-ocellaris": {"t": "FishBase, Amphiprion ocellaris", "u": "https://www.fishbase.se/summary/Amphiprion-ocellaris.html"},
-    "fb-amphiprion-percula": {"t": "FishBase, Amphiprion percula", "u": "https://www.fishbase.se/summary/Amphiprion-percula.html"},
-    "fb-amphiprion-perideraion": {"t": "FishBase, Amphiprion perideraion", "u": "https://www.fishbase.se/summary/Amphiprion-perideraion.html"},
-    "fb-amphiprion-sandaracinos": {"t": "FishBase, Amphiprion sandaracinos", "u": "https://www.fishbase.se/summary/Amphiprion-sandaracinos.html"},
-    "rls-abudefduf-sexfasciatus": {"t": "Reef Life Survey, Abudefduf sexfasciatus", "u": "https://reeflifesurvey.com/species/abudefduf-sexfasciatus/"},
-    "rls-abudefduf-vaigiensis": {"t": "Reef Life Survey, Abudefduf vaigiensis", "u": "https://reeflifesurvey.com/species/abudefduf-vaigiensis/"},
-    "rls-mulloidichthys-flavolineatus": {"t": "Reef Life Survey, Mulloidichthys flavolineatus", "u": "https://reeflifesurvey.com/species/mulloidichthys-flavolineatus/"},
-    "rls-mulloidichthys-vanicolensis": {"t": "Reef Life Survey, Mulloidichthys vanicolensis", "u": "https://reeflifesurvey.com/species/mulloidichthys-vanicolensis/"},
     "rls-upeneus-tragula": {"t": "Reef Life Survey, Upeneus tragula", "u": "https://reeflifesurvey.com/species/upeneus-tragula/"},
     "fb-upeneus-tragula": {"t": "FishBase, Upeneus tragula", "u": "https://www.fishbase.se/summary/Upeneus-tragula.html"},
     "rls-pristiapogon-exostigma": {"t": "Reef Life Survey, Pristiapogon exostigma", "u": "https://reeflifesurvey.com/species/pristiapogon-exostigma/"},
@@ -1020,18 +1008,12 @@
       "plain": [
         "Damselfishes of outer reef slopes and rocky inshore reefs; A. vaigiensis often feeds in groups in midwater, and its young drift with floating seaweed.",
         [["fb-abudefduf-vaigiensis", "Biology"]]
-      ],
-      "marks": [
-        ["Bold black bars across a pale or silvery body", [["rls-abudefduf-sexfasciatus", "Silvery grey with a forked black scissor-tail with light outer margins, and 5 black bars."], ["rls-abudefduf-vaigiensis", "Five narrow and distinct black bars."]]]
       ]
     },
     "Amphiprion": {
       "plain": [
         "Anemonefishes live with large sea anemones, often an adult pair and several smaller fish to each; in A. frenatus the male is much smaller than the female.",
         [["fao-pom", "Amphiprion frenatus, p. 3348"], ["fao-pom57", "Amphiprion ocellaris, p. 3350"], ["fao-pom57", "Amphiprion perideraion, p. 3351"]]
-      ],
-      "marks": [
-        ["Lives among the tentacles of a host sea anemone", [["fb-amphiprion-annamensis", "Associated with the anemones: Heteractis crispa and Stichodactyla haddoni"], ["fb-amphiprion-biaculeatus", "Associated with the anemone Entacmaea quadricolor"], ["fb-amphiprion-clarkii", "Associated with the anemones: Cryptodendrum adhaesivum"], ["fb-amphiprion-frenatus", "Associated with the anemone Entacmaea quadricolor"], ["fb-amphiprion-ocellaris", "lives among the venomous tentacles of large sea anemones"], ["fb-amphiprion-percula", "Associated with the anemones: Heteractis crispa , Heteractis magnifica , and Stichodactyla gigantea"], ["fb-amphiprion-perideraion", "Associated with the anemones: Heteractis magnifica (usually)"], ["fb-amphiprion-sandaracinos", "Associated with the anemones: Heteractis crispa and Stichodactyla mertensii"]]]
       ]
     },
     "Amblyglyphidodon": {
@@ -1167,8 +1149,7 @@
         [["fao-pmc49", "Chaetodontoplus mesoleucus, p. 3281"]]
       ],
       "marks": [
-        ["Black band through the eye, speckled body, yellow tail", [["rls-chaetodontoplus-mesoleucus", "black band through eye, speckled body with yellow tail."]]],
-        ["Yellow snout and blue lips", [["rls-chaetodontoplus-mesoleucus", "Blue lips and yellow snout"]]]
+        ["Black band through the eye, speckled body, yellow tail", [["rls-chaetodontoplus-mesoleucus", "black band through eye, speckled body with yellow tail."]]]
       ]
     },
     "Apolemichthys": {
@@ -1177,7 +1158,7 @@
         [["fao-pmc", "Apolemichthys trimaculatus, p. 3272"]]
       ],
       "marks": [
-        ["Yellow body with blue lips", [["rls-apolemichthys-trimaculatus", "Yellow body with dark scale margins, anal fin pale with black margin, blue lips"]]],
+        ["All-yellow body with dark scale edges", [["rls-apolemichthys-trimaculatus", "Yellow body with dark scale margins"]]],
         ["A black spot on the forehead", [["rls-apolemichthys-trimaculatus", "black spot on forehead"]]]
       ]
     },
@@ -1259,7 +1240,6 @@
       ],
       "marks": [
         ["See-through pinkish body with one dark stripe, eye to tail base", [["rls-pristiapogon-exostigma", "Clear to pink translucent with a single stripe that tapers from eye to mid tail base"], ["rls-pristiapogon-fraenatus", "Clear to pink translucent with a single black stripe that tapers from eye to mid tail base"]]],
-        ["A black spot at the tail base, at the end of the stripe", [["rls-pristiapogon-exostigma", "Black spot slightly above centre of tail base and end of stripe."], ["rls-pristiapogon-fraenatus", "Black spot at centre of tail base, level with end of stripe."]]],
         ["Front edge of the first dorsal fin black", [["rls-pristiapogon-exostigma", "leading edge of first dorsal fin black."], ["rls-pristiapogon-fraenatus", "Leading edge of first dorsal fin blackish."]]]
       ]
     },
@@ -1392,9 +1372,6 @@
       "plain": [
         "Goatfishes of lagoons and bays that gather over reefs by day and spread out at night to feed on sand flats.",
         [["fao-mul", "Mulloidichthys flavolineatus, p. 3181"], ["fao-mul", "Mulloidichthys vanicolensis, p. 3183"]]
-      ],
-      "marks": [
-        ["A yellow stripe along the side, from the eye to the tail base", [["rls-mulloidichthys-flavolineatus", "a yellow stripe along side from eye to tail base"], ["rls-mulloidichthys-vanicolensis", "Yellow stripe from eye to tail base"]]]
       ]
     },
     "Upeneus": {
@@ -2557,6 +2534,9 @@
     }
   },
   "none": {
+    "Mulloidichthys": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo; the yellow stripe from eye to tail base that Reef Life Survey (2026-11-19) gives both game species also runs, above a black one, on Parupeneus barberinus",
+    "Abudefduf": "the FAO key (couplets 19, 20) sets it apart by scale rows only: nothing seen on a photo; the black bars on a pale body that Reef Life Survey (2026-11-19) gives both game species are also on Dascyllus aruanus and D. melanurus",
+    "Amphiprion": "the FAO key (couplets 1, 2) sets it apart by scale counts and serrate gill covers only: nothing seen on a photo (its life with sea anemones is in its presentation); FishBase (2026-11-19) ties each game species to its host anemones, but Reef Life Survey says young Dascyllus trimaculatus live with anemones too, and FishBase says the same of young Amblypomacentrus",
     "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
     "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo; FishBase and Fishes of Australia (2026-11-19) give only dark brown markings and that it dives into sand: no clear photo feature",
     "Siganus": "the only genus of its family here: the family's IMR cues and ID marks tell it",
@@ -2566,7 +2546,7 @@
     "Dischistodus": "the FAO key (couplet 16) sets it apart by the scales of the snout and a notch under the eye only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species its own pattern: some white with dark patches, one dark with a white patch",
     "Centropyge": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species its own colours; small size alone is not seen on a photo",
     "Epinephelus": "the FAO key (couplets 12, 18, 20) sets it apart from Cephalopholis by spine counts only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
-    "Ostorhinchus": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo; not tried further (2026-11-19): nineteen game species with different stripes and spots",
+    "Ostorhinchus": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo; Reef Life Survey (2026-11-19) describes thirteen of its nineteen game species: stripes of different number and colour, one orange with a black tail band, one with a white dorsal margin; a black tail-base spot on several, as on Pristiapogon",
     "Pteropterus": "not a genus in the FAO key (2001), and FishBase gives no comparison: no source read; FishBase (2026-11-19) gives pectoral-fin blotches that other lionfishes in play may share, and no comparison: not kept",
     "Parupeneus": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
     "Plectorhinchus": "the FAO key (couplet 3) sets it apart from Diagramma by fin and scale counts only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species, and its young, its own pattern",
@@ -2586,7 +2566,7 @@
     "Dactyloptena": "the only genus of its family here: the family's ID marks tell it",
     "Uranoscopus": "the only genus of its family here: the family's ID marks tell it",
     "Opistognathus": "the only genus of its family here: the family's ID marks tell it",
-    "Gymnothorax": "the FAO key (couplet 5) sets it apart by slender, pointed teeth only, a couplet its own note calls troublesome and that some game species fail: nothing else seen on a photo; not tried further (2026-11-19): twelve game species, plain or patterned, none shared",
+    "Gymnothorax": "the FAO key (couplet 5) sets it apart by slender, pointed teeth only, a couplet its own note calls troublesome and that some game species fail: nothing else seen on a photo; Reef Life Survey (2026-11-19) describes seven of its twelve game species: spotted, speckled, barred or marbled, none shared",
     "Meiacanthus": "the FAO key (couplet 5) sets it apart by grooved fangs and the gill opening only, and its two game species share no colour pattern in FishBase: nothing seen on a photo; Reef Life Survey (2026-11-19) gives its two game species different patterns, one mimicked by Plagiotremus laudandus",
     "Petroscirtes": "the FAO key (couplets 6 to 8) sets it apart by fin-ray counts and the gill opening only, and its game species share no visible feature in FishBase; Reef Life Survey describes none of its game species, Fishes of Australia (2026-11-19) gives no summary",
     "Plagiotremus": "the FAO key (couplets 6, 7) sets it apart by fin-ray counts and the lateral line only, and its game species share no colour pattern in FishBase; Reef Life Survey (2026-11-19) gives its game species different patterns: two striped and slender, one a mimic of Meiacanthus",
@@ -2600,7 +2580,7 @@
     "Pseudochromis": "the FAO key (couplets 5 to 8) sets it apart by teeth, scales and ray counts only, and its two game species share no colour pattern in the sources read; Reef Life Survey (2026-11-19) has a pattern for one of its two game species only",
     "Pholidichthys": "the only genus of its family: the family's ID marks tell it",
     "Helcogramma": "the only genus of its family here: the family's ID marks tell it",
-    "Amblyeleotris": "the FAO key (couplets 40, 58) sets it apart by head papillae and fin-ray counts only, and its twelve game species differ in colour: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give bars to several game species but spots or other marks to others",
+    "Amblyeleotris": "the FAO key (couplets 40, 58) sets it apart by head papillae and fin-ray counts only, and its twelve game species differ in colour: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give bars or bands to most game species read, but A. latifasciata may lack them, three have no page, and Cryptocentrus fasciatus is barred too",
     "Valenciennea": "the FAO key (couplet 41) sets it apart by its teeth and size only, and its three game species share no colour pattern in FishBase; Reef Life Survey (2026-11-19) gives its three game species different patterns",
     "Cryptocentrus": "the FAO key (couplet 62) sets it apart by the gill membranes only, and its three game species differ in colour: nothing seen on a photo; Fishes of Australia (2026-11-19) gives bars to two game species, the third has no page",
     "Hazeus": "the FAO key (couplets 16 to 19) sets it apart by stiff first dorsal spines and a scaled gill cover, hard to see on a photo, and FishBase gives no colour for its game species; Fishes of Australia (2026-11-19) has a pattern for one of its two game species only"
