@@ -157,6 +157,10 @@ const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'larg
 // A fish photo's tile (Find the X; tools/fish_game.py): {f}-x.webp, a 360 px square around the fish, its square (xc) and
 // rewrite count (iv) in the address so a new tile is a new file for the caches; without one, or once R2 failed, the 480 px file.
 const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}${p.iv ? '.' + p.iv : ''}`) : img(p, 's'));
+// The tile photos of a tree subject's unit n (UNITS tiles: Find the X, quiz.js planFind), declared once for the fish and the
+// sea slugs: its game photos that have the square tile cut around the animal (xc, tools/fish_game.py tile_write, which
+// tools/seaslug_game.py shares), so a unit plays it only once photos with an animal's box are in play.
+const unitTiles = n => ((GX(n) || {views: {}}).views.wide || []).filter(p => p && p.xc);
 // Photo quality (docs/ARCHITECTURE.md "Overview"): the smallest file covering the box at up to 2x density (fit); Saver
 // the 480 px file whatever the box, Full the 1600 px one; Auto is Saver on the browser's data saver or slow connection,
 // or a slow line measured (linkBps). The enlarged view loads the 1600 px file (Saver: on a click).
@@ -2730,10 +2734,8 @@ const UNITS = {
     ],
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (docs/ARCHITECTURE.md "Subjects").
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
-    // The tile photos of unit n (Find the X, quiz.js planPhoto): its game photos that have
-    // the square tile cut around the fish (fish-game.json xc, tools/fish_game.py), so a family plays it only once judged
-    // photos with a fish's box are in play.
-    tiles: n => ((GX(n) || {views: {}}).views.wide || []).filter(p => p && p.xc),
+    // The tile photos of unit n (Find the X, quiz.js planPhoto; unitTiles): fish-game.json's xc.
+    tiles: unitTiles,
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
@@ -2918,7 +2920,9 @@ const UNITS = {
     // Tools › Look-alike web's colouring: by family (a genus's parent).
     webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
-    tiles: () => [],
+    // The tile photos of unit n (Find the X; unitTiles): seaslug-game.json's xc, cut by tools/seaslug_game.py where a photo
+    // carries the animal's box (bb). No photo does yet (judging/SEASLUG.md gives none), so the draw is as without it.
+    tiles: unitTiles,
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
     // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
