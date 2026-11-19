@@ -1,6 +1,6 @@
 # Fish ID Key for EventMeasure: every IMR PDF species, by key group, family and genus, in the Lab
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: S1, S2, S3, U13; docs/spec/fish.md "The Fish ID Key (Lab)" and
+Date: 2026-11-19. PR: #1258. Rules or docs touched: S1, S2, S3, U13; docs/spec/fish.md "The Fish ID Key (Lab)" and
 "A species record", docs/spec/basics.md "The Lab", ROADMAP "Fish ID Key for EventMeasure", rule W14's list of smoke parts.
 
 ## Context
