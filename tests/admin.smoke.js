@@ -6349,6 +6349,89 @@ async function sealPart(b, base, fails) {
       const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
       if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
     }
+    // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
+    // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
+    // photo in play; the tree subjects' species with an `out`, and those in the game with no photo in play or under their
+    // target, from autosort.js fishCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
+    // reason chip narrowing the list and All bringing it back, a page on the Tree for a species in the game and none for
+    // one out, no sideways scroll, dark in the dark theme. The sea slugs' list may be empty: the page then says None.
+    for (const [h, subj] of [
+      ['photos/stats/taxa', 'corals'],
+      ['fish/photos/stats/taxa', 'fish'],
+      ['seaslug/photos/stats/taxa', 'seaslug']
+    ]) {
+      await go(h);
+      await p.waitForFunction(() => document.querySelector('#view .adm-taxa'), null, {timeout: 90000}).catch(() => {});
+      const tx = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          S = ASUBJ,
+          rows = [...V.querySelectorAll('tbody tr')],
+          ids = rows.map(r => r.dataset.taxon),
+          chips = [...V.querySelectorAll('[data-taxa]')].map(b => [b.dataset.taxa, Number(b.querySelector('b').textContent)]);
+        let want, outIds;
+        if (S.sheets) {
+          const D = fuData(),
+            C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
+          outIds = FISHC.raw.species.filter(s => s.out).map(s => s.id);
+          want = outIds.length + C.sp.filter(r => !r.n || r.obs < r.tgt).length;
+        } else {
+          const game = new Set(gameOf(DATA));
+          outIds = Object.keys(DATA.gen).filter(n => !game.has(n));
+          want = outIds.length + [...game].filter(n => covViews(n).every(([v]) => !covOf(n, v).n)).length;
+        }
+        return {
+          h: location.hash,
+          rows: rows.length,
+          want,
+          all: chips.length ? chips[0] : null,
+          outOk: outIds.every(id => ids.includes(id)),
+          why: rows.filter(r => !r.children[2].textContent.trim() || /undefined|null/.test(r.textContent)).length,
+          link: S.sheets
+            ? [...V.querySelectorAll('tbody tr')]
+                .map(r => [r.dataset.taxon, !!r.querySelector('a')])
+                .filter(([id]) => !outIds.includes(id))
+                .every(([, a]) => a)
+            : null,
+          outLink: rows.filter(r => outIds.includes(r.dataset.taxon) && S.sheets && r.querySelector('a')).length,
+          chips: chips.length,
+          note: (V.querySelector('p.note') || {}).textContent || '',
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        tx.rows !== tx.want ||
+        !tx.all ||
+        tx.all[0] !== '' ||
+        tx.all[1] !== tx.rows ||
+        !tx.outOk ||
+        tx.why ||
+        tx.link === false ||
+        tx.outLink ||
+        (subj !== 'seaslug' && !tx.rows) ||
+        (!tx.rows && tx.note !== 'None.') ||
+        tx.wide > 0
+      )
+        fails.push(`${w}px #${h}: Taxa ${JSON.stringify(tx)}`);
+      if (tx.chips > 2) {
+        // one reason: its chip's count in the list, All brings the whole list back
+        const nar = await p.evaluate(() => {
+          const b = document.querySelectorAll('#view [data-taxa]')[1],
+            n = Number(b.querySelector('b').textContent),
+            k = b.dataset.taxa;
+          b.click();
+          const V = document.getElementById('view'),
+            one = [...V.querySelectorAll('tbody tr')].length,
+            on = V.querySelector('[data-taxa][aria-pressed="true"]').dataset.taxa;
+          V.querySelector('[data-taxa=""]').click();
+          return {n, one, on, k, back: document.querySelectorAll('#view tbody tr').length};
+        });
+        if (nar.one !== nar.n || nar.on !== nar.k || nar.back !== tx.rows) fails.push(`${w}px #${h}: Taxa chip ${JSON.stringify(nar)}`);
+      }
+      if (tx.rows) {
+        const dkT = await darkCards(p, '#view .adm-tbl th');
+        if (dkT) fails.push(`${w}px #${h}: Taxa, dark theme: still light ${dkT}`);
+      }
+    }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
     // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
@@ -6523,7 +6606,15 @@ async function sealPart(b, base, fails) {
                   'g:Amphiprion g:Chromis g:Dascyllus g:Pomacentrus'
                 )
               );
-            for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+            // the typed text (15) and no spelling step (16): a long one with no space on the mix-ups, which the Typed text
+            // card cuts in its cell (no sideways scroll at 390)
+            for (let i = 0; i < 4; i++)
+              add.push(
+                Object.assign(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''), {
+                  15: i % 3 ? 'Chromis' : 'Pomacentruspomacentruspomacentruspomacen',
+                  16: null
+                })
+              );
             // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
             for (let i = 0; i < 3; i++)
               add.push(
@@ -6569,6 +6660,10 @@ async function sealPart(b, base, fails) {
                 .filter(tr => /Rabbitfishes · Surgeonfishes|Surgeonfishes · Rabbitfishes/.test(tr.textContent))
                 .map(tr => tr.cells[1].textContent),
               zo: V.querySelectorAll('[data-zo]').length,
+              // the Typed text card's texts as typed, each in its capped cell (title: the whole text)
+              tt: [...V.querySelectorAll('.adm-scard')]
+                .filter(x => /^Typed text/.test(x.textContent))
+                .flatMap(x => [...x.querySelectorAll('td .adm-cut')].map(e => e.title)),
               wide: document.documentElement.scrollWidth - innerWidth
             };
           });
@@ -6592,8 +6687,22 @@ async function sealPart(b, base, fails) {
           .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {timeout: 60000})
           .catch(() => fe.push('Pairs not drawn'));
         const pr = await seen();
+        // SHOTS: the Typed text card, light then dark (rule W17), the theme put back as it was
+        if (process.env.SHOTS) {
+          const th0 = await fq.evaluate(() => document.documentElement.dataset.theme || '');
+          for (const th of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), th);
+            const card = (
+              await fq.evaluateHandle(() => [...document.querySelectorAll('#view .adm-scard')].find(x => /^Typed text/.test(x.textContent)))
+            ).asElement();
+            if (card) await card.screenshot({path: path.join(process.env.SHOTS, `fish-typed-text-${vw}-${th}.png`)});
+          }
+          await fq.evaluate(t => (t ? (document.documentElement.dataset.theme = t) : delete document.documentElement.dataset.theme), th0);
+        }
         if (
-          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
+          // Typed text: the typed mix-ups above as typed (admin.js typedText), the long one cut in its cell
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text' ||
+          pr.tt.join() !== 'pomacentruspomacentruspomacentruspomacen' ||
           pr.pair.join() !== 'Look-alike' ||
           pr.key.join() !== 'Key group' ||
           !pr.zo ||

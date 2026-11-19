@@ -1352,6 +1352,76 @@ async function overlays(b, base) {
     if (t) fails.push(`Your feedback helped, deleted account: ${JSON.stringify(t)}`);
     await c.close();
   }
+  // The card's safety net counts from the first frame drawn, never from the card's creation (Events, 2026-11-19: "empty card
+  // closed: feedback | Thank you | Your feedback helped" on fish/progress, a start-up that took 5.6 s): a card opened while
+  // the page is busy has had no frame yet, its fade-in has not started, and the net closed a card that was only waiting to be
+  // drawn, then counted the thanks as read. Animations ON (the suite's default is reduced motion, which has no fade-in),
+  // on the fish progress page, at desktop and phone width. The thanks must be on screen after a 3 s stall, stay until read,
+  // and be counted only then; a card that really cannot be drawn (hidden by a style) is closed by the net and not counted.
+  for (const w of [1707, 390]) {
+    const [c, p] = await open({viewport: {width: w, height: w > 800 ? 900 : 800}, reducedMotion: 'no-preference'}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      if (!localStorage.getItem('reefid-sync-ach')) localStorage.setItem('reefid-sync-ach', JSON.stringify({_v: 2, _rep: ['smk1']}));
+    });
+    await c.route(
+      u => u.pathname.endsWith('/curation-play.json'),
+      async r => {
+        const res = await r.fetch(),
+          j = await res.json();
+        j.seen = {...(j.seen || {}), 'rep:smk1': 1};
+        await r.fulfill({response: res, json: j});
+      }
+    );
+    await p.goto(base + '#fish/progress');
+    await p.waitForFunction(() => window.APP_READY && SUBJ.id === 'fish' && window.ROUTED === hashNow(), null, {timeout: 30000});
+    // The card on screen first (it may have waited for the page), then taken back and opened again with the page busy for
+    // 3 s right after, as a slow start-up does: longer than the net's 2.5 s.
+    await p.waitForSelector('.unlock.helped', {timeout: 10000}).catch(() => {});
+    const r = await p.evaluate(async () => {
+      document.querySelectorAll('.unlock').forEach(d => d.ulClose && d.ulClose());
+      achHelped();
+      const shown = !!document.querySelector('.unlock.helped');
+      const t = Date.now();
+      while (Date.now() - t < 3000);
+      await new Promise(ok => setTimeout(ok, 1500));
+      return {shown, open: !!document.querySelector('.unlock.helped')};
+    });
+    const drawn = await p
+      .waitForFunction(() => cardSeen(document.querySelector('.unlock.helped')), null, {timeout: 3000})
+      .then(() => true)
+      .catch(() => false);
+    const thx0 = await p.evaluate(() => (JSON.parse(localStorage.getItem('reefid-sync-ach')) || {})._thx || null);
+    await p.waitForTimeout(700); // its OK is deaf for a moment (cardCalm)
+    await p.click('.unlock.helped [data-b="1"]').catch(() => {});
+    const thx1 = await p.evaluate(() => (JSON.parse(localStorage.getItem('reefid-sync-ach')) || {})._thx || null);
+    if (!r.shown || !r.open || !drawn || thx0 || JSON.stringify(thx1) !== '["smk1"]')
+      fails.push(`Your feedback helped, page busy at ${w} px: ${JSON.stringify({...r, drawn, thx0, thx1})}`);
+    if (w === 390) {
+      // A card that cannot be drawn: closed by the net, never counted as read, due again later.
+      await p.evaluate(() => {
+        const A = JSON.parse(localStorage.getItem('reefid-sync-ach'));
+        delete A._thx;
+        delete A._thxAt;
+        A._rep = ['smk1'];
+        localStorage.setItem('reefid-sync-ach', JSON.stringify(A));
+        const s = document.createElement('style');
+        s.textContent = '.unlock{display:none !important}';
+        document.head.append(s);
+        achReps(['smk1']);
+      });
+      await p.waitForSelector('.unlock.helped', {state: 'attached', timeout: 5000}).catch(() => {});
+      const gone = await p
+        .waitForFunction(() => !document.querySelector('.unlock.helped'), null, {timeout: 8000})
+        .then(() => true)
+        .catch(() => false);
+      const thx2 = await p.evaluate(() => (JSON.parse(localStorage.getItem('reefid-sync-ach')) || {})._thx || null);
+      if (!gone || thx2) fails.push(`Your feedback helped, a card never drawn is not counted as read: ${JSON.stringify({gone, thx2})}`);
+    }
+    await c.close();
+  }
   return fails;
 }
 

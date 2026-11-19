@@ -77,9 +77,11 @@ date, the best run kept, the current run this device's).
 **Recount.** Records carry `_v` = `ACH_V`, and `achMerge` takes no achievement from a record of another version (its
 feats yes). Raising `ACH_V` makes every device recount every subject's list once on its own progress, silently
 (`achMigrate()`, `inSubject`, `core.js` `achRecount`): each achievement tested again on the current rules, those still
-met keeping their date, the others locked again, the feats kept. A subject whose data is not in yet (a lazy-loaded
-one) keeps its achievements aside on the device (`reefid-ach-old`, cleared at sign-out) until its data comes
-(`achPending`: from `app.js` `treeLoad` and before each check), so nothing untested travels.
+met keeping their date, the others locked again, the feats kept. An achievement taken out of a list goes from every
+player at that recount (the new record holds only the list's ids): none is kept for those who had it. A subject whose
+data is not in yet (a lazy-loaded one) keeps its achievements aside on the device (`reefid-ach-old`, cleared at
+sign-out) until its data comes (`achPending`: from `app.js` `treeLoad` and before each check), so nothing untested
+travels.
 
 **A learned mark taken away** by a recalculation (`model.js` `mxRecalc`, LEARNING.md "Learned under the former model")
 keeps the achievements and tells nothing (`model.js` `MXL.QUIET`). The code for the other way is kept: with `QUIET` off,
@@ -110,7 +112,9 @@ When a report is **handled**, the player who sent it is thanked at their next vi
   deaf for 600 ms, Enter not pressing it, `cardCalm`), shown at a calm moment (`progress.js` `achHelped`,
   `helpedCalm`): never over a question, a card, the tour, a toast or the report dialog (it waits for them, `helpedMo`);
   with a game on screen, at the break at Next when no other card took it (`helpedArm`, called at the end of `quiz.js`
-  `answer`; closing it goes on to the next question).
+  `answer`; closing it goes on to the next question). A card the safety net had to close because it was never drawn
+  (`cardShow`, 2.5 s after the first frame drawn; the event `empty card closed`) is not counted as read: it is due again
+  at the next check.
 - **Never again and again**: at the first report handled, then every report handled since the last thanks in one card,
   at most once per 7 days (`core.js` `helpedDue`, `HELPED_GAP`; `helpedMark` on closing; the record's `_thxAt` is the
   time of the last thanks, the latest of two devices in `mergeAch`). Left unseen by leaving the page, it comes back.

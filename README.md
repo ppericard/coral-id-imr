@@ -80,6 +80,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
 | [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
+| [docs/ANSWERS.md](docs/ANSWERS.md) | Pierre's answers, append-only: search it before asking him anything |
 | [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
 | [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; setting up, the sheet script's redeploy and what lives outside GitHub |
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
@@ -111,12 +112,11 @@ recorded in the data files (`a` credit, `lic` licence, `o` source page).
   by IMR. Some come from [Corals of the World](https://www.coralsoftheworld.org/), credited to their photographers under
   its [terms](https://www.coralsoftheworld.org/page/terms-of-use/) (personal, non-commercial or academic use with
   citation; all other rights reserved). Not for reuse. Fish and sea slugs use no IMR lecture photos.
-- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used. It stays a cited source (its pages,
-  criteria and look-alikes); the Coral ID Key's boxes are our own drawings.
 
 **Text and data.** The coral genus list, ID tips and lecture notes come from IMR Lecture 6; the fish cues, look-alikes
 and IMR names from IMR's fish presentation and reference list (© IMR, used in the app for IMR's training, not for
-reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach).
+reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach). The
+other books, guides and papers behind a tip or a look-alike are cited where they are used.
 Taxonomy follows the World Register of Marine Species (WoRMS). Size and depth facts come from Reef Life Survey and
 FishBase, cited per species. Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).
 

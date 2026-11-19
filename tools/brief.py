@@ -4,6 +4,7 @@
   python3 tools/brief.py           full brief (the integrator runs it at each stop)
   python3 tools/brief.py --short   5 lines at most (the SessionStart hook in .claude/settings.json)
   python3 tools/brief.py --time    one line: Manila time and the Rule 0 window (the UserPromptSubmit hook; offline)
+  --time --night-due               and, once a Manila day between 04:00 and 17:30, the line saying the night report is due
   --at HH:MM                       pretend it is that Manila time (tests)
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
@@ -48,23 +49,62 @@ def left():
 
 
 # --- Rule 0 window -------------------------------------------------------------------------------------------------------
-# AGENTS.md Rule 0 (Pierre, 2026-11-15): after 17:30 Manila the integrator asks Pierre nothing; everything else goes on.
+# AGENTS.md Rule 0: after 17:30 Manila the integrator asks Pierre nothing until his first message after 04:00; everything
+# else goes on. The time alone cannot tell whether he has written yet: from 04:00 the line says so, and the integrator
+# checks that his message came after 04:00.
 
 
 def window(hm):
     m = hm[0] * 60 + hm[1]
-    if 5 * 60 <= m < 17 * 60 + 30:
-        return 'day', 'normal working day (Rule 0): Pierre may be asked until 17:30'
-    return 'quiet', 'after 17:30 (Rule 0): ask Pierre nothing; questions wait in docs/STATUS.md; all else goes on'
+    if 4 * 60 <= m < 17 * 60 + 30:
+        return 'day', 'working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30'
+    return 'quiet', ('after 17:30 (Rule 0): ask Pierre nothing until his first message after 04:00; questions wait in '
+                     'docs/STATUS.md; all else goes on')
 
 
-def time_line(at):
+def manila_now(at):
     now = datetime.now(MANILA)
     if at:
         h, m = (int(x) for x in at.split(':'))
         now = now.replace(hour=h, minute=m)
+    return now
+
+
+def time_line(at):
+    now = manila_now(at)
     name, what = window((now.hour, now.minute))
     return 'Manila %s · %s: %s' % (now.strftime('%a %d %b %H:%M'), name, what)
+
+
+# --- The night report, once a day (Pierre, 2026-11-18; the night ends with his first message after 04:00, Rule 0) ------
+# At the first prompt of a Manila day in Rule 0's day window (04:00 to 17:30), the UserPromptSubmit hook (--time
+# --night-due) adds one line: the integrator gives Pierre tools/night.py's report before anything else. In the evening
+# it says nothing (a fresh container then is no morning). Offline: a marker file in the checkout holds the day it was
+# said, so it is once a day per checkout: a second session's checkout says it again in the same day.
+
+NIGHT_MARK = os.path.join('tools', '.cache', 'night-report-day')
+NIGHT_DAY = (4 * 60, 17 * 60 + 30)  # Manila minutes of the day, end excluded: Rule 0's day window
+
+
+def night_due(at):
+    """The reminder line the first time it is called in the day window of a Manila day, else None. Never raises."""
+    now = manila_now(at)
+    if not NIGHT_DAY[0] <= now.hour * 60 + now.minute < NIGHT_DAY[1]:
+        return None
+    day, path = now.date().isoformat(), os.environ.get('BRIEF_NIGHT_MARK') or os.path.join(ROOT, NIGHT_MARK)
+    try:
+        if open(path, encoding='utf8').read().strip() == day:
+            return None
+    except OSError:
+        pass
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf8') as f:
+            f.write(day)
+    except OSError:
+        return None  # cannot remember it was said: better silent than said at every prompt
+    return ('Night report due (first message of the day): integrator, run python3 tools/night.py and give Pierre its '
+            'result first, in French, in a few lines.')
 
 
 # --- GitHub (gh api, REST) -----------------------------------------------------------------------------------------------
@@ -482,12 +522,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--short', action='store_true', help='5 lines at most')
     ap.add_argument('--time', action='store_true', help='one line: Manila time and the Rule 0 window (offline)')
+    ap.add_argument('--night-due', action='store_true', help='with --time: once a Manila day between 04:00 and 17:30, the night report line')
     ap.add_argument('--at', metavar='HH:MM', help='pretend it is this Manila time (tests)')
     a = ap.parse_args()
     if a.at and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', a.at):
         ap.error('--at takes HH:MM')
     if a.time:
         print(time_line(a.at))
+        due = night_due(a.at) if a.night_due else None
+        if due:
+            print(due)
         return
     print('\n'.join(brief(a.short, a.at)))
     sys.stdout.flush()

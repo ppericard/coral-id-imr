@@ -1456,7 +1456,8 @@ const SHARED = ['players/list', 'players/visits', 'players/groups'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights); To do › Alerts (renderAlerts: the sheet's Alerts tab, about no subject).
-const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts'];
+// Photo stats › Taxa (admin-taxa.js): the taxa out of play and why, from what the admin holds for each subject.
+const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts', 'photos/stats/taxa'];
 // A view with work of its own (options.live): had by a subject of its rank while live() says it has work, whatever
 // SUBJECTS admin pages lists; drawn by options.draw once on screen, work or not (render), so its last answer never
 // lands on "Not for … yet" (Photo review › Light proposals, admin-light.js; Cover proposals, admin-covers.js). draw()
@@ -1606,7 +1607,9 @@ const GROUPS = [
         'Photo stats',
         [
           ['overview', 'Overview'],
-          ['difficulty', 'Difficulty']
+          ['difficulty', 'Difficulty'],
+          // The taxa out of play and why (admin-taxa.js renderTaxa): every subject's (EVERY).
+          ['taxa', 'Taxa']
         ]
       ]
     ]
@@ -3684,6 +3687,9 @@ function render() {
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
   if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
   if (cur === 'photos/stats/overview') return renderPstats();
+  // Opened from its address, the page can be drawn before admin-taxa.js is in (as a journey, above).
+  if (cur === 'photos/stats/taxa')
+    return typeof renderTaxa === 'function' ? renderTaxa() : addEventListener('load', () => render(), {once: true});
   if (modeKey() === 'stats') return renderStats();
   if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
   // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js).
@@ -4462,6 +4468,7 @@ function toggleHelp() {
             'players/groups': 'groups',
             'photos/stats/difficulty': 'statsph',
             'photos/stats/overview': ASUBJ.sheets ? 'fishpstats' : 'pstats',
+            'photos/stats/taxa': 'taxa',
             'analyses/difficulty/pairs': 'statsconf',
             'analyses/difficulty/heatmap': ASUBJ.sheets ? 'fishheat' : 'statsheat',
             'analyses/learning/answer-log': 'statslog',
@@ -6258,7 +6265,7 @@ function montPick(p) {
     fa = mine && LA.find(x => x.f === m.a),
     fb = mine && LB.find(x => x.f === m.b);
   const gap = (x, y) => (v === 'all' ? 4 * Math.abs(ZOOM[viewOf(p.A, x)] - ZOOM[viewOf(p.B, y)]) : 0);
-  // The site's automatic pick (learn.js photoPair): same growth form first, searched in every photo ("x" matches
+  // The site's automatic pick (model.js photoPair): same growth form first, searched in every photo ("x" matches
   // nothing), then nearest the front, then nearest zoom; with no same form, the best pair among the first 6.
   let best = null;
   (fa ? [fa] : LA).forEach((x, i) =>
@@ -11306,6 +11313,39 @@ function noChoiceMixups(R) {
   });
   return out;
 }
+// What the typed answers' raw text says (the sheet's Typed and Retyped right, readAnswers rows 15 and 16; the name study's
+// question g, docs/reviews/2026-11-05-name-confusion-study.md), trusted players only as the pairs: n typed answers, step
+// [spelling steps asked, retyped exactly], and the near-misses, each [shown, text as typed (lower case, trimmed), read as,
+// retyped: 1 exactly, 0 not, null no step, n], the most frequent first: a close typo of the unit shown (right, its spelling
+// step asked) or another unit's name (a typed mix-up). "I don't know" and exact answers are not near-misses. A removed
+// account's answers (anonymous flag 2: deleted or archived, as goneRow reads it) never show here (rule D7), though they
+// still count in the pooled pairs.
+function typedText(R) {
+  const tr = trustOf(R),
+    out = {n: 0, step: [0, 0], near: []},
+    N = {};
+  R.forEach(r => {
+    if (!r[2] || r[11] === 2 || !tr[r[0]] || fmtOf(r[5], 0) !== 'typed') return;
+    out.n++;
+    const sp = r[16] === 0 || r[16] === 1 ? r[16] : null,
+      a = r[3] || '';
+    if (sp !== null) (out.step[0]++, (out.step[1] += sp));
+    if (r[4] ? sp === null : !a || a === r[2]) return;
+    const k = JSON.stringify([
+      r[2],
+      String(r[15] || '')
+        .trim()
+        .toLowerCase(),
+      a,
+      sp
+    ]);
+    N[k] = (N[k] || 0) + 1;
+  });
+  out.near = Object.entries(N)
+    .map(([k, n]) => [...JSON.parse(k), n])
+    .sort((x, y) => y[4] - x[4] || (x[0] + x[1] < y[0] + y[1] ? -1 : 1));
+  return out;
+}
 // answerlog: end
 // Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log
 // (analyses/learning/answer-log: what the answers say, live; one role per admin page): one reading of the answer log,
@@ -11978,7 +12018,9 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 // pair's rate = mixed up / offered together (needs the choices logged); its score starts from a prior (declared
 // look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps by the same score
 // (app.js confOf, which also gives a shared growth form a slightly higher start). Answers logged without their choices
-// only add to "Before v10" (mix-ups without the choices offered); typed answers, which offer none, to "Typed".
+// only add to "Before v10" (mix-ups without the choices offered); typed answers, which offer none, to "Typed", and each
+// typed mix-up also counts in its pair as offered once and mixed up (core.js confAdd, as the sheet's ?stats=1 conf the
+// game plays with), so a pair's Offered and Mixed hold its typed mix-ups while A→B and B→A count the choices only.
 // The subject on screen's (the Corals | Fish switch, rule A4; fish admin at parity): its answers, its units
 // (a coral genus's look-alikes and family from data.json, another subject's from its data as fishAdmin reads them:
 // fishUnitRec), its photos (the corals' with their view, another subject's as fishAdmin reads them, each under its unit)
@@ -12036,7 +12078,8 @@ function statsConf() {
       .sort((x, y) => y[1] - x[1])
       .slice(0, 15);
   const OLD = top15(NC.old),
-    TYP = top15(NC.typed);
+    TYP = top15(NC.typed),
+    TT = ofAns('typedtext:' + S.id, () => typedText(R));
   // Per photo, colony and species: answers where the photo was shown, the wrong ones, and what it was taken for most.
   // Millepora's and the bonus genera's photos (DATA.x.gen) are played too (Millepora a slate genus, the others once on).
   // Another subject's photos: as fishAdmin reads them, each under its unit (its family).
@@ -12107,6 +12150,17 @@ function statsConf() {
             }
           ).join('')}</tbody></table></section>`
         : '';
+  // The typed near-misses as typed (typedText): a typo of the unit shown with its spelling step (✓ retyped exactly, ✗ not),
+  // or another unit's name. The raw text is shown here only, live, never in a stored report.
+  const ttCard = TT.near.length
+    ? `<section class="adm-scard"><h3>Typed text</h3><table class="adm-tbl"><thead><tr><th>Shown</th><th>Typed</th><th>Read as</th><th>n</th></tr></thead><tbody>${TT.near
+        .slice(0, 15)
+        .map(
+          ([g, t, a, sp, n]) =>
+            `<tr><td>${nm(g)}</td><td><span class="adm-cut" title="${esc(t)}">${esc(t || '–')}</span>${sp === null ? '' : sp ? ' <span title="Retyped exactly">✓</span>' : ' <span title="Not retyped exactly">✗</span>'}</td><td>${a === g ? '=' : nm(a)}</td><td class="n">${n}</td></tr>`
+        )
+        .join('')}</tbody></table></section>`
+    : '';
   $v.innerHTML =
     head +
     kpis([
@@ -12114,13 +12168,14 @@ function statsConf() {
       ['Pairs', PR.length],
       ['Traps (score ≥ ' + CONF.TRAP + ')', PR.filter(p => p.sc >= CONF.TRAP).length],
       ['Not declared', surprise],
-      ['Look-alikes from the data', PR.filter(p => p.dl).length]
+      ['Look-alikes from the data', PR.filter(p => p.dl).length],
+      ...(TT.step[0] ? [['Spelling steps retyped exactly', `${TT.step[1]}/${TT.step[0]}`]] : [])
     ]) +
     `
     <div class="adm-sgrid">
     <section class="adm-scard wide"><h3>Pairs</h3>${
       PR.length
-        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Pair</th><th>Starts as</th><th title="Offered together">Offered</th><th title="Mixed up">Mixed</th><th>Rate</th><th></th><th title="Starts at the prior, follows the answers. Traps from ${CONF.TRAP}">Score</th><th title="First taken for the second">A→B</th><th title="Second taken for the first">B→A</th></tr></thead><tbody>
+        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Pair</th><th>Starts as</th><th title="Offered together; a typed mix-up counts as offered once">Offered</th><th title="Mixed up, typed mix-ups included">Mixed</th><th>Rate</th><th></th><th title="Starts at the prior, follows the answers. Traps from ${CONF.TRAP}">Score</th><th title="First taken for the second">A→B</th><th title="Second taken for the first">B→A</th></tr></thead><tbody>
       ${PR.slice(0, 60)
         .map(
           p =>
@@ -12132,7 +12187,7 @@ function statsConf() {
     <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', phCell)}</section>
     <section class="adm-scard"><h3>${esc(S.admin.obs || 'Colonies')}</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener">${gnm(o.g)} ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
     <section class="adm-scard"><h3>Species</h3>${tbl(SP, 'Species', o => `<i>${esc(o.k)}</i>`)}</section>
-    ${noCh(TYP, 'Typed', 'Typed as')}${noCh(OLD, 'Before v10', 'Answered')}
+    ${noCh(TYP, 'Typed', 'Typed as')}${ttCard}${noCh(OLD, 'Before v10', 'Answered')}
     </div>`;
   bindStats();
   // another subject's photos: enlarged alone, captioned with their unit's name

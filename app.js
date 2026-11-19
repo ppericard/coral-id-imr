@@ -2193,7 +2193,7 @@ const UNITS = {
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
     names: () => typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX),
     norm: typeNorm,
-    // Look-alike pairs for the duels (quiz.js duelPick): the classic pairs (learn.js pairs), and Millepora and the bonus
+    // Look-alike pairs for the duels (quiz.js duelPick): the classic pairs (model.js pairs), and Millepora and the bonus
     // genera with the slate look-alike the Coral Finder names.
     pairs: () => [
       ...pairs(),
@@ -3196,15 +3196,21 @@ function cardShow(o) {
   document.body.appendChild(d);
   // A safety net (a dimmed screen with no card on it would leave the game stuck): a card still invisible after a moment (no panel drawn, no height, off screen or never faded in) closes by itself, so the
   // player is never locked behind an empty backdrop, and the event log names it so the cause can be found.
+  // The 2.5 s count starts at the first frame drawn after the card is in (two animation frames), never at its creation: a
+  // card opened while the page is busy (a slow start-up: the first page comes after seconds of work) or hidden (a
+  // background tab) has had no frame yet, so its fade-in has not started (opacity 0) and the net would close a card that
+  // is only waiting to be drawn ("empty card closed: feedback | Thank you", 2026-11-19, fish/progress). A hidden page
+  // draws no frame: the count starts when it is visible again.
   const check = () => {
     if (shut || !d.isConnected) return;
-    // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: check again later.
-    if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return setTimeout(check, 2500);
+    // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: count again from the next frame.
+    if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return arm();
     if (cardSeen(d)) return;
     if (typeof ev === 'function') ev('err', {msg: 'empty card closed: ' + d.dataset.info});
     close('empty');
   };
-  setTimeout(check, 2500);
+  const arm = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(check, 2500)));
+  arm();
   return d;
 }
 // Leaving the app (or the tab) while a card is open (to tell a player stuck behind a card from one who just left): the
@@ -3819,33 +3825,39 @@ const draftCand = () =>
         .then(j => j.cand || {})
         .catch(() => ({}))
     : Promise.resolve({});
-// Load order in tiers (docs/ARCHITECTURE.md "Load order in tiers"; files in index.html, loadTier), each set up once in
+// Load order in tiers (docs/spec/loading.md "Load order in tiers"; files in index.html, loadTier), each set up once in
 // (SETUP): 1 Home (data.json, curation, BOOT); 2 the quiz (with forms, quality, picks: the data rebuilt); 3 its next
-// photos (planNext); 4 the sheet's reads; 5 the rest, then the service worker (earlier, its install would share the
-// line). need(N) brings tiers 2..N; a page opened early asks for its own (route), a link at start-up too.
+// photos (planNext), then learn.js; 4 the sheet's reads; 5 the rest with proto/lab.css, then the service worker (earlier,
+// its install would share the line). need(N) brings tiers 2..N; a page opened early asks for its own (route), a link at
+// start-up too.
 let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
-  // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
-  // achievements 2 (progress.js is small and the quiz needs it); the live mode 2 (live.js, with the quiz's engine); the
-  // Tools and the Coral ID Key (proto/) 5.
+  // The tier each page needs: Home and About 1; the quiz, the duels, My progress, the leaderboard and the achievements 2
+  // (progress.js is small and the quiz needs it); the live mode 2 (live.js, with the quiz's engine); the Learn pages 3
+  // (learn.js: the Genera page, the sheets, Look-alikes, a comparison); the Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
     !h || h === 'home' || h === 'about' || h.startsWith('delete-account')
       ? 1
-      : /^(quiz|genera|g-|cmp|progress|board|ach|live)/.test(h)
+      : /^(quiz|progress|board|ach|live)/.test(h)
         ? 2
-        : 5,
+        : /^(genera|g-|cmp)/.test(h)
+          ? 3
+          : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
-const tier2json = () => J2 || (J2 = Promise.all([forms(), json('quality.json?v=3'), json('picks.json?v=1')]));
+// calibration-set.json: the photos the draw shows a little more often until each is rated (model.js CALSET, setBonus).
+const tier2json = () =>
+  J2 || (J2 = Promise.all([forms(), json('quality.json?v=3'), json('picks.json?v=1'), json('calibration-set.json?v=1')]));
 const SETUP = {
-  2: ([f, q, k]) => {
+  2: ([f, q, k, cs]) => {
     FORMS = f;
     CFMAP = f.cf;
     AUTOQ = q.q || {};
     PICKS = k;
+    CALSET = cs || {};
     build();
     loadStats();
     // progress.js comes with the quiz (answers given before it would lose their achievement bookkeeping): the achievement
@@ -3865,7 +3877,7 @@ const SETUP = {
     subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
     installNudge(); // install the app on the home screen: once, at a calm moment on Home
     prog();
-    window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
+    window.APP_READY = true; // Home, the quiz and My progress work (tests and tools/perf.js wait for this)
   },
   4: () => {
     syncPull();
@@ -3879,6 +3891,19 @@ const SETUP = {
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 };
+// A later tier's stylesheets (index.html <link data-css=N>, no rel: nothing fetched) become stylesheets where they stand,
+// so the cascade keeps its order; the tier waits until each has loaded or failed (the inline loader tries a failed one
+// again, as it does Home's).
+const tierCss = n =>
+  Promise.all(
+    [...document.querySelectorAll(`link[data-css="${n}"]:not([rel])`)].map(
+      l =>
+        new Promise(ok => {
+          l.onload = l.onerror = ok;
+          l.rel = 'stylesheet';
+        })
+    )
+  );
 function need(n) {
   if (n <= HAVE) return Promise.resolve();
   if (!TIERP[n])
@@ -3887,7 +3912,8 @@ function need(n) {
       window.loadTier ? loadTier(n) : null,
       n === 2 ? tier2json() : null,
       // The subject's whole data (fish: fish-game.json, after Home's files): the quiz and the Learn pages wait for it.
-      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null
+      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null,
+      tierCss(n)
     ])
       .then(a => SETUP[n] && SETUP[n](a[2]))
       .then(() => (HAVE = Math.max(HAVE, n)));

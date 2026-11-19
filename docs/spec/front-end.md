@@ -76,7 +76,7 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   still needs (`myProg()`, the same text as the My progress tooltip).
 - **Learn › Look-alikes** (`#learn/look-alikes`): a deck of about 20 classic pair montages (`classics()`, `montage()`);
   `#learn/compare/A/B` is the pair comparison, which accepts Millepora and the bonus genera (`gameGenus()`). The two
-  photos come from `learn.js` `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js`
+  photos come from `model.js` `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js`
   `answer`) also uses: the same growth form first (searched in every photo of both lists; `x` matches nothing), then
   nearest the front, then the nearest zoom level; with no same-form pair, the best pair among the first 6 of each list.
 - **Practice › Quiz** (`#practice/quiz`, tab "Quiz"): the adaptive photo quiz, with typed answers and duels slipped

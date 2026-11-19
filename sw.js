@@ -38,6 +38,7 @@ const SHELL = [
   'flag.js?v=11',
   'quality.json?v=3',
   'picks.json?v=1',
+  'calibration-set.json?v=1',
   'data.json?v=38',
   'fish.json?v=6',
   'fish-photos.json?v=6',

@@ -11,6 +11,7 @@ const {
   genusOffsetsOf,
   GENUS_K,
   trustOf,
+  confAdd,
   confusionOf,
   confScore,
   CONF,
@@ -30,7 +31,10 @@ const {
   memRecalc,
   PHOTO_BASE,
   photoLocal,
+  photoOnR2,
+  photoHasR2,
   photoFallback,
+  photoRetry,
   photoOnline,
   photoFileOf,
   photoAway,
@@ -220,6 +224,45 @@ test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the di
     d1 = C.dir['Acropora|Montipora'] || [0, 0],
     d2 = C.dir['Montipora|Acropora'] || [0, 0];
   assert.deepStrictEqual([d1[0] + d2[0], d1[1] + d2[1]], [off, mix]);
+});
+
+test('a typed miss counts in the pooled pairs as offered once and mixed up, in core.js and Code.gs stats_ alike', () => {
+  const s = loadCodeGs();
+  let n = 0;
+  const send = (name, g, a, m, ch = '') =>
+    s.post({
+      name,
+      pin: '1234',
+      data: {},
+      summary: {},
+      answers: [{id: 't' + n++, t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(), g, a, ok: a === g ? 1 : 0, m, ph: 'x-1', ch}]
+    });
+  // Ana is trusted (12 right four-choice answers), Bob is not (too few answers).
+  for (let i = 0; i < 12; i++) send('Ana', 'Porites', 'Porites', 'quiz', 'Porites Favites Montipora Pavona');
+  send('Ana', 'Acropora', 'Montipora', 'quiz|t'); // a typed miss: Acropora|Montipora [1, 1]
+  send('Ana', 'Montipora', 'Acropora', 'quiz|t|x'); // an exam question typed, the other way: [2, 2]
+  send('Ana', 'Acropora', 'Acropora', 'quiz|t'); // typed right: nothing in play
+  send('Ana', 'Pavona', '', 'quiz|t'); // "I don't know": no pair
+  send('Ana', 'Pavona', 'Porites', 'quiz', 'Pavona Porites Favites Montipora'); // from choices, as before
+  send('Bob', 'Favites', 'Pavona', 'quiz|t'); // untrusted: nothing
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows,
+    C = confusionOf(rows);
+  assert.deepStrictEqual(C.pair, s.get({stats: '1'}).conf, 'the same pooled pairs in the admin and the sheet');
+  assert.deepStrictEqual(C.pair['Acropora|Montipora'], [2, 2]);
+  assert.deepStrictEqual(C.pair['Favites|Pavona'], [1, 0], "an untrusted player's typed miss counts nowhere");
+  assert.deepStrictEqual(C.pair['Pavona|Porites'], [13, 1], 'twelve offers beside Porites shown, one mixed up beside Pavona shown');
+  assert.ok(!('Acropora|Montipora' in C.dir) && !('Montipora|Acropora' in C.dir), 'the direction counts the choices only');
+  assert.deepStrictEqual(
+    {...C.old},
+    {'Acropora|Montipora': 1, 'Montipora|Acropora': 1},
+    'the typed mix-ups stay among those with no choices'
+  );
+  // confAdd alone: no unit shown, nothing; a miss with no choices and no |t (the oldest rows) is no pair.
+  const O = {};
+  confAdd(O, '', 'Acropora', 0, 'quiz|t', '');
+  confAdd(O, 'Pavona', 'Acropora', 0, 'quiz', '');
+  confAdd(O, 'Pavona', 'Pavona', 0, 'quiz|t', '');
+  assert.deepStrictEqual(O, {});
 });
 
 test('confScore starts at the prior and follows the answers', () => {
@@ -1137,6 +1180,99 @@ test('photos from R2: the R2 address made local again, an element pointed at the
   assert.strictEqual(f.a.style, "--qbg:url('img/acropora-wide-1-s.webp')");
   assert.strictEqual(photoFallback(mk({src: inat})), false, 'nothing to do on a photo not from R2');
   assert.strictEqual(photoFallback(null), false);
+});
+
+test('photos from R2: an address is on R2 only when its parsed origin is R2, never because R2 appears in it', () => {
+  const host = new URL(PHOTO_BASE).hostname,
+    file = 'img/acropora-wide-1-s.webp';
+  // On R2: the base and anything under it, with a query or a fragment, the host in capitals (URL lowers it).
+  assert.strictEqual(photoOnR2(PHOTO_BASE), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file + '?c=0_0_1_1.2#r1'), true);
+  assert.strictEqual(photoOnR2(`https://${host.toUpperCase()}/${file}`), true);
+  // Not on R2: look-alike hosts, R2's address in another URL's path, query or fragment, R2 before an @ (the user part),
+  // another scheme or port, a relative or unparsable address, anything not a string.
+  const lookAlikes = [
+    `https://evil-r2.example/${file}`,
+    `https://r2host.evil.com/${file}`,
+    `https://${host}.evil.com/${file}`,
+    `https://evil${host}/${file}`,
+    `https://evil.com/${PHOTO_BASE}${file}`,
+    `https://evil.com/?u=${PHOTO_BASE}${file}`,
+    `https://evil.com/#${PHOTO_BASE}${file}`,
+    `https://${host}@evil.com/${file}`,
+    `https://${host}:pw@evil.com/${file}`,
+    `http://${host}/${file}`,
+    `https://${host}:8443/${file}`,
+    file,
+    `//${host}/${file}`,
+    'https://',
+    'not a url ' + PHOTO_BASE,
+    '',
+    null,
+    undefined,
+    {toString: () => PHOTO_BASE}
+  ];
+  for (const u of lookAlikes) assert.strictEqual(photoOnR2(u), false, String(u));
+  // In a string (an src, a srcset, an inline style): true when one of its addresses is on R2.
+  const R = PHOTO_BASE + 'img/acropora-wide-1';
+  assert.strictEqual(photoHasR2(`${R}-s.webp 480w, ${R}-m.webp 960w`), true);
+  assert.strictEqual(photoHasR2(`--qbg:url('${R}-s.webp')`), true);
+  assert.strictEqual(photoHasR2(`img/x-s.webp 480w, ${R}-m.webp 960w`), true);
+  for (const u of lookAlikes.slice(0, 10)) {
+    assert.strictEqual(photoHasR2(u), false, u);
+    assert.strictEqual(photoHasR2(`--qbg:url('${u}')`), false, u);
+    assert.strictEqual(photoHasR2(`${u} 480w, img/x-m.webp 960w`), false, u);
+  }
+  assert.strictEqual(photoHasR2(null), false);
+  // photoFallback leaves an element with only look-alike addresses as it is.
+  const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = mk({src: u, srcset: `${u} 480w`, 'data-lo': u, style: `--qbg:url('${u}')`}),
+      before = {...el.a};
+    assert.strictEqual(photoFallback(el), false, u);
+    assert.deepStrictEqual(el.a, before, u);
+  }
+  // photoRetry: no retry (false, nothing marked) for an address not on R2; one retry for an R2 address, the probe asked
+  // from that same address after PHOTO_RETRY ms (timer and Image stubbed: node has neither a page nor its loads).
+  const img = (src, currentSrc) => ({...mk({src}), currentSrc, dataset: {}});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = img(u, u);
+    assert.strictEqual(
+      photoRetry(el, () => assert.fail('no fallback')),
+      false,
+      u
+    );
+    assert.deepStrictEqual(el.dataset, {}, u);
+  }
+  const el = img('img/x-m.webp', '');
+  assert.strictEqual(
+    photoRetry(el, () => {}),
+    false,
+    'a site photo: no R2 retry'
+  );
+  const timers = [],
+    probes = [],
+    keep = {setTimeout: global.setTimeout, Image: global.Image};
+  global.setTimeout = f => timers.push(f);
+  global.Image = function () {
+    probes.push(this);
+  };
+  try {
+    const r2 = img(R + '-m.webp', R + '-m.webp');
+    assert.strictEqual(
+      photoRetry(r2, () => {}),
+      true
+    );
+    assert.strictEqual(r2.dataset.r2try, '1');
+    timers.forEach(f => f());
+    assert.strictEqual(probes.length, 1);
+    assert.strictEqual(probes[0].src, R + '-m.webp');
+  } finally {
+    global.setTimeout = keep.setTimeout;
+    if (keep.Image === undefined) delete global.Image;
+    else global.Image = keep.Image;
+  }
 });
 
 // Photos out of the repo: when R2 fails, a photo with an online original

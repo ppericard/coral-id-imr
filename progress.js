@@ -1080,6 +1080,9 @@ function helpedShow(brk) {
     onClose: how => {
       helpedUp = false;
       if (how === 'route') return void setTimeout(achHelped, 300); // left unseen: back on the next page
+      // Closed by the safety net (cardShow: never drawn): not read, so not thanked; due again at the next visit (no retry
+      // now: a card that cannot be drawn would loop).
+      if (how === 'empty') return void (brk && route());
       const A = store.get(ACHK, {}) || {};
       helpedMark(A, ids, Date.now());
       store.set(ACHK, A);

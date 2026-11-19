@@ -5810,6 +5810,90 @@ dropped by the players' answers.
 - **The fish** keep their statistics on the sheet only (no `SUBJECTS` `stats`): reading them in the app is the admin
   plan's PR 11 (ROADMAP), a change of their draw to check on their log (rule L12).
 
+### The fish's own pooled statistics (2026-11-18, PR #1148)
+
+The app reads the fish's photo ratings, unit offsets and pairs from the sheet (LEARNING.md "Each subject's own
+statistics"), as the sea slugs' above. Pierre, 2026-11-19 05:13 Manila (Q413): merge, with no further simulation.
+
+- **What the real reply moves** (`?stats=1&s=fish` read 2026-11-18, `av=tool`, no player in it; 2,163 rated photos, 81
+  units, 1,154 pairs): the photo ratings lead nowhere yet (median 1 weighed answer a photo, none over 5, the weight of the
+  judged-ease prior `PDIFF.W`), so a fish photo's difficulty stays its prior for now. The unit offsets do move: 34 units
+  hold 20 or more weighed answers, the offsets run from −1.14 to +1.26 (10th to 90th percentile −0.52 to +0.46), against
+  a judged-ease term that is small per unit (mean +0.06, sd 0.14, correlation −0.24 with the offset over the 32 units
+  that have both: no sign that the two count the same thing twice). 206 pairs were offered 8 times or more, 59 20 times
+  or more, 7 of those at or over `CONF.TRAP` (the most: Emperors and Snappers, 26 mix-ups in 97 offers). The memory
+  offsets (`mem` 0 / −0.87 / −0.41 / −1.52, `memn` 2,627 / 15 / 66 / 2: three of the four buckets on under 70 answers)
+  and the format offsets are not read.
+- **Checks** (rule L11, level 1: one subject, one input the corals and the sea slugs already use). Declared before
+  running: primary `know@300:up` (none expected), the guardrails of `tools/learncmp.js` non-inferiority.
+  `tools/learnsim.js --subject fish --questions 300`, the five fish profiles, before = no statistics (the judged-ease
+  priors alone), after = that reply as the photo statistics (`--stats`; the fish's memory and format offsets in it are
+  not read), the learner's true difficulties the same reply in both arms (`--truth`: a photo not rated takes its unit's
+  offset), so the learner's photo difficulties do not move with the app's estimate (a reading in its favour; the
+  learner's wrong choices still follow the app's pooled pairs, which the after arm changes). Look 1, seeds 1-5 (25
+  pairs): knowledge held on every profile; the bar's error E = bar − D* breached for the strong RA (+0.050 [+0.090],
+  margin +0.030) and was unclear for the others, so one step up: look 2, declared before it ran, seeds 1-15 (75 pairs,
+  `--looks 2`). True knowledge at 300 answers, after − before: +0.001 / +0.003 / −0.001 / −0.001 / −0.000 (beginner,
+  casual diver, lecture RA, strong RA, expert), every bound held, the primary no clear difference (T −4.24, p 0.63).
+  Units at Open Water +0.6 / +2.2 / +2.0 / +1.9 / +0.7, held; units met held; answers to the first Open Water unit fewer
+  or equal (−1.2 / −17.9 / −4.1 / −5.5 / −6.0). E stays breached for the strong RA (+0.034 [+0.054], margin +0.030) and
+  unclear for the others: E is negative everywhere (the bar reads below the learner's true knowledge: −0.367 → −0.333 for
+  the strong RA), so the change brings the bar closer to it, yet the guardrail was declared for the other side. Plateau
+  of the shown score unclear for the strong RA and the expert (+8 [+13], +5 [+10], margin +8 / +8). These runs predate
+  the swap of a shared photo's unit offset (LEARNING.md "Hierarchical photo Elo"), which the reply they read did not
+  allow. Codex asked for level 2; Pierre answered Q413 with the merge and no simulation (the change brings the fish in
+  line with the corals).
+- **The real log (rule L12) was not run**: the draw cannot be replayed (the log holds the questions asked), the fish
+  ratings and offsets were fitted on the very answers a recomputed expectation would be scored on (an in-sample
+  reading), and the Answers tab is too large to bring through the connector into a session. One real-log number the
+  reply holds (in-sample): the fish answered 4-choice questions better than the expectation the app logged with them
+  (`fmt` k4 +0.71 logits on 1,929 answers), and the answer-weighted mean unit offset is −0.18 (photo difficulty −0.19):
+  the same direction, the unit offsets taking back about a quarter of that gap, the rest staying in the format offset
+  the fish do not use yet. To do once fish answers have been drawn under the new numbers: a next-answer log-loss by time
+  (ratings fitted on the first part, scored on the rest) on a saved extract.
+
+### Typed mix-ups in the pooled pairs (2026-11-18, PR #1116)
+
+ROADMAP "Typed answers, what is left"; [decision](../decisions/2026-11-18-typed-answers-rest.md). A typed answer that
+names another unit is a mix-up the player produced with no choice to prompt it. The player's own record already counted
+it (`s.conf`, and `pairConf` takes a mix-up with no offer as offered once); the pooled pairs (`?stats=1` `conf`) did
+not, since they counted only the units offered among the choices. Now `core.js` `confAdd`, the one rule of `Code.gs`
+`statsStep_` and the admin's `confusionOf`, counts each trusted player's typed mix-up as one offer of the pair and one
+mix-up (LEARNING.md "Confusions"). Counting every unit as offered on every typed question would bury the pairs under
+offers no player weighed; counting the mix-up without its offer would make a typed mix-up weigh more than a picked one.
+
+- **The real log of 2026-11-18** (rule L12; 3,491 coral and 2,710 fish answers; 70 and 61 typed, 13 and 5 of them
+  another unit's name, all by trusted players, 3 players each): 12 coral pairs and 5 fish pairs move, and read by the
+  game itself (`model.js` `pooledConf` on each pair's real prior, `isDataLook`, `groupMap`, in the rated world's
+  engine) none crosses `CONF.TRAP` and none becomes a look-alike from the data (the largest: *Seriatopora* /
+  *Stylophora* 0.135 → 0.153 on [84, 10] → [86, 12]; *Echinopora* / *Porites* 0.043 → 0.103 on [7, 0] → [8, 1]; the
+  fish *Emperors* / *Groupers* 0.017 → 0.083); 10 of the 12 coral pairs come from one player. One confusion group
+  changes: the declared pairs merge the most confused first (GROUP.MAX 3), and *Acropora* / *Anacropora* (0.099 →
+  0.108) now comes before *Acropora*'s other declared pairs, so *Acropora* groups with *Anacropora* instead of
+  *Astreopora* and *Cyphastrea* (which stay a group of two); the fish groups are unchanged. A pick between two choices
+  on the same pair could flip it as well: the order is that close.
+- **The full replay**: a coral row logged before its scoring record (before 2026-11-06; 2,053 of the 3,491 coral rows)
+  rebuilds its mix-ups term and look-alike test from the pooled pairs; with the new pairs 15 of 490 player-genus bars
+  move, by at most 0.36 points (one day of new answers moves 21 bars, by up to 0.52 points). A row with its scoring
+  record replays the same whatever the pairs hold (`tests/scorer.test.js`). The PR first appended no rules version; the
+  integrator's call of 2026-11-19 (rule D5) appended coral rules version 11, so every coral player is replayed once,
+  silently (rule D6). The fish and the sea slugs replay with no pooled pairs: no rules version for them.
+- **Level 1** (rule L11; the app world sees the change only through its stats snapshot: learnsim plays with fixed
+  pooled stats and its typed answers never reach them): `tools/learnsim.js` the four profiles × 5 seeds × 300 questions
+  with the pooled stats of the real log before and after (the same photo ratings, memory and genus offsets),
+  `tools/learncmp.js`: every guardrail held or unclear, none breached (true knowledge at 300 within 0.006 for every
+  profile); unclear: the lecture RA's bar against true knowledge +0.025 [+0.062], the expert's units at Open Water −1.0
+  [−2.5], the lecture and strong RA's longest plateau, the beginner's units met at 100 −1.4 [−2.3]. Outside the
+  guardrails, the one difference whose bounds excluded zero: the expert's right % over answers 200-300, 95.2 → 92.2
+  (−3.0 [−5.1, −0.9]; no margin is set for it).
+- **Level 2** (2026-11-19, declared before running): the app world, corals, the four profiles × 20 fresh seeds (5-24),
+  300 questions, before = the merge-base with that day's `?stats=1`, after = the same snapshot plus every trusted typed
+  mix-up added by `confAdd`, guardrails only, `--looks 2`. No guardrail breached; every cell held except the strong RA's
+  longest plateau, 29 → 34 answers, +5 [+11] against a margin of +6 (unclear on the last declared look). The cells
+  unclear at level 1 are held; the expert's −3.0 is not reproduced (95.0 → 95.2, +0.1 [−0.6, +0.8]). True knowledge at
+  300 within 0.005 for every profile. The rated world was not run: it sets no pooled pairs (`tools/ratedworld.js`). Not
+  simulated: the fish, whose app reads its own pooled pairs since PR #1148 (their replay reads none).
+
 ### Photo exposure (2026-11-06, Q187-Q190; fish too)
 
 Pierre's answers to the photo exposure study (docs/reviews/2026-11-06-photo-exposure-study.md, PR #670: 19% of the coral
@@ -7323,3 +7407,15 @@ a player's first 10,000 answers are on such units (rated world, 10 seeds, the IM
 cuts the answers on photos under ease 4 by about 30% over those 10,000 (IMR RA 5,582 → 3,904), not only in the first 300
 questions: the rating of the hard photos (Q252) slows for as long as the tree keeps opening units. In the rated world
 the learner learns by the number of answers, so its unchanged knowledge says nothing about whether easier photos teach less.
+
+## The calibration set: the declared run and the dropped variants (2026-11-19)
+
+Moved from LEARNING.md "The calibration set" (#1130), which says what the code does now.
+
+- **The run as declared measured nothing**: `--truth gen` tells the app that every photo has 20 answers (learnsim's
+  `PSTAT` of that world), so no member is under its goal and the factor is 1 everywhere; both files were identical. The
+  same check without `--truth gen` (the learner reads the app's own photo difficulty, learnsim's default; the sheet's
+  real counts) is the one in LEARNING.md.
+- **Two earlier variants, dropped**: ×2 on every unit (share 4.17% → 5.94%, but the beginner met 2.4 fewer genera at
+  300 and reached its first Open Water 44 answers later) and held units only (share 5.21%, the beginner's true
+  knowledge at 300 down 0.023 on seeds 6-20). Both breached a guardrail; the built version is in LEARNING.md.

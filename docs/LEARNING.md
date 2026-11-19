@@ -256,6 +256,9 @@ The photos of a question on unit n come from `model.js` `photoSet`:
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
+- **No photo twice in a few questions.** A colony shown or planned in the session's last `RECENT` (10) questions waits
+  while the unit has another to show (`model.js` `SEENQ`, `seenAdd`, `leastRecent`, read by `photoSet` and `examSet`;
+  never leaving only colonies the draw holds back). In memory only. How and why: docs/decisions/2026-11-19-no-photo-twice.md.
 - **Online calibration.** A photo with few answers from all the players is drawn more often, × (1 + `CAL.B` /
   (1 + answers / `CAL.N`)) (`model.js` `calBonus`), multiplying the targeting, never replacing it. A share `CAL.RATE` of
   the questions on a unit the player holds (met, not shaky), never in a comeback, are calibration questions: one view
@@ -371,7 +374,7 @@ without cm counts as the median.
 
 A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
 card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
-look-alike of …", `learn.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+look-alike of …", `model.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
 
 ### Confusion groups
 
@@ -879,8 +882,10 @@ A photo's difficulty is its unit's offset G, shared by every photo of the unit, 
 n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start
 at 0, so a photo nobody has answered sits at its unit's offset. A photo's unit is the unit shown (every photo of a
 question is of one colony, rule P4), so no data file or per-unit code is needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
-answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
-time.
+answers, unit]}`, the unit whose offset G is in that total, from v189) and the offsets in `gd` (`{unit: [offset,
+weighed answers]}`); 0 is an average photo met for the first time. When the unit asked is not the one that last rated
+the photo (a fish photo shown at several ranks; a coral genus moved or renamed), the app swaps in the asked unit's
+offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
@@ -943,9 +948,10 @@ below (the corals and the fish) are in the notebook.
 
 ### Confusions
 
-`conf` holds per pair of units (A before B alphabetically) [offered together, mixed up], counted on the trusted answers
-that logged their choices: each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
-answer given (`core.js` `confusionOf` counts the same, and also by direction for the admin). The app turns them into
+`conf` holds per pair of units (A before B) [offered together, mixed up], counted on the trusted answers (`core.js`
+`confAdd`): each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the answer given; a
+typed answer naming another unit is one offer and one mix-up. `core.js` `confusionOf` counts the same, and by
+direction (choices only) for the admin. The app turns them into
 confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js` `pooledConf`,
 `core.js` `confScore`: "What a question shows", "Known mix-ups").
 
@@ -965,8 +971,11 @@ without `s`). The app reads:
   follow their players' answers: a pair seeded from iNaturalist's identifications (`model.js` `dataSeed`) that is offered
   together often and seldom mixed up falls under `CONF.TRAP` and stops being a look-alike. Their memory and format
   offsets stay the prior and none (`pmem`, `pfmt`), as the sheet's replay of them reads none.
-- **Not the fish's**: the sheet rates them (each question at the rank it asked), but the app does not read them (no
-  `SUBJECTS` `stats`), so a fish photo's difficulty is its judged-ease prior and every fish pair keeps its prior.
+- **The fish's** (`SUBJECTS` `fish` `stats`, from sheet v189: `core.js` `FISHST_SHEET`), the same way. Rows are rated
+  at the rank each question asked, so `PGD` holds one offset per unit id (`f:`, `g:`, `s:`). Their memory and format
+  offsets stay the prior and none (`pmem`, `pfmt`): using them would move the replayed progress (rule D5). The sheet
+  replays a fish answer from its logged scoring record (`core.js` `scoreRec`), whatever the statistics
+  (`tests/fishstats.test.js`). Measures: the notebook, "The fish's own pooled statistics".
 
 ### Photo exposure
 
@@ -975,6 +984,70 @@ photos: the calibration share `CAL.RATE` drawn among the colonies never seen, a 
 in a multi-view question, and a colony counting as seen whatever view of it was shown (`model.js` `colonyMem`), all in
 "What a question shows". The admin's Colony view puts up to `admin.js` `CELL_MAX` (40) colonies of a coral genus in the
 games, per view; the fish have no cap. The study and its simulations are in the notebook.
+
+### The calibration set (corals, 2026-11-18)
+
+The first step before an explicit placement test: a fixed set of about 50 coral photos, each drawn a little more often
+in normal play until it has 20 or more answers, never as a hidden probe; a test of 20-25 adaptive questions needs about
+40-60 photos of measured difficulty. Decision record: docs/decisions/2026-11-18-coral-calibration-set.md.
+
+- **Which photos** (`tools/calibset.js`, `calibration-set.json`): game photos of the slate genera (the bonus genera are
+  opt-in: few players meet them), in the views every question shows (colony and close-up; a two-level genus's colony
+  and close-up), never several corals, a photo rated Poor or a Colony photo whose growth form is not visible. One each
+  for every slate genus, the rest of the 50 to the genera with the most eligible colonies; within a genus, the views
+  alternate and the photo is the first of a fixed hash order, one per colony. Never by source, licence, observer or the
+  answers a photo already has (rule P1). The genera span the slate's difficulty, so the set does: on the sheet's ratings
+  of 2026-11-18, the 48 members already rated sit from −1.14 (10%) to 0.67 (90%), median −0.03, and 4 answers each
+  (median; 0 to 11, 212 in all). The hard end of a test comes from its formats (a single view, look-alike choices, a
+  typed name: the format offsets), not from a set of hard photos.
+- **Sticky**: a member stays while it is in play, even when its genus's share of the 50 falls (the set may then hold a
+  few more); a genus whose member left play (Pierre removed it, rated it Poor,
+  excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
+  says when it would); until then it is never drawn. No redraw: it would waste the members' answers.
+- **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
+  sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
+  online calibration's bonus (`calBonus`); then 1. Only on a unit the player holds (met, not shaky: the calibration
+  questions' condition) and for a photo within one width of the question's target (|x| ≤ 1 in the targeting's
+  Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
+  else: targeting, photo memory, variety, format and scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
+  file did not come, draws as before.
+- **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
+  lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
+
+**The check, declared before running** (rule L11 level 1, the app world: `tools/learnsim.js --stats` (the sheet's
+reply of 2026-11-18) `--truth gen`, the four profiles × 5 seeds × 600 questions, item learner; `--set none` (no set, the
+draw of `main`) against the set, on the same seeds):
+- primary: the share of questions 1-600 showing a member, pooled over the 20 pairs, up;
+- guardrails: `tools/learncmp.js`'s (true knowledge at 300 and 600, units met at 100 and 300, E = bar − D\* at 300 and
+  600), with their margins; and the colony repeat rate over questions 1-600 (a question showing a colony shown before in
+  the run), margin +1 point;
+- reported: the questions that showed each member, pooled over the 20 runs as one cohort (minimum, quartiles, members
+  never shown), before and after.
+
+**What the check found.**
+- **The run as declared** (`--truth gen`) and **two earlier variants** are in the notebook: "The calibration set: the
+  declared run and the dropped variants". The built version is below.
+- **Built version, the four profiles × 5 seeds** (seeds 1-5, 600 questions): members' share 4.17% → 5.35% (19 of 20
+  up; beginner +1.5 points, strong RA +1.4, lecture RA +1.1, expert +0.7); questions showing each member, pooled over
+  the 20 runs: minimum 1 → 3, quartiles 7 / 9 / 12 → 8 / 11 / 17, total 500 → 642, none never shown either way. Colony
+  repeats 10.2% → 10.5% (+0.36 points; margin 1 point). `learncmp`'s guardrails on 5 seeds: true knowledge and units
+  met held for every profile; the run-level ones swung both ways, as they did between the variants, so they were run
+  again on fresh seeds.
+- **Fresh seeds** (rule L11, one step up on the unclear and breached cells): the beginner on 45 (seeds 6-50; 6-20 to
+  600 questions, 21-50 to 300), the lecture and strong RAs on 15 (6-20, 600). Every guardrail held but one: first Open
+  Water −0.5 answers [bound +5.3], units met at 300 −1.2 [−1.8]; the lecture and strong RAs held on all.
+  **The one left: the beginner's true knowledge at 300 questions.** The within-one-width condition was chosen
+  after the held-only result on seeds 6-20, so only seeds 21-50 confirm it: there −0.013 [bound −0.023], past the
+  margin's bound though the mean is inside it (unclear); on seeds 6-20 −0.012 [−0.023]; pooled over the 45, −0.012
+  [−0.020]. At 600 questions +0.003 (seeds 1-5 and 6-20; seeds 21-50 stopped at 300). The simulated beginner meets about
+  one genus fewer by question 300 and has caught up by 600. A cost Pierre accepted (Q412, 2026-11-19: merge as is).
+- Compute: about 30 minutes (rule L11's cap 40), level 1 only. The real log cannot judge it (rule L12): its answers
+  were played under the draw before.
+- **Pace** [guess, from the sheet's counts of 2026-11-18]: the members hold 212 answers (median 4); at the study's
+  traffic (about 3,500 coral answers in 17 days) and the share above (+28%), the median member reaches 20 in roughly 7
+  weeks, the least shown quarter in 10 weeks or more, the slowest in several months (the starred genera among them: they
+  open after their look-alikes, rule L5). The factor buys about two weeks on the median (simulated 9 → 11 showings).
+  The check measures the share, not real players' pace: `--progress` tells.
 
 ### Full replay
 
@@ -1465,7 +1538,7 @@ exam are the app's own. Only the planner is written there, as `quiz.js` `planPho
 the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
 `distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
 every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
-`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+`confTerm`), the last two observations held back (`s.ro`), the session's window (`seenAdd`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
 photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
@@ -1584,7 +1657,7 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 (the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
 photo exposure. The measures learncmp reads (`--list` prints them; any may be the primary): the ones above (`know`,
 `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`, `unitsOW`, `unitsAdv`, `plateau`, `c3`, `hardAns`,
-`perPhoto`, `right`, `prog`, `thErr`), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
+`perPhoto`, `right`, `prog`, `thErr`), `near` (repeats within 9 questions), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
 `spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), the phase
 photos' shares (`phEarly`, `phLate`, `phEasy`, `phOther`, `phAns`), the measures after a break (`learnsim --breaks`:
 `cbLen`, `cbLong`, `cbRight`, `afterRight`, `held`, `holdAfter`, `open15`, read per break and per profile with their
@@ -1671,7 +1744,10 @@ learning change".
   as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file
   (`{photos: {file: d}, gd: {genus: d}}`), or `gen[:SD[:NOISE]]`, each photo's true difficulty drawn from N(μ_g, SD²) by
   a hash of its file name (μ_g the sheet's genus offset, SD by default `JUDGE.SD` 0.8), the app told the truth plus
-  N(0, NOISE²) (by default `JUDGE.NOISE` 0.3), as if 20 trusted answers had rated each photo.
+  N(0, NOISE²) (by default `JUDGE.NOISE` 0.3), as if 20 trusted answers had rated each photo. `--set FILE` serves FILE
+  as `calibration-set.json`, `--set none` an empty set (the draw without the calibration set), for a paired comparison
+  on one tree ("The calibration set"); `--truth gen` tells the app every photo has 20 answers, so the set's factor is off
+  in that world.
 - **Long runs**: a run is one synchronous `page.evaluate`, so the page's `localStorage` lives in its own memory
   (`tools/memstorage.js`, installed before anything writes: the browser's behaviour and its quota of 5,242,880
   characters, checked by `tests/memstorage.test.js`); the browser's storage traffic would otherwise queue in the

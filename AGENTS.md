@@ -16,13 +16,15 @@ where things are: the documentation map of [`README.md`](README.md); what lives 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
 Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
-sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied:
+sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied, and set its end on
+2026-11-19 ("La journée démarre à partir de mon premier message après 4h du mat"; "ok pour cette phrase"):
 
-> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing; everything else goes on
-> as normal, agents included.**
+> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
+> after 04:00; everything else goes on as normal, agents included.**
 
 - The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
-  never a guess. Before 17:30 nothing is different.
+  never a guess. His day starts with his first message after 04:00, not at a fixed hour (Pierre, 2026-11-19); until
+  17:30 nothing else is different.
 - "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
   Pierre" (number, context, question, recommendation, PR) for the morning.
 
@@ -59,6 +61,13 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   c'est du micro management… je ne devrais pas à choisir", Pierre, 2026-11-14). After a merge that changes what players
   meet or how the game behaves, tell Pierre in one line what went live (information, not a question); he corrects
   afterwards if he wants.
+- **What players will see comes from Pierre; how it is built is the agents'.** Before building anything players see,
+  the PR says it in one sentence with Pierre's words quoted verbatim and dated (a paraphrase is not a source), or marks
+  it "integrator's call" when it is easy to correct. If none of his decisions says it, ask him one question instead of
+  guessing. Everything else (names, keys, formats, implementation, tests, process) is decided without showing him.
+  Enforced: the PR template's "Players see" section, checked by `tools/train.py`. *Source:* Pierre, 2026-11-18 ("ok,
+  lance les quatre"), after summaries had built what he had not asked (the exam probes, "Apart") while he was asked
+  implementation details.
 - **Costly to undo: the PR waits for Pierre.** A choice whose effects cannot simply be taken back (a data format or a
   structure other code will follow, a migration, a change whose effect on players' records or progress cannot be
   reverted, content the IMR owns) goes to him as a question (below); the integrator merges once he has answered, his
@@ -81,7 +90,9 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   through shell commands that embed code (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code): such
   commands can trip the session's safety checks and ask Pierre to approve something he cannot judge. A script an agent
   needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
-  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???").
+  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???"). Enforced:
+  `tools/guard_bash.py`, a PreToolUse hook, refuses these commands at once with the way out, for every agent of a
+  session; `.claude/settings.json` allows a few read-only commands that recur (git status, ls, wc, the project's report tools).
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
@@ -97,6 +108,10 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
   screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
   a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger** (Pierre, 2026-11-19): each answer of Pierre's is applied to
+  the document it changes (a ROADMAP row, a rule, a study, a decision record) in the PR that records it, and added to the
+  append-only ledger [docs/ANSWERS.md](docs/ANSWERS.md); STATUS only cites it. Before any question,
+  the integrator searches the ledger, the rules and docs/decisions/; an answer found there is applied, never asked again.
 - **Data access**: any agent, subagents included, may **read** the sync sheet ("IMR Coral ID – RA progress", its id in
   HANDOVER "Code.gs") through the Google Sheets / Drive connector, read-only, real names included: no anonymisation
   between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit
@@ -184,7 +199,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One engine, never naming a subject.
+- **S1** One shared engine; a difference between subjects is declared and named in one place, never a hidden test on the subject.
 - **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
@@ -236,14 +251,15 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
    before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
    back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests but those tagged `slow`, in the machine slot: rule W24),
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
 6. `Code.gs` or `core.js` changed: rules D3-D5 (a `tools/sync/changes/` file, never `VERSION`). Tests never reach the
    real sheet (rule D1).
 7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
-8. PR from the template, Decisions filled; rebase on `origin/main` before each push (rule W18).
+8. PR from the template, Decisions filled; to bring it up to date, merge `origin/main` into it, never rebase or
+   force-push (rule W18).
 9. `@codex review` after each push; fix or answer every finding; never re-run a failed job (rule W23).
 
 ## Review guidelines
@@ -251,7 +267,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects is declared and named in one place (rule S1).
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).

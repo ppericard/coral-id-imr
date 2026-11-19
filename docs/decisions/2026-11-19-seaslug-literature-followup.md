@@ -25,3 +25,5 @@ Integrator's call, easy to correct:
 `tools/seaslug_lookalikes_cand.json` gains two `lit` entries and two groups; `seaslug.json` and `seaslug-game.json`
 are unchanged. The pairs are there for the species level. The Pikachu nickname's owner stays a discrepancy for
 `points.json` and a question for Pierre (scan §6), not settled here.
+
+Changed by: [2026-11-19-pikachu-nickname.md](2026-11-19-pikachu-nickname.md) (the nickname answered).

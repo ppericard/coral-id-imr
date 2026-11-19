@@ -55,11 +55,13 @@ const slimC = c =>
       : {})
   };
 test('curation-play.json: curation.json without auto, fish tags and ease, and fish auto but its undone adds', () => {
-  const {auto, fish, content, ...rest} = FULL,
-    {fish: pf, content: pc, ...prest} = PLAY;
+  const {auto, retest, flag, seen, fish, content, ...rest} = FULL,
+    {fish: pf, content: pc, seen: pseen, ...prest} = PLAY;
   assert.deepStrictEqual(prest, rest);
+  // The coral seen keeps its thanked reports, 'rep:<id>', and not the Candidates' reject marks, 'cand:<photo>'.
+  assert.deepStrictEqual(pseen || {}, Object.fromEntries(Object.entries(seen || {}).filter(([k]) => k.startsWith('rep:'))));
   assert.deepStrictEqual(pc, slimC(content));
-  const {tags, ease, auto: fa, content: fc, ...frest} = fish || {},
+  const {tags, ease, auto: fa, retest: fr, flag: ff, content: fc, ...frest} = fish || {},
     {auto: pa, content: pfc, ...pfrest} = pf || {};
   assert.deepStrictEqual(pfrest, frest);
   assert.deepStrictEqual(pfc, slimC(fc));
@@ -106,6 +108,19 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
     fish: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}},
     seaslug: {auto: {'2026-11-17': {a: '-a1x'}}, seen: {b: 1}}
   });
+  // The admin's retests and the players' flags go, here and in each part; the coral seen keeps only 'rep:' marks (the
+  // thanked reports), a part's seen stays whole.
+  assert.deepStrictEqual(
+    slim({
+      v: 1,
+      retest: {a: {q: [1, 2]}},
+      flag: {a: 1},
+      seen: {'cand:a': 1, 'rep:r1': 1},
+      fish: {flag: {b: 1}, retest: {b: 1}, seen: {'cand:b': 1}}
+    }),
+    {v: 1, seen: {'rep:r1': 1}, fish: {seen: {'cand:b': 1}}}
+  );
+  assert.deepStrictEqual(slim({v: 1, seen: {'cand:a': 1}}), {v: 1});
   // The admin's confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ) reaches the players.
   const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
   assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
@@ -239,7 +254,9 @@ test('no script the app or the Lab loads reads a field the players copy drops', 
     /\b(?:CUR|cur|c)\s*(?:\.|\?\.)\s*auto\b/,
     /\.fish\b[^;\n]*\.auto\b/,
     /\b(?:F|fish)\s*(?:\.|\?\.)\s*auto\b/,
-    /\[\s*['"](?:tags|ease)['"]\s*\]/
+    /\[\s*['"](?:tags|ease)['"]\s*\]/,
+    /\b(?:CUR|cur|c|F|fish)\s*(?:\)\s*)?(?:\.|\?\.)\s*(?:retest|flag)\b/,
+    /['"`]cand:/
   ];
   const hits = [];
   for (const f of files)

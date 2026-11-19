@@ -880,13 +880,7 @@ svg.dim .wedges line.on {
   margin-top: 2px;
 }
 
-/* memory pairs */
-.pgrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  max-width: 720px;
-}
+/* memory pairs (its grid, .pgrid, is My progress's photo wall too: app.css) */
 .pcard {
   aspect-ratio: 1;
   padding: 0;
@@ -935,9 +929,6 @@ svg.dim .wedges line.on {
   .pcard:hover .pback {
     background: color-mix(in srgb, var(--accent) 20%, var(--surface));
   }
-}
-.gside .seg small {
-  font-size: var(--fs-xs);
 }
 .pfront {
   transform: rotateY(180deg);
@@ -1045,9 +1036,6 @@ svg.dim .wedges line.on {
 .rtick.minor {
   display: none;
 }
-:root[data-size] .pgrid {
-  grid-template-columns: repeat(2, 1fr);
-}
 
 @media (min-width: 600px) {
   .ruler {
@@ -1055,14 +1043,6 @@ svg.dim .wedges line.on {
   }
   .rtick.minor {
     display: revert;
-  }
-  :root[data-size] .pgrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 1024px) {
-  :root[data-size] .pgrid {
-    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -1353,32 +1333,6 @@ svg.dim .wedges line.on {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: var(--r-sm);
-}
-.pgrid {
-  max-width: none;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-@media (min-width: 600px) {
-  .pgrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 1024px) {
-  .pgrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-:root[data-size='s'] .pgrid {
-  grid-template-columns: repeat(3, 1fr);
-}
-@media (min-width: 600px) {
-  :root[data-size='s'] .pgrid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-:root[data-size='l'] .pgrid {
-  grid-template-columns: repeat(3, 1fr);
 }
 @media (min-width: 600px) {
   .spot {
@@ -2105,18 +2059,6 @@ path.wallc {
   margin: 0 0 6px;
   font-size: var(--fs-xs);
 }
-.ikn {
-  display: inline-block;
-  min-width: 1.4em;
-  text-align: center;
-  font-family: var(--body);
-  font-size: var(--fs-xs);
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-radius: var(--pill);
-  padding: 0 6px;
-  vertical-align: 2px;
-}
 .ikopts {
   display: flex;
   flex-direction: column;
@@ -2664,38 +2606,10 @@ path.wallc {
   display: none;
 }
 
-/* Game layout shared by Practice games: play area left, controls in a side column (like the quiz). */
-.pgame {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-  margin-top: 12px;
-}
-@media (min-width: 1024px) {
-  .pgame {
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
-  }
-}
-.gside {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+/* The game layout of the Practice games and My progress (.pgame, .gside) is in app.css. This one rule stays here as well:
+   in the Lab's games (Reveal), it must still come after .lab .chips above. */
 .gside .chips {
   margin: 0;
-}
-.gside .note,
-.gside p {
-  margin: 0;
-}
-.gside .seg {
-  display: flex;
-  align-self: stretch;
-}
-.gside .seg button {
-  flex: 1;
-  padding-inline: 8px;
 }
 .rvlayout {
   margin-top: 12px;
@@ -2707,15 +2621,6 @@ path.wallc {
 }
 .rvstage {
   max-height: calc(100vh - 128px);
-}
-/* Phone base (mobile-first); larger screens restore below. */
-.pgame .gside {
-  order: -1;
-}
-@media (min-width: 1024px) {
-  .pgame .gside {
-    order: revert;
-  }
 }
 /* Memory on phones and tablets: controls in one compact row (levels, set, ↻) and a short status line, so the grid
    keeps nearly all the height (Pierre, phone screenshot 2026-11-01). Desktop keeps the side column. */
@@ -2829,13 +2734,6 @@ button.ikname::after {
 }
 button.ikname[aria-expanded='true']::after {
   content: ' ▾';
-}
-.ikxtag {
-  font-weight: 700;
-  color: var(--muted);
-  background: var(--other);
-  border-radius: var(--pill);
-  padding: 0 6px;
 }
 .iksheetl {
   font-size: var(--fs-xs);
