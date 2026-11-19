@@ -235,25 +235,30 @@ async function slot(name, o = {}) {
         const f = path.join(DIR, 'slot' + i),
           tmp = path.join(DIR, `.new-${process.pid}-${i}-${Math.random().toString(36).slice(2)}`);
         let got = false;
-        try {
-          fs.writeFileSync(tmp, record(name, o.pid), {mode: 0o666});
-          fs.linkSync(tmp, f); // fails if the slot is held: atomic, and f appears with its whole record
-          got = true;
-        } catch (e) {
-          if (e.code === 'EEXIST' && !reap(f)) {
-            // A file system that lets no one take back a dead slot (a directory made by another user, sticky): rather
-            // than wait for ever or fail, run without a slot, and say so.
-            console.error(`${name}: cannot take back a dead slot in ${DIR} (permissions); running without a slot.`);
-            return () => {};
-          }
-          if (e.code !== 'EEXIST') {
-            console.error(`${name}: no smoke slot (${DIR}: ${e.code}); running without one.`);
-            return () => {};
-          }
-        } finally {
+        // Two tries: when the first finds the slot held and takes back a dead holder's file, the second links into the
+        // place just freed, in this same pass, not a poll later (a poll later, a process stalled by a loaded runner's
+        // disk or CPU had spent its whole timeout and gave up with the freed slot in front of it).
+        for (let again = 0; !got && again < 2; again++) {
           try {
-            fs.unlinkSync(tmp);
-          } catch (e) {}
+            fs.writeFileSync(tmp, record(name, o.pid), {mode: 0o666});
+            fs.linkSync(tmp, f); // fails if the slot is held: atomic, and f appears with its whole record
+            got = true;
+          } catch (e) {
+            if (e.code !== 'EEXIST') {
+              console.error(`${name}: no smoke slot (${DIR}: ${e.code}); running without one.`);
+              return () => {};
+            }
+            if (again === 0 && !reap(f)) {
+              // A file system that lets no one take back a dead slot (a directory made by another user, sticky): rather
+              // than wait for ever or fail, run without a slot, and say so.
+              console.error(`${name}: cannot take back a dead slot in ${DIR} (permissions); running without a slot.`);
+              return () => {};
+            }
+          } finally {
+            try {
+              fs.unlinkSync(tmp);
+            } catch (e) {}
+          }
         }
         if (!got) continue;
         if (o.pid) return () => {}; // the slot stays with the runner, whose end gives it back (dead())
