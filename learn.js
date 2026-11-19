@@ -1072,7 +1072,8 @@ const spCommon = s => cnFirst(s, imrNow()) || s.common || capFirst(vernFirst(s.i
 // the others on a line below ("Also …"), a nickname said so; and under More details, every name with its sources, linked
 // (rule C2). '' for a record without them (the fish, a sea slug no source names).
 const capFirst = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
-const vernName = x => esc(capFirst(x.n)) + (x.nick ? ` <small>(nickname${x.note ? ': ' + esc(x.note) : ''})</small>` : '');
+const vernName = x =>
+  esc(capFirst(x.n)) + (x.nick || x.note ? ` <small>(${x.nick ? 'nickname' + (x.note ? ': ' : '') : ''}${esc(x.note || '')})</small>` : '');
 const vernHead = id => {
   const L = vernOf(id);
   return L.length
