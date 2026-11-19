@@ -43,7 +43,7 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **Before any question to Pierre**: `python3 tools/asked.py <terms>`; a hit is applied, never asked again; its last
   line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
-  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), `fish-holdout.json`, the decisions index
+  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), the decisions index
   (`python3 tools/decisions_index.py --fix`).
 - **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).

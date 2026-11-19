@@ -3962,6 +3962,50 @@ world, fish, the five profiles × 5 seeds × 300 questions, the branch's final c
 - **Guardrails**: every one held at every profile, every paired difference 0 to the tables' precision.
 - **The real log** (rule L12) cannot judge a change to the choices: a replay asks the questions already asked.
 
+### The per-player reserve: the checks (2026-11-18, 2026-11-19, #1099)
+
+**Level 2, 2026-11-18** (the first build, declared before running): the app world, fish and corals, beginner,
+strongRA, expert × seeds 1-5 × 300 questions; the rated world, the same × 1,000 answers; primary `learned@1000:down`,
+fish, rated world, one look; 37 minutes of machine time in all.
+- **Primary**: no clear difference (after #1094's measuring fix: T −6.92, p 0.078 exact; beginner 0.8 → 0.0, strongRA
+  10.2 → 9.6, expert 9.2 → 7.8). Few exams come by 1,000 answers: the measure cannot tell.
+- **App world**: no breach (unclear: the fish beginner's E and plateau; the corals' beginner's first unit at Open Water,
+  86.8 → 97.2, bound +38.3; the strongRA's units at Open Water at 300).
+- **Rated world, fish** (run again after #1094, which fixed the true unit offsets the rated world measured against): no
+  breach; true knowledge held at every checkpoint, both subjects, both worlds.
+- **Rated world, corals: two breaches, both the beginner's at 1,000 answers**: the global score 30.2 → 27.2 (bound −4.8,
+  margin −1.0) and the units at Open Water 12.8 → 10.0 (bound −4.7, margin −2). The corals held back 96 colonies in 14
+  genera where they held none; at 5 seeds, partly the run's path too (#1057's A/A run moved these measures by a breach's
+  size). Put to Pierre: Q420, answered A on 2026-11-19 08:53 Manila, keep as built ("ok. Il n'y a aucune raison que ça
+  influence les résultats...").
+- **Real log** (rule L12): it cannot judge it (another draw asks other questions; no answer on a per-player reserve yet).
+
+**After the port onto `main`, 2026-11-19** (#1146, #1130, #1148, #1162, #1093, #1116 merged in; eligibility by qualities
+only, rule P1: the `rep` and `imr` exclusions gone).
+- **Sizes**: one player reserves the same counts with and without the two exclusions (fish 2,319, sea slugs 437,
+  corals 96 colonies in 14 of 39 genera: the floors bind, not the eligibility); only which observations moves: 20
+  players together reserve 14,442 fish observations (14,119 with the exclusions) and 386 coral colonies (385). The coral
+  calibration set: 3.85 of its 50 members in one player's reserve on average (1 to 6 over 20 players).
+- **Level 1, declared before running** (the integrator's level for the port: the reserve's logic unchanged, Q420 A
+  covering the corals' cost of the kind measured): the app world, corals then fish, each subject's default profiles ×
+  seeds 1-5 × 300 questions, `main` 2d8a8d19f against the branch 53c6d0789, each arm from its own frozen checkout;
+  primary `know@300:down` pooled, one look; every guardrail; cost declared: the corals' beginner's pace and score; a
+  breach of another kind (any fish breach, true knowledge or E, a coral profile other than the beginner) stops and goes
+  to Pierre.
+- **Results** (`tools/learncmp.js`, one look; about 13 minutes of machine time for the four runs):
+  - **Primary** `know@300:down`: no clear difference, corals (T +6.12, p 0.18, 9 of 20 pairs down) and fish (T +7.00,
+    p 0.16, 9 of 25). True knowledge held for every profile in both subjects; E held but for the corals' lectureRA
+    (unclear).
+  - **Two breaches of a new kind**, each one profile at 5 seeds: the corals' strongRA, longest plateau 23 → 29 answers
+    (+6, bound +12, margin +5); the fish lectureRA, answers to the first unit at Open Water 36.4 → 49.0 (+12.6, bound
+    +31.9, margin +10). Unclear: corals firstOW and plateau (beginner), unitsOW@300 (lectureRA, strongRA, expert); fish
+    firstOW, plateau and met@100 (beginner), unitsOW@300 (expert). Every other cell held.
+  - Beside them, no margin set: the right % over questions 201-300 fell for every coral profile (−1.8 to −4.4 points,
+    three of the four bounds excluding zero) and for the fish beginner (−3.4), the tightest signal of the run.
+  - How to read it: the fish "before" arm still withheld #1057's one set, so the fish compare one set with another; the
+    fish lectureRA was not run on 2026-11-18; and the run cannot tell the P1 eligibility fix from the reserve itself.
+  - Not run further (rule L11: a breach goes to Pierre); the real log cannot judge it (rule L12).
+
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
 
 ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check

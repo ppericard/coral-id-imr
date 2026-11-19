@@ -320,14 +320,15 @@ test('app.js: build and treeBuild keep what their units were made from, out of s
   );
   assert.ok(
     flat(src).includes(
-      "Object.defineProperty(TREEU, 'cvIn', { value: {S, cur: CUR, st: TREEST, files: [TREERAW.f, TREERAW.ph, TREERAW.ho, TREERAW.gm], v: ''}, configurable: true });"
+      "Object.defineProperty(TREEU, 'cvIn', { value: {S, cur: CUR, st: TREEST, files: [TREERAW.f, TREERAW.ph, TREERAW.gm], v: ''}, configurable: true });"
     )
   );
   // Before DATA is set and after TREEU is made: what contentVer reads is the units in force.
   const b = block(src, 'function build() {', '\n}\n', {file: 'app.js'});
   assert.ok(b.indexOf("Object.defineProperty(d, 'cvIn'") < b.indexOf('DATA = d;'));
   const fb = block(src, 'const treeBuild = () => {', '\n};\n', {file: 'app.js'});
-  assert.ok(fb.indexOf('TREEU = treeCurate(') < fb.indexOf("Object.defineProperty(TREEU, 'cvIn'"));
+  assert.ok(fb.indexOf('TREEU = reserveOn(treeCurate(') >= 0);
+  assert.ok(fb.indexOf('TREEU = reserveOn(treeCurate(') < fb.indexOf("Object.defineProperty(TREEU, 'cvIn'"));
   assert.ok(/getR\('data\.json\?v=\d+'\)[\s\S]{0,200}\.then\(okJson\)/.test(src));
   assert.ok(/getR\('forms\.json\?v=\d+'\)\s*\.then\(okJson\)/.test(src));
   assert.ok(/const json = u =>\s*getR\(u\)\s*\.then\(okJson\)/.test(src));
