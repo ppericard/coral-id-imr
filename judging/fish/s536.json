@@ -237,12 +237,15 @@
    "keep": "dup"
   },
   "fish-s536-cand-81385287": {
-   "code": "o1g1mmk2",
+   "code": "o1g1ml12",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.3,
+    0.41,
+    0.72,
+    0.82
    ],
-   "note": "a yellow goby sits on the bottle, half the damselfish's size and sharp: confusion possible"
+   "note": "crop: the yellow goby on the bottle leaves the frame (Q430)"
   },
   "fish-s536-cand-667300647": {
    "code": "p1g0sl15",
