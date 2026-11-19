@@ -5,59 +5,57 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions. **Pierre's answers live in
 [ANSWERS.md](ANSWERS.md)** (append-only, history since 2026-11-03): search it, the rules and docs/decisions/ before
-asking him anything. This file only cites answers.
+asking him anything, **and the open PR branches' copies of it** (an answer recorded on a branch is not on `main` until
+that PR merges: on 2026-11-19 at 14:05 the integrator re-asked his 10:12 answers that way). This file only cites
+answers.
 
-Written 2026-11-19, about 09:55 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 14:30 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
-Last checked: reports and events: 2026-11-19 ~06:25 Manila (nothing new to report; the "empty card closed: feedback"
-event was fixed by #1189).
+Last checked: reports and events: 2026-11-19 ~14:25 Manila (no new report since 2026-11-17; one `old` event at 08:11,
+an app from before 2026-11-03 sending photo stats; nothing else).
 
 ## Now
 
-Main: sheet script **v190** (#1121); #1116 carries v191 (in a train). CLAUDE.md loads AGENTS.md (#1198). **No agent
-cap** (rules audit decision 1, Pierre's "ok" of 2026-11-18 evening; `tests/slot.js` guards the machine). A Bash guard
-(#1117) refuses heredocs, here-strings, `python -c`, `sed -i`, `node -e`. Scratchpad helpers: `prstate.sh`,
-`train_queue.sh` (waits for the running train and Candidate photos, then trains), `resolve_append.py` (append-only
-conflicts: main's lines, then the branch's).
+Main: sheet script **v193** (#1195). No agent cap (audit decision 1, Pierre's "ok" of 2026-11-18 evening;
+`tests/slot.js` guards the machine). Every blocked PR merged by 13:50 (25 today since 06:00); the open ones:
 
-- **Priority (Pierre, 09:04): the rules overhaul**, Q425 B step by step. Done: #1198 (AGENTS.md loaded; merge never
-  rebase; one PR per agent), #1117 (the approved rules audit, its guards). Running: rules tooling (`tools/asked.py`,
-  the ledger check, fewer index conflicts); a **substance review** of every rule (Pierre 09:46: "les règles ne
-  méritent pas d'être revues globalement ?"), then the core (#1200, placement proposal, waits for the review: both go
-  to Pierre together, as one batch "ok sauf X").
-- **Merged today (34)**: from #1179 to #1198, the decisions pass (#1192), the ledger and its history (#1188, #1193),
-  the rule wordings (#1190), Rule 0's first-message start (#1191), studies #1185, #1186, #1197, #1071, #1098, fish
-  pooled stats (#1148, v189), comments of core.js/Code.gs (#1121, v190).
-- **Agents running**: #1099 port (Q420 A; P1: no exclusion by route or source), #1045 port (Q421 A), #1095 rebuild
-  (privacy page: screenshots to Pierre for his reading), one-engine steps 1-2, #1195 level-2 check (P1 on the corals:
-  level 1 breached three cells; merge if level 2 shows no loss, else a question with figures), fish judging (8
-  candidates), Pikachu data then the `tricky-pairs` PR, the modes-audit PRs (docs, one answer recorder, live answers
-  on unopened units per L4, the duel achievement on the Again).
-- **Ready, waiting for Codex then a train**: #1093 (Q426 A).
+- **#1099** (a reserve of photos per player, Q420 A): level 2 done, B1 and B2 not confirmed, two new small breaches
+  (fish casual diver's plateau +9.2 against +9.1; corals lectureRA's shown score at 1,000 answers −1.8, heavy-tailed
+  photos only). **Q432** to Pierre: accept them as the reserve's cost; merge on his yes (remove `needs-pierre`; the
+  body's Decisions and level-1 "Not run further" lines are stale, fix before the train).
+- **#1217**, the rules core (B): Pierre's 10:12-10:13 answers (Q428, W20 out, U7's line, the core, S1+L6) applied.
+  Trial run 1: the quotes pass T0-T4, the log half of T1/T2 fails because **every hook runs `git show
+  origin/main:…`, a silent no-op where `origin/main` does not exist** (one-branch cloud clones: the Bash and agent
+  guards off there too). B waits for the hooks fix, then runs 1-3 (proposal §3: T1 and T2 three out of three).
+- **Agents running**: the hooks fix (`claude/hooks-no-main`; also whether subagents fire InstructionsLoaded); the fish
+  judging rubric from Pierre's gold-set review (11:28-11:43; Q429-Q431 left out).
 
 ## Next
 
-1. Trains as PRs become ready, one at a time; Code.gs PRs get their VERSION at merge (`tools/sheet_version.py`).
-2. The rules: the substance review's batch and the core's list to Pierre together; then the core trial and PRs (#1200
-   §3-§4).
-3. LEARNING.md is at its size budget: trim history to the notebook in the next docs PR, never raise the budget by
-   habit.
-4. The progress-moving rows of the modes audit (format term in the sheet's photo ratings, time median per format,
-   hold/comeback offset) go to Pierre with level-2 and L12 figures.
+1. Q432's answer, then #1099's train. #1217 after the hooks fix and three trial runs; then C (topic files on demand,
+   run 2), then D1/D2 (proposal §4; the substance review's §4.6 items not in B: W27's scratch-file names to INTEGRATOR,
+   D6 after Q330/Q332, P1 after #1045, L11's method to LEARNING).
+2. One engine, step 2; then the admin and Learn one-engine PRs in the order of
+   docs/reviews/2026-11-19-admin-one-engine.md.
+3. Modes audit: step 3's fix (the `asked()` readers: openPace, the planPhoto due filter, ratedworld.js's copy,
+   introReady count only answers after the card; then level 2 again); step 4, the duel achievement on the Again
+   (branch `claude/duel-ach-again`, head b8f4016, no PR yet).
+4. The judging models measured again on a blind gold set (Pierre answering without seeing any judge's view).
+5. LEARNING.md is at its size budget: trim history to the notebook in the next docs PR.
 
 ## Questions for Pierre
 
-Answered today (ANSWERS.md 2026-11-19): Q407-Q426 except Q419 (number skipped: a re-ask withdrawn), S1's wording, the
-ledger rule, Rule 0's end, the order of work (his only input is raising priorities), #773 superseded, README's Coral
-Finder line, the pCloud backups (started 2026-11-18).
-
-- Pending his reading: #1095's privacy page (screenshots once rebuilt).
-- Pending the substance review: the rules batch and the core's list (#1200).
+- **Q429-Q431** (the fish judging rubric, asked ~11:50): Q429 a "contrast" field or a rubric rule (rec. the rule);
+  Q430 crops of photos 10 and 23, A the judge proposes and he taps, B it enters cropped on its own when the other fish
+  leaves the frame whole (rec. B); Q431 juvenile ease, drop "juvenile = hard" and its 2/5 cap except look-alike
+  juveniles (rec. yes; about 3,750 juvenile photos to re-rate).
+- **Q432** (#1099, above). Rec. yes.
+- Q433: withdrawn (a re-ask of 10:12), never reused.
 - Still open in older reviews (check ANSWERS.md first, ask only what is not there): the architecture review (a)-(g),
   (i); the app-gaps review (a)-(j); #1041 §6.
 
-Last question number: Q426
+Last question number: Q433
 
 ## Pierre's hands
 
@@ -73,5 +71,7 @@ Last question number: Q426
 
 ## Last stop
 
-2026-11-19 ~09:55 Manila: handover. Night report given at 09:46 (53 PRs merged in the night, 5 red trains fixed).
-Scratchpad: ledgers, reconcile plan, modes audit, closing pack, practices study; no real names.
+2026-11-19 ~14:30 Manila: handover. Scratchpad: `prstate.sh`, `train_queue.sh`, `uptodate.sh` (merge main into a PR
+worktree, regenerate the index, push, ask Codex), `resolve_threads.sh` (CCR REST routes; GraphQL is blocked),
+`findmsg.py` (Pierre's messages by fragment, Manila time), `goldset/` (the review page, his answers, the scores),
+`res1099/l2/` (level 2's declaration and reports), `rcore/` (the trial's notes). No real names.

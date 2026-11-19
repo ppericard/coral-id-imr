@@ -28,7 +28,6 @@ Conventions that hold across them:
 | `stack.json`, `stack_check.py` | The pins of the whole stack (runtimes, tools, APIs); `--check` offline is **CI**, `--latest` lists what is behind |
 | `requirements.txt` | The Python packages CI installs, pinned by hash |
 | `rename_app.py` | Applies the app's names (from `core.js` `ORG`) to the static files; `--check` is **CI** |
-| `holdout.py` | Writes `fish-holdout.json`; `--check` is **CI** |
 | `photos.py` | The four photo sizes and where a photo lives; fills missing sizes; `--check` is **CI** |
 | `build_site.py` | The deploy's build of its staged copy: `curplay.py`, `stamp_versions.py`, `minify.js`, the checks |
 | `curplay.py` | Writes `curation-play.json`, the players' copy of the curation |
@@ -98,7 +97,7 @@ Conventions that hold across them:
 |---|---|
 | `fetch_local.py` | Coral candidate photos from iNaturalist, near Dauin first; `--plan` shows offline what it would fetch |
 | `fetch_approved.py` | Downloads the candidates Pierre added, in four sizes, for R2; run by the Candidate photos workflow |
-| `cand_gaps.py` | Game genera short of candidates (rule W20) |
+| `cand_gaps.py` | Game genera short of candidates (spec/photos.md "No more candidates") |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |
 | `photo_quality.py`, `quality_eye.json` | Automatic quality rating into `quality.json` |

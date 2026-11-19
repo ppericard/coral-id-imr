@@ -62,3 +62,57 @@ test('--any takes an entry holding one of the terms; --max limits what is printe
   assert.match(out, /1 more hits not shown/);
   assert.match(last(out), /for any of "rename" "nothing" — 2 hits$/);
 });
+
+// The branch search: a clone of a local bare "origin" holds main's ledger; the branch "feat" (an open PR) holds one more
+// answer. No network, no gh (--prs gives the list).
+const git = (cwd, ...a) =>
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...a], {cwd, stdio: 'pipe'});
+const LEDGER = '# Ledger\n\n- **06:50.** The badge stays: "ça reste".\n';
+const withOrigin = () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'asked-git-'));
+  const origin = path.join(base, 'origin.git'),
+    clone = path.join(base, 'clone');
+  git(base, 'init', '-q', '--bare', '-b', 'main', origin);
+  git(base, 'clone', '-q', origin, clone);
+  fs.mkdirSync(path.join(clone, 'docs'));
+  fs.writeFileSync(path.join(clone, 'docs', 'ANSWERS.md'), LEDGER);
+  git(clone, 'add', '.');
+  git(clone, 'commit', '-q', '-m', 'main');
+  git(clone, 'push', '-q', 'origin', 'HEAD:main');
+  git(clone, 'checkout', '-q', '-b', 'feat');
+  fs.writeFileSync(path.join(clone, 'docs', 'ANSWERS.md'), LEDGER + '- **10:12.** The yacht colour is teal: "teal".\n');
+  git(clone, 'commit', '-q', '-am', 'feat');
+  git(clone, 'push', '-q', 'origin', 'feat');
+  git(clone, 'checkout', '-q', 'main');
+  git(clone, 'branch', '-q', '-D', 'feat');
+  git(clone, 'update-ref', '-d', 'refs/remotes/origin/feat'); // as if never fetched
+  return {base, clone, origin};
+};
+const runIn = (root, ...a) => execFileSync('python3', ['-B', TOOL, '--root', root, ...a], {timeout: 20000}).toString();
+
+test("an answer only on an open PR's branch is found, with its PR number, once", () => {
+  const {base, clone} = withOrigin();
+  try {
+    assert.match(last(runIn(clone, '--no-prs', 'yacht')), /— 0 hits$/); // main alone does not have it
+    const out = runIn(clone, '--prs', '7:feat', 'yacht');
+    assert.match(out, /^PR #7 \(feat\) docs\/ANSWERS\.md:4 \(Ledger\)\n {4}- \*\*10:12\.\*\* The yacht colour/m, out);
+    assert.match(last(out), /docs\/ANSWERS\.md on 1 open PR branch for all of "yacht" — 1 hit$/);
+    // an entry already on main is not repeated from the branch
+    assert.match(last(runIn(clone, '--prs', '7:feat', 'badge')), /— 1 hit$/);
+  } finally {
+    fs.rmSync(base, {recursive: true, force: true});
+  }
+});
+
+test('offline (the fetch fails): one note, the rest of the search still answers', () => {
+  const {base, clone, origin} = withOrigin();
+  try {
+    fs.rmSync(origin, {recursive: true, force: true});
+    const out = runIn(clone, '--prs', '7:feat', 'badge');
+    assert.match(out, /^note: the open PRs' branches were not searched/m, out);
+    assert.match(last(out), /— 1 hit$/);
+    assert.ok(!/open PR branch/.test(last(out)), 'the searched line does not claim the branches: ' + last(out));
+  } finally {
+    fs.rmSync(base, {recursive: true, force: true});
+  }
+});

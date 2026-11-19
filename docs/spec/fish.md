@@ -3,8 +3,8 @@
 The fish subject's content: its two trees, the game's units, the circles, names, presence, commonness, the
 identification groups, and the covers each unit shows. This is the specification of what the code does now; why each
 part was decided is in [docs/decisions/](../decisions/README.md), [FISH_PATH.md](../FISH_PATH.md) and the PRs.
-[DATA.md](../DATA.md) is the short table of the data files; the fish photos (sources, candidates, the photos in play,
-the held-out set) are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model in
+[DATA.md](../DATA.md) is the short table of the data files; the fish photos (sources, candidates, the photos in play)
+are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model in
 [ARCHITECTURE.md](../ARCHITECTURE.md) "Subjects (the taxon model)"; the content editor's edits laid over `fish.json` in
 [content.md](content.md). The fish run on the same engine as the corals: the app reads the file through `core.js`
 `treeGen`.
@@ -35,7 +35,7 @@ the held-out set) are in [fish-photos.md](fish-photos.md); the subject's place i
   around Dauin first: "Commonness" below), `sl`, `cues`, `look` ([teaching id, how to tell it apart]), `phase`, `sub`
   (the sub-entries IMR names inside an entry: Chromis / Dascyllus / Pomacentrus / Anemonefish, Bannerfish, Surgeonfish /
   Unicornfish). The units are built from it (`core.js` `treeGen`), and the tools read it (`fish_photos.py`, the judging,
-  the photo tools, `tools/holdout.py`).
+  the photo tools).
 
 A species belongs to the node whose `ref` holds its nearest ancestor (the most specific wins), its genus being the genus
 of its PDF name (Chromis agilis stays under Chromis though WoRMS has it in Pycnochromis).

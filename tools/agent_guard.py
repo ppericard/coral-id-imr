@@ -15,8 +15,9 @@ prompt is never logged), and whether it was allowed. `tools/brief.py` prints tod
   python3 tools/agent_guard.py --check '{"description": "x", "prompt": "y"}'   the reason (exit 1), or nothing (exit 0)
   python3 tools/agent_guard.py --report [YYYY-MM-DD]   that Manila day's launches (today by default)
 
-The hook runs main's reviewed copy (`python3 -I -c "$(git show origin/main:tools/agent_guard.py)"`, the JSON on stdin),
-so this file uses the standard library only. Any error lets the launch through: the guard never blocks work by failing.
+The hook runs main's reviewed copy (`git show origin/main:tools/agent_guard.py` given with `python3 -I -c`, the JSON on
+stdin; fetched where the ref is missing, every launch refused if it cannot be: tests/hooks.test.js), so this file uses
+the standard library only. Inside the script, any error lets the launch through: it never blocks work by failing.
 """
 
 import json

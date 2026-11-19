@@ -1,8 +1,8 @@
 # Learning rules
 
 Pierre's standing rules on the learning logic. The model, its research, every constant and its measurements live in
-[LEARNING.md](../LEARNING.md): **change a learning constant only with its reason there.** The index of every rule is in
-[AGENTS.md](../../AGENTS.md#the-rules).
+[LEARNING.md](../LEARNING.md): **change a learning constant only with its reason there.** Spec:
+[spec/model.md](../spec/model.md). The index of every rule is in [README.md](README.md#the-index).
 
 ### L1
 
@@ -88,7 +88,7 @@ subject-neutral wording, 2026-11-06.
 
 ### L6
 
-**No unit-specific code: no special cases for one unit or one subject; the data says it, the engine stays generic.**
+**No unit-specific code: rule S1** (shared and modular by default; an exception is declared and named in one place).
 **Corals: Millepora counts as a slate genus; the other common off-slate genera are opt-in bonus genera.** *Millepora* is a slate genus for everything in the games and the progress (`BENTHIC`), with a warning on its
 first card and its sheet that it is not a hard coral nor on the IMR coral list, but on the IMR benthic slate. The bonus
 genera (`BONUS`: Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) are offered once by a card when the player
@@ -102,7 +102,7 @@ game genera (slate + Millepora + bonus) and the Key-only ones (the other `data.j
 Game coverage); Key-only genera get no Corallites candidates and a cap of `CAP.sheet` (6) colonies per view.
 *Why:* Millepora is very common at Dauin and in ReefCloud photos. *Source:* Pierre, 2026-11-01, changed 2026-11-02; no
 genus-specific case, 2026-11-03; subject-neutral wording, and no unit-specific code for every subject, 2026-11-06
-(Q169).
+(Q169); its first line merged into rule S1, 2026-11-19.
 
 ### L7
 

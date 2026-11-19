@@ -170,8 +170,11 @@ const server = http.createServer((req, res) => {
         exTyped += ty;
       }
       say(shownT);
-      // Typed exam questions are logged |t|x (the sheet reads |x at the end, model.js TYPED).
-      if (ex && (logged().m || '') !== (ty ? 'quiz|t|x' : 'quiz|x')) fails.push(`exam answer logged ${logged().m}, typed ${ty}`);
+      // Typed exam questions are logged |t|x (the sheet reads |x at the end, model.js TYPED); |h before them when the photo
+      // is one of the player's reserve (core.js reserveOf: the exam asks those first), never on a unit with none.
+      const lm = logged().m || '',
+        hOk = !/\|h\|/.test(lm) || heldOf(GX(t)).length > 0;
+      if (ex && (lm.replace('|h|', '|') !== (ty ? 'quiz|t|x' : 'quiz|x') || !hOk)) fails.push(`exam answer logged ${lm}, typed ${ty}`);
     }
     question = qx;
     // Every answer logged carries its attempt id (core.js answerId) and its content version (app.js contentVer: the
@@ -219,7 +222,8 @@ const server = http.createServer((req, res) => {
       Object.assign(P, keep);
     }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
-    // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (the raw text in
+    // beginner's genus (24%) never; a typed answer is logged quiz|t (an exam's quiz|t|x, quiz|h|t|x on a photo of the
+    // player's reserve: core.js reserveOf) with the genus read as its answer (the raw text in
     // ty) and no choices; a typo is read as the genus, retyped once first (the spelling step: exact, still wrong, Show
     // me; the step in tr); a typed miss naming another genus counts against both; "I don't know" is a miss for the genus
     // shown only; a word that is no genus is no answer.
@@ -299,7 +303,7 @@ const server = http.createServer((req, res) => {
       let l = logged();
       if (
         answersSoFar() !== a0 + 1 ||
-        !/^quiz\|t(\|x)?$/.test(l.m) ||
+        !/^quiz(\|h\|t\|x|\|t(\|x)?)$/.test(l.m) ||
         l.a !== g ||
         !l.ok ||
         l.ch !== '' ||
@@ -378,7 +382,7 @@ const server = http.createServer((req, res) => {
       // estimate and the level it was stepped against unchanged; its ability moves only with the global level, as every
       // genus does ("Global level and genus"), so never by more than the level's own move.
       if (
-        !/^quiz\|t(\|x)?$/.test(l.m) ||
+        !/^quiz(\|h\|t\|x|\|t(\|x)?)$/.test(l.m) ||
         l.a !== other ||
         l.ok ||
         P[other].h.slice(-1) !== '0' ||
@@ -399,7 +403,7 @@ const server = http.createServer((req, res) => {
       f().requestSubmit();
       say('');
       l = logged();
-      if (!/^quiz\|t(\|x)?$/.test(l.m) || l.a !== '' || l.ok || P[g].h.slice(-1) !== '0')
+      if (!/^quiz(\|h\|t\|x|\|t(\|x)?)$/.test(l.m) || l.a !== '' || l.ok || P[g].h.slice(-1) !== '0')
         fails.push(`I don't know on ${g}: logged ${JSON.stringify(l)}`);
       if (JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL))) !== before)
         fails.push("I don't know changed another genus");

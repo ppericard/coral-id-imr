@@ -1,8 +1,8 @@
 # UI and layout rules
 
 Pierre's standing rules on the interface. Design tokens and components: [DESIGN.md](../DESIGN.md) (follow it for any UI
-change). The admin's own rules are in [admin.md](admin.md). The index of every rule is in
-[AGENTS.md](../../AGENTS.md#the-rules).
+change). The admin's own rules are in [admin.md](admin.md). Specs: [ARCHITECTURE.md](../ARCHITECTURE.md) "Front
+end", [spec/front-end.md](../spec/front-end.md). The index of every rule is in [README.md](README.md#the-index).
 
 ### U1
 

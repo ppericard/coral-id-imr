@@ -166,7 +166,7 @@ LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
 DEAD = (17, 19)
-# The automatic refill (--refill; rule W20). A species short of easy photos has fewer than EASY_NEED
+# The automatic refill (--refill; docs/spec/photos.md "No more candidates is no more candidates"). A species short of easy photos has fewer than EASY_NEED
 # observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
 # easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
 EASY_E, EASY_NEED = 4, 3

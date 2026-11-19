@@ -236,7 +236,11 @@ test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard pho
     {jt: 'p1g0sm1', e: 4, k: 'best', u: ['code'], n: '?'},
     {jt: 'p1g0sm1', k: 'best'}, // no ease
     {jt: 'bad', e: 3, k: 'best'},
-    {g: 's123', k: 'best'} // the old "not this species" field: never read (the species is the experts' identification)
+    {g: 's123', k: 'best'}, // the old "not this species" field: never read (the species is the experts' identification)
+    // Q430 (Pierre, 2026-11-19): a crop that takes out the fish one could confuse is coded as cropped (one fish) and goes
+    // in with it; a code still k (the crop does not take it out) stays out, crop or not.
+    {jt: 'p1g0sm1', e: 4, k: 'best', c: [0, 0, 0.6, 1]},
+    {jt: 'p1g0smk', e: 4, k: 'best', c: [0, 0, 0.6, 1]}
   ];
   const S = J0.map(fishSure);
   assert.deepStrictEqual(S, [
@@ -250,7 +254,9 @@ test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard pho
     null,
     null,
     null,
-    null
+    null,
+    {keep: 'add', tags: 'p1g0sm1', ease: 4, phase: null, crop: [0, 0, 0.6, 1]},
+    {keep: 'reject', why: 'other species'}
   ]);
   // fetch_fish.py frees the room of what the pass sets aside for sure: exactly fishSure's rejects.
   const pyv = J(`print(json.dumps([sure_out(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0));
@@ -273,10 +279,11 @@ JF.CUR = {'seen': {'fish-s1-cand-30': 1}}
 JF.CAND = {'s1': [{'f': f'fish-s1-cand-{i}', 'o': f'obs{i // 20}'} for i in (10, 11, 20, 30)]}
 files = {
   'good': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm1j5', 'keep': 'best', 'phase': 'female'},
-                      'fish-s1-cand-11': {'code': 'o1g2sm14', 'keep': 'alt', 'crop': [0.2, 0.1, 0.8, 0.9]},
+                      'fish-s1-cand-11': {'code': 'o1g2sm14', 'keep': 'alt', 'crop': [0.2, 0.1, 0.8, 0.9], 'bb': [0.3, 0.2, 0.7, 0.8]},
                       'fish-s1-cand-20': {'code': 'p1g0sl15', 'keep': 'best', 'unsure': ['crop'], 'note': 'tail cut?'}}},
   'bad': {'species': 's1', 'photos': {'fish-s1-cand-10': {'code': 'p1g0sm19', 'keep': 'best', 'phase': 'adult', 'crop': [0.5, 0, 0.4, 1]},
-                                       'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'best', 'species': 'not', 'quality': 2},
+                                       'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'best', 'species': 'not', 'quality': 2,
+                                                           'crop': [0, 0, 0.5, 1], 'bb': [0.4, 0.2, 0.7, 0.6]},
                                        'fish-s1-cand-99': {'code': 'p1g0sm14', 'keep': 'best'}}},
   # Pierre decided on cand-30 (seen) after its judgement: it stays as judged, its best counts for its observation.
   'kept': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'dup'},
@@ -297,7 +304,7 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3,
   // flag p of a dimorph entry added, capping nothing.
   assert.deepStrictEqual(entries, [
     {jt: 'p1g0sm1jp', e: 2, k: 'best', ph: 'female'},
-    {jt: 'o1g2sm1p', e: 3, k: 'alt', c: [0.2, 0.1, 0.8, 0.9]}, // the crop as proposed, as the game photos'
+    {jt: 'o1g2sm1p', e: 3, k: 'alt', c: [0.2, 0.1, 0.8, 0.9], bb: [0.3, 0.2, 0.7, 0.8]}, // the crop as proposed, as the game photos'
     {jt: 'p1g0sl1p', e: 5, k: 'best', u: ['crop'], n: 'tail cut?'}
   ]);
   const bad = E2.join('\n');
@@ -305,6 +312,8 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3,
   assert.match(bad, /code must follow judging\/FISH.md/);
   assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
+  // The code is read on the photo as cropped: a crop keeps the whole fish, its box inside (Q430).
+  assert.match(bad, /fish-s1-cand-11: the crop cuts the fish's box bb/);
   assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule W3)
   assert.match(bad, /fish-s1-cand-99: not a candidate of s1/);
   assert.match(bad, /1 candidate\(s\) not judged yet/);

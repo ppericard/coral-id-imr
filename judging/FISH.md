@@ -81,7 +81,7 @@ the fish itself is poorly lit).
   the margin, the fish plain, is not (a crop may take it out).
 - **Screens and video captures** (a screen's edge, moiré or reflections; a video player's interface): flag `a`.
 - **Other fish dark and poorly seen** beside a subject the eye sees first: `o`.
-- **Open, unchanged**: contrast (Q429), saving a photo by a crop (Q430), the juvenile ease (Q431).
+- **Unchanged here**: contrast (Q429), the juvenile ease (Q431); crops: "A crop that saves a photo" (#1223).
 
 ## The observer's life stage (2026-11-19)
 
@@ -332,11 +332,14 @@ choices per family in the app" has the details.
 ## A proposed crop
 
 When the fish is small in the frame, or the margins distract (another fish, a diver, empty water), the pass proposes a
-crop: `tools/fish_judge.json` `crops`, `[left, top, right, bottom]` as fractions of the photo, the format of
-`curation.json` `crop` and of a coral candidate's suggested crop (`suggest.json` `c`). Judged on a 5 x 5 grid over the
-photo, so to about a tenth of its side; the crop keeps the whole fish with a margin. **A proposal only** (Pierre,
-2026-11-04): written into `fish-photos.json` as `c`, never applied by the app or by a script; the admin will show it for
-Pierre to accept or change, as for coral candidates (ROADMAP).
+crop: `[left, top, right, bottom]` as fractions of the photo (`curation.json` `crop`'s format; a candidate's `crop`, a
+reference photo's `tools/fish_judge.json` `crops`), read on the 5 x 5 grid, keeping the whole fish with a margin (its
+`bb` inside). A sure judgement enters play cropped (the auto-sort writes the crop into Pierre's draft; he undoes or
+redraws it), so **a code with a crop reads the photo as cropped** (`big` for clarity).
+
+**A crop that saves a photo** (Pierre, 2026-11-19, Q430: "J'ai toujours dit de mettre en jeu les suggestions"): when a
+crop takes every fish one could take for the subject wholly out of the frame, the subject whole and at least medium in
+it, propose it and code the cropped photo (`1`, `s` or `o`, not `k`); at the least doubt, add `unsure: ["crop"]`.
 
 ## The fish's box (rubric 7, 2026-11-09)
 

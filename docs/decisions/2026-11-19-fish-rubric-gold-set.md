@@ -58,13 +58,14 @@ Each rule rests on his words on the photos named (verbatim dictation):
   colour cast of photo 20 ("je suis pas sûr"); backscatter on a sharp fish (photo 8: "Je suis même pas sûr"); the ease
   of a recognisable family (photos 7, 18), tied to Q431.
 
-Open, unchanged: a contrast field or rule (Q429; photos 6, 13, 17, 27), saving a photo by a crop that takes out the fish
-one could confuse (Q430; photos 10, 23), the juvenile ease (Q431; photos 4, 7).
+Unchanged here: a contrast field or rule (Q429; photos 6, 13, 17, 27) and the juvenile ease (Q431; photos 4, 7: Pierre
+answered «ok» at 14:42, no juvenile ease cap, the classes labels only; changed in its own PR). Saving a photo by a crop
+that takes out the fish one could confuse (Q430; photos 10, 23) is #1223's "A crop that saves a photo".
 
 ## Consequences
 
 - No photo already judged changes: every committed code with clarity `b` already has an ease of 2 or less
   (`tools/fish_judge.json`, `judging/fish/*.json`, `suggest.json`, `fish-game.json` checked), so nothing is rebuilt.
   The other corrections act on the next judgements.
-- Following the annotation puts more juveniles under the juvenile cap (2), which Q431 questions.
+- Following the annotation puts more juveniles under the juvenile cap (2) until Q431's own PR removes that cap.
 - The gold set's 30 photos measure the next judging check, in-sample for this rubric (it was corrected on them).
