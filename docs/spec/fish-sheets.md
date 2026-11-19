@@ -107,7 +107,8 @@ Every scientific genus in play has a short presentation and its ID cues, sourced
 `[src key, where in it]`, `none` {name: why no marks}), in our own words, from the FAO species identification guide for
 the Western Central Pacific (vols 3 to 6: each family's key to the genera, or to the species where it has none, and the
 species accounts) and FishBase species pages (where the guide splits genera by counts only, a visible feature FishBase
-gives for the genus's only game species, or for each); only features seen on a photo, never a count. It covers every
+gives for the genus's only game species, or for each); else Reef Life Survey, Fishes of Australia or an FAO catalogue,
+the ref's where then their words verbatim; only features seen on a photo, never a count. It covers every
 genus in play without IMR cues, in every circle (the surprise cards' families aside); a genus with IMR cues may
 also take 1 to 3 marks ([decision](../decisions/2026-11-19-genus-marks-beside-imr-cues.md)).
 
@@ -115,7 +116,7 @@ also take 1 to 3 marks ([decision](../decisions/2026-11-19-genus-marks-beside-im
 {plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a mark with a number, a line too
 long, a species named that is not one of its own, a genus with IMR cues given a presentation or a reason, or a genus in
 play without IMR cues that lacks a presentation or has neither marks nor a reason (`--marks`: tests). `app.js`
-`treeGenera` makes a genus's marks its unit's tips (`qt`) under "ID marks (FAO species guide, FishBase)" (`tl`) only
+`treeGenera` makes a genus's marks its unit's tips (`qt`) under "ID marks (its sources)" (`tl`) only
 without IMR cues, the presentation its card's plain sentence (`plain`, `plainLine`); `learn.js` `genMarks` shows both
 on the one sheet the genus opens (as `treeRoot`), under the IMR cues' box when there is one.
 

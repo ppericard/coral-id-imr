@@ -60,7 +60,7 @@ is the design's shorthand, and internal identifiers may keep it.
   (docs/LEARNING.md "Fish: scientific genera"); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its own sourced presentation and ID marks once written (Pierre, 2026-11-08;
-  `tools/fish_genus_marks.json`, "ID marks (FAO species guide, FishBase)", never IMR's: ARCHITECTURE "Fish sheets"), else
+  `tools/fish_genus_marks.json`, "ID marks (" and its sources' names, never IMR's: ARCHITECTURE "Fish sheets"), else
   its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
