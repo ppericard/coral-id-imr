@@ -44,7 +44,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed};',
+      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed, introLive, unlocked};',
     ctx
   );
   const M = ctx.M;
@@ -213,4 +213,58 @@ test('synced: a reopening that arrives before an older closing is kept (Codex re
   // A closing newer than the reopening still closes it.
   C.introMerge(JSON.stringify({E: [70, 0, t + 400, 'b']}), null);
   assert.ok(!C.introduced('E'));
+});
+
+// Rule L4: a live game's answers on a unit the path has not opened count as evidence, never opening it (model.js
+// introLive, called by live.js liveLog before it records the answer); the path opens it later on its card, with them.
+test('a live answer on a unit not opened: it counts and stays closed until its card, the answers kept', () => {
+  const P = {A: {ok: 9, ko: 1}, B: {ok: 8, ko: 2}},
+    M = model({P});
+  M.introAdd(['A', 'B'], true); // the first cards
+  M.ctx.n = 10;
+  // Live answers on E (never met): marked 'l', then scored into its record (here: its counts, as the scorer leaves them).
+  M.introLive('E');
+  P.E = {ok: 2, ko: 1};
+  assert.strictEqual(M.introMap().E[3], 'l');
+  assert.ok(M.closed('E') && !M.introduced('E') && !M.introReady('E'));
+  assert.ok(!M.unlocked(['A', 'B', 'C', 'D', 'E', 'F']).includes('E'), 'not in unlocked(): no other game draws it');
+  assert.ok(M.introLeft().includes('E'), 'still among the units the path opens, one at a time');
+  // The record adopted from the sheet's replay (its answers rebuilt from the log) does not open it: the mark is in the
+  // cards' synced map, not in the record.
+  P.E = {ok: 5, ko: 1, th: 0.4};
+  assert.ok(!M.introReady('E') && !M.unlocked(['E']).length);
+  // Another live answer: no new mark; a unit already met or closed again by "One at a time" is never marked.
+  const t = M.introMap().E[2];
+  M.introLive('E');
+  assert.strictEqual(M.introMap().E[2], t);
+  M.introLive('A');
+  assert.strictEqual(M.introMap().A[3], 's');
+  // Its card on the path: open and ready with the answers it had.
+  M.introAdd(['E'], false);
+  M.ctx.n += 2;
+  assert.ok(M.introduced('E') && M.introReady('E') && M.unlocked(['E']).length === 1);
+  assert.deepStrictEqual(P.E, {ok: 5, ko: 1, th: 0.4});
+});
+
+test('synced: a live mark never closes a unit opened on another device; any opening there opens it here', () => {
+  const A = model(),
+    B = model();
+  A.introAdd(['A'], true);
+  B.introAdd(['A'], true);
+  // B answered C in a live game (mark 'l'); A had shown C's card earlier: A keeps it open, B opens it.
+  A.introAdd(['C'], false);
+  B.introLive('C');
+  A.introMerge(JSON.stringify(B.introMap()), null);
+  assert.strictEqual(A.introMap().C[3], 'c');
+  assert.ok(A.introduced('C'));
+  assert.strictEqual(A.ctx.drops, 0, 'nothing closed');
+  B.introMerge(JSON.stringify(A.introMap()), null);
+  assert.strictEqual(B.introMap().C[3], 'c');
+  assert.ok(B.introduced('C'));
+  assert.strictEqual(B.ctx.drops, 1, 'opened here: the planned questions are drawn again');
+  // A mark from a device that never met D closes D here too, until a card opens it.
+  B.introLive('D');
+  A.introMerge(JSON.stringify(B.introMap()), null);
+  assert.deepStrictEqual([A.introMap().D[1], A.introMap().D[3]], [0, 'l']);
+  assert.ok(A.closed('D') && !A.introduced('D'));
 });
