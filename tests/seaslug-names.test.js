@@ -105,7 +105,8 @@ taxa = [
  {'rank': 'species', 'name': 'Hexabranchus lacer', 'raw': {'inat': None, 'worms': None, 'wiki': None}},
  {'rank': 'genus', 'name': 'Aplysia', 'raw': {'inat': {'pref': 'Aplysia', 'en': []}, 'worms': [], 'wiki': None}}]
 web = [{'taxon': 'Hexabranchus lacer', 'rank': 'species', 'name': 'Spanish dancer', 'nick': True, 't': 'Site, a page', 'u': 'https://s.example/p'},
-       {'taxon': 'Costasiella kuroshimae', 'rank': 'species', 'name': 'Shaun the Sheep', 't': 'Mag', 'u': 'https://m.example/'}]
+       {'taxon': 'Costasiella kuroshimae', 'rank': 'species', 'name': 'Shaun the Sheep', 't': 'Mag', 'u': 'https://m.example/'},
+       {'taxon': 'Aplysia', 'rank': 'genus', 'name': 'Sea hare', 'nick': True, 'note': 'a caveat', 't': 'Pierre, his word'}]
 names, shared = N.derive(taxa, web)
 print(json.dumps([names, shared]))
 `);
@@ -118,7 +119,11 @@ print(json.dumps([names, shared]))
   ]);
   assert.deepStrictEqual(names[1], [{n: 'Spanish Dancer', src: ['worms', 'wiki']}], "the article's own English title counts");
   assert.deepStrictEqual(names[2], [{n: 'Spanish dancer', src: ['web'], nick: 1, web: [{t: 'Site, a page', u: 'https://s.example/p'}]}]);
-  assert.deepStrictEqual(names[3], [], 'a scientific name is never kept as an English name');
+  assert.deepStrictEqual(
+    names[3],
+    [{n: 'Sea hare', src: ['web'], nick: 1, note: 'a caveat', web: [{t: 'Pierre, his word'}]}],
+    "a name may carry a note, and a source that is no page has no u (Pierre's own word); a scientific name is never kept"
+  );
   assert.deepStrictEqual(shared, [
     {
       n: 'Spanish Dancer',
@@ -137,9 +142,20 @@ test('tools/seaslug_names.json derives as written and holds every family, genus 
   d.taxa.forEach(t =>
     t.names.forEach(x => {
       assert.ok(x.src.length, `${t.name}: ${x.n} has a source`);
-      (x.web || []).forEach(w => assert.match(w.u, /^https:\/\//, `${t.name}: ${x.n}'s page`));
+      // a source is a page, or Pierre's own word (no u, his note): rule C2
+      (x.web || []).forEach(w =>
+        w.u ? assert.match(w.u, /^https:\/\//, `${t.name}: ${x.n}'s page`) : assert.match(w.t, /^Pierre/, `${t.name}: ${x.n}'s source`)
+      );
     })
   );
+  // "Pikachu": T. pikachu and T. pacifica, T. picta mentioned with its note (Pierre, 2026-11-19, Q417)
+  const pk = n => d.taxa.find(t => t.name === n).names.find(x => x.n === 'Pikachu') || {};
+  assert.ok(pk('Thecacera pikachu').nick && pk('Thecacera pacifica').nick, 'Pikachu is a nickname of both');
+  assert.ok(
+    pk('Thecacera picta').nick && /not necessarily appropriate/.test(pk('Thecacera picta').note),
+    'T. picta: mentioned, with a note'
+  );
+  assert.ok(!pk('Thecacera pikachu').note && !pk('Thecacera pacifica').note, 'the note is on T. picta only');
   // A name on two taxa is a point for the admin (rule C5): each in points.json.
   const P = read('points.json').points.filter(p => p.subj === 'seaslug'),
     said = P.map(p => p.title + ' ' + p.q + ' ' + (p.ctx || []).join(' '))
