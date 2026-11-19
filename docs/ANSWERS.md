@@ -1368,12 +1368,12 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   cost. Applied: #1273's merge (its PR body).
 - **05:39, rule A1's wording.** «Pour la nouvelle formulation de A1, je valide.» A1 protects the choices he made by
   hand, one by one; an accepted proposal is replaced by a better one. Applied: docs/rules/admin.md A1 and the rules
-  index (this PR).
+  index (#1282).
 - **05:39, the model and effort bullet.** «Pour la ligne sur les modèles et l'effort, OK pour cette stratégie.»
-  Applied: AGENTS.md "The right model and effort for each task" and INTEGRATOR's table (#1257's), this PR.
+  Applied: AGENTS.md "The right model and effort for each task" and INTEGRATOR's table (#1257's), #1282.
 - **05:39, P2 (the 34 untraced lecture photos, "B for now" of 2026-11-18).** «Pour P2, non, j'en ai aucune idée, donc
   si vous n'avez pas réussi, si vous n'avez pas correctement noté les choses, ben, je ne sais pas.» Kept as they are;
-  asking the IMR trainer stays his. Applied: ROADMAP "Trace IMR lecture photos to their original source", this PR.
+  asking the IMR trainer stays his. Applied: ROADMAP "Trace IMR lecture photos to their original source", #1282.
 - **05:39-05:40, no command for him to run.** «c'est jamais à moi de lancer une commande à la main dans un terminal.
   Ça devrait jamais être à moi. C'est à toi de le faire.»; «Comment ça se fait en fait que tu en es arrivé à devoir me
   demander manuellement de lancer une commande ?» The integrator does such steps itself; only a step it may not take
