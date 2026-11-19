@@ -96,6 +96,7 @@ Newest day first; within a day, by file name.
 | 2026-11-18 | [Decisions found in the comments of tools/ and tests/](2026-11-18-decisions-from-comments-tools-tests.md) | #1127 |
 | 2026-11-18 | [Decisions found in the comments of the tools/ scripts](2026-11-18-decisions-from-comments-tools.md) | #1142 |
 | 2026-11-18 | [The short feedback sheet: the verdict, one line, the rest behind More](2026-11-18-feedback-sheet.md) | #1110 |
+| 2026-11-18 | [Guards rather than prose: what players see, the Bash guard, the night report](2026-11-18-guards-not-prose.md) | #1117 |
 | 2026-11-18 | [Infrastructure health: an hourly check and the numbers to watch before the free tiers run out](2026-11-18-infrastructure-health.md) | #1101 |
 | 2026-11-18 | [Live mode after version 1: a QR code of our own on the lobby screen](2026-11-18-live-after-v1.md) | #1114 |
 | 2026-11-18 | [Player groups: no "apart" setting; group changes show at once](2026-11-18-no-apart-groups.md) | #1113 |
