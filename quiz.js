@@ -25,13 +25,19 @@ function bindQuizNav() {
 // the subject's words; src: where its look-alike pairs come from.
 const duelLede = src =>
   `<p class="lede">Two ${SUBJ.many} that are often confused (${src}, and your own mix-ups): say which one is in the photo. Pick an answer (or press 1-2); <b>Next</b> (or Enter) goes on. The duels pair only the ${SUBJ.many} you have met in the quiz, and every answer counts in your progress as in the quiz.</p>`;
+// The custom quiz's ? paragraph (cur: the game on screen; '' on any other), in the subject's words (SUBJ.one, SUBJ.many):
+// every subject's help (gameHelp, UNITS help) adds it.
+const customPlayLede = cur =>
+  cur === CUSTOM_H
+    ? `<p class="lede"><b>Custom quiz</b>: only the ${SUBJ.many} you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other ${SUBJ.many} only when you picked fewer than 4. A ${SUBJ.one} you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a ${SUBJ.one} that reaches ${Math.round(100 * DOM.EX)}% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.</p>`
+    : '';
 // The game rules (behind the ? button).
 const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
     : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
-  ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a genus that reaches ${Math.round(100 * DOM.EX)}% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.</p>` : ''}
+  ${customPlayLede(cur)}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus's % is the share of its photos you would name alone and typed, as far as your answers on it have shown: a right answer on a hard photo or a typed one raises it most, a mistake takes it back down; it fills up to 95%, and it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
       ? ''
@@ -2790,8 +2796,7 @@ const cqPicks = play => {
 const cqLooks = (x, play) => [x, ...play.filter(n => n !== x && (isLook(x, n) || confusable(x, n)))];
 // The groups of a view: [{k, t: title (HTML), sub, mark (HTML), L: genera}], and a note above them ('' for none).
 function cqGroups(view, play) {
-  const mk = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`,
-    names = L => L.map(n => `<i>${esc(n)}</i>`).join(' · ');
+  const names = L => L.map(uname).join(' · ');
   if (view === 'mix') {
     const own = mixClusters(mixEdges(play)),
       C = own.length ? own : mixClusters(lookEdges(play)),
@@ -2799,7 +2804,7 @@ function cqGroups(view, play) {
     return {
       note: own.length
         ? ''
-        : 'No mix-ups of yours yet: here are the look-alikes of the IMR lecture and the Coral Finder book, those players confuse most first. Your own mix-ups take their place as you play.',
+        : `No mix-ups of yours yet: here are the look-alikes of ${UNITS[SUBJ.id].cq.src}, those players confuse most first. Your own mix-ups take their place as you play.`,
       G: C.map((c, i) => ({
         k: 'm' + i,
         t: names(ord(c.g)),
@@ -2821,24 +2826,52 @@ function cqGroups(view, play) {
       G: LV.map(([k, t]) => ({k, t: esc(t), sub: '', mark: '', L: play.filter(n => shownLevel(n)[0] === k)})).filter(g => g.L.length)
     };
   }
+  // The first view: the subject's own groups (UNITS cq).
+  return {note: '', G: UNITS[SUBJ.id].cq.groups(play)};
+}
+// The marker of a group (the group's number or sign in a coloured disc), shared by the subjects' groups below.
+const cqMark = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`;
+// The corals' groups: the IMR lecture's, the benthic slate and the bonus genera after them.
+function cqByIMR(play) {
   const gk = n => (isBonus(n) ? '+' : isBenthic(n) ? 'F' : shownGroup(n) || '★'),
     ord = k => (typeof k === 'number' ? k : {'★': 100, F: 101, '+': 102}[k]);
-  return {
-    note: '',
-    G: [...new Set(play.map(gk))]
-      .sort((a, b) => ord(a) - ord(b))
-      .map(k => {
-        const gr = DATA.imrg.find(x => x.n === k),
-          L = play.filter(n => gk(n) === k);
-        return gr
-          ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: mk(gr.n, groupHue(gr.n)), L}
-          : k === 'F'
-            ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: mk('F', 200), L}
-            : k === '+'
-              ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: mk('+', 200), L}
-              : {k, t: 'Not covered in the lecture', sub: '', mark: mk('★', 200), L};
-      })
-  };
+  return [...new Set(play.map(gk))]
+    .sort((a, b) => ord(a) - ord(b))
+    .map(k => {
+      const gr = DATA.imrg.find(x => x.n === k),
+        L = play.filter(n => gk(n) === k);
+      return gr
+        ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
+        : k === 'F'
+          ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: cqMark('F', 200), L}
+          : k === '+'
+            ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: cqMark('+', 200), L}
+            : {k, t: 'Not covered in the lecture', sub: '', mark: cqMark('★', 200), L};
+    });
+}
+// The fish's groups: the identification groups of the regional key (TREEU.groups), in its order, as the Families page
+// shows them (learn.js viewFishList); a unit under a family (a species, a scientific genus) is in its family's group.
+function cqByKey(play) {
+  const gOf = n => {
+      for (let u = GX(n), i = 0; u && i < 4; u = GX(u.parent), i++) if (u.group) return u.group;
+      return 0;
+    },
+    gr = (TREEU && TREEU.key && TREEU.groups) || [],
+    G = [...gr.map(x => ({k: x.n, t: esc(x.title), sub: '', mark: cqMark(x.n, groupHue(x.n)), L: play.filter(n => gOf(n) === x.n)}))];
+  G.push({
+    k: '?',
+    t: gr.length ? 'Not in a group yet' : 'All',
+    sub: '',
+    mark: gr.length ? cqMark('?', 200) : '',
+    L: play.filter(n => !gr.some(x => x.n === gOf(n)))
+  });
+  return G.filter(g => g.L.length);
+}
+// The sea slugs': the units under their parent of the rank UNITS listBy names (the families), in the tree's order, as the
+// Genera page does (app.js unitsByParent), the units with no family last. No English name here: the picker shows the
+// scientific names, as the quiz does before an answer.
+function cqByFamily(play) {
+  return unitsByParent(play, UNITS[SUBJ.id].listBy).map(([p, L]) => ({k: p || '?', t: p ? uname(p) : 'Other', sub: '', mark: '', L}));
 }
 function viewCustom() {
   // The genera unlocked only (model.js unlocked: one progression path): picking opens none.
@@ -2854,18 +2887,21 @@ function viewCustom() {
   if (!CQ.VIEWS.includes(view)) view = 'imr';
   const tile = n => {
     const p = cover(GX(n));
-    return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
+    // data-s: what the search reads, lower case: the unit's name, its id and its English names (UNITS vern).
+    const s = [unameT(n), n, ...vernOf(n).map(x => x.n)].join(' ').toLowerCase();
+    return `<button type="button" class="cqtile" data-g="${esc(n)}" data-s="${esc(s)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<span class="cqnm">${uname(n)}</span>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
+  const U = UNITS[SUBJ.id].cq;
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches ${Math.round(100 * DOM.EX)}% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
-  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
-    ['imr', 'IMR groups'],
+  <p class="lede">The Quiz on the ${SUBJ.many} you pick. Tap the photos of the ${SUBJ.many} you want to work on, then <b>Start</b>. Three ways to see them: <b>${esc(U.by)}</b>, ${U.about}; <b>My mix-ups</b>, the ${SUBJ.many} you confuse with each other, the most confused first (before you have any, the look-alikes of ${U.src}); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest ${SUBJ.many}, those you missed lately, or a ${SUBJ.one} and its look-alikes. Only the ${SUBJ.many} picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other ${SUBJ.many} make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. A ${SUBJ.one} you have not met yet shows its card first. Mastery exams only come in the Quiz: a ${SUBJ.one} that reaches ${Math.round(100 * DOM.EX)}% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a ${SUBJ.one}" aria-label="Search a ${SUBJ.one}" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
+    ['imr', U.by],
     ['mix', 'My mix-ups'],
     ['prog', 'Progress']
   ]
     .map(([k, t]) => `<button type="button" data-cv="${k}" aria-pressed="${view === k}">${t}</button>`)
     .join('')}</div></div>
-  <div class="cqquick"><span class="label">Quick picks</span><button type="button" class="chip" data-qp="weak"${qp.weak.length < CUSTOM.MIN ? ' disabled title="Answer a few questions first"' : ''}>My weakest</button><button type="button" class="chip" data-qp="miss"${qp.miss.length < CUSTOM.MIN ? ' disabled title="Nothing missed lately"' : ''}>Recently missed</button><select class="chip" id="cqlk" aria-label="Look-alikes of a genus"><option value="">Look-alikes of…</option>${lk.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select></div>
+  <div class="cqquick"><span class="label">Quick picks</span><button type="button" class="chip" data-qp="weak"${qp.weak.length < CUSTOM.MIN ? ' disabled title="Answer a few questions first"' : ''}>My weakest</button><button type="button" class="chip" data-qp="miss"${qp.miss.length < CUSTOM.MIN ? ' disabled title="Nothing missed lately"' : ''}>Recently missed</button><select class="chip" id="cqlk" aria-label="Look-alikes of a ${SUBJ.one}"><option value="">Look-alikes of…</option>${lk.map(n => `<option value="${esc(n)}">${esc(unameT(n))}</option>`).join('')}</select></div>
   <div class="cq"></div>
   <div class="cqbar"><span class="cqn" aria-live="polite"></span><button type="button" class="linkish" data-clear>Clear all</button><button type="button" class="next" data-start>Start</button></div>`;
   const box = $v.querySelector('.cq'),
@@ -2875,7 +2911,7 @@ function viewCustom() {
   const show = () => {
     box.querySelectorAll('.cqtile').forEach(b => {
       b.setAttribute('aria-pressed', String(on.has(b.dataset.g)));
-      b.hidden = !!q && !b.dataset.g.toLowerCase().includes(q);
+      b.hidden = !!q && !b.dataset.s.includes(q);
     });
     box.querySelectorAll('.cqg').forEach(g => {
       const T = [...g.querySelectorAll('.cqtile:not([hidden])')];
@@ -2885,11 +2921,11 @@ function viewCustom() {
     });
     const k = on.size;
     // The genera picked, named under the count: a quick pick or a long list shows what is in without scrolling.
-    n.innerHTML = `<b>${k >= CUSTOM.MIN ? `${k} genera` : k ? 'Pick one more genus' : `Pick at least ${CUSTOM.MIN} genera`}</b>${
+    n.innerHTML = `<b>${k >= CUSTOM.MIN ? `${k} ${SUBJ.many}` : k ? `Pick one more ${SUBJ.one}` : `Pick at least ${CUSTOM.MIN} ${SUBJ.many}`}</b>${
       k
         ? `<small>${play
             .filter(x => on.has(x))
-            .map(x => `<i>${esc(x)}</i>`)
+            .map(uname)
             .join(', ')}</small>`
         : ''
     }`;
