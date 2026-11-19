@@ -1,6 +1,6 @@
 # Fish judging rubric: the gold set's corrections
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: P1, P3; judging/FISH.md "How to look", "Tags", "The gold set's
+Date: 2026-11-19. PR: #1218. Rules or docs touched: P1, P3; judging/FISH.md "How to look", "Tags", "The gold set's
 corrections", "The observer's life stage", "Ease", "Caps", "Candidates", "Other species: the split"; spec/fish-photos.md
 "The pre-sort", "What is in play".
 
