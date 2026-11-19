@@ -1,6 +1,6 @@
 # Rule P1 for the corals: no photo placed, ordered or weighted for who took it
 
-Date: 2026-11-19. PR: #N. Rules or docs touched: docs/spec/photos.md "Photos per context", docs/spec/basics.md,
+Date: 2026-11-19. PR: #1195. Rules or docs touched: docs/spec/photos.md "Photos per context", docs/spec/basics.md,
 docs/spec/data.md "Photo rights", docs/spec/subjects.md, docs/LEARNING.md "What a question shows", docs/ARCHITECTURE.md
 "Photos per context", docs/ROADMAP.md (the corals' photo source priority row, closed).
 
