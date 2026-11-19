@@ -674,6 +674,29 @@ async function freshSeed(b, base, errs, seed, fresh) {
         ok(!a.length, 'the surgeonfishes’ side: its juveniles that resemble');
         ok(!b.length, 'the angelfishes’ side: the species resembled');
       }
+      // The pair's marks after a mix-up between the two (model.js mimMix; quiz.js fbLine, mimMarks), through the real
+      // answer: the juvenile taken for the angelfishes gives the sheet's one line from the pair's marks, with their
+      // sources; taken for another family, the line it always had. The records touched are put back.
+      const oth = TREEU.c1.filter(n => n !== nM && n !== m1.fb && GX(n).views.wide.length).slice(0, 2),
+        ch = [nM, m1.fb, ...oth],
+        keep = Object.fromEntries(ch.map(n => [n, P[n] && JSON.parse(JSON.stringify(P[n]))])),
+        line = c => {
+          dropPlans();
+          SHOWNQ = null;
+          question('quiz', nM, ch, '', {shown: [pM]});
+          // answer.js: a chosen wrong answer (the unit of the species resembled, or another), never any answer
+          const bt = document.querySelector(`#view [data-c="${CSS.escape(c)}"]`);
+          if (bt) bt.click();
+          const l = document.querySelector('#after .fbline');
+          return {line: l ? l.textContent : '', lines: document.querySelectorAll('#after .fbs > .fbline').length};
+        },
+        mk = m1.pair.marks.map(k => k.t),
+        mix = line(m1.fb),
+        other = oth.length ? line(oth[0]) : null;
+      ok(mix.lines === 1 && mk.some(t => mix.line.includes(t)), `a mix-up of the pair: its marks make the one line (${mix.line})`);
+      ok(/Australian Museum|FishBase|IMR/.test(mix.line), `with their sources (${mix.line})`);
+      ok(!other || !mk.some(t => other.line.includes(t)), `another family: no mark of the pair (${other && other.line})`);
+      Object.entries(keep).forEach(([n, x]) => (x ? (P[n] = x) : delete P[n]));
       P[nM] = s0;
     }
     return {fails, gated};

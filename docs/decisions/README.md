@@ -81,6 +81,7 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
+| 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
 | 2026-11-19 | [One answer recorder for every game: the photo quiz and the live game record through quiz.js recordAnswer](2026-11-19-one-answer-recorder.md) | #1213 |
@@ -98,7 +99,6 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
-| 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
 
 Older decisions are still in the notebook's "Decision log"
 ([docs/archive/learning-notebook.md](../archive/learning-notebook.md); LEARNING.md "Decision log" points there), the
