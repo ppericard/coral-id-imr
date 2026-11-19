@@ -89,11 +89,12 @@ def search(root, terms, any_term=False):
 def open_prs(root):
     """The open PRs as (number, head branch), from gh; None when gh fails or is offline."""
     try:
-        r = subprocess.run(['gh', 'pr', 'list', '--state', 'open', '--limit', '100', '--json', 'number,headRefName'],
+        # REST, not `gh pr list`: GraphQL is not available from Claude Code sessions
+        r = subprocess.run(['gh', 'api', 'repos/{owner}/{repo}/pulls?state=open&per_page=100'],
                            cwd=root, capture_output=True, text=True, timeout=20)
         if r.returncode:
             return None
-        return [(p['number'], p['headRefName']) for p in json.loads(r.stdout)]
+        return [(p['number'], p['head']['ref']) for p in json.loads(r.stdout)]
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         return None
 
