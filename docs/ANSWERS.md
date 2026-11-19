@@ -1388,3 +1388,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
   trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
   their original source", #1282.
+- **05:53, one admin for every subject.** «l'admin doit être le même ou presque le même pour l'ensemble des matières
+  et des modes de jeu. Donc il y a un admin qui ensuite est adapté pour chacune des matières. Et donc du coup c'est
+  aussi valable pour le nidibranche, c'est aussi valable pour quoi que ce soit qu'on veuille plugger derrière.» One
+  admin adapted to each subject, the sea slugs and any later one included, each subject declaring only its
+  differences in one place; the fish parity goal becomes the one-engine plan. Applied: ROADMAP "One engine for every
+  subject, what is left" (the row "Fish admin at parity with the corals, Analyses first" folded into it, the backlog's
+  item 4), the study's §5 (step 3 built), decision record `2026-11-20-one-admin-every-subject`, #1288.

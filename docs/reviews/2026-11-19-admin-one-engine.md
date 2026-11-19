@@ -207,8 +207,8 @@ green checks; refactors of this size probably run longer.
    data, `FISHC`, step 4's), and the Journey (its units' names; one "sheets opened" section for every subject, the log's
    per-genus listing named once, `sheetsByUnit`). Gone: `unitWait`, the Pairs and Heatmap `gx`/`rec` twins; `fuRanks`
    renamed `ranksOf` (§2). The tree in force's registry (`FISHA`) still serves To do's reports, Health and the tiles
-   (steps 4 and 8). The ratchet: 276 occurrences to 254, 45 file-proxy pairs to 41 (`.sheets` 66 to 50, `DATA.gen` 81 to
-   76, `FISHS` 37 to 36), 137 names to 136. Checked: the demo admin's HTML of Taxa, the Heatmap, Pairs, four Analyses
+   (steps 4 and 8). The ratchet: 273 occurrences to 251, 45 file-proxy pairs to 41 (`.sheets` 66 to 50, `DATA.gen` 78 to
+   73, `FISHS` 37 to 36), one name fewer (`fuRanks`). Checked: the demo admin's HTML of Taxa, the Heatmap, Pairs, four Analyses
    views and three Journeys, for each subject, identical before and after (1280 px, the clock fixed).
 4. **One Tree** (Dup-1, second half; admin L): `renderTree(S)`, the builders declared in one place. Depends on 0 and
    3.
