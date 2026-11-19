@@ -588,6 +588,7 @@ const DOC_BUDGET = {
   'docs/spec/basics.md': [14, 130],
   'docs/spec/front-end.md': [21, 130],
   'docs/spec/model.md': [23, 130],
+  'docs/spec/reserve.md': [5, 130],
   'docs/spec/quiz.md': [20, 130],
   'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],

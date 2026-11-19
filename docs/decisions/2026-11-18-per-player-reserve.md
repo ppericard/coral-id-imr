@@ -1,7 +1,7 @@
 # Per-player reserve: each player's own exam photos, every subject
 
 Date: 2026-11-18 (Manila, about 12:05). PR: #1099. Rules or docs touched: LEARNING.md "The reserve in the game",
-ARCHITECTURE.md, ROADMAP "A held-out photo set"; rules P1, P4, S1, D4, D8, D9 applied, none changed.
+spec/model.md "The exam's reserve", ROADMAP "A held-out photo set"; rules P1, P4, S1, D4, D8, D9 applied, none changed.
 
 ## Context
 
@@ -45,5 +45,6 @@ The integrator's calls (easy to correct):
 - **No gate (rule D4):** the script's mode parsing already reads `|h` on any subject.
 - **For players:** different players practise on different photos, and the corals and the sea slugs now hold some
   photos back from practice.
-- **The rule L11 check** (LEARNING.md "The reserve in the game") found two breaches, both for the corals' beginner in
-  the rated world. They go to Pierre with the PR.
+- **The rule L11 check** (docs/archive/learning-notebook.md "The per-player reserve: the checks") found two breaches,
+  both for the corals' beginner in the rated world; Pierre kept the corals' reserve as built (Q420 A), and the photos
+  it may take read their qualities only (rule P1): [2026-11-19-per-player-reserve-corals.md](2026-11-19-per-player-reserve-corals.md).

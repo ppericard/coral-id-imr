@@ -1,8 +1,8 @@
 # Fish photos: sources, candidates and the photos in play
 
 Where a fish photo comes from, the rules every source applies, how a candidate is judged, curated and put in play, and
-the files on the way to the game (`fish-cand.json`, `tools/fish_refs.json`, `fish-game.json`, `fish-photos.json`,
-`fish-holdout.json`). This is the specification of what the code does now; why each part was decided is in
+the files on the way to the game (`fish-cand.json`, `tools/fish_refs.json`, `fish-game.json`, `fish-photos.json`).
+This is the specification of what the code does now; why each part was decided is in
 [docs/decisions/](../decisions/README.md) and the PRs. [DATA.md](../DATA.md) is the short table of the data files; the
 fish content (`fish.json`: units, circles, presence, covers) is in [fish.md](fish.md); the judging rubric in
 `judging/FISH.md`; the admin pages in [ARCHITECTURE.md](../ARCHITECTURE.md) "Admin back-office" ("Admin for every
@@ -532,35 +532,7 @@ photos with `xc`; none for the corals, so they never play it) and `tileSrc(p)` (
 its 480 px photo once R2 has failed, a tile having no online original), `quiz.js` `planFind` (the question), `question`
 (the four tiles as the choices, `.qstage.qfx`, `app.css` `.fxt`).
 
-## The held-out set (`fish-holdout.json`, `tools/holdout.py`)
+## Photos kept for the exam
 
-The fish observations kept out of practice for an honest mastery exam (ROADMAP "A held-out photo set"):
-`{v, built, about, rule, held: {species id: [observation id]}}` (an observation by `fish-game.json`'s short `o`).
-
-- **Sized per exam unit**, enough to take the exam again several times when there are enough photos otherwise: 15 per
-  unit with a mastery exam (three exams of `model.js` `EXAM.n`; every family in play, then each scientific genus of a
-  circle-1 family topped up, `holdout.py` `exam_units`), taken across its species in turn (their `fish.json` order),
-  never leaving a species with fewer than 8 observations in practice (`autosort.js` `FISHT.obs`).
-- **Learning first**: a unit holds back only from a real surplus, what leaves it at least 30 observations in practice
-  (`holdout.py` `FLOOR`; a genus's floor also bounds what its family takes from its species), so a thin unit holds back
-  nothing and its exam asks the photos seen least; `GENUS_KEEP` and `RATIO` stay as parameters, off.
-- **Eligible**: an observation in play none of whose photos is Pierre's own, a reference source's (`rep`) or of
-  reference level (`core.js` `refLevel`), the surprise-only species left out; whole observations (rule P4); within a
-  species the first in a fixed hash order (sha256 of the salt and the id), sticky (a held-out observation stays while in
-  play and eligible; a unit under its target takes the next; only a species left under 8 in practice gives some back); a
-  file made under another rule is drawn again. Pierre's ★ covers and featured picks are not read, so a Publish never
-  makes it stale: the reader leaves a picked photo out of the set.
-- The photo workflow rewrites it with `fish-game.json`; CI runs `--check`.
-- **In the game** ([LEARNING.md](../LEARNING.md) "The held-out photos in the game"): the app loads it with Home's fish
-  files (`app.js` UNITS fish get `ho`; `{}` when it cannot come, and every photo then plays as practice); `core.js`
-  `treeHeld` reads it, less the observations of Pierre's ★ covers and featured photos (`curation.json` fish genera, by
-  `treePid`); `treePhotos` (its fourth argument) marks those photos `ho`; `treeGen`, `treeGenUnits` and `app.js`
-  `treeGenera` put them in each unit's `held` list (family, genus, species), never in `views`, so no draw, card, cover,
-  sheet, Learn page, duel, Find the X, Memory or Home list shows them.
-- Only the mastery exam asks them (no practice probe): `model.js` `examSet` draws from the held-out photos the player
-  was never shown (any unit) first, the hardest; `genusDiff` and the variant groups (`examPics`, `varUnitOf`) read
-  `views` and `held` together, as the sheet's variant table (`treeVarTable`, made without the set) does. `quiz.js` logs
-  `|h` on an answer that showed one, so an exam answer reads `…|h|x` (after `|c`, before `|kN`, `|t`, `|x`); counted
-  like any answer.
-- The sheet, the admin and the tools that read `fish-game.json` without the set see every photo (the admin does not
-  mark them yet). `tests/holdoutwire.test.js`.
+No file holds fish photos out of play: each player's own reserve takes a few observations of a unit out of that player's
+practice for their mastery exam, the same for every subject ([model.md › The exam's reserve](model.md#the-exams-reserve)).

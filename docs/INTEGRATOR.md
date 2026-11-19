@@ -41,7 +41,7 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **The Candidate photos run moves `main`** after any judging merge, and a train started meanwhile stops ("main moved"):
   wait for that workflow's run to end, then train.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
-  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), `fish-holdout.json`.
+  otherwise), `suggest.json` (re-import the PR's species over `main`'s file).
 - **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).
 - **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: the waiter's own command

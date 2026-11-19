@@ -75,6 +75,7 @@ Newest first.
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
+| 2026-11-19 | [The per-player reserve: the corals keep theirs, and which photos it may take reads their qualities only](2026-11-19-per-player-reserve-corals.md) | #1099 |
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
@@ -86,6 +87,7 @@ Newest first.
 | 2026-11-18 | [The coral calibration set: 50 photos drawn a little more often until each has 20 answers](2026-11-18-coral-calibration-set.md) | #1130 |
 | 2026-11-18 | [Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits](2026-11-18-architecture-steps-3-4.md) | #1146 |
 | 2026-11-18 | [Guards rather than prose: what players see comes from Pierre, the Bash guard, the night report](2026-11-18-guards-not-prose.md) | #1117 |
+| 2026-11-18 | [Per-player reserve: each player's own exam photos, every subject](2026-11-18-per-player-reserve.md) | #1099 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
 | 2026-11-18 | [Decisions found in the comments of the tools/ scripts](2026-11-18-decisions-from-comments-tools.md) | #1142 |
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |

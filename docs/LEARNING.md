@@ -545,7 +545,7 @@ it.
 ### Logged for the admin's player journey
 
 The mode of each answer says what the question was: `quiz` the photo quiz, `|s` its custom form, `|d` a duel slipped
-in, `|f` a Find the X, `|c` a comeback question, `|h` a held-out photo, `|kN` fewer plausible choices than buttons,
+in, `|f` a Find the X, `|c` a comeback question, `|h` a photo of the player's reserve, `|kN` fewer plausible choices than buttons,
 `|t` typed, `|x` a mastery-exam question (`quiz.js` `answer`); the cards keep their kind and time; Open all and the
 back card keep their choice. The admin's player journey reads them.
 
@@ -595,8 +595,9 @@ asked, either way, offered together or mixed up (pair coverage: `core.js` `looks
 confusion-group partners that can open are met; a unit whose record says `noex` (a fish species) has none. Then
 `EXAM.n` questions on it are slipped into the photo quiz, unannounced and counted nowhere on screen, at least
 `EXAM.gap` other answers apart (recognition, not short-term memory). Each is as hard as the game gets: one photo alone,
-the hardest of its view, the views taking turns, 3 look-alike traps; a held-out photo never shown first, else a photo
-never shown, else the least seen of those never answered right (`model.js` `examSet`). `TYPED.exam` of them are typed
+the hardest of its view, the views taking turns, 3 look-alike traps; an observation of the player's reserve never shown
+to them first, else an observation never shown, else the least seen of those never answered right (`model.js`
+`examSet`; "The reserve in the game"). `TYPED.exam` of them are typed
 ("Typed questions"). All right, with a right answer on each variant group the unit has (`model.js` `examPassed`,
 `varLeft`): the unit is learned, 100%. Any miss on the unit, or the unit given for another, ends the exam; it starts
 again from the entry. On the bar, each exam question passed fills a fifth of what is left to 100%, at most four of them
@@ -759,15 +760,15 @@ so the trap arrives with its explanation. Why and who decided: the
 Its level-1 checks are in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check", "The
 mimicry pairs drilled: the level-1 check").
 
-### The held-out photos in the game
+### The reserve in the game
 
-Some fish observations are kept out of practice for an honest mastery exam (rule L9): never shown in a game, a card, a
-sheet or a list, asked only by the mastery exam, first, unannounced and counted like any answer, logged `|h`
-(`core.js` `treeHeld`, `model.js` `examSet`). The set is `fish-holdout.json`, written by `tools/holdout.py`: per exam
-unit (every family in play, and the scientific genera of the circle-1 families), 15 observations (three exams), never leaving a species with fewer
-than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in practice, else holds back
-nothing (learning first). Never Pierre's own photos, a reference source's or a reference-level one. Deterministic and
-sticky. A unit's difficulty counts its held-out photos, so withholding them moves nothing.
+Each player has a reserve of their own, in every subject, for an honest mastery exam (rule L9): per unit with an exam,
+up to 15 observations (three exams) this player never sees in practice, asked by their exam first, unannounced, counted
+like any answer and logged `|h`; other players practise on them ([spec/reserve.md](spec/reserve.md)). Taken across the
+unit's species in an order of the player's own, only from a real surplus (learning first: at least 8 per species and
+30 per unit left in practice), never Pierre's own photos, a reference-level one or a card's, never by route or source
+(rule P1). Recomputed at each build; the unit's difficulty counts them, so withholding them moves nothing the sheet
+computes. Checks: the [notebook](archive/learning-notebook.md) ("The per-player reserve: the checks").
 
 ### Fish: scientific genera, the first step of branch B
 
@@ -1007,6 +1008,8 @@ in normal play until it has 20 or more answers, never as a hidden probe; a test 
   Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
   else: targeting, photo memory, variety, format and scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
   file did not come, draws as before.
+- **Reserves**: a member may fall in a player's reserve ("The reserve in the game"; about 4 of the 50 per player), out
+  of that player's practice only.
 - **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
   lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
 
@@ -1801,7 +1804,7 @@ learning change".
   to tell each declared look-alike pair apart (2 choices, average photo, both ways); the genera whose true success on a
   **hard reference question** (one photo alone, difficulty + 1 plus the single view's 0.5, 4 choices: the genus and its
   3 most confusable slate genera; `LEARNER.REF_D`) is `LEARNER.REF_OK` 0.9 or more; the genera that entered the exam,
-  and their true reference success then and when learned; the exam, held-out, duel, Find the X and Again questions and
+  and their true reference success then and when learned; the exam, reserved-photo, duel, Find the X and Again questions and
   the cards so far; the field row ("Field learner and the Custom-8 scenario") and rule L11's levels, score and plateau
   ("Validating a learning change"). Per run: the question at which each genus was first met (`metAt`, printed as the
   median per profile for the genera of `--met`, by default Acropora, Porites, Pocillopora, Montipora and Millepora; a
@@ -1876,7 +1879,7 @@ bar is judged by it in several learner worlds.
   recognition, no guess. Field and exemplar learners: every slate genus is a possible answer (for a unit outside the
   slate, the units of its own kind). μ_g and SD: with `--truth gen`, the sheet's genus offset and `JUDGE.SD` 0.8 (an
   assumption); with a truth file, its `gd` and its `sd` (else 0.8); otherwise the mean and the spread of the app's own
-  difficulties of g's photos, its held-out ones included. learnsim keeps D\* and the bar shown per genus met.
+  difficulties of g's photos, the player's reserved ones included. learnsim keeps D\* and the bar shown per genus met.
 - **The exemplar learner** (`--learner exemplar`, `LEARNER.EX`: K 8, R 0.6, D 8, B 0.03): a summed-similarity model
   after the GCM (Nosofsky 1986), with a background (guessing) term. Every photo shown is stored as an exemplar of the
   genus shown, a miss's montage stores a typical photo of the genus given, and prior know counts as know / (1 − know)

@@ -295,12 +295,6 @@ The fish content and photos themselves: [fish.md](fish.md), [fish-photos.md](fis
   `--check`, the import into `suggest.json` `fish`. `--subject seaslug` runs the same pass on the sea slugs' candidates
   (`seaslug-cand.json`) and rubric (`judging/SEASLUG.md`; `fish_judge.py` `RUBRICS`), files
   `judging/seaslug/<taxon id>.json`, imported into `suggest.json` `seaslug`.
-- **`holdout.py`** → `fish-holdout.json`: the fish held-out set
-  ([fish-photos.md](fish-photos.md#the-held-out-set-fish-holdoutjson-toolsholdoutpy)): writes the file from
-  `fish-game.json`, `fish.json` and the file itself (sticky); `--check` (CI: the file is what a run writes), `--stats`
-  (the exam units, families and scientific genera, that reach 15 held out, hold fewer, hold none; the
-  species under 8 in practice); `FLOOR`, `RATIO`, `GENUS_KEEP` the variants' parameters, `--fresh` (a draw from nothing,
-  never once the wiring ships). Run by the photo workflow after `fetch_approved.py`; `tests/holdout.test.js`.
 - **`fish_draw_sim.js`**: the fish draw's easy share in the real app: `model.js` `photoSet` drawn per entry and stage of
   a player's level, the share of photos under ease 4 (`--photos FILE`, `--calib JSON`, `--entries`, `--draws`;
   Playwright, in the machine slot); [LEARNING.md](../LEARNING.md) "The fish draw in big pools".
