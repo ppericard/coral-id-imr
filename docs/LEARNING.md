@@ -236,7 +236,7 @@ Newton's method on d_f with a normal prior N(0, `FMT.SD`²), for a format with `
 of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `typed`, `exam`…;
 a format absent counts 0, `core.js` `fmtOff`). The ability steps expect the question with its format's offset, and the
 photo's aim takes it (`aimOff(k, df)`), so a 2-choice question that is right more often than 1 in 2 explains no longer
-over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `replay` false) scores and aims with every
+over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `offsets` false) scores and aims with every
 offset at 0 (`model.js` `pfmt`).
 
 ### What a question shows
@@ -908,7 +908,7 @@ sheet, the admin and the app (`core.js` `MEM`, `memBucket`, `memFam`, `eloReplay
   `PHOTO_W.KNOWN` −1), weighs `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices). Served as `mem`, with
   `memn`, the trusted answers behind each bucket.
 - **Per subject** (`model.js` `pmem`): the app reads the sheet's offsets (`PMEM`) for the subject the sheet replays
-  with them (`SUBJECTS` `replay`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
+  with them (`SUBJECTS` `offsets`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
   older sheet or offline (`core.js` `memOf`).
 - **The offsets do not depend on time.** Rule L1's second exception (photo memory) would allow a lag term; none is in
   until the lag table shows enough answers per lag band (ROADMAP "Photo memory that fades with time").
