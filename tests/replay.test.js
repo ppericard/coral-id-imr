@@ -321,6 +321,41 @@ test('replayProgress: the ability, the run, the global level and the times, as q
   assert.strictEqual(C.abilityOf({}, 'A'), 0, 'a genus never answered, no global level: 0');
 });
 
+// docs/LEARNING.md "One contrast queue": the Again after a mix-up and the duels are one kind of question; a right one of
+// any of them counts for the duel achievement (s.du), as the game sets it (quiz.js recordAnswer, core.js contrastQ).
+test('contrastQ: the Duel tab, a duel slipped in and an Again are contrasts; 4 choices, typed, live and the exam are not', () => {
+  for (const [m, n] of [
+    ['quiz-duel|A|B', 2],
+    ['quiz|d|k2', 2],
+    ['quiz|k2', 2],
+    ['quiz|s|k2', 2],
+    ['quiz|s|d|k2', 2]
+  ])
+    assert.strictEqual(C.contrastQ(m, n), true, m);
+  for (const [m, n] of [
+    ['quiz', 4],
+    ['quiz|k2', 4], // 4 shown, 2 plausible: not an Again
+    ['quiz|t', 0],
+    ['quiz|x', 4],
+    ['quiz|f', 4],
+    ['live', 2],
+    ['wink', 2],
+    ['', 2]
+  ])
+    assert.strictEqual(C.contrastQ(m, n), false, m);
+});
+
+test('replayProgress: a right Again counts for the duel achievement, as a right duel does; a missed one does not', () => {
+  const mode = (r, m) => r.map((x, i) => (i === 5 ? m : x));
+  const du = rows => (C.replayProgress(rows, {gen: GEN}).p.P.A || {}).du;
+  const base = [row('p', 0, 'A', 'B', 'a0', 'A B C D')]; // the mix-up that queues the Again
+  assert.strictEqual(du([...base, mode(row('p', 1, 'A', 'A', 'a1', 'A B'), 'quiz|k2')]), 1, 'a right Again');
+  assert.strictEqual(du([...base, mode(row('p', 1, 'A', 'A', 'a1', 'A B'), 'quiz|d|k2')]), 1, 'a right duel slipped in');
+  assert.strictEqual(du([...base, mode(row('p', 1, 'A', 'B', 'a1', 'A B'), 'quiz|k2')]), undefined, 'a missed Again');
+  assert.strictEqual(du([...base, mode(row('p', 1, 'A', 'A', 'a1', 'A B C D'), 'quiz|k2')]), undefined, '4 shown, 2 plausible');
+  assert.strictEqual(du([...base, mode(row('p', 1, 'A', 'A', 'a1', 'A B'), 'live')]), undefined, 'a live answer');
+});
+
 test('replayProgress: the genus wrongly given loses progress, gets a miss and its run reset, but its ability does not move', () => {
   // B is answered right twice, then given for a photo of A three times.
   const rows = [row('p', 0, 'B', 'B', 'b0', 'B A C D'), row('p', 1, 'B', 'B', 'b1', 'B A C D')];

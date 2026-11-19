@@ -496,7 +496,7 @@ target with 2 choices, in its own format (`again`, `qduel`).
 The duel of "One contrast queue": a pair from the subject's look-alike pairs (`UNITS` pairs: for the corals the
 declared look-alikes, Millepora's and the bonus genera's with the slate look-alike the Coral Finder names) and the
 look-alikes from the data, never two units of one label (`model.js` `choiceNames`). A right answer counts for the duel
-achievement as one in the Duel tab does.
+achievement as one in the Duel tab or a right Again does (`core.js` `contrastQ`).
 
 ### Find the X slipped into the fish quiz
 

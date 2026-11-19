@@ -3137,6 +3137,11 @@
     const k = /\|k(\d)/.exec(m);
     return k && Number(k[1]) < 4 ? (Number(k[1]) >= 3 ? 'k3' : 'k2') : 'k4';
   }
+  // A 2-choice contrast of a look-alike pair (docs/LEARNING.md "One contrast queue": the Again after a mix-up and the
+  // duels slipped into the quiz are one kind of question, the Duel tab's too), from its mode and its number of choices:
+  // the formats duel, qduel and again of a quiz answer (fmtOf; a live answer is none). A right one counts for the duel
+  // achievement (s.du), in the game (quiz.js recordAnswer) and in the replay (replayProgress).
+  const contrastQ = (m, nch) => /^quiz/.test(String(m || '')) && ['duel', 'qduel', 'again'].includes(fmtOf(m, nch));
   // Per-format offsets (docs/LEARNING.md "Per-format offsets"): a question's format moves its success beyond what the
   // app's guess rate 1/k allows for (2 plausible choices among 4 shown: right 87% where the app expected 74%; typed: 76%
   // where it expected 82%, on the real answers). Each format f gets an offset d_f, in logits, added
@@ -6370,7 +6375,7 @@
         // the time of the last such miss, takes away a mark passed before it; lx, the last miss, ends an exam in course.
         if (!ok) s.lx = r[1];
         if (!ok && !keepsMark(s, pl.P, t)) s.lm = r[1];
-        if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
+        if (ok && contrastQ(mode, chs.length)) s.du = 1;
         if (wrong) {
           const x = pl.P[c];
           x.lx = r[1];
@@ -7375,6 +7380,7 @@
     trustOf,
     guessOf,
     fmtOf,
+    contrastQ,
     FMT,
     fmtOffsetsOf,
     fmtPoint,
