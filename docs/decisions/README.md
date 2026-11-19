@@ -85,6 +85,7 @@ Newest first.
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
 | 2026-11-19 | [Rules tooling: a search before any question, the answers ledger checked, the decisions index generated](2026-11-19-rules-tooling.md) | #1199 |
+| 2026-11-19 | [The rules core trial's harness, and a guard on agent launches: model and effort set, every launch logged](2026-11-19-rules-trial-harness.md) | #1209 |
 | 2026-11-19 | [The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING](2026-11-19-rules-wordings.md) | #1190 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
