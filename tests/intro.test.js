@@ -240,11 +240,14 @@ test('a live answer on a unit not opened: it counts and stays closed until its c
   assert.strictEqual(M.introMap().E[0], 10);
   M.introLive('A');
   assert.strictEqual(M.introMap().A[3], 's');
-  // Its card on the path: open and ready with the answers it had.
+  // Its card on the path: open, and ready as any card's unit (INTRO.GAP answers after it: its answers before the card
+  // are not the card's question, model.js askedOpen), with the answers it had.
+  P.E.at = CLOCK;
   M.introAdd(['E'], false);
+  assert.ok(M.introduced('E') && !M.introReady('E'));
   M.ctx.n += 2;
   assert.ok(M.introduced('E') && M.introReady('E') && M.unlocked(['E']).length === 1);
-  assert.deepStrictEqual(P.E, {ok: 5, ko: 1, th: 0.4});
+  assert.deepStrictEqual({...P.E, at: 0}, {ok: 5, ko: 1, th: 0.4, at: 0});
 });
 
 test('synced: a live mark never closes a unit opened on another device; any opening there opens it here', () => {

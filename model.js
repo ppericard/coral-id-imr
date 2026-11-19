@@ -694,8 +694,13 @@ const openRecent = (at = answersSoFar()) =>
 // soon: the genera of the questions already on screen or planned before this one (quiz.js planNext), asked by then.
 const openPace = (at = answersSoFar(), soon = []) => {
   const L = openRecent(at);
-  return L.length < OPEN.MAX && L.every(n => asked(n) || soon.includes(n));
+  return L.length < OPEN.MAX && L.every(n => askedOpen(n) || soon.includes(n));
 };
+// The genera opened on a card in the last OPEN.WIN answers whose question is still to come once they are ready (quiz.js
+// planPhoto, tools/ratedworld.js): the question asks one of them first, so the opening's pace is openPace's ceiling, not
+// the luck of the draw. list: the units in play; soon as openPace's.
+const openDue = (at, list, soon = []) =>
+  openRecent(at).filter(n => !askedOpen(n) && !soon.includes(n) && introReady(n) && list.includes(n));
 // An opening only after a right answer (docs/LEARNING.md "An opening only after a right answer": a new genus must not
 // feel like a reward for a miss): the path opens a genus only when the last graded answer was right, or there was none;
 // the opening is deferred, not lost. Every graded answer counts, whatever the game: the global record's recent results
@@ -917,6 +922,18 @@ const introAdd = (L, start, kind = start ? 's' : 'c') => {
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
+// Asked since the path opened it: an answer at or after the time of its entry (the card, the first cards, Open all: e[2]),
+// read from the unit's last answer (s.at, answeredAt; the replay keeps the later of the two). The readers that wait for
+// the card's own question (openPace, openDue, introReady, the circles' and the bonus offer's "every unit asked", the
+// all-met card) read this, not asked: a live game's answers before the card (introLive; rule L4) and those before a card
+// that reopens a unit closed by One at a time count as evidence, never as the card's question. An entry with no time,
+// or a record with no s.at (both older): any answer, as asked.
+const askedOpen = n => {
+  if (!asked(n)) return false;
+  const e = introMap()[n],
+    at = (P[n] || {}).at;
+  return !e || !(Number(e[2]) > 0) || typeof at !== 'number' || at >= e[2];
+};
 // Closed again by "One at a time" (introBack, below), or answered in another mode before the path opened it (introLive,
 // below): kind 'b' wins over the answers already given until a card (or Open all) opens the genus again and replaces
 // the mark; the unit keeps its answers.
@@ -935,7 +952,7 @@ const introLive = n => {
 const introduced = n => !closed(n) && (asked(n) || n in introMap());
 const introReady = n => {
   if (closed(n)) return false;
-  if (asked(n)) return true;
+  if (askedOpen(n)) return true;
   const e = introMap()[n];
   return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
 };

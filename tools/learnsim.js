@@ -352,9 +352,10 @@ function play(cfg) {
     const m = ds.reduce((a, x) => a + x, 0) / ds.length;
     return [m, Math.sqrt(ds.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, ds.length - 1)) || J.SD];
   };
-  // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
+  // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback). With --live too: the live
+  // answers, then the cards, each at its own time (model.js askedOpen reads a unit's answers at or after its card's).
   let T = Date.parse('2026-11-02T08:00:00Z');
-  if (breaks.length) Date.now = () => T;
+  if (breaks.length || cfg.live) Date.now = () => T;
 
   const sig = x => 1 / (1 + Math.exp(-x)),
     cl = q => Math.min(0.995, Math.max(0.005, q)),
@@ -887,6 +888,7 @@ function play(cfg) {
     if (!cfg.liveOff && liveLog(SUBJ, {qi: i, pid: 'sim0000000', s: SUBJ.id, t, c: pick, ph: b.ph.map(p => p.f), chs: ch}) === 'ok') live.rec++;
     teach(t, prof.rate * (pick === t ? 1 : L.MISS));
     if (pick !== t) teach(pick, prof.rate * L.PICKED);
+    T += L.STEP;
     live.n++;
     live.ok += pick === t ? 1 : 0;
     if (!live.units.includes(t)) live.units.push(t);

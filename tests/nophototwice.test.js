@@ -107,6 +107,7 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     introduced: () => true,
     cbIn: () => false,
     openRecent: () => [],
+    openDue: () => [],
     asked: () => true,
     nextTarget: () => turn.shift() || names[0],
     planFind: () => null,

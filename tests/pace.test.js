@@ -43,7 +43,7 @@ function model({P = {}} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {OPEN, INTRO, openRecent, openPace, openChance, shaky, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h)};',
+      '\nthis.M = {OPEN, INTRO, openRecent, openPace, openDue, askedOpen, introReady, introLive, openChance, shaky, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h)};',
     ctx
   );
   return Object.assign(ctx.M, {ctx});
@@ -103,6 +103,72 @@ test('opening pace: the first cards count, Open all and a genus closed again do 
   assert.strictEqual(M.openPace(), true);
   M.introBack(false);
   assert.strictEqual(M.openRecent().length, 0);
+});
+
+// Answers given before a unit's card (a live game's, rule L4: model.js introLive; or those before a card that reopens a
+// unit closed by One at a time) are evidence, never the card's question (model.js askedOpen): the pace waits for the
+// card's question (openPace), the question is drawn among the cards' (openDue) once the unit is ready, which it is
+// INTRO.GAP answers after its card, as a unit with no answer (introReady).
+test("answers before its card: the pace, the cards' questions and readiness wait for one after it", () => {
+  const P = {A: {ok: 5, ko: 0}, B: {ok: 4, ko: 1}, C: {}, D: {}};
+  const M = model({P}),
+    list = ['A', 'B', 'C', 'D'],
+    due = (...a) => [...M.openDue(...a)]; // an array of this realm
+  M.introAdd(['A', 'B'], true);
+  P.A.at = P.B.at = Date.now() + 1;
+  // C answered three times in a live game before the path opened it: closed, its answers kept.
+  M.ctx.n = 10;
+  M.introLive('C');
+  P.C = {ok: 1, ko: 2, at: Date.now() - 1000};
+  assert.ok(!M.introReady('C') && !M.openRecent(10).includes('C') && M.openPace(10));
+  // Its card at answer 20.
+  M.ctx.n = 20;
+  M.introAdd(['C'], false);
+  const e = M.introMap().C;
+  assert.ok(e[3] === 'c' && P.C.at < e[2]);
+  assert.strictEqual(M.askedOpen('C'), false, 'asked, but not since its card');
+  M.ctx.n = 21;
+  assert.strictEqual(M.introReady('C'), false, 'not ready on the answer right after its card');
+  assert.strictEqual(M.openPace(21), false, 'its question still to come: no new card');
+  assert.deepStrictEqual(due(21, list), [], 'not ready yet');
+  M.ctx.n = 22;
+  assert.strictEqual(M.introReady('C'), true, 'ready INTRO.GAP answers after its card');
+  assert.deepStrictEqual(due(22, list), ['C'], "the next question is the card's");
+  assert.deepStrictEqual(due(22, list, ['C']), [], 'unless already planned');
+  assert.deepStrictEqual(due(22, ['A', 'B']), [], 'or out of play');
+  // Its question: an answer at or after its card's time.
+  P.C = {ok: 2, ko: 2, at: e[2]};
+  assert.strictEqual(M.askedOpen('C'), true);
+  assert.strictEqual(M.openPace(22), true);
+  assert.deepStrictEqual(due(22, list), []);
+});
+test('answers before the card that reopens a unit closed by One at a time: the same wait', () => {
+  const P = {A: {ok: 5, ko: 0}, B: {ok: 4, ko: 1}, C: {}, D: {}};
+  const M = model({P}),
+    list = ['A', 'B', 'C', 'D'];
+  M.introAdd(['A', 'B'], true);
+  M.ctx.n = 30;
+  M.introAll('progress'); // C and D open with Open all, answered, then closed again by One at a time
+  P.D = {ok: 3, ko: 3, at: Date.now() - 1000};
+  M.introBack(false);
+  assert.ok(!M.introReady('D'));
+  M.ctx.n = 40;
+  M.introAdd(['D'], false); // its card on the path
+  assert.ok(!M.askedOpen('D') && !M.introReady('D') && !M.openPace(40));
+  M.ctx.n = 42;
+  assert.deepStrictEqual([...M.openDue(42, list)], ['D']);
+});
+test('askedOpen: an entry with no time, a record with no time, or no entry: every answer counts, as asked', () => {
+  const P = {A: {ok: 1, ko: 0}, B: {ok: 0, ko: 1, at: 5}, C: {ok: 2, ko: 0, at: 5}, D: {}};
+  const M = model({P});
+  M.introAdd(['A', 'B'], false); // timed cards; A's record has no time (saved before s.at), B's is older than its card
+  assert.strictEqual(M.askedOpen('A'), true, 'a record with no time: as asked');
+  assert.strictEqual(M.askedOpen('B'), false);
+  assert.strictEqual(M.askedOpen('C'), true, 'no entry (met by an answer): as asked');
+  assert.strictEqual(M.askedOpen('D'), false, 'never answered');
+  // An entry synced with no time (an older app): as asked.
+  M.introMap().B[2] = 0;
+  assert.strictEqual(M.askedOpen('B'), true);
 });
 
 // A unit stuck shaky (docs/LEARNING.md "A unit stuck shaky"): from OPEN.STUCK_FROM answers so far (answersSoFar, the

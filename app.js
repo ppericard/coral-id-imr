@@ -2051,7 +2051,7 @@ const treeGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
   const c1 = TREEU ? TREEU.c1 : [];
-  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!TREEU && fishC3();
+  return c < 3 ? c1.every(x => askedOpen(x) && introduced(x)) : !!TREEU && fishC3();
 };
 // Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
 // c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3
@@ -2248,7 +2248,7 @@ const UNITS = {
       {
         k: 'bon',
         units: () => BONUS.filter(n => GX(n)),
-        due: () => slateGenera().every(n => asked(n) && introduced(n)), // a genus closed again by "One at a time" (model.js introBack) waits for its card first
+        due: () => slateGenera().every(n => askedOpen(n) && introduced(n)), // a genus closed (model.js introBack, introLive) waits for its card and its question
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
         body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
@@ -2635,15 +2635,16 @@ const setLater = n => {
 // (model.js sharesNow).
 const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...(S.auto ? S.auto() : [])] : []));
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
-// its units already opened on a card (players whose circle 3 once opened by itself keep it). A unit of a part that is
-// off never opens (model.js mayOpen); one already open stays open.
+// its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
+// answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
+// is off never opens (model.js mayOpen); one already open stays open.
 // (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never).
 const opensNow = () => UNITS[SUBJ.id].opens || [];
 const openOf = (S, full) => {
   const L = S.units(),
     m = introMap();
   return openState(Q, S.k, {
-    met: L.some(n => n in m),
+    met: L.some(n => n in m && !closed(n)),
     due: full && S.due(),
     left: full && L.some(n => !introduced(n)),
     at: full ? answersSoFar() : 0
