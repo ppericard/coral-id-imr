@@ -8,55 +8,48 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
-Written 2026-11-20, about 01:10 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-20, about 03:55 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
-Last checked: reports and events: 2026-11-19 ~14:25 Manila (no new report since 2026-11-17; one `old` event at 08:11).
+Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17; events since 2026-11-19
+14:25 summarised in the chat).
 
 ## Now
 
-Main: sheet script **v200** in the repository (#1249 v198, #1267 v199, #1265 v200); the live script follows once
-deployed. The night runs a merge queue, one PR per train (scratchpad `nightq.sh`, `chainq.sh`). Merged since 22:20:
-#1249 (species by scientific name, the sheet part), #1268, #1260 (19 fish genus marks), #1236 (sea slug genus marks,
-circle 3), #1266 (ledger), #1267 (admin rubric declared once), #1269 (351 juvenile photos re-judged at full size:
-277 retagged, 8 aquarium or screen photos out), #1256 (Q437 plan), #1264 (Pierre's decisions written into ROADMAP
-rows; `answers_check` fails an answer not applied), #1262 (Matrix, Lab), #1259 (Q438: the route back; the build reads
-newer proposals over accepted ones: 9 photos back in play), #1275 (main red after #1259's rebuild: the admin read a
-copied adult tag on the Boxfishes cover as Pierre's; fixed forward), #1265 (the Duel tab for fish and sea slugs),
-#1271 (admin opens faster on phones: 19.5 s to 16 s cold in a simulated phone), #1261, #1270 (Photo stats ›
-Difficulty for every subject).
+Main: sheet script **v200** (live v200). The night's merge queue ran one PR per train (scratchpad `nightq.sh`,
+`chainq.sh`; a session restart stops it: restart `chainq.sh`). Merged since 01:10: #1272 (85 set-aside fish photos
+back in play, cropped), #1258 (fish ID key, Lab), #1276, #1238 (sea slug genus marks, circle 2), #1274 (L11 check
+tools stop at 40 minutes; level 3 waits for Pierre's go; the workflow part cut to a ROADMAP row), #1263 (sea slug
+species marks, 165 of 206). Before 01:10: see #1276's STATUS (the night's first 17 merges, Q437's Duel tab, Q438).
 
-- **In the queue**: #1272 (85 set-aside fish photos back in play, cropped, judged at full size), #1238 (sea slug genus
-  marks, circle 2), #1274 (L11 check tools stop at 40 minutes; level 3 waits for Pierre's go), #1258 (fish ID key,
-  Lab), then #1263 (sea slug species marks) after #1238.
-- **Held**: #1273 (species by scientific name, the app part, gated on v198): its L11 primary is unclear for the strong
-  RA and the expert (-1.6 and -1.1 scientific genera at Advanced at 3,000 answers, 8 seeds); a second look and the app
-  world are running on GitHub runners; merge only on their verdict.
-- **Agents working**: #1273's runner checks; Q437 PR 2 (custom quiz for every subject) and PR 3 (Look-alikes and
-  Compare for every subject); the merger of the PRs that conflict after the ROADMAP rewrite.
+- **In the queue**: #1278 (Look-alikes and Compare for every subject, v201 assigned). Then #1277 (custom quiz for
+  every subject: a fix for its fish smoke, two choices only, is being made; its VERSION is re-assigned after #1278),
+  #1280 (Lab tools on the subject on screen: Blur reveal overflows 6 px at 390 px, being fixed), #1279 (Memory for
+  fish and sea slugs: two photos of one unit; VERSION at merge).
+- **Held for Pierre**: #1273 (species by scientific name, the app part, gated on v198): Q440 below.
+- **Agents working**: the fixes of #1277 and #1280.
 
 ## Next
 
-The night: no question to Pierre after 17:30. Only decided work (20:42-20:43: few agents, no filler study).
-
-1. Train the queue; #1263 after #1238; #1273 on its checks' verdict (VERSION at merge: v201).
-2. Q437's next PRs from the plan: the Lab tools that ask a unit, sea slug basics, sea slug Find the X; Memory for
-   one-view subjects as two photos of one unit (integrator's call, easy to correct).
-3. Find the X's own offset (Q371); the level's answer count from the log (Q322, Q330); `core.js` one holder at a time.
-4. IMR lecture photos never upscaled; the Corals of the World captures replaced by their originals (ROADMAP).
+1. Train the queue; each `core.js` PR gets its VERSION right before its train (`tools/sheet_version.py --assign`).
+2. Q437's last PRs from `docs/reviews/2026-11-19-modes-every-subject.md`: sea slug basics (sourced), sea slug Find the X.
+3. #1273 on Pierre's Q440; the real-log check (rule L12) before its merge.
+4. Find the X's own offset (Q371); the level's answer count from the log (Q322, Q330); `core.js` one holder at a time.
 
 ## Questions for Pierre
 
 For the morning (after his first message after 04:00; each checked against ANSWERS.md):
 - **Q439**: the Lab prototypes Same or different?, Odd one out, Matrix and the fish ID key: which graduate (U13)?
   Rec. he plays each on his phone first (rule W4: he judges by taps); those he likes go to Practice for every subject.
+- **Q440**: #1273, the species by their scientific names, costs about 1.3 scientific genera at Advanced after 3,000
+  answers (about 6% of 21), the same in two independent runs (8 and 7 seeds, strong RA and expert); every guardrail
+  held; the new species take about 1% of the questions, as designed. Accept this cost? Rec. accept.
 - The wording of rule A1 (20:57, 20:59: A1 protects his hand decisions, one by one; accepted agent proposals can be
   replaced by a better proposal that goes into the game). The counts (#1259): 831 values set by his hand (an upper
   bound; fish: 28), 31,362 agent proposals let through, 44 that cannot be told. Not numbered (a rule's wording).
 - The AGENTS.md bullet on models and effort, from #1257's table. Not numbered (a rule's wording).
-- The admin's opening: the answer log is now its biggest wait (1 MB gzipped); reading only the rows since his last
-  visit needs a browser copy of players' data, which he declined on 2026-11-04. Rec. keep declining unless the admin
-  is still too slow on his phone after #1271; measure there first.
+- The admin's opening: the answer log is now its biggest wait; reading only the rows since his last visit needs a
+  browser copy of players' data, which he declined on 2026-11-04. Rec. measure on his phone after #1271 first.
 - #1273's two built readings, easy to change: Q394's smaller faults count only the species' own common name (half) and
   its own genus (a quarter); `fdauin20` counts scientific names only, as the plan says (rec. accept either name).
 - P2: what "B for now" (2026-11-18) meant for the 34 untraced lecture photos. A fact, not numbered.
@@ -66,7 +59,7 @@ For the morning (after his first message after 04:00; each checked against ANSWE
   points; species-level look-alike pairs (Q390); one engine §6 formats (a)-(d); the ROADMAP "Open question" rows; the
   architecture review (a)-(g), (i); the app-gaps review (a)-(j); #1041 §6.
 
-Last question number: Q439
+Last question number: Q440
 
 ## Pierre's hands
 
@@ -87,6 +80,6 @@ Last question number: Q439
 
 ## Last stop
 
-2026-11-20 ~01:10 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`), `uptodate.sh`,
-`prstate.sh`, `failjobs.sh`, `rowdiff.py` and `bothsides.py` (conflict helpers), `findmsg.py`, `gold2/`, `recount/`,
-`q438/`, `k159/`, `tagdoubts/`. No real names.
+2026-11-20 ~03:55 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`), `uptodate.sh`,
+`prstate.sh`, `failjobs.sh`, `thr.py` (open threads), `rowdiff.py` and `bothsides.py` (conflict helpers), `m5/`
+(`rowmerge.py`), `findmsg.py`, `gold2/`, `recount/`, `q438/`, `k159/`, `tagdoubts/`. No real names.
