@@ -136,7 +136,7 @@ function npLists(T, sel, first) {
     sec = (cls, title, L, kind) => {
       L.forEach(it => NP_ITEMS.set(kind + ':' + it.f, it));
       return L.length
-        ? `<section class="adm-row adm-np ${cls}" data-np-sec="${kind}"><h3>${title} <small>${L.length}</small></h3><div class="adm-grid adm-qgrid">${L.map(it => npTile(it, kind)).join('')}</div></section>`
+        ? `<section class="adm-row adm-np ${cls}" data-np-sec="${kind}"><h3>${title} <small>${L.length}</small></h3><div class="adm-grid">${L.map(it => npTile(it, kind)).join('')}</div></section>`
         : '';
     };
   NP_ITEMS = new Map();
