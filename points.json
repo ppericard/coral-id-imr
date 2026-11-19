@@ -1061,13 +1061,26 @@
       "kind": "sources",
       "subj": "fish",
       "at": "2026-11-19",
-      "title": "Iniistius dea juveniles: some published photos are I. pavo",
+      "title": "Iniistius dea juveniles: one published image is I. pavo",
       "q": "Fishes of Australia says a published image of an Iniistius dea juvenile (Kuiter's) is a juvenile I. pavo. Are the game's 13 juvenile photos of I. dea all I. dea?",
       "ctx": [
         "Fishes of Australia 294: \"Kuiter's image of Iniistius dea is a juvenile Iniistius pavo.\"",
         "The game has 13 juvenile photos under Iniistius dea and 36 under I. pavo (fish-game.json, 2026-11-19). Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
       ],
       "src": [{"t": "Fishes of Australia, Iniistius dea", "u": "https://fishesofaustralia.net.au/home/species/294"}]
+    },
+    {
+      "id": "fish-juv-frogfish-black-orange",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "The black, orange-spotted juvenile frogfish: Antennarius maculatus, not A. pictus?",
+      "q": "Frogfish.ch writes that the black frogfish with orange-yellow spots, long taken for the juvenile of Antennarius pictus, is the juvenile of A. maculatus (Pietsch 2018). Are the game's 13 juvenile photos under A. pictus all A. pictus?",
+      "ctx": [
+        "Frogfish.ch, the Antennarius pictus group: \"The black frogfish with orange-yellow spots and bluish fins was long thought to be the juvenile of A. pictus. According to T. Pietsch 2018 (University of Waschington) this is the juvenile of the Warty Frogfish.\" It adds: \"the juvenile of the Giant-Frogfishes looks nearly the same as the Warty Frogfish - only the lure is different\".",
+        "The game has 13 juvenile photos under Antennarius pictus and 21 under A. maculatus (fish-game.json, 2026-11-19). The A. pictus sheet line gives no colour. Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
+      ],
+      "src": [{"t": "Frogfish.ch, the Antennarius pictus group", "u": "https://frogfish.ch/Antennarius-pictus-group.html"}]
     },
     {
       "id": "fish-juv-iniistius-pavo-ocelli",

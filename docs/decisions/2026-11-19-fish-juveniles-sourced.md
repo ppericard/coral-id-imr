@@ -11,7 +11,7 @@ classes become a per-species label for the analyses, with no effect on the game;
 classes are hard. At 15:35 he added: «Il faut sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui
 les décrit ou parlent d'eux. Surtout si ça peut aider notre app». Three agents read the sources for the 369 species with
 juvenile photos in the game (FishBase, Fishes of Australia, Reef Life Survey, the Australian Museum, Wikipedia and a few
-others), each quote checked against the page they saved.
+others); every quote kept is found verbatim in the pages they saved (checked again on the merged file).
 
 ## Decision
 
@@ -27,20 +27,21 @@ others), each quote checked against the page they saved.
   when a source says it is nearly identical to, or confused with, a congener's or a same-family juvenile, or lacks its
   genus's or species' mark; Bold only when a source calls it distinctive, easily recognised or unmistakable (a vivid
   pattern alone is described, not rated); Like when a source says it is like the adult or names only differences of
-  degree. The entry classes map: A and early Bold, B Off, the late *Halichoeres* and *Thalassoma* Finer rank ("alike
+  degree or a small added mark. "Lacks its species' mark", "differences of degree" and "a small added mark" are this
+  PR's readings of section 4, not its words. The entry classes map: A and early Bold, B Off, the late *Halichoeres* and *Thalassoma* Finer rank ("alike
   across species"), the late mimics Off, C Like.
 - **The species sheet** shows the line under the photos, "Juvenile:" first, its sources numbered (Players see, from
   Pierre's 15:35 words). One helper with the family sheet's juvenile note (rule S1).
 - **No effect on the game**: the build writes `fish.json` species `jv`; nothing in the draw, the ease or the judging
   reads it, which `tests/fishjuv.test.js` checks.
-- **Every contradiction between sources** found on the way goes to `points.json` (rule C5): nine points. The wrong
+- **Every contradiction between sources** found on the way goes to `points.json` (rule C5): ten points. The wrong
   Fishes of Australia link of the Damselfish entry's juvenile note (359, *Neoglyphidodon melas*) is now 349, *Dascyllus
   trimaculatus*.
 
 ## Consequences
 
-- 242 species have a record: 189 a class (Off 38, Finer rank 40, Bold 32, Like 79), 186 a line, 53 a line without a
-  class (described, never rated); 127 species have no source found, listed in `none`.
+- 246 species have a record: 189 a class (Off 38, Finer rank 40, Bold 32, Like 79), 190 a line, 57 a line without a
+  class (described, never rated); 123 species have no source found on how their juvenile looks, listed in `none`.
 - The cap's removal in the judging (`tools/fish_judge.py` `cap`) is another PR.
 - Whether *Halichoeres* and *Thalassoma* juveniles are Finer rank (the study's section 8 (b)) is applied here as a label
   only; the draw keeps their late list.

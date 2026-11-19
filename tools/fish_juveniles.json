@@ -1,5 +1,5 @@
 {
- "about": "The fish juveniles, per species (Pierre, 2026-11-19, Q435: four classes become a per-species label for the analyses, with no effect on the game; 15:35: source every juvenile that external sources describe). For each species with juvenile photos in the game: cls, its class (off, finer, bold, like: the juvenile difficulty study's section 4, the definitions in classes), by (source: its own sources rate it; entry: its IMR entry's juvenile class in tools/fish_source.json juv, entry naming it), line (one plain sentence on the juvenile, shown on its species sheet), differs (how it differs from the adult), look (a look-alike a source names, a game species present in the Philippines), ease (a source's words on how easy or hard it is), src [{t, u, q: the quote}], each page read on 2026-11-19. none: the species searched with no source found. Built into fish.json species jv {c, line, src [{t, u}], look} by tools/build_fish.py (juveniles), which checks it; the draw, the ease and the judging never read it (tests/fishjuv.test.js).",
+ "about": "The fish juveniles, per species (Pierre, 2026-11-19, Q435: four classes become a per-species label for the analyses, with no effect on the game; 15:35: source every juvenile that external sources describe). For each species with juvenile photos in the game: cls, its class (off, finer, bold, like: the juvenile difficulty study's section 4, the definitions in classes), by (source: its own sources rate it; entry: its IMR entry's juvenile class in tools/fish_source.json juv, entry naming it), line (one plain sentence on the juvenile, shown on its species sheet), differs (how it differs from the adult), look (a look-alike a source names, a game species present in the Philippines), ease (a source's words on how easy or hard it is), src [{t, u, q: the quote}], each page read on 2026-11-19. none: the species searched with no source found on how their juvenile looks. Built into fish.json species jv {c, line, src [{t, u}], look} by tools/build_fish.py (juveniles), which checks it; the draw, the ease and the judging never read it (tests/fishjuv.test.js).",
  "read": "2026-11-19",
  "classes": {
   "off": "A source says the juvenile resembles another family, an object or another animal (not where the IMR entry's class A or early list, Pierre's, names it).",
@@ -8,6 +8,36 @@
   "like": "A source says it is like the adult (or the females or males), or names only differences of degree in the adult's pattern; or its entry's class C."
  },
  "species": {
+  "Acanthurus lineatus": {
+   "line": "Deeper-bodied than the adult.",
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Acanthurus-lineatus.html",
+     "q": "body of juveniles relatively deeper than that of adults"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2186",
+     "q": "juveniles relatively deeper bodied than adults"
+    }
+   ]
+  },
+  "Acanthurus mata": {
+   "line": "Deeper-bodied than the adult, with a double-notched tail.",
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1026",
+     "q": "caudal fin of adults deeply emarginate, double emarginate in juveniles"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Acanthurus-mata.html",
+     "q": "smaller individuals are deeper-bodied"
+    }
+   ]
+  },
   "Acanthurus olivaceus": {
    "line": "Bright yellow all over, with a pale blue edge on the anal fin; no orange band behind the eye yet.",
    "differs": "The adult is dark greyish brown with a bright orange, dark-edged band behind the eye; the band develops gradually as the juvenile grows.",
@@ -194,6 +224,16 @@
     }
    ]
   },
+  "Anampses meleagrides": {
+   "line": "Small juveniles have a rounded tail; the adult's is straight to notched.",
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1222",
+     "q": "Caudal fin of adults truncate to emarginate; rounded in small juveniles."
+    }
+   ]
+  },
   "Antennarius commerson": {
    "cls": "finer",
    "by": "source",
@@ -229,14 +269,14 @@
     {
      "t": "Frogfish.ch",
      "u": "https://frogfish.ch/Antennarius-pictus-group.html",
-     "q": "The black frogfish with orange-yellow spots and bluish fins was long thought to be the juvenile of A."
+     "q": "The black frogfish with orange-yellow spots and bluish fins was long thought to be the juvenile of A. pictus. According to T. Pietsch 2018 (University of Waschington) this is the juvenile of the Warty Frogfish."
     }
    ]
   },
   "Antennarius pictus": {
    "cls": "off",
    "by": "source",
-   "line": "Small frogfish, often dark with many orange or white spots, sitting in the open on sand or reef.",
+   "line": "Small frogfish sitting in the open on sand or reef, resembling small sponges or nudibranchs.",
    "differs": "Same frogfish build; the young sits in the open and resembles small sponges or nudibranchs.",
    "look": "Antennarius maculatus",
    "src": [
@@ -3466,6 +3506,16 @@
    "by": "entry",
    "entry": "t18"
   },
+  "Valenciennea puellaris": {
+   "line": "The third dorsal spine is long and threadlike in small juveniles.",
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Valenciennea-puellaris.html",
+     "q": "third dorsal spine, longest, filamentous in juveniles under 40 mm SL"
+    }
+   ]
+  },
   "Variola albimarginata": {
    "cls": "like",
    "by": "source",
@@ -3518,8 +3568,6 @@
   "Abudefduf sexfasciatus",
   "Abudefduf vaigiensis",
   "Acanthurus auranticavus",
-  "Acanthurus lineatus",
-  "Acanthurus mata",
   "Acanthurus nigrofuscus",
   "Acanthurus thompsoni",
   "Acanthurus triostegus",
@@ -3532,7 +3580,6 @@
   "Amblygobius sphynx",
   "Amphiprion annamensis",
   "Amphiprion percula",
-  "Anampses meleagrides",
   "Antennarius randalli",
   "Arothron hispidus",
   "Arothron mappa",
@@ -3637,7 +3684,6 @@
   "Sphyraena flavicauda",
   "Trachinocephalus trachinus",
   "Triaenodon obesus",
-  "Valenciennea puellaris",
   "Valenciennea sexguttata",
   "Vanderhorstia dorsomacula"
  ]

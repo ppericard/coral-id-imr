@@ -61,10 +61,10 @@ test('fish.json species jv: as the file gives it, the look-alikes game species p
     // never an entry class (A, B, C, mixed, ns): those stay the draw's (fish.json juv)
     assert.ok(!s.jv.c || CLS.includes(s.jv.c));
   }
-  // the counts as the PR states them (a harmonised class for 189 species; 53 described, not rated)
+  // the counts as the PR states them (a harmonised class for 189 species; 57 described, not rated)
   const by = {};
   for (const s of withJv) by[s.jv.c || 'none'] = (by[s.jv.c || 'none'] || 0) + 1;
-  assert.deepStrictEqual(by, {off: 38, finer: 40, bold: 32, like: 79, none: 53});
+  assert.deepStrictEqual(by, {off: 38, finer: 40, bold: 32, like: 79, none: 57});
 });
 
 test('the build stops on a line without a source, a look-alike out of the game, a class by entry not its entry', () => {
