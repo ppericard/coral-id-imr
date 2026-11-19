@@ -609,7 +609,7 @@ const DOC_BUDGET = {
   'docs/spec/photos.md': [17, 130],
   'docs/spec/player-reports.md': [8, 130],
   'docs/spec/deploy.md': [6, 130],
-  'docs/decisions/README.md': [10, 200], // the index grows by a row per record
+  'docs/decisions/README.md': [11, 200], // the index grows by a row per record
   'docs/rules/README.md': [1, 150],
   'docs/rules/admin.md': [5, 230],
   'docs/rules/content.md': [9, 220],
