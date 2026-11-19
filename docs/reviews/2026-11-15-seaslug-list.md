@@ -129,7 +129,8 @@ same way, that evening: §8.
     is on the page abbreviates the same;
   - or a nickname, only when its English Wikipedia title redirects to that species' article: "sea bunny" → *Jorunna
     parva*; "leaf sheep", "sea sheep", "leaf slug" → *Costasiella kuroshimae*; "Pikachu" (title "Pikachu nudibranch")
-    → *Thecacera pacifica*; "black-margined nudibranch" → *Doriprismatica atromarginata*.
+    → *Thecacera pacifica* (shared with *T. pikachu*, *T. picta* mentioned: Pierre, 2026-11-19, Q417, in the
+    [literature scan](2026-11-17-seaslug-literature-scan.md) §6); "black-margined nudibranch" → *Doriprismatica atromarginata*.
   - Three nicknames are **not counted**, and are questions instead (§6): "Spanish dancer" (either *Hexabranchus*),
     "blue dragon" (often *Glaucus*, not a reef slug of ours) and "Shaun the Sheep" (no redirect).
   - English names ("Willan's Chromodoris") are **not counted**: iNaturalist's and WoRMS's disagree for most species
