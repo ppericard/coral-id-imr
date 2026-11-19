@@ -39,8 +39,11 @@ genus's photo plays when Research Grade or his own (rule S2), the admin's retire
 - `model.js` `photoSet`: no × 1.3; `SUBJECTS` `tiers` and `app.js` `isCore` are gone.
 - `app.js` `cover` and the admin's `coverOf`: Pierre's pick, `data.json`'s stored cover, then the first featured
   Closer photo whatever its source. 15 genera change from an IMR lecture photo to `data.json`'s stored cover: 4 from
-  `tools/covers.txt`, 11 from the default an earlier builder stored (10 of them his own photos), an order the code
-  cannot see.
+  `tools/covers.txt`, 11 from the default an earlier builder stored (10 of them his own photos).
+- Found, not handled: `data.json`'s stored covers that `tools/covers.txt` does not set (26 genera with no pick of
+  Pierre's; 20 of them his own photos, 13 the first photo of `data.json`'s own-first list) come from a builder older than
+  the repository's history, so whether they were chosen by source or by Pierre cannot be told. Left as they are for the
+  integrator: passing over them for the first featured Closer photo would change 15 genera's card photo.
 - "By quality" is mostly the automatic rating for the IMR lecture photos (114 of 116 in the games, none rated Poor):
   they come first when that rating or Pierre's puts them there.
 - The admin's automatic order (`autoOrder`, the featured fill, the Poor warning) mirrors the site's; Coral basics shows
