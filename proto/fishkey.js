@@ -104,8 +104,15 @@ LAB.add({
   title: 'Fish ID Key',
   blurb: 'Every species of the IMR reference PDF, by identification group, family and genus, with the names to pick in EventMeasure.',
   lede: 'Find the name to pick in EventMeasure: type any name, or open a family. Names are those of the IMR reference PDF, with WoRMS beside them when it differs.',
+  // Offered (on the Tools page and at its address) only while its subject is open to this player (app.js subjOpen: a
+  // subject in its beta group shows to its group and the admin only, rule S1).
+  subj: () => SUBJECTS.find(s => (UNITS[s.id] || {}).emkey),
+  on() {
+    const S = this.subj();
+    return !!S && subjOpen(S);
+  },
   render(root, arg) {
-    const S = SUBJECTS.find(s => (UNITS[s.id] || {}).emkey);
+    const S = this.subj();
     if (!S) {
       root.innerHTML = '<p class="note">No fish data here.</p>';
       return;
@@ -235,7 +242,9 @@ LAB.add({
         const b = e.target.closest('[data-z]');
         if (!b) return;
         const L = photos.get(b.dataset.z) || [];
-        if (L.length) zoom(L, 0);
+        if (!L.length) return;
+        zoomSp = byFam.get(b.dataset.z) || null;
+        zoom(L, 0);
       };
       filter();
       if (st.f) jump();
@@ -284,6 +293,21 @@ LAB.add({
       q.select();
     };
     document.addEventListener('keydown', slash, true);
+    // Report on an enlarged photo of the key (rule U14): in its subject's words and names, whatever subject is on screen,
+    // and about its species' family (the lightbox's own button looks the photo up in the corals). Caught before sync.js's
+    // handler (window, capture), which it then replaces for these photos only.
+    let zoomSp = null;
+    const report = e => {
+      const b = e.target.closest && e.target.closest('#lightbox [data-rep]');
+      if (!b || !zoomSp || lb.hidden) return;
+      const c = REPC[+b.dataset.rep];
+      if (!c) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const g = zoomSp.f.sheet ? zoomSp.f.id : '';
+      inSubject(S.id, () => reportDialog({...c, g}, b));
+    };
+    addEventListener('click', report, true);
     root.innerHTML = '<p class="note">Loading the fish…</p>';
     treeHome(S.id)
       .then(raw => {
@@ -317,6 +341,7 @@ LAB.add({
     return () => {
       alive = false;
       document.removeEventListener('keydown', slash, true);
+      removeEventListener('click', report, true);
       wide.removeEventListener('change', onWide);
     };
   }

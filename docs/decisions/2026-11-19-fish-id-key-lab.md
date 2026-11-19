@@ -29,7 +29,9 @@ Choices made while building, not decided with Pierre, each easy to change (integ
   record (a mullet, family in no circle) comes last under its PDF section, outside the groups, not placed in a group of
   the key by us.
 - **Only the PDF's species**: the circle-3 species from other sources are not in it (the row names the PDF).
-- **Wiring**: the subject is the one whose `UNITS` entry declares `emkey` (rule S1); Identify keeps "coming soon".
+- **Wiring**: the subject is the one whose `UNITS` entry declares `emkey` (rule S1); Identify keeps "coming soon". The
+  tool is offered only while that subject is open to the player (a subject in its beta group stays hidden from the
+  others, rule S1), and an enlarged photo's Report is in the fish's words, about the species' family (rule U14).
 
 ## Consequences
 

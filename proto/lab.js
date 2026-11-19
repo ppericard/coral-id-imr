@@ -247,8 +247,9 @@ function viewLab(h) {
   }
   const [id, ...args] = h.slice(4).split('|');
   const p = LAB.list.find(x => x.id === id);
-  // A Tools address of no tool here (a graduated one included: it lives in its section): the Tools page.
-  if (id && (!p || GRADUATED[id])) {
+  // A Tools address of no tool here (a graduated one included: it lives in its section), or of a tool not offered to this
+  // player (`on`: the Fish ID Key, while its subject is not open to them): the Tools page.
+  if (id && (!p || GRADUATED[id] || (p.on && !p.on()))) {
     location.replace(hr('lab'));
     return;
   }
@@ -261,7 +262,9 @@ function viewLab(h) {
   const votes = labVotes();
   // A prototype marked `admin` (a design mock-up for the owner, e.g. cards) is listed in the admin's browser only; its
   // link works for anyone.
-  const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
+  const order = LAB.files
+    .map(f => LAB.list.find(x => x.id === f))
+    .filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN) && (!p.on || p.on()));
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id] && p.hub !== false);
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>

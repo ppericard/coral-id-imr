@@ -4293,6 +4293,14 @@ async function fishKeyCheck(b, base) {
       await th.click();
       const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden);
       if (!lb) fails.push(`${W} a thumbnail does not enlarge`);
+      // Its Report: in the fish's words and about the species' family, though the corals are on screen.
+      await p.click('#lightbox .rep').catch(() => fails.push(`${W} no Report on the enlarged photo`));
+      const rep = await p.evaluate(() => {
+        const d = document.getElementById('repdlg');
+        return d ? {txt: d.textContent.replace(/\s+/g, ' '), subj: SUBJ.id} : null;
+      });
+      if (!rep || /genus|coral/i.test(rep.txt) || rep.subj !== 'coral') fails.push(`${W} the photo's report: ${JSON.stringify(rep)}`);
+      await p.evaluate(() => document.querySelector('#repdlg [value="cancel"]')?.click());
       await p.keyboard.press('Escape');
     }
     // "/" focuses the search here; once the page is left, it opens Genera again (the key's listener gone).

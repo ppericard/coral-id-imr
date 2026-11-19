@@ -410,7 +410,9 @@ this file's order; a PDF species with no family record last, under its PDF secti
 rule (`app.js` `seenCover`; a tap enlarges its photos), the PDF name, WoRMS's beside it when it differs (rule S2), the
 common name, the PDF page, its sheet. One search: every word typed starts a word of its PDF, WoRMS or synonym names,
 common names, genus, family or PDF section. State in the address (`f=`, `q=`); data through `app.js` `treeHome` /
-`treeLoad`; its subject declares `UNITS` `emkey` (rule S1). Checked by `tests/fishkey.test.js` and the pages smoke's
+`treeLoad`; its subject declares `UNITS` `emkey` (rule S1), and the tool is offered only while that subject is open to
+the player (its `on`, read by `proto/lab.js`). An enlarged photo's Report speaks the fish's words, about its family.
+Checked by `tests/fishkey.test.js` and the pages smoke's
 `fishkey` part.
 
 ## Rebuild
