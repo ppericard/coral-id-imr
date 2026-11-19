@@ -354,7 +354,7 @@ def check(sid):
 def entry(sid, x, rep=None):
     """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry, and the
-    reference flag r with its ease bonus for a candidate whose fish-cand.json record carries `rep`). A sea slug's: its
+    reference flag r, which leaves the ease as judged, for a candidate whose fish-cand.json record carries `rep`). A sea slug's: its
     rubric's caps (no entry: no phase, every juvenile capped), keep best when the judgement names none, and an egg-mass
     photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
@@ -413,7 +413,8 @@ def cmd_import(names, only_check, by):
 def cmd_rep(fields=("jt", "e")):
     """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
     judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
-    judgement gets the flag r and the ease bonus, one no longer tagged loses them. Only those entries change.
+    judgement gets the flag r, one no longer tagged loses it, and the ease is the judgement's either way (no reference
+    ease point). Only those entries change.
     fields ("codes": also u and n): re-applies a re-judge of some photos' codes, unsure fields and notes (the other
     species split of 2026-11-09, Q323) to the candidates already judged, without the whole species' --check (a species
     may hold new candidates not judged yet, which the import refuses); waiting or decided alike. The subject's (use):
