@@ -91,12 +91,12 @@ play = G.ref_play(fish, refs, codes)
 print(json.dumps({'codes': codes, 'keep': keep, 'play': {r['f']: [r['e'], r['jt']] for _, r in play},
                   'in': sorted(r['f'] for _, r, _, _ in G.in_play(cur, cand, sug, fish, refs, codes, keep))}))`
     );
-    // The build reads the candidate judgement, never the reference copy: 1 an adult (4, one point more as a reference
-    // photo: 5), 2 a juvenile (capped at 2); 3 waits while its judgement is unsure; 4 keeps its candidate's dup; 5 has
+    // The build reads the candidate judgement, never the reference copy: 1 an adult (4, and 4 as a reference photo too:
+    // no point for the route), 2 a juvenile (capped at 2); 3 waits while its judgement is unsure; 4 keeps its candidate's dup; 5 has
     // no candidate judgement and keeps its own; 6's doubt is on its box only, which withholds no judgement.
     assert.deepStrictEqual(out.codes, {fi1: 'p1g0sl14', fi2: 'p1g0sl1j2', fi4: 'p1g0sl14', fi5: 'o1g0sm13', fi6: 'p1g0sl15'});
     assert.deepStrictEqual(out.keep, {fi1: 'best', fi2: 'best', fi4: 'dup', fi6: 'best'});
-    assert.deepStrictEqual(out.play.fi1, [5, 'p1g0sl1r']);
+    assert.deepStrictEqual(out.play.fi1, [4, 'p1g0sl1r']);
     assert.deepStrictEqual(out.play.fi2, [2, 'p1g0sl1jr']);
     assert.ok(!('fi3' in out.play), 'an unsure candidate judgement leaves its reference copy unjudged');
     assert.deepStrictEqual(out.in, ['fi1', 'fi2', 'fi5', 'fi6'], 'the dup stays out, whatever its reference copy said');

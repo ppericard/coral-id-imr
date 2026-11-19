@@ -666,10 +666,10 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 ### Fish: easy, reference-like photos first, whoever took them
 
 The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
-`easyRank`): reference-level photos first (`core.js` `refLevel`: a reference source's own photo judged easy, or any
-photo judged 5 with the reference look: profile, whole, good light, true colours, sharp, one kind of fish), then by
-ease, then the most reference-like (`core.js` `refScore`), then a fixed hash of the file name, never by who took it
-(rule P1). In the draw a reference-level photo never seen weighs `calib.ref` (3) times more.
+`easyRank`): reference-level photos first (`core.js` `refLevel`: judged 4-5 with the reference look: profile, whole,
+good light, true colours, sharp, one kind of fish; never its route in), then by ease, then the most reference-like
+(`core.js` `refScore`), then a fixed hash of the file name, never by who took it (rule P1). In the draw a
+reference-level photo never seen weighs `calib.ref` (3) times more.
 
 ### The fish draw in big pools
 
