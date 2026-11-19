@@ -450,6 +450,162 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 4. Odd one out (proto/oddone.js, the Lab) on the sea slugs, as tests/fish.smoke.js oddOne plays it on the fish: the genera of
+  // three declared look-alike pairs unlocked and one genus with none among them, every other genus locked; the photos stubbed (its
+  // tiles are its choices). 24 rounds: four photos, three observations of one genus and one of another, all unlocked, all different
+  // observations (rule P4); the odd one a declared look-alike of the genus shown three times whenever one is unlocked, any unlocked
+  // genus else; the tile ticked is the odd one and the verdict true to the tile tapped; no progress, log or answer count changes;
+  // one screen before the answer, after it and with More open at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s4')) return;
+        sessionStorage.setItem('s4', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+      let s = 31337;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    });
+    // (a route added later is asked first: the photos of any host answered by the picture)
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const open = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const all = UNITS[SUBJ.id].pairs(),
+        shots = n => new Set(['wide', 'medium', 'macro'].flatMap(v => gamePics(n, v)).map(x => x.o || x.f)).size,
+        P0 = all.filter(([a, c]) => GX(a) && GX(c) && shots(a) >= 3 && shots(c) >= 3),
+        met = [...new Set(P0.slice(0, 3).flat())],
+        alone = pool().find(
+          n => !met.includes(n) && shots(n) >= 3 && !all.some(([a, c]) => (a === n && met.includes(c)) || (c === n && met.includes(a)))
+        );
+      if (P0.length < 3 || !alone) return {pairs: P0.length, alone};
+      introAdd([...met, alone], true);
+      location.hash = hr('lab-oddone');
+      return {pairs: P0.length, met, alone};
+    });
+    check(open.pairs >= 3 && open.alone, `4: ${open.pairs} declared sea slug pairs in play, a genus with none: ${open.alone}`);
+    // answer.js: the Tools game's tiles, not a quiz question's choices
+    const TILE = '#view .ooq .fxt [data-c]';
+    await p.waitForSelector(`${TILE}:not([disabled])`, {timeout: 30000}).catch(() => {});
+    const fit = () =>
+      p.evaluate(() => {
+        const tab = document.querySelector('.sections'),
+          tabTop = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight,
+          aft = document.getElementById('after'),
+          sheet = aft && getComputedStyle(aft).position === 'fixed' ? aft.getBoundingClientRect().top : tabTop;
+        return [...document.querySelectorAll('#view .ooq .fxt, #view #after, #view #next')]
+          .map(e => [e.id || e.className, e.getBoundingClientRect()])
+          .filter(
+            ([n, r]) =>
+              r.top < -1 || r.bottom > tabTop + 1 || (/fxt/.test(n) && document.querySelector('#view .ooq.done') && r.bottom > sheet + 1)
+          )
+          .map(([n, r]) => `${n} ${Math.round(r.top)}..${Math.round(r.bottom)} of ${Math.round(Math.min(tabTop, sheet))}`)
+          .concat(document.documentElement.scrollHeight > innerHeight + 1 ? ['the page scrolls'] : []);
+      });
+    if (open.met) {
+      const r = await p.evaluate(async sel => {
+        const out = [],
+          ok = (x, m) => x || out.push(m),
+          until = async f => {
+            for (let i = 0; i < 400 && !f(); i++) await new Promise(res => setTimeout(res, 25));
+            return f();
+          },
+          rec = () =>
+            JSON.stringify([P, SYNC ? SYNC.log || null : null, store.get(LOG0, []), store.get(ANONQ, []), introMap(), answersSoFar()]),
+          before = rec(),
+          pairs = UNITS[SUBJ.id].pairs(),
+          met = unlocked(),
+          find = f => {
+            for (const n of pool())
+              for (const v of ['wide', 'medium', 'macro']) {
+                const p = (gamePics(n, v) || []).find(x => x.f === f);
+                if (p) return {n, p};
+              }
+            return null;
+          },
+          kinds = new Set(),
+          places = new Set();
+        for (let i = 0; i < 24; i++) {
+          if (
+            !(await until(() => document.querySelectorAll(sel).length === 4 && [...document.querySelectorAll(sel)].every(b => !b.disabled)))
+          ) {
+            ok(false, `round ${i + 1}: four tiles never opened`);
+            break;
+          }
+          const L = [...document.querySelectorAll('#view .ooq .fxt img')].map(im => find(im.dataset.f));
+          if (L.length !== 4 || L.some(x => !x)) {
+            ok(false, `round ${i + 1}: photos ${L.length}, ${L.map(x => x && x.n)}`);
+            break;
+          }
+          const by = {};
+          L.forEach((x, k) => (by[x.n] = (by[x.n] || []).concat(k)));
+          const units = Object.keys(by),
+            maj = units.find(n => by[n].length === 3),
+            odd = units.find(n => by[n].length === 1);
+          ok(units.length === 2 && maj && odd, `round ${i + 1}: not three and one: ${JSON.stringify(by)}`);
+          if (!maj || !odd) break;
+          ok(
+            L.every(x => met.includes(x.n)),
+            `round ${i + 1}: a genus not unlocked: ${units}`
+          );
+          ok(new Set(L.map(x => x.p.o || x.p.f)).size === 4, `round ${i + 1}: one observation twice`);
+          const looks = met.filter(o => pairs.some(([a, c]) => (a === maj && c === o) || (c === maj && a === o)));
+          if (looks.length) ok(looks.includes(odd), `round ${i + 1}: ${odd} is no declared look-alike of ${maj}, among ${looks}`);
+          kinds.add(looks.length ? 'look' : 'any');
+          places.add(by[odd][0]);
+          const tap = i % 4;
+          document.querySelector(`${sel}[data-c="${tap}"]`).click();
+          const tiles = [...document.querySelectorAll('#view .ooq .fxt')],
+            h3 = document.querySelector('#view #after h3');
+          ok(tiles.findIndex(f => f.classList.contains('fok')) === by[odd][0], `round ${i + 1}: the tile ticked is not the odd one`);
+          ok(h3 && h3.classList.contains('ok') === (tap === by[odd][0]), `round ${i + 1}: the verdict`);
+          ok(
+            tiles.every(f => f.querySelector('figcaption')),
+            `round ${i + 1}: a tile not named once answered`
+          );
+          document.getElementById('next').click();
+        }
+        ok(kinds.size === 2, `kinds seen (a look-alike, any genus): ${[...kinds]}`);
+        ok(places.size === 4, `places of the odd one: ${[...places]}`);
+        ok(rec() === before, 'playing it changed the record, log or answer count');
+        ok(unlocked().length === met.length && met.every(n => introduced(n)), 'playing it opened a unit');
+        return out;
+      }, TILE);
+      r.forEach(m => check(false, `4: ${m}`));
+      for (const [w, h] of [
+        [390, 844],
+        [1280, 800]
+      ]) {
+        await p.setViewportSize({width: w, height: h});
+        await p.waitForTimeout(300);
+        await p.waitForSelector(`${TILE}:not([disabled])`, {timeout: 8000}).catch(() => {});
+        const f0 = await fit();
+        await p.click(`${TILE}[data-c="1"]`);
+        await p.waitForSelector('#view .ooq.done #next', {timeout: 5000}).catch(() => {});
+        const f1 = await fit();
+        await p.click('#view #fbmbtn');
+        // (on a desktop the side column scrolls under a long More, Next pinned in view: only the page may never scroll)
+        const f2 = (await fit()).filter(x => !/^after /.test(x));
+        check(!f0.length && !f1.length && !f2.length, `4: ${w}px not one screen, before ${f0}, answered ${f1}, with More ${f2}`);
+        await p.click('#view #next');
+        await p.waitForSelector('#view .ooq:not(.done) [data-c]', {timeout: 8000}).catch(() => {}); // answer.js: the Tools game
+      }
+    }
+    check(!errs.length, '4: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   await b.close();
   server.close();
   if (fails.length) {
