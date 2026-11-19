@@ -207,7 +207,8 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   sheet's opening hold is the corals' (`SUBJECTS` `hold`; `sync.js` `holdAdopt`, as that subject). The
   one-tap question, the apology card and the update notes are the engine's, in every subject (a note about one subject
   names it, `RECALC.L` `subj`). At sign-in every subject takes the account's copy as its merge baseline, played on
-  the device or not. A wink is decided before a question is taken or chosen (`quizPhoto`), so planned questions and the Again / duel spacing wait.
+  the device or not. A wink is decided before a question is taken or chosen (`quizPhoto`), so planned questions and
+  the Again / duel spacing wait.
 - **Sheets across subjects**: a genus sheet or comparison (`#learn/genus/…`, `#cmp-…`) opened with a subject that has
   none (from the Coral ID Key with Fish chosen) switches to the subject that has it (`route`, `setSubject`); the other
   way, a subject chosen by the player on such a page opens its section's page for that subject (`setSubject`,
