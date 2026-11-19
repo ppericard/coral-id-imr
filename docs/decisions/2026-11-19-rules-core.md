@@ -43,7 +43,10 @@ review (#1206) asked whether each rule still earns its place and found what was 
   l'intégrateur)» and «ok, applique ce tableau» (2026-11-18); the sample test, «A valider en comparant avec un modèle
   fort sur un échantillon» (2026-11-18); no permission prompts, «Pourquoi je me retrouve avec ces demandes alors que tu
   es en mode 'Accept edits'?» (2026-11-18); what players see, «ok, lance les quatre» (2026-11-18); W27, «si tu ne les
-  écris pas quelque part, ça sera jamais fait» (2026-11-09).
+  écris pas quelque part, ça sera jamais fait» (2026-11-09), and the cap now lifted, «la limite est plus complexe que
+  ça. Ya des agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer» (2026-11-14)
+  and «ok» to four agents, studies on top (2026-11-18); research without asking (2026-11-17) and estimates in agent
+  time (2026-11-18), their dates.
 
 ## Consequences
 
