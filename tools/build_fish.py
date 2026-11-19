@@ -734,7 +734,7 @@ def add_families(o, key, declared=()):
     # against the data.
     gnames = dict(json.loads(GNAMES.read_text(encoding="utf-8")).get("genera", {})) if GNAMES.exists() else {}
     # The genus name roots (tools/fish_genus_roots.json): root, checked (genus_root); every
-    # circle-1 genus has one or a reason in skip.
+    # genus (circles 1-3) has one or a reason in skip.
     groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
     # The genera's own presentation and ID marks (tools/fish_genus_marks.json): plain, marks, msrc, mby, checked
@@ -766,8 +766,8 @@ def add_families(o, key, declared=()):
             sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
         if rt:
             r["root"] = genus_root(g, rt, r)
-        elif r["circle"] == 1 and g not in rskip:
-            sys.exit(f"tools/fish_genus_roots.json: circle-1 genus {g} has neither a root nor a reason in skip")
+        elif g not in rskip:
+            sys.exit(f"tools/fish_genus_roots.json: genus {g} has neither a root nor a reason in skip")
         mk = mks.pop(g, None)
         if mk is not None:
             r.update(genus_marks(g, mk, r, g in mnone, gmk.get("src", {}), msrc_used, [sp[i] for i in x["species"]]))
@@ -1209,8 +1209,8 @@ def main():
 
 def show_rootless(o):
     """The genera the content editor's circle edits (curation.json, read, never written) bring into circle 1 with no
-    name root: the build requires one only of the base's circle-1 genera (add_families), so these show none on their
-    sheet. Each says its skip reason when tools/fish_genus_roots.json has one."""
+    name root: the build requires a root or a reason of every genus (add_families), so these show none on their sheet
+    for the reason tools/fish_genus_roots.json skip gives."""
     cur = json.loads(CUR.read_text(encoding="utf-8")) if CUR.exists() else {}
     skip = json.loads(GROOTS.read_text(encoding="utf-8")).get("skip", {}) if GROOTS.exists() else {}
     rl = fish_inforce.rootless(o, cur, skip)
