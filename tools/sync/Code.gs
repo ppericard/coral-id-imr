@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 196 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 198 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 196;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 198;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -823,9 +823,10 @@ function mainJson_(file){
 // it (core.js contentApply, the app's own function), and {gen, st} carries its structure stamp (core.js structStamp: ''
 // while nothing changes the base). curation.json is read from main, the full file (the players' copy is written only at
 // deploy); its structure entries alone are kept (scur1: {fp, c}, fp their fingerprint, core.js structFp), and the units
-// under that fingerprint (sgen4:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
+// under that fingerprint (sgen5:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
 // The cache keys carry a number (SGEN_, STREE_, SVAR_), raised whenever what is cached changes shape, so a value an
-// older script cached is never read by this one.
+// older script cached is never read by this one (sgen5 and stree4: the units and the tree with the species by their
+// scientific names, core.js treeSpUnits 'sci'; the variant table is unchanged, a species unit has no exam yet).
 // The curation is read again by the 15-minute trigger (subjStRefresh_) and at once when a device says a stamp the sheet
 // does not hold (replays_ stn, at most once a minute), so a Publish reaches the replays within 15 minutes. null when the
 // curation or the file cannot be read: no replay then (never the base's structure in place of the editor's), the app
@@ -856,13 +857,14 @@ let CURF_ = null;
 // treeBoardTree, the app's own UNITS tree) gets that tree made from the same file and structure, kept beside the units
 // under the same fingerprint (STREE_), so the board's weights per family and circle follow a circle Publish with the
 // replays, whether a device saves or not (subjTreeKept_, board_).
-// The replay's units are about 270 KB, over the script cache's 100 KB a value, so both are put and read in parts
+// The replay's units are about 560 KB for the fish and 100 KB for the sea slugs (with their species by scientific name;
+// 285 KB and 9 KB before), over the script cache's 100 KB a value, so both are put and read in parts
 // (cacheBigPut_, cacheBigGet_), the stamp's reader too (subjStKept_).
 // And its variant table (core.js SUBJECTS replayed vars, treeVarTable: each unit's variant photos, their kinds and
 // observations, from the pool files with the structure laid over), kept under the same fingerprint (SVAR_, about 330 KB
 // in parts), so the replay takes a learned mark away from the log (subjVar_, rplMake_; rules D8, D9); not made (a file
 // unreadable): the units made again at the next call.
-const SGEN_ = 'sgen4:', STREE_ = 'stree3:', SVAR_ = 'svar2:';
+const SGEN_ = 'sgen5:', STREE_ = 'stree4:', SVAR_ = 'svar2:';
 const subjTreeOn_ = S => !!(S.score && S.replayed && typeof S.replayed.tree === 'function');
 const subjVarOn_ = S => !!(S.replayed && typeof S.replayed.vars === 'function');
 function subjRpl_(sid, force){
@@ -3306,7 +3308,7 @@ function exposure_(rows, by){
   });
 }
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
-// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool3<id>, cut in
+// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool4<id>, cut in
 // parts by cacheBigPut_: the corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB, over the script
 // cache's 100 KB a value). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
 // only: true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that subject's
@@ -3324,7 +3326,7 @@ function pools_(only, ups){
     return files[name] = v;
   };
   CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
-    const k = 'pool3' + S.id, hit = cacheBigGet_(c, k);  // pool3: with the species units' parents (unitUp_)
+    const k = 'pool4' + S.id, hit = cacheBigGet_(c, k);  // pool4: with the scientific species units' parents too (unitUp_)
     if (hit) { try { const v = JSON.parse(hit); if (v && v.p) { out[S.id] = v.p; if (ups) ups[S.id] = v.u || {}; } return; } catch (e) {} }
     if (only === true || (only && only !== S.id)) return;
     let P = null, U = {};
@@ -3360,8 +3362,10 @@ function cacheBigGet_(c, k){
 }
 // A subject's units above the ones its pool holds, from its first pool file: fish.json's genera (g:Chromis) and
 // species (by sheet id, s:Chromis ternatensis, by id, and by unit id, s:s084: core.js treeSpUnits) to their family
-// (f:Damselfishes), the unit the fish pool groups its photos under (core.js unitPool); {} for a file without them (the
-// corals' data.json).
+// (f:Damselfishes), the unit the fish pool groups its photos under (core.js unitPool); a species by its scientific
+// name (core.js spUnitId sci: sci:s084, sci:xgoniobranchussp5) to its genus, the level it hangs from (core.js LEVELS),
+// which is the pool's unit for the sea slugs and the family's genus for the fish (photoCheck_ walks up); {} for a file
+// without them (the corals' data.json).
 function unitUp_(F){
   const up = Object.create(null);
   if (!F || !Array.isArray(F.genera)) return up;
@@ -3369,8 +3373,9 @@ function unitUp_(F){
   (F.species || []).forEach(x => {
     const fam = x && (x.family || up['g:' + String(x.name || '').split(' ')[0]]);
     if (!fam) return;
-    if (x.id) up[x.id] = up['s:' + x.id] = fam;
+    if (x.id) up[x.id] = up[CORE_.spUnitId('cn', x.id)] = fam;
     if (x.name) up['s:' + x.name] = fam;
+    if (x.id && x.genus && up[x.genus]) up[CORE_.spUnitId('sci', x.id)] = x.genus;
   });
   return up;
 }
@@ -3389,12 +3394,14 @@ function photoIdx_(only){
 // under a coral genus); 'unknown' when no photo is in any pool (out of play now, renamed, made up). Only 'other' is
 // flagged: such an answer is logged and counts for the player as any other, and only rates no photo (stats_).
 // The unit is also taken as the subject renamed it (core.js renamedId: an old fish entry t01 is f:Damselfishes) and as
-// its parent unit (unitUp_: a fish genus g:Chromis or species s:Chromis ternatensis is its family's, whose photos the
-// fish pool groups).
+// the units above it (unitUp_, up to three levels: a fish genus g:Chromis or species s:Chromis ternatensis is its
+// family's, whose photos the fish pool groups; a species by its scientific name, sci:s084, its genus's, and so its
+// family's for the fish).
 function photoCheck_(idx, sid, unit, fs){
   if (!idx || !fs.length) return 'ok';
   const S = CORE_.SUBJECTS.find(x => x.id === sid), up = own_(idx.up, sid) || {}, own = lc_(unit), keys = [];
-  [unit, CORE_.renamedId(S, unit)].forEach(u => [u, own_(up, u)].forEach(x => { if (typeof x === 'string' && x && keys.indexOf(sid + '|' + x) < 0) keys.push(sid + '|' + x); }));
+  const add = x => { if (typeof x === 'string' && x && keys.indexOf(sid + '|' + x) < 0) keys.push(sid + '|' + x); };
+  [unit, CORE_.renamedId(S, unit)].forEach(u => { for (let x = u, i = 0; i < 4 && typeof x === 'string' && x; i++, x = own_(up, x)) add(x); });
   let other = 0;
   for (let i = 0; i < fs.length; i++) {
     const at = own_(idx.at, fs[i]);
@@ -5340,11 +5347,14 @@ const CORE_ = (function () { const module = {exports: {}};
   // treeGenera (treeGenSets: each with its sibling genera as look-alikes and its family's line) and the species units,
   // from fish.json alone (no photo changes them). The sync sheet builds it from fish.json (Code.gs fishGen_);
   // tests/fishreplay.test.js checks it against the app's units. unit 'genus' (the sea slugs): the genus units treeGen
-  // plays from the start (treeGenUnits), and no scientific genera or species units.
+  // plays from the start (treeGenUnits), and no scientific genera or common-name species units.
+  // Both: the species by their scientific names (treeSpUnits 'sci', under their genus units), so the sheet replays an
+  // answer on one as the game scores it (SCI_SHEET; docs/reviews/2026-11-18-species-step2-plan.md §2.6).
   function treeReplayGen(F, unit) {
     const X = treeGen(F || {}, {}, undefined, unit),
       out = {},
-      gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
+      gens = new Map(((F && F.genera) || []).map(g => [g.id, g])),
+      sci = () => treeSpUnits(F || {}, X, 'sci').forEach(u => (out[u.id] = {look: u.look.slice(), fam: u.fam, from: u.from}));
     Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
     if (X.unit === 'genus') {
       // and the genera a specialist source names as its look-alikes (the tree's genus look, across families), as
@@ -5353,6 +5363,7 @@ const CORE_ = (function () { const module = {exports: {}};
         const G = gens.get(id);
         if (G && Array.isArray(G.look)) out[id].look = [...new Set([...out[id].look, ...G.look.filter(o => X.gen[o])])];
       });
+      sci();
       return out;
     }
     treeGenSets(F, X).forEach(({E, by}) => {
@@ -5363,24 +5374,61 @@ const CORE_ = (function () { const module = {exports: {}};
     // (from: abilityOf), so the replay counts a species picked wrongly as the game does (rule L2) and starts a species
     // from its family's ability as the game does.
     treeSpUnits(F || {}, X).forEach(u => (out[u.id] = {look: u.look.slice(), fam: u.fam, from: u.from}));
+    sci();
     return out;
   }
-  // The fish species units, one progress unit per species answered by common name (docs/LEARNING.md "Fish: the species
-  // level, step 1, by common name"): 's:' + the species id (s:s091), one for each species with a listed common name
-  // (fish.json cn) in a family in play (never a wink family's), in each family's species order (the commonness order,
-  // cmi), the order they open in. Each with: s, its fish.json record; family, its family unit; look, the other species
-  // units of its family (the traps of its choices, rule L7); fam, its family's line; from, the unit a species never
-  // answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf). The app's units (app.js
-  // fishSpUnitsUnits) and the sheet's replay (treeReplayGen) read this one list. X: treeGen's units, when built already.
-  function treeSpUnits(F, X) {
-    const G = (X || treeGen(F || {}, {})).gen,
+  // The levels of a tree subject's units (Q398, the integrator's call: docs/reviews/2026-11-18-species-step2-plan.md
+  // §2.1), one table that every part building or reading a species unit reads (treeSpUnits, treeReplayGen,
+  // treeScoreTree; Code.gs unitUp_), never a prefix of its own: pre, the prefix of its ids; rank, the rank it is logged
+  // at; kind, the name a species level is asked by (cn its common names, sci its scientific name); parent, the level it
+  // hangs from (the unit it starts from, abilityOf from, and opens after); plain, its ids keep letters and digits only
+  // after the prefix (a key the log's and the board's patterns always pass: sci:xgoniobranchussp5).
+  const LEVELS = {
+    family: {pre: 'f:', rank: 'family', parent: null},
+    genus: {pre: 'g:', rank: 'genus', parent: 'family'},
+    cn: {pre: 's:', rank: 'species', kind: 'cn', parent: 'family'},
+    sci: {pre: 'sci:', rank: 'species', kind: 'sci', parent: 'genus', plain: true}
+  };
+  // A species' unit id at a species level (LEVELS cn or sci): s:s091, sci:s091, sci:xgoniobranchussp5.
+  const spUnitId = (lv, id) => LEVELS[lv].pre + (LEVELS[lv].plain ? String(id).replace(/[^A-Za-z0-9]/g, '') : String(id));
+  // A unit's level (its LEVELS key), '' for a unit with no prefix (a coral genus).
+  const levelOf = id => Object.keys(LEVELS).find(k => String(id || '').startsWith(LEVELS[k].pre)) || '';
+  // The species units of a tree subject at a species level lv (LEVELS):
+  // - 'cn' (the default; docs/LEARNING.md "Fish: the species level, step 1, by common name"): one progress unit per
+  //   species answered by common name, 's:' + the species id (s:s091), one for each species with a listed common name
+  //   (fish.json cn) in a family in play (never a wink family's), in each family's species order (the commonness order,
+  //   cmi), the order they open in. Each with: s, its fish.json record; family, its family unit; look, the other species
+  //   units of its family (the traps of its choices, rule L7); fam, its family's line; from, the unit a species never
+  //   answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf).
+  // - 'sci' (docs/reviews/2026-11-18-species-step2-plan.md §2.1; Q397, Q398): one unit per species by its scientific name,
+  //   every species under a genus unit of a family in play (treeGenSets: the fish's scientific genera of every circle, the
+  //   sea slugs' genus units), a common name or none, in each family's species order; its id sci: + the species id in
+  //   letters and digits (spUnitId); look, the other scientific species units of its family; genus and from, its genus
+  //   unit (the scientific tree: never the common-name unit). X must then be treeGen's units at the subject's unit rank.
+  // The app's units (app.js treeGenera) and the sheet's replay (treeReplayGen) read this one list. X: treeGen's units,
+  // when built already.
+  function treeSpUnits(F, X, lv = 'cn') {
+    const X0 = X || treeGen(F || {}, {}),
+      G = X0.gen,
       sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
       out = [];
+    if (lv === 'sci') {
+      treeGenSets(F || {}, X0).forEach(({f, E, by}) => {
+        const gOf = new Map([...by].flatMap(([g, L]) => L.map(s => [s.id, g]))),
+          L = [...new Set([...(f.species || []).filter(id => gOf.has(id)), ...gOf.keys()])].map(id => sp.get(id)).filter(Boolean),
+          ids = L.map(s => spUnitId('sci', s.id)),
+          fam = E.name + (E.fam ? ' · ' + E.fam : '');
+        L.forEach((s, i) =>
+          out.push({id: ids[i], s, family: f.id, genus: gOf.get(s.id), look: ids.filter(o => o !== ids[i]), fam, from: gOf.get(s.id)})
+        );
+      });
+      return out;
+    }
     ((F && F.families) || []).forEach(f => {
       const E = G[f.id];
       if (!E || E.wink) return;
       const L = (f.species || []).map(id => sp.get(id)).filter(s => s && (s.cn || []).length),
-        ids = L.map(s => 's:' + s.id),
+        ids = L.map(s => spUnitId('cn', s.id)),
         fam = E.name + (E.fam ? ' · ' + E.fam : '');
       L.forEach((s, i) => out.push({id: ids[i], s, family: f.id, look: ids.filter(o => o !== ids[i]), fam, from: f.id}));
     });
@@ -5393,9 +5441,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // tree, with and without a structure edit. With the species units (SPECIES_SHEET; app.js treeSp), a player with no
   // species unit gets the same % on either tree (the few species whose common and cn fields disagree move the raw score
   // by about 1e-6).
+  // With the scientific species (SCI_SHEET; treeScoreTree sci): every species with a scientific unit has its own entry,
+  // that unit in its scientific place; a player with no such unit answered gets the same % as on the tree without them.
   function treeBoardTree(F) {
     const X = treeGen(F || {}, {});
-    return treeScoreTree({...X, gen: {...treeReplayGen(F), ...X.gen}}, F || {}, true);
+    return treeScoreTree({...X, gen: {...treeReplayGen(F), ...X.gen}}, F || {}, true, true);
   }
   // The fish structure in force (SUBJECTS fish structure apply): fish.json F with the content editor's circles and pairs
   // X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null, src}]}, each a change from F: structApply)
@@ -8436,8 +8486,13 @@ const CORE_ = (function () { const module = {exports: {}};
   // on: the species level on (sync.js speciesOn; rule D4): each species with a common-name unit (treeSpUnits) has an
   // entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C); its scientific
   // name has no unit (''). Off, every species is packed, whatever the data.
-  function treeScoreTree(X, F, on) {
-    const sp = new Map((F.species || []).map(s => [s.id, s])),
+  // sci: the scientific species level on (SCI_SHEET; rule D4): each species with a scientific unit (treeSpUnits 'sci')
+  // has an entry of its own, that unit in the scientific place (S), its common-name unit as above (none: null); its
+  // weight, genus and circle as before, so a player with no scientific species answered scores what the tree without
+  // them gives (the species that leave a pack round their weights apart: about 1e-6 of the raw score).
+  function treeScoreTree(X, F, on, sci) {
+    const own = sci ? new Set(treeSpUnits(F, X, 'sci').map(u => u.s.id)) : null,
+      sp = new Map((F.species || []).map(s => [s.id, s])),
       fam = new Map((F.families || []).map(f => [f.id, f])),
       fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
       L = fams.flatMap(id => (fam.get(id).species || []).filter(x => sp.has(x)).map(x => [sp.get(x), id])),
@@ -8448,10 +8503,16 @@ const CORE_ = (function () { const module = {exports: {}};
       circ = id => X.gen[id].circle || 1;
     L.forEach(([s, id], i) => {
       fw[id] = (fw[id] || 0) + w[i];
-      const g = s.genus && X.gen[s.genus] ? s.genus : '';
+      const g = s.genus && X.gen[s.genus] ? s.genus : '',
+        cn = on && (s.cn || []).length ? spUnitId('cn', s.id) : '';
+      // The scientific level on: a species with its scientific unit has its own entry, keyed by it.
+      if (own && own.has(s.id)) {
+        const u = spUnitId('sci', s.id);
+        return pack.set(u, [w[i], g, u, cn ? [cn] : on || !s.common ? null : [], circ(id)]);
+      }
       // The species level on: a species with a listed name has its own entry, its unit as its common names; one with none
       // has none, null, and is packed.
-      if (on && (s.cn || []).length) return pack.set('s:' + s.id, [w[i], g, '', ['s:' + s.id], circ(id)]);
+      if (cn) return pack.set(cn, [w[i], g, '', [cn], circ(id)]);
       const named = on ? false : !!s.common, // no common name at all: null (treeScore), never packed with the others
         key = g + '|' + circ(id) + '|' + named,
         e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
@@ -8578,7 +8639,9 @@ const CORE_ = (function () { const module = {exports: {}};
   };
   // The posterior after one own answer: the drift first (a three-point kernel of variance DOM.Q², on the probabilities;
   // none before the first answer), then the answer's likelihood. lp: the log posterior before. Returns the new one.
-  function domUpdate(lp, ok, d, k, R = 1, S = 1, drift = true) {
+  // z: the answer's weight in the likelihood (a tempered one: partOf, a smaller fault counts as part of a miss), 1 a whole
+  // answer.
+  function domUpdate(lp, ok, d, k, R = 1, S = 1, drift = true, z = 1) {
     let x = lp.slice();
     if (drift) {
       const a = Math.min(1 / 3, (DOM.Q * DOM.Q) / (2 * DOM.STEP * DOM.STEP)),
@@ -8587,7 +8650,7 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     x = x.map((v, i) => {
       const q = Math.min(1 - 1e-9, Math.max(1e-9, domP(domTh(i), d, k, R, S)));
-      return v + Math.log(ok ? q : 1 - q);
+      return v + z * Math.log(ok ? q : 1 - q);
     });
     return domNorm(x);
   }
@@ -8619,13 +8682,13 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // One own answer on the genus record s (scoreAnswer: the genus shown; the genus wrongly given, rule L2, as a
   // miss on its photo). d: the question's difficulty for the player, k the plausible choices, R the recall, f {mu: the
-  // genus offset, o: this format's offset, t: the typed format's, S: the slope}. The stored bar moves the answer's way
-  // only (a right answer never lowers it, a miss never raises it): the drift alone can move the posterior's expectation
-  // a little either way, and the bar shows evidence, not the passing of answers.
+  // genus offset, o: this format's offset, t: the typed format's, S: the slope, z: the answer's weight, partOf}. The
+  // stored bar moves the answer's way only (a right answer never lowers it, a miss never raises it): the drift alone can
+  // move the posterior's expectation a little either way, and the bar shows evidence, not the passing of answers.
   function domStep(s, ok, d, k, R = 1, f = {}) {
     const S = typeof f.S === 'number' && f.S > 0 ? f.S : 1,
       had = Array.isArray(s.dp) && s.dp.length === DOM.N;
-    s.dp = domUpdate(domLp(s), ok, d + (Number(f.o) || 0), k, R, S, had);
+    s.dp = domUpdate(domLp(s), ok, d + (Number(f.o) || 0), k, R, S, had, typeof f.z === 'number' && f.z > 0 ? f.z : 1);
     const b = Math.round(domBar(s.dp, f.mu, S, f.t) * 1e4) / 1e4,
       o = typeof s.ds === 'number' ? s.ds : 0;
     s.ds = ok ? Math.max(o, b) : Math.min(o, b);
@@ -9493,7 +9556,8 @@ const CORE_ = (function () { const module = {exports: {}};
   //   format (fmtOff: 0 without the sheet's fmt), which the ability steps' expectation takes (the question that much
   //   easier) and nothing else does: the logged e and the progress weights stay without it;
   // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
-  //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false);
+  //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false); z the kind of a smaller fault (PART: a common
+  //   name or the genus alone typed for a species' scientific name), its miss then weighed by partOf;
   // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
   //   recovered d0 from its rounded e). Otherwise the ability as P holds it, which is what the game logged.
   // Returns {th0, dm, e, w, look, rw}: the ability before the answer, the question's difficulty with the memory and the
@@ -9512,7 +9576,15 @@ const CORE_ = (function () { const module = {exports: {}};
   // logits, a format easier than the app thought has a positive offset, as fmtOff, so the question counts as that much
   // easier: a 2-choice right answer, more often right than a 1 in 2 guess explains, proves less, and a 2-choice miss
   // weighs less; 0 unless the game passes the sheet's offsets).
-  const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
+  const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q), z: partOf(q)});
+  // A smaller fault (Q394 A, Pierre, 2026-11-17: "A"; docs/reviews/2026-11-18-species-step2-plan.md §3): on a species asked
+  // by its scientific name, a common name typed is half a miss (cn), its genus alone (or with a second word no species of
+  // the game has) a quarter of a miss (g); never a gain. The app names the kind (the answer's q.z, logged in its scoring
+  // record, scoreRec z), the size is here, so a later size is one rules version and the whole log replays with it.
+  // The sizes are starting values, read on the real answers later. The weight scales the miss's steps on the unit and
+  // the global level (the bar's likelihood, the moving average, the Elo); its counts and recent results take a miss.
+  const PART = {cn: 0.5, g: 0.25};
+  const partOf = q => (q && !q.ok && typeof q.z === 'string' && Object.prototype.hasOwnProperty.call(PART, q.z) ? PART[q.z] : 1);
   // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
   // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
   // after it.
@@ -9550,6 +9622,7 @@ const CORE_ = (function () { const module = {exports: {}};
       R = typeof q.R === 'number' ? q.R : 1,
       p = Number(q.p) || 0,
       df = Number(q.df) || 0,
+      zw = partOf(q), // a smaller fault's weight (Q394), 1 for any other answer
       dm = d0 + fam + cf,
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
@@ -9563,7 +9636,7 @@ const CORE_ = (function () { const module = {exports: {}};
       if (domIn(q, s)) domStep(s, ok, dm, k, R, domF(q, q.mu));
       else {
         // The miss weighs against the aim at the player's level before this answer's own step on it.
-        w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th));
+        w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th)) * zw;
         s.pg = pgStep(pgOf(s), ok, w);
       }
       delete s.L; // BKT's knowledge, before s.pg
@@ -9571,7 +9644,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q), q.from);
+      eloStep(P, t, s, ok, dm - df, k, rw * zw, p, slopeOf(q), q.from);
       Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
@@ -9589,7 +9662,7 @@ const CORE_ = (function () { const module = {exports: {}};
       s.ty = (s.ty || 0) + 1;
     }
     if (scored) {
-      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p, slopeOf(q));
+      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw * zw, p, slopeOf(q));
       // One surprise counted once (docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it
       // stands after this answer's step on it, so its levelMove carries only the level's moves from the other answers
       // (against the level before, the genus would also take, at its next question, the level's step on this answer).
@@ -9632,7 +9705,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
   // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (the
   // sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c, r,
-  // g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below). Numbers to 3
+  // g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below); z the kind of a
+  // smaller fault (PART, Q394: 'cn' or 'g', left out for any other answer). Numbers to 3
   // decimals: the game rounds them before scoring (scoreIn), so the replay meets exactly what it used. x: the record as
   // an object or its JSON (a sheet cell); null when it has no d (a row logged before the scorer, or broken).
   const SC_MAX = 50;
@@ -9664,6 +9738,8 @@ const CORE_ = (function () { const module = {exports: {}};
     if (scNum(o.o)) out.o = scNum(o.o);
     if (scNum(o.t)) out.t = scNum(o.t);
     if (scNum(o.s) !== null && o.s > 0 && scNum(o.s) !== 1) out.s = scNum(o.s);
+    // z: the kind of a smaller fault (PART: cn, g; Q394), left out for any other answer.
+    if (typeof o.z === 'string' && Object.prototype.hasOwnProperty.call(PART, o.z)) out.z = o.z;
     return out;
   }
   // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
@@ -9694,7 +9770,8 @@ const CORE_ = (function () { const module = {exports: {}};
       n: q.muc,
       o: q.df,
       t: q.dt,
-      s: q.S
+      s: q.S,
+      z: q.z
     });
 
   // Rules versions: progress is recalculated from the whole answer log, by the sheet, whenever the progress engine
@@ -9806,6 +9883,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "Typed mix-ups in the pooled pairs (PR #1116; docs/decisions/2026-11-18-typed-answers-rest.md): a trusted player's typed answer that names another genus counts in the sheet's pooled pairs (conf) as offered once and mixed up (confAdd), so a row logged before its scoring record, whose mix-ups term and look-alike test the replay rebuilds from the pooled pairs, can replay differently; a row with its scoring record replays as before",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 12,
+      at: '2026-11-19',
+      why: "Live answers on units not opened count (rule L4, Pierre, 2026-11-18: live answers \"count without unlocking\"; the modes audit, step 3): a signed-in student's live answer on a unit the path has not opened is scored and logged like any answer, the unit staying closed until its card (it was dropped, never logged); its answers before the card are evidence, never the card's question (model.js askedOpen: the opening's pace, the card's question, readiness, the circles' gate). A log replays as before; every device takes the replay once",
+      // No card (rule D6).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -9842,6 +9926,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The scientific genera of every circle (Pierre, 2026-11-18 ~06:32 Manila, \"lance\"; docs/FISH_PATH.md \"Levels\"): the genera of the families of circles 2 and 3 are units as circle 1's are (fishGenSets: their sibling genera as look-alikes, their family's line), so the sheet's replay counts a wrong pick of one against it (rule L2), its variant table holds them and the score's tree credits their species' scientific names with them (fishScoreTree, fishBoardTree), every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 5,
+      at: '2026-11-19',
+      why: "The species by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md; Q397, Q398, Pierre, 2026-11-18) and the smaller faults (Q394 A, Pierre, 2026-11-17): the sheet's replay reads every species in play under its genus unit as a unit (treeSpUnits 'sci', sci:<species id>: the other scientific species of its family as its look-alikes, its genus the unit it starts from), so a wrong pick of one counts against it (rule L2); a common name typed for a species' scientific name counts as half a miss, its genus alone as a quarter, never a gain (core.js PART, the scoring record's z); the leaderboard's tree gives each of those species its own entry (treeBoardTree). A log with no such answer replays as before; every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
+      // No card (rule D6).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -9851,6 +9942,12 @@ const CORE_ = (function () { const module = {exports: {}};
       v: 1,
       at: '2026-11-17',
       why: "The sea slugs' progress replayed from the answer log, as the fish's (rules D8, D9; their leaderboard, Pierre, 2026-11-17): a player's sea slug progress is replayed by the sheet from their sea slug answers with the same engine; the log is the only reference, a bar may go down.",
+      msg: null
+    },
+    {
+      v: 2,
+      at: '2026-11-19',
+      why: "The species by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md §2.6, §2.7; Q397, Q398, Pierre, 2026-11-18) and the smaller faults (Q394 A, Pierre, 2026-11-17): the sheet's replay reads every species under its genus unit as a unit (treeSpUnits 'sci', sci:<species id>, Goniobranchus sp. 5 as sci:xgoniobranchussp5; the other species of its family as its look-alikes, its genus the unit it starts from), so a wrong pick of one counts against it (rule L2); its genus alone typed counts as a quarter of a miss, never a gain (core.js PART). A log with no such answer replays as before; every player replayed at once, the leaderboard included (rules D8, D9), silently (rule D6)",
       msg: null
     }
   ];
@@ -10255,6 +10352,8 @@ const CORE_ = (function () { const module = {exports: {}};
           Object.assign(q, {d0: sc.d, fam: memory ? sc.f || 0 : 0, cf: sc.c || 0, look: !!sc.l, R: sc.r === undefined ? 1 : sc.r});
           // The format's offset as logged (o): 0 for an answer scored without the offsets.
           Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h, df: sc.o || 0});
+          // A smaller fault's kind as logged (z, Q394): the miss weighed by today's size of it (partOf).
+          if (sc.z) q.z = sc.z;
         } else if (replayable) {
           // A row logged before the scorer: its difficulty recovered from the logged e (rounded to 0.01), its memory and
           // mix-ups term rebuilt with today's pooled stats, its look-alike test after the offers, as the game ran it.
@@ -11364,6 +11463,11 @@ const CORE_ = (function () { const module = {exports: {}};
     treeReplayGen,
     SEASLUG_RVS,
     treeSpUnits,
+    LEVELS,
+    spUnitId,
+    levelOf,
+    PART,
+    partOf,
     treeBoardTree,
     easyRank,
     easyCover,
