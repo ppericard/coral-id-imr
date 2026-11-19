@@ -145,17 +145,17 @@ const WHOLE = ['admin-fish.js'],
     [
       'admin-fish.js',
       'Dup-3',
-      'FQ FSKIP FPIN tagRows tagFlags fishNotThisSel fishCrop FKEEP fishJudged fishRot fishSrc fishSrcTag fishName candSpecies fishInPlay fishZoom fishEdit fishAutoBlock bindFishAuto renderFishCand'
+      'FQ FFULL FASIDE FSKIP FPIN tagRows tagFlags fishNotThisSel fishCrop FKEEP fishJudged fishRot fishSrc fishSrcTag fishName candSpecies fishInPlay fishZoom fishEdit fishAutoBlock bindFishAuto renderFishCand'
     ],
-    ['admin-fish.js', 'Dup-9', 'FTAGS FFLAGS fishTagText FROWS FFLAGS_MINE FPHASE_ROW fRow fVals fishRows bindFishRows'],
+    ['admin-fish.js', 'Dup-9', 'FTAGS FTAGS_OPEN FFLAGS fishTagText FROWS FFLAGS_MINE FPHASE_ROW fRow fVals fishRows bindFishRows'],
     ['admin-nodephotos.js', 'Dup-1', 'coralLive'],
     ['admin-taxa.js', 'Dup-10', 'taxaFish'],
     [
       'admin.js',
       'Dup-1',
-      'FUNSURE fuJ FU_IMR FU_WALL fuRanks fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters fuTagK fuTreeMount renderFishUnits famHref'
+      'FUNSURE FUT fuJ FU_IMR FU_WALL fuRanks fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters fuTagK fuTreeMount renderFishUnits famHref'
     ],
-    ['admin.js', 'Dup-2', 'FISHS fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
+    ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
     ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo renderCand'],
     ['admin.js', 'Dup-4', 'FREV_PH FREV_VIEW FREV frevRow renderFishReview renderQuality renderForm'],
     ['admin.js', 'Dup-5', 'renderDiff FDIFF_MAX renderFishDiff'],
@@ -169,7 +169,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'learn.js',
       'Dup-14',
-      'viewGenus FTREE NOFISH noFish famUnit fishMine fishIsWink famSci famIMR famGroup famSpecies fishFamOf viewFishSheet fishTile famSizes fishMarks treeFamily treeGenus fishSpecies'
+      'viewGenus FTREE FTREE_OF NOFISH noFish famUnit fishMine fishIsWink famSci famIMR famGroup famSpecies fishFamOf viewFishSheet fishTile famSizes fishMarks treeFamily treeGenus fishSpecies'
     ],
     ['learn.js', 'Dup-15', 'classics viewLookalikes viewCompare treeGenusLooks']
   ],
@@ -214,14 +214,30 @@ function ratchet(listed, actual) {
   }
   return bad;
 }
-// The top-level names of a file: column 0, plus column 2 in a file whose code sits in a wrapper opened at its top.
+// The top-level names of a file: column 0, plus column 2 in a file whose code sits in a wrapper opened at its top. A
+// const/let/var with several bindings (`const a = 1,\n  b = 2;`) gives every binding: the lines one step in from its
+// keyword that start `name =` right after a line ending in a comma, until a line ends it with `;` at that depth or less.
+// A destructuring, and a binding with no initial value, give none.
 function declared(src) {
   const wrapped = /^\((?:async )?(?:function\b|\(\))/m.test(src.split('\n').slice(0, 40).join('\n')),
-    re = new RegExp(`^${wrapped ? ' {0,2}' : ''}(?:async )?(?:function\\*? |(?:const|let|var) )([A-Za-z_$][\\w$]*)`);
-  return src
-    .split('\n')
-    .map(l => (re.exec(l) || [])[1])
-    .filter(Boolean);
+    re = new RegExp(`^(${wrapped ? ' {0,2}' : ''})(?:async )?(?:function\\*? |(const|let|var) )([A-Za-z_$][\\w$]*)`),
+    out = [];
+  let open = -1, // the indent of the declaration still open, or -1
+    comma = false; // the line before ended in a comma
+  for (const l of src.split('\n')) {
+    const m = re.exec(l),
+      ind = l.length - l.trimStart().length;
+    if (m) {
+      out.push(m[3]);
+      open = m[2] ? m[1].length : -1;
+    } else if (open >= 0 && comma && ind === open + 2) {
+      const b = /^\s*([A-Za-z_$][\w$]*)\s*=(?![=>])/.exec(l);
+      if (b) out.push(b[1]);
+    }
+    if (open >= 0 && ind <= open + 2 && /;\s*(\/\/.*)?$/.test(l)) open = -1;
+    if (l.trim() && !/^\s*\/\//.test(l)) comma = /,\s*(\/\/.*)?$/.test(l);
+  }
+  return out;
 }
 const own = (f, n, words) => WHOLE.includes(f) || words.test(n) || FAMILY.test(n);
 function names(listed, files, src, words, countOnly = NAME_COUNTS) {
@@ -312,6 +328,27 @@ test('rule S1 ratchet: the checks catch what they are for (planted cases)', () =
     flat = ['function fishNew() {}', '  function fishLocal() {}', 'const plain = 1;'].join('\n');
   assert.deepStrictEqual(declared(wrap), ['fuNew', 'plain']);
   assert.deepStrictEqual(declared(flat), ['fishNew', 'plain'], 'a local of a function is not a top-level name');
+  // every binding of a multi-binding declaration, in both layouts; no property of an object, no local of a body
+  const multi = [
+    'let FISHA = null, // the tree subject',
+    '  FISHB = 2,',
+    '  plain = () => {',
+    '    fishInBody = 1;',
+    '  },',
+    '  fishLast = {',
+    '    fishProp = 1,',
+    '    fishShort,',
+    '  };',
+    'const one = () => {',
+    '  fishBody = 1;',
+    '};',
+    'const o = {',
+    '  fishKey = 1,',
+    '  other,',
+    '};',
+    'const fishAfter = 1;'
+  ].join('\n');
+  assert.deepStrictEqual(declared(multi), ['FISHA', 'FISHB', 'plain', 'fishLast', 'one', 'o', 'fishAfter']);
   const NM = (listed, text, f = 'a.js', countOnly = {}) => names(listed, [f], () => text, WORDS, countOnly);
   assert.match(NM([], flat).join(), /"fishNew" is a new per-subject name/);
   assert.match(NM([], wrap).join(), /"fuNew" is a new per-subject name/);
