@@ -331,6 +331,49 @@ test('the last two observations shown are recorded, as photoSet reads them', () 
   assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
 });
 
+// Rule L4 (--live): live answers on units the path has not opened count and open nothing; once the path cards such a
+// unit, its question comes as any card's (model.js openDue, askedOpen): not before INTRO.GAP answers, then first.
+test("live answers before a unit's card: its card's question comes as any card's, INTRO.GAP answers after it", () => {
+  const U = RW.unitsOf('coral'),
+    pl = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]}),
+    {M, ctx} = pl,
+    closedNow = () => Object.keys(ctx.P).filter(n => n !== '~level' && M.asked(n) && (M.introMap()[n] || [])[3] === 'b');
+  pl.liveRun(8);
+  assert.ok(closedNow().length >= 5, 'answered live, closed: ' + closedNow().length);
+  assert.ok(closedNow().every(n => !M.introduced(n) && !M.introReady(n)));
+  // The first cards and their questions, until no card's question is left to come.
+  let i = 0;
+  const left = () => M.openRecent().some(n => !M.askedOpen(n));
+  for (; i < 40 && (i < 6 || left()); i++) pl.step(i);
+  assert.ok(!left(), 'the cards asked');
+  const u = closedNow()[0],
+    g = M.INTRO.GAP;
+  assert.ok(u, 'a unit answered live still closed');
+  M.introAdd([u], false); // its card on the path
+  assert.ok(M.asked(u) && !M.askedOpen(u) && !M.introReady(u) && !M.openPace());
+  for (let j = 0; j < g; j++) assert.notStrictEqual(pl.step(i++).t, u, 'not asked before INTRO.GAP answers');
+  assert.strictEqual(pl.step(i++).t, u, "then its card's question first");
+  assert.ok(M.askedOpen(u));
+  // --liveoff: the same answers, recorded nowhere (Codex review #1234).
+  const off = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+  off.liveRun(8, true);
+  assert.ok(
+    off.result().live.n === 8 && off.result().live.rec === 0 && !Object.keys(off.ctx.P).some(n => n !== '~level' && off.M.asked(n))
+  );
+  // The trainer's questions do not depend on the student's arm: recorded or not, the same 40 questions, photos and
+  // choices, and the same answers (Codex review #1234).
+  const arm = o => {
+    const p = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+    p.liveRun(40, o);
+    return p;
+  };
+  const on = arm(false),
+    no = arm(true);
+  assert.ok(on.result().live.rec > 0 && no.result().live.rec === 0);
+  assert.deepStrictEqual(on.liveQs, no.liveQs);
+  assert.strictEqual(on.result().live.ok, no.result().live.ok);
+});
+
 // The judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
 test('D* over the game photos only; a typed miss on a slate genus may name a bonus genus', () => {
   const U = RW.unitsOf('coral'),

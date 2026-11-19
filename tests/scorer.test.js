@@ -232,11 +232,11 @@ test('a row logged before the scorer still replays by its logged e (the inversio
 // test from them, so the change appends a coral rules version (rule D5) and the sheet replays every coral player once;
 // a row with its record replays as the game scored it.
 test('typed mix-ups in the pooled pairs: a rules version, the rows before the scorer replayed with them, the rows with it unchanged', () => {
-  // The coral rules versions run with no gap, the last one for this change, with no card (rule D6).
+  // The coral rules versions run with no gap, version 11 for this change, with no card (rule D6).
   C.RVS.forEach((x, i) => assert.strictEqual(x.v, i + 1, 'rules versions run with no gap'));
-  const last = C.RVS.at(-1);
-  assert.strictEqual(last.v, C.RV);
+  assert.strictEqual(C.RVS.at(-1).v, C.RV);
   assert.strictEqual(C.rvOf('coral'), C.RV);
+  const last = C.RVS.find(x => x.v === 11);
   assert.ok(/Typed mix-ups in the pooled pairs/.test(last.why) && /confAdd/.test(last.why), last.why);
   assert.strictEqual(last.msg, null);
   // The pooled pairs before (the choices only) and after: trusted players typed B for A twelve times (confAdd). Every
