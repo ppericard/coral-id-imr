@@ -175,12 +175,15 @@
    "keep": "best"
   },
   "fish-s191-cand-435944127": {
-   "code": "o1g1mmk2",
+   "code": "p1g1ml13",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.25,
+    0.08,
+    0.75,
+    0.44
    ],
-   "note": "a pale parrotfish with a dark eye line, two thirds its size, below it: maybe another genus, confusion possible"
+   "note": "crop: the pale parrotfish below leaves the frame (Q430)"
   },
   "fish-s191-cand-658737674": {
    "code": "p1g2sm13",

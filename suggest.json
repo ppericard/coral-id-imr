@@ -802,7 +802,7 @@
   "s119": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 60
    }
   },
@@ -858,7 +858,7 @@
   "s085": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 55
    }
   },
@@ -1488,7 +1488,7 @@
   "s123": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 37
    }
   },
@@ -1768,7 +1768,7 @@
   "s193": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 86
    }
   },
@@ -1838,7 +1838,7 @@
   "s203": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 86
    }
   },
@@ -1852,7 +1852,7 @@
   "s191": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 70
    }
   },
@@ -1873,7 +1873,7 @@
   "s188": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 69
    }
   },
@@ -2076,7 +2076,7 @@
   "s289": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 40
    }
   },
@@ -2447,7 +2447,7 @@
   "s240": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 78
    }
   },
@@ -2692,7 +2692,7 @@
   "s230": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 80
    }
   },
@@ -3812,21 +3812,21 @@
   "s535": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 112
    }
   },
   "s536": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 66
    }
   },
   "s537": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 46
    }
   },
@@ -4015,7 +4015,7 @@
   "s181": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-19",
     "n": 35
    }
   },
@@ -4029,7 +4029,7 @@
   "s319": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-08",
+    "at": "2026-11-19",
     "n": 39
    }
   },
@@ -4225,7 +4225,7 @@
   "s492": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-15",
+    "at": "2026-11-19",
     "n": 45
    }
   },
@@ -4421,7 +4421,7 @@
   "s661": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-15",
+    "at": "2026-11-19",
     "n": 45
    }
   },
@@ -41025,13 +41025,16 @@
    "k": "best"
   },
   "fish-s085-cand-727288649": {
-   "jt": "p1g0smk",
-   "e": 3,
+   "jt": "p1g0sls",
+   "e": 5,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.03,
+    0.12,
+    0.48,
+    0.43
    ],
-   "n": "the most central fish is another Dascyllus, two humbugs behind: same genus, but the subject may be taken for it"
+   "n": "crop: the two humbugs only; the two-bar Dascyllus at the centre and right leaves the frame (Q430)"
   },
   "fish-s085-cand-737473923": {
    "jt": "p1g0sms",
@@ -46966,13 +46969,22 @@
    "k": "best"
   },
   "fish-s113-cand-467931977": {
-   "jt": "p1g1smk",
-   "e": 3,
+   "jt": "p1g1sl1",
+   "e": 4,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.3,
+    0.2,
+    0.75,
+    0.62
    ],
-   "n": "a sharp yellow damselfish at left, half the subject's length, genus not settled on the photo: leaning no confusion, doubtful"
+   "bb": [
+    0.3,
+    0.3,
+    0.7,
+    0.6
+   ],
+   "n": "crop: the yellow damselfish at left and top right leave the frame (Q430)"
   },
   "fish-s113-cand-468408577": {
    "jt": "p1g1sm1",
@@ -48295,9 +48307,16 @@
    "k": "best"
   },
   "fish-s119-cand-307205728": {
-   "jt": "p1g0smk",
-   "e": 2,
-   "k": "best"
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best",
+   "c": [
+    0.25,
+    0.16,
+    0.62,
+    0.45
+   ],
+   "n": "crop: the blue Chromis and the striped damselfish leave the frame (Q430)"
   },
   "fish-s119-cand-307926475": {
    "jt": "o1g1sm1",
@@ -49657,13 +49676,16 @@
    "k": "best"
   },
   "fish-s123-cand-345174107": {
-   "jt": "p1g0smk",
-   "e": 4,
+   "jt": "p1g0sls",
+   "e": 5,
    "k": "alt",
-   "u": [
-    "code"
+   "c": [
+    0.2,
+    0.0,
+    0.85,
+    0.52
    ],
-   "n": "a dark fish with a white band, about the snappers' size and sharp, at lower left: confusion possible, not certain"
+   "n": "crop: the school only; the dark white-banded fish at lower left leaves the frame (Q430)"
   },
   "fish-s123-cand-368397513": {
    "jt": "p1g0sl1",
@@ -63098,9 +63120,16 @@
    "k": "best"
   },
   "fish-s181-cand-655332221": {
-   "jt": "p1g0ssk",
-   "e": 2,
-   "k": "best"
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best",
+   "c": [
+    0.27,
+    0.295,
+    0.8,
+    0.75
+   ],
+   "n": "crop: the two yellow fish (top left, bottom) leave the frame (Q430)"
   },
   "fish-s181-cand-655351834": {
    "jt": "p1g0slo",
@@ -65019,14 +65048,17 @@
    "k": "best"
   },
   "fish-s187-cand-434052823": {
-   "jt": "o1g0mmkp",
-   "e": 2,
+   "jt": "p1g0mm1p",
+   "e": 3,
    "k": "best",
    "ph": "terminal",
-   "u": [
-    "code"
+   "c": [
+    0.08,
+    0.0,
+    0.5,
+    0.55
    ],
-   "n": "a pale slender fish at right, about the parrotfish's size, kind unclear (a wrasse?): confusion possible, not certain"
+   "n": "crop: the pale slender fish at right leaves the frame (Q430)"
   },
   "fish-s187-cand-435099837": {
    "jt": "o1g2sm1p",
@@ -65633,9 +65665,22 @@
    "k": "best"
   },
   "fish-s188-cand-545406170": {
-   "jt": "p1g1smkp",
-   "e": 3,
-   "k": "alt"
+   "jt": "p1g1sl1p",
+   "e": 4,
+   "k": "alt",
+   "c": [
+    0.02,
+    0.21,
+    0.72,
+    0.582
+   ],
+   "bb": [
+    0.04,
+    0.2,
+    0.7,
+    0.58
+   ],
+   "n": "crop: the butterflyfish below and the dark parrotfish above leave the frame (Q430)"
   },
   "fish-s188-cand-545406172": {
    "jt": "p1g1sl1p",
@@ -66658,13 +66703,16 @@
    "k": "dup"
   },
   "fish-s191-cand-435944127": {
-   "jt": "o1g1mmkp",
-   "e": 2,
+   "jt": "p1g1ml1p",
+   "e": 3,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.25,
+    0.08,
+    0.75,
+    0.44
    ],
-   "n": "a pale parrotfish with a dark eye line, two thirds its size, below it: maybe another genus, confusion possible"
+   "n": "crop: the pale parrotfish below leaves the frame (Q430)"
   },
   "fish-s191-cand-448101666": {
    "jt": "p1g2ss1p",
@@ -67477,13 +67525,16 @@
    "k": "best"
   },
   "fish-s193-cand-551805479": {
-   "jt": "o1g2bmkp",
-   "e": 1,
+   "jt": "p1g2bl1p",
+   "e": 2,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.21,
+    0.32,
+    0.75,
+    0.75
    ],
-   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
+   "n": "crop: the dark fish at left, the small fish above and the green parrotfish below leave the frame (Q430)"
   },
   "fish-s193-cand-552145669": {
    "jt": "p1g2bm1p",
@@ -71866,14 +71917,20 @@
    "ph": "terminal"
   },
   "fish-s203-cand-469143100": {
-   "jt": "p1g1slkp",
+   "jt": "p1g1ml1p",
    "e": 3,
    "k": "alt",
    "ph": "terminal",
-   "u": [
-    "code"
+   "c": [
+    0.13,
+    0.34,
+    0.75,
+    0.68
    ],
-   "n": "a squirrelfish about two thirds its size, sharp, just behind it: confusion possible"
+   "u": [
+    "crop"
+   ],
+   "n": "crop takes the squirrelfish above out, but a blue sliver stays at the top edge above the head: maybe its fin"
   },
   "fish-s203-cand-469143106": {
    "jt": "o1g2sm1p",
@@ -80196,9 +80253,16 @@
    "k": "best"
   },
   "fish-s230-cand-437807599": {
-   "jt": "p1d1smkj",
+   "jt": "p1d1sl1j",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "c": [
+    0.1,
+    0.19,
+    0.96,
+    0.8
+   ],
+   "n": "crop: the two pale fish cut by the top edge leave the frame (Q430)"
   },
   "fish-s230-cand-459511591": {
    "jt": "o1g0sl1",
@@ -82894,9 +82958,22 @@
    "k": "best"
   },
   "fish-s240-cand-555852573": {
-   "jt": "o1g1smk",
-   "e": 2,
-   "k": "best"
+   "jt": "p1g1sl1",
+   "e": 4,
+   "k": "best",
+   "c": [
+    0.0,
+    0.24,
+    0.65,
+    1.0
+   ],
+   "bb": [
+    0.0,
+    0.25,
+    0.6,
+    1.0
+   ],
+   "n": "crop: the checkerboard wrasse above leaves the frame (Q430)"
   },
   "fish-s240-cand-556434300": {
    "jt": "p1g1smk",
@@ -95171,13 +95248,16 @@
    "k": "best"
   },
   "fish-s289-cand-258279800": {
-   "jt": "p1g0slk",
+   "jt": "p0g0sl1",
    "e": 3,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.0,
+    0.08,
+    0.92,
+    0.655
    ],
-   "n": "a silver cardinalfish with a yellow eye line, about two thirds its size and sharp, below it: maybe another genus"
+   "n": "crop: the silver cardinalfish below leaves the frame (Q430); urchin spines hide the rear and tail"
   },
   "fish-s289-cand-276848955": {
    "jt": "p1g0sl1",
@@ -101103,9 +101183,19 @@
    "k": "best"
   },
   "fish-s319-cand-565734064": {
-   "jt": "p1g1smk",
+   "jt": "p1g1mlo",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "c": [
+    0.29,
+    0.335,
+    0.73,
+    0.64
+   ],
+   "u": [
+    "crop"
+   ],
+   "n": "crop takes the blue fish above out; the tail is close to the bottom edge and a blurred yellow fish stays at lower left"
   },
   "fish-s319-cand-595786268": {
    "jt": "p1g1sm1",
@@ -144222,9 +144312,22 @@
    "k": "best"
   },
   "fish-s492-cand-695669180": {
-   "jt": "o1g1smk",
-   "e": 3,
-   "k": "best"
+   "jt": "p1g1sl1",
+   "e": 4,
+   "k": "best",
+   "c": [
+    0.39,
+    0.33,
+    0.8,
+    0.7
+   ],
+   "bb": [
+    0.4,
+    0.35,
+    0.75,
+    0.7
+   ],
+   "n": "crop: the damselfish at upper left leaves the frame (Q430)"
   },
   "fish-s492-cand-701421347": {
    "jt": "p1g0sm1",
@@ -154745,13 +154848,16 @@
    "k": "best"
   },
   "fish-s535-cand-458656450": {
-   "jt": "o1g1smk",
+   "jt": "o1d1ml1",
    "e": 2,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.25,
+    0.315,
+    0.82,
+    0.645
    ],
-   "n": "a pale damselfish of another genus, half its size, sharp beside the anemone: confusion possible"
+   "n": "crop: the pale damselfish below and the dark one above leave the frame (Q430)"
   },
   "fish-s535-cand-458656463": {
    "jt": "o1g1smk",
@@ -155508,13 +155614,16 @@
    "k": "best"
   },
   "fish-s536-cand-81385287": {
-   "jt": "o1g1mmk",
+   "jt": "o1g1ml1",
    "e": 2,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.3,
+    0.41,
+    0.72,
+    0.82
    ],
-   "n": "a yellow goby sits on the bottle, half the damselfish's size and sharp: confusion possible"
+   "n": "crop: the yellow goby on the bottle leaves the frame (Q430)"
   },
   "fish-s536-cand-904118": {
    "jt": "p1g0sms",
@@ -155537,13 +155646,22 @@
    "k": "best"
   },
   "fish-s537-cand-349632216": {
-   "jt": "p1g1slk",
-   "e": 3,
+   "jt": "p1g1sl1",
+   "e": 4,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.435,
+    0.08,
+    1.0,
+    0.73
    ],
-   "n": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
+   "bb": [
+    0.45,
+    0.15,
+    0.95,
+    0.73
+   ],
+   "n": "crop: the pale damselfish at left leaves the frame (Q430)"
   },
   "fish-s537-cand-349632649": {
    "jt": "p1g0sl1",
@@ -187554,13 +187672,22 @@
    "k": "best"
   },
   "fish-s661-cand-725061651": {
-   "jt": "p1g0smk",
-   "e": 3,
+   "jt": "p1g0sl1",
+   "e": 5,
    "k": "best",
-   "u": [
-    "code"
+   "c": [
+    0.4,
+    0.28,
+    0.95,
+    0.75
    ],
-   "n": "a yellow-and-black fish of another family about half the goby's size, sharp, beside it: confusion possible, not certain"
+   "bb": [
+    0.5,
+    0.35,
+    0.9,
+    0.75
+   ],
+   "n": "crop: the yellow-and-black fish at left leaves the frame (Q430)"
   },
   "fish-s661-cand-739194427": {
    "jt": "p1g0sl1",
