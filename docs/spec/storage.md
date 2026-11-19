@@ -46,6 +46,7 @@ could clash with another app on the shared origin `ppericard.github.io`). `core.
 | `imr-coral-intro`, `imr-coral-intro-offer` | `reefid-sync-coral-intro`, `reefid-sync-coral-intro-offer` | First-meeting cards seen, Open all and the back card's choice (`model.js` `INTRO`). |
 | `imr-coral-reset` | `reefid-sync-coral-reset` | Time of the last progress reset (the sheet's opening hold counts from it). |
 | `imr-coral-custom` | `reefid-sync-coral-custom` | The genera picked for the custom quiz (`quiz.js` `quizCustom`). |
+| (none) | `reefid-sync-fish-custom`, `reefid-sync-seaslug-custom` | The same for the fish's families and the sea slugs' genera: one key per subject (`subjKey(id, 'custom')`), merged and cleared per subject (`sync.js`). |
 | `imr-coral-rv` | `reefid-sync-coral-rv` | The progress rules version this device applied (`sync.js` `RVK`, full replay); the sheet drops it under both names from a merged account. |
 | `imr-coral-ach`, `imr-coral-board` | `reefid-sync-ach`, `reefid-sync-board` | Achievements, leaderboard choice. |
 | (none) | `reefid-sync-told` | The one-time notices told on any device of the account (`core.js` `TOLD`, tokens; [sync.md](sync.md#one-time-notices-after-the-first-sync)). |

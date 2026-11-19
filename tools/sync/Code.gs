@@ -4334,8 +4334,6 @@ const CORE_ = (function () { const module = {exports: {}};
   // one unit, and these subjects have one view (SUBJECTS views).
   const CLOSED_TREE = {
     cmp: 'Not opened yet: the Look-alikes deck and Compare read the coral views and sources (ROADMAP "Every game mode for every subject")',
-    'quiz-custom':
-      'Not opened yet: the selection is saved under the coral key and grouped by the IMR lecture (ROADMAP "Every game mode for every subject")',
     pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
   };
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
@@ -4596,7 +4594,7 @@ const CORE_ = (function () { const module = {exports: {}};
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-custom', 'quiz-duel'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -4806,7 +4804,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'quiz', 'quiz-duel'],
+      pages: ['genera', 'sheet', 'quiz', 'quiz-custom', 'quiz-duel'],
       closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by

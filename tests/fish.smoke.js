@@ -641,6 +641,50 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
+// (16) The custom quiz (quiz.js viewCustom, Q437): twelve families unlocked, the pages read and played by
+// tests/customquiz.check.js at 390 and 1280 px (the tab, every family in one ID group, the search, the picks saved under
+// reefid-sync-fish-custom, the quiz on them).
+async function customQuiz(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+    );
+    await c.addInitScript(qa.PAGE);
+    await c.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-cq')) {
+          sessionStorage.setItem('fish-cq', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+        }
+      } catch (e) {}
+    });
+    const q = await c.newPage();
+    q.on('pageerror', e => errs.push(`custom quiz: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+    const n = await q.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => gamePics(n, 'wide').length)
+        .slice(0, 12);
+      introAdd(L, true);
+      return L.length;
+    });
+    if (n < 6) fails.push(`custom quiz: ${n} fish families with a photo`);
+    else await require('./customquiz.check.js')(q, base, fails, 'fish', w);
+    await c.close();
+  }
+  return fails;
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3527,6 +3571,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const oo = run.has('main') ? await oddOne(b, base, errs) : [];
   // (15) Matrix: matrixGame, above.
   const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
+  // (16) The custom quiz: customQuiz, above.
+  const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -3868,6 +3914,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...sd,
     ...oo,
     ...mx,
+    ...cqz,
     ...cold,
     ...grp,
     ...all,

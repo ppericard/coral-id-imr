@@ -1963,7 +1963,14 @@ function mimTrap(t, ch, u) {
 //   path, so a genus not met yet is asked at once, its first-meeting card shown with that question (quiz.js);
 // - the wrong choices (customChoices): from the selection first, with the photo quiz's rules (distractors), so a selected
 //   look-alike group drills itself; a selection under 4 genera is topped up from the other genera in play.
-const CUSTOM = {KEY: 'reefid-sync-coral-custom', MIN: 2};
+// KEY: the subject on screen's selection (core.js subjKey: reefid-sync-<subject>-custom, the corals' the key they always
+// had, so their saved selections stay); sync.js merges and clears each subject's own (rule D7).
+const CUSTOM = {
+  get KEY() {
+    return sKey('custom');
+  },
+  MIN: 2
+};
 const customOf = (saved, play) => {
   const S = new Set(Array.isArray(saved) ? saved : []),
     L = play.filter(n => S.has(n));

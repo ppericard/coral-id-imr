@@ -66,6 +66,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
 | 2026-11-19 | [The Coral Finder book is a source like any other, with no credit line of its own](2026-11-19-coral-finder-credit.md) | #1194 |
 | 2026-11-19 | [Coral look-alike pairs: the IMR lecture's split from the Coral Finder's, into the IMR instance's layer](2026-11-19-coral-pairs-split.md) | #1170 |
+| 2026-11-19 | [The custom quiz for every subject: one key per subject, the groups declared in `UNITS`](2026-11-19-custom-quiz-every-subject.md) | #1266 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (fifth pass)](2026-11-19-decisions-from-comments-tests-5.md) | #1153 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (sixth pass)](2026-11-19-decisions-from-comments-tests-6.md) | #1157 |
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
