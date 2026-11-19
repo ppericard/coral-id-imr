@@ -50,7 +50,7 @@ const server = http.createServer((req, res) => {
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 // SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both); SMOKE_PART / SMOKE_ONLY: some parts (below).
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
-// Hidden, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
+// the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
 // SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job
@@ -531,8 +531,8 @@ async function sealPart(b, base, fails) {
       await settle();
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     };
-    // A genus page: Photos › Genera › Live, the genus as the last segment.
-    const goGenus = g => go('photos/genera/live/' + encodeURIComponent(g));
+    // A genus page: its node in Photos › Tree › Key, the genus as the last segment (the Genera tab was folded into the Tree).
+    const goGenus = g => go('photos/tree/key/' + encodeURIComponent(g));
     const text = () => p.evaluate(() => document.getElementById('view').innerText);
     // One player's heatmap for an id with no answers on the side on screen (a deleted, merged or archived account's: rule
     // D7): no map, no number, the id never offered in the picker, one line. '' when so, else what showed.
@@ -601,7 +601,7 @@ async function sealPart(b, base, fails) {
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
       return [
         ...L,
-        {h: 'photos/genera/live/' + Object.keys(DATA.gen)[1], tab: 'Genera', view: 'photos/genera/live', n: 3},
+        {h: 'photos/tree/key/' + Object.keys(DATA.gen)[1], tab: 'Tree', view: 'photos/tree/key', n: 2},
         {h: 'inbox/coverage/games?look=all', tab: 'Coverage', view: 'inbox/coverage/games', n: 3},
         {h: 'players/list/journey/Ana Demo', tab: 'List', view: null, n: 1}
       ];
@@ -1838,9 +1838,9 @@ async function sealPart(b, base, fails) {
               roots: [...document.querySelectorAll('.adm-tree [role=treeitem][aria-level="1"]')].map(x => x.dataset.tt),
               rows: document.querySelectorAll('.adm-tree [role=treeitem]').length,
               cards: [...document.querySelectorAll('.adm-tcard')].map(x => x.dataset.ttc),
-              open: (document.querySelector('.adm-ctopen') || {}).getAttribute?.('href') || '',
-              views: [...document.querySelectorAll('[data-ctv]')].map(x => x.dataset.ctv),
-              feat: document.querySelectorAll('.adm-ctfeat a').length,
+              tools: ['[data-lv]', '[data-ok]', '.adm-ctopen', '[data-gv]'].map(s => !!document.querySelector(s)).join(),
+              views: [...document.querySelectorAll('[data-drop]')].map(x => x.dataset.drop),
+              feat: document.querySelectorAll('.adm-tile.is-feat').length,
               kids: [...document.querySelectorAll('[data-ttkid] option')].map(o => o.value).filter(Boolean),
               tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean),
               keyView: (document.querySelector('#subnav [data-view="photos/tree/key"]') || {}).getAttribute?.('href') || '',
@@ -1854,7 +1854,7 @@ async function sealPart(b, base, fails) {
           if (
             c.hash !== '#photos/tree/key' ||
             c.note ||
-            !/^Genera,Tree,/.test(tabs) ||
+            !/^Tree,/.test(tabs) ||
             c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora'
           )
             fails.push(`${w}px Coral Tree: the first group ${JSON.stringify(c)}`);
@@ -1866,12 +1866,13 @@ async function sealPart(b, base, fails) {
           c = await ct();
           if (!c.cards.includes('Duncanopsammia') || !c.cards.includes('Cyphastrea') || c.kids.join() !== c.cards.join())
             fails.push(`${w}px Coral Tree: group 4 ${JSON.stringify(c)}`);
-          // A genus: its path, its views' featured photos, its genus page linked (#photos/genera/live/<genus>, kept)
+          // A genus: its path, its views with their photos and the tools of the former genus page (zooms, ✓ Validated, the
+          // view filter; the Genera tab was folded into the Tree, 2026-11-19), no link to another page
           await go('photos/tree/key/Acropora');
           c = await ct();
           if (
             c.crumbs.join(' › ') !== '1 · Small, raised, separate-walled corallites › Acropora' ||
-            c.open !== '#photos/genera/live/Acropora' ||
+            c.tools !== 'true,true,false,true' ||
             c.views.join() !== 'wide,medium,macro' ||
             !c.feat ||
             c.wide > 0
@@ -1887,15 +1888,49 @@ async function sealPart(b, base, fails) {
           c = await ct();
           if (c.hash !== '#photos/tree/worms' || !c.cards.length || (w === 1280 && !c.roots.every(r => r.startsWith('wf:'))))
             fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
-          // A genus card opens its Tree page, and the link there its genus page
+          // A genus card opens its Tree page, with the genus's tools on it
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           await p.click('.adm-tcard[data-ttc="Stylophora"]');
           await settle();
-          if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora') fails.push(`${w}px Coral Tree: a card's link`);
-          await p.click('.adm-ctopen');
+          if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora' || !(await p.$('[data-lv]')))
+            fails.push(`${w}px Coral Tree: a card's link`);
+          // Removed from the site and Excluded are lists on a genus's page: Remove lists the photo (Put back returns it, one
+          // click each), × lists it as excluded (Restore); a group's page lists those of its genera; the Tag… filters count
+          // the genera that have any; Undo steps back
+          await go('photos/tree/key/Acropora');
+          const lists = () =>
+            p.evaluate(() => ({
+              rm: [...document.querySelectorAll('[data-np-sec="back"] figure')].map(x => x.dataset.f),
+              ex: [...document.querySelectorAll('[data-np-sec="restore"] figure')].map(x => x.dataset.f),
+              tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean)
+            }));
+          c = await lists();
+          // (the real curation already excludes some of Acropora's photos: the list shows them, nothing else)
+          const ex0 = c.ex.length;
+          if (c.rm.length || !c.tags.includes('removed') || !c.tags.includes('excluded'))
+            fails.push(`${w}px Coral Tree: lists on a genus with nothing removed ${JSON.stringify(c.rm)}`);
+          const f0 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
+          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="hide"]`);
           await settle();
-          if ((await p.evaluate(() => location.hash)) !== '#photos/genera/live/Stylophora' || !(await p.$('[data-lv]')))
-            fails.push(`${w}px Coral Tree: Genus page`);
+          c = await lists();
+          if (c.rm.join() !== f0) fails.push(`${w}px Coral Tree: Remove listed ${JSON.stringify(c)}`);
+          await go('photos/tree/key/' + encodeURIComponent('k:1'));
+          c = await lists();
+          if (!c.rm.includes(f0)) fails.push(`${w}px Coral Tree: a group page lists its genera's removed photos ${JSON.stringify(c)}`);
+          await go('photos/tree/key/Acropora');
+          await p.click(`[data-np-sec="back"] figure[data-f="${f0}"] [data-np="back"]`);
+          await settle();
+          c = await lists();
+          if (c.rm.length) fails.push(`${w}px Coral Tree: Put back ${JSON.stringify(c)}`);
+          const f1 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
+          await p.click(`[data-drop] .adm-tile[data-f="${f1}"] [data-act="exclude"]`);
+          await settle();
+          c = await lists();
+          if (c.ex.length !== ex0 + 1 || !c.ex.includes(f1)) fails.push(`${w}px Coral Tree: × listed ${JSON.stringify(c.ex)}`);
+          await p.click(`[data-np-sec="restore"] figure[data-f="${f1}"] [data-np="restore"]`);
+          await settle();
+          c = await lists();
+          if (c.ex.length !== ex0 || c.ex.includes(f1)) fails.push(`${w}px Coral Tree: Restore ${JSON.stringify(c.ex)}`);
           if (once) {
             // Opened cold at a coral Tree address (a bookmark, a reload): the page draws, with no error.
             const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
@@ -1908,7 +1943,7 @@ async function sealPart(b, base, fails) {
             q.on('pageerror', e => ne.push(e.message));
             await q.goto(base + 'admin.html?demo#photos/tree/worms/Pachyseris');
             await q
-              .waitForFunction(() => document.querySelector('.adm-ctopen'), null, {timeout: 90000})
+              .waitForFunction(() => document.querySelector('[data-lv]'), null, {timeout: 90000})
               .catch(() => ne.push('the genus page never drew'));
             const cold = await q.evaluate(() =>
               [...document.querySelectorAll('.adm-crumbs a, .adm-crumbs b')].map(x => x.textContent).join(' › ')
@@ -2439,7 +2474,7 @@ async function sealPart(b, base, fails) {
         fails.push(`${w}px Subjects: back to ${S[0].id} on the same page ${JSON.stringify(at)}`);
       // A page one side lacks (a coral genus page): the other side's view of the same tab or group, one it has.
       const gen = await p.evaluate(() => Object.keys(DATA.gen)[0]);
-      await p.evaluate(g => (location.hash = '#photos/genera/live/' + encodeURIComponent(g)), gen);
+      await p.evaluate(g => (location.hash = '#photos/tree/key/' + encodeURIComponent(g)), gen);
       await settle();
       await p.click(`#subj [data-subj="${other.id}"]`);
       await settle();
@@ -2467,7 +2502,7 @@ async function sealPart(b, base, fails) {
         ['~stats-needs', '#players/activity', 'Activity'],
         ['Acropora', '#players/activity', 'Activity'],
         ['fish/~users', '#fish/players/activity', 'Activity'],
-        ['photos', '#photos/genera/live', 'Genera']
+        ['photos', '#photos/tree/key', 'Tree']
       ];
       for (const [from, to, tab] of RED) {
         await go(from);
@@ -2477,18 +2512,18 @@ async function sealPart(b, base, fails) {
         if (hash !== to || strip(at.tab || at.menu) !== tab)
           fails.push(`${w}px #${from}: ${hash} on ${at.tab || at.menu}, not ${to} on ${tab}`);
       }
-      // #photos lands on the first genus page.
+      // #photos lands on the Tree's first group page (the Genera tab, which it opened on a genus, is folded into the Tree).
       await go('photos');
-      if (!(await p.evaluate(g => (document.querySelector('.adm-sname') || {}).textContent === g, first)))
-        fails.push(`${w}px #photos: not the first genus page`);
-      // Deep links: a genus page, and a journey whose name holds the separators (split before decoding).
-      await go('photos/genera/live/' + encodeURIComponent('Porites'));
-      if ((await p.evaluate(() => (document.querySelector('.adm-sname') || {}).textContent)) !== 'Porites')
-        fails.push(`${w}px #photos/genera/live/Porites: not the Porites page`);
+      if (!(await p.evaluate(() => !!document.querySelector('.adm-tcard') && !document.querySelector('[data-lv]'))))
+        fails.push(`${w}px #photos: not the Tree's first group page`);
+      // Deep links: a genus's node, and a journey whose name holds the separators (split before decoding).
+      await go('photos/tree/key/' + encodeURIComponent('Porites'));
+      if ((await p.evaluate(() => (document.querySelector('.adm-sname i') || {}).textContent)) !== 'Porites')
+        fails.push(`${w}px #photos/tree/key/Porites: not the Porites page`);
       // The IMR lecture photos' sources (Pierre, 2026-11-15, #925): on Stylophora's page a traced one (imr-p12_i8, Corals of
       // the World) is NC with its photographer and site's terms in the badge's title, one found only as copies
       // (imrl-p10_i2) is "source unknown" and keeps its IMR badge; its enlarged photo links the page that credits it.
-      await go('photos/genera/live/Stylophora');
+      await go('photos/tree/key/Stylophora');
       const lt = await p.evaluate(() => {
         const t = f => document.querySelector(`#view .adm-tile[data-f="${f}"]`);
         const one = f => {
@@ -3343,20 +3378,22 @@ async function sealPart(b, base, fails) {
         JSON.stringify(all.pr) !== JSON.stringify([['handled in #577', 'https://github.com/ppericard/coral-id-imr/pull/577']])
       )
         fails.push(`${w}px To do › All, a report handled in a PR: ${JSON.stringify(all)}`);
-      // Genera › Hidden: Put back takes a removed photo back.
+      // Tree › a genus › Removed from the site: Put back takes a removed photo back.
       const hid = await p.evaluate(() => {
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
           f = photos(n)[0].f;
         ACT.hide(n, f);
-        location.hash = 'photos/genera/hidden';
+        location.hash = 'photos/tree/key/' + encodeURIComponent(n);
         return {n, f};
       });
       await settle();
-      if (!(await p.$(`#view [data-f="${hid.f}"] [data-unhide]`))) fails.push(`${w}px Hidden: the removed photo is not listed`);
+      if (!(await p.$(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`)))
+        fails.push(`${w}px Removed: the removed photo is not listed`);
       else {
-        await p.click(`#view [data-f="${hid.f}"] [data-unhide]`);
+        await p.click(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`);
         await settle();
-        if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
+        if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid))
+          fails.push(`${w}px Removed: Put back left the photo removed`);
       }
       // To do › Out of the presence rule (Pierre, 2026-11-05: he sorts these photos himself, and one out of the rule "must not
       // be there"; the demo has the real data's out-of-rule photos): Remove excludes a photo for good (the ×) and Undo brings
@@ -3593,13 +3630,16 @@ async function sealPart(b, base, fails) {
         p.evaluate(() => ({
           btns: [...document.querySelectorAll('.adm-sticky [data-gv]')].map(b => b.textContent),
           on: [...document.querySelectorAll('.adm-sticky [data-gv][aria-pressed="true"]')].map(b => b.dataset.gv),
-          rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out) h3')].map(h => h.firstChild.textContent.trim()),
+          // the views' sections (a Tree page also holds Structure, Sheet and the Removed and Excluded lists)
+          rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out)')]
+            .filter(s => s.querySelector('[data-drop]'))
+            .map(s => s.querySelector('h3').firstChild.textContent.trim()),
           drops: [...document.querySelectorAll('.adm-main [data-drop]')].map(g => g.dataset.drop),
           cands: !!document.querySelector('.adm-main .adm-cands'),
           note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
           saved: localStorage.getItem('demo:reefid-admin-gview'),
-          all: rows(cur.slice(LIVE.length + 1)).map(([v]) => label(cur.slice(LIVE.length + 1), v)),
-          nc: unused(cur.slice(LIVE.length + 1)).length
+          all: rows(cur.slice(TREE.length + 1)).map(([v]) => label(cur.slice(TREE.length + 1), v)),
+          nc: unused(cur.slice(TREE.length + 1)).length
         }));
       // A missing button is a failure, not a 30 s wait: the checks after it then fail too.
       const pick = async sel => ((await p.$(sel)) ? p.click(sel) : fails.push(`${w}px View filter: no ${sel}`));
@@ -5542,7 +5582,7 @@ async function sealPart(b, base, fails) {
         r.sts !== 'done,wait,drop' ||
         !r.unit ||
         r.unit[0] !== 'Open genus' ||
-        !/^#photos\/genera\/live\//.test(r.unit[1]) ||
+        !/^#photos\/tree\/key\//.test(r.unit[1]) ||
         r.page !== 'index.html#practice/quiz' ||
         r.attach ||
         !r.tiles.length ||
@@ -7627,7 +7667,7 @@ async function sealPart(b, base, fails) {
                 .join();
           return t && {f: t.dataset.f, g: t.dataset.g, acts: acts(t), n: !!t.querySelector('.adm-hnum')};
         });
-        await go('photos/genera/live/' + encodeURIComponent(ht.g));
+        await go('photos/tree/key/' + encodeURIComponent(ht.g));
         const gt = await p.evaluate(f => {
           const t = document.querySelector(`.adm-tile[data-f="${CSS.escape(f)}"]`);
           return (
