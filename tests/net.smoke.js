@@ -798,9 +798,21 @@ const server = http.createServer((req, res) => {
     await p.goto(base + '#' + require('../core.js').routeOut('quiz'), {waitUntil: 'commit'});
     if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no quiz question');
     else {
-      const r = await p.evaluate(() => smokeAnswer(false));
+      // The montage puts the photo shown beside one of the genus answered in the same view (quiz.js answer: V[tp.view]),
+      // so a wrong genus with no photo in that view (Lobactis has no 'medium' photo) shows none: 5 runs in 60 on any
+      // head had it (2026-11-19, the first question's one photo at a random view). The wrong answer given is one that has
+      // a photo in a view shown; none among the choices (rare): any wrong one, with no montage expected.
+      const wrong = await p.evaluate(() => {
+        const t = (typeof qNow === 'function' && qNow() && qNow().g) || SHOWNQ[1],
+          views = ((SHOWNQ && SHOWNQ[4] && SHOWNQ[4].shown) || []).map(x => x.view),
+          has = n => views.some(v => ((GX(n).views || {})[v] || []).some(x => gamePhotoOk(n, x)));
+        return (
+          [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(b => b.dataset.c).find(n => n !== t && GX(n) && has(n)) || null
+        );
+      });
+      const r = await p.evaluate(w => smokeAnswer(w === null ? false : w), wrong);
       const vs = await p.evaluate(() => !!document.querySelector('#view .qstage.qvs .qko img'));
-      if (r.fmt === 'choices' && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
+      if (wrong && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
     }
     await go('quiz-duel');
     if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no duel question');
