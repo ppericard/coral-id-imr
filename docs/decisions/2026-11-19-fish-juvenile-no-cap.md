@@ -1,6 +1,6 @@
 # Fish juveniles: no ease cap; the judged ease is the starting point
 
-Date: 2026-11-19. PR: #PR. Rules or docs touched: judging/FISH.md "Ease", "Caps", "Juveniles", "Entries out of circle
+Date: 2026-11-19. PR: #1237. Rules or docs touched: judging/FISH.md "Ease", "Caps", "Juveniles", "Entries out of circle
 1"; judging/SEASLUG.md "Caps", "Juveniles"; FISH_PATH.md "Juveniles and colour phases"; spec/fish-photos.md "The
 pre-sort"; ROADMAP "Remove the fish easy-photos bootstrap".
 
