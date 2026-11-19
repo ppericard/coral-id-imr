@@ -1,6 +1,6 @@
 # One engine, step 2: the features `replay` switched become named `SUBJECTS` fields, at today's values
 
-Date: 2026-11-19. PR: #NNNN. Rules or docs touched: S1; docs/spec/subjects.md "The registry", "Sync and replay per
+Date: 2026-11-19. PR: #1226. Rules or docs touched: S1; docs/spec/subjects.md "The registry", "Sync and replay per
 subject"; docs/spec/fish-game.md, docs/spec/seaslugs.md, docs/LEARNING.md (the circle-3 threshold); ROADMAP "One engine
 for every subject, what is left".
 
