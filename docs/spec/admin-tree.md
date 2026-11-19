@@ -217,8 +217,9 @@ photo tools on their own part of `curation.json`:
   game's cap) on each species and each genus-level list (`autosort.js` `fishSpecies(J, tgt)`, `fishTarget`,
   `admin-fish.js` `candSpecies`); no auto-sort, so the queue has no Checks switch; an egg-mass judgement (`{egg: 1}`) is
   set aside (`autosort.js` `fishSure`).
-- Their rubric's tag rows on a photo's Tags and in words (`SUBJECTS` `admin.tags`, the rows that differ from the fish's
-  by position: `admin-fish.js` `tagRows`, `tagFlags`, `admin.js` `tagWords`, `fuTags`).
+- Their rubric's tag rows on a photo's Tags and in words, and the view buttons of Photo review (`SUBJECTS` `admin.tags`,
+  declared by each tree subject: the views, the light and the flags differ from the fish's, the rest comes from
+  `core.js` `treeRubric`; read by `admin.js` `tagRows`, `tagFlags`, `tagWords`, `tagText`).
 - The content editor's Sheet box on their Tree's node pages (`SUBJECTS` seaslug `content`; their structure:
   [content.md › The sea slugs' structure](content.md#the-sea-slugs-structure)), To do › Health, and their reported
   photos with the photo tools; a report's unit opens its genus's node (`repUnit`, the report's Open link: a unit narrower
