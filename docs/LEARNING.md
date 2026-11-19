@@ -416,7 +416,8 @@ it shows.
 
 Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
 drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
-and opens none (rule L4); wrong choices may name any unit, as the quiz's do.
+and opens none (rule L4); wrong choices may name any unit, as the quiz's do. A live game asks the trainer's set; its
+answers on units not unlocked are skipped (rule L4 lets them count, opening nothing: not built yet).
 
 ### The first-launch question
 
@@ -544,10 +545,9 @@ it.
 
 ### Logged for the admin's player journey
 
-The mode of each answer says what the question was: `quiz` the photo quiz, `|s` its custom form, `|d` a duel slipped
-in, `|f` a Find the X, `|c` a comeback question, `|h` a held-out photo, `|kN` fewer plausible choices than buttons,
-`|t` typed, `|x` a mastery-exam question (`quiz.js` `answer`); the cards keep their kind and time; Open all and the
-back card keep their choice. The admin's player journey reads them.
+The mode of each answer says what the question was ([spec/sync.md](spec/sync.md) "Mode"; what each counts:
+[spec/quiz.md](spec/quiz.md#what-each-mode-counts)); the cards keep their kind and time; Open all and the back card
+keep their choice. The admin's player journey reads them.
 
 ### Millepora and the bonus genera
 
