@@ -78,7 +78,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   them back their true proportions" (Pierre, 2026-11-05, as relayed by the integrator in the PR). Applied: #578.
 - **Q65.** A separate family, Contributions, never counting in progress or the leaderboard; three tiers 1st / 5th /
   10th, each shown right after the report; counting rules (every report, signed in or not, one per photo, Other only
-  with a note); synced with the… (paraphrase). Applied: #579, #785.
+  with a note); synced with the achievements (paraphrase; Pierre, 2026-11-05, as #579 records it). Applied: #579, #785.
 - **Q66.** When a player's report is handled, the player who sent it is thanked at their next visit, without being
   thanked over and over (Pierre, Q66 and 2026-11-05). (paraphrase). Applied: #581, #579, #665.
 - **Q67.** "je vais suivre ta recommandation" (Pierre, 2026-11-05, to the integrator's recommendation): the old rule on
@@ -99,9 +99,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q76.** a player × genus effect in the Learning model comes later. This PR does not add one: the residuals are
   computed after the current model. (paraphrase). Applied: #620, #589, #590, #829, #830.
 - **Q77.** behaviour PCA, not raw answers. (paraphrase). Applied: #604, #620, #589, #590, #829.
-- **Q78.** Pierre's answers of 2026-11-05: the photo domain (instead of r2.dev) goes with the planned domain rename
-  (Q78, already planned: added to that row); player learning trajectories from first answer to now as a later analysis
-  level (Q71 follow-up); STATUS… (paraphrase). Applied: #590, #589.
+- **Q78.** (paraphrase) Pierre's answers of 2026-11-05 to Q70-Q81 (the recommendation was yes): photos served from a
+  domain of his own instead of `r2.dev` (development-only, rate-limited), together with the domain rename planned before
+  December (Q78, already planned: added to that row); player learning trajectories from first answer to now as a later
+  analysis level (Q71 follow-up). Applied: #590, #589.
 - **Q79.** Titles *First feedback* / *Helping hand* / *Co-author*, the descriptions as written, icon 💬: Pierre,
   2026-11-05 (Q79, A). (paraphrase). Applied: #579, #589, #590.
 - **Q80.** (paraphrase) Title Your feedback helped, the text saying that a report he sent was looked at and handled
@@ -144,8 +145,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   and 07:25, and Q140, which he approved as a simulation. (paraphrase). Applied: #641, #646.
 - **07:30, Q138.** Q138 (approved by Pierre on 2026-11-06 as Q146; review
   docs/reviews/2026-11-06-engine-algorithms-review.md §3, §5, §10). The expectation's guess model, 1/k + (1 − 1/k) σ(θ −
-  d), gets the formats wrong. On the real log, questions showing 4 choices of which 2… (paraphrase). Applied: #638,
-  #646, #637 (closed, not merged).
+  d), gets the formats wrong. On the real log, questions showing 4 choices of which 2 are plausible are right 87% of the
+  time where the app expects 74%; with 3 plausible, 90% vs 71%; typed, 76% vs 82%; each over-credited answer inflates
+  the ability and the level. (paraphrase) Pierre approved #638 as presented: per-format offsets from the data, served by
+  the sheet, used in the expectation and the photo aim, guess rates kept at 1/k. Applied: #638, #646, #637 (closed, not
+  merged).
 - **07:30, Q144.** "merge now" (Pierre, Q144, 2026-11-06 07:30, #612): merge now, ahead of the fish flip plus 48 hours
   that the fish release plan had set. Applied: #612.
 - **13:19, Q158.** Open fish to everyone now, keeping the beta label: Pierre, Q158 (2026-11-06 13:19). (paraphrase).
@@ -243,14 +247,18 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   right for every profile, experts above all early. Applied: LEARNING.md; rules/learning.md L11 (#621).
 - **Q122.** (paraphrase) The icon itself, C1 (straight handle): Pierre, 2026-11-06 (his answer to the app-icon question,
   Q122 in STATUS; ROADMAP, Rethink the app icon, Pierre 2026-11-04). Applied: #623, #621.
-- **Q127, Q128.** Part 2 of the progress work (Q135). The bar of a genus becomes the posterior expected domain score:
-  the share of all its possible photos, easy to hard, that the player would name alone and typed. It is estimated only
-  from the player's own answers on that… (paraphrase). Applied: #646, #624, #622, rules/learning.md L9.
+- **Q127, Q128.** (paraphrase) Pierre, 2026-11-06 06:38 Manila, on the research note (section 6 a and b, #622): Q127
+  yes, 100% means naming right every photo of the genus, alone and without choices, over the theoretical distribution of
+  all its possible photos, easy to hard (ours are a sample of it, so adding photos moves no bar); Q128 yes, the bar uses
+  only the player's own answers on that genus (the global level serves everything else, not the bar). Part 2 (Q135,
+  #646) built it as the posterior expected domain score. Applied: #646, #624, #622, rules/learning.md L9.
 - **Q129.** pair coverage at the exam's entry: the exam needs the genus to have been asked beside its look-alikes.
   (paraphrase). Applied: #646, #624, #622, rules/learning.md L9.
-- **Q130, Q131.** Pierre's decisions of 2026-11-06 06:38 Manila on the research note (#622,
-  docs/reviews/2026-11-06-progress-metric-research.md): Q127 (100% = names right every photo of the genus, alone,
-  without choices, over the genus's theoretical photo distribution), Q128… (paraphrase). Applied: #624, #622, #646.
+- **Q130, Q131.** (paraphrase) Pierre, 2026-11-06 06:38 Manila, on the research note (section 6 d and e, #622,
+  docs/reviews/2026-11-06-progress-metric-research.md): Q130 yes, replace the yardstick "overclaim vs pOpen" with the
+  signed error against the true domain score plus time-to-credit, before any further tuning; Q131 yes, hold #611's bar
+  change until that comparison has run on it and on the domain-score bar (its typed-vocabulary part does not depend on
+  the bar). Applied: #624 (the judge), #622, #646.
 - **Q132.** (paraphrase) One scorer, d0 and R logged before the new bar, replayed with one meaning (F6 (c), then (b) not
   needed for logged rows): Pierre, 2026-11-06, Q132 (coherence review decisions 1 and 4). Applied: #632, #643, #638,
   #977, #646.
@@ -286,6 +294,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   kind-words feedback. Applied: #657, #834.
 - **Q165.** Repeats: Pierre, 2026-11-06 (Q165): hold off; the real fix is more photos in the game (#614 and the
   reference photos). (paraphrase). Applied: #657.
+- **14:17, no wall.** "No wall: before Open Water a photo under ease 4 may come, but rarely" (Pierre, 2026-11-06 14:17,
+  as #729 quotes it). Applied: docs/LEARNING.md, tests/fish.smoke.js, #729; its number is Q252 (2026-11-08, below).
 - **Q166.** "merge, once your L2 fix is green" (Pierre, 2026-11-06 14:24, via the integrator; #661). Applied: #661.
 - **Q167.** "YES, it applies to fish too, i.e. no photo with several fish species. Make the rule subject-neutral."
   (Pierre, 2026-11-06 14:24, via the integrator; #661). Rule P3 now reads in terms of several organisms to identify
@@ -316,15 +326,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   colony-level memory). Applied: #685, #689, rules/learning.md L3.
 - **Q193.** docs/ARCHITECTURE.md (cap), docs/ROADMAP.md (Q193). (paraphrase). Applied: #685, #689.
 - **Q194.** Pierre, 2026-11-06 15:38 (Q194): the screens and choices as shown, merged as is; since Q180 the swiper
-  mainly removes or corrects. The choices it covered: (paraphrase). Applied: #599, #602, #689.
+  mainly removes or corrects. The choices it covered: in #599, one card with the species' photos in play as small tiles
+  under it, an Out of play button on an enlarged photo in play (one click, Undo), an All | Checks segment, Add writing
+  the pass's tags, ease, phase and crop, and the order within a species (best, alt, not judged, near-duplicate, then
+  the easiest, then a reference photo); in #602, Not this → another species making it that species' candidate, the
+  phase row for the 5 entries with phase lines only, "missing phases first" ordering candidates within a species only,
+  and phase "none" stored as an empty string. (paraphrase) Applied: #599, #602, #689.
 - **15:41, Q196.** "we can merge the new bar now." (Pierre, 2026-11-06 15:41, Q196, #646). #638 merges first, so this PR
   is rules version 9. Applied: #646, #689.
 - **Q200.** recalculate fish units under the new bar on the device, silently, keeping learned marks. (paraphrase).
   Applied: #688, #734, #689.
-- **Q252.** (paraphrase) The standing RARE rule (Pierre, 2026-11-06 14:17, Q252), as applied in #729 and #1093: before
-  Open Water and for variants not released, the window keeps a full-weight colony rather than force a held-back one (the
-  integrator's call, following that rule and the variants' ramp, Q391 a). Applied: #1093, #729, #735.
-
 ## 2026-11-07
 
 - **08:50, Q177.** (paraphrase) Pierre, 2026-11-07 08:50-08:52: circle-3 fish families were opening one by one by
@@ -404,7 +415,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   near-Dauin species of the game families comes in (an exhaustive search of every family in play). Applied: #727, #721.
 - **Q216.** The families and their circles: Pierre, 2026-11-08 (Q216). Hawkfishes, Blennies, Eel-tailed Catfishes,
   Bigeyes, Tunas, Soles, Cornetfishes, Remoras, Needlefishes, Eagle Rays, Cat Sharks, Dottybacks, Convict Blennies and
-  Triplefins in circle 3. Trumpetfishes… (paraphrase). Applied: #727, #751, #721.
+  Triplefins in circle 3. Trumpetfishes, Shrimpfishes and Sweepers in circle 2 ("we see them regularly, even in the
+  videos", as #727 translates it). Each book label is its own family ("if the book has its own label, it goes under its
+  own label", same translation). (paraphrase) Applied: #727, #751, #721.
 - **Q217.** Dartfishes on their own key label, circle 3: Pierre, 2026-11-08 (Q217). (paraphrase). Applied: #727, #721.
 - **Q218.** Duplicates stay out: the same photo id once only (put); a second photo of an observation already in play
   waits until judged against that observation's photos (Pierre, 2026-11-08, Q218, #715). (paraphrase). Applied: #731,
@@ -457,7 +470,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   species here (IMR, Anemonefish, slide 22). Applied: #720.
 - **Q240.** yes. A player who turns scientific names on by hand (⚙ or My progress) while no family is at Advanced gets a
   family's genera from its Open Water. This is Q.sciH, set by bonusSet and synced with the choice (sync.js mergeSubject,
-  the progress reset clears it).… (paraphrase). Applied: #720, #975, #822, #1071, #1067.
+  the progress reset clears it). The offer and the back card never set it; the My progress toast names the level that
+  applies. (paraphrase) Applied: #720, #975, #822, #1071, #1067.
 - **Q241, Q243-Q245, Q269, Q272-Q279.** (paraphrase) Answered together on 2026-11-08 ~12:10 within the STATUS block
   Questions Q229-Q280 answered except Q230 (out-of-zone taxon photos, waits for numbers); no words recorded; see #735,
   #738 and #751. Applied: #735, #738, #751.
@@ -477,6 +491,12 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q250.** "OK pour les textes" (Pierre, 2026-11-08, Q250, #728): the two nudge texts. Applied: #728.
 - **Q251.** "OK pour rajouter une nouvelle colonne" (Pierre, 2026-11-08, Q251, #728): the new Answers column Rejected
   tries (column X, after Scoring). Applied: #728.
+- **Q252.** "0.1" (Pierre, 2026-11-08, Q252, as #729 quotes it; the question was whether 1% is a good compromise for
+  still getting never-rated photos rated, since the risk was that unrated photos never came for being thought too
+  hard): `RARE.SHARE` = 0.1, so that before a unit reaches Open Water the photos under ease 4 weigh at most
+  about 1 in 10 of the draw (the rule of 2026-11-06 14:17 above, now with its number). #1093 applies it to the window:
+  before Open Water and for variants not released, the window keeps a full-weight colony rather than force a held-back
+  one (the integrator's call, following that rule and the variants' ramp, Q391 a). Applied: #729, #735, #1093.
 - **Q253.** Silent: "pour l'instant on le passe en silencieux" (Pierre, 2026-11-08, #730, on how current players learn
   of the new fish score). The ? text on My progress explains the score. Applied: #730.
 - **Q254.** the circle-1 Entries component at 55%, OK. (paraphrase). Applied: #730, #1067.
@@ -486,7 +506,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Applied: #730.
 - **Q257.** weighted means with the genus half-credit in Scientific names, OK, on Pierre's condition: a player who plays
   genera and never species cannot pass a set level. The formula guarantees it (S = max(own, ½ × genus)) and
-  tests/treescore.test.js proves it: genera… (paraphrase). Applied: #730, #975, #1067.
+  tests/treescore.test.js proves it: genera alone keep Scientific names at 50% or less and the global % at or below the
+  "families + every genus" anchor (74%), on any bars. (paraphrase) Applied: #730, #975, #1067.
 - **Q258.** credit = S, OK. (paraphrase). Applied: #730, #1041.
 - **Q259.** the 10-point ladder; retire fpct25. (paraphrase). Applied: #734, #975,
   decisions/2026-11-18-seaslug-achievements-high.md.
@@ -623,16 +644,26 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q314.** Codex's limit lifted with credits. (paraphrase). Applied: #806, #804.
 - **Q315.** option (2), a time intensity per photo in the prior part of photoDiff (fades as the photo's own answers come
   in); option (1) only as the declared comparison, never stacked; two variants tested, time intensity from all answers
-  vs right answers only (with… (paraphrase). Applied: #806, #808 (closed, not merged), #844, #804, #1150.
+  vs right answers only (with rapid-guess cut-offs), the one that predicts better kept (declared before); option (3),
+  enlarging, waits for data; keep logging the time. Validation: L11 level 2 (real-log replay primary, players as the
+  unit; corals primary, fish exploratory). (paraphrase, Pierre 2026-11-09, as #806 records it) Applied: #806, #808
+  (closed, not merged), #844, #804, #1150.
 - **Q316.** a componential difficulty model as an evolution of the current Elo engine: one difficulty per question =
   rank offset + family + genus + species + photo components, each shrunk toward its parent while it has few answers; the
-  online update splits the surprise… (paraphrase). Applied: #806, #809, #1165.
+  online update splits the surprise among the components by their uncertainty (a TrueSkill / simplified Kalman rule);
+  with only genus + photo it must reproduce today's v31 ratings within rounding; the genus and species parts count also
+  at family rank (his "yes"); order: an offline fit first (read-only), then the sheet, then the app; validated by L11.
+  The same day Q136 was reopened on this engine: check whether the per-genus player ability can be assumed centred on
+  zero across players on our data. (paraphrase, Pierre 2026-11-09, as #806 records it) Applied: #806, #809, #1165.
 - **Q317.** keep #790's conservative prior for fish; later a memory model = a lasting per-outcome value + a boost
   decaying with the time since the photo was last shown, decay shape fixed from the literature, one fitted weight;
-  L11/L12 validation steps (read-only table… (paraphrase). Applied: #806, #944, rules/learning.md L1.
+  L11/L12 validation steps (the read-only table first). It adds a photo-memory exception to rule L1. (paraphrase,
+  Pierre 2026-11-09, as #806 records it) Applied: #806, #944, rules/learning.md L1.
 - **Q318.** Pierre chose Q318 (a) on 2026-11-09: re-measure option (1) with z net of the player's right-answer speed.
   The real-log replay with z against the median of the player's own earlier right answers keeps a clear gain on corals:
-  −1.03 × 10⁻³ per answer [−1.71… (paraphrase). Applied: #808 (closed, not merged), #845.
+  −1.03 × 10⁻³ per answer [−1.71, −0.34], 10 of 14 players better, p 0.0015, k 1.5 the commonest choice (the curve flat
+  from 1 to 3); fish showed nothing clear. (paraphrase; the figures are the replay's, from the LEARNING notebook)
+  Applied: #808 (closed, not merged), #845.
 - **Q319.** (paraphrase) A name two game species share is dropped from the one that does not own it; a PDF name shared
   stays. This replaces Q319's earlier rule that a typed name is right whenever the photo's family is among the owners:
   Pierre, 2026-11-09 ~15:45 Manila (Q331 texts OK; Q333 strict). Applied: #834, #954, #833 (closed, not merged), #969,
@@ -743,7 +774,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Domain and repository rename, Professionalise the platform (to update) (#941, #949).
 - **Rule 0 in one sentence.** "ok pour cette phrase" (Pierre, 2026-11-15 16:25, #965): after 17:30 Manila the integrator
   asks him nothing. Applied: AGENTS.md Rule 0 (#965, #967).
-- **Spanish dancer** (paraphrase): its juveniles are egg ribbons. Applied: the sea slug photos (#967).
+- **Spanish dancer.** "No, those are the egg ribbons. Search online." (Pierre, 2026-11-15 16:49 Manila, translated, as
+  docs/reviews/2026-11-15-seaslug-sources.md records it), answering the observation that *H. lacer* has the most
+  "juvenile" annotations (43), so the Spanish dancer probably has a different juvenile form. The remark is about those
+  annotations and a request to investigate, not a claim about juvenile animals: the investigation (§1.2) found that all
+  of the 43 juvenile-annotated observations show the animal itself (small Spanish dancers in their juvenile colours),
+  none an egg ribbon or an egg mass; the egg ribbons sit in the photo supply, annotated "Egg", not "Juvenile" (§1.3).
+  The decision it led to (§1.4, Pierre, 2026-11-15): egg ribbons and egg masses are never candidate photos
+  (`tools/seaslug_source.json` `photos.exclude`); genuine juvenile photos are not excluded. The same day he asked for
+  online reference sources on nudibranchs, for facts and for photos (same document, §2). Applied: the sea slug
+  photos (#967), docs/reviews/2026-11-15-seaslug-sources.md.
 - **Q356.** "j'aurais préféré qu'on fasse la même chose pour les poissons et les coraux ... quelque chose qui soit
   cohérent entre tous les modes de jeu" (Pierre, 2026-11-15, #871, after B' was shown): variant B for every subject; the
   B' commit is reverted. Applied: #941.
@@ -792,7 +832,18 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q374.** no covers above coral genera for now. (STATUS; paraphrase except quoted words). Applied: #949.
 - **Q375.** the tree in chunks. Species open only once the sheet reports TREE_SHEET (treeOn()), and stay out of
   fishScoreTree below it. (paraphrase). Applied: #975, #963, #967.
-- **Q376.** (paraphrase). Applied: #975, #954, #969, #1165, #967.
+- **Q376.** (paraphrase; the options' wording is as #954 and #975 record it) Pierre, 2026-11-15, on the common-name
+  sources study (docs/reviews/2026-11-15-common-name-sources-study.md), which found that no reference ranks names by
+  usage. (a) B: the main name is iNaturalist's default English name (FishBase's main English name where iNaturalist has
+  none), shown first to every player except a player at IMR (who answered "I'm at IMR"), who sees the IMR name first;
+  both are always listed and accepted. (b) A: the main name fills the species' one progress unit (Q362), and any other
+  listed name is accepted and credits the same unit (this replaces "needs all its listed names"). (c) yes: regional
+  standard names (the Australian AS 5300 / Fishes of Australia ones, e.g. "Swallowtail puller", "Headband humbug") are
+  accepted when typed and never shown first (FISH_PATH now says never shown). (d) a genus with no reference name gets a name inferred from its species'
+  names, flagged as inferred (as already done for Tobies and Rabbitfishes), while Centropyge, Dendrochirus and Dascyllus
+  take the names iNaturalist or FishBase give them. #954's departure from (a) for a main name that is another species'
+  IMR name was replaced by Q381 (2026-11-15: two species may share a name). Applied: docs/FISH_PATH.md Common names,
+  #975, #954, #969, #1165, #967.
 - **Q379.** "Perhaps we should also avoid them for covers" (Pierre, 2026-11-15, on his watermarked ★ covers, #993). This
   is why the default card photo moves for 3 families, and why his ★ Scorpionfishes cover gets the Keep / Choose another
   question in the admin. Applied: #993, #972, #968, #1132, #967.
@@ -986,7 +1037,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   INTEGRATOR.md records it). Applied: INTEGRATOR.md Habits (#1111).
 - **Q395.** species exams (Pierre, 2026-11-17 evening and 2026-11-18 morning): a family exam at species level kept by a
   hidden checklist (a box ticked in ordinary play by a right answer on a first-seen photo at Advanced; the hidden exam
-  asks only the remaining boxes, at… (paraphrase). Applied: #1041, #1063, #1068.
+  asks only the remaining boxes, at least 3 questions; a miss unticks it, then 2 right in a row; no threshold: "bonne
+  idée"), and an ultimate exam (100-200 questions, 95% to pass, hard but recognisable photos, the only way from 99% to
+  100%: "oui"); exams may reuse seen photos when needed (as #1041 records it). (paraphrase) Applied: #1041, #1063, #1068.
 - **Q396.** "il faudra que ça soit facilement visible et accessible pour les joueurs" (Pierre, 2026-11-18, #1071,
   #1041): a per-subject What I learn card instead of ⚙ settings; the card's study (#1071) answered: Q400 D, Q401 A, Q402
   A, Q403 no switch (variants are required, only delayed), Q404 A. Applied: #1041, #1063, #1068.
