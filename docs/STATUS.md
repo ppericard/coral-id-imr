@@ -27,7 +27,8 @@ re-rate), #1234.
   assigned, `SCI_SHEET` 198), #1264 (Pierre's decisions written into ROADMAP rows; `answers_check` fails an answer not
   applied), #1262 (Matrix, Lab), #1260 (19 more fish genus marks), #1236 and #1238 (sea slug genus marks, circles 3
   and 2), #1263 (sea slug species marks, 165 of 206).
-- **Then**: #1267 (admin rubric declared once; touches `core.js`, so v199 at merge, after #1249); #1256 (Q437 plan;
+- **Then**: #1259 (Q438 route back; the build reads newer proposals over accepted ones, 20:57-20:59: 9 photos back
+  in play, 1 out, 351 records retagged), #1267 (admin rubric declared once; touches `core.js`, so v199 at merge, after #1249); #1256 (Q437 plan;
   its agent builds the next PRs); #1261 (admin fish reference level, P1).
 - **Agents working**: Q437 modes for every subject; Q438 route back (#1259: two jobs red and five Codex threads, being
   fixed; it also counts hand curation against accepted proposals); the fish key for EventMeasure (#1258: two
@@ -52,8 +53,8 @@ For the morning (after his first message after 04:00; each checked against ANSWE
 - **Q439**: the Lab prototypes Same or different?, Odd one out, Matrix and the fish ID key: which graduate (U13)?
   Rec. he plays each on his phone first (rule W4: he judges by taps); those he likes go to Practice for every subject.
 - The wording of rule A1 (20:57, 20:59: A1 protects his hand decisions, one by one; accepted agent proposals can be
-  replaced by a better proposal that goes into the game), with the counts of hand and accepted curation from the
-  Q438 PR. Not numbered (a rule's wording).
+  replaced by a better proposal that goes into the game). The counts (#1259): 831 values set by his hand (an upper
+  bound; fish: 33), 31,362 agent proposals let through, 44 that cannot be told. Not numbered (a rule's wording).
 - The AGENTS.md bullet on models and effort, from #1257's table. Not numbered (a rule's wording).
 - P2: what "B for now" (2026-11-18) meant for the 34 untraced lecture photos. A fact, not numbered.
 - The trainer's set: his 11-18 answer says "seven modes" and names six. A fact, not numbered.
