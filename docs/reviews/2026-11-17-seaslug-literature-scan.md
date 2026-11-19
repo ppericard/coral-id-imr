@@ -463,7 +463,8 @@ and *T. pacifica*, and *T. picta* is mentioned as the one local divers tend to c
 is not necessarily appropriate for it.
 
 Context for the integrator: the nicknames are counted by a rule decided with Pierre (Q377: a nickname counts for the
-species its English Wikipedia redirect lands on); this would be an exception to it, so it waits for him. Nothing in the
+species its English Wikipedia redirect lands on); this would be an exception to it, so it waited for him (answered
+above). Nothing in the
 game changes now: the units are genera (Pierre, 2026-11-16).
 
 ## Appendix A. The tool's files and commands

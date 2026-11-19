@@ -115,8 +115,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   dispatching a workflow (`gh api -X POST …/actions/workflows/approved-photos.yml/dispatches -f ref=main`).
 - **Rule 0** (AGENTS.md, one sentence since 2026-11-15): after 17:30 Manila, ask him nothing; questions wait in STATUS.
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
-  There is no morning-report scheduled task (disabled by Q202, closed by Pierre on 2026-11-18): the session-start summary
-  of reports and events (AGENTS.md "Working mode") is the morning's.
+  The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
+  2026-11-18: no morning report); the session-start summary of reports and events (AGENTS.md "Working mode") stands.
 
 ## Real people (pseudonyms on GitHub, names only in chat)
 

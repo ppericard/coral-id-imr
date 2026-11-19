@@ -70,7 +70,7 @@ subject test; the end state is every subject doing the same thing.
    and rule L12; wait for enough answers, as #1148 recommends.
 9. `Code.gs`: one replay path and one board path for every subject (1.3, 6): a sheet version, a replay-equivalence check
    on the log, D5 only if a number moves.
-10. `isCore` / `tiers` (7) removed with the corals' other source boosts (ROADMAP "Corals: remove the photo source
+10. Remove `isCore` / `tiers` (7) with the corals' other source boosts (ROADMAP "Corals: remove the photo source
     priority"); `startFb` (8) after a calibration.
 
 Steps 1 to 6 move nobody's progress and are easy to correct; step 7 moves the achievements record; steps 8 and 9 may
