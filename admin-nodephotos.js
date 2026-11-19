@@ -134,7 +134,7 @@ function npLists(T, sel, first) {
     ex = A.excluded ? A.excluded(units) : [],
     orph = first && A.orphans ? A.orphans() : [],
     sec = (cls, title, L, kind) => {
-      L.forEach(it => NP_ITEMS.set(kind + ':' + it.f, it));
+      L.forEach(it => NP_ITEMS.set(`${kind}:${it.unit}:${it.f}`, it)); // a photo removed from two genera is two items
       return L.length
         ? `<section class="adm-row adm-np ${cls}" data-np-sec="${kind}"><h3>${title} <small>${L.length}</small></h3><div class="adm-grid">${L.map(it => npTile(it, kind)).join('')}</div></section>`
         : '';
@@ -158,7 +158,7 @@ function npBind(scope) {
   scope.querySelectorAll('[data-np-sec]').forEach(s => {
     const kind = s.dataset.npSec;
     s.querySelectorAll('figure[data-f]').forEach(t => {
-      const it = NP_ITEMS.get(kind + ':' + t.dataset.f);
+      const it = NP_ITEMS.get(`${kind}:${t.dataset.g}:${t.dataset.f}`);
       if (!it) return;
       t.querySelectorAll('[data-np]').forEach(b => {
         b.onclick = () => (b.dataset.np === 'zoom' ? A.zoom(it, kind) : A[b.dataset.np](it));

@@ -3630,7 +3630,10 @@ async function sealPart(b, base, fails) {
         p.evaluate(() => ({
           btns: [...document.querySelectorAll('.adm-sticky [data-gv]')].map(b => b.textContent),
           on: [...document.querySelectorAll('.adm-sticky [data-gv][aria-pressed="true"]')].map(b => b.dataset.gv),
-          rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out) h3')].map(h => h.firstChild.textContent.trim()),
+          // the views' sections (a Tree page also holds Structure, Sheet and the Removed and Excluded lists)
+          rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out)')]
+            .filter(s => s.querySelector('[data-drop]'))
+            .map(s => s.querySelector('h3').firstChild.textContent.trim()),
           drops: [...document.querySelectorAll('.adm-main [data-drop]')].map(g => g.dataset.drop),
           cands: !!document.querySelector('.adm-main .adm-cands'),
           note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
@@ -5579,7 +5582,7 @@ async function sealPart(b, base, fails) {
         r.sts !== 'done,wait,drop' ||
         !r.unit ||
         r.unit[0] !== 'Open genus' ||
-        !/^#photos\/genera\/live\//.test(r.unit[1]) ||
+        !/^#photos\/tree\/key\//.test(r.unit[1]) ||
         r.page !== 'index.html#practice/quiz' ||
         r.attach ||
         !r.tiles.length ||
