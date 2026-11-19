@@ -47,7 +47,7 @@ function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))},
       GX: n => (n in circle ? {circle: circle[n]} : null),
       TREEU: {c1},
-      fishC3: () => true,
+      treeC3: () => true,
       openState: C.openState,
       Q: {},
       opensNow: () => [{k: 'c3', units: () => c3, due: () => true}]

@@ -5,64 +5,70 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions. **Pierre's answers live in
 [ANSWERS.md](ANSWERS.md)** (append-only, history since 2026-11-03): search it, the rules and docs/decisions/ before
-asking him anything, **and the open PR branches' copies of it** (an answer recorded on a branch is not on `main` until
-that PR merges: on 2026-11-19 at 14:05 the integrator re-asked his 10:12 answers that way). This file only cites
+asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
-Written 2026-11-19, about 14:30 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 16:30 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
-Last checked: reports and events: 2026-11-19 ~14:25 Manila (no new report since 2026-11-17; one `old` event at 08:11,
-an app from before 2026-11-03 sending photo stats; nothing else).
+Last checked: reports and events: 2026-11-19 ~14:25 Manila (no new report since 2026-11-17; one `old` event at 08:11).
 
 ## Now
 
-Main: sheet script **v193** (#1195). No agent cap (audit decision 1, Pierre's "ok" of 2026-11-18 evening;
-`tests/slot.js` guards the machine). Every blocked PR merged by 13:50 (25 today since 06:00); the open ones:
+Main: sheet script **v195** (#1227). The rules core is in (#1217: AGENTS.md cut to the core, topic files on demand; its
+trial passed three runs out of three). No agent cap (Pierre, 14:42 «oui»). Merged since 13:50: #1099 (per-player
+reserve, v194), #1220 (hooks without `origin/main`), #1222, #1223 (crops, Q430 B), #1224, #1221, #1225, #1227, #1217,
+#1230 (sign-in smoke race). In a train at 16:25: #1218 (fish rubric from the gold set), #1228 (juvenile study).
 
-- **#1099** (a reserve of photos per player, Q420 A): level 2 done, B1 and B2 not confirmed, two new small breaches
-  (fish casual diver's plateau +9.2 against +9.1; corals lectureRA's shown score at 1,000 answers −1.8, heavy-tailed
-  photos only). **Q432** to Pierre: accept them as the reserve's cost; merge on his yes (remove `needs-pierre`; the
-  body's Decisions and level-1 "Not run further" lines are stale, fix before the train).
-- **#1217**, the rules core (B): Pierre's 10:12-10:13 answers (Q428, W20 out, U7's line, the core, S1+L6) applied.
-  Trial run 1: the quotes pass T0-T4, the log half of T1/T2 fails because **every hook runs `git show
-  origin/main:…`, a silent no-op where `origin/main` does not exist** (one-branch cloud clones: the Bash and agent
-  guards off there too). B waits for the hooks fix, then runs 1-3 (proposal §3: T1 and T2 three out of three).
-- **Agents running**: the hooks fix (`claude/hooks-no-main`; also whether subagents fire InstructionsLoaded); the fish
-  judging rubric from Pierre's gold-set review (11:28-11:43; Q429-Q431 left out).
+- **Open, waiting on CI, Codex or a train**: #1226 (one engine step 2; being amended for Q436: the one-tap question for
+  every subject, the apology and recalculation cards as subject-free templates, 15:54-15:56; then VERSION at merge);
+  #1229 (the measured block, Q434; conflicts with main: bring up to date); #1231 (marks for the genera IMR describes;
+  its `smoke (draw)` failed on a random coral draw check: a flake fix is running, then a new head).
+- **Agents running**: fish species marks PR (601 species sourced, drafts on the sheets); fish juveniles PR (all 369
+  species sourced: a line per sheet, the four classes as labels only, Q435); crop re-judge of the `k` candidates
+  (Q430 B); modes step 3 (the `asked()` readers, then level 2); sea slug genus marks circles 2 and 3; coral tips for
+  Merulina, Cyphastrea, Halomitra; Q416 b (a mimicry pair's marks after a mix-up); tell-apart lines for 9 pairs; the
+  `slow` test tag (Q414); Lab "Same or different?"; the draw smoke flake.
+- **Gold set 2** (42 new fish photos, each with one judge's view drawn at random, 14:44 and 14:50): the page was sent
+  to Pierre at 15:36; his answers go into `scratchpad/gold2/pierre/answers.json`, then `gold2/score2.py`.
 
 ## Next
 
-1. Q432's answer, then #1099's train. #1217 after the hooks fix and three trial runs; then C (topic files on demand,
-   run 2), then D1/D2 (proposal §4; the substance review's §4.6 items not in B: W27's scratch-file names to INTEGRATOR,
-   D6 after Q330/Q332, P1 after #1045, L11's method to LEARNING).
-2. One engine, step 2; then the admin and Learn one-engine PRs in the order of
-   docs/reviews/2026-11-19-admin-one-engine.md.
-3. Modes audit: step 3's fix (the `asked()` readers: openPace, the planPhoto due filter, ratedworld.js's copy,
-   introReady count only answers after the card; then level 2 again); step 4, the duel achievement on the Again
-   (branch `claude/duel-ach-again`, head b8f4016, no PR yet).
-4. The judging models measured again on a blind gold set (Pierre answering without seeing any judge's view).
-5. LEARNING.md is at its size budget: trim history to the notebook in the next docs PR.
+The night: no question to Pierre after 17:30.
+
+1. Train every ready PR, one Code.gs PR per train (VERSION at merge). After #1218: the juvenile ease cap removed
+   (Q431 «ok», Q435 «ok»: no cap at all), in its own PR.
+2. After #1226: species by scientific name, the sheet PR (Q394-Q398 answered), then Find the X's own offset (Q371),
+   then the level's answer count from the log (Q322, Q330); `core.js` one holder at a time.
+3. Lab prototypes (U13: stay in the Lab): Odd one out, Matrix, the fish ID key for EventMeasure.
+4. Name roots, fish circles 2-3 (Q124 d); CI: split `smoke (admin 1280 more)`; one engine admin PRs 2-3; P1 in the
+   admin (`refLevel`); learnsim fish profiles; the fish Photo stats › Difficulty page (check the data first).
+5. Fish genera with no photo-visible mark in FAO or FishBase (45 genera, 144 species): test a regional guide; Chromis,
+   Pomacentrus, Ctenochaetus beside their IMR cues the same way.
+6. The measured block's full run on a GitHub runner (about 2 h of compute, over L11's 40-minute local cap).
 
 ## Questions for Pierre
 
-- **Q429-Q431** (the fish judging rubric, asked ~11:50): Q429 a "contrast" field or a rubric rule (rec. the rule);
-  Q430 crops of photos 10 and 23, A the judge proposes and he taps, B it enters cropped on its own when the other fish
-  leaves the frame whole (rec. B); Q431 juvenile ease, drop "juvenile = hard" and its 2/5 cap except look-alike
-  juveniles (rec. yes; about 3,750 juvenile photos to re-rate).
-- **Q432** (#1099, above). Rec. yes.
-- Q433: withdrawn (a re-ask of 10:12), never reused.
-- Still open in older reviews (check ANSWERS.md first, ask only what is not there): the architecture review (a)-(g),
-  (i); the app-gaps review (a)-(j); #1041 §6.
+- **Q437** (asked 16:15): open Compare, pairs, the custom quiz and the duel to fish and sea slugs, in shared code.
+  Rec. yes.
+- Answered today and applied or in flight: Q427-Q436 (Q433 withdrawn, a re-ask of Q428); see ANSWERS.md.
+- For the morning (from the ROADMAP scan, 16:15; check ANSWERS.md first): the Lab modes' graduation (U13); the fish
+  basics achievement's name and tier; the trainer's set; TYPED values; the fish key's Clingfishes and label mappings;
+  the fish families left out; species-level look-alike pairs (fish, sea slugs: Q390); one engine §6 formats (a)-(d);
+  open questions (no new genus after a miss in the custom quiz and duel; tour step 3's Back; a later script failing to
+  load; account-name look-alikes); Q351 (b), the fish ease weight.
+- Still open in older reviews: the architecture review (a)-(g), (i); the app-gaps review (a)-(j); #1041 §6.
 
-Last question number: Q433
+Last question number: Q437
 
 ## Pierre's hands
 
+- **Gold set 2**: 42 photos to review (sent 15:36).
 - **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game.
-- **In the admin**: Light and Cover proposals, then Publish; Points; the unsure fish candidates; the 16 non-Philippine
-  *A. pyroferus* juvenile photos and `fbAcpyr_j0`.
+- **In the admin**: Light and Cover proposals, then Publish; Points (new tonight: Naso's single plate against IMR's
+  "two scalpels", *Pomacentrus armillatus* / *P. opisthostigma*, juvenile and species source disagreements); the
+  unsure fish candidates; the 16 non-Philippine *A. pyroferus* juvenile photos and `fbAcpyr_j0`.
 - Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
@@ -71,7 +77,6 @@ Last question number: Q433
 
 ## Last stop
 
-2026-11-19 ~14:30 Manila: handover. Scratchpad: `prstate.sh`, `train_queue.sh`, `uptodate.sh` (merge main into a PR
-worktree, regenerate the index, push, ask Codex), `resolve_threads.sh` (CCR REST routes; GraphQL is blocked),
-`findmsg.py` (Pierre's messages by fragment, Manila time), `goldset/` (the review page, his answers, the scores),
-`res1099/l2/` (level 2's declaration and reports), `rcore/` (the trial's notes). No real names.
+2026-11-19 ~16:30 Manila: handover. Scratchpad: `prstate.sh`, `wait_ready.sh`, `train_queue.sh`, `uptodate.sh`,
+`resolve_threads.sh`, `findmsg.py`, `goldset/`, `goldcheck/` (runs 1 and 2), `gold2/` (set 2, its key in `private/`),
+`juvsrc/` and `marksrc/` (the sourcing shards), `contrast/` (the before/after series), `coverage/`. No real names.

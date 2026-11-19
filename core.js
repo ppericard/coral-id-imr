@@ -237,8 +237,19 @@
   //   flat    its units are a flat list in data.json, not a tree (the corals): its content slots and structure apply to
   //           data.json (app.js build, structSeen); a tree subject reads its files through UNITS get instead. The engine
   //           asks this field, never a pool file's name
-  //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
-  //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only
+  //   replay  the sheet's first replay path computes from its logged answers (Code.gs answerRows_ keeps only its rows):
+  //           the full replay of its progress under RVS (the reply's unprefixed replay, sync.js replayAdopt), the default
+  //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
+  //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
+  //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
+  //   hold    the sheet's opening hold counts its answers (Code.gs hold_), adopted as this subject (sync.js holdAdopt)
+  //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
+  //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
+  //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
+  //           signIn); any other subject adds all the progress this device holds
+  //   hold and offsets follow the sheet, which computes them for replay's subject alone (tests/subject-neutral.test.js)
+  //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
+  //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
   //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
   //           under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
   //   board   it has its own leaderboard (Code.gs board_ &s=<id>), by its % then its Elo; boardSheet, the script version
@@ -402,6 +413,10 @@
   // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
   // version or later, so one it has not seen answer, or an older one, changes nothing.
   const FISHST_SHEET = 189;
+  // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
+  // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
+  // that score, the plain mean.
+  const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   const SUBJECTS = [
     {
       id: 'coral',
@@ -428,6 +443,9 @@
       rank: 'genus',
       flat: true,
       replay: true,
+      hold: true,
+      offsets: true,
+      anonBase: true,
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       ach: true,
       // Its achievements (core.js ACH; a function: the list is defined below) and whether its answers keep the feats of the
@@ -575,6 +593,7 @@
       // candidate cap, so a pool of 1,000 photos favours its easy ones as a pool of 30 does (docs/LEARNING.md "The fish
       // draw in big pools", tools/fish_draw_sim.js).
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
+      gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat.
       pages: ['basics', 'genera', 'sheet', 'quiz'],
@@ -764,6 +783,7 @@
       // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
+      gate: TREE_GATE,
       pages: ['genera', 'sheet', 'quiz'],
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
@@ -915,7 +935,21 @@
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
   // keep a group for it (app.js subjOpen, admin.js groupOn, Code.gs groupIds_). Any other value opens it to all.
   const subjGroup = S => !!S && S.open === 'group';
-  // The subject whose answers the sheet computes from (SUBJECTS replay: the corals): its replay, hold and photo ratings.
+  // Whether a card or note x concerns subject id (rule S1: the data says which subject a card is about, never the
+  // engine): one with no subj is the engine's and shows in every subject; subj, a subject id or a list of them, only there.
+  const subjIn = (x, id) => !x || x.subj == null || [].concat(x.subj).includes(id);
+  // The notes one card shows (progress.js recalcNotice): from due, the notes not seen yet (oldest first), the longest run
+  // one subject can show, and that subject: the one on screen (sid) when the first note may show there, else the first
+  // note's first subject. The notes after the run wait for the next card, so marking the run's last one seen (the notes
+  // are seen in order) never passes over another subject's note. {sid, L}, L empty when nothing is due.
+  const noteRun = (due, sid) => {
+    const L = Array.isArray(due) ? due : [],
+      s = !L.length || subjIn(L[0], sid) ? sid : [].concat(L[0].subj)[0],
+      n = L.findIndex(x => !subjIn(x, s));
+    return {sid: s, L: n < 0 ? L : L.slice(0, n)};
+  };
+  // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
+  // unlabelled row. The sheet's hold and photo memory follow it too (SUBJECTS hold, offsets).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
   // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
   const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);
@@ -7417,6 +7451,8 @@
     subjCounts,
     subjKey,
     subjDev,
+    subjIn,
+    noteRun,
     treeGen,
     treeGenSets,
     treeObs,

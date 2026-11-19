@@ -236,7 +236,7 @@ Newton's method on d_f with a normal prior N(0, `FMT.SD`²), for a format with `
 of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `typed`, `exam`…;
 a format absent counts 0, `core.js` `fmtOff`). The ability steps expect the question with its format's offset, and the
 photo's aim takes it (`aimOff(k, df)`), so a 2-choice question that is right more often than 1 in 2 explains no longer
-over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `replay` false) scores and aims with every
+over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `offsets` false) scores and aims with every
 offset at 0 (`model.js` `pfmt`).
 
 ### What a question shows
@@ -544,8 +544,8 @@ Now and then, at a natural break between an answer and the next question, a one-
 `PULSE`; its bank `core.js` `PULSEQ`: too easy or too hard, the flow channels, harder photos, fun, frustration,
 boredom; asked in rounds, never the same wording twice in a row). First after `PULSE.FIRST` (35) answers, then every
 `PULSE.EVERY` (40), twice that after a "Not now"; never early in a session (at least `PULSE.SESS_N`, 15 answers,
-and `PULSE.SESS_MS`, 5 minutes, into it). Only for the subject the sheet replays (the corals) and in the photo quiz or the
-Duel tab. The out-of-game prompts (the sign-in card, this question, the cards about which units are in play) are at least
+and `PULSE.SESS_MS`, 5 minutes, into it). In every subject (an engine feature, Pierre, 2026-11-19), in the photo quiz or the Duel tab;
+the admin reads each subject's answers apart, by the page each was given on. The out-of-game prompts (the sign-in card, this question, the cards about which units are in play) are at least
 `PROMPT.GAP` (10) answers apart and never shown over a card (`quiz.js` `PROMPT`, `promptOk`). The answer goes to the sheet as an event with what the game knew then (mode, answers this visit, recent right
 %, level, units met); the showing and "Not now" are logged too, for the response rate. Nothing in the game changes with
 it.
@@ -644,8 +644,8 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
   forms) and the look-alikes come in as a family is learned. One photo per question.
 - **Circles** (fish.json, a family's best species' circle; `app.js` `treeGate`): 1, the families the IMR course teaches;
   2, open once every circle-1 family has been asked; 3, the families beyond the course, offered by a card once circle 1
-  reaches `FISH_C3` (its Entries component at 55%, or, without the global score, the plain mean at 50%:
-  `app.js` `FISH_C3 = {entries: 0.55, mean: 0.5}`), open on the player's yes (or in My progress any time), offered again
+  reaches its gate (its Entries component at 55%, or, without the global score, the plain mean at 50%:
+  `core.js` `SUBJECTS` `gate`, `TREE_GATE = {c3: {entries: 0.55, mean: 0.5}}`; `app.js` `treeC3`), open on the player's yes (or in My progress any time), offered again
   `OPEN_AGAIN` (200) answers after a "Not now", then never. Every circle counts in the progress, open or not.
 - **Winks**: an unmistakable fish (a whale shark) as a rare surprise card in the photo quiz, its name among 3 absurd
   choices: never counted anywhere (logged with the mode `WINK_MODE`, which every reader of the log leaves out). Wink i is
@@ -912,7 +912,7 @@ sheet, the admin and the app (`core.js` `MEM`, `memBucket`, `memFam`, `eloReplay
   `PHOTO_W.KNOWN` −1), weighs `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices). Served as `mem`, with
   `memn`, the trusted answers behind each bucket.
 - **Per subject** (`model.js` `pmem`): the app reads the sheet's offsets (`PMEM`) for the subject the sheet replays
-  with them (`SUBJECTS` `replay`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
+  with them (`SUBJECTS` `offsets`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
   older sheet or offline (`core.js` `memOf`).
 - **The offsets do not depend on time.** Rule L1's second exception (photo memory) would allow a lag term; none is in
   until the lag table shows enough answers per lag band (ROADMAP "Photo memory that fades with time").
