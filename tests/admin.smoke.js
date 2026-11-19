@@ -9295,7 +9295,7 @@ async function sealPart(b, base, fails) {
         fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
       )
         fails.push(
-          `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto})}`
+          `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto, crop: fa.fish.crop, tags: fa.fish.tags, phase: fa.fish.phase, sum: fa.sum})}`
         );
       // One fish auto decision undone in the Auto details (Codex review #479, rule A1): gone from the draft, logged
       // undone, never applied again at the next run.
