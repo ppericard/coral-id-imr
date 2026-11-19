@@ -1,8 +1,10 @@
 # What I learn: each subject's levels in one visible place (design study, 2026-11-18)
 
 Status: design study with mockups, no app change. The mockups are the app itself served locally, with a seeded
-mid-course player and the new card injected (section 13); they are not committed. Pierre chooses what players see in
-the questions at the end (section 15); everything else is the integrator's call once he has answered.
+mid-course player and the new card injected (section 13); they are not committed. **Pierre answered all five questions
+of section 15 on 2026-11-18 (morning, Q400-Q404; his answers are in "Pierre's answers" there). Two of them go against
+the recommendations: Q401 A (a level turned on comes at the usual threshold, not from the parent's Open Water) and
+Q403 (no switch for juveniles and colour phases).** The rest of the study is the integrator's call, easy to correct.
 
 ## 1. Why this study
 
@@ -324,6 +326,23 @@ that exist and the names rows added by #1041's PR.
 
 Only what players see. Each has a recommendation; the rest (wording, layout, the dot, "Coming" rows, the tour
 sentence, Open all's words) ships as the integrator's call and is easy to correct.
+
+**Pierre's answers (2026-11-18, morning; numbered Q400-Q404 in the chat; recorded in docs/ANSWERS.md and in
+docs/reviews/2026-11-18-species-step2-plan.md §3, Q396).** The ledger and STATUS keep his choices as letters, not as
+words; the letters below are the study's own options.
+
+| Question | His answer | Against the recommendation? |
+| --- | --- | --- |
+| (a) Where the card lives, Q400 | **D**: the card on My progress, reached from Home by A's line (the study's recommendation) | no |
+| (b) Turning a level on before it is due, Q401 | **A**: a level turned on is allowed, and each part comes as its parent reaches the usual threshold (C0: Advanced for the genera and species), never sooner; the row shows waiting | **yes** (recommended B, Q240's rule for every level) |
+| (c) Turning a level off, Q402 | **A**: progress kept, the % keeps its one scale (that part stops rising) | no |
+| (d) Juveniles and colour phases, Q403 | **No switch** (C): variants are required, only delayed | **yes** (recommended A, a switch whose Off keeps Instructor needing them) |
+| (e) Names rows, Q404 | **A**: every names row has its switch; all off leaves the families only, allowed; the two names trees are independent | no |
+
+What follows for the sections above: section 6's A is the card's rule (the row says it waits for its parent's usual
+threshold, not "come as each family reaches Open Water"); section 8's switch is not built (section 8 C, an information
+row, is the integrator's call, easy to correct); Q240's rule (2026-11-08) is not extended to the other levels, and how it
+sits beside Q401 A for the scientific genera is for the build PR to settle and report.
 
 **(a) Where the card lives.** Context: Pierre wants it "facilement visible et accessible"; Home must stay one screen
 (rule U12, his).
