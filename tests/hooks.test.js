@@ -201,6 +201,10 @@ test("origin/main present: main's copy runs, never the branch's, and nothing is 
   const r = run(s, C.agent.split('agent_guard.py').join('new_guard.py'), agentEv);
   assert.strictEqual(r.status, 0, r.stderr);
   assert.strictEqual(r.stdout, '');
+  // A flag main's brief.py does not know yet (a branch adding one): argparse exits 2, which on UserPromptSubmit would
+  // block every prompt; the hook fails with 1 instead, a notice.
+  assert.strictEqual(run(s, C.prompt.split('--night-due').join('--not-on-main-yet')).status, 1);
+  assert.strictEqual(run(s, C.start.split('--short').join('--not-on-main-yet')).status, 1);
 });
 
 test('hooks fired at once in a checkout with no origin/main all take effect (one fetch wins the ref lock)', async () => {

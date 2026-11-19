@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --short; elif has; then exit 0; else echo \"⚠ Session hooks: this checkout has no origin/main ref and fetching it failed, so the brief, the instructions log and the Bash and Agent guards cannot run their copy on origin/main (the guards refuse until it is there). Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --short || exit 1; elif has; then exit 0; else echo \"⚠ Session hooks: this checkout has no origin/main ref and fetching it failed, so the brief, the instructions log and the Bash and Agent guards cannot run their copy on origin/main (the guards refuse until it is there). Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
             "timeout": 15
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --time --night-due; elif has; then exit 0; else echo \"⚠ Session hooks: no origin/main ref (fetching it failed): the brief cannot run and the guards refuse. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --time --night-due || exit 1; elif has; then exit 0; else echo \"⚠ Session hooks: no origin/main ref (fetching it failed): the brief cannot run and the guards refuse. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
             "timeout": 5
           }
         ]
