@@ -347,8 +347,11 @@ while `OPEN.K` units met are shaky). Only units open now take a place: one close
 `model.js` `OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200}`.
 
 **Opening pace** (`model.js` `openRecent`, `openPace`): no new unit while one opened on a card in the last `OPEN.WIN`
-answers has not been asked yet, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15 answers at
-most, whatever `openChance` says. A unit opened on its card and not asked yet is asked as soon as it is ready.
+answers has not been asked since its card, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15
+answers at most, whatever `openChance` says. A unit opened on its card and not asked since is asked as soon as it is
+ready (`openDue`). "Asked since its card" (`askedOpen`: an answer at or after the card's time) is what every reader
+waiting for a card's question reads (the pace, readiness, the fish circle 2, the bonus offer, the all-met card): answers
+given before the card (a live game's, those before a card that reopens a unit) are evidence, never its question.
 
 ### A unit stuck shaky
 
