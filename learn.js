@@ -766,14 +766,7 @@ function viewFishList() {
   // (their parent), titled by its name, in the subject's order (its tree's, TREEU.gen), the units in the slate's order
   // inside it; units without one in a last block.
   function byRank(L, rk) {
-    const up = n => {
-        const p = GX(n).parent;
-        return p && GX(p) && (rankOf(p) || unitRankOf(SUBJ)) === rk ? p : '';
-      },
-      at = Object.keys(TREEU.gen),
-      by = new Map();
-    L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
-    const B = [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity)),
+    const B = unitsByParent(L, rk),
       // the family's heading, its first English name beside it (app.js vernFirst)
       fam = ([p, U]) =>
         blk(
