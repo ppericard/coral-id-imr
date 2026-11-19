@@ -19,8 +19,8 @@ stratified (each photo in the first stratum it matches; the legacy count `m` lef
 
 | Stratum | Rule | Population | Drawn |
 | --- | --- | --- | --- |
-| G Pierre's gold | he rejected (`curation.json` `fish.seen` / `exclude`) a photo the auto-sort put in or nobody logged, or added one it set aside | 19 | 19 |
-| R rejected | reference count `k` or `x`, or flag `a` | 3,580 | 12 |
+| G Pierre's gold | he rejected (`curation.json` `fish.seen` / `exclude`) a photo the auto-sort put in or nobody logged | 16 | 16 |
+| R rejected | reference count `k` or `x`, or flag `a` | 3,580 | 12 + 3 (below) |
 | U unsure | reference `unsure` | 42 | 8 |
 | J juvenile | flag `j` | 3,754 | 9 |
 | S several fish | count `s` or `o` | 4,162 | 8 |
@@ -30,7 +30,9 @@ stratified (each photo in the first stratum it matches; the legacy count `m` lef
 
 **Reference.** The committed judgements, made by strong models (mostly Opus) and re-judged where the 2026-11-15
 "one judgement per photo" pass found divergences. Pierre's recorded decisions are gold: 16 rejections, 3 adds over an
-auto set-aside. The 1,721 auto-sort Checks have no answer recorded, so they are not gold. No judged candidate carries
+auto set-aside. The 1,721 auto-sort Checks have no answer recorded, so they are not gold. (The draw first counted 3 more photos as his adds;
+checked before the run, they are in `add` and `seen` alike, auto decisions out of play: they stay in the sample as
+rejected photos, scored on their code.) Pierre's 16: 3 auto-adds he rejected, 4 excluded, 9 rejected by hand. No judged candidate carries
 Not this (`out`): the reference holds no recorded wrong-species case. Its own noise (FISH.md, 2,058 photos judged twice
 by strong models): identical code 37%, may-play disagreement 1.6%, juvenile flag 4.1%, ease off by 2 or more 5.1%; so no
 exact-code bar.
@@ -43,8 +45,9 @@ photo id, the URL or the reference. Same batches and order for every configurati
 **Metrics.** In play (both sides): no `unsure`, `keep` best or alt (a lone photo is its own best), count `1`, `s` or
 `o`, no flag `a`; Pierre's gold overrides the reference on G.
 
-1. In-play agreement with the committed reference, G excluded (the reference itself put his 16 rejections in play, so a
-   perfect copy of it would score 75% with G in: the scorer's self-test); G scored apart, as agreement with Pierre.
+1. In-play agreement with the committed reference on the 52 photos it is sure about, G and U excluded; G scored apart
+   as agreement with Pierre (the reference itself put his 16 rejections in play), U apart too (a judge sure on the 8
+   reference-unsure photos would otherwise top out at 86%: both found by the scorer's self-test, before the run).
 2. Serious errors: the judge puts in play a photo the reference keeps out for a reason that misleads players: count `k`
    (another species one could take for the subject), `x` (subject unclear), flag `a` (not a fish in water). A watermark
    never takes a photo out of play (FISH.md "Watermark", Q373), so a missed `w` is reported as `w` recall, not as a
@@ -55,7 +58,12 @@ photo id, the URL or the reference. Same batches and order for every configurati
 
 **Thresholds** (a configuration passes only if all hold): in-play agreement ≥ 90% and at most 5 points under the Opus
 high control; serious errors ≤ 1 per 50 photos (≤ 1 here); Pierre-rejected photos put in play no more than the control;
-juvenile flag ≥ 90%; ease after caps within 1 ≥ 85%; count class ≥ 90%; extra unsure ≤ 15%; every photo answered.
+juvenile flag ≥ 90%; ease after caps within 1 ≥ 85%; count class ≥ 90%; extra unsure ≤ 15%; every photo answered with
+a valid code. Where the Opus high control itself misses an absolute bar (in-play, juvenile, ease, count class), that
+bar is read as the control's figure minus 5 points and the results say so; the serious-error bar stays absolute.
+
+The judges' brief asks for `unsure` "at the least doubt", as the rubric does, so the measured unsure rate is the one the
+bulk pass would have.
 
 **Candidates.** The Agent tool's `model` and `effort`: Haiku 5.5 low and medium, Sonnet 5.5 medium and high, Opus 5.5
 medium and high (the control). 6 batches of 11-14 photos: 36 judge calls, launched by the integrator from the packets.
