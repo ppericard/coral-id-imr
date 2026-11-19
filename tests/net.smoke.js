@@ -1077,7 +1077,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
+      await p.goto(base + 'admin.html?demo#photos/tree/key/' + encodeURIComponent(g));
       const sel = `figure[data-f="${ph.f}"] img`;
       await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
       await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
@@ -1123,7 +1123,7 @@ const server = http.createServer((req, res) => {
       if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
         fails.push('Admin, R2 cut off, service worker: it never took the page over');
       else {
-        await p.goto(base + 'admin.html?demo#photos/genera/live/Acropora');
+        await p.goto(base + 'admin.html?demo#photos/tree/key/Acropora');
         await p.reload(); // a hash change alone keeps the page from before the worker
         // A photo of the genus page shown from its online original: R2 failed for it.
         const ok = await p
@@ -1252,7 +1252,7 @@ const server = http.createServer((req, res) => {
           if (!st.ok || !st.src.startsWith(R2 + 'img/' + ph.f + '-s.webp'))
             fails.push(`${at}, R2 answering: a photo that lives on R2 only did not show from R2 (${JSON.stringify(st)})`);
         } else {
-          await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
+          await p.goto(base + 'admin.html?demo#photos/tree/key/' + encodeURIComponent(g));
           const sel = `figure[data-f="${ph.f}"] img`;
           await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
           await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
