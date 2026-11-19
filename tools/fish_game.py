@@ -472,7 +472,8 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
 def tier(fish):
     """The download order when a run cannot take every photo (--max): the reference photos first, then the starter
     entries' photos (fish.json start), circle 1's, then the rest (Pierre, 2026-11-06, Q199: starters and reference photos
-    first). (record, route) -> a sort key."""
+    first). The reference route keeps this priority for entry into the base, never for placement: a photo's place reads
+    ref_level, from the photo (rule P1). (record, route) -> a sort key."""
     of, _ = entries(fish)
     start = set(fish.get('start') or [])
     circle = {t['id']: t.get('circle') or 9 for t in fish.get('teach') or []}
@@ -791,24 +792,25 @@ def watermarked(r):
 
 # core.js refLevel's and refScore's copies (the reference level and the reference look of a judged photo).
 REF_LOOK = re.compile(r'^p1g0s[lm][1s]$')
-REF_GOOD, REF_REP = 'p1g0sl1', 8
+REF_GOOD = 'p1g0sl1'
 
 
 def ref_level(r):
-    """core.js refLevel: one kind of fish (count 1 or s), and a reference source's photo (rep) judged very easy, or any
-    photo judged ease 5 with the reference look (no juvenile, camouflage or out of the water)."""
+    """core.js refLevel: a photo judged very easy (ease 4 or 5) with the reference look (its last letter is the count: one
+    kind of fish, 1 or s; no juvenile, camouflage or out of the water). Read from the photo alone, never from its route in
+    (rep, the flag r: docs/decisions/2026-11-19-fish-reference-from-photo.md)."""
     jt, e = str(r.get('jt') or ''), r.get('e') or 0
-    return (len(jt) >= 7 and jt[6] in '1s'
-            and ((e >= 4 and bool(r.get('rep'))) or (e == 5 and bool(REF_LOOK.match(jt[:7])) and not set(jt[7:]) & set('jca'))))
+    return e >= 4 and bool(REF_LOOK.match(jt[:7])) and not set(jt[7:]) & set('jca')
 
 
 def ref_score(jt):
-    """core.js refScore: how much a judged photo looks like a reference photo (the r flag, the field-guide traits)."""
+    """core.js refScore: how much a judged photo looks like a reference photo (the field-guide traits; the flag r weighs
+    nothing)."""
     c = str(jt or '')
     if len(c) < 7:
         return 0
     fl = re.sub(r'\d+$', '', c[7:])
-    return (REF_REP if 'r' in fl else 0) + sum(c[i] == v for i, v in enumerate(REF_GOOD)) - sum(x in fl for x in 'jca')
+    return sum(c[i] == v for i, v in enumerate(REF_GOOD)) - sum(x in fl for x in 'jca')
 
 
 def first_photos(game, cur=None, fish=None, n=FIRST):
