@@ -1231,3 +1231,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
   tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
   bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
+- **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
+  juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
+  with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
+  sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
+  peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
+  (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
