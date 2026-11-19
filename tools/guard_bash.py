@@ -48,45 +48,88 @@ WAY_OUT = (
 HEREDOC_MARK = re.compile(r'<<-?[ \t]*([\'"]?)([A-Za-z_]\w*)\1')
 
 
-def substitutions(command, singles=True):
-    """The commands inside $(…) and `…` outside single quotes: the shell runs them even inside double quotes.
-    `singles=False` for the body of an unquoted heredoc, where a single quote is only a character (inside a `$(…)` of
-    that body the shell quotes normally again). The body of a heredoc inside `$(…)` is skipped when finding where the
-    substitution ends, so an apostrophe or a bracket in a commit message does not derail it."""
-    out, i, n = [], 0, len(command)
+def skip_single(s, j):
+    """The index after the single-quoted span opening at s[j]."""
+    k = s.find("'", j + 1)
+    return len(s) if k < 0 else k + 1
+
+
+def skip_backtick(s, j):
+    """The index after the backtick span opening at s[j]."""
+    k = s.find('`', j + 1)
+    return len(s) if k < 0 else k + 1
+
+
+def skip_double(s, j):
+    """The index after the double-quoted span whose opening quote is just before s[j]: an apostrophe is a character
+    there, a `$(…)` or a backtick still runs."""
+    n = len(s)
+    while j < n:
+        c = s[j]
+        if c == '\\':
+            j += 2
+        elif c == '"':
+            return j + 1
+        elif s.startswith('$(', j):
+            j = skip_command(s, j + 2)
+        elif c == '`':
+            j = skip_backtick(s, j)
+        else:
+            j += 1
+    return n
+
+
+def skip_command(s, j):
+    """The index after the `)` that closes a `$(` whose body starts at s[j]. Inside it the shell quotes normally again
+    (also when the `$(` sits in the body of a bare heredoc). The body of a heredoc opened inside is skipped, so an
+    apostrophe or a bracket in a commit message does not derail the scan."""
+    n, depth, skip = len(s), 1, None  # skip: (newline, end) of the body of a heredoc opened on this line
+    while j < n and depth:
+        c = s[j]
+        if skip and j == skip[0]:
+            j, skip = skip[1], None
+        elif c == '\\':
+            j += 2
+        elif c == "'":
+            j = skip_single(s, j)
+        elif c == '"':
+            j = skip_double(s, j + 1)
+        elif c == '`':
+            j = skip_backtick(s, j)
+        else:
+            mark = HEREDOC_MARK.match(s, j) if c == '<' and s[j - 1] != '<' else None
+            if mark and not skip:
+                nl = s.find('\n', mark.end())
+                end = re.compile(r'\n[ \t]*' + re.escape(mark.group(2)) + r'[ \t]*(?=\n|\Z)').search(s, mark.end())
+                if nl >= 0 and end:
+                    skip = (nl, end.end())
+            depth += {'(': 1, ')': -1}.get(c, 0)
+            j += 1
+    return j
+
+
+def substitutions(command, quotes=True):
+    """The commands inside $(…) and `…` that the shell runs: outside single quotes, and inside double quotes (where an
+    apostrophe is only a character). `quotes=False` for the body of an unquoted heredoc, where no quote means anything."""
+    out, i, n, double = [], 0, len(command), False
     while i < n:
         c = command[i]
-        if singles and c == "'" and (i == 0 or command[i - 1] != '\\'):
-            j = command.find("'", i + 1)
-            i = n if j < 0 else j + 1  # a single-quoted span: no substitution inside
-            continue
-        if command.startswith('$(', i) and not command.startswith('$((', i):
-            depth, j, skip = 1, i + 2, None  # skip: (newline, end) of the body of a heredoc opened on this line
-            while j < n and depth:
-                if skip and j == skip[0]:
-                    j, skip = skip[1], None  # the body is text for the shell's reader: its quotes and brackets do not count
-                    continue
-                if command[j] == "'":  # inside $(…) the shell quotes normally, even in the body of a bare heredoc
-                    k = command.find("'", j + 1)
-                    j = n if k < 0 else k + 1
-                    continue
-                mark = HEREDOC_MARK.match(command, j) if command[j] == '<' and command[j - 1] != '<' else None
-                if mark and not skip:
-                    nl = command.find('\n', mark.end())
-                    end = re.compile(r'\n[ \t]*' + re.escape(mark.group(2)) + r'[ \t]*(?=\n|\Z)').search(command, mark.end())
-                    if nl >= 0 and end:
-                        skip = (nl, end.end())
-                depth += {'(': 1, ')': -1}.get(command[j], 0)
-                j += 1
-            out.append(command[i + 2:j - 1])
+        if quotes and c == '\\':
+            i += 2
+        elif quotes and c == "'" and not double:
+            i = skip_single(command, i)  # a single-quoted span: no substitution inside
+        elif quotes and c == '"':
+            double, i = not double, i + 1
+        elif command.startswith('$(', i):
+            j = skip_command(command, i + 2)
+            out.append(command[i + 2:j - 1 if command[j - 1] == ')' else j])
             i = j
-            continue
-        if c == '`':
-            j = command.find('`', i + 1)
-            out.append(command[i + 1:j if j >= 0 else n])
-            i = n if j < 0 else j + 1
-            continue
-        i += 1
+        elif c == '`':
+            j = skip_backtick(command, i)
+            out.append(command[i + 1:j - 1 if j - 1 > i and command[j - 1] == '`' else j])
+            i = j
+        else:
+            i += 1
     return out
 
 
@@ -103,7 +146,7 @@ def inner_reason(inner):
         return reason(inner)
     if m.group(1):  # quoted delimiter: the body is literal text
         return None
-    for body_inner in substitutions(m.group(3), singles=False):
+    for body_inner in substitutions(m.group(3), quotes=False):
         why = inner_reason(body_inner)
         if why:
             return why

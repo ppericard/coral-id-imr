@@ -53,7 +53,12 @@ const REFUSED = [
   'echo "$(cat <<EOF\nit\'s `node -e 1`\nEOF\n)"',
   'echo "$(cat <<EOF\nline\n$(echo $(sed -i s/a/b/ f))\nEOF\n)"',
   // Inside $(…) of that body the shell quotes normally again: a quoted ")" does not end the substitution.
-  "echo \"$(cat <<EOF\n$(echo ')'; python3 -c 'print(1)')\nEOF\n)\""
+  "echo \"$(cat <<EOF\n$(echo ')'; python3 -c 'print(1)')\nEOF\n)\"",
+  // Codex review #1117, round 3: an apostrophe inside double quotes is a character, not the start of a quoted span.
+  'echo "it\'s $(python3 -c 1)"',
+  'echo "it\'s `node -e 1`"',
+  'echo "$(echo ")"; python3 -c 1)"',
+  'echo "a \\" it\'s" "$(sed -i s/a/b/ f)"'
 ];
 const ALLOWED = [
   'git status',
@@ -77,6 +82,8 @@ const ALLOWED = [
   'ls -la tools | wc -l',
   'git commit -m "$(cat <<EOF\nTitle\n\nOn $(git rev-parse HEAD), it\'s fine :)\nEOF\n)"',
   "git commit -m \"$(cat <<'EOF'\nPierre's title (and a smile :)\n\nBody\nEOF\n)\"",
+  'git commit -m "it\'s a $(git rev-parse HEAD)"',
+  'echo "it\'s" \'and "this"\' && echo $(git rev-parse HEAD)',
   'git commit -m "$(cat <<"EOF"\nWhy $(python3 -c 1) stays text.\nEOF\n)"'
 ];
 
