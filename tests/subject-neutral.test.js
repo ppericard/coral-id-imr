@@ -8,7 +8,7 @@ require('./slot.js').testGuard();
 // with its ROADMAP row. A SUBJECTS field true for exactly one subject (a feature switched on for that subject alone, such
 // as replay) is a test on that subject wherever it is read: it is listed in FLAGS, with what it switches and its ROADMAP
 // row; its reads, direct or through core.js replaySubject and replayedSubjects, are not listed line by line. The same for
-// a field of a subject's `admin` part set for one subject only (admin.autosort, admin.tags...). UNITS members are each
+// a field of a subject's `admin` part set for one subject only (admin.autosort, admin.target...). UNITS members are each
 // subject's own by design and are not checked here. The admin and Learn pages, where the subjects still have code of their
 // own, are counted in tests/subject-neutral-admin.test.js.
 const test = require('node:test'),
@@ -76,11 +76,6 @@ const FLAGS = [
   [
     'admin.target',
     "the sea slugs' photos in play per species that its Candidates fill up to (autosort.js fishTarget; the fish's by tier)",
-    ONE_ENGINE
-  ],
-  [
-    'admin.tags',
-    "the sea slugs' rubric rows where they differ from the fish's default (admin-fish.js FROWS, judging/SEASLUG.md)",
     ONE_ENGINE
   ]
 ];
