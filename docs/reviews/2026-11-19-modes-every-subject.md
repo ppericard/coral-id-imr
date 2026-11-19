@@ -32,8 +32,8 @@ stays closed).
 | Find the X (slipped into the quiz) | closed, reason | open | closed, data | Corals: coral photos do not read as small thumbnails (`UNITS` `tiles` comment). Sea slugs: no square tile cut around the animal (`xc`) in `seaslug-game.json`; `tiles: () => []` with no comment | `app.js` `UNITS` `tiles`; `tools/fish_game.py` (the fish's `xc`) |
 | **Duel tab** (`quiz-duel`) | open | **open (PR 1)** | **open (PR 1)** | Was gate only: the pairs (`UNITS` `pairs`) and `quizDuel`/`duelPick` were shared. Extra in PR 1: the ? text (`duelLede`), the relief card's words and its Compare button | `core.js` `SUBJECTS` `pages`; `quiz.js` |
 | Custom quiz (`quiz-custom`) | open | closed | closed | data: one fixed key `reefid-sync-coral-custom` (`model.js` `CUSTOM.KEY`), merged and cleared for the corals only (`sync.js` ~469-474, ~1712). code: `cqGroups` reads `DATA.imrg`, `isBenthic`, `shownGroup`. UI: tiles, search, the select and the count print raw ids (`esc(n)`) and the word "genera"; coral help text | `quiz.js` `viewCustom`, `cqGroups`; `model.js` `CUSTOM`; `sync.js` |
-| Look-alikes deck (`cmp`, Learn) | open | closed | closed | code: `classics` reads `model.js` `pairs()` (coral `DATA.gen` look); `montage` reads `DATA.gen[n].views` and `MONT_V`; `srcTag` knows only "IMR lecture" and "Coral Finder". The fish have sourced pairs (`look`, `lsrc`: the IMR fish presentation); the sea slugs `decl` | `learn.js` `viewLookalikes`, `montage`, `srcTag` |
-| Compare (`cmp-A\|B`) | open | closed | closed | code: `viewCompare` reads `gameGenus`, `g.crit` and `critRef` (Coral ID Key criteria), `g.ig`, the three `VIEWS`, `DATA.cmp`. UI: the quiz feedback's "Compare them" hidden by a data-shape test (`quiz.js` `fbBody` `fish = !!g.name`) | `learn.js` `viewCompare`; `quiz.js` `fbBody` |
+| Look-alikes deck (`cmp`, Learn) | open | **open (PR 3)** | **open (PR 3)** | Was code: `classics` reads `model.js` `pairs()` (coral `DATA.gen` look); `montage` reads `DATA.gen[n].views` and `MONT_V`; `srcTag` knows only "IMR lecture" and "Coral Finder". The fish have sourced pairs (`look`, `lsrc`: the IMR fish presentation); the sea slugs `decl` | `learn.js` `viewLookalikes`, `montage`, `srcTag` |
+| Compare (`cmp-A\|B`) | open | **open (PR 3)** | **open (PR 3)** | Was code: `viewCompare` reads `gameGenus`, `g.crit` and `critRef` (Coral ID Key criteria), `g.ig`, the three `VIEWS`, `DATA.cmp`. UI: the quiz feedback's "Compare them" hidden by a data-shape test (`quiz.js` `fbBody` `fish = !!g.name`) | `learn.js` `viewCompare`; `quiz.js` `fbBody` |
 | Memory (`pairs`) | open | closed, reason | closed, reason | reason: it matches a colony photo with its corallites, two views of one unit; these subjects have one view (`SUBJECTS` `views`). A Memory for them is a different game (below) | `proto/pairs.js` |
 | Basics (Learn step 0) | open | open | **open (PR 5)** | Was content: no basics module written for the sea slugs | `SUBJECTS` `pages` `basics`; `proto/basics.js`, `proto/fishbasics.js`, `proto/seaslugbasics.js` |
 | Learn list and sheets | open | open | open | none | `UNITS` `list`, `sheet` |
@@ -65,7 +65,8 @@ answers that are scored exactly like those of the same page for the corals.
    - Tests: `tests/subjects.test.js` (every mode open or closed with its reason, a pair's address round-trips with
      tree ids, a Duel-tab answer is a two-choice contrast for any ids).
    - Feature, S: comparable to #1095, #1161, #1171, #1222, #1242: median 1.8 h (range 64 min-3.9 h).
-2. **The custom quiz for every subject.**
+2. **The custom quiz for every subject** (done, #1277: the first view's groups are one `UNITS` member, `cq`; the fish's
+   groups are the ID key's, a species in its family's; the sea slugs' are their families).
    - The key per subject: `subjKey(SUBJ.id, 'custom')`, which is the corals' `reefid-sync-coral-custom` already, so
      the corals' saved selections stay. `sync.js` merges the latest selection and clears it at sign-out for each subject
      (`mergeSubject`, rule D7).
@@ -76,7 +77,9 @@ answers that are scored exactly like those of the same page for the corals.
    - Tests: the key, the merge and clear per subject (`tests/custom.test.js`, `tests/sync.test.js`); the fish smoke
      opens the page and plays one question.
    - Feature, M: comparable to #986, #1056, #1159, #1204, #1218: median 60 min (range 30 min-1.7 h).
-3. **Look-alikes and Compare for every subject.**
+3. **Look-alikes and Compare for every subject** (built: `UNITS` `deck`, `inGame`, `cmp` per subject; `montage` and
+   `viewCompare` read `GX(n).views` and `SUBJ.views`; `srcTag` names the source as the data gives it; the fish and sea
+   slug pairs are their declared ones, which every source names; one photo a side).
    - Pairs: `classics` reads a shared list of pairs, each subject's `UNITS` `pairs` filtered by `isClassic` on its own
      sourced pairs (`lsrc`: the IMR lecture, Coral Finder, the IMR fish presentation; the sea slugs' named sources).
    - Photos: `montage` and `viewCompare` read `GX(n).views` and `SUBJ.views` instead of `DATA.gen` and `VIEWS`. For a

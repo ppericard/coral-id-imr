@@ -70,7 +70,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **U14** Players can report a problem anywhere.
 
 **Admin** ([admin.md](admin.md))
-- **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
+- **A1** Never change Pierre's hand-made curation automatically or in a PR; an accepted proposal is replaced by a better one.
 - **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
 - **A3** The top level stays short: a new page goes into an existing tab or group first.
 - **A4** One subject switch covers every admin page.

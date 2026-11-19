@@ -75,11 +75,21 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   titles are `.gtitle`. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
   sentence (`plainLine()`); once the player has seen the genus, a line at the top gives their level on it and what it
   still needs (`myProg()`, the same text as the My progress tooltip).
-- **Learn › Look-alikes** (`#learn/look-alikes`): a deck of about 20 classic pair montages (`classics()`, `montage()`);
-  `#learn/compare/A/B` is the pair comparison, which accepts Millepora and the bonus genera (`gameGenus()`). The two
-  photos come from `model.js` `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js`
-  `answer`) also uses: the same growth form first (searched in every photo of both lists; `x` matches nothing), then
-  nearest the front, then the nearest zoom level; with no same-form pair, the best pair among the first 6 of each list.
+- **Learn › Look-alikes** (`#learn/look-alikes`, every subject): a deck of pair montages (`classics()`, `montage()`) over
+  the pairs the subject's `UNITS` `deck` gives: the corals' classic pairs (about 20: `isClassic`), the fish's and the sea
+  slugs' declared pairs (each carries its source line, `lsrc`: the IMR presentation's slide, the Sea Slug Forum, Nudi
+  Pixel, a paper; `srcTag` names it as the data gives it). `#learn/compare/A/B` is the pair comparison, which accepts
+  Millepora and the bonus genera for the corals (`UNITS` `inGame`). The corals' two photos come from `model.js`
+  `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js` `answer`) also uses: the same growth
+  form first (searched in every photo of both lists; `x` matches nothing), then nearest the front, then the nearest zoom
+  level; with no same-form pair, the best pair among the first 6 of each list. A subject with one view (`SUBJECTS`
+  `views`: the fish, the sea slugs) shows one photo a side: the admin's pick (`curation.json` `<subject>.mont`: `a`, `b`,
+  its `v` a phase, adult by default; `hide` keeps the pair off the deck) else the first adult photo. Compare's columns
+  read each unit's own tips under their label (the IMR cues, the sea slugs' marks, each naming its source: `tipsLabel`);
+  a unit with none says so and shows no summary as tips. What a subject adds (`UNITS` `cmp`: the corals' tag, group line and
+  Coral ID Key criteria box; the tree subjects' own line) is declared there. Above the columns, the tell-apart line of the
+  pair with its source where a record has one (`quiz.js` `pairText`: a fish pair's IMR lines, a sea slug pair's lines,
+  the corals' lecture lines). The answer's "Compare them" link follows `SUBJECTS` `pages`.
 - **Practice › Quiz** (`#practice/quiz`, tab "Quiz"): the adaptive photo quiz, with typed answers and duels slipped
   in. Its page key and answer modes keep the name `quiz` (answer modes `quiz|…`, which the sheet parses):
   [model.md](model.md), [quiz.md](quiz.md).

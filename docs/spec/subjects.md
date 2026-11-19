@@ -34,7 +34,7 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   (runs, corallites, hard photos); `boardSheet`, the sync script from which a subject's board is served (the sea slugs');
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
   `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
-  `quiz` and `quiz-duel`; the sea slugs' `genera`, `sheet`, `quiz`, `quiz-duel`. `closed`: each `MODES` Learn or
+  `cmp`, `quiz`, `quiz-custom` and `quiz-duel`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`. `closed`: each `MODES` Learn or
   Practice page a subject lacks, with its reason (`tests/subjects.test.js`; ROADMAP "Every game mode for every
   subject"). `basics` names the basics module's feat (`_basics`, `_fbasics`, `_sbasics`);
 - `sheets` (the fish and the sea slugs): the address word of each rank of its sheets and the prefix of their ids,
@@ -90,7 +90,9 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 `UNITS[id]` holds what the engine and the pages read for each subject. The tree subjects' entries start from
 `TREE_UNITS`, the members that read the tree in force the same way for each (`load`, `slate`, `core`, `circles`,
 `gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `bar`); each entry adds only
-its words, its files and its own settings and differences.
+its words, its files and its own settings and differences. The Look-alikes deck and Compare read `deck` (the pairs of
+the deck), `inGame` (a unit Compare may show) and `cmp` (`src`, `clues`, `tag`, `line`, `more`: what each says of a unit
+beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes).
 
 - **Loading.** `load()`, its data before its pages open (the corals' is in from start-up; a tree subject's is `treeLoad`:
   its tree, its first photos and its game photos), and `home()`, what start-up waits for when it differs: the fish's is

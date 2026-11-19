@@ -7,8 +7,11 @@ view and address: [ARCHITECTURE.md](../ARCHITECTURE.md) "Admin back-office", "An
 
 ### A1
 
-**Pierre's curation choices (`curation.json`) are never changed automatically**: no script, rebuild or import may
-overwrite them. An agent **may propose** to change one (its reason may be wrong, or may have changed); Pierre decides. Only step-by-step Undo of his own actions; **no bulk reset/wipe button of any kind** (he refused it
+**The curation choices Pierre made by hand, one by one (`curation.json`), are never changed automatically**: no
+script, rebuild or import may overwrite them; an agent **may propose** to change one (its reason may be wrong, or may
+have changed), and Pierre decides. A value the auto-sort or an agent proposed and he only let through (an accepted
+proposal, a bulk Validate) is a proposal: a newer, better proposal replaces it and goes into the game, and he corrects
+afterwards. Only step-by-step Undo of his own actions; **no bulk reset/wipe button of any kind** (he refused it
 twice). **Never write `curation.json` in a PR**: Pierre publishes it straight to `main` from the admin; merge `origin/main` and keep
 `main`'s copy. The admin's Publish never writes a whole copy: it re-reads the published file and merges the draft onto
 it key by key (`merge3()`, #240, after a whole-copy publish from a stale tab lost curation on 2026-11-01); keep it that
@@ -21,8 +24,9 @@ way if you touch `save()` in `admin.js`.
   `fish.out`, Pierre's "Not this" (the iNaturalist experts got the species wrong: his click only, never an agent's), and
   never proposes again a photo he marked so.
 
-*Why:* the curation is Pierre's work, and each choice he made has a reason. *Source:* Pierre, by 2026-11-01; auto-sort,
-2026-11-03; fish, 2026-11-04; may propose, 2026-11-05.
+*Why:* a choice Pierre made by hand has a reason; one he only let through was an agent's, and a better one should
+reach the game. *Source:* Pierre, by 2026-11-01; auto-sort, 2026-11-03; fish, 2026-11-04; may propose, 2026-11-05;
+hand choices only, 2026-11-20 05:39 («je valide», on his words of 2026-11-19 20:57-20:59; #1259's counts).
 
 ### A2
 

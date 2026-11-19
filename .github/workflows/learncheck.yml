@@ -1,10 +1,17 @@
 # Tier 2 of a learning change (rule L11; docs/LEARNING.md "Validating a learning change"): the paired comparison of two
 # versions of the app (before and after a change) in the app world (tools/learnsim.js, the real app in Chromium) and the
-# rated world (learnsim --world rated, Node), on the same seeds, read by tools/learncmp.js against the guardrails. Too
-# long for a laptop or the shared machine at level 2-3 (the fish app world: about an hour for both arms), so a manual
-# run on a GitHub runner: manual dispatch only, never on a push or a schedule. Commits nothing, sends nothing, no
+# rated world (learnsim --world rated, Node), on the same seeds, read by tools/learncmp.js against the guardrails.
+# Manual dispatch only, never on a push or a schedule, on a GitHub runner. Commits nothing, sends nothing, no
 # artifact: the report goes to the run's summary (simulated players only, no player data).
 # Every input reaches the commands through env and is checked against a narrow pattern first (no ${{ inputs }} in run).
+# The cap (rule L11; Pierre, Q405 2026-11-18 and Q415 2026-11-19), kept here and not left to the compared checkouts:
+# a check is at most CAP_MIN minutes of compute in total, however many runs: one deadline, set before the first run,
+# shared by the arms and worlds (2 or 4 runs); each run gets the equal share (or the `budget` input, checked against
+# the number of runs) and is cut at the deadline whatever its checkout does, an older `before` that ignores --budget
+# included; a run cut before it wrote its file leaves a stub marked cut that learncmp reads. A check that does not fit
+# is split (one world, fewer seeds, a shorter run), never lowered below LEARNING.md's figures. Level 3 (over L2_SEEDS
+# seeds, or over L2_ANSWERS answers with the rated world) needs Pierre's go (`pierre_go`: the reference of his go),
+# checked in the first step, before either checkout is read.
 name: Learning check (tier 2)
 on:
   workflow_dispatch:
@@ -53,8 +60,16 @@ on:
         description: 'Looks declared (rule L11: each look reads its bounds at 1 - 0.10 / looks)'
         default: '1'
         type: string
+      budget:
+        description: 'Minutes of compute per learnsim run (empty: the 40 minutes shared equally; runs x budget at most 40)'
+        default: ''
+        type: string
+      pierre_go:
+        description: "Level 3 only: the reference of Pierre's go (a Q number or message, and the date)"
+        default: ''
+        type: string
       args:
-        description: 'More learnsim options for both arms and worlds (e.g. --profiles beginner,expert --dist tail)'
+        description: 'More learnsim options for both arms and worlds (e.g. --profiles beginner,expert --dist tail); not the ones above'
         default: ''
         type: string
 permissions:
@@ -65,8 +80,11 @@ concurrency:
 jobs:
   compare:
     runs-on: ubuntu-26.04
-    timeout-minutes: 360
+    timeout-minutes: 90 # the setup, CAP_MIN of compute, the report
     env:
+      CAP_MIN: '40' # tools/checkbudget.js MAX_MIN
+      L2_SEEDS: '20' # tools/checkbudget.js LEVEL2.seeds
+      L2_ANSWERS: '10000' # tools/checkbudget.js LEVEL2.answers
       AFTER: ${{ inputs.after }}
       BEFORE: ${{ inputs.before }}
       SUBJECT: ${{ inputs.subject }}
@@ -77,6 +95,8 @@ jobs:
       PRIMARY: ${{ inputs.primary }}
       PRIMARY_WORLD: ${{ inputs.primary_world }}
       LOOKS: ${{ inputs.looks }}
+      BUDGET: ${{ inputs.budget }}
+      PIERRE_GO: ${{ inputs.pierre_go }}
       ARGS: ${{ inputs.args }}
     steps:
       - name: Check the inputs
@@ -84,12 +104,33 @@ jobs:
           ok() { [[ "$2" =~ $3 ]] || { echo "::error::$1 '$2' does not match $3"; exit 1; }; }
           ok after "$AFTER" '^[A-Za-z0-9._/-]{1,100}$'
           ok before "$BEFORE" '^[A-Za-z0-9._/-]{1,100}$'
+          ok subject "$SUBJECT" '^(fish|coral)$'
+          ok world "$WORLD" '^(both|app|rated)$'
           ok seeds "$SEEDS" '^[1-9][0-9]?$'
           ok questions "$QUESTIONS" '^[1-9][0-9]{0,4}$'
           ok answers "$ANSWERS" '^[1-9][0-9]{0,5}$'
           ok primary "$PRIMARY" '^([A-Za-z][A-Za-z0-9]*@([0-9]+|run):(up|down))?$' # learncmp's MEASURE@CHECKPOINT (c3@run)
           ok looks "$LOOKS" '^[1-9]$'
+          ok budget "$BUDGET" '^([1-9][0-9]?)?$'
+          ok pierre_go "$PIERRE_GO" '^[A-Za-z0-9 ,.:@#_-]{0,100}$'
           ok args "$ARGS" '^[A-Za-z0-9 ,.:@_=-]{0,200}$'
+          # The options the workflow sets itself (the cap and the go are not the args' to change).
+          set_here='(^|[[:space:]])--(seeds|questions|budget|per-job|pierre-go|world|subject|out)([[:space:]=]|$)'
+          if [[ "$ARGS" =~ $set_here ]]; then echo "::error::args holds an option the workflow sets itself (${BASH_REMATCH[2]}): use its input"; exit 1; fi
+          # The shared cap: the runs of a check (two arms, one or both worlds) together stay within CAP_MIN.
+          runs=$([ "$WORLD" = both ] && echo 4 || echo 2)
+          if [ -n "$BUDGET" ] && [ $((BUDGET * runs)) -gt "$CAP_MIN" ]; then
+            echo "::error::budget $BUDGET x $runs runs is over the $CAP_MIN-minute cap of a check (rule L11): at most $((CAP_MIN / runs)) minutes a run, or one world"
+            exit 1
+          fi
+          # Level 3 needs Pierre's go, whatever the checkouts do (rule L11): level 2's ceilings, as tools/checkbudget.js.
+          l3=""
+          [ "$SEEDS" -gt "$L2_SEEDS" ] && l3="$SEEDS seeds"
+          [ "$WORLD" != app ] && [ "$ANSWERS" -gt "$L2_ANSWERS" ] && l3="$ANSWERS answers in the rated world"
+          if [ -n "$l3" ] && ! [[ "$PIERRE_GO" =~ [^[:space:]] ]]; then
+            echo "::error::level 3 ($l3) needs Pierre's explicit go (rule L11): give its reference in pierre_go. Nothing ran."
+            exit 1
+          fi
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.after }}
@@ -113,18 +154,49 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.65.1
           if [ "$WORLD" != rated ]; then npx playwright install --with-deps chromium; fi
+      # One deadline for the whole check, set here, before the first run (the setup is not compute). Each run: the equal
+      # share of CAP_MIN (or the budget input), less if the deadline is nearer; learnsim's --budget leaves a minute
+      # before the hard limit (calibration and teardown), and `timeout` ends the run at that limit whatever the checkout
+      # (an older `before` ignores --budget), never past the deadline. A run that left no file (killed, or cut before
+      # its first job: exit 3 without one) gets a stub marked cut with no runs, which learncmp reads.
       - name: Both arms, the same seeds
         run: |
           set -o pipefail
           out="$RUNNER_TEMP/out" && mkdir -p "$out"
           worlds=$([ "$WORLD" = both ] && echo "app rated" || echo "$WORLD")
+          runs=$([ "$WORLD" = both ] && echo 4 || echo 2)
+          share=${BUDGET:-$((CAP_MIN / runs))}
+          deadline=$(($(date +%s) + CAP_MIN * 60))
+          stub() { printf '{"subject":"%s","budgetMin":%s,"cut":{"cut":true,"budgetMin":%s,"planned":0,"done":0},"runs":[]}\n' "$SUBJECT" "$2" "$2" > "$1"; }
           for w in $worlds; do
             n=$([ "$w" = app ] && echo "$QUESTIONS" || echo "$ANSWERS")
             for side in before after; do
               echo "::group::$w world, $side"
-              # shellcheck disable=SC2086 # ARGS: several options, checked above
-              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
-                --seeds "$SEEDS" --questions "$n" --workers 4 $ARGS --out "$out/$w-$side.json")
+              f="$out/$w-$side.json"
+              left=$((deadline - $(date +%s)))
+              mins=$(((left - 60) / 60))
+              [ "$mins" -gt "$share" ] && mins=$share
+              if [ "$mins" -lt 1 ]; then
+                echo "::warning::$w world, $side: not run, under 2 minutes left of the $CAP_MIN-minute cap"
+                stub "$f" 0
+              else
+                rc=0
+                # shellcheck disable=SC2086 # ARGS: several options, checked above
+                (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" timeout --kill-after=20 $((mins * 60 + 30)) \
+                  node tools/learnsim.js --world "$w" --subject "$SUBJECT" --seeds "$SEEDS" --questions "$n" --workers 4 \
+                  --budget "$mins" ${PIERRE_GO:+--pierre-go "$PIERRE_GO"} $ARGS --out "$f") || rc=$?
+                case $rc in
+                  0) ;;
+                  3 | 124 | 137)
+                    echo "::warning::$w world, $side: cut at its $mins-minute budget (exit $rc)"
+                    [ -f "$f" ] || stub "$f" "$mins"
+                    ;;
+                  *)
+                    echo "::error::$w world, $side: learnsim failed (exit $rc)"
+                    exit "$rc"
+                    ;;
+                esac
+              fi
               echo "::endgroup::"
             done
           done

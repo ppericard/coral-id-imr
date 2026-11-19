@@ -61,8 +61,8 @@ The game is at the genus, the level the ID books and the experts work at, by the
 `unitRank: 'genus'` (read through `core.js` `unitRankOf`; unset, a subject's units are at its `rank`, the fish's
 families) makes `treeGen` (its `unit`, `treeGenUnits`) take every genus holding a species of the circles as a unit, in
 its best species' circle, with its family's photos of its species and its own genus-level photos (`gl`: `treeGlOf`).
-Its look-alikes: its sibling genera (the traps), the genera a specialist source names (the duels: `UNITS.seaslug`
-`pairs` from each genus's `decl`, each pair with its sources' line, `lsrc`), and the data look-alikes only iNaturalist's
+Its look-alikes: its sibling genera (the traps), the genera a specialist source names (the duels and the Look-alikes
+deck with Compare: `UNITS.seaslug` `pairs` from each genus's `decl`, each pair with its sources' line, `lsrc`), and the data look-alikes only iNaturalist's
 identifications show (`dlook`), which the players' answers can drop (`model.js` `dataSeed`). `app.js` `treeGenera`
 completes those records as it does the fish's scientific genera; there is no opt-in genus set (`sets: []`,
 `optin: []`). Their ID marks are their own, in our words from numbered sources (`tools/seaslug_cues.json`), shown on the
