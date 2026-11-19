@@ -198,6 +198,18 @@ green checks; refactors of this size probably run longer.
    buttons, which were the fish's and are now their own six views.
 3. **One registry `reg(S)` with a coral adapter** (Dup-2, Dup-10, Dup-11, Dup-21; admin L). The prerequisite for 4-8.
    No page changes.
+   **Done** (spec/admin.md "Each subject's admin part", `tests/registry.test.js`): `admin.js` `reg(S)`, `regLoad(S)`,
+   `regRec(S, n)` in one block, the one switch the subject's declared data shape (`SUBJECTS` `flat`); a tree subject gets
+   the object its files were read into (`UNITA`), the corals one built in memory in `repReg`'s shape (`reports.js`
+   `flatReg`: `data.json` and the genus pages' photos under the draft, rebuilt per draft state; no file, no format
+   change). Read by Analyses (`anGen`, the units' names, the thumbnails), Pairs and the Heatmap (one pair record, one
+   roster from the registry's slate), Photo stats › Taxa (the corals' half; its tree half still reads the family pages'
+   data, `FISHC`, step 4's), and the Journey (its units' names; one "sheets opened" section for every subject, the log's
+   per-genus listing named once, `sheetsByUnit`). Gone: `unitWait`, the Pairs and Heatmap `gx`/`rec` twins; `fuRanks`
+   renamed `ranksOf` (§2). The tree in force's registry (`FISHA`) still serves To do's reports, Health and the tiles
+   (steps 4 and 8). The ratchet: 276 occurrences to 254, 45 file-proxy pairs to 41 (`.sheets` 66 to 50, `DATA.gen` 81 to
+   76, `FISHS` 37 to 36), 137 names to 136. Checked: the demo admin's HTML of Taxa, the Heatmap, Pairs, four Analyses
+   views and three Journeys, for each subject, identical before and after (1280 px, the clock fixed).
 4. **One Tree** (Dup-1, second half; admin L): `renderTree(S)`, the builders declared in one place. Depends on 0 and
    3.
 5. **One Candidates swiper** (Dup-3; admin L, the biggest single duplicate after the Tree). Depends on 2 and 3.
