@@ -77,7 +77,7 @@ Values have 3 decimals; `sh` has 1. Besides the whole frame's block, a photo has
 - the 425 fish photos with a box.
 
 The other ~28,000 game photos (about 1.2 GB of `-m` files) take about 2 hours at 4-4.5 photos a second on the shared
-agent machine, over rule L11's 40 minutes. Left (ROADMAP "Measured photo block: the full run"):
+agent machine, over rule L11's 40 minutes. Left (the list of record for this work: ROADMAP has no room for its row):
 
 - the full run, on a GitHub runner or as resumed `--minutes 35` runs;
 - the upkeep: the Candidate photos workflow runs `--dir r2-upload` on the photos it downloads, and its push job allows

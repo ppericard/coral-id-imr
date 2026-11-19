@@ -1,8 +1,8 @@
 # The measured block: photo values computed once from the pixels, in measured.json
 
 Date: 2026-11-19. PR: #1229. Rules or docs touched: L13, S1, A5; docs/spec/measured.md (new), docs/ARCHITECTURE.md
-"Photos", docs/spec/tools.md, docs/spec/analyses.md, docs/DATA.md, tools/README.md, ROADMAP "Measured photo block: the
-full run", "Contrast correction on the Learn sheets' photos".
+"Photos", docs/spec/tools.md, docs/spec/analyses.md, docs/DATA.md, tools/README.md, ROADMAP "Contrast correction on
+the Learn sheets".
 
 ## Context
 
@@ -52,7 +52,7 @@ fish photos of the first pass (`judging/FISH.md` "Agreement with other sources")
   `docs/spec/data.md` was at its size budget, so the spec is a file of its own, `docs/spec/measured.md`.
 - **Coverage now**: 917 photos, a fixed hash sample of 500 of every subject (33 corals, 405 fish, 62 sea slugs) and the
   425 fish photos with a box. The other ~28,000 photos would take about 2 hours here, over rule L11's 40 minutes: the
-  full run and the workflow's upkeep are the ROADMAP row.
+  full run and the workflow's upkeep are listed in measured.md "Coverage" (ROADMAP is at its size budget).
 - **First figures** (the 405 fish of the sample; descriptive only, rule A5: the photos of one observation or species are
   not independent, and the first-pass judges saw a machine colour hint):
   - The warm share follows the colour-loss tag (Spearman's rho 0.61; AUC 0.80 for no loss against the rest).

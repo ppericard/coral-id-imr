@@ -42,7 +42,7 @@ no other unit among the choices counted apart, the typed ones and those logged b
 sharpness, whole frame and fish box; [measured.md](measured.md)) is not among the report's photo features yet. An
 analysis joins it by the photo's file name `f`, the key of `ph` and `fph`, which an answer's photos name (`a.ph`,
 `analysis.js` `fphRows`). Putting it in `photoMetaFish` or `photoMeta` changes the fingerprint and refits every
-milestone, so it waits for the full run (ROADMAP "Measured photo block: the full run").
+milestone, so it waits for the full run ([measured.md › Coverage](measured.md#coverage)).
 
 ## Where it computes
 
