@@ -467,12 +467,6 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   It changes no game data: a proposed change goes to a pull request of its own, a discrepancy to `points.json` (rule C5).
   `tests/seaslug-lit.test.js`.
 
-## Learning checks
-
-- **`learnprof.js`**: the simulated players' profiles of `learnsim.js` and `ratedworld.js` (each file's header has the rest):
-  the units each knows, by circle, IMR course, commonness; the fish species (`sp`; `--spknow off` drops them); the
-  first-launch answer. `tests/learnprof.test.js`, `tests/ratedworld.test.js`. [LEARNING.md](../LEARNING.md) "Profiles".
-
 ## The instance
 
 - **`instance.py`, `instance.json`, `instances/`**: the instance (id, name, centre) and its layer files, laid on the
