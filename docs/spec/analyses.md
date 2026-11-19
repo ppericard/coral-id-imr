@@ -38,6 +38,12 @@ enlarge alone and its observations are iNaturalist's, `SUBJECTS` `admin` `obs`; 
 no other unit among the choices counted apart, the typed ones and those logged before the choices were,
 `noChoiceMixups`; `tests/answerlog.test.js`).
 
+**The measured block** (`measured.json`, `tools/photo_measure.py`: contrast, brightness, saturation, warm share,
+sharpness, whole frame and fish box; [data.md](data.md) "measured.json") is not among the report's photo features yet.
+An analysis joins it by the photo's file name `f`, the key of `ph` and `fph`, which an answer's photos (`a.ph`, `analysis.js` `fphRows`) name. Putting it in
+`photoMetaFish` or `photoMeta` changes the fingerprint and refits every milestone, so it waits for the full run
+(ROADMAP "Measured photo block: the full run").
+
 ## Where it computes
 
 `tools/analyses.js`, run by the GitHub Action `.github/workflows/analyses.yml` every hour (minute 23) and by hand (Run

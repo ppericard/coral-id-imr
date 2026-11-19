@@ -250,6 +250,15 @@ written with `tools/datajson.py`.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
   `metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
+- **`photo_measure.py`**: the measured block of every game photo of every subject (`GAME`: `data.json`,
+  `fish-game.json`, `seaslug-game.json`, the one place a subject is named) → `measured.json` ([data.md](data.md)
+  "measured.json"). Incremental and resumable: only the photos not measured or whose crop or box changed; written every
+  500 photos; `--minutes` (35 by default) stops cleanly and a rerun goes on. Reads each `-m` file from R2 into memory
+  (nothing on disk), 4 threads, at most 8 requests a second, three tries; `--dir` reads a folder instead (the photo
+  workflow's `r2-upload/`, a test's fixtures). `--subject`, `--sample N` (a fixed hash order), `--boxed` (the photos
+  with the fish's box), `--only`. `--judges` measures nothing: Spearman's rho and the AUC of each measure against the
+  judges' light, colour loss and clarity tags and the ease, whole frame and box. Takes the machine slot (rule W24).
+  Tests: `tests/photomeasure.test.js` (made-up images with known values, the box in the crop, an incremental run).
 - **`find_dups.py`**: near-duplicates → `dups.json` (run it again after adding photos).
 - **`tag_origin.py`**: the `loc` tag (`dauin` / `ph` / `world`) on iNaturalist photos.
 - **`judging_manifest.py`, `judging_import.py`, `judging_cand.py`**: the outside photo-judging agent's package
