@@ -422,7 +422,7 @@ def cmd_rep(fields=("jt", "e"), stamp=False):
     unsure fields and notes (the other species split of 2026-11-09, Q323; the crops that save a photo, Q430) to the
     candidates already judged, without the whole species' --check (a species may hold new candidates not judged yet,
     which the import refuses); waiting or decided alike. A re-judge (stamp) dates the pass of each species it changed
-    ("by" {species: {fish: {at}}}, as the import does): the auto-sort's route back reads it (autosort.js fishBack: a photo
+    ("by" {species: {fish: {at}}}, as the import does): the auto-sort's route back reads it (autosort.js sortBack: a photo
     it set aside comes back only on a judgement made since). The subject's (use): suggest.json "seaslug" and
     judging/seaslug/ for the sea slugs, whose codes also re-apply the egg rule."""
     S = load("suggest.json", {}) or {}

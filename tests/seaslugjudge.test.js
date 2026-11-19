@@ -185,7 +185,7 @@ print(json.dumps(code))`
       }
     })
   );
-  // The pass's date set back, so the re-judge's own date (the route back reads it: autosort.js fishBack) shows.
+  // The pass's date set back, so the re-judge's own date (the route back reads it: autosort.js sortBack) shows.
   S.by['900'].seaslug.at = '2026-01-01';
   fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify(S));
   const today = RUN(

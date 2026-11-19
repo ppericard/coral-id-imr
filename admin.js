@@ -6524,7 +6524,7 @@ async function fishLoad(withGame, S = FISHS) {
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
           game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
           byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}]))),
-          // {photo: the key of its candidate list in the file}: its pass's entry in suggest.json "by" (fishPassAt)
+          // {photo: the key of its candidate list in the file}: its pass's entry in suggest.json "by" (passAt)
           key: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([k, L]) => (L || []).map(p => [p.f, k])))
         };
         if (S === FISHS) FISHC = T.C;
@@ -6556,7 +6556,7 @@ async function fishAutoRun() {
   if (!TOKEN || !DRAFT || !ASORT || !Object.keys((SUG && SUG[AK]) || {}).length) return null;
   const C = await fishLoad(false, ASORT);
   const keepOn = autoState(fishCompare(DRAFT[AK])).keep.on,
-    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => fishPassAt(C, f));
+    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
   saveDraft();
@@ -6564,8 +6564,8 @@ async function fishAutoRun() {
   return R;
 }
 // The date a candidate of the auto-sort's subject was judged (YYYY-MM-DD), or null: its pass's in suggest.json "by" (the
-// judging tools stamp it), read by the route back of the photos the auto-sort set aside (autosort.js fishBack).
-const fishPassAt = (C, f) => ((((SUG && SUG.by) || {})[(C.key || {})[f]] || {})[AK] || {}).at || null;
+// judging tools stamp it), read by the route back of the photos the auto-sort set aside (autosort.js sortBack).
+const passAt = (C, f) => ((((SUG && SUG.by) || {})[(C.key || {})[f]] || {})[AK] || {}).at || null;
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again (or, one
 // it had brought back, set aside again). One Undo step.
 async function fishAutoUndo(f) {

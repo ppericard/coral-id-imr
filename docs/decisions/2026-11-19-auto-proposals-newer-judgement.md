@@ -36,7 +36,7 @@ What was built:
   unsure one waits for him), unless he answered its re-judge proposal Keep mine; while he never corrected it, a photo it
   set aside plays again when a sure judgement made since puts it in, and a photo it put in, its tags still its copy (his
   Keep in play gives them up), leaves play when a sure judgement made since sets it aside. (a) and (c) stand.
-- **The admin's route back** (`autosort.js` `fishBack`): the same photos come back into his draft, logged `b`, one Undo
+- **The admin's route back** (`autosort.js` `sortBack`): the same photos come back into his draft, logged `b`, one Undo
   each (it sets them aside again). His own Reject of a photo the auto-sort had set aside marks it `-r`, so it is never
   taken for the auto-sort's.
 - **"Made since"**: on or after the day of the decision, by the species' pass date (`suggest.json` `by`), which the

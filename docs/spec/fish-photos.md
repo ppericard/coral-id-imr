@@ -305,11 +305,11 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   judgment, which a new judging pass may replace. The log marks the decision undone (`-`): never applied again, counted
   in no agreement. Emptied maps stay as `{}` in the draft, so the Publish merge removes these entries only, never what
   another device published in the same map.
-- **The route back** (Pierre, 2026-11-19, Q438; `fishBack`): a photo the run set aside comes back into the draft when a
+- **The route back** (Pierre, 2026-11-19, Q438; `sortBack`): a photo the run set aside comes back into the draft when a
   judgement made since is a sure add, typically a crop that saves it (Q430, `judging/FISH.md` "A crop that saves a
   photo"). Only the run's own plain reject (`r`: not a Check, not undone, no `@t`), still set aside only, with no tags or
   crop of his, judged on or after the reject's day (`suggest.json` `by` {species: {fish: {at}}}, which the import and
-  `tools/judging_fish.py codes` stamp; admin `fishPassAt`). It is added like an add (code `b` and the fields it wrote)
+  `tools/judging_fish.py codes` stamp; admin `passAt`). It is added like an add (code `b` and the fields it wrote)
   while its species has room, else it waits as a candidate (code `b` alone). Undo sets it aside again (`-b`). His own
   Reject of a photo the run had set aside (left waiting by a Not this taken back) marks its code `-r`, so it is never
   taken for the run's (`fishReject`).

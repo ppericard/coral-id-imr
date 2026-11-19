@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The curation as the fish game's build reads it (tools/fish_game.py read_cur; Pierre, 2026-11-19 20:57 and 20:59): what
 // the auto-sort proposed and he only let through (its log letters) reads the newer judgement, his own decisions stand, and
 // curation.json itself is never written (rule A1). The players' copy reads it the same way (tools/curplay.py), and the
-// admin's route back (autosort.js fishBack) brings back the same photos. Made-up data; needs python3.
+// admin's route back (autosort.js sortBack) brings back the same photos. Made-up data; needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
