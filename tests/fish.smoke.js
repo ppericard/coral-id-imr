@@ -438,6 +438,164 @@ async function sameDifferent(b, base, errs) {
   await c.close();
   return fails.map(m => `same or different: ${m}`);
 }
+// (14) Odd one out (proto/oddone.js, the Lab) on the fish: the families of three declared look-alike pairs unlocked, and one
+// family with no look-alike among them, every other family locked; the photos stubbed (its tiles are its choices). 40 rounds:
+// four photos of three observations of one family and one of another, all unlocked and all different observations (rule P4);
+// the odd one a declared look-alike of the family shown three times whenever one is unlocked, any unlocked family else; both
+// cases and every place come; the tile of the odd one is the one ticked and the verdict true to the tile tapped; the answers
+// change no progress, log or answer count and open no family (untimed, no effect on progress); one screen before the answer, after
+// it and with More open at 390 and 1280 px.
+async function oddOne(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-oo')) {
+        sessionStorage.setItem('fish-oo', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 4242;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`odd one out: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const open = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const all = UNITS[SUBJ.id].pairs(),
+      obs = n => new Set(((GX(n) || {views: {}}).views.wide || []).map(p => p.o || p.f)).size,
+      P0 = all.filter(([a, c]) => pool().includes(a) && pool().includes(c) && obs(a) >= 3 && obs(c) >= 3),
+      met = [...new Set(P0.slice(0, 3).flat())],
+      alone = pool().find(
+        n => !met.includes(n) && obs(n) >= 3 && !all.some(([a, c]) => (a === n && met.includes(c)) || (c === n && met.includes(a)))
+      );
+    if (P0.length < 3 || !alone) return {pairs: P0.length, alone};
+    introAdd([...met, alone], true);
+    location.hash = hr('lab-oddone');
+    return {pairs: P0.length, met, alone};
+  });
+  if (open.pairs < 3 || !open.alone) return [`odd one out: ${open.pairs} declared fish pairs in play, a family with none: ${open.alone}`];
+  // answer.js: the Tools game's tiles, not a quiz question's choices
+  const TILE = '#view .ooq .fxt [data-c]';
+  await q.waitForSelector(`${TILE}:not([disabled])`, {timeout: 30000}).catch(() => {});
+  const fit = () =>
+    q.evaluate(() => {
+      const tab = document.querySelector('.sections'),
+        tabTop = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight,
+        aft = document.getElementById('after'),
+        sheet = aft && getComputedStyle(aft).position === 'fixed' ? aft.getBoundingClientRect().top : tabTop;
+      return [...document.querySelectorAll('#view .ooq .fxt, #view #after, #view #next')]
+        .map(e => [e.id || e.className, e.getBoundingClientRect()])
+        .filter(
+          ([n, r]) =>
+            r.top < -1 || r.bottom > tabTop + 1 || (/fxt/.test(n) && document.querySelector('#view .ooq.done') && r.bottom > sheet + 1)
+        )
+        .map(([n, r]) => `${n} ${Math.round(r.top)}..${Math.round(r.bottom)} of ${Math.round(Math.min(tabTop, sheet))}`)
+        .concat(document.documentElement.scrollHeight > innerHeight + 1 ? ['the page scrolls'] : []);
+    });
+  const fails = [];
+  const r = await q.evaluate(async sel => {
+    const out = [],
+      ok = (x, m) => x || out.push(m),
+      until = async f => {
+        for (let i = 0; i < 400 && !f(); i++) await new Promise(res => setTimeout(res, 25));
+        return f();
+      },
+      rec = () =>
+        JSON.stringify([P, SYNC ? SYNC.log || null : null, store.get(LOG0, []), store.get(ANONQ, []), introMap(), answersSoFar()]),
+      before = rec(),
+      pairs = UNITS[SUBJ.id].pairs(),
+      met = unlocked(),
+      // The family a photo file belongs to, and the photo's record, among every family of the game.
+      find = f => {
+        for (const n of Object.keys(TREEU.gen)) {
+          const p = ((GX(n) || {views: {}}).views.wide || []).find(x => x.f === f);
+          if (p) return {n, p};
+        }
+        return null;
+      },
+      kinds = new Set(),
+      places = new Set();
+    for (let i = 0; i < 40; i++) {
+      if (
+        !(await until(
+          () => [...document.querySelectorAll(sel)].length === 4 && [...document.querySelectorAll(sel)].every(b => !b.disabled)
+        ))
+      ) {
+        ok(false, `round ${i + 1}: four tiles never opened`);
+        break;
+      }
+      const L = [...document.querySelectorAll('#view .ooq .fxt img')].map(im => find(im.dataset.f));
+      if (L.length !== 4 || L.some(x => !x)) {
+        ok(false, `round ${i + 1}: photos ${L.length}, ${L.map(x => x && x.n)}`);
+        break;
+      }
+      const by = {};
+      L.forEach((x, k) => (by[x.n] = (by[x.n] || []).concat(k)));
+      const units = Object.keys(by),
+        maj = units.find(n => by[n].length === 3),
+        odd = units.find(n => by[n].length === 1);
+      ok(units.length === 2 && maj && odd, `round ${i + 1}: not three and one: ${JSON.stringify(by)}`);
+      if (!maj || !odd) break;
+      ok(
+        L.every(x => met.includes(x.n)),
+        `round ${i + 1}: a family not unlocked: ${units}`
+      );
+      ok(new Set(L.map(x => x.p.o || x.p.f)).size === 4, `round ${i + 1}: one observation twice`);
+      const looks = met.filter(o => pairs.some(([a, c]) => (a === maj && c === o) || (c === maj && a === o)));
+      if (looks.length) ok(looks.includes(odd), `round ${i + 1}: ${odd} is no declared look-alike of ${maj}, among ${looks}`);
+      kinds.add(looks.length ? 'look' : 'any');
+      places.add(by[odd][0]);
+      const tap = i % 4;
+      document.querySelector(`${sel}[data-c="${tap}"]`).click();
+      const tiles = [...document.querySelectorAll('#view .ooq .fxt')],
+        h3 = document.querySelector('#view #after h3');
+      ok(tiles.findIndex(f => f.classList.contains('fok')) === by[odd][0], `round ${i + 1}: the tile ticked is not the odd one`);
+      ok(h3 && h3.classList.contains('ok') === (tap === by[odd][0]), `round ${i + 1}: the verdict`);
+      ok(
+        tiles.every(f => f.querySelector('figcaption')),
+        `round ${i + 1}: a tile not named once answered`
+      );
+      document.getElementById('next').click();
+    }
+    ok(kinds.size === 2, `kinds seen (a look-alike, any family): ${[...kinds]}`);
+    ok(places.size === 4, `places of the odd one: ${[...places]}`);
+    ok(rec() === before, 'playing it changed the record, log or answer count');
+    ok(unlocked().length === met.length && met.every(n => introduced(n)), 'playing it opened a unit');
+    return out;
+  }, TILE);
+  fails.push(...r);
+  // One screen at 390 and 1280 px, before the answer, answered and with More open.
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await q.waitForSelector(`${TILE}:not([disabled])`, {timeout: 8000}).catch(() => {});
+    const f0 = await fit();
+    await q.click(`${TILE}[data-c="1"]`);
+    await q.waitForSelector('#view .ooq.done #next', {timeout: 5000}).catch(() => {});
+    const f1 = await fit();
+    await q.click('#view #fbmbtn');
+    // (on a desktop the side column scrolls under a long More, Next pinned in view: only the page may never scroll)
+    const f2 = (await fit()).filter(x => !/^after /.test(x));
+    if (f0.length || f1.length || f2.length)
+      fails.push(`${w}px: not one screen, before ${JSON.stringify(f0)}, answered ${JSON.stringify(f1)}, with More ${JSON.stringify(f2)}`);
+    await q.click('#view #next');
+    await q.waitForSelector('#view .ooq:not(.done) [data-c]', {timeout: 8000}).catch(() => {}); // answer.js: the Tools game
+  }
+  await c.close();
+  return fails.map(m => `odd one out: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3320,6 +3478,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const fx = await findTheX(b, base, errs);
   // (13) Same or different?: sameDifferent, above.
   const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
+  // (14) Odd one out: oddOne, above.
+  const oo = run.has('main') ? await oddOne(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -3652,7 +3812,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...sd, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...sd, ...oo, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
