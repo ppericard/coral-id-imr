@@ -117,6 +117,10 @@
    "t": "Willan and Cattaneo-Vietti 1995, New data on Chelidonura amoena (The Beagle 12)",
    "u": "https://archive.org/details/biostor-242510"
   },
+  "ssf-philgard": {
+   "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet",
+   "u": "https://www.seaslugforum.net/find/philgard"
+  },
   "ssf-robolute": {
    "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet",
    "u": "https://www.seaslugforum.net/find/robolute"
@@ -432,8 +436,11 @@
   },
   "Chelidonura|Tubulophilinopsis": {
    "Chelidonura": [
-    "two long tail lobes, the left far longer than the right, as C. amoena",
-    [["wcv1995", "the external features of Chelidonura amoena, p. 11"]]
+    "long, pointed tail lobes, the left far longer than the right, as C. amoena",
+    [
+     ["ssf-philgard", "Chelidonura's tails, against Philinopsis gardineri, now Tubulophilinopsis"],
+     ["wcv1995", "the external features of Chelidonura amoena, p. 11"]
+    ]
    ],
    "Tubulophilinopsis": [
     "short, rounded tail lobes of equal size; a crest on the head shield",

@@ -1,6 +1,6 @@
 # The tell-apart pairs left without a line: four more written, five kept with their reason
 
-Date: 2026-11-19. PR: this one. Builds on [2026-11-18-tellapart-lines](2026-11-18-tellapart-lines.md) (#1119). Rules or
+Date: 2026-11-19. PR: #1245. Builds on [2026-11-18-tellapart-lines](2026-11-18-tellapart-lines.md) (#1119). Rules or
 docs touched: C2, C5, C6; ROADMAP "The feedback sheet's decisive lines".
 
 ## Context
@@ -15,8 +15,9 @@ pass looked for a source for each of the nine.
 - **Written, sea slugs (2, both sides)**, from sources read on 2026-11-19:
   - *Chelidonura* / *Tubulophilinopsis*: the tail lobes. *Tubulophilinopsis* from its genus diagnosis (Zamora-Silva and
     Malaquias 2018, p. 40: short, rounded, symmetrical caudal lobes; a crest-like rise on the head shield);
-    *Chelidonura* from *C. amoena*, a game species (Willan and Cattaneo-Vietti 1995, p. 11: both lobes long, the left
-    far longer).
+    *Chelidonura* from the Sea Slug Forum's *Philinopsis gardineri* sheet (Rudman 1998: the genus's long, pointed
+    tails) and *C. amoena*, a game species (Willan and Cattaneo-Vietti 1995, p. 11: both lobes long, the left far
+    longer).
   - *Tambja* / *Tyrannodoris*: the oral tentacles and the sense slit before the rhinophores, both from the genera's
     definitions in Willan and Chang 2017 (*Tambja* p. 17, *Tyrannodoris* p. 18); the downward-pointing tentacles from the
     Sea Slug Forum's *Roboastra luteolineata* sheet (Rudman 1999), now *Tyrannodoris luteolineata*, a game species.
