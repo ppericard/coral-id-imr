@@ -4,7 +4,7 @@
 ne méritent pas d'être revues globalement ? Ya aucune optimisation/amélioration possible ?» The rules core proposal
 (#1200) moved every rule without touching what it says, on purpose ("Writing a rule down": never generalise or harden;
 a change of substance needs his OK). This study asks the other question: does each rule still earn its place, and how
-can the set be better. **The batch for Pierre, in French, is §5.** No question number is assigned here: the integrator
+can the set be better. **The batch for Pierre, in English (the integrator puts it to him in French in the chat), is §5.** No question number is assigned here: the integrator
 numbers what it asks.
 
 - **Base:** `origin/main` at `4165c3cf2` (#1116), 2026-11-19 about 10:00 Manila: #1117 (the guards, the rules audit)
@@ -17,7 +17,7 @@ numbers what it asks.
   the research on instruction load) and #1200's placement of every rule.
 - **Searched before any question:** `docs/ANSWERS.md` (read whole), the rules' *Source* lines, `docs/decisions/` (the
   rule-wording records of 11-18 and 11-19, rules step 1, guards rather than prose), STATUS "Questions for Pierre". What
-  he already answered is applied, never asked (§5 says "pour info").
+  he already answered is applied, never asked (§5 lists them "for information").
 
 ## 0. In short
 
@@ -487,7 +487,7 @@ Departures from #1200, each with its reason on its row: W2 retired into W7; W20 
 `needs-pierre` out of the core into W6; W27's scratch-file names to INTEGRATOR. Agreements: W5 into W19, L3's starred
 sentence kept, L15 and W4 kept, W25 kept, D1's how-to kept, the review guidelines whole.
 
-## 5. The batch for Pierre (French, ready to paste)
+## 5. The batch for Pierre (English here; the integrator puts it to him in French in the chat)
 
 Already answered, not asked: the audit's decisions 1-5 and 8 (2026-11-18 evening); Q425 B; merge, never rebase, one PR
 per agent (08:53); S1's wording (06:58); the ledger rule (07:05); the order of work (08:57). The agent cap is #1200's
@@ -495,35 +495,38 @@ per agent (08:53); S1's wording (06:58); the ledger rule (07:05); the order of w
 the integrator assigns the number. Points 2-4 are asked plainly. The batch then separates his answers, applied, from
 the integrator's editing calls, which are information only and go to him as wordings only if he says no to point 1.
 
+Pierre's own words stay in French where they are quoted (marked "quote"), each with an English gloss.
+
 ```text
-Pierre, la revue de fond des règles que tu as demandée ce matin. Réponds « ok » ou « ok sauf X ».
+Pierre, the substance review of the rules you asked for this morning. Answer "ok" or "ok except X".
 
-1. Écrire une règle : seul un changement de fond (ce qu'une règle exige, une nouvelle règle) passe par toi ; le
-   travail d'édition (raccourcir, déplacer, fusionner des doublons, appliquer une réponse que tu as déjà donnée) est le
-   choix de l'intégrateur, listé dans la PR. « Jamais généraliser ni durcir » reste. Si tu dis non, chaque PR de
-   réécriture te montrera ses formulations en un lot. Reco : ok.
-2. Retirer W20 (« plus de candidats, c'est plus de candidats ») des règles : il part dans la spec des photos, mot pour
-   mot, avec ta source. C'est une décision sur l'approvisionnement des photos, pas une règle de travail. Reco : ok.
-3. Nouvelle ligne dans U7 (réglages) : les niveaux de chaque matière se règlent sur sa carte What I learn, jamais en
-   ajoutant des lignes dans ⚙ ; ⚙ garde les réglages généraux. Tes mots du 18 : « On ne peut pas continuer à empiler
-   des settings dans le menu déroulant ». Reco : ok.
-4. L6 dit encore, avec tes mots du 6 : « pas de cas particulier pour une unité ou une matière ». S1 (ok de 06:58)
-   permet une différence entre matières si elle est déclarée à un seul endroit. Je propose que L6 garde « pas de cas
-   particulier pour une unité » et renvoie à S1 pour les matières. Reco : ok.
+1. Writing a rule: only a change of substance (what a rule requires, a new rule) goes through you; editing work
+   (shortening, moving, merging duplicates, applying an answer you already gave) is the integrator's call, listed in
+   the PR. "Never generalise or harden" stays. If you say no, every rewriting PR will show you its wordings in one
+   batch. Rec: ok.
+2. Retire W20 (quote: « plus de candidats, c'est plus de candidats », "more candidates is more candidates") from the
+   rules: it moves to the photos spec word for word, with your source. It is a decision about photo sourcing, not a
+   working rule. Rec: ok.
+3. New line in U7 (settings): each subject's levels are set on its What I learn card, never by adding rows to the ⚙
+   menu; ⚙ keeps the general settings. Your words of the 18th (quote): « On ne peut pas continuer à empiler des
+   settings dans le menu déroulant » ("we cannot keep piling settings into the dropdown"). Rec: ok.
+4. L6 still says, with your words of the 6th (quote): « pas de cas particulier pour une unité ou une matière » ("no
+   special case for a unit or a subject"). S1 (your ok of 06:58) allows a difference between subjects if it is
+   declared in one place. I propose that L6 keeps "no special case for a unit" and points to S1 for subjects. Rec: ok.
 
-Tes réponses déjà données, que j'applique (pour info) :
-- l'ordre du travail est à l'intégrateur (08:57) ; les intégrateurs tournent en mode auto (06:37) ; aucune corvée
-  GitHub pour toi (12/11) ; les alertes de sécurité comptent comme celles de Codex (08/11) : écrits dans le noyau ;
-- l'audit des règles : W27 ne fait plus redemander une demande courte, on construit la lecture facile à corriger et on
-  dit laquelle (décision 2) ; une règle tenue par un outil devient une ligne qui le nomme (décision 3) ; la méthode de
-  L11 va dans LEARNING (décision 8) ;
-- W7 : avant toute question, chercher dans le registre de tes réponses (07:05) ;
-- D6 suit Q330 et Q332 : plus aucune carte pour un recalcul ou une marque « appris » retirée ;
-- P1 : une seule évaluation par photo, « référence » déduite de la photo (Q358, #1045), une fois #1045 mergée.
+Your answers already given, which I apply (for information):
+- the order of work is the integrator's (08:57); integrators run in auto mode (06:37); no GitHub chore for you
+  (12/11); security alerts count like Codex's (08/11): written into the core;
+- the rules audit: W27 no longer re-asks a short request, we build the easy-to-correct reading and say which one
+  (decision 2); a rule held by a tool becomes one line that names it (decision 3); L11's method goes into LEARNING
+  (decision 8);
+- W7: before any question, search the ledger of your answers (07:05);
+- D6 follows Q330 and Q332: no more card for a recalculation or a withdrawn "learned" mark;
+- P1: one evaluation per photo, "reference" deduced from the photo (Q358, #1045), once #1045 is merged.
 
-Mes choix d'édition (pour info) : W2 fusionne dans W7, W5 dans W19 ; les détails techniques sortent des règles
-vers les specs et les outils (P1, C4, L3, L7, U3, D3) ; les Why et Source raccourcis, l'historique dans les
-records. Aucune règle produit n'est supprimée ni durcie.
+My editing calls (for information): W2 merges into W7, W5 into W19; technical details move out of the rules into
+the specs and the tools (P1, C4, L3, L7, U3, D3); the Why and Source lines are shortened, the history goes to the
+records. No product rule is removed or hardened.
 ```
 
 ## 6. Counts
