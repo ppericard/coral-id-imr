@@ -12,7 +12,8 @@
 //    ends. A holder's children run in its slot (REEFID_SLOT, below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
 //
 // 1b. Heavy work other than Playwright takes the same slots:
-//    node tests/run.js [node --test options] [files]   a full unit-test run (default: every tests/*.test.js); a single
+//    node tests/run.js [node --test options] [files]   a full unit-test run (default: every tests/*.test.js but the
+//                                                       `// @slow` ones; --all: those too); a single
 //                                                       file stays unlocked: node --test tests/x.test.js (the fast tier)
 //    node tests/slot.js [--name N] -- cmd [args]        any command, run once it holds a slot
 //    slot.guard(name)                                   at the top of a heavy Node tool: re-runs it under the slot (a

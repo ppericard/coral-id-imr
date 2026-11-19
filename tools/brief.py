@@ -13,7 +13,8 @@ the live one, the stack items behind their latest stable (tools/stack_check.py -
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
 of a limit; in the short brief only when one warns or the check failed), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass.
 When this checkout's CLAUDE.md, AGENTS.md or .claude/ instructions differ from origin/main it says so (agents load this
-copy), and it counts today's Agent launches by model and effort from tools/agent_guard.py's log. The hooks run main's reviewed copy
+copy), it counts today's Agent launches by model and effort from tools/agent_guard.py's log, and it names the docs past
+their size mark (tests/docs.test.js DOC_MARKS; only when one is: a warning, never a block). The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
@@ -457,6 +458,67 @@ def launches(at):
     return 'Agent launches today: %d (%s)%s' % (sum(ok.values()), dist or 'none', '; %d refused' % refused if refused else '')
 
 
+MARKS_SRC = 'tests/docs.test.js'  # its DOC_MARKS block, RECORD_MARK and CHANGE_MARK (docs/decisions/2026-11-19-doc-size-marks.md)
+
+
+def doc_marks():
+    """{'marks': {path: [kb or None, line]}, 'record': [kb, line], 'change': [kb, line]} read from tests/docs.test.js;
+    empty marks when the file or its block is missing (an older checkout). Never raises."""
+    try:
+        with open(os.path.join(ROOT, MARKS_SRC), encoding='utf8') as f:
+            src = f.read()
+    except OSError:
+        src = ''
+    block = re.search(r'^const DOC_MARKS = \{\n(.*?)^\};', src, re.M | re.S)
+    marks = {p: [None if kb == 'null' else int(kb), int(ln)]
+             for p, kb, ln in re.findall(r"^  '([^']+)': \[(null|\d+), (\d+)\]", block.group(1) if block else '', re.M)}
+    def one(name):
+        found = re.search(r'^const %s = \[(\d+), (\d+)\];' % name, src, re.M)
+        return [int(x) for x in found.groups()] if found else [0, 0]
+
+    return {'marks': marks, 'record': one('RECORD_MARK'), 'change': one('CHANGE_MARK')}
+
+
+def past_marks():
+    """The docs past their size or line mark, worded as tests/docs.test.js's warnings; [] when none. Never raises."""
+    from decimal import Decimal, ROUND_HALF_UP
+    m = doc_marks()
+    files = dict(m['marks'])
+    for folder, mark in (('docs/decisions', m['record']), ('tools/sync/changes', m['change'])):
+        try:
+            names = os.listdir(os.path.join(ROOT, folder))
+        except OSError:
+            continue
+        for n in names:
+            if n.endswith('.md') and folder + '/' + n not in files and mark[1]:  # each README has its own mark
+                files[folder + '/' + n] = mark
+    out = []
+    for p, (kb, line) in sorted(files.items()):
+        try:
+            with open(os.path.join(ROOT, p), encoding='utf8') as f:
+                text = f.read()
+        except (OSError, ValueError):
+            continue
+        size = Decimal(len(text.encode('utf8'))) / 1024
+        longest = max(len(x) for x in text.split('\n'))
+        if kb is not None and size > kb:
+            out.append('%s is %s KB, past its mark of %d KB' % (p, size.quantize(Decimal('0.1'), ROUND_HALF_UP), kb))
+        if longest > line:
+            out.append('%s has a line of %d characters, past its mark of %d' % (p, longest, line))
+    return out
+
+
+def marks_line(past, short):
+    """One line naming the docs past their mark, or None when none is."""
+    if not past:
+        return None
+    names = sorted({re.split(r' (?:is|has) ', x)[0] for x in past})
+    if short:
+        return 'docs past their size mark: ' + ', '.join(names)
+    return ('Docs past their size mark (a warning: is everything in each in its place? then raise its mark in '
+            'tests/docs.test.js): ' + '; '.join(past))
+
+
 def fish_todo():
     """(photos, species) of the fish candidates waiting for the judging pass: not decided by Pierre (curation.json fish
     add, seen, exclude, out) and not judged (suggest.json fish), as tools/judging_fish.py todo counts them; the automatic
@@ -576,6 +638,12 @@ def brief(short, at):
         lines[-1] += ' · ' + al
     elif al:
         lines.append(al)
+    # Docs past their size mark (tests/docs.test.js DOC_MARKS): a warning, never a block; in the short brief on the last line.
+    ml = marks_line(past_marks(), short)
+    if ml and short:
+        lines[-1] += ' · ' + ml
+    elif ml:
+        lines.append(ml)
     ft = None if short else fish_todo()
     if ft and ft[0]:
         lines.append('Fish candidates waiting for the judging pass: %d in %d species (python3 tools/judging_fish.py todo)' % ft)

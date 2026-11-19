@@ -14,7 +14,10 @@ const SRC = fs.readFileSync(path.join(__dirname, '..', 'proto', 'samediff.js'), 
 function draw() {
   const ctx = {};
   vm.createContext(ctx);
-  vm.runInContext(block(SRC, 'function sdPlan', 'LAB.add(') + '\nthis.plan = sdPlan; this.photos = sdPhotos;', ctx);
+  vm.runInContext(
+    'const labObs = p => p.o || p.f;\n' + block(SRC, 'function sdPlan', 'LAB.add(') + '\nthis.plan = sdPlan; this.photos = sdPhotos;',
+    ctx
+  );
   return ctx;
 }
 const {plan, photos} = draw();
@@ -130,7 +133,9 @@ test('the page is untimed and changes no progress: it never calls the quiz recor
     assert.ok(!new RegExp(`\\b${f}\\(`).test(code), `proto/samediff.js calls ${f}`);
   assert.match(code, /UNITS\[SUBJ\.id\]\.pairs\(\)/, 'the declared pairs of the subject on screen');
   assert.match(code, /\bunlocked\(\)/, 'the unlocked units (rule L4)');
-  assert.match(code, /photoSet\(/, "the draw's own photo choice");
+  // The draw's own photo choice is the shared source's (proto/lab.js labShots; tests/oddone.test.js greps it for recorders).
+  assert.match(code, /labShots\(/, "the draw's own photo choice, through the shared source");
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'proto', 'lab.js'), 'utf8'), /photoSet\(n, null, 0, 2, 'compare', keep\)/);
 });
 
 test('registered: the Tools list, the service worker list and the hub icon', () => {

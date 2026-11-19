@@ -379,22 +379,22 @@ const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
 const ITEM = {MISS: 1.5, PICKED: 0.5};
-function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null}) {
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null, spknow = true}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
-    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib});
+    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib, spknow});
   for (let i = 0; i < N; i++) pl.step(i);
   return pl.result();
 }
 // One player in world W (runOne's, or one of a population's: runPop): step(i) plays answer i + 1 and returns it ({t, c,
 // ok, k, typed, chs, ph: the files shown}); result() the run as runOne returns it. rseed seeds the app's and the learner's
 // generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
-// (runPop serves it the sheet's statistics).
-function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null}) {
+// (runPop serves it the sheet's statistics). spknow false: learnsim --spknow off (every species at the profile's lo).
+function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null, spknow = true}) {
   // the simulated player's reserve (core.js reserveOf): one id per profile and seed (its own form; the app world's is learnsim.js simId)
   const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib, id: `~anon sim ${profile} ${rseed}`}),
-    prof = LP.profOf(profile, U.subject),
+    prof = spknow ? LP.profOf(profile, U.subject) : {...LP.profOf(profile, U.subject), sp: null},
     r = gen((rseed * 2654435761) ^ 0x9e3779b9),
     slate = U.slate,
     knows = LP.knownUnits(prof, {
@@ -407,8 +407,11 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     know = {};
   slate.forEach(n => (know[n] = knows.has(n) ? prof.hi : prof.lo));
   U.extra.forEach(n => (know[n] = LP.genKnown(prof, knows, G[n].parent, G[n].imrg) ? prof.hi : prof.lo));
-  // the species by common name: no profile knows them beyond its low start (the expert's is 0.93)
-  (U.sp || []).forEach(n => (know[n] = prof.lo));
+  // the species by common name: those the profile knows (tools/learnprof.js sp: the cheatsheet's, the first of the families
+  // it knows) at sp.hi, the others at its low start; U.sp is in the families' order, X.sps the fish.json species (cs)
+  const spL = (U.sp || []).map(n => ({id: n, family: G[n].parent, cs: (((U.X || {}).sps || {})[G[n].sp] || {}).cs || 0})),
+    spK = LP.knownSpecies(prof, knows, spL);
+  spL.forEach(s => (know[s.id] = LP.spKnow(prof, spK, s.id)));
   const teach = (n, x = 1) => n in know && (know[n] += Math.min(1, prof.rate * x) * (1 - know[n])),
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
     pRec = (n, d, single = true) => sig(logit(know[n]) + pi - d - (single ? RATED.SINGLE : 0)),
@@ -420,8 +423,9 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     kindOf = U.kind,
     KINDS = [...new Set(UA.map(kindOf))],
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
-  // The first-launch answer (--choice auto, learnsim AUTO): the IMR RAs "imr", the strong RA and the expert "know".
-  const choice = {beginner: 'new', casualDiver: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'}[profile] || 'new';
+  // The first-launch answer (tools/learnprof.js choice, as learnsim --choice auto): the lecture RA "imr", the strong RA
+  // and the expert "know"; new for the others.
+  const choice = LP.choiceOf(profile) || 'new';
   M.startSet(choice, 'tour');
   const rows = [],
     expo = [],
@@ -624,6 +628,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     expo,
     preOW,
     knows: [...knows],
+    spKnows: [...spK], // the species units at the profile's sp.hi (tools/learnprof.js sp)
     right: rights / Math.max(1, N),
     lv,
     qs,
@@ -722,7 +727,7 @@ function rateErr(st, TW, W) {
 // seconds, gap their knowledge-gap term (secOf), every the rounds between two refreshes of the ratings served. Returns
 // {runs: one per player (runOne's), pop: {seed, times, gap, rho (beta against d), at: [{q, err, errW, corr, gdErr,
 // photos}]}}; keep: also the log, the world W and its seconds TW (an app world's stats and truth from a population).
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0, calib = null}) {
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0, calib = null, spknow = true}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   // The corals only: the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
@@ -732,7 +737,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     TW = timeWorld(U, W, seed, times, {gap}),
     pls = profiles.map((profile, j) =>
-      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, calib, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
+      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, calib, spknow, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
     ),
     log = [],
     at = [];
@@ -775,8 +780,8 @@ async function main(o) {
     POP = [];
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
-    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null});
-    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null});
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null, spknow: o.spknow !== false});
+    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null, spknow: o.spknow !== false});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -844,7 +849,7 @@ async function main(o) {
           seed0: o.seed0,
           questions: o.N,
           checkpoints: cps,
-          profiles: Object.fromEntries(o.profiles.map(n => [n, LP.profOf(n, o.subject)])),
+          profiles: Object.fromEntries(o.profiles.map(n => [n, o.spknow === false ? {...LP.profOf(n, o.subject), sp: null} : LP.profOf(n, o.subject)])),
           rated: RATED,
           dist: o.dist,
           learnerKind: o.learner || 'count',
