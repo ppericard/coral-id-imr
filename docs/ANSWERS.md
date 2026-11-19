@@ -1148,6 +1148,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Applied in #1190:** 06:50, rule S1's wording: rule S1 in `docs/rules/subjects.md` and AGENTS.md.
 - **Applied in #1198:** Q425, its first step: CLAUDE.md loads AGENTS.md (decision record `2026-11-19-rules-step1`).
 - **Applied in #1199:** 08:53, the answers ledger as checked data (tools/answers_check.py, in the docs test).
+- **10:05, Q427 (#1195, rule P1 on the corals: no source boost; level 2 left one breach, the strong RA's shown score
+  at 1,000 answers).** A, merge: «ok». Applied: #1195.
 - **09:46, a review of the rules' substance.** "Est-ce que les règles ne méritent pas d'être revues globalement? Ya
   aucune optimisation/amélioration possible?". Applied: the substance review (#1206); its answers go in with the
   rules core.
