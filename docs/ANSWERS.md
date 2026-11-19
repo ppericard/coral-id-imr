@@ -1179,3 +1179,23 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement
   (#1211); the integrator's answer, its call: a hook refuses an Agent launch without `model` and `effort`, every
   launch is logged, and the brief prints the day's distribution, `tools/agent_guard.py` (#1209).
+- **14:42, Q432 (#1099, the per-player reserve's two level-2 breaches).** Accept them as the reserve's cost: "Ok. Je
+  sais même pas pourquoi on se pose la question. C'est juste évident". Applied: #1099; such a small breach with true
+  knowledge held is the integrator's to settle.
+- **14:42, Q430 (fish photo crops).** B, the photo enters cropped on its own: "J'ai toujours dit de mettre en jeu les
+  suggestions, surtout si elles peuvent être corrigées à postériori, ce qui est le cas ici." Applied: the crop PR.
+- **14:42, Q431 (juvenile ease).** «ok» to dropping "juvenile = hard" and its 2/5 cap except look-alike juveniles,
+  and: "Mais certains juvéniles sont difficiles parce qu'ils ne sont justement pas remarquables et qu'ils ne
+  ressemblent pas du tout à l'adulte. Tu peux faire une étude avec des sources externes pour voir ce qui connu comme
+  "difficile" à identifier vs "facile"?". Applied: the juvenile difficulty study.
+- **14:42, Q429 (a contrast field).** A question back, not a decision: "Si ça peut être utile il faut envisager de
+  changer le format des données. Est-ce que ça pourrait être utile? Qu'est-ce que t'en penses?". Open.
+- **14:42, the rules (#1217).** Q433 (a re-ask of Q428, withdrawn) «ok»; W20: "Je sais même plus à quoi elle sert cette
+  règle" (it leaves the rules); U7's line: "Ok. Mais à nouveau on fait une règle dure pour un truc qui est juste du bon
+  sens de design..." (the line goes to DESIGN.md as guidance, not into U7); the agent cap removed: «oui». Applied:
+  #1217.
+- **14:42, one PR at a time.** "Pourquoi une PR à la fois? Il y avait combien d'agents qui tournaient?": no reason (an
+  over-reading of 10:49); work runs in parallel.
+- **14:44, the next gold set.** "C'est pas un double aveugle. C'est pas moi qui doit pas voir les réponses. Sinon tu
+  me demandes un travail de robot et je dois garder en tête la grille en entier". Applied: the judges stay blind to his
+  verdicts, he sees a judge's view (a model drawn at random per photo), on new photos.
