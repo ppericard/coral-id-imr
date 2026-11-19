@@ -40,7 +40,8 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   does on every head), and say so.
 - **The Candidate photos run moves `main`** after any judging merge, and a train started meanwhile stops ("main moved"):
   wait for that workflow's run to end, then train.
-- **Before any question to Pierre**: `python3 tools/asked.py <terms>`; a hit is applied, never asked again; its last
+- **Before any question to Pierre**: `python3 tools/asked.py <terms>`; a hit is applied, never asked again (open PRs'
+  ledgers included); its last
   line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
   otherwise), `suggest.json` (re-import the PR's species over `main`'s file), the decisions index
@@ -204,8 +205,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   train moves it. `git pull` before a train so you run the current `train.py`. Only the train pushes `release`; a Code.gs
   merged any other way does not reach the sheet until the next train.
 - **The shared index files**: the decisions index is generated (above). `docs/ANSWERS.md` is append-only: on a conflict
-  keep `main`'s lines first, then the PR's, and run `python3 tools/answers_check.py`. No `merge=union`: a local merge
-  (the train's build) honours it, GitHub's merge is not known to, so a train could build clean and be refused halfway
+  keep `main`'s lines first, then the PR's, and run `python3 tools/answers_check.py`. `.gitattributes` has `merge=union`
+  for it (#1215): a local `git merge` (the train's build) honours it, GitHub's merge ignores it, so a PR can show a
+  conflict on GitHub while a train merges clean, and a conflict there is resolved by hand
   ([record](decisions/2026-11-19-rules-tooling.md)).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
   assign are new heads, so `@codex review` and wait. The train adds no head.
