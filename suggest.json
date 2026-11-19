@@ -4687,7 +4687,7 @@
   "s596": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-19",
+    "at": "2026-11-14",
     "n": 74
    }
   },
@@ -63120,8 +63120,8 @@
    "k": "best"
   },
   "fish-s181-cand-655332221": {
-   "jt": "o1g0ml1",
-   "e": 3,
+   "jt": "p1g0ml1",
+   "e": 4,
    "k": "best",
    "c": [
     0.27,
@@ -65048,8 +65048,8 @@
    "k": "best"
   },
   "fish-s187-cand-434052823": {
-   "jt": "o1g0mm1p",
-   "e": 2,
+   "jt": "p1g0mm1p",
+   "e": 3,
    "k": "best",
    "ph": "terminal",
    "c": [
@@ -66703,8 +66703,8 @@
    "k": "dup"
   },
   "fish-s191-cand-435944127": {
-   "jt": "o1g1ml1p",
-   "e": 2,
+   "jt": "p1g1ml1p",
+   "e": 3,
    "k": "best",
    "c": [
     0.25,
@@ -67525,8 +67525,8 @@
    "k": "best"
   },
   "fish-s193-cand-551805479": {
-   "jt": "o1g2bl1p",
-   "e": 1,
+   "jt": "p1g2bl1p",
+   "e": 2,
    "k": "best",
    "c": [
     0.21,
@@ -82958,8 +82958,8 @@
    "k": "best"
   },
   "fish-s240-cand-555852573": {
-   "jt": "o1g1sl1",
-   "e": 3,
+   "jt": "p1g1sl1",
+   "e": 4,
    "k": "best",
    "c": [
     0.0,
@@ -95248,7 +95248,7 @@
    "k": "best"
   },
   "fish-s289-cand-258279800": {
-   "jt": "p1g0sl1",
+   "jt": "p0g0sl1",
    "e": 3,
    "k": "best",
    "c": [
@@ -95257,13 +95257,7 @@
     0.92,
     0.655
    ],
-   "bb": [
-    0.05,
-    0.15,
-    0.85,
-    0.65
-   ],
-   "n": "crop: the silver cardinalfish below leaves the frame (Q430); urchin spines across the rear"
+   "n": "crop: the silver cardinalfish below leaves the frame (Q430); urchin spines hide the rear and tail"
   },
   "fish-s289-cand-276848955": {
    "jt": "p1g0sl1",
@@ -144318,8 +144312,8 @@
    "k": "best"
   },
   "fish-s492-cand-695669180": {
-   "jt": "o1g1sl1",
-   "e": 3,
+   "jt": "p1g1sl1",
+   "e": 4,
    "k": "best",
    "c": [
     0.39,
@@ -187678,8 +187672,8 @@
    "k": "best"
   },
   "fish-s661-cand-725061651": {
-   "jt": "o1g0sl1",
-   "e": 4,
+   "jt": "p1g0sl1",
+   "e": 5,
    "k": "best",
    "c": [
     0.4,
