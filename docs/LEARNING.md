@@ -256,6 +256,23 @@ The photos of a question on unit n come from `model.js` `photoSet`:
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
+- **No photo twice in a few questions.** The photo memory (`s.ps`) and the colonies held back (`s.ro`) are written at an
+  answer, but the photo quiz plans up to `AHEAD` (3) questions ahead (`quiz.js` `planNext`), so a question planned
+  behind another on the unit would be drawn blind to it and could show its colony again. The draw also reads the
+  session's window (`model.js` `SEENQ`, `seenAges`, `leastRecent`): the photos of the last `RECENT` (10, the game's own
+  "recent", wider than `AHEAD`) questions shown (`seenAdd`, from `quiz.js` `question`, which serves the quiz, the custom
+  quiz and the Duel tab, and from `live.js` `liveBuild`) and of those planned (the `NEXTQ` queue, read when drawing, so
+  a dropped plan leaves nothing behind). A photo counts by its file and by its observation, a Find the X by its four
+  tiles. In `photoSet`, a colony in the window is not drawn while the unit has another it can show; the filter comes
+  after the calibration question's and before the variety, the floor and the cap, which then work on the others. With
+  every colony in the window, the one shown longest ago is drawn. It never leaves only colonies the draw holds back:
+  before Open Water the hard ones (`RARE`: with every easy colony in the window, `rareCap` would have nothing easy to
+  cap against and a hard photo would come at full weight) and the variants not released yet (`varOf`); with every
+  colony at full weight in the window, the one of them shown longest ago stays, as the exploration share keeps the seen
+  easy ones. The corals have neither, so their draw takes the window alone. `examSet` takes the same filter on its
+  photos. The window is in memory only (a session): nothing is synced, and `s.ps`, `s.ro`, the expectation and the
+  progress are unchanged. The calibration set's factor (`setBonus`) is a photo's weight, so it works among the colonies
+  outside the window. Decision record: docs/decisions/2026-11-19-no-photo-twice.md.
 - **Online calibration.** A photo with few answers from all the players is drawn more often, × (1 + `CAL.B` /
   (1 + answers / `CAL.N`)) (`model.js` `calBonus`), multiplying the targeting, never replacing it. A share `CAL.RATE` of
   the questions on a unit the player holds (met, not shaky), never in a comeback, are calibration questions: one view
@@ -1539,7 +1556,8 @@ exam are the app's own. Only the planner is written there, as `quiz.js` `planPho
 the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
 `distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
 every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
-`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+`confTerm`), the last two observations held back (`s.ro`), the session's window of photos shown (`seenAdd`; one question
+at a time there, no queue), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
 photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
@@ -1658,7 +1676,8 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 (the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
 photo exposure. The measures learncmp reads (`--list` prints them; any may be the primary): the ones above (`know`,
 `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`, `unitsOW`, `unitsAdv`, `plateau`, `c3`, `hardAns`,
-`perPhoto`, `right`, `prog`, `thErr`), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
+`perPhoto`, `right`, `prog`, `thErr`), `near` (the share of questions showing a colony or a photo shown in the 9 before),
+`learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
 `spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), the phase
 photos' shares (`phEarly`, `phLate`, `phEasy`, `phOther`, `phAns`), the measures after a break (`learnsim --breaks`:
 `cbLen`, `cbLong`, `cbRight`, `afterRight`, `held`, `holdAfter`, `open15`, read per break and per profile with their

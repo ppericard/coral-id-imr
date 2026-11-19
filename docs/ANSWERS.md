@@ -102,3 +102,5 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
 - **08:57, the order of work.** "Mon seul input c'est quand j'ai besoin de mettre des choses en priorité": the
   integrator sets the order of development and never asks Pierre "now or later"; Pierre steps in only to raise a
   priority (AGENTS.md "Questions to Pierre": never the order).
+- **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
+  the transient lag: «ok». Applied: #1093.
