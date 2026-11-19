@@ -100,9 +100,9 @@ def in_force(fish, cur):
 
 def rootless(fish, cur, skip=None):
     """The genera a circle edit brings into circle 1 that have no name root: [(genus name, family id, reason or None)]
-    in the genera's order. The build requires a root (or a reason in tools/fish_genus_roots.json skip) only of the
-    base's circle-1 genera, so such a genus shows no name-root line on its sheet; this is the report of them (reason:
-    the skip entry's, None when the genus has neither a root nor a reason)."""
+    in the genera's order. The build requires a root or a reason (tools/fish_genus_roots.json skip) of every genus of
+    fish.json, so such a genus shows no name-root line on its sheet for that reason; this is the report of them
+    (reason: the skip entry's, None when the genus has neither, a genus added since the build)."""
     skip = skip or {}
     base = {g['id']: g.get('circle') for g in fish.get('genera') or []}
     return [(g['name'], g['family'], skip.get(g['name']))

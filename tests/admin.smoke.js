@@ -53,9 +53,19 @@ const server = http.createServer((req, res) => {
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
-// SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job
-// runs them all); SMOKE_ONLY=players runs one part.
+// SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
+// runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
+// (timed below; on CI at 1280, in seconds: main 140, photos 120, players 80, actions 35, seal 12).
 const PARTS = ['main', 'actions', 'players', 'photos', 'seal'];
+// Each part reports how long it took, so a CI log shows the groups' balance (smokes.yml) without a guess; nothing is checked.
+const timed = async (name, f) => {
+  const t0 = Date.now();
+  try {
+    await f();
+  } finally {
+    console.log(`admin.smoke part ${name}: ${Math.round((Date.now() - t0) / 1000)} s`);
+  }
+};
 const WIDTHS = [390, 1280];
 // Dark theme as the app sets it: the ⚙ Theme (reefid-sync-theme) puts data-theme on <html> (admin.html's inline script).
 // The app and the admin never follow the system's prefers-color-scheme (rule U3), so Playwright's colorScheme: 'dark'
@@ -355,7 +365,7 @@ async function sealPart(b, base, fails) {
   await sc.close();
 }
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos', 'seal']}),
+  const run = slot.parts(PARTS, {main: ['main'], photos: ['photos'], rest: ['actions', 'players', 'seal']}),
     ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -560,12 +570,12 @@ async function sealPart(b, base, fails) {
       if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
       await ctx.close();
     };
-    // A run without the main part (SMOKE_PART=more or actions: tests/slot.js parts) runs its parts alone, in the whole
+    // A run without the main part (SMOKE_PART=rest or photos: tests/slot.js parts) runs its parts alone, in the whole
     // run's order, and skips the rest of the pass.
     if (!run.has('main')) {
-      if (once && run.has('actions')) await actionsPart();
-      if (run.has('players')) await playersPart();
-      if (once && run.has('photos')) await photosPart();
+      if (once && run.has('actions')) await timed('actions', actionsPart);
+      if (run.has('players')) await timed('players', playersPart);
+      if (once && run.has('photos')) await timed('photos', photosPart);
       await finish();
       continue;
     }
@@ -3745,7 +3755,7 @@ async function sealPart(b, base, fails) {
         if (s.src.join() !== s.want.src.join()) fails.push(`${w}px Filter bar: Candidates sources ${JSON.stringify(s)}`);
       }
     }
-    if (once && run.has('actions')) await actionsPart();
+    if (once && run.has('actions')) await timed('actions', actionsPart);
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
     // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
@@ -3938,7 +3948,7 @@ async function sealPart(b, base, fails) {
         }
       }
     }
-    // The players' part (SMOKE_ONLY=players; CI runs it with the photos' part in the admin 1280 "more" job): Players ›
+    // The players' part (SMOKE_ONLY=players; CI runs it with the actions and seal parts in the admin 1280 "rest" job): Players ›
     // List, a long name, merge and delete, the journeys, To do's errors and reports. A function, run here in a whole run,
     // or alone right after the page opens (above).
     async function playersPart() {
@@ -5774,7 +5784,7 @@ async function sealPart(b, base, fails) {
       if (cnt.view !== cnt.open + cnt.flags) fails.push(`To do › Reports, fish: the count ${JSON.stringify(cnt)}`);
       await go('inbox/todo/reports');
     }
-    if (run.has('players')) await playersPart();
+    if (run.has('players')) await timed('players', playersPart);
     await go('players/activity');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     if (once) {
@@ -9655,10 +9665,10 @@ async function sealPart(b, base, fails) {
         }
       }
     }
-    if (once && run.has('photos')) await photosPart();
+    if (once && run.has('photos')) await timed('photos', photosPart);
     await finish();
   }
-  if (ws.includes(1280) && run.has('seal')) await sealPart(b, base, fails);
+  if (ws.includes(1280) && run.has('seal')) await timed('seal', () => sealPart(b, base, fails));
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.

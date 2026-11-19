@@ -81,7 +81,7 @@ the fish itself is poorly lit).
   the margin, the fish plain, is not (a crop may take it out).
 - **Screens and video captures** (a screen's edge, moiré or reflections; a video player's interface): flag `a`.
 - **Other fish dark and poorly seen** beside a subject the eye sees first: `o`.
-- **Unchanged here**: contrast (Q429), the juvenile ease (Q431); crops: "A crop that saves a photo" (#1223).
+- **Unchanged here**: contrast (Q429); crops: "A crop that saves a photo" (#1223); the juvenile ease: "Juveniles" below.
 
 ## The observer's life stage (2026-11-19)
 
@@ -100,8 +100,8 @@ preuves solides").
 
 Pierre's criteria (2026-11-04). Very easy first: good light, colourful, the fish clearly visible, in profile, the whole
 fish in the frame, one fish (or the subject obvious), an easy species (that last one is the entry's order, not the
-photo's: `fish.json` `start` and the opening rule). Avoid at the very start: juveniles; species whose sexes or colour
-phases differ (Parrotfish); the fish in its night livery, partial fish, head-on or tail views, heavy crops, murky water, camouflage,
+photo's: `fish.json` `start` and the opening rule). Avoid at the very start: juveniles (their draw ramp's, never
+their ease, "Juveniles" below); species whose sexes or colour phases differ (Parrotfish); the fish in its night livery, partial fish, head-on or tail views, heavy crops, murky water, camouflage,
 several species in the frame.
 
 - **5 very easy**: profile, whole, good light (a flash on a dark background included), sharp, large or medium, one fish (or a school of it); colourful or with
@@ -112,13 +112,13 @@ several species in the frame.
 - **3 medium**: two mild shortfalls, or one strong one: a marked oblique, a head-on, tail or top view, part of the fish
   cut or hidden, the fish in its night livery, a strong colour loss, the fish small, camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
-  fish, a juvenile, a school in the blue.
+  fish, a school in the blue.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
-**Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`), a
-monochrome photo (colour loss `3`) or a strongly blurred one (clarity `b`, 2026-11-19) is at most 2
-(a juvenile: unless its entry or genus shows its juveniles early, below); camouflage (`c`), not a live fish seen in the water (`a`), the night livery (`n`), a strong
-colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
+**Caps** (the tool applies them, so a typed ease can never break them): an unclear subject (`x`), a monochrome photo
+(colour loss `3`) or a strongly blurred one (clarity `b`, 2026-11-19) is at most 2; camouflage (`c`), not a live fish
+seen in the water (`a`), the night livery (`n`), a strong colour loss (`2`), a head-on, tail or top view (`h`, `t`,
+`d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
 5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
 
 **The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
@@ -126,28 +126,12 @@ Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a
 is telling it from a wrasse, a look-alike pair); it gets hard only when the species is asked. The flag stays on the
 photos for the species questions and the explanation cards.
 
-**The juvenile cap follows the juvenile classes** (rubric 5, 2026-11-04: a research note on the 27 IMR entries, classes
-and rules approved by Pierre; data in `tools/fish_source.json` `juv`, per entry and, for mixed entries, per genus or
-species, each with its sources). A juvenile photo is judged on the other criteria only (no cap) when its entry is class A
-or its species is in the entry's `early` list; every other juvenile keeps the cap (`tools/fish_judge.py` `juv_early`):
-
-- **Class A** (juveniles distinctive and recognisable: they help learn the family early): Spadefish (very tall fins:
-  greatly elongated dorsal and anal fins; and, Pierre's observation, they look much bigger than they are: very long fins on
-  a tiny body, the body growing while the overall height hardly changes), Sweetlips (head-down, wriggling swimming with
-  exaggerated fin movements, bold creamy blotches), Boxfish (*Ostracion cubicus*: bright yellow with black spots, the same
-  box shape). Pierre is a source for Spadefish and Sweetlips too.
-- **Show-early genera or species** of the mixed entries: *Dascyllus* (Damselfish), *Pomacanthus* (Angelfish), *Macolor*
-  (Snapper), *Coris gaimard* and *Novaculichthys* (Wrasse), *Arothron stellatus* (Pufferfish).
-- **Class B** (nondescript, confusing, or resembling another family: taught later, with their explanation card): Parrotfish,
-  Emperor; and the look-alike juveniles of mixed entries: *Acanthurus pyroferus* (resembles *Centropyge* pygmy angelfish),
-  *Scolopsis bilineata* (resembles a fangblenny), *Plectropomus laevis* (resembles a toby), *Halichoeres* and *Thalassoma*
-  (alike across species).
-- **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
-  Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
-- Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
-
-The B and look-alike caps stay after the bootstrap (those juveniles come late, with an explanation card); the C and
-no-source caps go with it (ROADMAP). The juvenile tag stays on every photo.
+**Juveniles** (`j`) are judged on the photo like any other and cap nothing, whatever their class (Pierre, 2026-11-19,
+Q435: the judged ease is the starting point, the players' answers decide;
+[the decision](../docs/decisions/2026-11-19-fish-juvenile-no-cap.md)). The juvenile classes (`fish.json` `juv`,
+[FISH_PATH.md](../docs/FISH_PATH.md) "Juveniles and colour phases") set only when a juvenile comes in the draw. The
+juvenile tag stays on every photo. The in-play juveniles typed 1-2 under the old "2 hard: a juvenile" line were
+re-rated blind (the decision's "The re-rate"; `judging/fish-juvenile-rerate.json`).
 
 ## Reference photos
 
@@ -482,7 +466,7 @@ under "Other species, out of play", where Keep in play sets `o` in one tap.
 
 ## Entries out of circle 1
 
-No juvenile class exists for them (`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families
+Many of these families
 are rarely shown as a very easy photo, the rubric applied as written (no family exception): morays, snake eels, garden
 eels and jawfishes live mostly in a hole (partial), frogfishes, scorpionfishes, stonefishes and seamoths are
 camouflaged, rays and seamoths mostly seen from above, sharks in blue water.

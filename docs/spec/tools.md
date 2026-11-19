@@ -81,7 +81,9 @@ written with `tools/datajson.py`.
 - **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
   SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
   SubagentStart gives the Manila time and main's core line. `--report [--since HH:MM]`, `--expect [REF]`;
-  `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main.
+  `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main, and
+  names the docs past their size mark (read from `tests/docs.test.js` `DOC_MARKS`;
+  [decision](../decisions/2026-11-19-doc-size-marks.md)).
 - **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
   it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
   holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
@@ -192,7 +194,10 @@ written with `tools/datajson.py`.
 - **`apply_name_roots.py`**: the sourced roots of the coral genus names → `root` (re-runnable); the slate genera left
   without one, each with its reason (`SKIP`). The fish genus roots are `tools/fish_genus_roots.json`, read by
   `build_fish.py`.
-- **`apply_id_tips.py`**: `tools/id_tips.txt` → `gen[g].qt`.
+- **`apply_id_tips.py`**: `tools/id_tips.txt` → `gen[g].qt`. A line with a third column, "Coral Finder", is a slate genus
+  the lecture slides do not cover (no `imr`: Merulina, Cyphastrea, Halomitra): its tips are condensed from its Coral
+  Finder criteria (`crit`, book pages `pages`) and the script also writes `gen[g].tl`, "ID tips (Coral Finder p. …)",
+  the heading every tips box shows (`app.js` `tipsLabel`, `learn.js` `viewGenus`), never "ID tips (IMR)" (rules C1, C2).
 - **`apply_coral_apart.py`**: the coral slate pairs' tell-apart lines. It checks the hand-kept `tools/coral_apart.json`
   (every declared slate pair, Millepora's included, in `pairs` or in `none` with a reason; each side its own genus's
   words with its sources) and writes `data.json` `ap` / `apsrc` (`--check`: exit 1 when they differ,
@@ -254,6 +259,7 @@ written with `tools/datajson.py`.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
   `metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
+- **`photo_measure.py`**: [measured.md](measured.md).
 - **`find_dups.py`**: near-duplicates → `dups.json` (run it again after adding photos).
 - **`tag_origin.py`**: the `loc` tag (`dauin` / `ph` / `world`) on iNaturalist photos.
 - **`judging_manifest.py`, `judging_import.py`, `judging_cand.py`**: the outside photo-judging agent's package

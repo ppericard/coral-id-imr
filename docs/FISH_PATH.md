@@ -512,8 +512,9 @@ Decided from the admin pooling study:
 - Early, never a late stage (Pierre's ReefRecall rule). The easy photos come first: until 2026-11-06 an entry's questions showed only its very easy photos
   before Open Water (`model.js` `easyFirst`); since then (Pierre: "NO WALL", #660) the judged ease is only the photo's prior and the
   draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
-  photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
-  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw.
+  photos"). A juvenile is judged on its photo like any other, its ease never capped (Pierre, 2026-11-19, Q435: the judged
+  ease is the starting point, the players' answers decide; [the decision](decisions/2026-11-19-fish-juvenile-no-cap.md)).
+  No level gates them: when a juvenile comes is its draw ramp's, below.
 - **On the unit's own mastery** (Pierre, 2026-11-07: "we must put back a progressive path that presents juveniles and
   sexual dimorphism"; 2026-11-17, Q391 a: one rule for every level): each juvenile, sex or colour phase photo comes into
   its unit's draw on a ramp of that unit's bar, by the juvenile classes below (`core.js` `varKindOf`, `VAR_AT`;
@@ -537,7 +538,7 @@ Decided from the admin pooling study:
     *Scolopsis bilineata* (resembles a fangblenny), *Plectropomus laevis* (resembles a toby), *Halichoeres* and *Thalassoma*
     (alike across species).
   - **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
-    Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
+    Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): from Open Water, as every juvenile of no class.
   - Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
 - **The mimicry class** (Pierre, 2026-11-18; docs/LEARNING.md "The mimicry class"): a juvenile or an adult that a source
   says resembles another species (the pairs M1-M7 of `tools/fish_lookalikes.json`, `fish.json` `lookalikes`) comes into
@@ -547,7 +548,8 @@ Decided from the admin pooling study:
   whose look varies by region (`fish.json` species `region`: *A. pyroferus*) never shows a photo taken elsewhere on the
   card. The pair is then drilled (2026-11-19, the per-photo traps below): such a photo makes the unit of the species
   it resembles a trap, and the pair duels and comes back as an Again on its two species (docs/LEARNING.md).
-- The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
+- The B and look-alike juveniles get their explanation card when they come in (below). The classes set when a juvenile
+  comes, never its ease (Q435).
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
   (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
@@ -767,8 +769,15 @@ Every question here is answered (3: Q394 A; 5: Q395).
 
 The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
-- **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
-  they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
+- **learnsim fish profiles** (rules L11, L12, 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
+  fish's own structure, never on the corals': the beginner, the casual diver (the families met most near Dauin and the commonest
+  species of each, common names only), the lecture RA ("I'm at IMR": the circle-1 families, their IMR genera, the IMR
+  cheatsheet's 24 most sighted species), the strong RA (the circle-1 families and genera, the cheatsheet's species and the 3
+  commonest of each circle-1 family), the expert. A known species sits below its family (a name is a step harder) and each
+  RA's families keep species it does not know. Their values are assumptions until about 10 players have 200 fish answers
+  (the real log had 5, and no species answer, on 2026-11-19); a level-2 check of the species level runs `--world rated`
+  long enough for families to reach Advanced (3,000 answers), and `--spknow off` on both arms against a version without them.
+  They also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
   - IMR profile with everything open: right rate stays near the target (no lasting drop below the corals' range), Latin and typed Latin
     reached sooner than on the calm path.
   - RA level-1 path not slowed: entries reach Advanced at the same pace as on level 1 alone, within the seeds' spread.

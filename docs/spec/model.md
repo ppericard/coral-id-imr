@@ -58,7 +58,7 @@ there are no coded tracks; the player's own answers set the pace.
   near Dauin first (`commonFactor` in `core.js`, from `data.json` `cm`). A unit's exam waits for its group partners
   (`matesLeft`). A fish genus's declared look-alikes are in `decl`, its IMR sub-entry.
 - The pace (`openPace`): no card while a unit carded in the last `OPEN.WIN` (15) answers waits for its question, at most
-  `OPEN.MAX` (3) carded in any 15; a carded unit is asked as soon as it is ready.
+  `OPEN.MAX` (3) carded in any 15; it is asked once ready, after its card (`openDue`, `askedOpen`).
 - An opening only after a right answer (`openRight`): no card while the last graded answer in any game was a miss; a
   card planned before the miss is planned again.
 - Easier questions while the opening hold is on (`holdEase`): the photos and the format aim `h − INTRO.HOLD` logits
@@ -193,7 +193,7 @@ the sourced marks, the sources of the resemblance; once per pair, `TOLD` `mim:<s
 never with a photo taken outside the region of a species whose look varies by region (its `region`). The pair
 drilled: such a photo makes the unit it resembles, at the rank asked, a trap counted plausible (`mimUnit`,
 `mimTrap`); once its card is shown the families duel (`mimPairs`), and a duel or an Again after its mix-up shows the
-pair's species (`mimKeep`). LEARNING.md "The mimicry class".
+pair's species (`mimKeep`); a mix-up shows its marks (`mimMix`). LEARNING.md "The mimicry class".
 
 ## Progress and mastery
 

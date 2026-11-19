@@ -54,37 +54,49 @@ decision its own heading with its context, decision and consequences in a short 
 
 ## Index
 
-Newest first.
+Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
 | 2026-11-19 | [Every answer of Pierre's reaches its doc, and an append-only ledger of his answers](2026-11-19-answers-ledger.md) | #1188 |
 | 2026-11-19 | [Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file](2026-11-19-autosort-followup.md) | #1183 |
+| 2026-11-19 | [CI speed, second step: the admin 1280 smoke in three groups balanced by the measured time of each part](2026-11-19-ci-admin-split.md) | #1243 |
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
 | 2026-11-19 | [The Coral Finder book is a source like any other, with no credit line of its own](2026-11-19-coral-finder-credit.md) | #1194 |
 | 2026-11-19 | [Coral look-alike pairs: the IMR lecture's split from the Coral Finder's, into the IMR instance's layer](2026-11-19-coral-pairs-split.md) | #1170 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (fifth pass)](2026-11-19-decisions-from-comments-tests-5.md) | #1153 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (sixth pass)](2026-11-19-decisions-from-comments-tests-6.md) | #1157 |
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
+| 2026-11-19 | [Doc size marks: a warning to check the doc, never a wall; ROADMAP keeps its open items, the decisions index is whole](2026-11-19-doc-size-marks.md) | #1255 |
 | 2026-11-19 | [The duel achievement counts a right Again like a right duel](2026-11-19-duel-ach-again.md) | #1227 |
 | 2026-11-19 | [The fish genus page's "Don't confuse with" lists sourced pairs only](2026-11-19-fish-genus-dont-confuse.md) | #1171 |
+| 2026-11-19 | [Juveniles (fish and sea slugs): no ease cap; the judged ease is the starting point](2026-11-19-fish-juvenile-no-cap.md) | #1237 |
+| 2026-11-19 | [The fish juveniles sourced per species: a class label for the analyses and a line on the species sheet](2026-11-19-fish-juveniles-sourced.md) | #1235 |
+| 2026-11-19 | [Fish name roots, circles 2-3: every genus rooted or skipped](2026-11-19-fish-name-roots.md) | #1248 |
 | 2026-11-19 | [The fish read their own pooled statistics in the app, merged with no further simulation](2026-11-19-fish-own-stats.md) | #1148 |
 | 2026-11-19 | [Fish reference photos: one judgement, the level read from the photo](2026-11-19-fish-reference-from-photo.md) | #1045 |
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
 | 2026-11-19 | [Fish judging rubric: the gold set's corrections](2026-11-19-fish-rubric-gold-set.md) | #1218 |
 | 2026-11-19 | [A fish photo with a look-alike near its edge plays once a crop takes it out](2026-11-19-fish-saving-crop.md) | #1223 |
+| 2026-11-19 | [Fish species sheets: sourced adult ID marks, shown as drafts until Pierre validates them](2026-11-19-fish-species-marks.md) | #1232 |
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject](2026-11-19-genera-into-tree.md) | #1214 |
+| 2026-11-19 | [Fish genera with IMR cues: our sourced ID marks under them, as the families](2026-11-19-genus-marks-beside-imr-cues.md) | #1231 |
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
+| 2026-11-19 | [learnsim fish profiles: species known by the IMR cheatsheet and commonness, values assumed until fitted](2026-11-19-learnsim-fish-species.md) | #1251 |
+| 2026-11-19 | [Live answers on units not opened count, opening nothing; answers before a card are never its question](2026-11-19-live-locked-units.md) | #1234 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
+| 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
+| 2026-11-19 | [Odd one out: a Lab prototype, three of a unit and one intruder, untimed, no effect on progress](2026-11-19-odd-one-out-lab.md) | #1253 |
 | 2026-11-19 | [One answer recorder for every game: the photo quiz and the live game record through quiz.js recordAnswer](2026-11-19-one-answer-recorder.md) | #1213 |
 | 2026-11-19 | [One engine, step 2: replay's features named, the one-tap question and the notices the engine's](2026-11-19-one-engine-named-fields.md) | #1226 |
 | 2026-11-19 | [Rule P1 for the corals: no photo placed, ordered or weighted for who took it](2026-11-19-p1-corals-no-source-boost.md) | #1195 |
 | 2026-11-19 | [Per-player exam reserve, every subject; the corals keep theirs; the photos it takes read their qualities only](2026-11-19-per-player-reserve.md) | #1099 |
+| 2026-11-19 | [The measured block: photo values computed once from the pixels, in measured.json](2026-11-19-photo-measured-block.md) | #1229 |
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [The privacy page: a short notice, the points the law asks for, no internal detail](2026-11-19-privacy-short.md) | #1095 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
@@ -93,8 +105,12 @@ Newest first.
 | 2026-11-19 | [Rules tooling: a search before any question, the answers ledger checked, the decisions index generated](2026-11-19-rules-tooling.md) | #1199 |
 | 2026-11-19 | [The rules core trial's harness, and a guard on agent launches: model and effort set, every launch logged](2026-11-19-rules-trial-harness.md) | #1209 |
 | 2026-11-19 | [The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING](2026-11-19-rules-wordings.md) | #1190 |
+| 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
+| 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |
+| 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
+| 2026-11-19 | [The tell-apart pairs left without a line: four more written, five kept with their reason](2026-11-19-tellapart-none-pairs.md) | #1245 |
 | 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |
 | 2026-11-19 | [Your tricky pairs on My progress: the player's own mix-ups, shown, with no weight change](2026-11-19-tricky-pairs.md) | #1210 |
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |

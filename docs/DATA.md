@@ -31,6 +31,7 @@ Everything else is written by a tool that a pull request runs and commits. A too
 | `picks.json` | Suggested featured photos per genus and view | `tools/judging_import.py` | The app, the admin |
 | `dups.json` | Near-duplicate photos | `tools/find_dups.py` | The admin |
 | `metrics.json` | Objective photo metrics (sharpness, size, colour cast) | `tools/photo_metrics.py` | The admin |
+| `measured.json` | The measured block of each game photo, every subject: contrast, brightness, saturation, warm share, sharpness, on the whole frame and the fish's box | `tools/photo_measure.py` | `tools/photo_measure.py --judges`; the analyses join it by hand for now |
 | `suggest.json` | The outside judging agent's results, per subject, imported as suggestions | `tools/judging_import.py`, `tools/judging_cand.py`, `tools/judging_fish.py` | The admin; `tools/fish_game.py` |
 | `presence.json` | Per coral photo species, whether the presence rule (C8) holds | `tools/coral_presence.py` | The admin |
 | `names.json` | Former names and spellings, one section per subject: an extract of `tools/taxonomy.json` | `tools/taxonomy.py` | The admin |
@@ -55,7 +56,8 @@ read (`pool`, `files`).
 - **`curation.json` is merged key by key** by Publish. A pull request never edits it.
 - **Names are short.** The fields most often met:
   - a genus record in `data.json` (`gen`): `n` the slate number (0 for a starred look-alike), `fam` family, `ig` IMR
-    lecture group, `imr` lecture notes, `qt` ID tips, `sum` short description, `plain` plain sentence, `mn`
+    lecture group, `imr` lecture notes, `qt` ID tips (and `tl` their heading, only on a genus the lecture skips: its tips
+    come from the Coral Finder, not IMR), `sum` short description, `plain` plain sentence, `mn`
     mnemonic, `crit` Coral Finder criteria, `tr` and `trs` trait ids (`trs`: only some species), `look` look-alikes,
     `lsrc` source of each pair, `ap` and `apsrc` the pairs' tell-apart lines and their sources, `sl` slide numbers,
     `info` other sources, `views` and `more` photo lists, `cover`, `cm` how common near Dauin, `root` the name's roots;

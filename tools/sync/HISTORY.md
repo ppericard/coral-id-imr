@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v197 (2026-11-19)
+
+The embedded `core.js` carries rules version 12 of the corals (`RVS`): a signed-in student's live answer on a unit the path has not opened now counts and is logged like any answer, the unit staying closed until its card (rule L4, Pierre, 2026-11-18: live answers "count without unlocking"; the modes audit, step 3); its answers before the card are evidence, never the card's question (`model.js` `askedOpen`). The replay of a log is unchanged; the new version makes every device take the replay once, with no card (rule D6)
+
 ## v196 (2026-11-19)
 
 One engine, step 2 (rule S1; `docs/decisions/2026-11-19-one-engine-named-fields.md`): the copy of `core.js` carries the features `SUBJECTS` `replay` used to switch for the sheet's subject as named fields, all the corals' as before (`hold`, `offsets`, `anonBase`), the tree subjects' circle-3 threshold as `gate`, and the engine's cards and notes their subject in their own data (`subjIn`, `noteRun`). The script's own code is unchanged and still computes the hold, the photo memory and the first replay for `replaySubject`; no number the sheet computes moves

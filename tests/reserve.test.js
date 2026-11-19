@@ -430,6 +430,14 @@ test('the sheet’s own script never reads a reserve: the tag logged with the an
   assert.ok(!/reserveOf|reserveSplit/.test(own));
 });
 
+// The app's anonymous id (sync.js anonId) comes from crypto, out of reach of the draw smoke's seeded Math.random: unpinned,
+// each run is another player with another reserve, so the photos and the exam's questions the smoke expects move.
+test('the draw smoke pins the player id (JSON, as the app’s store reads it): the same reserve every run', () => {
+  const src = read('tests/draw.smoke.js');
+  assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\('[a-z0-9]{10}'\)\)/);
+  assert.match(read('sync.js'), /crypto\.getRandomValues/, 'the id is still random in the app: this pin is what makes a smoke fixed');
+});
+
 // learnsim's truth from hashes (--truth gen) seeds the reserved photos' difficulties too.
 test('learnsim and the rated world: the reserved photos get their own simulated difficulty; one player id per run', () => {
   const src = read('tools/learnsim.js'),
@@ -476,4 +484,14 @@ test('resId: the account’s name, else the device’s anonymous id as the sheet
   assert.strictEqual(run({SYNC: {name: 'Ana Lee', pin: '1234'}, anonId: () => 'x'}), 'ana lee');
   assert.strictEqual(run({SYNC: null, anonId: () => 'abc123xyz0'}), '~anon abc123xyz0');
   assert.strictEqual(run({}), '', 'neither (a harness): no reserve');
+});
+
+// The profiles smoke's players are the test's own, but the app's anonymous id (sync.js anonId, crypto) seeds the reserve:
+// unpinned, each run is another player with other photos, and the window of the expert's last questions (model.js SEENQ)
+// sometimes holds the colony the calibration check measures, which then is never drawn.
+test('the profiles smoke pins the player id and checks calibration on an empty window of recent questions', () => {
+  const src = read('tests/profiles.smoke.js');
+  assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\('[a-z0-9]{10}'\)\)/);
+  const cal = src.slice(src.indexOf('Online calibration (CAL)'));
+  assert.match(cal.slice(0, cal.indexOf('out.cal =')), /SEENQ = \[\];\s*NEXTQ = null;/);
 });

@@ -97,35 +97,35 @@
    "keep": "best"
   },
   "fish-s191-cand-382068020": {
-   "code": "p1g1sssj1",
+   "code": "p1g1sssj2",
    "keep": "best"
   },
   "fish-s191-cand-598810503": {
-   "code": "p1g1sl1j2",
+   "code": "p1g1sl1j3",
    "keep": "best"
   },
   "fish-s191-cand-720353": {
-   "code": "p1g1sm1j2",
+   "code": "p1g1sm1j3",
    "keep": "best"
   },
   "fish-s191-cand-607600603": {
-   "code": "o1g1sm1j2",
+   "code": "o1g1sm1j3",
    "keep": "best"
   },
   "fish-s191-cand-204817622": {
-   "code": "p1g2ss1j1",
+   "code": "p1g2ss1j2",
    "keep": "best"
   },
   "fish-s191-cand-718398": {
-   "code": "p1g1sl1j2",
+   "code": "p1g1sl1j3",
    "keep": "best"
   },
   "fish-s191-cand-604140184": {
-   "code": "p1g1ss1j2",
+   "code": "p1g1ss1j3",
    "keep": "best"
   },
   "fish-s191-cand-719431": {
-   "code": "p1g0sl1j2",
+   "code": "p1g0sl1j4",
    "keep": "best"
   },
   "fish-s191-cand-396491738": {
@@ -175,12 +175,15 @@
    "keep": "best"
   },
   "fish-s191-cand-435944127": {
-   "code": "o1g1mmk2",
+   "code": "p1g1ml13",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.25,
+    0.08,
+    0.75,
+    0.44
    ],
-   "note": "a pale parrotfish with a dark eye line, two thirds its size, below it: maybe another genus, confusion possible"
+   "note": "crop: the pale parrotfish below leaves the frame (Q430)"
   },
   "fish-s191-cand-658737674": {
    "code": "p1g2sm13",

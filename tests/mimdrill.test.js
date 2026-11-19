@@ -67,7 +67,7 @@ function model(G, {bar = {}, met = () => true, conf = {}} = {}) {
     imrFormsOf: () => [],
     CONF: {TRAP: 0.2}
   };
-  const out = '\nreturn {mimUnit, drawHas, mimSide, mimKeep, mimPairs, plausibleK, mimTrap, pgLook};',
+  const out = '\nreturn {mimUnit, mimMix, drawHas, mimSide, mimKeep, mimPairs, plausibleK, mimTrap, pgLook};',
     make = new Function(...Object.keys(stubs), code + out);
   return make(...Object.values(stubs));
 }
@@ -87,6 +87,60 @@ test('mimUnit: the unit at the rank asked of the species a photo of the class re
   const I = model(units(entry('all', ['s:s2', 'g:B1', 'f:A'])));
   assert.strictEqual(I.mimUnit('f:A', juv1), null);
   assert.strictEqual(I.mimUnit('g:A1', juv1), 'g:B1');
+});
+
+test('mimMix: a mix-up between the two species of a pair, both ways, at the rank asked; never an ordinary miss', () => {
+  const e = entry(),
+    M = model(units(e)),
+    ad2 = LB.find(p => p.sp === 's2' && !p.ph),
+    juv2 = LB.find(p => p.sp === 's2' && p.ph),
+    s3 = LB.find(p => p.sp === 's3');
+  // A photo of the class taken for the species it resembles, at every rank
+  assert.strictEqual(M.mimMix('f:A', juv1, 'f:B'), e);
+  assert.strictEqual(M.mimMix('g:A1', juv1, 'g:B1'), e);
+  assert.strictEqual(M.mimMix('s:s1', juv1, 's:s2'), e);
+  // The species resembled taken for the class's unit (the other side of its duel and Again)
+  assert.strictEqual(M.mimMix('f:B', ad2, 'f:A'), e);
+  assert.strictEqual(M.mimMix('s:s2', juv2, 's:s1'), e);
+  // Never: an ordinary miss, the other answer at another rank, a right answer, no answer, no photo
+  assert.strictEqual(M.mimMix('f:A', juv1, 'f:C'), null, 'another family');
+  assert.strictEqual(M.mimMix('f:B', ad2, 'f:C'), null);
+  assert.strictEqual(M.mimMix('f:A', juv1, 'g:B1'), null, 'another rank');
+  assert.strictEqual(M.mimMix('f:A', juv1, 'f:A'), null, 'right');
+  assert.strictEqual(M.mimMix('f:A', juv1, ''), null, 'I don’t know');
+  assert.strictEqual(M.mimMix('f:A', undefined, 'f:B'), null, 'no photo');
+  // Nor a photo of neither species at the stage that resembles: an adult of the side whose juveniles resemble, another
+  // species of either family
+  assert.strictEqual(M.mimMix('f:A', ad1, 'f:B'), null);
+  assert.strictEqual(M.mimMix('f:A', s0, 'f:B'), null);
+  assert.strictEqual(M.mimMix('f:B', s3, 'f:A'), null);
+  // The side resembled at its juvenile stage only: its adults are no mix-up of the pair
+  const J = entry('juvenile'),
+    MJ = model(units(J));
+  assert.strictEqual(MJ.mimMix('f:B', ad2, 'f:A'), null);
+  assert.strictEqual(MJ.mimMix('f:B', juv2, 'f:A'), J);
+  // A pair inside one family: nothing at the family (the answer is right), the genera still apart
+  const I = entry('all', ['s:s2', 'g:B1', 'f:A']),
+    MI = model(units(I));
+  assert.strictEqual(MI.mimMix('f:A', juv1, 'f:A'), null);
+  assert.strictEqual(MI.mimMix('g:A1', juv1, 'g:B1'), I);
+  // Two pairs on one family resembling the same species, one of its juveniles, one of every photo: a juvenile of the
+  // species resembled takes the pair that names its juveniles, an adult the other
+  const G = units(),
+    eAll = {...entry('all'), pair: {id: 'X1', b: 's2', st: {a: 'juvenile', b: 'all'}}},
+    eJuv = {...entry('juvenile'), pair: {id: 'X2', b: 's2', st: {a: 'juvenile', b: 'juvenile'}}};
+  G['f:A'].mim = [eAll, eJuv];
+  const M2 = model(G);
+  assert.strictEqual(M2.mimMix('f:B', juv2, 'f:A').pair.id, 'X2');
+  assert.strictEqual(M2.mimMix('f:B', ad2, 'f:A').pair.id, 'X1');
+});
+
+test('mimMix is the feedback only: the draw, the scoring and the Again never read it (quiz.js)', () => {
+  const uses = QSRC.split('\n').filter(l => /mimMix\(/.test(l) && !/^\s*\/\//.test(l));
+  assert.strictEqual(uses.length, 1, 'one call, in answer()');
+  assert.match(uses[0], /const mx = good \? null : tap \? mimMix\(c, tap, target\) : mimMix\(target, seenPh\[0\], c\);/);
+  assert.ok(!/rematchAdd\([^)]*\bmx\b/.test(QSRC) && !/recordAnswer\(\{[^}]*\bmx\b/.test(QSRC), 'no Again, no record reads it');
+  assert.ok(!/mimMix/.test(rd('core.js')), 'nothing in the progress engine');
 });
 
 test('mimTrap: in the place of the weakest trap, or the one of its label; plausible and a look-alike there', () => {
@@ -199,6 +253,7 @@ function plan({traps = 1, typed = false, ex = null, metB = true, photo = {f: 'j'
       openChance: () => 0,
       openPick: L => L[0],
       openRecent: () => [],
+      openDue: () => [],
       asked: () => true,
       nextTarget: () => 'f:A',
       customDraw: null,

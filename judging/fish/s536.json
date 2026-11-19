@@ -9,7 +9,7 @@
    "keep": "best"
   },
   "fish-s536-cand-269186307": {
-   "code": "p1g1sssj1",
+   "code": "p1g1sssj2",
    "keep": "best"
   },
   "fish-s536-cand-269186371": {
@@ -169,7 +169,7 @@
    "keep": "dup"
   },
   "fish-s536-cand-532578929": {
-   "code": "p1g1smsj2",
+   "code": "p1g1smsj3",
    "keep": "best"
   },
   "fish-s536-cand-433386268": {
@@ -201,15 +201,15 @@
    "keep": "dup"
   },
   "fish-s536-cand-625222959": {
-   "code": "p1g0smoj2",
+   "code": "p1g0smoj4",
    "keep": "best"
   },
   "fish-s536-cand-254463015": {
-   "code": "p1g1sssj1",
+   "code": "p1g1sssj3",
    "keep": "best"
   },
   "fish-s536-cand-320154578": {
-   "code": "h0g0sm1j1",
+   "code": "h0g0sm1j2",
    "keep": "best"
   },
   "fish-s536-cand-349146032": {
@@ -237,12 +237,15 @@
    "keep": "dup"
   },
   "fish-s536-cand-81385287": {
-   "code": "o1g1mmk2",
+   "code": "o1g1ml12",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.3,
+    0.41,
+    0.72,
+    0.82
    ],
-   "note": "a yellow goby sits on the bottle, half the damselfish's size and sharp: confusion possible"
+   "note": "crop: the yellow goby on the bottle leaves the frame (Q430)"
   },
   "fish-s536-cand-667300647": {
    "code": "p1g0sl15",

@@ -402,6 +402,22 @@ const mimUnit = (t, p) => {
     u = m ? m.m.find(x => GX(x) && rankOf(x) === rankOf(t)) : null;
   return u && u !== t ? u : null;
 };
+// mimMix: the entry of the mimicry pair a wrong answer c mixed up on photo p of unit t (the answer's feedback shows its
+// marks, quiz.js fbLine): p of either species of the pair at the stage that resembles, c the other species' unit at t's
+// rank; null otherwise (a right answer, none, an ordinary miss, a pair inside one unit). Both ways: a photo of the class
+// taken for the species it resembles (mimUnit), or a photo of the species resembled (the other side of its duel and
+// Again) taken for the class's unit, a pair that names that species' juveniles first when the photo is one (the cleaner
+// wrasse's young, resembled by one blenny's young, all of it by another's). The feedback only: the draw and the scoring
+// read mimUnit.
+const mimMix = (t, p, c) => {
+  if (!p || !c || c === t || !GX(c) || rankOf(c) !== rankOf(t)) return null;
+  if (mimUnit(t, p) === c) return mimOf(t, p);
+  const juv = m => (m.pair.st || {}).b === 'juvenile',
+    L = ((GX(varHome(c)) || {}).mim || []).filter(
+      m => m.u.includes(c) && m.m.includes(t) && p.sp === m.pair.b && (!juv(m) || phaseOf(p) === 'juvenile')
+    );
+  return L.find(juv) || L[0] || null;
+};
 // Whether unit n's draw gives some photo keep accepts a weight now (varOf: the variants' and the class's ramps), so a
 // drill kept to such photos never shows one its unit still holds back (photoSet draws at random when all weigh 0).
 const drawHas = (n, keep) => {
@@ -702,8 +718,13 @@ const openRecent = (at = answersSoFar()) =>
 // soon: the genera of the questions already on screen or planned before this one (quiz.js planNext), asked by then.
 const openPace = (at = answersSoFar(), soon = []) => {
   const L = openRecent(at);
-  return L.length < OPEN.MAX && L.every(n => asked(n) || soon.includes(n));
+  return L.length < OPEN.MAX && L.every(n => askedOpen(n) || soon.includes(n));
 };
+// The genera opened on a card in the last OPEN.WIN answers whose question is still to come once they are ready (quiz.js
+// planPhoto, tools/ratedworld.js): the question asks one of them first, so the opening's pace is openPace's ceiling, not
+// the luck of the draw. list: the units in play; soon as openPace's.
+const openDue = (at, list, soon = []) =>
+  openRecent(at).filter(n => !askedOpen(n) && !soon.includes(n) && introReady(n) && list.includes(n));
 // An opening only after a right answer (docs/LEARNING.md "An opening only after a right answer": a new genus must not
 // feel like a reward for a miss): the path opens a genus only when the last graded answer was right, or there was none;
 // the opening is deferred, not lost. Every graded answer counts, whatever the game: the global record's recent results
@@ -925,13 +946,37 @@ const introAdd = (L, start, kind = start ? 's' : 'c') => {
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
-// Closed again by "One at a time" (introBack, below): kind 'b' wins over the answers already given until a card (or Open
-// all) opens the genus again and replaces the mark.
+// Asked since the path opened it: an answer at or after the time of its entry (the card, the first cards, Open all: e[2]),
+// read from the unit's last answer (s.at, answeredAt; the replay keeps the later of the two). The readers that wait for
+// the card's own question (openPace, openDue, introReady, the circles' and the bonus offer's "every unit asked", the
+// all-met card) read this, not asked: a live game's answers before the card (introLive; rule L4) and those before a card
+// that reopens a unit closed by One at a time count as evidence, never as the card's question. An entry with no time,
+// or a record with no s.at (both older): any answer, as asked.
+const askedOpen = n => {
+  if (!asked(n)) return false;
+  const e = introMap()[n],
+    at = (P[n] || {}).at;
+  return !e || !(Number(e[2]) > 0) || typeof at !== 'number' || at >= e[2];
+};
+// Closed again by "One at a time" (introBack, below), or answered in another mode before the path opened it (introLive,
+// below): kind 'b' wins over the answers already given until a card (or Open all) opens the genus again and replaces
+// the mark; the unit keeps its answers.
 const closed = n => (introMap()[n] || [])[3] === 'b';
+// A live game's answer on a unit the path has not opened (live.js liveLog; rule L4: another mode's answers count as
+// evidence on a locked unit, never opening it): the unit gets the closed mark 'b' with no time (0), so its answers
+// count and it waits for its card. With no time, the mark never replaces an entry another device holds and any timed
+// opening replaces it (introMerge); One at a time's own marks carry their time. Nothing for a unit already met (a card,
+// an answer, Open all) or closed.
+const introLive = n => {
+  if (introduced(n) || closed(n)) return;
+  const m = introMap();
+  m[n] = [answersSoFar(), 0, 0, 'b'];
+  store.set(INTRO.KEY, m);
+};
 const introduced = n => !closed(n) && (asked(n) || n in introMap());
 const introReady = n => {
   if (closed(n)) return false;
-  if (asked(n)) return true;
+  if (askedOpen(n)) return true;
   const e = introMap()[n];
   return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
 };
@@ -1010,7 +1055,8 @@ function introMerge(m, o) {
     // A genus closed by "One at a time" ('b') on one device is closed here too, and one opened again since by its card
     // on one device is open here too: between a mark and an opening, the later one (its time) wins. A card ('c') later
     // than an Open all ('a') can only be a reopening after a 'b' mark, so it is kept too: a delayed 'b' older than that
-    // reopening must not close the genus again (a@100, then c@300, then b@200).
+    // reopening must not close the genus again (a@100, then c@300, then b@200). A live game's mark (introLive: 'b' with
+    // no time) is older than any timed entry: it never replaces one, and any timed opening replaces it.
     const later = (h, e) => (e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0);
     let open = false; // a genus closed or reopened here: the questions planned ahead may be about it (or offer it)
     Object.entries(m).forEach(([n, e]) => {
@@ -1286,7 +1332,9 @@ const recallAt = (n, t = Date.now(), last = lastAt()) => {
 };
 const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
-const cbPlay = () => [...slateGenera(), ...bonusList()];
+// A unit closed (a live game's answers before its card, model.js introLive; One at a time) is neither: its answers do not
+// start a comeback, whose floor would hold back the first cards while no unit is open (rule L4).
+const cbPlay = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
 const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
 // Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
 // its gap starts a comeback; a gap during a comeback adds to it.
@@ -1348,13 +1396,18 @@ function comebackStep(R, th, d, k, good) {
   cbSave();
 }
 // The times an answer leaves in the progress: the genus's last answer and days answered right, the player's last answer.
+// now: when it was given (a live answer recorded later, quiz.js recordAnswer at); a later answer's time is kept, so an
+// answer recorded late never reads as given after a card shown since (askedOpen).
 function answeredAt(s, good, now = Date.now()) {
-  s.at = now;
-  if (good && s.dl !== dayNo(now)) {
+  s.at = Math.max(Number(s.at) || 0, now);
+  // A day counts once, and only after the last one counted: an answer recorded late on an earlier day neither counts
+  // it again nor moves the last day back (Codex review #1234).
+  const d = dayNo(now);
+  if (good && !(s.dl >= d)) {
     s.dd = (s.dd || 0) + 1;
-    s.dl = dayNo(now);
+    s.dl = d;
   }
-  if (P[LEVEL]) P[LEVEL].at = now;
+  if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)

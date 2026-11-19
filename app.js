@@ -618,7 +618,7 @@ function build() {
   DATAON = on;
   DATAST = on ? structStamp(S, RAW, CUR) : '';
   // An edited ID tip's source, shown under the tips wherever they are (tipsList qsrc; rule C2).
-  [d.gen, (d.x || {}).gen].forEach(G => Object.values(G || {}).forEach(g => g && g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
+  [d.gen, (d.x || {}).gen].forEach(G => Object.values(G || {}).forEach(tipsEdited));
   applyCuration(d, CUR);
   applyForms(d, CUR);
   applySlots(d, CUR, {picks: PICKS, autoq: AUTOQ});
@@ -2066,7 +2066,7 @@ const treeGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
   const c1 = TREEU ? TREEU.c1 : [];
-  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!TREEU && treeC3();
+  return c < 3 ? c1.every(x => askedOpen(x) && introduced(x)) : !!TREEU && treeC3();
 };
 // Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
 // c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3
@@ -2263,7 +2263,7 @@ const UNITS = {
       {
         k: 'bon',
         units: () => BONUS.filter(n => GX(n)),
-        due: () => slateGenera().every(n => asked(n) && introduced(n)), // a genus closed again by "One at a time" (model.js introBack) waits for its card first
+        due: () => slateGenera().every(n => askedOpen(n) && introduced(n)), // a genus closed (model.js introBack, introLive) waits for its card and its question
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
         body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
@@ -2643,15 +2643,16 @@ const setLater = n => {
 // (model.js sharesNow).
 const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...(S.auto ? S.auto() : [])] : []));
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
-// its units already opened on a card (players whose circle 3 once opened by itself keep it). A unit of a part that is
-// off never opens (model.js mayOpen); one already open stays open.
+// its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
+// answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
+// is off never opens (model.js mayOpen); one already open stays open.
 // (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never).
 const opensNow = () => UNITS[SUBJ.id].opens || [];
 const openOf = (S, full) => {
   const L = S.units(),
     m = introMap();
   return openState(Q, S.k, {
-    met: L.some(n => n in m),
+    met: L.some(n => n in m && !closed(n)),
     due: full && S.due(),
     left: full && L.some(n => !introduced(n)),
     at: full ? answersSoFar() : 0
@@ -2718,10 +2719,14 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
-// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera; a bonus genus's
+// ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
+// Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
 const tipsLabel = g =>
   g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
+// A genus whose tips the content editor replaced, with a source of his own: it shows under them (qsrc), and the heading
+// made for the genera the lecture skips (tl) stops naming the Coral Finder as their source.
+const tipsEdited = g => g && g.esrc && g.esrc.qt && ((g.qsrc = g.esrc.qt), g.tl && (g.tl = 'ID tips'));
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';

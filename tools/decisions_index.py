@@ -8,8 +8,10 @@
 A row is | date | [title](file) | #PR |: the title is the record's first line, the date and the PR its "Date: … PR: #N"
 line (docs/decisions/README.md "What a record holds"). Rows are sorted by date, newest first, then by file name, so a
 PR's new row lands at its topic's place in its day's block, not at the top where every other PR of the day adds
-one: two PRs collide only when their topics sort next to each other. A conflict in the index is never hand-merged:
-merge main, then run --fix. Offline, standard library only.
+one: two PRs collide only when their topics sort next to each other. The whole index is in README.md, one row per
+record: it grows by a row per record, and its size mark only warns (docs/decisions/2026-11-19-doc-size-marks.md).
+The retired OLDER.md (the split index of #1246) is never a record: --check fails while it exists, --fix deletes it.
+A conflict in the index is never hand-merged: merge main, then run --fix. Offline, standard library only.
 """
 import argparse
 import os
@@ -19,13 +21,15 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEADER = '| Date | Record | PR |\n|---|---|---|\n'
 NAME = re.compile(r'^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$')
+RETIRED = 'OLDER.md'  # the older rows of the split index; the whole index is back in README.md
+NOT_RECORDS = ('README.md', RETIRED)
 
 
 def records(folder):
     """(date, file, title, pr) of every record; raises SystemExit naming a record without its title or its line."""
     out, bad = [], []
     for f in sorted(os.listdir(folder)):
-        if f == 'README.md' or not f.endswith('.md'):
+        if f in NOT_RECORDS or not f.endswith('.md'):
             continue
         with open(os.path.join(folder, f), encoding='utf-8') as fh:
             text = fh.read()
@@ -73,12 +77,20 @@ def main(argv=None):
     with open(path, encoding='utf-8') as f:
         readme = f.read()
     before, rows, after = split(readme)
-    if rows == want:
-        return 0
+    retired = os.path.join(folder, RETIRED)
     if a.fix:
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(before + want + after)
-        print('docs/decisions/README.md: index rewritten (%d rows)' % want.count('\n'))
+        if os.path.exists(retired):
+            os.remove(retired)
+            print('docs/decisions/%s: deleted (the whole index is in README.md)' % RETIRED)
+        if rows != want:
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(before + want + after)
+            print('docs/decisions/README.md: index rewritten (%d rows)' % want.count('\n'))
+        return 0
+    if os.path.exists(retired):
+        print('docs/decisions/%s is retired: the whole index is in README.md; run python3 tools/decisions_index.py --fix' % RETIRED)
+        return 1
+    if rows == want:
         return 0
     have, need = rows.splitlines(), want.splitlines()
     k = next((i for i in range(max(len(have), len(need))) if i >= len(have) or i >= len(need) or have[i] != need[i]), 0)

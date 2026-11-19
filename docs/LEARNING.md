@@ -352,8 +352,11 @@ while `OPEN.K` units met are shaky). Only units open now take a place: one close
 `model.js` `OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200}`.
 
 **Opening pace** (`model.js` `openRecent`, `openPace`): no new unit while one opened on a card in the last `OPEN.WIN`
-answers has not been asked yet, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15 answers at
-most, whatever `openChance` says. A unit opened on its card and not asked yet is asked as soon as it is ready.
+answers has not been asked since its card, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15
+answers at most, whatever `openChance` says. A unit opened on its card and not asked since is asked as soon as it is
+ready (`openDue`). "Asked since its card" (`askedOpen`: an answer at or after the card's time) is what every reader
+waiting for a card's question reads (the pace, readiness, the fish circle 2, the bonus offer, the all-met card): answers
+given before the card (a live game's, those before a card that reopens a unit) are evidence, never its question.
 
 ### A unit stuck shaky
 
@@ -425,7 +428,8 @@ it shows.
 Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
 drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
 and opens none (rule L4); wrong choices may name any unit, as the quiz's do. A live game asks the trainer's set; its
-answers on units not unlocked are skipped (rule L4 lets them count, opening nothing: not built yet).
+answers on units not unlocked count and open nothing (rule L4): the unit is marked closed (`model.js` `introLive`: the
+mark of One at a time with no time) until the path opens it on its card, with its answers.
 
 ### The first-launch question
 
@@ -464,8 +468,8 @@ some recall, and the first answers after it measure how much.
   `recallOf`). **Stability** S, in days: from `FSRS.S0` to `FSRS.S1`, log-linear in x = σ(ability − genus offset) (1
   once learned), times `FSRS.G` for each further day the unit was answered right (`s.dd`: spaced days count, not answers
   in one sitting; `model.js` `stability`). `model.js` `FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5}`.
-- **Rust**: the right answers the break is expected to have cost, summed over the units answered (`model.js`
-  `rustOf`, `rustNow`). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
+- **Rust**: the right answers the break is expected to have cost, summed over the units answered and not closed
+  (`model.js` `rustOf`, `rustNow`, `cbPlay`: a live game's units before their card start no comeback). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
   left rust.
 - **Its questions** (`model.js` `comebackOf`): units answered right, the surest half until one is right in this
   comeback, then the most rusted half; the player's usual choices; photos aimed at ability + ln R; no card, duel, exam
@@ -762,8 +766,18 @@ so the trap arrives with its explanation. Why and who decided: the
     other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), never, as on the card, a photo taken
     outside the region of a species flagged regional; only while that side's draw holds one now (`drawHas`), else any
     photo of the unit.
-- **Not built yet** (ROADMAP "Look-alike pairs between species"): family pairs, the Look-alikes deck for every subject,
-  the admin's ⚠ badge and its lift, the feature frames' default.
+- **Its marks after a mix-up** ([decision](decisions/2026-11-19-mimicry-marks-feedback.md)): a miss that takes a photo
+  of one species of the pair, at the stage that resembles, for the other species' unit at the rank asked, either way
+  (`model.js` `mimMix`; in Find the X, the photo tapped taken for the name asked), makes the feedback sheet's one line
+  ([spec/quiz.md](spec/quiz.md) "The feedback sheet") from the pair's marks (`quiz.js` `mimMarks`, `fbLine`): the first
+  mark of each side, the photo's species first, each species by the name the player sees first, as on the card, "(juvenile)"
+  after it when the pair names that side's juveniles (its `st`, never the mark's words): "Pacific mimic surgeon
+  (juvenile): A scalpel on the tail base, as every surgeonfish · Pearl-scaled angelfish: A large spine at the lower edge
+  of the cheek", their sources small after it (`mimSrc`); a side with no mark left out, a pair with no marks keeps
+  the usual line. More opens on the pair's other marks, then the units' own pair line. The feedback only: the draw, the
+  scoring, the Again and the log stay as above (no rules version). Any tree subject's pairs take this path (`mimLay`).
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): the reverse trap, Find the X on the pair, family
+  pairs, the Look-alikes deck for every subject, the admin's ⚠ badge and its lift, the feature frames' default.
 
 Its level-1 checks are in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check", "The
 mimicry pairs drilled: the level-1 check").
@@ -1289,9 +1303,9 @@ levels are learnsim's `lectureRA` and `strongRA` (the first-launch answer "IMR c
 | Profile | Who | Corals | Fish |
 | --- | --- | --- | --- |
 | Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
-| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
-| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water |
-| Strong RA | an RA with practice behind the lecture | the IMR lecture groups, in the course's order, until 60% of the slate is covered, at 85%; the others 10% | the IMR families and their genera well known; both names |
+| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little, and the commonest species of each; common names only |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; the cheatsheet's 24 species a little less; both names; the IMR genera from Open Water |
+| Strong RA | an RA with practice behind the lecture | the IMR lecture groups, in the course's order, until 60% of the slate is covered, at 85%; the others 10% | the IMR families and their genera well known; the cheatsheet's species and the 3 commonest of each IMR family a little less; both names |
 | Expert | knows nearly everything | every genus at 93% | every family, genus and species at 93%; both names |
 
 Built in `tools/learnprof.js` (one list, loaded by learnsim in Node and in the page; the rated world reads the same list),
@@ -1302,9 +1316,16 @@ of the slate is covered, at 0.85; the others 0.1. Fish: the lecture RA knows the
 genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others 0.1; the expert
 every family, genus and species at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most common
 families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at 0.02,
-and declines the scientific names (Not now on the set's offer). In both worlds the species units start at a profile's
-low value. First-launch answer with `--choice auto`: the beginner and the casual diver "new", the lecture RA "imr", the
-others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
+and declines the scientific names (Not now on the set's offer). The species units (by common name), in both worlds
+(`sp`, `knownSpecies`): the lecture RA knows the 24 most sighted of the IMR course PDF's cheatsheet (`fish.json` `cs`)
+at 0.4; the strong RA those and the first 3 of each circle-1 family in its order (the commonness order they open in)
+at 0.7; the casual diver the first of each family it knows at 0.3; the expert all at 0.93; the others start at the
+profile's low value, so a species starting from its family's ability is still met. `--spknow off`: every species at
+the low value, as before (a paired run against a version without them passes it to both arms). These fish values are
+assumptions, not fits: on 2026-11-19 the real log had no species answer, 5 players with 200 fish answers or more, and
+right rates set by the draw's target (ROADMAP "Simulated profiles fitted to real players"). First-launch answer
+(`learnprof.js` `choice`, with `--choice auto` and in the rated world): the beginner and the casual diver "new", the
+lecture RA "imr", the others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
 (knows 4 genera in 5 well, the rest hardly) and `spotty` (knows the genera of some IMR lecture groups as an expert does,
 the others hardly).
 

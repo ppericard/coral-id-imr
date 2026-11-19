@@ -25,7 +25,7 @@
    "keep": "best"
   },
   "fish-s240-cand-682792036": {
-   "code": "p1g1sl1j2",
+   "code": "p1g1sl1j3",
    "keep": "best"
   },
   "fish-s240-cand-682792180": {
@@ -121,7 +121,7 @@
    "keep": "dup"
   },
   "fish-s240-cand-597650869": {
-   "code": "p1g1sm1j2",
+   "code": "p1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-269000125": {
@@ -129,27 +129,27 @@
    "keep": "best"
   },
   "fish-s240-cand-341450858": {
-   "code": "o1g1sm1j2",
+   "code": "o1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-301085009": {
-   "code": "o1g1sm1j2",
+   "code": "o1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-270474816": {
-   "code": "o1d1sm1j2",
+   "code": "o1d1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-382267572": {
-   "code": "p1g1ss1j1",
+   "code": "p1g1ss1j2",
    "keep": "best"
   },
   "fish-s240-cand-171677386": {
-   "code": "p1g1sl1j2",
+   "code": "p1g1sl1j4",
    "keep": "best"
   },
   "fish-s240-cand-342178240": {
-   "code": "o1g1sm1j2",
+   "code": "o1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-342178234": {
@@ -169,8 +169,21 @@
    "keep": "best"
   },
   "fish-s240-cand-555852573": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1sl14",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.24,
+    0.65,
+    1.0
+   ],
+   "bb": [
+    0.0,
+    0.25,
+    0.6,
+    1.0
+   ],
+   "note": "crop: the checkerboard wrasse above leaves the frame (Q430)"
   },
   "fish-s240-cand-682554473": {
    "code": "p1d2sms2",
@@ -222,7 +235,7 @@
    "keep": "dup"
   },
   "fish-s240-cand-173339484": {
-   "code": "p1g1sm1j2",
+   "code": "p1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-45959970": {
@@ -298,23 +311,23 @@
    "keep": "best"
   },
   "fish-s240-cand-546890323": {
-   "code": "o1g1ss1j2",
+   "code": "o1g1ss1j3",
    "keep": "best"
   },
   "fish-s240-cand-539481613": {
-   "code": "p1g1ss1j1",
+   "code": "p1g1ss1j2",
    "keep": "best"
   },
   "fish-s240-cand-695071106": {
-   "code": "o1g1sl1j2",
+   "code": "o1g1sl1j3",
    "keep": "best"
   },
   "fish-s240-cand-605075067": {
-   "code": "p1g1sm1j2",
+   "code": "p1g1sm1j3",
    "keep": "best"
   },
   "fish-s240-cand-530620006": {
-   "code": "p1g1ss1j1",
+   "code": "p1g1ss1j3",
    "keep": "best"
   }
  }

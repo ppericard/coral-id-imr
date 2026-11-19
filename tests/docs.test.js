@@ -9,6 +9,10 @@ const test = require('node:test'),
   crypto = require('crypto');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+// A doc's size mark is a warning, never a wall (Pierre, 2026-11-19; docs/decisions/2026-11-19-doc-size-marks.md): past it
+// the test passes and says so; the PR then checks that everything in the doc belongs there and, if so, raises the mark.
+const MARK_ASK = ': is everything in it in its place? If so, raise its mark in the same PR (tests/docs.test.js)';
+const warnMark = (t, msg) => t.diagnostic('MARK ' + msg + MARK_ASK);
 // The specification files ARCHITECTURE.md's map sections point to (docs restructuring of 2026-11-18, PR 4).
 const SPECS = fs
   .readdirSync(path.join(ROOT, 'docs', 'spec'))
@@ -44,9 +48,9 @@ test('the docs never tell a PR to bump version numbers by hand', () => {
 // copied reviews are history and keep their words).
 const STATUS = read('docs/STATUS.md');
 
-test('docs/STATUS.md exists, has its sections and stays within its budget', () => {
+test('docs/STATUS.md exists and has its sections; past its line mark it warns', t => {
   const lines = STATUS.split('\n').length;
-  assert.ok(lines <= 100, 'docs/STATUS.md has ' + lines + ' lines: at most about 100 (overwrite it, never append)');
+  if (lines > 100) warnMark(t, 'docs/STATUS.md has ' + lines + ' lines, past its mark of 100 (it is overwritten, never appended)');
   assert.match(STATUS, /^Last checked: reports and events: .+$/m, 'docs/STATUS.md: the "Last checked: reports and events" line');
   for (const h of ['Now', 'Next', 'Questions for Pierre', "Pierre's hands", 'Parked after hours', 'Last stop'])
     assert.ok(new RegExp('^## ' + h + '$', 'm').test(STATUS), 'docs/STATUS.md: section "## ' + h + '" missing');
@@ -206,16 +210,20 @@ const TEXT_FILES = (() => {
   return out;
 })();
 
-test('AGENTS.md stays within its size budget', t => {
+// The one hard size limit: Codex reads only the first 32 KiB of AGENTS.md by default, so past 30 KB its tail is lost.
+test('AGENTS.md stays under 30 KB (Codex reads its first 32 KiB); past its 20 KB mark it warns', t => {
   const kb = Buffer.byteLength(AGENTS) / 1024;
-  assert.ok(kb <= 30, 'AGENTS.md is ' + kb.toFixed(1) + ' KB: 30 KB at most (target 20 KB; move details to docs/rules/)');
-  if (kb > 20) t.diagnostic('AGENTS.md is ' + kb.toFixed(1) + ' KB, above its 20 KB target: move details to docs/rules/');
+  assert.ok(
+    kb <= 30,
+    'AGENTS.md is ' + kb.toFixed(1) + ' KB: Codex reads only its first 32 KiB, so 30 KB at most (move details to docs/rules/)'
+  );
+  if (kb > 20) warnMark(t, 'AGENTS.md is ' + kb.toFixed(1) + ' KB, past its 20 KB mark');
 });
 
-// AGENTS.md is the core every agent loads (#1200, Q425 B): kept short in lines too, since each line is read in every task.
-test('AGENTS.md, the core, stays within its line budget', () => {
+// AGENTS.md is the core every agent loads (#1200, Q425 B: a short core): each line is read in every task.
+test('AGENTS.md, the core: past its line mark it warns', t => {
   const n = AGENTS.split('\n').length - 1;
-  assert.ok(n <= 160, 'AGENTS.md has ' + n + ' lines: 160 at most (the core; details go to docs/rules/)');
+  if (n > 160) warnMark(t, 'AGENTS.md has ' + n + ' lines, past its mark of 160 (the core; details go to docs/rules/)');
 });
 
 // A retired rule ID is never reused nor cited alone; a range that spans it (W12-W27) skips it.
@@ -591,21 +599,23 @@ test('every answer in the ledger names its doc, and nothing answered is cited as
   );
 });
 
-// Size and line-length budgets: every living doc is bounded in bytes and in its longest line, so a doc cannot grow back
-// without a PR saying so. Each budget is the doc's size a little above its size on main when the budget was set (about 5 %
-// in bytes, rounded up to the KB; about 5 % in the longest line, rounded up to ten), so today's docs pass and growth is
-// caught. A budget is lowered when a doc is cut, never raised without a reason in the PR. [KB, longest line in characters];
-// a null KB leaves the size to the doc's own test above (AGENTS.md).
-const DOC_BUDGET = {
+// Size and line-length marks (docs/decisions/2026-11-19-doc-size-marks.md): every living doc has a mark in bytes and in
+// its longest line, so a doc that grows is noticed, never blocked. The marks were set a little above each doc's size when
+// they came in (#1144, after the docs audit found ARCHITECTURE and LEARNING grown past 700 KB as changelogs): arbitrary
+// numbers, not limits. Past a mark the test warns (MARK in its output; tools/brief.py lists them too) and the PR checks
+// the doc: history, versions and duplicates go (rule W19), what belongs there stays, and the mark is raised. A mark is
+// lowered when a doc is cut. [KB, longest line in characters]; a null KB leaves the size to AGENTS.md's own test above.
+// tools/brief.py reads this block (its entries one per line, as below): keep the format.
+const DOC_MARKS = {
   'AGENTS.md': [null, 980],
   'CLAUDE.md': [2, 240],
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
   'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
-  'docs/ROADMAP.md': [117, 1360],
+  'docs/ROADMAP.md': [128, 1600], // a row keeps what is left and the figures to decide on, however long (2026-11-19)
   'docs/HANDOVER.md': [23, 3140],
-  'docs/INTEGRATOR.md': [22, 210],
+  'docs/INTEGRATOR.md': [24, 210], // + the habit for a doc past its mark (2026-11-19)
   'docs/ANSWERS.md': [200, 200], // append-only ledger: it grows by an entry per answer, never cut
   'docs/BACKUP.md': [13, 150],
   'docs/DATA.md': [10, 410],
@@ -637,16 +647,17 @@ const DOC_BUDGET = {
   'docs/spec/fish-game.md': [12, 130],
   'docs/spec/fish-sheets.md': [10, 130],
   'docs/spec/seaslugs.md': [12, 130],
-  'docs/spec/tools.md': [47, 130],
+  'docs/spec/tools.md': [49, 130], // + brief.py's marks line (2026-11-19)
   'docs/spec/analyses.md': [26, 130],
   'docs/spec/analyses-method.md': [34, 130], // moved from LEARNING.md, 2026-11-19
   'docs/spec/loading.md': [16, 130],
   'docs/spec/site.md': [7, 130],
+  'docs/spec/measured.md': [6, 130], // new, 2026-11-19 (Q434)
   'docs/spec/storage.md': [11, 240],
   'docs/spec/photos.md': [18, 130], // + "No more candidates", moved whole from the rules (its ID retired)
   'docs/spec/player-reports.md': [8, 130],
   'docs/spec/deploy.md': [6, 130],
-  'docs/decisions/README.md': [12, 200], // the index grows by a row per record (about 150 bytes): 12 KB from #1199
+  'docs/decisions/README.md': [16, 200], // the whole index: a row per record (about 190 bytes)
   'docs/rules/README.md': [9, 180], // the index of every rule, moved from AGENTS.md (#1200)
   'docs/rules/admin.md': [5, 230],
   'docs/rules/content.md': [9, 220],
@@ -667,45 +678,73 @@ const DOC_BUDGET = {
   'tools/README.md': [13, 280],
   'tools/sync/changes/README.md': [2, 130]
 };
-// A record has no entry of its own (every decision PR would add one): the same budget for each. A sheet script change
+// A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change
 // waiting for its version (tools/sync/changes/<branch>.md, one paragraph, removed at merge) likewise.
-const RECORD_BUDGET = [8, 200];
-const CHANGE_BUDGET = [8, 4000];
-// Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
-const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
-const budgetOf = f => {
+const RECORD_MARK = [8, 200];
+const CHANGE_MARK = [8, 4000];
+// No mark on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
+const DOC_UNMARKED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
+const markOf = f => {
   const key = f.split(path.sep).join('/');
-  if (DOC_BUDGET[key]) return DOC_BUDGET[key];
-  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_BUDGET;
-  return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
+  if (DOC_MARKS[key]) return DOC_MARKS[key];
+  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_MARK;
+  return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_MARK : null;
+};
+// What a doc's text says against its mark: one line per mark passed, [] within both.
+const pastMark = (f, src, m) => {
+  const kb = Buffer.byteLength(src) / 1024,
+    longest = Math.max(...src.split('\n').map(l => [...l].length)),
+    out = [];
+  if (m[0] !== null && kb > m[0]) out.push(f + ' is ' + kb.toFixed(1) + ' KB, past its mark of ' + m[0] + ' KB');
+  if (longest > m[1]) out.push(f + ' has a line of ' + longest + ' characters, past its mark of ' + m[1]);
+  return out;
 };
 
-test('every living doc has a size and line-length budget, and no budget names a doc that is gone', () => {
-  const living = LIVING_DOCS.filter(f => !DOC_UNBUDGETED.has(f));
+test('every living doc has a size and line-length mark, and no mark names a doc that is gone', () => {
+  const living = LIVING_DOCS.filter(f => !DOC_UNMARKED.has(f));
   assert.deepStrictEqual(
-    living.filter(f => !budgetOf(f)),
+    living.filter(f => !markOf(f)),
     [],
-    "living docs with no budget in DOC_BUDGET (add one a little above the doc's size)"
+    "living docs with no mark in DOC_MARKS (add one a little above the doc's size)"
   );
   assert.deepStrictEqual(
-    Object.keys(DOC_BUDGET).filter(f => !living.map(x => x.split(path.sep).join('/')).includes(f)),
+    Object.keys(DOC_MARKS).filter(f => !living.map(x => x.split(path.sep).join('/')).includes(f)),
     [],
-    'DOC_BUDGET entries for docs that are not living docs any more: delete them'
+    'DOC_MARKS entries for docs that are not living docs any more: delete them'
   );
 });
 
-test('every living doc stays within its size and line-length budget', () => {
-  const over = [];
+test('a doc past its mark warns and passes', () => {
+  const msgs = [];
+  const fake = {diagnostic: m => msgs.push(m)};
+  const doc = 'x'.repeat(2048) + '\n' + 'y'.repeat(140);
+  for (const m of pastMark('docs/X.md', doc, [1, 130])) warnMark(fake, m);
+  assert.deepStrictEqual(msgs, [
+    'MARK docs/X.md is 2.1 KB, past its mark of 1 KB' + MARK_ASK,
+    'MARK docs/X.md has a line of 2048 characters, past its mark of 130' + MARK_ASK
+  ]);
+  assert.deepStrictEqual(pastMark('docs/X.md', doc, [3, 2100]), [], 'within both marks: nothing');
+  assert.deepStrictEqual(pastMark('AGENTS.md', doc, [null, 2100]), [], 'a null KB: the size is not read here');
+});
+
+test('every living doc against its size and line-length mark: past one, a warning, never a failure', t => {
   for (const f of LIVING_DOCS) {
-    const b = budgetOf(f);
-    if (!b) continue; // the test above names it
-    const src = read(f),
-      kb = Buffer.byteLength(src) / 1024,
-      longest = Math.max(...src.split('\n').map(l => [...l].length));
-    if (b[0] !== null && kb > b[0]) over.push(f + ': ' + kb.toFixed(1) + ' KB, budget ' + b[0] + ' KB');
-    if (longest > b[1]) over.push(f + ': a line of ' + longest + ' characters, budget ' + b[1]);
+    const m = markOf(f);
+    if (m) for (const msg of pastMark(f.split(path.sep).join('/'), read(f), m)) warnMark(t, msg);
   }
-  assert.deepStrictEqual(over, [], 'docs over their budget: shorten or move history to a decision record, never raise the budget by habit');
+});
+
+// tools/brief.py lists the docs past their mark at the session start, from this file's DOC_MARKS block: it must read the
+// same marks and find the same docs past them.
+test('tools/brief.py reads the marks of this file and finds the docs past them as this test does', () => {
+  const {execFileSync} = require('child_process');
+  const py = 'import json,sys; sys.path.insert(0, "tools"); import brief; print(json.dumps(brief.doc_marks()))';
+  const got = JSON.parse(execFileSync('python3', ['-B', '-c', py], {cwd: ROOT}).toString());
+  assert.deepStrictEqual(got.marks, DOC_MARKS);
+  assert.deepStrictEqual([got.record, got.change], [RECORD_MARK, CHANGE_MARK]);
+  const pyPast = 'import json,sys; sys.path.insert(0, "tools"); import brief; print(json.dumps(brief.past_marks()))';
+  const want = LIVING_DOCS.flatMap(f => (markOf(f) ? pastMark(f.split(path.sep).join('/'), read(f), markOf(f)) : [])).sort();
+  assert.deepStrictEqual(JSON.parse(execFileSync('python3', ['-B', '-c', pyPast], {cwd: ROOT}).toString()).sort(), want);
 });
 
 // README.md and privacy.html name the subjects the app teaches and say which are in beta; both must follow core.js
