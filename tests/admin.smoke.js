@@ -5809,6 +5809,53 @@ async function loadPart(b, base, fails) {
       r = await info('demorep7');
       if (!r || !r.unit || !r.tiles.length || !r.coralTools || r.attach || r.page !== 'index.html#practice/quiz')
         fails.push(`To do › Reports, feedback from a game: ${JSON.stringify(r)}`);
+      // A flag clears itself when its photo leaves play, and one on a photo that no longer exists is no task (Pierre,
+      // 2026-11-20): a stale flag already in the draft is not listed nor counted; Remove clears the flag in the same
+      // step (Undo brings both back); the next save drops the stale ones. The draft is put back after.
+      {
+        await go('inbox/todo/reports');
+        const base = await p.evaluate(() => ({d: JSON.stringify(DRAFT), s: snap, h: HIST.length}));
+        const seed = await p.evaluate(() => {
+          const n = Object.keys(DATA.gen).find(g => photos(g).some(q => !hidden(g, q))),
+            f = photos(n).find(q => !hidden(n, q)).f,
+            at = new Date().toISOString();
+          flagsSet(DRAFT, ADM0, {
+            [f]: {genus: n, view: 'wide', where: 'smoke', at},
+            'zz-gone-1': {genus: n, view: 'wide', where: 'smoke', at}
+          });
+          snap = JSON.stringify(DRAFT); // the seeded draft is the step Remove comes after, as a click's own
+          render();
+          return {n, f};
+        });
+        const st = () =>
+          p.evaluate(() => ({
+            tiles: [...document.querySelectorAll('#view .adm-flagged [data-f]')].map(t => t.dataset.f),
+            open: flagsOpen(DRAFT, ADM0).map(x => x[0]),
+            kept: Object.keys(flagsOf(DRAFT, ADM0))
+          }));
+        let s = await st();
+        if (JSON.stringify(s.open) !== JSON.stringify([seed.f]) || s.tiles.includes('zz-gone-1') || !s.tiles.includes(seed.f))
+          fails.push(`${w}px To do › Flagged: a flag on a missing photo listed or counted ${JSON.stringify(s)}`);
+        await p.click(`#view .adm-flagged [data-f="${seed.f}"] [data-act="hide"]`);
+        await settle();
+        s = await st();
+        if (s.kept.length || s.tiles.length)
+          fails.push(`${w}px To do › Flagged: Remove left the flag (and the stale one) ${JSON.stringify(s)}`);
+        await p.evaluate(() => undo());
+        await settle();
+        s = await st();
+        if (JSON.stringify(s.kept) !== JSON.stringify([seed.f, 'zz-gone-1']) || !s.tiles.includes(seed.f))
+          fails.push(`${w}px To do › Flagged: Undo did not bring the flag back with the photo ${JSON.stringify(s)}`);
+        await p.evaluate(b => {
+          DRAFT = JSON.parse(b.d);
+          snap = b.s;
+          HIST.length = b.h;
+          FUT = [];
+          memoReset();
+          render();
+        }, base);
+        await settle();
+      }
       // The fish side: its reports and the feedback about no subject; the fish photo tools, the fish units' links.
       await go('fish/inbox/todo/reports');
       await p
@@ -5889,7 +5936,7 @@ async function loadPart(b, base, fails) {
       const cnt = await p.evaluate(() => ({
         view: +(((document.querySelector('#subnav a[href$="inbox/todo/reports"]') || {}).textContent || '').match(/\d+/) || [0])[0],
         open: document.querySelectorAll('#view .adm-rep[data-rs="open"]').length,
-        flags: Object.keys(flagsOf(DRAFT)).length
+        flags: flagsOpen(DRAFT).length
       }));
       if (cnt.view !== cnt.open + cnt.flags) fails.push(`To do › Reports, fish: the count ${JSON.stringify(cnt)}`);
       await go('inbox/todo/reports');
