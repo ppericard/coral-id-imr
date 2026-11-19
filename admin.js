@@ -713,20 +713,40 @@ async function ghFile(path) {
   if (!f) return null;
   return {text: f.content ? fromB64(f.content) : await blobText(f.sha), sha: f.sha};
 }
+// Is this text the blob of that sha? A git blob's sha is the SHA-1 of "blob <bytes>\0" and the bytes. This text is the base
+// Publish merges on: a reply that is not the file (an error page, a JSON envelope) must never stand for it.
+const blobIs = async (text, sha) => {
+  const te = new TextEncoder(),
+    body = te.encode(text),
+    head = te.encode(`blob ${body.length}\0`),
+    all = new Uint8Array(head.length + body.length);
+  all.set(head);
+  all.set(body, head.length);
+  return crypto.subtle.digest('SHA-1', all).then(
+    d => [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join('') === sha,
+    () => false
+  );
+};
 // A blob never changes under its sha: its text is kept in the browser's Cache Storage under that sha (the latest only),
-// so the next visit and the next Publish skip the download (curation.json: 0.54 MB gzipped). It is public data (curation.json is on the site). Any failure of the cache: the download, as before. Not in the demo.
+// so the next visit and the next Publish skip the download (curation.json: 0.54 MB gzipped). Public data (curation.json is
+// on the site). Read raw and checked against the sha, kept and read back checked; the base64 reply when the raw one is
+// refused or not the blob. Any failure of the cache: the download, as before. Not in the demo.
 async function blobText(sha) {
   const key = '/__blob/' + sha;
   let c = null;
   try {
     c = typeof caches === 'object' && caches && !(typeof DEMO !== 'undefined' && DEMO) ? await caches.open('reefid-admin-blobs') : null;
     const h = c && (await c.match(key));
-    if (h) return await h.text();
+    if (h) {
+      const t = await h.text();
+      if (await blobIs(t, sha)) return t;
+      await c.delete(key);
+    }
   } catch (e) {
     c = null;
   }
-  // Its raw bytes; the base64 reply when that fails.
-  const text = await ghText(`/git/blobs/${sha}`).catch(async () => fromB64((await gh(`/git/blobs/${sha}`)).content));
+  let text = await ghText(`/git/blobs/${sha}`).catch(() => null);
+  if (text === null || !(await blobIs(text, sha))) text = fromB64((await gh(`/git/blobs/${sha}`)).content);
   try {
     if (c) {
       await Promise.all((await c.keys()).map(k => c.delete(k)));
@@ -7795,7 +7815,9 @@ async function start() {
             console.warn(`${u} not loaded:`, e.message);
             return {};
           })).then(j => (j && j[k]) || {});
-  const late = sugOwn(landing());
+  // The demo opens as before (the suggestions first) unless asked with ?demo&late: the smoke's steps start from a page
+  // whose auto-sort has run, and only tests/admin.smoke.js loadPart opens it late.
+  const late = sugOwn(landing()) && (!DEMO || /[?&]late\b/.test(location.search));
   let CJ;
   try {
     let PJ;

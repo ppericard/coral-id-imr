@@ -52,7 +52,9 @@ const server = http.createServer((req, res) => {
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
-// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
+// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart) and, in the same part, the admin opened
+// with suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
+// first, as before); main, everything else.
 // SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
 // runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
 // (timed below; on CI at 1280, in seconds: main 140, photos 120, players 80, actions 35, seal 12).
@@ -376,6 +378,8 @@ async function loadPart(b, base, fails) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
+  // One made-up judgment, for a candidate of cand.json (the real suggest.json may name none of them: 2026-11-03).
+  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand || {}).flat()[0].f;
   let held = null,
     asked = 0;
   await lc.route(
@@ -383,9 +387,14 @@ async function loadPart(b, base, fails) {
     async r => {
       asked++;
       if (held) await held.p;
-      r.continue();
+      r.fulfill({contentType: 'application/json', body: JSON.stringify({v: 1, cand: {[CF]: {v: 'wide', q: 3, k: 'best', fm: 'M'}}})});
     }
   );
+  // waits for the page to ask for suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
+  const askedOnce = async () => {
+    for (let i = 0; i < 200 && !asked; i++) await new Promise(ok => setTimeout(ok, 100));
+    return asked > 0;
+  };
   const hold = () => {
     const h = {};
     h.p = new Promise(ok => (h.go = ok));
@@ -397,7 +406,7 @@ async function loadPart(b, base, fails) {
     open = async hash => {
       const p = await lc.newPage();
       p.on('pageerror', e => errs.push(e.stack || e.message));
-      await p.goto(base + 'admin.html?demo' + hash);
+      await p.goto(base + 'admin.html?demo&late' + hash);
       return p;
     },
     shown = (p, re) =>
@@ -410,10 +419,11 @@ async function loadPart(b, base, fails) {
     late = p => p.evaluate(() => typeof SUG_LATE === 'function'),
     laid = p =>
       p.evaluate(
-        () =>
+        f =>
           Object.values(DATA.cand)
             .flat()
-            .some(x => x.j) && Object.keys((SUG || {}).cand || {}).length > 0
+            .some(x => x.f === f && x.j && x.j.q === 3) && ((SUG || {}).cand || {})[f],
+        CF
       );
   // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
   let h = hold(),
@@ -421,9 +431,7 @@ async function loadPart(b, base, fails) {
   if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
   if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
     fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
-  await p.waitForFunction(() => Object.keys(SHEET_READS).length === 0, null, {timeout: 30000}).catch(() => {});
-  await p.waitForTimeout(1500);
-  if (!asked) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
+  if (!(await askedOnce())) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
   h.go();
   await p.waitForFunction(() => SUG_LATE === null, null, {timeout: 30000}).catch(() => fails.push(F + 'the suggestions never came in'));
   if (!(await laid(p))) fails.push(F + 'the suggestions were not laid over the candidates when they came late');
@@ -445,8 +453,7 @@ async function loadPart(b, base, fails) {
   // 3. opened on a page that needs them: nothing is drawn, nothing started, until they are in (as before)
   h = hold();
   p = await open('#photos/candidates');
-  await p.waitForTimeout(1500);
-  if (!asked) fails.push(F + 'a page that needs the suggestions did not ask for them at once');
+  if (!(await askedOnce())) fails.push(F + 'a page that needs the suggestions did not ask for them');
   if (await p.evaluate(() => typeof DRAFT !== 'undefined' && !!DRAFT && !!DRAFT.genera))
     fails.push(F + 'a page that needs the suggestions started without them');
   h.go();
