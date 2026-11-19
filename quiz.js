@@ -829,9 +829,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // a comeback question takes its genus's recall as it is now.
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
-  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
-  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+  // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
+  // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does, and the mix-up is counted.
@@ -1671,14 +1671,19 @@ function tipShow(t, st, cur) {
 // One-tap questions (docs/ARCHITECTURE.md "One-tap questions"): a question from core.js PULSEQ (pulsePick's rounds)
 // answered in one tap or "Not now", logged as ev 'pulse'; nothing in the game changes with it. From PULSE.FIRST answers,
 // then every PULSE.EVERY (PULSE.AFTERX times that after "Not now"), only once the session has PULSE.SESS_N answers and
-// lasted PULSE.SESS_MS (pulseSess; a session: answers under SESSION.GAP apart, as the admin's). reefid-pulse: {at:
-// answers when the last showed, q: its item, left: the round's items, x: 1 after "Not now", v: the session {t0, t, n}}.
+// lasted PULSE.SESS_MS (pulseSess; a session: answers under SESSION.GAP apart, as the admin's). Asked in every subject,
+// each with its own pacing (pulseSt, under sDev('pulse'): the answers it counts, answersSoFar, are the subject on
+// screen's): {at: answers when the last showed, q: its item, left: the round's items, x: 1 after "Not now"}. The
+// session is the device's, every answer of any subject in it: v {t0, t, n} in PULSEK (pulseV), which is the first
+// subject's own key too (its dev is ''), so its record stays as it was.
 const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESS_N: 15, SESS_MS: 5 * 60000, WAIT: 600},
   PULSEK = 'reefid-pulse';
-const pulseSt = () => {
-  const st = store.get(PULSEK, {});
+const pulseObj = k => {
+  const st = store.get(k, {});
   return st && typeof st === 'object' ? st : {};
 };
+const pulseSt = () => pulseObj(sDev('pulse')),
+  pulseV = () => pulseObj(PULSEK).v;
 // The session an answer at time t belongs to: the same one when the last answer is less than SESSION.GAP before it, else
 // a new one. Every answer in a game counts (answer()), whatever the subject or the game, as the admin counts sessions.
 const pulseVisit = (v, t) =>
@@ -1686,7 +1691,7 @@ const pulseVisit = (v, t) =>
     ? {t0: v.t0, t, n: v.n + 1}
     : {t0: t, t, n: 1};
 const pulseNote = (t = Date.now()) => {
-  const st = pulseSt();
+  const st = pulseObj(PULSEK);
   store.set(PULSEK, {...st, v: pulseVisit(st.v, t)});
 };
 // The session is far enough along for a prompt at time now: still going (its last answer less than SESSION.GAP ago),
@@ -1699,13 +1704,11 @@ const pulseSess = (v, now = Date.now()) =>
   v.n >= PULSE.SESS_N &&
   now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
-  // Its answers describe the subject the sheet replays (core.js SUBJECTS replay: the corals; the fish beta asks nothing).
-  if (!SUBJ.replay) return false;
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
     st = pulseSt(),
     at = typeof st.at === 'number' ? st.at : -1e9;
-  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && pulseSess(st.v);
+  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && pulseSess(pulseV());
 };
 // Response rate (Pierre's question: shown against answered): each prompt logs PULSE_SHOWN, then its answer's code,
 // PULSE_SKIP ("Not now", Escape) or PULSE_NONE (the page left with it up); every event carries what the game knew when it
@@ -1729,7 +1732,7 @@ function pulseAsk() {
     pk = pulsePick(st),
     it = pulseItem(pk.q),
     h = session.h;
-  store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left, v: st.v});
+  store.set(sDev('pulse'), {at: answersSoFar(), q: pk.q, left: pk.left, v: pulseV()});
   pulseOpen = {
     id: it.id,
     at: {
@@ -1766,7 +1769,7 @@ function pulseAsk() {
     onClose: how => {
       if (pulseOpen) {
         pulseEv(how === 'route' ? PULSE_NONE : PULSE_SKIP);
-        if (how !== 'route') store.set(PULSEK, {...pulseSt(), x: 1});
+        if (how !== 'route') store.set(sDev('pulse'), {...pulseSt(), x: 1});
         pulseOpen = null;
       }
       if (how !== 'route') route();

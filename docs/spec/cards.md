@@ -186,17 +186,23 @@ One pop-up per device, at the first moment no tour or card is open, to a player 
 its own kicker and button (`k`, `b`) and a `kind`: `update` for a recalculation (the card's medallion is then the
 player's progress ring) or `feature` for a new game mode (✨); the latest due gives the card its kind. `reefid-recalc`
 holds the id of the last note seen, so a player sees each note once. Marked seen by its button or Escape; leaving the
-page closes it unseen. A later recalculation that needs telling adds a note at the end of `RECALC.L`; a recalculation of
-progress is otherwise silent (rule D6).
+page closes it unseen. A note about one subject says so in its data (`subj`, a subject id or a list; `core.js`
+`subjIn`): the two progress notes are the corals'; one without (the typed questions) is the engine's and shows in
+whatever subject is on screen. A card holds the run one subject shows (`core.js` `noteRun`); a note about another
+subject waits for the next card. A player with no answers in a note's subject has its notes marked seen unshown, and
+the engine's notes after them still come in the subject on screen. A later recalculation that needs telling adds a
+note at the end of `RECALC.L` (a `subj` if it speaks of one subject), no code; a recalculation of progress is
+otherwise silent (rule D6).
 
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,
 at app open, to the players who played through a run of the draw that was not right, shown only until `SORRY.UNTIL`
-(2026-11-17): it no longer shows. What the device held when this code first ran on it is read once and kept
-(`reefid-sorry-first` {t, n, h, c}): n, the answers between `SORRY.FROM` and then (the answers still in `LOG0` /
-`SYNC.log`, else those since the last card shown before the window); h, the opening hold's sum (`reefid-hold`); c, the
-most units carded within 15 answers in the window. Due with n ≥ `SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c
-≥ `SORRY.CARDS` (4). It greets the player by first name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`:
-the first word of the sign-in name, capitalised, else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
+(2026-11-17): it no longer shows, in any subject (an engine card, kept as a template). What the device held when this
+code first ran on it is read once and kept (`reefid-sorry-first` {t, n, h, c}): n, the answers between `SORRY.FROM`
+and then (the answers still in `LOG0` / `SYNC.log`, else those since the last card shown before the window); h, the
+opening hold's sum (`reefid-hold`); c, the most units carded within 15 answers in the window. Due with n ≥
+`SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4). It greets the player by first
+name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`: the first word of the sign-in name, capitalised,
+else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
 picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get
 easier after misses. It's fixed now. Sorry for the rough ride!" (the day said in the player's clock: This or Yesterday
 evening, else the date). Button "Thanks" or Escape: `reefid-sorry` (this device only, like
@@ -222,8 +228,10 @@ achievement toast, then shown on the same question), not after a reload, and not
 
 A short question about how the game feels, asked now and then (`quiz.js` `PULSE`, `pulseDue`, `pulseAsk`; the bank in
 `core.js` `PULSEQ`, `pulsePick`, `pulseScore`, shared with the admin; LEARNING.md "What the players say about the
-difficulty"). State `reefid-pulse` = {at: the answers when the last one showed, q: its item, left: the round's items
-still to ask, x: 1 after "Not now", v: the current session {t0: its first answer's time, t: its last, n: its answers}}.
+difficulty"), in every subject. Each subject paces its own (`sDev('pulse')`, `reefid-<dev>pulse`) = {at: its answers
+when the last one showed, q: its item, left: the round's items still to ask, x: 1 after "Not now"}; the session is the
+device's, every answer of any subject in it: `reefid-pulse` `v` = {t0: its first answer's time, t: its last, n: its
+answers} (the first subject's own record too).
 
 - **When**: after an answer in the photo quiz (the custom quiz too, `photoQuiz`) and the duels, as a card at Next,
   before the next question is drawn (in a flow of answers, a prompt inside the feedback is missed). The answer arms Next
