@@ -1,6 +1,6 @@
 # Memory for every subject
 
-Date: 2026-11-19. PR: #1. Rules or docs touched: S1, L4, L14, P3, P4; docs/spec/front-end.md "The pages" (Practice ›
+Date: 2026-11-19. PR: #1279. Rules or docs touched: S1, L4, L14, P3, P4; docs/spec/front-end.md "The pages" (Practice ›
 Memory), docs/spec/subjects.md, `docs/reviews/2026-11-19-modes-every-subject.md` (PR 7), ROADMAP "Every game mode for
 every subject".
 
