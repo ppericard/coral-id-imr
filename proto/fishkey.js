@@ -144,8 +144,11 @@ LAB.add({
           if (!M.has(p.sp)) M.set(p.sp, []);
           M.get(p.sp).push(p);
         };
-      Object.values((raw.gm && raw.gm.photos) || {}).forEach(L => (L || []).forEach(add));
-      Object.values((raw.ph && raw.ph.photos) || {}).forEach(L => (L || []).forEach(add));
+      // The photos in play under the curation in force, as the game reads them (core.js treePhotos: a photo he took out
+      // leaves at once, before the files are rebuilt): the game photos, or the first ones until they are in.
+      Object.values(treePhotos((raw.ph && raw.ph.photos) || {}, (raw.gm && raw.gm.photos) || {}, treeCur(S, CUR))).forEach(L =>
+        (L || []).forEach(add)
+      );
       Object.entries((raw.ph && raw.ph.sheet) || {}).forEach(([sp, L]) => (L || []).forEach(p => add({sp, ...p})));
       const T = treeOf(S.id).TREEU,
         pick = sid => (T && T.covers ? T.covers[sid] : null) || null,
@@ -303,9 +306,18 @@ LAB.add({
         if (alive && !I)
           root.innerHTML = '<p class="note">The fish data could not load. Check the connection and open this page again.</p>';
       });
+    // From tablet up the index has no summary to open it (lab.css): crossing the breakpoint (a phone turned, a window
+    // widened) opens it.
+    const wide = matchMedia('(min-width: 600px)'),
+      onWide = () => {
+        const d = root.querySelector('.fkidx');
+        if (d && wide.matches) d.open = true;
+      };
+    wide.addEventListener('change', onWide);
     return () => {
       alive = false;
       document.removeEventListener('keydown', slash, true);
+      wide.removeEventListener('change', onWide);
     };
   }
 });

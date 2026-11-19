@@ -4237,6 +4237,13 @@ async function fishKeyCheck(b, base) {
     }));
     if (r0.rows !== pdf.length || !r0.fams || r0.wide || r0.count !== `${pdf.length} species`)
       fails.push(`${W} ${JSON.stringify(r0)}, expected ${pdf.length} rows`);
+    // A phone turned to a tablet's width: the index (folded on the phone, with no summary from tablet up) opens.
+    if (w < 600) {
+      await p.setViewportSize({width: 1024, height: 768});
+      await p.waitForTimeout(200);
+      if (!(await p.evaluate(() => document.querySelector('.fkidx').open))) fails.push(`${W} the index stays closed once wider`);
+      await p.setViewportSize({width: w, height: h});
+    }
     // A WoRMS name finds the PDF's species, its address keeps the search.
     await p.fill('#fkq', moved.now);
     const r1 = await p.evaluate(() => ({
@@ -4244,7 +4251,8 @@ async function fishKeyCheck(b, base) {
       hash: location.hash,
       empty: !document.querySelector('.fkempty').hidden
     }));
-    if (!r1.shown.includes(moved.name) || r1.empty || !/q=/.test(decodeURIComponent(r1.hash))) fails.push(`${W} search ${moved.now}: ${JSON.stringify(r1)}`);
+    if (!r1.shown.includes(moved.name) || r1.empty || !/q=/.test(decodeURIComponent(r1.hash)))
+      fails.push(`${W} search ${moved.now}: ${JSON.stringify(r1)}`);
     await p.fill('#fkq', 'zzqx');
     const r2 = await p.evaluate(() => ({
       shown: document.querySelectorAll('.fksp:not([hidden])').length,
