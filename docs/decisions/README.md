@@ -85,6 +85,7 @@ Newest first.
 | 2026-11-18 | [Decisions kept from code comments: Pierre's words that were only in core.js and Code.gs](2026-11-18-decisions-from-code-comments.md) | #1121 |
 | 2026-11-18 | [The coral calibration set: 50 photos drawn a little more often until each has 20 answers](2026-11-18-coral-calibration-set.md) | #1130 |
 | 2026-11-18 | [Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits](2026-11-18-architecture-steps-3-4.md) | #1146 |
+| 2026-11-18 | [Guards rather than prose: what players see comes from Pierre, the Bash guard, the night report](2026-11-18-guards-not-prose.md) | #1117 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
 | 2026-11-18 | [Decisions found in the comments of the tools/ scripts](2026-11-18-decisions-from-comments-tools.md) | #1142 |
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |
