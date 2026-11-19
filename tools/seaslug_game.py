@@ -87,6 +87,13 @@ line:
       read from R2 by the app (app.js img) with the online original (src) as its fallback (core.js photoAway).
     A photo already on R2 (the committed file) keeps its files; one whose crop or rotation changed is listed with its
     old files until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
+  - the tile (Pierre, 2026-11-19, Q437: every game mode for every subject; Find the X, one name and four photos): a photo
+    whose judgement carries the animal's box (suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
+    pass the fish's tile rule (fish_game.py tile_tags) carries bb, and its download (or, on R2 already, a run for the
+    tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
+    record then carrying xc (the tile's square) or xn (why not). No sea-slug judgement carries a box yet (judging/
+    SEASLUG.md "no bb"), so no record has a tile and the app's Find the X (app.js UNITS tiles) is not drawn for the sea
+    slugs until a box pass puts boxes in.
 
 The R2 step is off in the Candidate photos workflow until Pierre's go (.github/workflows/approved-photos.yml
 SEASLUG_R2): the workflow builds offline (every new photo remote, r: 1) while it is off.
@@ -428,9 +435,13 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         if not auto and orig.get(f) != unit:
             t = (sp_of.get(unit) or gens.get(unit) or {}).get('name') or t
         ph = phase(jt)
+        # The animal's box, for the Find the X tile (the fish's rule and cut, tools/fish_game.py tile_tags, tile_crop): a
+        # judgement carrying one (bb, which no sea-slug judgement does yet) on a photo whose tags pass the tile rule.
+        bb = FG.box_of(f, None, sug) if FG.tile_tags(jt) else None
         return {'f': f, 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': t, 'sp': unit,
                 **({'gl': 1} if unit in gens else {}), 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
                 **({'e': int(e)} if e else {}), **({'jt': jt} if jt else {}), **({'ph': ph} if ph else {}),
+                **({'bb': bb} if bb else {}),
                 **({'auto': 'cand'} if auto else {}), 'r': 1}
 
     def judged(key, unit, gl=False):
@@ -467,8 +478,12 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
                 # crop or rotation, or the judge's crop, changed
                 del r['r']
                 r.update({k: o[k] for k in ('ar', 'cr', 'ro', 'iv') if k in o})
+                if r.get('bb') and o.get('bb') == r['bb']:
+                    r.update({k: o[k] for k in ('xc', 'xn') if k in o})  # its tile, made (xc) or refused (xn) from this box
                 if stale(o, c, ro):
                     todo.append((r, c, o.get('iv', 0) + 1, ro))
+                elif r.get('bb') and not ('xc' in r or 'xn' in r):
+                    todo.append((r, c, o.get('iv', 0), ro, True))  # a new or changed box: its tile alone, the four files stay
             else:
                 todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0, ro))
         photos.setdefault(fid, []).extend(keep)
@@ -558,13 +573,15 @@ def download_all(todo, out, get=None, pause=None, workers=6):
     os.makedirs(out, exist_ok=True)
 
     def one(x):
-        r, c, iv, ro = x
-        q = {k: v for k, v in r.items() if k not in ('r', 'ar', 'cr', 'ro', 'iv')}
+        r, c, iv, ro = x[:4]
+        if len(x) > 4:  # the tile alone (a new or changed box), its record already on R2: cr and ro as they are
+            q = {k: v for k, v in r.items() if k not in ('xc', 'xn')}
+            FG.tile_only(q, out, get, pause)
+            return q, c, iv
+        q = {k: v for k, v in r.items() if k not in ('r', 'ar', 'cr', 'ro', 'iv', 'xc', 'xn')}
         if ro:
             q['ro'] = ro
         FG.download(q, c, out, get, pause)
-        q.pop('xc', None)
-        q.pop('xn', None)
         return q, c, iv
     done, failed = 0, []
     with cf.ThreadPoolExecutor(workers) as ex:
@@ -577,15 +594,20 @@ def download_all(todo, out, get=None, pause=None, workers=6):
                 failed.append(r['f'])
                 print('failed:', r['f'], e)
                 continue
-            for k in ('r', 'cr', 'ro', 'iv'):
+            if len(futs[fut]) == 4:
+                for k in ('r', 'cr', 'ro', 'iv'):
+                    r.pop(k, None)
+                r['ar'] = q['ar']
+                if c:
+                    r['cr'] = c
+                if q.get('ro'):
+                    r['ro'] = q['ro']
+                if iv:
+                    r['iv'] = iv
+            for k in ('xc', 'xn'):
                 r.pop(k, None)
-            r['ar'] = q['ar']
-            if c:
-                r['cr'] = c
-            if q.get('ro'):
-                r['ro'] = q['ro']
-            if iv:
-                r['iv'] = iv
+                if k in q:
+                    r[k] = q[k]  # its tile, made (xc) or refused (xn: tools/fish_game.py tile_crop)
             done += 1
     return done, failed
 
@@ -629,11 +651,12 @@ def plan_text(tree, game, todo, n=MAX):
     for c in CIRCLES + (None,):
         on = [p for p in allr if c is None or circle.get(p['sp']) == c]
         td = [x[0] for x in todo if c is None or circle.get(x[0]['sp']) == c]
+        tl = sum(1 for x in todo if len(x) > 4 and (c is None or circle.get(x[0]['sp']) == c))  # tiles alone: one file
         sp = {p['sp'] for p in on}
         tot = len([s for s in tree['species'] if c is None or s['circle'] == c])
         name = f'circle {c}' if c else 'all'
         lines.append(f'{name}: {len(on)} photos in play over {len(sp)} of {tot} species, {len(on) - len([p for p in on if p.get("r")])} '
-                     f'on R2; to download: {len(td)} ({len(td) * 4} files, about {len(td) * FG.KB_PER_PHOTO / 1024:.0f} MB)')
+                     f'on R2; to download: {len(td)} ({(len(td) - tl) * 4 + tl} files, about {len(td) * FG.KB_PER_PHOTO / 1024:.0f} MB)')
     lines.append(f'R2 after the run: about {len(allr) * FG.KB_PER_PHOTO / 1024:.0f} MB for the sea slugs '
                  f'({FG.KB_PER_PHOTO} KB a photo, the fish\'s mean over four sizes); at most {n} a run: '
                  f'{-(-len(todo) // n) if todo else 0} run(s), circle 1 first')

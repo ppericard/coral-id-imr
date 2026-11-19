@@ -103,6 +103,15 @@ with no global score, its plain mean at 50%; circle 3 by itself, with no offer c
 that step is on in the Candidate photos workflow (`SEASLUG_R2`), so the photos in play that R2 lacks are uploaded with
 the fish's ([fish-photos.md](fish-photos.md)).
 
+**Find the X** (Q437) runs on the shared engine: `app.js` `UNITS` `tiles` is the fish's declaration (`unitTiles`), and
+`tools/seaslug_game.py` cuts the square tiles with the fish's code (`tools/fish_game.py` `tile_crop`, `tile_write`,
+`tile_only`, nothing copied) for a record that carries the animal's box (`bb`: a judgement's, read as
+`fish_game.py` `box_of` reads it) and whose tags pass the fish's tile rule (`tile_tags`: profile or slight oblique, so a
+dorsal photo, the sea slugs' commonest good view, has no tile). **No sea slug photo carries a box** (2026-11-20: 0 of
+3,014 in play; 1 proposed crop among 5,163 judgements, on a photo not in play; Pierre's sea slug crops: none), and
+`judging/SEASLUG.md` gives none (no `bb`), so no record has a tile and the format is not drawn for them (`planFind` finds
+no tile) until a box pass puts boxes in.
+
 ## English names as information
 
 The common names and nicknames, at the family, genus and species level, wherever names are shown, when they exist; there
