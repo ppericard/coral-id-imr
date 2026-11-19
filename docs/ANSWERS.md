@@ -1394,3 +1394,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
   judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
   judging or boxing pass is measured first), #1287.
+- **06:48-06:50, the reference of a measurement.** «Et tu as bien vu que ce n'est pas toujours le plus juste? On s'est
+  déjà apperçu que des fois c'est la calibration qui n'est pas bonne»; «Je pense que ça dépend des sujets/taches. Mais
+  parfois ya effectivement besoin d'une recalibration». The strong model alone is no reference: repeatability of each
+  configuration, adjudicated disputes, and a gold set of his answers for judgement tasks. Applied: INTEGRATOR "Working
+  with Pierre" (the same line), #1289.
