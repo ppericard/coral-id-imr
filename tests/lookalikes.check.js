@@ -66,6 +66,26 @@ module.exports = async function lookCheck(p, w, fails, tag = '') {
       c1 = await p.evaluate(() => (document.querySelector('#view .lkn') || {}).textContent.trim());
     if (h1 === h0 || !/^Pair 2 \//.test(c1)) bad(`the next arrow stayed on the pair: ${h0} ${h1} ${c1}`);
   }
+  // The admin's saved picks (curation mont {v, a, b}) hold each side in its own order, not the key's alphabetical one: a
+  // pair saved with the second unit's photo as a and the first's as b still gives each unit its own photo.
+  const mp = await p.evaluate(() => {
+    if (SUBJ.views.length > 1 || !CUR) return null;
+    const [A, B] = classics()[0],
+      w = SUBJ.views[0][0],
+      LA = GX(A).views[w].filter(x => !juvP(x)),
+      LB = GX(B).views[w].filter(x => !juvP(x)),
+      pa = LA[LA.length - 1],
+      pb = LB[LB.length - 1],
+      k = pairKey(A, B),
+      part = SUBJ.admin.cur ? (CUR[SUBJ.admin.cur] = CUR[SUBJ.admin.cur] || {}) : CUR,
+      was = part.mont;
+    part.mont = {[k]: {v: 'adult', a: pb.f, b: pa.f}};
+    const m = montage(A, B);
+    part.mont = was;
+    if (!was) delete part.mont;
+    return {ok: m.pa.f === pa.f && m.pb.f === pb.f, got: [m.pa.f, m.pb.f], want: [pa.f, pb.f]};
+  });
+  if (mp && !mp.ok) bad(`a saved pick in the other order is ignored: ${JSON.stringify(mp)}`);
   // Compare, of the pair the deck shows.
   const pair = await p.evaluate(() => classics()[0]);
   await p.evaluate(x => (location.hash = hr('cmp-' + x[0] + '|' + x[1])), pair);

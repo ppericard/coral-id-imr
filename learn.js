@@ -554,8 +554,11 @@ function montage(a, b) {
   const LA = list(A, v),
     LB = list(B, v),
     mine = m.v === v,
-    fa = mine && LA.find(p => p.f === m.a),
-    fb = mine && LB.find(p => p.f === m.b);
+    // The admin writes a and b in its own order of the pair (the book's, for the fish), not the key's alphabetical one: each
+    // saved photo is resolved against the unit that owns it.
+    own = f => (mine && f ? [LA.find(p => p.f === f), LB.find(p => p.f === f)] : [null, null]),
+    fa = own(m.a)[0] || own(m.b)[0] || undefined,
+    fb = own(m.b)[1] || own(m.a)[1] || undefined;
   const [pa, pb] = photoPair(LA, LB, fa, fb);
   return {k, A, B, v, pa, pb, src: lsrcOf(A, B), es: lsrcEsrc(A, B)};
 }
