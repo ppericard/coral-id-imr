@@ -362,13 +362,19 @@
    "phase": "terminal"
   },
   "fish-s203-cand-469143100": {
-   "code": "p1g1slk3",
+   "code": "p1g1ml13",
    "keep": "alt",
    "phase": "terminal",
-   "unsure": [
-    "code"
+   "crop": [
+    0.13,
+    0.34,
+    0.75,
+    0.68
    ],
-   "note": "a squirrelfish about two thirds its size, sharp, just behind it: confusion possible"
+   "unsure": [
+    "crop"
+   ],
+   "note": "crop takes the squirrelfish above out, but a blue sliver stays at the top edge above the head: maybe its fin"
   },
   "fish-s203-cand-490013369": {
    "code": "p1g2ml13",
