@@ -49,14 +49,17 @@ def left():
 
 
 # --- Rule 0 window -------------------------------------------------------------------------------------------------------
-# AGENTS.md Rule 0 (Pierre, 2026-11-15): after 17:30 Manila the integrator asks Pierre nothing; everything else goes on.
+# AGENTS.md Rule 0: after 17:30 Manila the integrator asks Pierre nothing until his first message after 04:00; everything
+# else goes on. The time alone cannot tell whether he has written yet: from 04:00 the line says so, and the integrator
+# checks that his message came after 04:00.
 
 
 def window(hm):
     m = hm[0] * 60 + hm[1]
-    if 5 * 60 <= m < 17 * 60 + 30:
-        return 'day', 'normal working day (Rule 0): Pierre may be asked until 17:30'
-    return 'quiet', 'after 17:30 (Rule 0): ask Pierre nothing; questions wait in docs/STATUS.md; all else goes on'
+    if 4 * 60 <= m < 17 * 60 + 30:
+        return 'day', 'working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30'
+    return 'quiet', ('after 17:30 (Rule 0): ask Pierre nothing until his first message after 04:00; questions wait in '
+                     'docs/STATUS.md; all else goes on')
 
 
 def manila_now(at):
