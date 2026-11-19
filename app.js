@@ -2715,7 +2715,8 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
-// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera; a bonus genus's
+// ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
+// Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
 const tipsLabel = g =>
   g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');

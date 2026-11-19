@@ -386,7 +386,7 @@ function viewGenus(name) {
       <div class="idbox">
         ${plainLine(g)}${esrcP(g, 'plain')}
         ${g.x ? `<div class="tipbox"><h3>ID tips${g.qsrc && g.qsrc.t ? '' : ` <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span>`}</h3>${tipsList(g)}</div>` : ''}
-        ${tipsIn || g.mn ? `<div class="tipbox">${tipsIn ? `<h3>ID tips (IMR)${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
+        ${tipsIn || g.mn ? `<div class="tipbox">${tipsIn ? `<h3>${g.tl || 'ID tips (IMR)'}${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
         ${rootLine(g, slateOf(DATA))}
         ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}${esrcP(g, 'imr')}</div>` : ''}
         ${imr.length ? '' : cfList}
