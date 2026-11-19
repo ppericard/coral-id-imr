@@ -235,7 +235,7 @@ function renderCovers() {
   clearTimeout(COVER_N.t);
   const O = coverNow(),
     sp = FISHC.species,
-    RK = fuRanks(),
+    RK = ranksOf(),
     centre = (FISHC.centre || {}).name;
   status();
   if (!O.length) {
