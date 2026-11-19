@@ -74,6 +74,7 @@ Newest first.
 | 2026-11-19 | [A fish photo with a look-alike near its edge plays once a crop takes it out](2026-11-19-fish-saving-crop.md) | #1223 |
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject](2026-11-19-genera-into-tree.md) | #1214 |
+| 2026-11-19 | [Fish genera with IMR cues: our sourced ID marks under them, as the families](2026-11-19-genus-marks-beside-imr-cues.md) | #1231 |
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
