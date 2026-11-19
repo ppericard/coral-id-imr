@@ -1700,11 +1700,6 @@ const admAddr = p => {
 // Points), its first view for a group or a tab, else its group's first view, else the subject's landing page.
 function admRoute(p, S = ASUBJ) {
   if (ADM_PAGES.includes(p) || ADM_PARAM.some(x => p.startsWith(x) && p.length > x.length)) return p;
-  // The one old address kept, by Pierre's call of 2026-11-19 (the corals' Photos › Genera tab, folded into the Tree; rule W3's
-  // "no redirect" stands for everything else): #photos/genera/live/<Genus> opens that genus's Tree node, the other former
-  // pages (genera, live, hidden, excluded) the Tree, where those lists now are.
-  const gOld = p.match(/^photos\/genera(?:\/live\/(.+)|\/live|\/hidden|\/excluded)?$/);
-  if (gOld) return gOld[1] ? TREE + '/' + gOld[1] : TREE;
   // The subject's own tabs and views first (a fish #photos opens Tree, a tab the corals do not have).
   const seg = p.split('/'),
     has = t => t[2].some(([h]) => hasPage(S, h)),

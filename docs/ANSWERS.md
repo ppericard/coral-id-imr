@@ -1139,10 +1139,3 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
-- **10:30, the admin's Photos › Genera tab.** «Pourquoi on a encore Genera + Tree pour Coraux???»: Genera is folded into
-  the Tree's genus page and removed (Q339-Q341, Q359). Applied: #1214.
-- **10:32-10:33, one code for every subject on the Tree's node pages.** «A nouveau, le but est d'avoir un code commun
-  entre les matières, pas des codes pour chaque matière...»; «Il faut juste identifier les spécificités de chaque matière
-  et voir comment les implémenter, soit avec des paramètres, soit avec des bouts de codes spécialisés»: the photo curation
-  of a node page is one shared section, each subject's specificity declared in one table. Applied: #1214 (spec/admin-tree.md,
-  ROADMAP "The Tree tab", decisions/2026-11-19-genera-into-tree.md).

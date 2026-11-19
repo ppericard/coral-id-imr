@@ -1894,20 +1894,6 @@ async function sealPart(b, base, fails) {
           await settle();
           if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora' || !(await p.$('[data-lv]')))
             fails.push(`${w}px Coral Tree: a card's link`);
-          // The former Genera addresses (#photos/genera/live/<genus>, …/hidden, …/excluded) open the genus's Tree node, the others
-          // the Tree (Pierre, 2026-11-19: the one old address kept; admin.js admRoute)
-          for (const [from, to] of [
-            ['photos/genera/live/Porites', '#photos/tree/key/Porites'],
-            ['photos/genera/live', '#photos/tree/key'],
-            ['photos/genera/hidden', '#photos/tree/key'],
-            ['photos/genera/excluded', '#photos/tree/key'],
-            ['photos/genera', '#photos/tree/key']
-          ]) {
-            await p.evaluate(h => (location.hash = h), from);
-            await settle();
-            const at = await p.evaluate(() => location.hash);
-            if (at !== to) fails.push(`${w}px Coral Tree: ${from} opened ${at}, not ${to}`);
-          }
           // Removed from the site and Excluded are lists on a genus's page: Remove lists the photo (Put back returns it, one
           // click each), × lists it as excluded (Restore); a group's page lists those of its genera; the Tag… filters count
           // the genera that have any; Undo steps back

@@ -1,6 +1,6 @@
 # The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject
 
-Date: 2026-11-19. PR: #1214. Rules or docs touched: A1, A3, A4, S1, W3 (one old address kept); docs/spec/admin-tree.md "The
+Date: 2026-11-19. PR: #1214. Rules or docs touched: A1, A3, A4, S1, W3; docs/spec/admin-tree.md "The
 node pages' photo curation, shared by every subject"; docs/spec/admin-photos.md; docs/spec/admin.md; ROADMAP "The Tree tab".
 
 ## Context
@@ -28,9 +28,9 @@ spécialisés».
 - The layout (the genus tools in the Tree page's bar and body, the lists as sections, the Tag… filters Removed photos and
   Excluded photos in place of the tab counters, the excluded photos naming no genus on the first root page of a view) is
   the integrator's call, easy to correct.
-- Old addresses: `#photos/genera/live/<Genus>` opens the genus's Tree node and the other Genera addresses open the Tree,
-  one rule at the top of `admRoute`, no table, as the task asked: an exception to rule W3 (no redirect), limited to these
-  addresses.
+- Old addresses: none kept. A first version redirected `#photos/genera/…` to the Tree; Pierre, 2026-11-19, 11:14: «Pourquoi?
+  C'est quoi le use case que t'imagines?». There is none (only he uses the admin; rule W3, no backward compatibility), so
+  a `#photos/genera…` address is an unknown address like any other (`admRoute`).
 - Not done here, kept as the next step: one tile and one body for the photos in play (the corals' views and the fish's
   species) and the fish's Removed and Excluded lists, which need their inverse (put back, restore) first; the shared section
   does not add a write the fish page does not have.

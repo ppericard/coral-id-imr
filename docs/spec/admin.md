@@ -73,11 +73,8 @@ than the corals puts its prefix first (`#fish/inbox/todo/reports`: "One subject 
 
 `admRoute()` decides what an address shows: a shorter one (a group, a tab) opens its first view, an old or unknown one
 its group's first view, else the landing page, and the address is replaced in place (`readHash`). Old addresses (`#~…`,
-`#<Genus>`) are not translated (rule W3: there is no table of aliases), with one exception Pierre's layout call of
-2026-11-19 made: the former Photos › Genera addresses (`#photos/genera/live/<Genus>`, `…/hidden`, `…/excluded`) open the
-genus's Tree node (`#photos/tree/key/<Genus>`) or the Tree, one rule at the top of `admRoute()`, no table (the Genera tab
-is folded into the Tree: [admin-tree.md › The node pages' photo curation](admin-tree.md#the-node-pages-photo-curation-shared-by-every-subject)).
-Links come from `GROUPS` (`navs()`) and `genusHref()`. With no address the admin opens on its landing page, Players › Activity `#players/activity`
+`#<Genus>`, the former `#photos/genera/…`) are not translated (rule W3: there is no table of aliases). Links come from
+`GROUPS` (`navs()`) and `genusHref()`. With no address the admin opens on its landing page, Players › Activity `#players/activity`
 (`homeOf`; Players › List for a subject without Activity).
 
 ### What it remembers
