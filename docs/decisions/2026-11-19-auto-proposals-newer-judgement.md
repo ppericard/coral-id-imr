@@ -80,8 +80,8 @@ The counts of `curation.json` (main of 2026-11-19 21:10 Manila; `node` on `autos
 - In play, on main's data with this PR (the build's reading against the curation as written): 9 photos the auto-sort had
   set aside come back, uncropped: each was re-judged since (the subject unclear `x` then clear, or a near-duplicate then
   another angle, on 2026-11-14 and 15; suggest.json's history), now a sure best or alt; 1 it had put in leaves (judged
-  since other species one could take for the subject); and 270 records change (tags 242, ease 123, phase 39; 15
-  juveniles' ease), each from a sure judgement. Once #1254's
-  re-rate is in, the juveniles' copied ease follows it (the integrator counted 101 that differ).
+  since other species one could take for the subject); and 351 records change (tags 242, ease 208, phase 39), each
+  from a sure judgement; 100 of the ease changes are juveniles, re-rated by #1254 (the integrator counted 101 copies
+  that differ).
 - The 694 `k` set aside now have a route: a crop that saves one brings it back by itself.
 - The corals' games are built as before: their auto-sort's proposals (the (b) column) are not read anew here.
