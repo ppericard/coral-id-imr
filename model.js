@@ -1440,10 +1440,10 @@ let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // of a question, as the player knows them now.
 let PMEM = memOf((store.get('reefid-photo-stats', {}) || {}).mem);
 // The offsets of the subject in play (pmem): PMEM is fitted on the one subject the sheet rates (Code.gs stats_, SUBJECTS
-// replay: the corals), so any other subject draws, scores and recalculates with the prior (core.js MEM.PRIOR, memOf of
+// offsets: the corals), so any other subject draws, scores and recalculates with the prior (core.js MEM.PRIOR, memOf of
 // nothing): no coral offset touches another subject's answer.
 const PMEM0 = memOf();
-const pmem = () => (SUBJ.replay ? PMEM : PMEM0);
+const pmem = () => (SUBJ.offsets ? PMEM : PMEM0);
 // Per-format offsets (core.js fmtOffsetsOf, ?stats=1 fmt; docs/LEARNING.md "Per-format offsets"): {format: [offset,
 // answers]}, how much easier (in logits) the players found each question format than its guess rate 1/k allows, added
 // to the expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); {} before any reply.
@@ -1451,7 +1451,7 @@ let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));
 // The format offsets of the subject in play (pfmt), as pmem: a subject the sheet does not rate aims and scores with every
 // format at 0 (the app's own expectation before any fit, core.js FMT), never with a coral offset.
 const PFMT0 = Object.freeze({});
-const pfmt = () => (SUBJ.replay ? PFMT : PFMT0);
+const pfmt = () => (SUBJ.offsets ? PFMT : PFMT0);
 // Progress saved before the photo memory, recalculated once and silently (core.js memRecalc): every genus record not
 // marked yet (s.pm), at load, after each pull of the synced progress (sync.js mergeSaved), and in quiz.js answer before a
 // record's first answer. Saved and synced when it changed anything.
@@ -1468,13 +1468,13 @@ function memRecalcAll() {
 // Each other subject's own pooled statistics (core.js SUBJECTS stats: the sea slugs; sync.js loadOwnStats), kept under
 // its own key (OWN_STATS + its id) and joined to the corals' (PBASE, the reply loadStats keeps) in PSTAT, PGD and PCONF:
 // their photos and units carry ids of their own (seaslug-…, g:Chromodoris), so each subject reads its own numbers in the
-// same maps. The photo memory and the format offsets stay the corals' alone (pmem, pfmt), as the sheet's replay of
-// another subject reads (Code.gs rplMake_).
+// same maps (the corals' come from the plain ?stats=1 and have no stats). The photo memory and the format offsets stay
+// the corals' alone (SUBJECTS offsets: pmem, pfmt), as the sheet's replay of another subject reads (Code.gs rplMake_).
 const OWN_STATS = 'reefid-photo-stats-';
 let PBASE = store.get('reefid-photo-stats', {}) || {};
 function statsJoin(base = PBASE) {
   PBASE = base || {};
-  const own = SUBJECTS.filter(S => !S.replay && S.stats)
+  const own = SUBJECTS.filter(S => S.stats)
       .map(S => store.get(OWN_STATS + S.id, null))
       .filter(o => o && typeof o === 'object'),
     join = (b, k) => Object.assign({}, b, ...own.map(o => (o[k] && typeof o[k] === 'object' ? o[k] : {})));
