@@ -66,7 +66,11 @@ deck with Compare: `UNITS.seaslug` `pairs` from each genus's `decl`, each pair w
 identifications show (`dlook`), which the players' answers can drop (`model.js` `dataSeed`). `app.js` `treeGenera`
 completes those records as it does the fish's scientific genera; there is no opt-in genus set (`sets: []`,
 `optin: []`). Their ID marks are their own, in our words from numbered sources (`tools/seaslug_cues.json`), shown on the
-sheets and in the quiz feedback.
+sheets and in the quiz feedback. **A species' own marks** (`tools/seaslug_species_marks.json`, agent drafts: each line
+with the SEASLUG.WORLD or Sea Slug Forum page's words it rests on; `none` the species left out and why) tell it from its
+genus's other species; `tools/seaslug_cues.py` `species_apply` puts `marks`, `msrc`, `mby`, `mdraft` on `seaslug.json`
+species, and the species sheet shows them in `learn.js` `marksBox` with "Draft, not yet reviewed", as a fish species'
+(`tests/seaslug-species-marks.test.js`). The quiz does not read them.
 
 **The families stay structure only**: in `TREEU.gen` (no rank of their own, `app.js` `rankOf` reads them as `family`,
 never asked), their sheets, a genus's family line and parent, and the Learn page: the genus tiles shown directly,

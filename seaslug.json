@@ -2155,6 +2155,43 @@
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Rhinophores never plain: with bulbs, rings of plates or large flanges",
+    "Cerata in groups, set in arches along the back",
+    "Eats the eggs of other sea slugs, as F. japonicus and F. tsuruganus"
+   ],
+   "msrc": [
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), Remarks, pp. 74-75: the rhinophores of every Favorinus",
+     "u": "https://archive.org/details/biostor-266362"
+    },
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), the genus Favorinus, p. 72",
+     "u": "https://archive.org/details/biostor-266362"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Favorinus japonicus fact sheet, on Aplysia egg masses, its colour from its food",
+     "u": "https://www.seaslugforum.net/find/favojap"
+    },
+    {
+     "t": "Willan 1983, Description of the aeolid nudibranch Favorinus tsuruganus from eastern Australia (J. Malac. Soc. Aust. 6), note added in proof: F. tsuruganus eats nudibranch eggs",
+     "u": "https://archive.org/details/biostor-266362"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2,
+      3
+     ]
+    ]
    }
   },
   {
@@ -2165,7 +2202,31 @@
    "species": [
     "s49860"
    ],
-   "ref": 204623
+   "ref": 204623,
+   "marks": [
+    "The rear end is a sloping flat disc, fringed with small papillae",
+    "Mottled green and brown, well hidden in seagrass, sand or mud"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, the back shield of Dolabella",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, the colour and habitat of Dolabella",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Diversidoris",
@@ -2175,7 +2236,23 @@
    "species": [
     "s467980"
    ],
-   "ref": 204234
+   "ref": 204234,
+   "marks": [
+    "D. crocea: the mantle edge has a lasting fold halfway along each side"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Noumea crocea fact sheet, Noumea crocea, now Diversidoris crocea: the mantle skirt",
+     "u": "https://www.seaslugforum.net/find/noucroc"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidiopsis",
@@ -2277,6 +2354,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "A firm body covered in many blunt, stalked tubercles",
+    "Rhinophores rise from tube-like sheaths rimmed with tubercles",
+    "The gill is guarded by lobes that bear tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Fahey and Gosliner 2004, A phylogenetic analysis of the Aegiridae (Proc. Calif. Acad. Sci. 55), genus Aegires, diagnosis, p. 618",
+     "u": "https://archive.org/details/biostor-144012"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
    }
   },
   {
@@ -2289,7 +2390,46 @@
     "s120937",
     "s199474"
    ],
-   "ref": 204185
+   "ref": 204185,
+   "marks": [
+    "The rear of the mantle rises into a long, curved horn",
+    "The mantle edge forms side lobes, as in C. tenue and C. trilobatum"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet, the dorsal horn of most Ceratosoma",
+     "u": "https://www.seaslugforum.net/find/ceratenu"
+    },
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), character 6, the posterior protuberance, p. 123",
+     "u": "https://archive.org/details/biostor-3280"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet, the mantle lobes",
+     "u": "https://www.seaslugforum.net/find/ceratenu"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma trilobatum fact sheet, the lateral lobe",
+     "u": "https://www.seaslugforum.net/find/ceratril"
+    },
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), character 5, the mantle lobes, p. 123",
+     "u": "https://archive.org/details/biostor-3280"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      3,
+      4
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidiella",
@@ -2376,6 +2516,31 @@
     "inat": 50215,
     "worms": 137783,
     "wiki": "Glossodoris"
+   },
+   "marks": [
+    "A broad body; the mantle edge keeps a row of lasting waves",
+    "Its gill branches often stand in a double spiral"
+   ],
+   "msrc": [
+    {
+     "t": "Matsuda and Gosliner 2018, Glossing over cryptic species: new Glossodoris and Doriprismatica (Zootaxa 4444), genus Glossodoris, diagnosis",
+     "u": "https://doi.org/10.11646/zootaxa.4444.5.1"
+    },
+    {
+     "t": "Matsuda and Gosliner 2018, Glossing over cryptic species: new Glossodoris and Doriprismatica (Zootaxa 4444), Glossodoris buko, external morphology: the undulations of every Glossodoris",
+     "u": "https://doi.org/10.11646/zootaxa.4444.5.1"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
    }
   },
   {
@@ -2387,7 +2552,41 @@
     "s332450",
     "s607312"
    ],
-   "ref": 531565
+   "ref": 531565,
+   "marks": [
+    "Brightly coloured, or blends in with the sponge it feeds on",
+    "A prominent crest on its siphon"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), character 21, colour, p. 376",
+     "u": "https://archive.org/details/biostor-131922"
+    },
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), Sagaminopteron psychedelicum, natural history: the genus feeds on sponges, p. 334",
+     "u": "https://archive.org/details/biostor-131922"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Sagaminopteron nigropunctatum fact sheet, camouflaged on its sponge",
+     "u": "https://www.seaslugforum.net/find/saganigr"
+    },
+    {
+     "t": "Gosliner 1989, Revision of the Gastropteridae (The Veliger 32), Discussion, the genus Sagaminopteron, p. 378",
+     "u": "https://archive.org/details/biostor-131922"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1,
+      2
+     ],
+     [
+      3
+     ]
+    ]
+   }
   },
   {
    "id": "g:Thorunna",
@@ -2422,6 +2621,22 @@
      }
     ]
    },
+   "marks": [
+    "T. daniellae: a narrow mantle skirt; the foot tapers to a point behind"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Thorunna daniellae fact sheet, the mantle overlap and the foot",
+     "u": "https://www.seaslugforum.net/find/thordani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
    "apart": {
     "g:Hexabranchus": "Hexabranchus: gills set one by one into the back, with no pocket to pull them into"
    },
@@ -2442,7 +2657,31 @@
    "species": [
     "s50442"
    ],
-   "ref": 137897
+   "ref": 137897,
+   "marks": [
+    "In D. boholiensis, a narrow ridge runs down the back to the gills",
+    "D. boholiensis: a wide, thin mantle skirt, often shed when disturbed"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Discodoris boholiensis fact sheet, the narrow visceral ridge",
+     "u": "https://www.seaslugforum.net/find/discboho"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Discodoris boholiensis fact sheet, the mantle skirt",
+     "u": "https://www.seaslugforum.net/find/discboho"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Mexichromis",
@@ -2454,7 +2693,31 @@
     "s319772",
     "s469554"
    ],
-   "ref": 224364
+   "ref": 224364,
+   "marks": [
+    "M. multituberculata: tubercles scattered over the mantle",
+    "M. trilineata is often found in groups on the blue sponge it eats"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Mexichromis multituberculata fact sheet, the mantle's tubercles",
+     "u": "https://www.seaslugforum.net/find/meximult"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pectenodoris trilineata fact sheet, Pectenodoris trilineata, now Mexichromis trilineata: its food sponge",
+     "u": "https://www.seaslugforum.net/find/pecttril"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Cadlinella",
@@ -2464,7 +2727,23 @@
    "species": [
     "s60594"
    ],
-   "ref": 536916
+   "ref": 536916,
+   "marks": [
+    "C. ornatissima: a back studded with pink-tipped tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Cadlinella ornatissima fact sheet, its tubercles",
+     "u": "https://www.seaslugforum.net/find/cadlorna"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tubulophilinopsis",
@@ -2485,6 +2764,39 @@
       "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
       "u": "https://nudipixel.net/similarities"
      }
+    ]
+   },
+   "marks": [
+    "A raised, rounded crest on top of the head shield",
+    "Eyes at the front of the head, each in a small pale ring",
+    "Short, rounded tail lobes at the rear"
+   ],
+   "msrc": [
+    {
+     "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183), Tubulophilinopsis, diagnosis and etymology, p. 40",
+     "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet, the crest of the tubular buccal bulb group, now Tubulophilinopsis",
+     "u": "https://www.seaslugforum.net/find/philgard"
+    },
+    {
+     "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183), Tubulophilinopsis, diagnosis, p. 40",
+     "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2
+     ],
+     [
+      2
+     ]
     ]
    },
    "apart": {
@@ -2533,6 +2845,22 @@
    "dlook": [
     "g:Favorinus"
    ],
+   "marks": [
+    "Rhinophores ringed with stacked thin plates (perfoliate)"
+   ],
+   "msrc": [
+    {
+     "t": "Korshunova et al. 2017, Polyphyly of the traditional family Flabellinidae (ZooKeys 717), diagnoses of the family Samlidae and the genus Samla",
+     "u": "https://doi.org/10.3897/zookeys.717.21885"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
    "apart": {
     "g:Coryphellina": "Coryphellina: rhinophores covered in small bumps (papillae)"
    },
@@ -2555,7 +2883,28 @@
     "s418465",
     "s471382"
    ],
-   "ref": 567581
+   "ref": 567581,
+   "marks": [
+    "A body covered in pustules or low tubercles, as M. alleni and M. sinuata"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 1996, Phylogeny of Ceratosoma, with descriptions of two new species (Proc. Calif. Acad. Sci. 49), Ceratosoma alleni, now Miamira alleni, external morphology",
+     "u": "https://archive.org/details/biostor-3280"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Ceratosoma sinuatum fact sheet, now Miamira sinuata, its tubercles",
+     "u": "https://www.seaslugforum.net/find/cerasinu"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Armina",
@@ -2566,7 +2915,31 @@
     "s841162",
     "s841163"
    ],
-   "ref": 137677
+   "ref": 137677,
+   "marks": [
+    "A flat body narrowing to the rear, the back with long ridges or pustules",
+    "Rhinophores set close together; the front edge of the mantle unbroken"
+   ],
+   "msrc": [
+    {
+     "t": "Ardila and Valdés 2004, The genus Armina in the southern Caribbean (The Nautilus 118), Introduction, p. 131: the features of the Arminidae",
+     "u": "https://archive.org/details/biostor-101092"
+    },
+    {
+     "t": "Ardila and Valdés 2004, The genus Armina in the southern Caribbean (The Nautilus 118), Introduction, p. 131: the features shared by Armina",
+     "u": "https://archive.org/details/biostor-101092"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Roboastra",
@@ -2576,7 +2949,31 @@
    "species": [
     "s120982"
    ],
-   "ref": 138045
+   "ref": 138045,
+   "marks": [
+    "Large oral tentacles, rolled up at the front of the head",
+    "Hunts and eats other sea slugs"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Roboastra gracilis fact sheet, the oral tentacles of every Roboastra",
+     "u": "https://www.seaslugforum.net/find/robograc"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Roboastra gracilis fact sheet, the food of the genus",
+     "u": "https://www.seaslugforum.net/find/robograc"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Plakobranchus",
@@ -2587,7 +2984,31 @@
     "s723224",
     "s49121"
    ],
-   "ref": 225419
+   "ref": 225419,
+   "marks": [
+    "In P. ocellatus, side flaps close over the back, hiding green ridges",
+    "P. ocellatus: often half buried in sand, in shallow lagoons and pools"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Plakobranchus ocellatus fact sheet, the parapodial flaps and their chloroplast ridges",
+     "u": "https://www.seaslugforum.net/find/placocel"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Plakobranchus ocellatus fact sheet, its habitat",
+     "u": "https://www.seaslugforum.net/find/placocel"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Longibranchus",
@@ -2597,7 +3018,27 @@
    "species": [
     "s1668619"
    ],
-   "ref": 1832555
+   "ref": 1832555,
+   "marks": [
+    "Cerata set singly, one behind the other, down each side",
+    "Smooth rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Korshunova et al. 2025, The endless forms are the most differentiated (Zool. J. Linn. Soc. 204), Eubranchidae, the diagnosis of the genus Longibranchus",
+     "u": "https://doi.org/10.1093/zoolinnean/zlaf057"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Bermudella",
@@ -2607,7 +3048,36 @@
    "species": [
     "s1521020"
    ],
-   "ref": 138039
+   "ref": 138039,
+   "marks": [
+    "B. brunneomaculata: rhinophores with few, widely spaced plates",
+    "B. brunneomaculata lives and feeds on bryozoans under large sponges"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, external morphology, p. 129",
+     "u": "https://archive.org/details/biostor-110161"
+    },
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), character 11, the rhinophoral lamellae, p. 155",
+     "u": "https://archive.org/details/biostor-110161"
+    },
+    {
+     "t": "Gosliner 2004, Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia (Proc. Calif. Acad. Sci. 55), Okenia brunneomaculata, now Bermudella brunneomaculata, natural history, p. 129",
+     "u": "https://archive.org/details/biostor-110161"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Aplysia",
@@ -2647,6 +3117,38 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "Two large flaps (parapodia) rise from the sides and wrap the body",
+    "Ear-like rolled rhinophores; gives off purple ink when disturbed",
+    "Its rear end is not a flat disc, unlike Dolabella"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2004, Aplysioidea (the sea hares), the parapodial lobes of the sea hares",
+     "u": "https://www.seaslugforum.net/find/aplysioidea"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2004, Aplysioidea (the sea hares), the head and the purple gland of the sea hares",
+     "u": "https://www.seaslugforum.net/find/aplysioidea"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dolabella auricularia fact sheet, Dolabella's shape against Aplysia's",
+     "u": "https://www.seaslugforum.net/find/dolaauri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2
+     ]
     ]
    }
   },
@@ -3867,7 +4369,32 @@
     "inat": 119434,
     "worms": 558229,
     "wiki": "Chromodoris annae"
-   }
+   },
+   "marks": [
+    "Dark specks in the blue centre of the back",
+    "A blue centre edged in black, inside a yellow mantle rim"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris annae fact sheet",
+     "u": "https://www.seaslugforum.net/find/chroanna"
+    },
+    {
+     "t": "SEASLUG.WORLD, Chromodoris annae",
+     "u": "https://en.seaslug.world/species/chromodoris_annae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s126110",
@@ -3922,7 +4449,28 @@
     "inat": 126110,
     "worms": 527322,
     "wiki": "Nembrotha kubaryana"
-   }
+   },
+   "marks": [
+    "Black with green bumps or ridges, sometimes pinkish orange ones",
+    "A bright orange border to the foot and the rhinophore pockets"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Nembrotha kubaryana fact sheet",
+     "u": "https://www.seaslugforum.net/find/nembkuba"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s119429",
@@ -3971,7 +4519,32 @@
     "inat": 119429,
     "worms": 558217,
     "wiki": "Chromodoris willani"
-   }
+   },
+   "marks": [
+    "White specks on its gills and rhinophores",
+    "Pale blue back with thin black lines and a thin white edge"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris willani fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrowill"
+    },
+    {
+     "t": "SEASLUG.WORLD, Chromodoris willani",
+     "u": "https://en.seaslug.world/species/chromodoris_willani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s121050",
@@ -4013,7 +4586,28 @@
     "inat": 121050,
     "worms": 527317,
     "wiki": "Nembrotha chamberlaini"
-   }
+   },
+   "marks": [
+    "A broad black saddle along the back, the head and rhinophores bright red",
+    "A blue to purple band round the foot, a yellow band inside it"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha chamberlaini",
+     "u": "https://en.seaslug.world/species/nembrotha_chamberlaini"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s119860",
@@ -4061,7 +4655,28 @@
     "inat": 119860,
     "worms": 527325,
     "wiki": "Nembrotha lineolata"
-   }
+   },
+   "marks": [
+    "Pale yellowish, covered in fine chestnut-brown stripes",
+    "Blue rhinophore sheaths, foot edges and gill stalks"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha lineolata",
+     "u": "https://en.seaslug.world/species/nembrotha_lineolata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s468033",
@@ -4110,7 +4725,28 @@
     "inat": 468033,
     "worms": 558646,
     "wiki": "Hypselodoris tryoni"
-   }
+   },
+   "marks": [
+    "Dark purple spots ringed in white over a brownish net",
+    "A thin bluish violet line round the mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris tryoni",
+     "u": "https://en.seaslug.world/species/hypselodoris_tryoni"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s49735",
@@ -4154,7 +4790,28 @@
     "inat": 49735,
     "worms": 212835,
     "wiki": "Phyllidia varicosa"
-   }
+   },
+   "marks": [
+    "Blue-grey ridges topped with yellow bumps, black lines between them",
+    "A continuous blue-grey ridge along the middle of the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidia varicosa",
+     "u": "https://en.seaslug.world/species/phyllidia_varicosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s125934",
@@ -4196,7 +4853,32 @@
     "inat": 125934,
     "worms": 457014,
     "wiki": "Halgerda batangas"
-   }
+   },
+   "marks": [
+    "A fine net of orange lines on a translucent ivory white back",
+    "Low bumps tipped orange-red, each ringed white at the base"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Halgerda batangas",
+     "u": "https://en.seaslug.world/species/halgerda_batangas"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Halgerda batangas fact sheet",
+     "u": "https://www.seaslugforum.net/find/halgbata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469568",
@@ -4304,7 +4986,33 @@
     "inat": 201640,
     "worms": 558198,
     "wiki": "Chromodoris lochi"
-   }
+   },
+   "marks": [
+    "Plain pale yellow to orange gills and rhinophores, without white specks",
+    "A spatula-shaped mantle, white to bluish white with thin black lines"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris lochi fact sheet",
+     "u": "https://www.seaslugforum.net/find/chroloch"
+    },
+    {
+     "t": "SEASLUG.WORLD, Chromodoris lochi",
+     "u": "https://en.seaslug.world/species/chromodoris_lochi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s121048",
@@ -4352,7 +5060,28 @@
     "inat": 121048,
     "worms": 558230,
     "wiki": "Chromodoris magnifica"
-   }
+   },
+   "marks": [
+    "A broad orange band round the mantle, between white lines",
+    "Black stripes, often broken, on a white to pale blue back; orange gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris magnifica",
+     "u": "https://en.seaslug.world/species/chromodoris_magnifica"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50554",
@@ -4413,7 +5142,32 @@
     "inat": 50554,
     "worms": 536623,
     "wiki": "Phyllidia ocellata"
-   }
+   },
+   "marks": [
+    "Gold-yellow with black rings edged white, each round a yellow bump",
+    "Large round yellow bumps, like eye-spots"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidia ocellata fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylocel"
+    },
+    {
+     "t": "SEASLUG.WORLD, Phyllidia ocellata",
+     "u": "https://en.seaslug.world/species/phyllidia_ocellata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s346881",
@@ -4468,7 +5222,28 @@
     "inat": 346881,
     "worms": 597336,
     "wiki": "Goniobranchus geometricus"
-   }
+   },
+   "marks": [
+    "A black net of hexagon-like tiles over raised white marks",
+    "Green to yellow-brown gills and rhinophore clubs"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus geometricus",
+     "u": "https://en.seaslug.world/species/goniobranchus_geometricus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s142294",
@@ -4515,7 +5290,33 @@
     "inat": 142294,
     "worms": 212836,
     "wiki": "Phyllidia coelestis"
-   }
+   },
+   "marks": [
+    "Sky-blue with black bands; blue-grey ridges in a Y shape",
+    "Yellow-capped bumps along the middle that never join into a ridge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidia coelestis",
+     "u": "https://en.seaslug.world/species/phyllidia_coelestis"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidia coelestis fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylcoel"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s54892",
@@ -4556,7 +5357,28 @@
     "inat": 54892,
     "worms": 548882,
     "wiki": "Phyllodesmium briareum"
-   }
+   },
+   "marks": [
+    "Light to olive-brown with darker spots; smooth club-shaped cerata",
+    "On or near the soft coral Briareum"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium briareum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_briareum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50300",
@@ -4636,7 +5458,28 @@
     "inat": 50300,
     "worms": 534383,
     "wiki": "Jorunna funebris"
-   }
+   },
+   "marks": [
+    "White with dark rings filled with tiny dark spots",
+    "White gills lined black; white rhinophores with black base and tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Jorunna funebris",
+     "u": "https://en.seaslug.world/species/jorunna_funebris"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s119872",
@@ -4678,7 +5521,32 @@
     "inat": 119872,
     "worms": 536617,
     "wiki": "Phyllidia elegans"
-   }
+   },
+   "marks": [
+    "Pink bumps, often capped in yellow",
+    "Brighter than P. varicosa: broad bluish-green and yellowish areas"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidia elegans fact sheet",
+     "u": "https://www.seaslugforum.net/find/phyleleg"
+    },
+    {
+     "t": "SEASLUG.WORLD, Phyllidia elegans",
+     "u": "https://en.seaslug.world/species/phyllidia_elegans"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s119438",
@@ -4726,7 +5594,32 @@
     "inat": 119438,
     "worms": 527320,
     "wiki": "Nembrotha cristata"
-   }
+   },
+   "marks": [
+    "Deep black with raised emerald-green bumps, often in rows",
+    "A green border to the foot, not orange"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha cristata",
+     "u": "https://en.seaslug.world/species/nembrotha_cristata"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Nembrotha cristata fact sheet",
+     "u": "https://www.seaslugforum.net/find/nembcris"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s142953",
@@ -4774,7 +5667,32 @@
     "inat": 142953,
     "worms": 527328,
     "wiki": "Nembrotha milleri"
-   }
+   },
+   "marks": [
+    "Shiny grey-green with black creases along the body",
+    "Black gills and black rhinophore clubs"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha milleri",
+     "u": "https://en.seaslug.world/species/nembrotha_milleri"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Nembrotha milleri fact sheet",
+     "u": "https://www.seaslugforum.net/find/nembmill"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s121406",
@@ -4811,7 +5729,28 @@
     "inat": 121406,
     "worms": 558430,
     "wiki": "Ardeadoris egretta"
-   }
+   },
+   "marks": [
+    "Pure white with a bright orange-gold mantle edge",
+    "Large, with a wide, wavy mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Ardeadoris egretta",
+     "u": "https://en.seaslug.world/species/ardeadoris_egretta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469422",
@@ -4848,7 +5787,33 @@
     "inat": 469422,
     "worms": 597339,
     "wiki": "Goniobranchus kuniei"
-   }
+   },
+   "marks": [
+    "A broad violet mantle border, with violet gills and rhinophores",
+    "Dark purple spots ringed paler on a brownish back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus kuniei",
+     "u": "https://en.seaslug.world/species/goniobranchus_kuniei"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrokuni"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s199475",
@@ -4889,7 +5854,28 @@
     "inat": 199475,
     "worms": 213149,
     "wiki": "Chelidonura amoena"
-   }
+   },
+   "marks": [
+    "Bright yellow tail flaps",
+    "Grey-speckled shields with a yellow front edge and white edging"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chelidonura amoena",
+     "u": "https://en.seaslug.world/species/chelidonura_amoena"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s546397",
@@ -4919,7 +5905,28 @@
     "inat": 546397,
     "worms": 765107,
     "wiki": "Elysia marginata"
-   }
+   },
+   "marks": [
+    "Olive green, the parapodia edged by an orange, white and black band",
+    "Scattered black and white dots on the back and parapodia"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Elysia marginata",
+     "u": "https://en.seaslug.world/species/elysia_marginata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s468042",
@@ -5077,7 +6084,28 @@
     "inat": 468030,
     "worms": 527538,
     "wiki": "Thecacera picta"
-   }
+   },
+   "marks": [
+    "Translucent yellowish white with chocolate-brown bands",
+    "Orange-yellow tips to the rhinophore sheaths, gill appendages and tail"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thecacera picta",
+     "u": "https://en.seaslug.world/species/thecacera_picta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s481507",
@@ -5126,7 +6154,33 @@
     "inat": 481507,
     "worms": 597329,
     "wiki": "Goniobranchus coi"
-   }
+   },
+   "marks": [
+    "A wavy dark line outlining a brown centre round gills and rhinophores",
+    "A thick brown band inside the mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus coi",
+     "u": "https://en.seaslug.world/species/goniobranchus_coi"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris coi fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrocoi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s54667",
@@ -5189,7 +6243,33 @@
     "inat": 54667,
     "worms": 560044,
     "wiki": "Hypselodoris apolegma"
-   }
+   },
+   "marks": [
+    "Deep magenta to violet, fading into a white mantle hem through a white net",
+    "Orange-yellow rhinophore clubs and gills on purple stalks"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris apolegma",
+     "u": "https://en.seaslug.world/species/hypselodoris_apolegma"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2002, Hypselodoris apolegma fact sheet",
+     "u": "https://www.seaslugforum.net/find/hypsapol"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120948",
@@ -5245,7 +6325,28 @@
     "inat": 120948,
     "worms": 531173,
     "wiki": "Tambja morosa"
-   }
+   },
+   "marks": [
+    "Very black with blue lines on the head, sides and foot edge",
+    "Bluish-green gill plumes"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tambja morosa",
+     "u": "https://en.seaslug.world/species/tambja_morosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s56646",
@@ -5291,7 +6392,28 @@
     "inat": 56646,
     "worms": 599344,
     "wiki": "Chelidonura varians"
-   }
+   },
+   "marks": [
+    "Velvety black to indigo with electric-blue lines on the edges",
+    "Tail lobes of unequal length, the left longer"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chelidonura varians",
+     "u": "https://en.seaslug.world/species/chelidonura_varians"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s207581",
@@ -5339,7 +6461,28 @@
     "inat": 207581,
     "worms": 536615,
     "wiki": "Phyllidia picta"
-   }
+   },
+   "marks": [
+    "Black with big separate bumps, blue at the base and gold on top",
+    "Blue crescents along the mantle edge, each crossed by a black ray"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidia picta",
+     "u": "https://en.seaslug.world/species/phyllidia_picta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s49904",
@@ -5406,7 +6549,24 @@
     "inat": 49904,
     "worms": 140819,
     "wiki": "Pleurobranchus forskalii"
-   }
+   },
+   "marks": [
+    "Reddish purple to pale chestnut with a tortoiseshell-like net"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Pleurobranchus forskalii",
+     "u": "https://en.seaslug.world/species/pleurobranchus_forskalii"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s871903",
@@ -5447,7 +6607,32 @@
     "inat": 871903,
     "worms": 1047492,
     "wiki": "Coryphellina exoptata"
-   }
+   },
+   "marks": [
+    "Pinkish purple; cerata with a deep purple ring and cream-yellow tips",
+    "Bright orange rhinophores covered in tiny bumps"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Coryphellina exoptata",
+     "u": "https://en.seaslug.world/species/coryphellina_exoptata"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Flabellina exoptata fact sheet",
+     "u": "https://www.seaslugforum.net/find/flabexop"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s548309",
@@ -5494,7 +6679,28 @@
     "inat": 548309,
     "worms": 560043,
     "wiki": "Hypselodoris bullockii"
-   }
+   },
+   "marks": [
+    "White to ivory, the mantle edged by a very fine white line",
+    "Yellow rhinophores and gills, often purplish at the base"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris bullockii",
+     "u": "https://en.seaslug.world/species/hypselodoris_bullockii"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s126108",
@@ -5535,7 +6741,28 @@
     "inat": 126108,
     "worms": 494498,
     "wiki": "Thuridilla lineolata"
-   }
+   },
+   "marks": [
+    "Bright blue, the parapodia edged orange with a thin black line inside",
+    "Rhinophores tipped orange and black"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Thuridilla lineolata fact sheet",
+     "u": "https://www.seaslugforum.net/find/thurline"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120989",
@@ -5584,7 +6811,33 @@
     "inat": 120989,
     "worms": 536733,
     "wiki": "Reticulidia halgerda"
-   }
+   },
+   "marks": [
+    "Fine white-and-yellow ridges in a net over a black back",
+    "Many narrow ridges, no broad pale mantle border; orange-red rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Reticulidia halgerda",
+     "u": "https://en.seaslug.world/species/reticulidia_halgerda"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469421",
@@ -5651,7 +6904,34 @@
     "inat": 469421,
     "worms": 597334,
     "wiki": "Goniobranchus fidelis"
-   }
+   },
+   "marks": [
+    "Black rhinophore clubs and gills",
+    "White with a broad red to orange rim reaching inwards in tongues"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris fidelis fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrofide"
+    },
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus fidelis",
+     "u": "https://en.seaslug.world/species/goniobranchus_fidelis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467977",
@@ -5687,7 +6967,28 @@
     "inat": 467977,
     "worms": 558301,
     "wiki": "Chromodoris colemani"
-   }
+   },
+   "marks": [
+    "White back with thin black lines between orange-brown bands",
+    "Orange-brown gills and rhinophores, and an orange-brown mantle rim"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris colemani",
+     "u": "https://en.seaslug.world/species/chromodoris_colemani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1475021",
@@ -5753,7 +7054,28 @@
    "ensrc": {
     "inat": 1475021,
     "worms": 1571927
-   }
+   },
+   "marks": [
+    "Irregular red and white blotches on the back",
+    "White gills with red stems and veins; red rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hexabranchus lacer",
+     "u": "https://en.seaslug.world/species/hexabranchus_lacer"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469221",
@@ -5857,7 +7179,28 @@
     "inat": 469221,
     "worms": 494655,
     "wiki": "Costasiella kuroshimae"
-   }
+   },
+   "marks": [
+    "White rhinophores with black tips",
+    "Green cerata with white tips and iridescent dots"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Costasiella kuroshimae",
+     "u": "https://en.seaslug.world/species/costasiella_kuroshimae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50528",
@@ -5901,7 +7244,28 @@
     "inat": 50528,
     "worms": 536543,
     "wiki": "Phestilla melanobrachia"
-   }
+   },
+   "marks": [
+    "Blackish cerata with a greenish sheen and pale tips, or the colour of its coral",
+    "On sun corals (Tubastraea), which it eats"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phestilla melanobrachia",
+     "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s557665",
@@ -5964,7 +7328,28 @@
     "inat": 557665,
     "worms": 708806,
     "wiki": "Melibe colemani"
-   }
+   },
+   "marks": [
+    "Transparent, with a net of cream-white tubes showing through",
+    "Flattened, wedge-shaped cerata fringed with papillae"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Melibe colemani",
+     "u": "https://en.seaslug.world/species/melibe_colemani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s244849",
@@ -6030,7 +7415,28 @@
     "inat": 244849,
     "worms": 220381,
     "wiki": "Spanish dancer"
-   }
+   },
+   "marks": [
+    "Crimson to blood-red with a broad white mantle border",
+    "A band of short white streaks along each side of the back; pale rose gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hexabranchus sanguineus",
+     "u": "https://en.seaslug.world/species/hexabranchus_sanguineus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s142790",
@@ -6100,7 +7506,28 @@
     "inat": 142790,
     "worms": 420618,
     "wiki": "Thecacera pacifica"
-   }
+   },
+   "marks": [
+    "Yellow to deep orange-yellow, a see-through orange surface",
+    "Finger-like appendages beside the gills, black fading to sky blue"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thecacera pacifica",
+     "u": "https://en.seaslug.world/species/thecacera_pacifica"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s548348",
@@ -6170,7 +7597,28 @@
     "inat": 548348,
     "worms": 534396,
     "wiki": "Jorunna parva"
-   }
+   },
+   "marks": [
+    "Small, covered in close-set bristly bumps, greyish yellow",
+    "Black rhinophore clubs and black-veined gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Jorunna parva",
+     "u": "https://en.seaslug.world/species/jorunna_parva"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s780919",
@@ -6187,7 +7635,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Deep purple with a thick solid white band round the mantle",
+    "Bright orange rhinophores; gills orange or purple"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris variobranchia",
+     "u": "https://en.seaslug.world/species/hypselodoris_variobranchia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s389587",
@@ -6229,7 +7698,32 @@
     "inat": 389587,
     "worms": 599253,
     "wiki": "Favorinus tsuruganus"
-   }
+   },
+   "marks": [
+    "Black rhinophores with cup- or collar-like swellings",
+    "Cerata always yellow-orange with a black tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Favorinus tsuruganus",
+     "u": "https://en.seaslug.world/species/favorinus_tsuruganus"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Favorinus tsuruganus fact sheet",
+     "u": "https://www.seaslugforum.net/find/favotsur"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s143227",
@@ -6283,7 +7777,32 @@
     "inat": 143227,
     "worms": 558300,
     "wiki": "Chromodoris strigata"
-   }
+   },
+   "marks": [
+    "Orange border with tongues of the pale background running into it",
+    "Dark see-through patches set in a regular pattern on the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris strigata",
+     "u": "https://en.seaslug.world/species/chromodoris_strigata"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris strigata fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrostri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s782298",
@@ -6374,7 +7893,33 @@
     "inat": 346899,
     "worms": 597338,
     "wiki": "Goniobranchus hintuanensis"
-   }
+   },
+   "marks": [
+    "Opaque white bumps ringed in deep magenta on the back",
+    "A net of pale plum lines, and reddish purple gills and rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Chromodoris hintuanensis fact sheet",
+     "u": "https://www.seaslugforum.net/find/chrohint"
+    },
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus hintuanensis",
+     "u": "https://en.seaslug.world/species/goniobranchus_hintuanensis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s49860",
@@ -6520,7 +8065,28 @@
    "ensrc": {
     "inat": 1263433,
     "worms": 1533655
-   }
+   },
+   "marks": [
+    "Gills white at the base, yellow on their upper half",
+    "Greyish blue back with dense white dots, inside a broken black line"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris alcalai",
+     "u": "https://en.seaslug.world/species/chromodoris_alcalai"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120977",
@@ -6581,7 +8147,32 @@
     "inat": 120977,
     "worms": 536717,
     "wiki": "Phyllidiopsis shireenae"
-   }
+   },
+   "marks": [
+    "A tall crest along the back, very pale pink with a few black lines",
+    "Salmon pink rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidiopsis shireenae fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylshir"
+    },
+    {
+     "t": "SEASLUG.WORLD, Phyllidiopsis shireenae",
+     "u": "https://en.seaslug.world/species/phyllidiopsis_shireenae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s136327",
@@ -6622,7 +8213,28 @@
     "inat": 136327,
     "worms": 599830,
     "wiki": "Phyllidiopsis xishaensis"
-   }
+   },
+   "marks": [
+    "Pale with low bumps in fine rows and thin black lines between them",
+    "Black rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidiopsis xishaensis",
+     "u": "https://en.seaslug.world/species/phyllidiopsis_xishaensis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467975",
@@ -6701,7 +8313,32 @@
     "inat": 358109,
     "worms": 558618,
     "wiki": "Ceratosoma gracillimum"
-   }
+   },
+   "marks": [
+    "No mantle edge between the head and the side lobes",
+    "Pale greenish grey with olive blotches and countless red dots"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Ceratosoma gracillimum fact sheet",
+     "u": "https://www.seaslugforum.net/find/ceragrac"
+    },
+    {
+     "t": "SEASLUG.WORLD, Ceratosoma gracillimum",
+     "u": "https://en.seaslug.world/species/ceratosoma_gracillimum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s470152",
@@ -6741,7 +8378,32 @@
    "ensrc": {
     "inat": 470152,
     "worms": 494660
-   }
+   },
+   "marks": [
+    "Black or black-edged rhinophores",
+    "Grey middle cerata, black outer ones, each with a white band and black tip"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2004, Costasiella usagi fact sheet",
+     "u": "https://www.seaslugforum.net/find/costusag"
+    },
+    {
+     "t": "SEASLUG.WORLD, Costasiella usagi",
+     "u": "https://en.seaslug.world/species/costasiella_usagi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s49728",
@@ -6816,7 +8478,33 @@
     "inat": 49728,
     "worms": 536574,
     "wiki": "Phyllidiella pustulosa"
-   }
+   },
+   "marks": [
+    "Black with clusters of pink to greenish bumps, grouped in knobs",
+    "A pale pink edge to the mantle"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidiella pustulosa",
+     "u": "https://en.seaslug.world/species/phyllidiella_pustulosa"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidiella pustulosa fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylpust"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s319379",
@@ -6859,7 +8547,28 @@
     "inat": 319379,
     "worms": 209596,
     "wiki": "Hypselodoris emma"
-   }
+   },
+   "marks": [
+    "Yellow back with violet lines and fainter brownish lines between them",
+    "A wide rounded front end of the mantle, waved about as it moves"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris emma",
+     "u": "https://en.seaslug.world/species/hypselodoris_emma"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s143074",
@@ -6906,7 +8615,28 @@
     "inat": 143074,
     "worms": 536716,
     "wiki": "Phyllidiopsis krempfi"
-   }
+   },
+   "marks": [
+    "Pink with big broad-based bumps and black lines meandering between",
+    "Rhinophores pink in front, black on the tip and back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidiopsis krempfi",
+     "u": "https://en.seaslug.world/species/phyllidiopsis_krempfi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s119863",
@@ -6955,7 +8685,32 @@
     "inat": 119863,
     "worms": 559960,
     "wiki": "Glossodoris rufomarginata"
-   }
+   },
+   "marks": [
+    "Orange-brown speckled back and rim, with a broad white band inside the rim",
+    "Brownish-grey gills and rhinophores with white midribs"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Glossodoris rufomarginata fact sheet",
+     "u": "https://www.seaslugforum.net/find/glosrufo"
+    },
+    {
+     "t": "SEASLUG.WORLD, Glossodoris rufomarginata",
+     "u": "https://en.seaslug.world/species/glossodoris_rufomarginata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469415",
@@ -6985,7 +8740,33 @@
     "inat": 469415,
     "worms": 597344,
     "wiki": "Goniobranchus verrieri"
-   }
+   },
+   "marks": [
+    "White, rimmed by a thin red outer line and a yellow inner line",
+    "No pale blue line on the outermost mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus verrieri",
+     "u": "https://en.seaslug.world/species/goniobranchus_verrieri"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Chromodoris verrieri fact sheet",
+     "u": "https://www.seaslugforum.net/find/chroverr"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1375852",
@@ -7002,7 +8783,28 @@
     "near": true,
     "nearU": 7,
     "nearN": 8
-   }
+   },
+   "marks": [
+    "Cerata ringed salmon-pink and orange, like a flame",
+    "Translucent white, with opaque white patches below the cerata groups"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Coryphellina flamma",
+     "u": "https://en.seaslug.world/species/coryphellina_flamma"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s332450",
@@ -7031,7 +8833,28 @@
    "ensrc": {
     "inat": 332450,
     "worms": 599450
-   }
+   },
+   "marks": [
+    "Pale green with pink rings outlined in black",
+    "A broad pink band round the parapodia, a thin black line inside it"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Sagaminopteron psychedelicum",
+     "u": "https://en.seaslug.world/species/sagaminopteron_psychedelicum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s471255",
@@ -7080,7 +8903,28 @@
     "inat": 471255,
     "worms": 597340,
     "wiki": "Goniobranchus preciosus"
-   }
+   },
+   "marks": [
+    "A fine pale blue edge, then a broad dark red band and a yellow band",
+    "A narrow mantle that barely covers the body"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus preciosus",
+     "u": "https://en.seaslug.world/species/goniobranchus_preciosus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467976",
@@ -7127,7 +8971,28 @@
     "inat": 467976,
     "worms": 534389,
     "wiki": "Jorunna rubescens"
-   }
+   },
+   "marks": [
+    "Large and pale greyish red with short blackish-blue streaks",
+    "A mantle arched like a log, covering the foot"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Jorunna rubescens",
+     "u": "https://en.seaslug.world/species/jorunna_rubescens"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s349039",
@@ -7144,7 +9009,28 @@
     "near": true,
     "nearU": 3,
     "nearN": 4
-   }
+   },
+   "marks": [
+    "Orange to brownish yellow round the mantle edge",
+    "Gills and rhinophores the same orange to brownish yellow"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Thorunna furtiva fact sheet",
+     "u": "https://www.seaslugforum.net/find/thorfurt"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50534",
@@ -7270,7 +9156,28 @@
     "inat": 126096,
     "worms": 457494,
     "wiki": "Chromodoris dianae"
-   }
+   },
+   "marks": [
+    "Gills orange right down to their base",
+    "White with fine black lines and a broad yellow mantle rim"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris dianae",
+     "u": "https://en.seaslug.world/species/chromodoris_dianae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s147938",
@@ -7317,7 +9224,32 @@
     "inat": 147938,
     "worms": 560037,
     "wiki": "Hypselodoris whitei"
-   }
+   },
+   "marks": [
+    "Whitish with purple lines that join round the rhinophores and gills",
+    "Orange rhinophores with white tips; orange gills marked white"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris whitei",
+     "u": "https://en.seaslug.world/species/hypselodoris_whitei"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hypselodoris whitei fact sheet",
+     "u": "https://www.seaslugforum.net/find/hypswhit"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s54668",
@@ -7370,7 +9302,32 @@
     "inat": 54668,
     "worms": 558673,
     "wiki": "Mexichromis multituberculata"
-   }
+   },
+   "marks": [
+    "Large blunt bumps tipped purple over a yellowish back",
+    "Spots of colour around the mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Mexichromis multituberculata",
+     "u": "https://en.seaslug.world/species/mexichromis_multituberculata"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Mexichromis multituberculata fact sheet",
+     "u": "https://www.seaslugforum.net/find/meximult"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s60594",
@@ -7429,7 +9386,28 @@
     "near": true,
     "nearU": 13,
     "nearN": 24
-   }
+   },
+   "marks": [
+    "Whitish to grey-blue with yellow spots and smaller dark blue spots",
+    "Erect gills edged with red lines, white spots on their outer face"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris roo",
+     "u": "https://en.seaslug.world/species/hypselodoris_roo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s847499",
@@ -7446,7 +9424,32 @@
     "near": true,
     "nearU": 11,
     "nearN": 28
-   }
+   },
+   "marks": [
+    "Brick-red to brown with white spots, denser towards the edge",
+    "Rim bands: light blue outside, dark green, then light yellow-green",
+    "A very large gill, held in a double spiral"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Glossodoris acosti",
+     "u": "https://en.seaslug.world/species/glossodoris_acosti"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s823909",
@@ -7486,7 +9489,29 @@
    "ensrc": {
     "inat": 823909,
     "worms": 1055261
-   }
+   },
+   "marks": [
+    "Creamy white with large dark brown to black rings or a black net"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tubulophilinopsis pilsbryi",
+     "u": "https://en.seaslug.world/species/tubulophilinopsis_pilsbryi"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Philinopsis pilsbryi fact sheet",
+     "u": "https://www.seaslugforum.net/find/philpils"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s696622",
@@ -7541,7 +9566,29 @@
     "inat": 696622,
     "worms": 766653,
     "wiki": "Samla bicolor"
-   }
+   },
+   "marks": [
+    "White body; a sharp orange to golden ring below the tip of its cerata"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Samla bicolor",
+     "u": "https://en.seaslug.world/species/samla_bicolor"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Flabellina bicolor fact sheet",
+     "u": "https://www.seaslugforum.net/find/flabbico"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s471362",
@@ -7577,7 +9624,33 @@
     "inat": 471362,
     "worms": 457526,
     "wiki": "Hypselodoris krakatoa"
-   }
+   },
+   "marks": [
+    "A tall, volcano-like gill pocket; brown patches in a figure-of-eight",
+    "Black lines with white spots, and rusty-brown white-tipped rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris krakatoa",
+     "u": "https://en.seaslug.world/species/hypselodoris_krakatoa"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Hypselodoris krakatoa fact sheet",
+     "u": "https://www.seaslugforum.net/find/hypskrak"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s471361",
@@ -7594,7 +9667,28 @@
     "near": true,
     "nearU": 11,
     "nearN": 20
-   }
+   },
+   "marks": [
+    "Dark purple patches beside a white line down the back",
+    "Bluish white with a broad yellowish orange mantle border"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris purpureomaculosa",
+     "u": "https://en.seaslug.world/species/hypselodoris_purpureomaculosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s126094",
@@ -7635,7 +9729,33 @@
     "inat": 126094,
     "worms": 536725,
     "wiki": "Phyllidiopsis annae"
-   }
+   },
+   "marks": [
+    "Small, with granular blue ridges and narrow black stripes",
+    "Black rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidiopsis annae",
+     "u": "https://en.seaslug.world/species/phyllidiopsis_annae"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidiopsis annae fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylanna"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s319772",
@@ -7684,7 +9804,28 @@
     "inat": 319772,
     "worms": 597888,
     "wiki": "Mexichromis trilineata"
-   }
+   },
+   "marks": [
+    "Pale purple with yellow lines, edged white, along the back",
+    "Orange-yellow rhinophores and gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Mexichromis trilineata",
+     "u": "https://en.seaslug.world/species/mexichromis_trilineata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s715017",
@@ -7727,7 +9868,33 @@
     "inat": 715017,
     "worms": 833143,
     "wiki": "Goniobranchus leopardus"
-   }
+   },
+   "marks": [
+    "Dark marks set in hollow squares, like a leopard's spots",
+    "A narrow purple mantle border on a cream, brown-netted back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus leopardus",
+     "u": "https://en.seaslug.world/species/goniobranchus_leopardus"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris leopardus fact sheet",
+     "u": "https://www.seaslugforum.net/find/chroleop"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s199473",
@@ -7764,7 +9931,28 @@
     "inat": 199473,
     "worms": 457496,
     "wiki": "Chromodoris joshi"
-   }
+   },
+   "marks": [
+    "Buttery yellow with a wide black band inside the margin",
+    "Pumpkin-orange gills and rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris joshi",
+     "u": "https://en.seaslug.world/species/chromodoris_joshi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s778448",
@@ -7801,7 +9989,28 @@
     "inat": 778448,
     "worms": 1264642,
     "wiki": "Glossodoris buko"
-   }
+   },
+   "marks": [
+    "Small, translucent white, with an opaque white band round the mantle",
+    "White gills and rhinophores tipped yellow; a fine yellow mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Glossodoris buko",
+     "u": "https://en.seaslug.world/species/glossodoris_buko"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s552180",
@@ -7818,7 +10027,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Very large fleshy outgrowths, like a soft coral",
+    "Mainly green, with white to pale yellow markings and edges"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Miamira alleni",
+     "u": "https://en.seaslug.world/species/miamira_alleni"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s199470",
@@ -7872,7 +10102,28 @@
    "ensrc": {
     "inat": 199470,
     "worms": 494488
-   }
+   },
+   "marks": [
+    "Light blue, the parapodia spotted white to cream and edged white",
+    "Rhinophores red on their upper part, the red ending in a slant"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thuridilla albopustulosa",
+     "u": "https://en.seaslug.world/species/thuridilla_albopustulosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s126092",
@@ -7915,7 +10166,28 @@
     "inat": 126092,
     "worms": 390071,
     "wiki": "Phyllodesmium rudmani"
-   }
+   },
+   "marks": [
+    "Cerata like closed Xenia polyps: cream ridges and dense brown dots",
+    "Buried in Xenia soft coral, only its cerata showing"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium rudmani",
+     "u": "https://en.seaslug.world/species/phyllodesmium_rudmani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s841162",
@@ -7932,7 +10204,28 @@
     "near": true,
     "nearU": 33,
     "nearN": 43
-   }
+   },
+   "marks": [
+    "Black with white ridges that fork towards the rear; an orange mantle edge",
+    "Deep blue rhinophores with yellow tips; a deep blue band round the foot"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Armina occulta",
+     "u": "https://en.seaslug.world/species/armina_occulta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120937",
@@ -7985,7 +10278,33 @@
     "inat": 120937,
     "worms": 212893,
     "wiki": "Ceratosoma tenue"
-   }
+   },
+   "marks": [
+    "A small extra side lobe between the rhinophores and the gill lobe",
+    "A dotted purple line along the mantle and foot edges"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Ceratosoma tenue",
+     "u": "https://en.seaslug.world/species/ceratosoma_tenue"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma tenue fact sheet",
+     "u": "https://www.seaslugforum.net/find/ceratenu"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s468034",
@@ -8002,7 +10321,28 @@
     "near": true,
     "nearU": 11,
     "nearN": 12
-   }
+   },
+   "marks": [
+    "Creamy white with brown spots, blotches or lines",
+    "A dark brown head, rhinophores and gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha mullineri",
+     "u": "https://en.seaslug.world/species/nembrotha_mullineri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s778294",
@@ -8032,7 +10372,28 @@
     "inat": 778294,
     "worms": 1047248,
     "wiki": "Samla bilas"
-   }
+   },
+   "marks": [
+    "Sky-blue diamond patches down the middle of the back",
+    "A broad crimson ring, edged white, near the tip of its cerata"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Samla bilas",
+     "u": "https://en.seaslug.world/species/samla_bilas"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120982",
@@ -8096,7 +10457,28 @@
     "near": true,
     "nearU": 10,
     "nearN": 10
-   }
+   },
+   "marks": [
+    "Black with pale yellowish ridges widening into rounded blotches",
+    "White rhinophores with a black band and orange tips"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Armina scotti",
+     "u": "https://en.seaslug.world/species/armina_scotti"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s54648",
@@ -8113,7 +10495,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Cerata tips flattened like arrowheads, a white stripe down the middle",
+    "Translucent white, rhinophores about as long as the oral tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium jakobsenae",
+     "u": "https://en.seaslug.world/species/phyllodesmium_jakobsenae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s723224",
@@ -8130,7 +10533,28 @@
     "near": true,
     "nearU": 2,
     "nearN": 3
-   }
+   },
+   "marks": [
+    "Intense ochre with white spots thinly ringed yellow",
+    "Black rhinophores with purplish tips; a black tail"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Plakobranchus papua",
+     "u": "https://en.seaslug.world/species/plakobranchus_papua"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s346901",
@@ -8160,7 +10584,28 @@
     "inat": 346901,
     "worms": 548878,
     "wiki": "Phyllodesmium crypticum"
-   }
+   },
+   "marks": [
+    "Flat, square-edged cerata lined with nodules, like Xenia tentacles",
+    "Body hidden under big packed cerata with whitish edges and tips"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium crypticum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_crypticum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50552",
@@ -8177,7 +10622,32 @@
     "near": true,
     "nearU": 4,
     "nearN": 5
-   }
+   },
+   "marks": [
+    "Black, evenly sprinkled with separate tall pink to red bumps",
+    "Bumps not in rows and rarely joined, giving a speckled look"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidiella nigra fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylnigr"
+    },
+    {
+     "t": "SEASLUG.WORLD, Phyllidiella nigra",
+     "u": "https://en.seaslug.world/species/phyllidiella_nigra"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s63087",
@@ -8224,7 +10694,24 @@
     "inat": 63087,
     "worms": 420528,
     "wiki": "Chelidonura hirundinina"
-   }
+   },
+   "marks": [
+    "Small and black, crossed by fine white, yellow and blue-green lines"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chelidonura hirundinina",
+     "u": "https://en.seaslug.world/species/chelidonura_hirundinina"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120988",
@@ -8273,7 +10760,28 @@
     "inat": 120988,
     "worms": 536734,
     "wiki": "Reticulidia fungia"
-   }
+   },
+   "marks": [
+    "Fewer, broad orange ridges edged white, like a mushroom coral's septa",
+    "A broad blue-grey mantle border"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Reticulidia fungia",
+     "u": "https://en.seaslug.world/species/reticulidia_fungia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1668619",
@@ -8325,7 +10833,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Spiny, cactus-like cerata, never curled at the tip",
+    "On soft corals such as Lemnalia, which it eats"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium koehleri",
+     "u": "https://en.seaslug.world/species/phyllodesmium_koehleri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1521020",
@@ -8404,7 +10933,28 @@
     "inat": 898566,
     "worms": 1349546,
     "wiki": "Aplysia nigrocincta"
-   }
+   },
+   "marks": [
+    "Reddish to black, the parapodia edged bluish or white",
+    "Rhinophore and tentacle tips the colour of the parapodia edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Aplysia nigrocincta",
+     "u": "https://en.seaslug.world/species/aplysia_nigrocincta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s778296",
@@ -8434,7 +10984,28 @@
     "inat": 778296,
     "worms": 1047250,
     "wiki": "Samla riwo"
-   }
+   },
+   "marks": [
+    "Translucent white with a dense lacy net of opaque white lines",
+    "A broad purple ring on its cerata"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Samla riwo",
+     "u": "https://en.seaslug.world/species/samla_riwo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50551",
@@ -8487,7 +11058,33 @@
     "inat": 50551,
     "worms": 181237,
     "wiki": "Melibe viridis"
-   }
+   },
+   "marks": [
+    "Large and tan, with brown blotches on the back and cerata",
+    "A large net-like oral hood fringed with rows of papillae"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Melibe viridis",
+     "u": "https://en.seaslug.world/species/melibe_viridis"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Melibe viridis fact sheet",
+     "u": "https://www.seaslugforum.net/find/meliviri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s64717",
@@ -8609,7 +11206,29 @@
     "inat": 823908,
     "worms": 1055265,
     "wiki": "Tubulophilinopsis gardineri"
-   }
+   },
+   "marks": [
+    "Dark brown to dark blue, edged in blue, without long tails"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tubulophilinopsis gardineri",
+     "u": "https://en.seaslug.world/species/tubulophilinopsis_gardineri"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet",
+     "u": "https://www.seaslugforum.net/find/philgard"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s840762",
@@ -8645,7 +11264,24 @@
    "ensrc": {
     "inat": 840762,
     "worms": 1814148
-   }
+   },
+   "marks": [
+    "Black, its leaf-like cerata edged and spotted yellow"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Cyerce nigra",
+     "u": "https://en.seaslug.world/species/cyerce_nigra"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s519522",
@@ -8675,7 +11311,28 @@
     "inat": 519522,
     "worms": 536729,
     "wiki": "Phyllidiopsis fissurata"
-   }
+   },
+   "marks": [
+    "Black with tall pale pink bumps, mushroom-like and deeply fissured",
+    "A very tall smooth pink cone on the back; pink rhinophores striped black"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidiopsis fissurata",
+     "u": "https://en.seaslug.world/species/phyllidiopsis_fissurata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469460",
@@ -8692,7 +11349,33 @@
     "near": false,
     "nearU": 1,
     "nearN": 1
-   }
+   },
+   "marks": [
+    "White under a yellowish net that leaves white spots, no black lines",
+    "A raised gill pocket; gills and rhinophores the body's colour"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris reidi",
+     "u": "https://en.seaslug.world/species/hypselodoris_reidi"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2002, Hypselodoris reidi fact sheet",
+     "u": "https://www.seaslugforum.net/find/hypsreid"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469508",
@@ -8770,7 +11453,33 @@
     "inat": 194607,
     "worms": 494494,
     "wiki": "Thuridilla gracilis"
-   }
+   },
+   "marks": [
+    "Dark green to almost black with fine white lines along the body",
+    "Orange-red edges and rhinophore tips"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thuridilla gracilis",
+     "u": "https://en.seaslug.world/species/thuridilla_gracilis"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Thuridilla gracilis fact sheet",
+     "u": "https://www.seaslugforum.net/find/thurgrac"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s199474",
@@ -8819,7 +11528,24 @@
     "inat": 199474,
     "worms": 212891,
     "wiki": "Ceratosoma trilobatum"
-   }
+   },
+   "marks": [
+    "A single large side lobe by the gills, joined to the head by a ridge"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Ceratosoma trilobatum fact sheet",
+     "u": "https://www.seaslugforum.net/find/ceratril"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s418427",
@@ -8856,7 +11582,28 @@
     "inat": 418427,
     "worms": 548883,
     "wiki": "Phyllodesmium colemani"
-   }
+   },
+   "marks": [
+    "On organ pipe coral, its cerata edged whitish like the polyps",
+    "Translucent greenish brown with small brown specks"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium colemani",
+     "u": "https://en.seaslug.world/species/phyllodesmium_colemani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1679552",
@@ -8904,7 +11651,28 @@
    "ensrc": {
     "inat": 1679552,
     "worms": 1883897
-   }
+   },
+   "marks": [
+    "Pale orange with black spots in regular lines",
+    "Black dots on the rhinophore tips, sheaths and gill appendages"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thecacera pikachu",
+     "u": "https://en.seaslug.world/species/thecacera_pikachu"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s49121",
@@ -8945,7 +11713,28 @@
     "inat": 49121,
     "worms": 451657,
     "wiki": "Plakobranchus ocellatus"
-   }
+   },
+   "marks": [
+    "Creamy white, pale brown or pale green with dense paler spots",
+    "Green or blue eye-spots in some animals"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Plakobranchus ocellatus",
+     "u": "https://en.seaslug.world/species/plakobranchus_ocellatus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s471272",
@@ -9004,7 +11793,24 @@
     "near": true,
     "nearU": 9,
     "nearN": 10
-   }
+   },
+   "marks": [
+    "Cerata banded white, bright blue and golden yellow, with a black tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tenellia bughaw",
+     "u": "https://en.seaslug.world/species/tenellia_bughaw"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s349052",
@@ -9034,7 +11840,28 @@
     "inat": 349052,
     "worms": 457931,
     "wiki": "Phyllodesmium tuberculatum"
-   }
+   },
+   "marks": [
+    "Bluish grey all over",
+    "Big round raised nodules all over the largest cerata"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium tuberculatum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_tuberculatum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1532043",
@@ -9107,7 +11934,28 @@
     "inat": 54645,
     "worms": 534073,
     "wiki": "Phyllodesmium poindimiei"
-   }
+   },
+   "marks": [
+    "Long, slender, gently coiled see-through cerata with yellowish white tips",
+    "Translucent white with fine white speckles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium poindimiei",
+     "u": "https://en.seaslug.world/species/phyllodesmium_poindimiei"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s52862",
@@ -9293,7 +12141,28 @@
     "inat": 51172,
     "worms": 221080,
     "wiki": "Halgerda tessellata"
-   }
+   },
+   "marks": [
+    "Sharp yellow ridges in a net over brownish hollows",
+    "A dark brown stripe down the middle of the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Halgerda tessellata",
+     "u": "https://en.seaslug.world/species/halgerda_tessellata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s418465",
@@ -9335,7 +12204,28 @@
     "inat": 418465,
     "worms": 597463,
     "wiki": "Miamira miamirana"
-   }
+   },
+   "marks": [
+    "Green, blue and grey, with brown eye-spots and whitish bumps",
+    "A keeled back with ribs running across it to a yellowish edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Miamira miamirana",
+     "u": "https://en.seaslug.world/species/miamira_miamirana"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s346900",
@@ -9352,7 +12242,32 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Opaque white diamond-shaped patches down the middle of the back",
+    "A bluish band below the white or cream tips of the cerata and tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium opalescens",
+     "u": "https://en.seaslug.world/species/phyllodesmium_opalescens"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Phyllodesmium opalescens fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylopal"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s471382",
@@ -9396,7 +12311,28 @@
     "inat": 471382,
     "worms": 567583,
     "wiki": "Miamira sinuata"
-   }
+   },
+   "marks": [
+    "Ridges across the back that end in lobes on a wavy mantle edge",
+    "Rhinophores and gills sprinkled with fine white dots"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Miamira sinuata",
+     "u": "https://en.seaslug.world/species/miamira_sinuata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s785725",
@@ -9432,7 +12368,28 @@
     "inat": 785725,
     "worms": 1297848,
     "wiki": "Hypselodoris paradisa"
-   }
+   },
+   "marks": [
+    "A V-shaped reddish mark behind the rhinophores",
+    "Translucent pink with rows of white dashes and small black spots"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris paradisa",
+     "u": "https://en.seaslug.world/species/hypselodoris_paradisa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s390159",
@@ -9469,7 +12426,28 @@
     "inat": 390159,
     "worms": 221077,
     "wiki": "Halgerda willeyi"
-   }
+   },
+   "marks": [
+    "Translucent white with yellow to orange ridges and bumps",
+    "Thick dark lines in the hollows; short black lines along the edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Halgerda willeyi",
+     "u": "https://en.seaslug.world/species/halgerda_willeyi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s508245",
@@ -9512,7 +12490,24 @@
     "inat": 508245,
     "worms": 730434,
     "wiki": "Aplysia argus"
-   }
+   },
+   "marks": [
+    "Pale eye-like spots ringed darker all over the body"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Aplysia argus",
+     "u": "https://en.seaslug.world/species/aplysia_argus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1595806",
@@ -9529,7 +12524,28 @@
     "near": true,
     "nearU": 14,
     "nearN": 23
-   }
+   },
+   "marks": [
+    "Slender cerata in clearly separate rows, lying back along the body",
+    "Broad pale purple markings on the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tenellia nakapila",
+     "u": "https://en.seaslug.world/species/tenellia_nakapila"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s52961",
@@ -9614,7 +12630,28 @@
     "inat": 348633,
     "worms": 457519,
     "wiki": "Trapania vitta"
-   }
+   },
+   "marks": [
+    "All white, with orange lines on the rhinophores and gills",
+    "Orange oral tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Trapania vitta",
+     "u": "https://en.seaslug.world/species/trapania_vitta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1623585",
@@ -9631,7 +12668,28 @@
     "near": true,
     "nearU": 2,
     "nearN": 2
-   }
+   },
+   "marks": [
+    "Cream to greyish, the cerata netted with dark brown lines",
+    "A whitish-fuchsia band inside the wavy, yellow-spotted cerata edges"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Cyerce blackburnae",
+     "u": "https://en.seaslug.world/species/cyerce_blackburnae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467978",
@@ -9661,7 +12719,28 @@
     "inat": 467978,
     "worms": 536631,
     "wiki": "Phyllidia exquisita"
-   }
+   },
+   "marks": [
+    "Small, white with fine black lines and yellow-capped bumps",
+    "A yellow mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidia exquisita",
+     "u": "https://en.seaslug.world/species/phyllidia_exquisita"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50550",
@@ -9691,7 +12770,28 @@
     "inat": 50550,
     "worms": 536474,
     "wiki": "Elysia pusilla"
-   }
+   },
+   "marks": [
+    "Small and grass-green, sprinkled with fine white spots",
+    "Clamped onto the green alga Halimeda, matching its shape"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Elysia pusilla",
+     "u": "https://en.seaslug.world/species/elysia_pusilla"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s504449",
@@ -9728,7 +12828,28 @@
     "inat": 504449,
     "worms": 531196,
     "wiki": "Tambja olivaria"
-   }
+   },
+   "marks": [
+    "Dull olive green with black and yellow-orange markings",
+    "A yellow band round the head that runs back to join behind the gills"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Tambja olivaria fact sheet",
+     "u": "https://www.seaslugforum.net/find/tamboliv"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s143297",
@@ -9811,7 +12932,28 @@
     "inat": 469554,
     "worms": 597884,
     "wiki": "Mexichromis pusilla"
-   }
+   },
+   "marks": [
+    "Reddish purple with a broad pale yellow mantle band",
+    "White blotches between the rhinophores and in front of the gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Mexichromis pusilla",
+     "u": "https://en.seaslug.world/species/mexichromis_pusilla"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s497250",
@@ -9847,7 +12989,24 @@
     "inat": 497250,
     "worms": 723627,
     "wiki": "Janolus savinkini"
-   }
+   },
+   "marks": [
+    "Yellow papillae, each with a broad purplish ring and a bright blue tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Janolus savinkini",
+     "u": "https://en.seaslug.world/species/janolus_savinkini"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s891079",
@@ -9864,7 +13023,28 @@
     "near": true,
     "nearU": 2,
     "nearN": 2
-   }
+   },
+   "marks": [
+    "Cerata ringed purple, then reddish brown, then yellow, with a yellow tip",
+    "Reddish brown rhinophores with white tips; purple spots down the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Janolus flavoanulatus",
+     "u": "https://en.seaslug.world/species/janolus_flavoanulatus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s319334",
@@ -9907,7 +13087,28 @@
     "inat": 319334,
     "worms": 536709,
     "wiki": "Phyllidiella rudmani"
-   }
+   },
+   "marks": [
+    "Pale pink with a pair of straight black stripes along the back",
+    "Rhinophores banded black and pink"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidiella rudmani fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylrudm"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s147944",
@@ -9936,7 +13137,33 @@
    "ensrc": {
     "inat": 147944,
     "worms": 599289
-   }
+   },
+   "marks": [
+    "A deep purple spot just below the tip of its cerata",
+    "Ringed rhinophores, plated along their whole length"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Favorinus mirabilis",
+     "u": "https://en.seaslug.world/species/favorinus_mirabilis"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Favorinus mirabilis fact sheet",
+     "u": "https://www.seaslugforum.net/find/favomira"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1623583",
@@ -9953,7 +13180,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Light grey to cream with a web of dark grey lines over body and cerata",
+    "A silvery white bump in each cell of the web; gold spots"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Cyerce katiae",
+     "u": "https://en.seaslug.world/species/cyerce_katiae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s504909",
@@ -9994,7 +13242,29 @@
     "inat": 504909,
     "worms": 531090,
     "wiki": "Notodoris minor"
-   }
+   },
+   "marks": [
+    "Bright yellow with a net of black tiger-stripe lines"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Notodoris minor",
+     "u": "https://en.seaslug.world/species/notodoris_minor"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet",
+     "u": "https://www.seaslugforum.net/find/notomino"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s123404",
@@ -10043,7 +13313,28 @@
     "inat": 123404,
     "worms": 599475,
     "wiki": "Pleurobranchus grandis"
-   }
+   },
+   "marks": [
+    "White with large elongate brown patches over a white net",
+    "The rear of the mantle often held up, folded into a siphon"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Pleurobranchus grandis fact sheet",
+     "u": "https://www.seaslugforum.net/find/pleugran"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s354398",
@@ -10086,7 +13377,32 @@
     "inat": 354398,
     "worms": 597314,
     "wiki": "Ardeadoris angustolutea"
-   }
+   },
+   "marks": [
+    "A thin orange-yellow line at the very edge of the mantle",
+    "Gills reddish brown on their upper half",
+    "An opaque white band down the middle of the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Ardeadoris angustolutea",
+     "u": "https://en.seaslug.world/species/ardeadoris_angustolutea"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s495795",
@@ -10103,7 +13419,33 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "A broad red to reddish-orange mantle border",
+    "An opaque white band just inside the red border"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Ardeadoris averni",
+     "u": "https://en.seaslug.world/species/ardeadoris_averni"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Glossodoris averni fact sheet",
+     "u": "https://www.seaslugforum.net/find/glosaver"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s418431",
@@ -10133,7 +13475,28 @@
     "inat": 418431,
     "worms": 527326,
     "wiki": "Nembrotha livingstonei"
-   }
+   },
+   "marks": [
+    "A white cross- or star-shaped mark between the rhinophores",
+    "Bright orange rhinophore sheaths and oral tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Nembrotha livingstonei",
+     "u": "https://en.seaslug.world/species/nembrotha_livingstonei"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469420",
@@ -10163,7 +13526,28 @@
     "inat": 469420,
     "worms": 565620,
     "wiki": "Goniobranchus albopunctatus"
-   }
+   },
+   "marks": [
+    "A red back densely sprinkled with small white spots",
+    "Fine blue, violet and yellow lines round the mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus albopunctatus",
+     "u": "https://en.seaslug.world/species/goniobranchus_albopunctatus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s415316",
@@ -10212,7 +13596,28 @@
     "inat": 415316,
     "worms": 457531,
     "wiki": "Hypselodoris zephyra"
-   }
+   },
+   "marks": [
+    "Parallel black lines with yellow patches on a white back",
+    "Dark orange rhinophores with white tips"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris zephyra",
+     "u": "https://en.seaslug.world/species/hypselodoris_zephyra"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s779446",
@@ -10229,7 +13634,32 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Finely branched cerata, like a clump of brown algae",
+    "Translucent greenish brown, darker towards the cerata tips"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2005, Melibe digitata fact sheet",
+     "u": "https://www.seaslugforum.net/find/melidigi"
+    },
+    {
+     "t": "SEASLUG.WORLD, Melibe digitata",
+     "u": "https://en.seaslug.world/species/melibe_digitata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s715146",
@@ -10265,7 +13695,28 @@
     "inat": 715146,
     "worms": 866649,
     "wiki": "Verconia alboannulata"
-   }
+   },
+   "marks": [
+    "Pink, with a white band that splits into a ring round the gills",
+    "Elongate reddish-purple spots along the edge of the cream margin"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Verconia alboannulata",
+     "u": "https://en.seaslug.world/species/verconia_alboannulata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s349048",
@@ -10387,7 +13838,28 @@
     "near": false,
     "nearU": 1,
     "nearN": 1
-   }
+   },
+   "marks": [
+    "Translucent grey with fine black specks and pale bumps, on a grey sponge",
+    "Orange spots on the front corners of the head shield"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Sagaminopteron nigropunctatum fact sheet",
+     "u": "https://www.seaslugforum.net/find/saganigr"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s199590",
@@ -10434,7 +13906,28 @@
     "near": false,
     "nearU": 1,
     "nearN": 1
-   }
+   },
+   "marks": [
+    "Iridescent lilac to purple, like a lotus flower",
+    "Cerata tipped peach with red to violet rings below the tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Coryphellina lotos",
+     "u": "https://en.seaslug.world/species/coryphellina_lotos"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1365704",
@@ -10468,7 +13961,29 @@
     "near": true,
     "nearU": 3,
     "nearN": 6
-   }
+   },
+   "marks": [
+    "Purplish red with discs ringed by double white circles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Pleurobranchus weberi",
+     "u": "https://en.seaslug.world/species/pleurobranchus_weberi"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Pleurobranchus weberi fact sheet",
+     "u": "https://www.seaslugforum.net/find/pleuwebe"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s48654",
@@ -10568,7 +14083,24 @@
    "ensrc": {
     "inat": 418506,
     "worms": 599477
-   }
+   },
+   "marks": [
+    "Brilliant red with close-set bumps, each ringed dark purple with a dot"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Pleurobranchus peronii",
+     "u": "https://en.seaslug.world/species/pleurobranchus_peronii"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467982",
@@ -10615,7 +14147,24 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Beige, feather-like cerata with side projections"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium pinnatum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_pinnatum"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s476173",
@@ -10645,7 +14194,28 @@
     "inat": 476173,
     "worms": 457515,
     "wiki": "Trapania palmula"
-   }
+   },
+   "marks": [
+    "Oar-blade appendages, white with a blue diagonal band",
+    "Cream yellow with dense brown patches dotted cream"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Trapania palmula",
+     "u": "https://en.seaslug.world/species/trapania_palmula"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50556",
@@ -10705,7 +14275,28 @@
     "near": true,
     "nearU": 2,
     "nearN": 2
-   }
+   },
+   "marks": [
+    "A solid opaque white patch over most of the back",
+    "Dark reddish-brown rhinophores; cerata banded white, dull blue, cream tip"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Tenellia puti",
+     "u": "https://en.seaslug.world/species/tenellia_puti"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s849396",
@@ -10722,7 +14313,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Fine brown lines on a pink to peach body",
+    "White spots raised on small bumps all over the body"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris skyleri",
+     "u": "https://en.seaslug.world/species/hypselodoris_skyleri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50430",
@@ -10794,7 +14406,33 @@
     "inat": 355499,
     "worms": 558680,
     "wiki": "Thorunna daniellae"
-   }
+   },
+   "marks": [
+    "White, with a broken purple line inside a translucent white rim",
+    "Only the rhinophore plates coloured, red to orange; white gills edged so"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thorunna daniellae",
+     "u": "https://en.seaslug.world/species/thorunna_daniellae"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Thorunna daniellae fact sheet",
+     "u": "https://www.seaslugforum.net/find/thordani"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469461",
@@ -10811,7 +14449,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "White, densely dotted yellow, with dark blue lobes along the mantle edge",
+    "Dark orange-red rhinophores; white gills tipped orange-red"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris bollandi",
+     "u": "https://en.seaslug.world/species/hypselodoris_bollandi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s548307",
@@ -10847,7 +14506,33 @@
     "inat": 548307,
     "worms": 599304,
     "wiki": "Phyllodesmium kabiranum"
-   }
+   },
+   "marks": [
+    "Orange-yellow to orange-brown with a white line down the back",
+    "Thin dark brown lines along its cerata, from tip to base"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium kabiranum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_kabiranum"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2002, Phyllodesmium kabiranum fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylkabi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s495412",
@@ -10864,7 +14549,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Rope-like ridges along the back, crossed by dark bands on its rear half",
+    "A pinkish-orange mantle border with dark spots along it"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Dermatobranchus funiculus",
+     "u": "https://en.seaslug.world/species/dermatobranchus_funiculus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s823951",
@@ -10911,7 +14617,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Bright blue spots with black centres on the oral veil and mantle edge",
+    "White ridges lined with brown spots; a yellow-orange edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Dermatobranchus caeruleomaculatus",
+     "u": "https://en.seaslug.world/species/dermatobranchus_caeruleomaculatus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1491723",
@@ -10957,7 +14684,28 @@
     "near": false,
     "nearU": 1,
     "nearN": 1
-   }
+   },
+   "marks": [
+    "Opaque white stripes along a yellowish white back",
+    "A broken reddish purple band with a yellow outer edge round the mantle"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus setoensis",
+     "u": "https://en.seaslug.world/species/goniobranchus_setoensis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s476171",
@@ -10974,7 +14722,28 @@
     "near": true,
     "nearU": 7,
     "nearN": 9
-   }
+   },
+   "marks": [
+    "Brown patches with red swirls, dotted white, on a short squat body",
+    "Blotchy black rhinophore clubs; pale red gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Trapania miltabrancha",
+     "u": "https://en.seaslug.world/species/trapania_miltabrancha"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1354147",
@@ -10991,7 +14760,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Rim bands: bluish white, deep red, yellow, then an inner white band",
+    "A small bean-shaped body with a smooth, unspotted back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus fabulus",
+     "u": "https://en.seaslug.world/species/goniobranchus_fabulus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s699008",
@@ -11067,7 +14857,28 @@
    "ensrc": {
     "inat": 120967,
     "worms": 599288
-   }
+   },
+   "marks": [
+    "Rhinophores with round swellings halfway up",
+    "Pale yellow with whitish diamond marks down the back; red cerata"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Favorinus japonicus",
+     "u": "https://en.seaslug.world/species/favorinus_japonicus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s504373",
@@ -11104,7 +14915,28 @@
     "inat": 504373,
     "worms": 457497,
     "wiki": "Chromodoris michaeli"
-   }
+   },
+   "marks": [
+    "Black spots inside a broken black band, on a powdery blue back",
+    "A wide bright orange band inside a white mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris michaeli",
+     "u": "https://en.seaslug.world/species/chromodoris_michaeli"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s469419",
@@ -11153,7 +14985,32 @@
     "inat": 469419,
     "worms": 559949,
     "wiki": "Glossodoris hikuerensis"
-   }
+   },
+   "marks": [
+    "Brown with dense pale speckles",
+    "Rim bands: pale brown outside, whitish, then a dark, almost black band"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Glossodoris hikuerensis",
+     "u": "https://en.seaslug.world/species/glossodoris_hikuerensis"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Glossodoris hikuerensis fact sheet",
+     "u": "https://www.seaslugforum.net/find/gloshiku"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s549234",
@@ -11194,7 +15051,28 @@
     "inat": 549234,
     "worms": 494512,
     "wiki": "Cyerce elegans"
-   }
+   },
+   "marks": [
+    "Almost water-clear, the eyes and organs showing through",
+    "Leaf-like cerata with reddish-brown spots on the edge and fine white lines"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Cyerce elegans",
+     "u": "https://en.seaslug.world/species/cyerce_elegans"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s121317",
@@ -11236,7 +15114,33 @@
     "inat": 121317,
     "worms": 457655,
     "wiki": "Thorunna halourga"
-   }
+   },
+   "marks": [
+    "Pinkish purple, darker purple before the rhinophores and behind the gills",
+    "A broad white band round the mantle edge"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Thorunna halourga",
+     "u": "https://en.seaslug.world/species/thorunna_halourga"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2002, Thorunna halourga fact sheet",
+     "u": "https://www.seaslugforum.net/find/thorhalo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s120983",
@@ -11291,7 +15195,32 @@
     "inat": 120983,
     "worms": 536637,
     "wiki": "Phyllidia polkadotsa"
-   }
+   },
+   "marks": [
+    "Golden yellow with large round black spots",
+    "No white anywhere on the body"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllidia polkadotsa",
+     "u": "https://en.seaslug.world/species/phyllidia_polkadotsa"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllidia polkadotsa fact sheet",
+     "u": "https://www.seaslugforum.net/find/phylpolk"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50398",
@@ -11364,7 +15293,33 @@
     "inat": 504910,
     "worms": 531091,
     "wiki": "Notodoris serenae"
-   }
+   },
+   "marks": [
+    "Dull white to grey with scattered raised black spots",
+    "Long arching flaps shielding the gills; a yellow foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Notodoris serenae fact sheet",
+     "u": "https://www.seaslugforum.net/find/notosere"
+    },
+    {
+     "t": "SEASLUG.WORLD, Notodoris serenae",
+     "u": "https://en.seaslug.world/species/notodoris_serenae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s418333",
@@ -11381,7 +15336,33 @@
     "near": false,
     "nearU": 1,
     "nearN": 1
-   }
+   },
+   "marks": [
+    "Clusters of deep green marks netted with white on a cream ground",
+    "White rhinophores with burnt-orange tips"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Thuridilla carlsoni fact sheet",
+     "u": "https://www.seaslugforum.net/find/thurcarl"
+    },
+    {
+     "t": "SEASLUG.WORLD, Thuridilla carlsoni",
+     "u": "https://en.seaslug.world/species/thuridilla_carlsoni"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s332512",
@@ -11418,7 +15399,28 @@
     "inat": 332512,
     "worms": 457516,
     "wiki": "Trapania scurra"
-   }
+   },
+   "marks": [
+    "Translucent lavender with white to cream patches",
+    "Bright blue on the front of the foot and the oral tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Trapania scurra",
+     "u": "https://en.seaslug.world/species/trapania_scurra"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s504813",
@@ -11448,7 +15450,28 @@
     "inat": 504813,
     "worms": 866658,
     "wiki": "Verconia norba"
-   }
+   },
+   "marks": [
+    "A thick milky-white mantle border with a broken reddish-purple inner edge",
+    "A single white line down the back to the gills; orange-red gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Verconia norba",
+     "u": "https://en.seaslug.world/species/verconia_norba"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1115871",
@@ -11465,7 +15488,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "See-through white to grey, starred with opaque white spots and lines",
+    "Small orange dots along the mantle rim"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Chromodoris kalawakan",
+     "u": "https://en.seaslug.world/species/chromodoris_kalawakan"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s505174",
@@ -11495,7 +15539,28 @@
     "inat": 505174,
     "worms": 597346,
     "wiki": "Goniobranchus albonares"
-   }
+   },
+   "marks": [
+    "Opaque white with a bright orange band just inside the mantle edge",
+    "White rhinophores and gills"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Goniobranchus albonares",
+     "u": "https://en.seaslug.world/species/goniobranchus_albonares"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s467983",
@@ -11524,7 +15589,33 @@
    "ensrc": {
     "inat": 467983,
     "worms": 593362
-   }
+   },
+   "marks": [
+    "Almost transparent and greenish yellow, the organs showing through",
+    "A flat blade with a bumpy edge behind each rhinophore stalk"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Melibe engeli",
+     "u": "https://en.seaslug.world/species/melibe_engeli"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Melibe engeli fact sheet",
+     "u": "https://www.seaslugforum.net/find/melienge"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s50445",
@@ -11571,7 +15662,28 @@
     "near": false,
     "nearU": 0,
     "nearN": 0
-   }
+   },
+   "marks": [
+    "Deep purple with a thick solid white band round the mantle",
+    "Purple rhinophores and purple gills, never orange"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris violacea",
+     "u": "https://en.seaslug.world/species/hypselodoris_violacea"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s325414",
@@ -11667,7 +15779,24 @@
     "inat": 781482,
     "worms": 1297856,
     "wiki": "Hypselodoris katherinae"
-   }
+   },
+   "marks": [
+    "Fine red lines or dashes on a pink to peach body"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Hypselodoris katherinae",
+     "u": "https://en.seaslug.world/species/hypselodoris_katherinae"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "s1471723",
@@ -11733,7 +15862,28 @@
     "inat": 891014,
     "worms": 568191,
     "wiki": "Aplysia reticulata"
-   }
+   },
+   "marks": [
+    "Cream with a dense net of brown lines and patches",
+    "Swims actively by flapping its parapodia"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Aplysia reticulata",
+     "u": "https://en.seaslug.world/species/aplysia_reticulata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   },
+   "mdraft": 1
   },
   {
    "id": "x:goniobranchus-sp5",

@@ -428,17 +428,18 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   copies the names into `seaslug.json` (`en`, `ensrc`). `tests/seaslug-names.test.js`.
 - **`seaslug_cues.py`, `seaslug_cues.json`**: the sourced ID marks: `seaslug_cues.json` holds, by genus and by family, 1
   to 3 short visible features in our words (`marks`, each line with its sources: `src` {t, u} and where in it), and
-  `none`, a circle-1 genus left without marks and why. `seaslug_cues.py` (`apply`, run by `tools/seaslug_game.py`
+  `none`, a genus left without marks and why. `seaslug_cues.py` (`apply`, run by `tools/seaslug_game.py`
   `build`) checks them (a source on every line, https, at most 80 characters, no number, a species named only among the
   genus's game species, rule C6; every circle-1 genus in marks or none; every source used) and puts `marks`, `msrc`,
   `mby` on `seaslug.json`'s genera and families, as on a fish genus (`tools/fish_genus_marks.json`), so the fish engine
   shows them unchanged: `learn.js` `genMarks` and `fishMarks` on the sheets, `app.js` `treeGenera` in the quiz feedback
-  ("ID marks (Sea Slug Forum, …)"); `python3 tools/seaslug_cues.py` prints what it covers. Its `apart` holds the
+  ("ID marks (Sea Slug Forum, …)"); run alone, it prints what it covers. Its `apart` holds the
   declared genus pairs' tell-apart lines (`apart_of`, the same checks, on a declared pair only, one side or both) and
-  `apartNone` the pairs left without one, with why; every declared pair is in one of them
-  ([quiz.md › The feedback sheet](quiz.md#the-feedback-sheet)). The sheets speak the sea slugs' words through `app.js`
-  `UNITS` `words` (`learn.js` `sheetWord`); the fish keep their own words by default. Sources consulted:
+  `apartNone` the pairs left without one, with why
+  ([quiz.md › The feedback sheet](quiz.md#the-feedback-sheet)). The sheets speak the sea slugs' words (`app.js`
+  `UNITS` `words`, `learn.js` `sheetWord`). Sources:
   [2026-11-18-seaslug-cues-sources](../reviews/2026-11-18-seaslug-cues-sources.md). `tests/seaslug-cues.test.js`.
+  `species_apply`: the same for `seaslug_species_marks.json` onto the species ([seaslugs.md](seaslugs.md)).
 - **`seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`** → `seaslug_lookalikes_cand.json`: the look-alike
   candidates ([survey](../reviews/2026-11-17-seaslug-lookalikes-survey.md)); the app does not read the file:
   `seaslug_game.py` `genus_looks` takes its genus pairs into `seaslug.json`, the species pairs wait for the species
