@@ -1984,10 +1984,9 @@ async function sealPart(b, base, fails) {
               key = f => {
                 const j = (SUG && SUG.fish && SUG.fish[f]) || {},
                   jt = (F.tags || {})[f] || j.jt || '';
-                const e = (F.ease || {})[f] || j.e || 3,
-                  p = FISHC.byF[f] || {};
+                const e = (F.ease || {})[f] || j.e || 3;
                 // the game's order (core.js easyRank): reference-level first, then the easiest, then refScore
-                return [refLevel({e, jt, rep: p.rep || jt.slice(7).includes('r')}) ? 1 : 0, e, refScore(jt)];
+                return [refLevel({e, jt}) ? 1 : 0, e, refScore(jt)];
               };
             const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f)),
               ge = (x, y) => x[0] > y[0] || (x[0] === y[0] && (x[1] > y[1] || (x[1] === y[1] && x[2] >= y[2])));

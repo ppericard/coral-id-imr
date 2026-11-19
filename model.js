@@ -217,8 +217,9 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
-    // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
-    // (SUBJECTS calib: 3 for fish, 1 for the corals), whoever took it.
+    // come first. A reference-level photo never seen (core.js refLevel: judged ease 4 or 5 with the reference look,
+    // whatever its source) weighs the subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1 for the
+    // corals), whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
