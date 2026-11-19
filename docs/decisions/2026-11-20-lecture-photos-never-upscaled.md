@@ -1,6 +1,6 @@
 # IMR lecture photos are never drawn larger than their own pixels
 
-Date: 2026-11-20. PR: #1286. Rules or docs touched: `docs/spec/photos.md`, `docs/ROADMAP.md`, `quiz.js`,
+Date: 2026-11-20. PR: #1289. Rules or docs touched: `docs/spec/photos.md`, `docs/ROADMAP.md`, `quiz.js`,
 `learn.js`, `proto/samediff.js`, `app.css`, `tests/pages.smoke.js`.
 
 ## Context
