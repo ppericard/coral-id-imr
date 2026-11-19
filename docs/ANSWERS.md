@@ -1395,3 +1395,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   clics pour chaque photos? Tu me donnes du travail en plus. Réfléchis plus largement au problème et propose moi
   d'autres solutions»). Applied: docs/spec/admin.md "Each subject's admin part", decision record
   `2026-11-20-flags-clear-themselves`, #1291.
+- **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
+  tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
+  devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
+  problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
+  judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
+  judging or boxing pass is measured first), #1287.
