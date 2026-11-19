@@ -369,17 +369,32 @@ over `fuData`: per family, genus and species), in the fish data's words (`SUBJEC
   a photo under its candidate id and its game id one photo: `answersBy` by `treePid`; the bands `pstatsBands`);
   **3+ answers per family**, its last column **Missed**, the photos everyone misses as Health counts them
   (`everyoneMisses`), opening Health;
-- no photo difficulty and no Difficulty view: the sheet rates the corals' photos only.
+- the photo difficulty is Photo stats › Difficulty (below), not here.
 - Tested in `tests/fishpstats.test.js` and `tests/admin.smoke.js` (the cards at 390 and 1280 px, light and dark; the
   answers per photo against a count made in the page from the fish answers of a fresh fish session).
 
 ### Difficulty
 
-`#photos/stats/difficulty` (the corals only): by genus, one lane per view, a dot per photo sized by its answers, the
-lane's median, a box and whiskers from 5 photos; genera and tables by median. **Far harder than their genus**: the
-photos in play whose own part of the difficulty, the `?stats=1` difficulty minus the genus offset `gd`, is `FAR.D` = 1.5
-logits or more after `FAR.N` = 5 answers or more, the farthest first, each opening the photo (`admin.js` `farHarder`;
-at a genus recognised 4 times in 5, such a photo is recognised about 1 time in 2; `tests/farharder.test.js`).
+`#photos/stats/difficulty`, every subject's page (`EVERY`; `statsPhotos`, one renderer `diffHtml` over each subject's
+numbers: `diffMain` the corals', `diffOwn` a subject with ratings of its own): by unit (the corals' genera; the fish's
+families, the sea slugs' genera), one lane per view, a dot per photo sized by its answers, the lane's median, a box and
+whiskers from 5 photos; units and tables by median; a subject with one view has no Views card and no legend.
+**Far harder than their unit**: the photos in play whose own part of the difficulty, the sheet's difficulty minus the
+offset `gd` of the unit it carries, is `FAR.D` = 1.5 logits or more after `FAR.N` = 5 answers or more, the farthest first,
+each opening the photo (`farFrom`; `farHarder` for the corals; at a unit recognised 4 times in 5, such a photo is recognised
+about 1 time in 2; `tests/farharder.test.js`).
+
+- **Own ratings** (`SUBJECTS` `stats`, the script version that serves them: fish v189, sea slugs v167; rule D4): `?stats=1&s=<id>`
+  read once (`loadOwnStats`, `ownRead`) from a reply that names the subject, else the page says which version it needs. A
+  photo is rated at the rank each question asked: its fifth element names the unit whose offset its difficulty carries.
+  `ownMerge` joins the sheet's photos by `treePid` (a photo logged under its game id and its candidate id is one: its two
+  ratings merged, weighed by their weighed answers; 63 of the fish's 2,221) and takes each to the unit of its row (its
+  registry entry: the family) by swapping the offsets, as `model.js` `photoDiff` does, so a photo rated at a genus lies
+  with the family's; the far-harder gap is the same either way. The page draws without waiting for the answer log (routed
+  before `renderStats`). Sources are the subject's `admin.origins`. The sea slugs' ratings are served from v167 but empty
+  so far: their page says "No answers yet" until players have answered.
+  Tested in `tests/ownstats.test.js` and `tests/admin.smoke.js` (rated photos against a count from the demo's made-up fish and
+  sea slug answers, light and dark).
 
 ### Taxa
 

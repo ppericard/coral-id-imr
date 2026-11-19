@@ -141,7 +141,7 @@ number never goes up: the step of §5 that removes a duplicate lowers its number
 ### Which pages a subject has
 
 `hasPage` decides: every Players page (`players/…`), the pages about no subject or read from what every subject holds (`EVERY`: Coverage › Rights, To do ›
-Alerts, Photo stats › Taxa), a view with work of its own while it has some (`GROUPS` view options `live` and `draw`: Light proposals, Cover
+Alerts, Photo stats › Taxa and Difficulty), a view with work of its own while it has some (`GROUPS` view options `live` and `draw`: Light proposals, Cover
 proposals), a tab or view for one unit rank only shown to a subject of that rank (`GROUPS` option `rank`: Photo review's
 Ease, Phase & framing and the proposals, `rank: 'family'`; `SUBJECTS` `rank`), and otherwise what `pages` lists. The
 header shows only the groups, tabs and views of the pages the subject has; an address of a page it does not have says
@@ -332,8 +332,8 @@ One helper and one colour scale for the whole admin, `admin.js` between `// reco
   under it (`recScale`). "vs expected" (points against the game's expectation) keeps its sign, and so does the one-tap
   tables' "Difficulty" column: the players' own felt difficulty (−1 too easy to +1 too hard), not a model difficulty.
 - The method is in the "?" of every page that shows a reading (`REC_HELP`, `REC_PAGES`). Where it reads: Photo review ›
-  By difficulty (each tile), Photo stats › Difficulty (the KPIs: median photo, middle half, hardest genus; the
-  distribution's axis and bins; Views and Sources "Recognised"; each genus, its dots and lanes), Health and a session's
+  By difficulty (each tile), Photo stats › Difficulty (the KPIs: median photo, middle half, hardest unit; the
+  distribution's axis and bins; Views and Sources "Recognised"; each unit, its dots and lanes: every subject's), Health and a session's
   summary (photos everyone misses: "recognised by N%", and "harder than its genus" when its photo Elo is
   `HEALTH.PH_FAR` above its genus median), Players (Elo, Not signed in: Elo), a Journey (Elo), Analyses › Learning ›
   Answer log (Genera: the median player Elo on each), Coverage's Where to look ("too easy": players' Elo against the
