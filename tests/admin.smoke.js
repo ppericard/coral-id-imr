@@ -1984,10 +1984,9 @@ async function sealPart(b, base, fails) {
               key = f => {
                 const j = (SUG && SUG.fish && SUG.fish[f]) || {},
                   jt = (F.tags || {})[f] || j.jt || '';
-                const e = (F.ease || {})[f] || j.e || 3,
-                  p = FISHC.byF[f] || {};
+                const e = (F.ease || {})[f] || j.e || 3;
                 // the game's order (core.js easyRank): reference-level first, then the easiest, then refScore
-                return [refLevel({e, jt, rep: p.rep || jt.slice(7).includes('r')}) ? 1 : 0, e, refScore(jt)];
+                return [refLevel({e, jt}) ? 1 : 0, e, refScore(jt)];
               };
             const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f)),
               ge = (x, y) => x[0] > y[0] || (x[0] === y[0] && (x[1] > y[1] || (x[1] === y[1] && x[2] >= y[2])));
@@ -6606,7 +6605,15 @@ async function sealPart(b, base, fails) {
                   'g:Amphiprion g:Chromis g:Dascyllus g:Pomacentrus'
                 )
               );
-            for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+            // the typed text (15) and no spelling step (16): a long one with no space on the mix-ups, which the Typed text
+            // card cuts in its cell (no sideways scroll at 390)
+            for (let i = 0; i < 4; i++)
+              add.push(
+                Object.assign(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''), {
+                  15: i % 3 ? 'Chromis' : 'Pomacentruspomacentruspomacentruspomacen',
+                  16: null
+                })
+              );
             // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
             for (let i = 0; i < 3; i++)
               add.push(
@@ -6652,6 +6659,10 @@ async function sealPart(b, base, fails) {
                 .filter(tr => /Rabbitfishes · Surgeonfishes|Surgeonfishes · Rabbitfishes/.test(tr.textContent))
                 .map(tr => tr.cells[1].textContent),
               zo: V.querySelectorAll('[data-zo]').length,
+              // the Typed text card's texts as typed, each in its capped cell (title: the whole text)
+              tt: [...V.querySelectorAll('.adm-scard')]
+                .filter(x => /^Typed text/.test(x.textContent))
+                .flatMap(x => [...x.querySelectorAll('td .adm-cut')].map(e => e.title)),
               wide: document.documentElement.scrollWidth - innerWidth
             };
           });
@@ -6675,8 +6686,22 @@ async function sealPart(b, base, fails) {
           .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {timeout: 60000})
           .catch(() => fe.push('Pairs not drawn'));
         const pr = await seen();
+        // SHOTS: the Typed text card, light then dark (rule W17), the theme put back as it was
+        if (process.env.SHOTS) {
+          const th0 = await fq.evaluate(() => document.documentElement.dataset.theme || '');
+          for (const th of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), th);
+            const card = (
+              await fq.evaluateHandle(() => [...document.querySelectorAll('#view .adm-scard')].find(x => /^Typed text/.test(x.textContent)))
+            ).asElement();
+            if (card) await card.screenshot({path: path.join(process.env.SHOTS, `fish-typed-text-${vw}-${th}.png`)});
+          }
+          await fq.evaluate(t => (t ? (document.documentElement.dataset.theme = t) : delete document.documentElement.dataset.theme), th0);
+        }
         if (
-          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
+          // Typed text: the typed mix-ups above as typed (admin.js typedText), the long one cut in its cell
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text' ||
+          pr.tt.join() !== 'pomacentruspomacentruspomacentruspomacen' ||
           pr.pair.join() !== 'Look-alike' ||
           pr.key.join() !== 'Key group' ||
           !pr.zo ||

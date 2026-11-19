@@ -70,11 +70,12 @@ test('the species units: the worlds of before unchanged, opened from their famil
   assert.deepStrictEqual(W.eps, W0.eps);
   Object.keys(W0.mu).forEach(n => assert.strictEqual(W.mu[n], W0.mu[n], n));
   U.sp.forEach(n => assert.ok(n in W.mu && X.gen[n].from === X.gen[n].parent, n));
-  // 700 answers: the rank share (model.js SHARE) keeps the species out until some of the families are at Advanced
-  const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 700, cps: [700]}),
+  // 1,200 answers: the rank share (model.js SHARE) keeps the species out until some of the families are at Advanced. The
+  // first species comes after a few hundred answers, varying widely by seed: a mechanism check, never a rate.
+  const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 1200, cps: [1200]}),
     first = {};
   r.expo.forEach((e, i) => r.kinds[e[0]] === 'species' && !(e[0] in first) && (first[e[0]] = i + 1));
-  assert.ok(Object.keys(first).length >= 1, 'no species asked in 700 answers');
+  assert.ok(Object.keys(first).length >= 1, 'no species asked in 1,200 answers');
   Object.entries(first).forEach(([n, i]) => {
     const p = X.gen[n].parent,
       own = U.sp.filter(o => X.gen[o].parent === p && X.gen[o].views.wide.length);
@@ -272,7 +273,8 @@ test('the question: every choice counts from 2 traps, the hold and the mix-ups a
       confTerm: () => 0.2,
       introduced: () => true,
       TYPED: {k: Infinity},
-      photoSet: (t, skip, shift, k, f) => ((calls.photo = {skip, shift, k, f}), {shown: [{f: 'p'}]})
+      photoSet: (t, skip, shift, k, f) => ((calls.photo = {skip, shift, k, f}), {shown: [{f: 'p'}]}),
+      seenAdd: q => (calls.seen = q[4].shown[0].f) // shown: the session's window (model.js SEENQ)
     },
     ctx = {shuffle: a => a, Math: {random: () => 0.5}},
     G = {a: {cover: 'cov.webp'}};
@@ -280,6 +282,7 @@ test('the question: every choice counts from 2 traps, the hold and the mix-ups a
   let q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd'], cards: ['a'], start: true});
   assert.strictEqual(q.k, 4);
   assert.deepStrictEqual(calls.photo, {skip: 'cov.webp', shift: -0.7, k: 4, f: 'k4'});
+  assert.strictEqual(calls.seen, 'p');
   assert.strictEqual(calls.trapsEase, -0.5);
   calls.traps = 1;
   q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd']});
