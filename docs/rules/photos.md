@@ -2,8 +2,8 @@
 
 Pierre's standing rules on photos: sources, views, what games may show, credits. Pierre's curation choices
 (`curation.json`) are in [admin.md](admin.md) (rule A1). Specs: [ARCHITECTURE.md](../ARCHITECTURE.md) "Photos",
-"Photos per context", "Share-alike coral photos". The index of every rule is in
-[AGENTS.md](../../AGENTS.md#the-rules).
+"Photos per context", "Share-alike coral photos"; [spec/photos.md](../spec/photos.md),
+[spec/fish-photos.md](../spec/fish-photos.md). The index of every rule is in [README.md](README.md#the-index).
 
 ### P1
 

@@ -245,8 +245,9 @@ written with `tools/datajson.py`.
   workflow passes it) also downloads any photo of Millepora and the bonus genera still remote (`r: 1`, as
   `build_extra.py` imports them), so every game photo is hosted like the others; the other extra Dauin genera (Coral ID
   Key only) stay on iNaturalist.
-- **`cand_gaps.py`**: the game genera short of candidates waiting (rule W20); Key-only genera are left out. It asks
-  iNaturalist as `fetch_local.py` does (its `get`, paced with retries; the genus taxon from `taxonomy.json`).
+- **`cand_gaps.py`**: the game genera short of candidates waiting ([photos.md](photos.md) "No more candidates");
+  Key-only genera are left out. It asks iNaturalist as `fetch_local.py` does (its `get`, paced with retries; the genus
+  taxon from `taxonomy.json`).
 - **`r2_move.py`**: lists what leaves `img/` (a photo with an online original) and what stays, by kind, owner and genus,
   with sizes; `--verify` checks each file on R2 byte for byte (R2's ETag is the file's MD5); `--apply` removes from `img/`
   the files R2 holds identically.
