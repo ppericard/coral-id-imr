@@ -1,5 +1,5 @@
 {
-  "about": "The fish genera's own presentation and ID marks, for every genus in play the IMR fish presentation gives no cues for (and marks for some it gives cues for, below), in every circle, the surprise cards' families aside (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players; circles 2 and 3 since 2026-11-18, \"d'abord le contenu\"). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done, every family in play (each of its genera without IMR cues is in genera with a presentation, and with marks or in none with its reason; the build stops otherwise). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, nor a feature seen only in the hand; a species named is one of the genus's game species (rule C6). Most lines come from the FAO species identification guide for the Western Central Pacific (Carpenter and Niem, eds, vols 3 and 4, 1999, vols 5 and 6, 2001: each family's key to the genera, or its key to the species where it has none, and its species accounts), the rest from FishBase species pages; a genus the guide names otherwise says so (as Xyrichtys, as Pseudaluteres, as Dendrochirus brachypterus, as Apogon cyanosoma, as Trachinocephalus myops, as Dasyatis kuhlii, as Doryrhamphus (Dunckerocampus), as Carangoides bajad and C. ferdau, as Pseudochromis porphyreus). Circles 2 and 3, and a circle-1 genus with IMR cues (Dascyllus): where the guide splits the genera by counts only, or has no key, a visible feature that FishBase gives for the genus's only game species, or for each of its game species, stands as a mark (the sea slug cues' rule), a feature its species share rather than a tell-apart; the requiem sharks, whose FAO pages did not open, are from FishBase alone. The only genus of its family here gets a presentation only: the family's IMR cues and ID marks (tools/fish_sheets.json) tell it. none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues may have 1 to 3 marks (no plain, never in none), from the same sources, faithful to its IMR cues and never contradicting them (rule C1; a source that differs goes to points.json, rule C5), shown under the IMR cues as a family's marks are (integrator's call on Pierre's \"Mouais bof\", 2026-11-19, to keeping them apart); one with no mark seen on a photo in the sources is simply left out. tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
+  "about": "The fish genera's own presentation and ID marks, for every genus in play the IMR fish presentation gives no cues for (and marks for some it gives cues for, below), in every circle, the surprise cards' families aside (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players; circles 2 and 3 since 2026-11-18, \"d'abord le contenu\"). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done, every family in play (each of its genera without IMR cues is in genera with a presentation, and with marks or in none with its reason; the build stops otherwise). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, nor a feature seen only in the hand; a species named is one of the genus's game species (rule C6). Most lines come from the FAO species identification guide for the Western Central Pacific (Carpenter and Niem, eds, vols 3 and 4, 1999, vols 5 and 6, 2001: each family's key to the genera, or its key to the species where it has none, and its species accounts), the rest from FishBase species pages; a genus the guide names otherwise says so (as Xyrichtys, as Pseudaluteres, as Dendrochirus brachypterus, as Apogon cyanosoma, as Trachinocephalus myops, as Dasyatis kuhlii, as Doryrhamphus (Dunckerocampus), as Carangoides bajad and C. ferdau, as Pseudochromis porphyreus). Circles 2 and 3, and a circle-1 genus with IMR cues (Dascyllus): where the guide splits the genera by counts only, or has no key, a visible feature that FishBase gives for the genus's only game species, or for each of its game species, stands as a mark (the sea slug cues' rule), a feature its species share rather than a tell-apart; the requiem sharks, whose FAO pages did not open, are from FishBase alone. Any circle, where neither gives a photo feature (Pierre, 2026-11-19: \"Il faut sourcer tous les … qu'on peut\"): a feature that Reef Life Survey (rls-), FishBase or Fishes of Australia (foa-) species pages give for each game species, or an FAO species catalogue (faocat-) for the genus, the ref's where then being the page's words verbatim, each checked by script against the page as read on 2026-11-19. The only genus of its family here gets a presentation only: the family's IMR cues and ID marks (tools/fish_sheets.json) tell it. none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues may have 1 to 3 marks (no plain, never in none), from the same sources, faithful to its IMR cues and never contradicting them (rule C1; a source that differs goes to points.json, rule C5), shown under the IMR cues as a family's marks are (integrator's call on Pierre's \"Mouais bof\", 2026-11-19, to keeping them apart); one with no mark seen on a photo in the sources is simply left out. tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
   "src": {
     "fao-lab": {
       "t": "FAO species guide, Labridae (Westneat 2001), key to the genera",
@@ -365,7 +365,31 @@
     "fb-paragobiodon-xanthosoma": {"t": "FishBase, Paragobiodon xanthosoma", "u": "https://www.fishbase.se/summary/Paragobiodon-xanthosoma.html"},
     "fb-mahidolia-mystacina": {"t": "FishBase, Mahidolia mystacina", "u": "https://www.fishbase.se/summary/Mahidolia-mystacina.html"},
     "fb-tomiyamichthys-oni": {"t": "FishBase, Tomiyamichthys oni", "u": "https://www.fishbase.se/summary/Tomiyamichthys-oni.html"},
-    "fb-gobiodon-prolixus": {"t": "FishBase, Gobiodon prolixus", "u": "https://www.fishbase.se/summary/Gobiodon-prolixus.html"}
+    "fb-gobiodon-prolixus": {"t": "FishBase, Gobiodon prolixus", "u": "https://www.fishbase.se/summary/Gobiodon-prolixus.html"},
+    "faocat-lut": {"t": "FAO species catalogue, Snappers of the world (Allen 1985), Macolor", "u": "https://www.fao.org/4/ac481e/ac481e34.pdf"},
+    "rls-macolor-macularis": {"t": "Reef Life Survey, Macolor macularis", "u": "https://reeflifesurvey.com/species/macolor-macularis/"},
+    "rls-macolor-niger": {"t": "Reef Life Survey, Macolor niger", "u": "https://reeflifesurvey.com/species/macolor-niger/"},
+    "rls-pomacanthus-imperator": {"t": "Reef Life Survey, Pomacanthus imperator", "u": "https://reeflifesurvey.com/species/pomacanthus-imperator/"},
+    "rls-pomacanthus-navarchus": {"t": "Reef Life Survey, Pomacanthus navarchus", "u": "https://reeflifesurvey.com/species/pomacanthus-navarchus/"},
+    "rls-pomacanthus-semicirculatus": {"t": "Reef Life Survey, Pomacanthus semicirculatus", "u": "https://reeflifesurvey.com/species/pomacanthus-semicirculatus/"},
+    "rls-pomacanthus-sexstriatus": {"t": "Reef Life Survey, Pomacanthus sexstriatus", "u": "https://reeflifesurvey.com/species/pomacanthus-sexstriatus/"},
+    "rls-upeneus-tragula": {"t": "Reef Life Survey, Upeneus tragula", "u": "https://reeflifesurvey.com/species/upeneus-tragula/"},
+    "fb-upeneus-tragula": {"t": "FishBase, Upeneus tragula", "u": "https://www.fishbase.se/summary/Upeneus-tragula.html"},
+    "rls-pristiapogon-exostigma": {"t": "Reef Life Survey, Pristiapogon exostigma", "u": "https://reeflifesurvey.com/species/pristiapogon-exostigma/"},
+    "rls-pristiapogon-fraenatus": {"t": "Reef Life Survey, Pristiapogon fraenatus", "u": "https://reeflifesurvey.com/species/pristiapogon-fraenatus/"},
+    "rls-parachaetodon-ocellatus": {"t": "Reef Life Survey, Parachaetodon ocellatus", "u": "https://reeflifesurvey.com/species/parachaetodon-ocellatus/"},
+    "rls-chaetodontoplus-mesoleucus": {"t": "Reef Life Survey, Chaetodontoplus mesoleucus", "u": "https://reeflifesurvey.com/species/chaetodontoplus-mesoleucus/"},
+    "rls-apolemichthys-trimaculatus": {"t": "Reef Life Survey, Apolemichthys trimaculatus", "u": "https://reeflifesurvey.com/species/apolemichthys-trimaculatus/"},
+    "rls-plectropomus-laevis": {"t": "Reef Life Survey, Plectropomus laevis", "u": "https://reeflifesurvey.com/species/plectropomus-laevis/"},
+    "rls-plectroglyphidodon-lacrymatus": {"t": "Reef Life Survey, Plectroglyphidodon lacrymatus", "u": "https://reeflifesurvey.com/species/plectroglyphidodon-lacrymatus/"},
+    "rls-choerodon-anchorago": {"t": "Reef Life Survey, Choerodon anchorago", "u": "https://reeflifesurvey.com/species/choerodon-anchorago/"},
+    "rls-pseudobalistes-flavimarginatus": {"t": "Reef Life Survey, Pseudobalistes flavimarginatus", "u": "https://reeflifesurvey.com/species/pseudobalistes-flavimarginatus/"},
+    "rls-sphaeramia-nematoptera": {"t": "Reef Life Survey, Sphaeramia nematoptera", "u": "https://reeflifesurvey.com/species/sphaeramia-nematoptera/"},
+    "rls-taeniamia-melasma": {"t": "Reef Life Survey, Taeniamia melasma", "u": "https://reeflifesurvey.com/species/taeniamia-melasma/"},
+    "rls-labracinus-cyclophthalmus": {"t": "Reef Life Survey, Labracinus cyclophthalmus", "u": "https://reeflifesurvey.com/species/labracinus-cyclophthalmus/"},
+    "foa-658": {"t": "Fishes of Australia, Pygoplites diacanthus", "u": "https://fishesofaustralia.net.au/home/species/658"},
+    "rls-pygoplites-diacanthus": {"t": "Reef Life Survey, Pygoplites diacanthus", "u": "https://reeflifesurvey.com/species/pygoplites-diacanthus/"},
+    "foa-315": {"t": "Fishes of Australia, Amblypomacentrus breviceps", "u": "https://fishesofaustralia.net.au/home/species/315"}
   },
   "families": [
     "f:Damselfishes",
@@ -677,6 +701,10 @@
       "plain": [
         "Solitary wrasses of shallow coral reefs and seagrass beds that eat crustaceans, molluscs and sea urchins.",
         [["fao-lab04", "Choerodon anchorago, p. 3418"]]
+      ],
+      "marks": [
+        ["A triangular white bar cutting into the grey at mid-body", [["rls-choerodon-anchorago", "triangular white bar cutting into grey around mid-body"]]],
+        ["A round white patch at the rear base of the dorsal fin", [["rls-choerodon-anchorago", "circular white patch at rear base of dorsal fin"]]]
       ]
     },
     "Cymolutes": {
@@ -689,12 +717,20 @@
       "plain": [
         "Slender wrasses, about 16 cm, usually bright green, hiding well camouflaged in seagrass beds and sandy algal flats of lagoons.",
         [["fb-novaculoides-macrolepidotus", "Size, Morphology, Biology"]]
+      ],
+      "marks": [
+        ["Slender and usually bright green", [["fb-novaculoides-macrolepidotus", "A slender species, usually bright green."]]],
+        ["Hides in seagrass and algal flats", [["fb-novaculoides-macrolepidotus", "Found solitary or in small groups (Ref. 90102 ) in seagrass beds and sandy algal flats of lagoons and mangrove channels. Secretive amongst the vegetation and well-camouflaged"]]]
       ]
     },
     "Wetmorella": {
       "plain": [
         "Tiny, secretive wrasses, about 6 cm, of caves and crevices on lagoon and seaward reefs, mostly found below 30 m.",
         [["fb-wetmorella-albofasciata", "Size, Biology"]]
+      ],
+      "marks": [
+        ["Narrow pale bands radiating from the eye across the head", [["fb-wetmorella-albofasciata", "Head with narrow, diagonal pale bands radiating from the orbit"]]],
+        ["A large black spot on the pelvic fin", [["fb-wetmorella-albofasciata", "A large black spot covering more than half of pelvic fin."]]]
       ]
     },
     "Scarus": {
@@ -761,6 +797,10 @@
       "plain": [
         "Large triggerfishes, up to 60 cm, living alone on coral reefs and eating sea urchins, crabs and molluscs; nest-guarding females are aggressive.",
         [["fao-bal55", "Pseudobalistes flavimarginatus, p. 3922"]]
+      ],
+      "marks": [
+        ["Yellow edges on the dorsal, anal and tail fins", [["rls-pseudobalistes-flavimarginatus", "yellow margin to dorsal, anal and tail fins."]]],
+        ["Apricot face, dark stripes behind the eye", [["rls-pseudobalistes-flavimarginatus", "Apricot-coloured face, dark stripes behind eye"]]]
       ]
     },
     "Melichthys": {
@@ -1054,6 +1094,10 @@
       "plain": [
         "Damselfishes of clear lagoon and seaward reefs; P. lacrymatus lives among mixed coral and rubble and feeds mainly on algae.",
         [["fb-plectroglyphidodon-lacrymatus", "Biology"]]
+      ],
+      "marks": [
+        ["Dark body evenly sprinkled with small blue spots", [["rls-plectroglyphidodon-lacrymatus", "Dark body covered by even scattering of small blue spots"]]],
+        ["Pale, whitish to yellow tail", [["rls-plectroglyphidodon-lacrymatus", "Pale white to yellow tail, becoming dusky with age"]]]
       ]
     },
     "Dischistodus": {
@@ -1077,6 +1121,10 @@
       "plain": [
         "Small damselfishes of sandy or silty lagoons, around rubble or sponges; the young often shelter with anemones, and old shells or bottles serve as nests.",
         [["fb-amblypomacentrus-breviceps", "Size, Biology"]]
+      ],
+      "marks": [
+        ["A broad dark bar through the eye, dark saddles on the back", [["foa-315", "A damselfish with a broad dark brown bar through the eye, two broad bars of saddles on the back"]]],
+        ["Rows of pale blue spots on the sides, yellowish below", [["foa-315", "rows of pale blue spots on sides, and yellowish lower sides."]]]
       ]
     },
     "Chaetodon": {
@@ -1125,7 +1173,11 @@
       ]
     },
     "Parachaetodon": {
-      "plain": ["Butterflyfishes of lagoons and coral reefs, at 3 to 50 m.", [["fao-cha47", "Parachaetodon ocellatus, p. 3265"]]]
+      "plain": ["Butterflyfishes of lagoons and coral reefs, at 3 to 50 m.", [["fao-cha47", "Parachaetodon ocellatus, p. 3265"]]],
+      "marks": [
+        ["Triangular body, most of all with the dorsal fin raised", [["rls-parachaetodon-ocellatus", "has more triangular body shape, particularly when dorsal fin extended."]]],
+        ["Bars not joined under the pectoral fin (Coradion: joined)", [["rls-parachaetodon-ocellatus", "Bars not joined beneath pectoral fin as in Coradion species (Coralfishes)."]]]
+      ]
     },
     "Centropyge": {
       "plain": [
@@ -1137,24 +1189,38 @@
       "plain": [
         "Angelfishes of coral reefs, at 3 to 30 m, that feed on sponges and tunicates, alone, in pairs or in small groups.",
         [["fao-pmc50", "Pygoplites diacanthus, p. 3286"]]
+      ],
+      "marks": [
+        ["Orange-yellow, with dark-edged bluish-white bars onto the fins", [["foa-658", "A yellowish-orange angelfish with dark-edged bluish-white bars on the head and sides extending onto the dorsal and anal fins"], ["rls-pygoplites-diacanthus", "Distinctive bright banded body markings."]]],
+        ["A dark patch around the eye and a yellow tail", [["foa-658", "a dark patch around the eye and a yellow tail."]]]
       ]
     },
     "Pomacanthus": {
       "plain": [
         "Large angelfishes, up to 25 to 40 cm, that feed on sponges and tunicates, alone or in pairs.",
         [["fao-pmc50", "Pomacanthus imperator, P. navarchus and P. semicirculatus, p. 3285"]]
+      ],
+      "marks": [
+        ["Young: dark, with thin blue and white curved or upright lines", [["rls-pomacanthus-imperator", "Juveniles with blue concentric curved lines on dark body"], ["rls-pomacanthus-navarchus", "Juveniles with narrow vertical blue and white bands."], ["rls-pomacanthus-semicirculatus", "Juveniles with curved blue and white lines on dark body"], ["rls-pomacanthus-sexstriatus", "Juvenile with white vertical bars in dark central body, bars grading to blue above and below."]]]
       ]
     },
     "Chaetodontoplus": {
       "plain": [
         "Angelfishes of lagoons and coral reefs, at 5 to 25 m; C. mesoleucus feeds on sponges and tunicates in small groups.",
         [["fao-pmc49", "Chaetodontoplus mesoleucus, p. 3281"]]
+      ],
+      "marks": [
+        ["Black band through the eye, speckled body, yellow tail", [["rls-chaetodontoplus-mesoleucus", "black band through eye, speckled body with yellow tail."]]]
       ]
     },
     "Apolemichthys": {
       "plain": [
         "Angelfishes of outer reef slopes and drop-offs, at 10 to 35 m, that feed on sponges and tunicates.",
         [["fao-pmc", "Apolemichthys trimaculatus, p. 3272"]]
+      ],
+      "marks": [
+        ["All-yellow body with dark scale edges", [["rls-apolemichthys-trimaculatus", "Yellow body with dark scale margins"]]],
+        ["A black spot on the forehead", [["rls-apolemichthys-trimaculatus", "black spot on forehead"]]]
       ]
     },
     "Genicanthus": {
@@ -1181,7 +1247,11 @@
       ]
     },
     "Plectropomus": {
-      "plain": ["Large groupers: P. laevis reaches about 125 cm.", [["fao-ser40", "Plectropomus laevis, p. 2532"]]]
+      "plain": ["Large groupers: P. laevis reaches about 125 cm.", [["fao-ser40", "Plectropomus laevis, p. 2532"]]],
+      "marks": [
+        ["Dark saddles across the back", [["rls-plectropomus-laevis", "five dark grey saddles on back"]]],
+        ["One form white with black saddles and yellow fins", [["rls-plectropomus-laevis", "form is white with black saddles and yellow fins."]]]
+      ]
     },
     "Variola": {
       "plain": [
@@ -1228,24 +1298,39 @@
       "plain": [
         "Cardinalfishes of clear reef flats, lagoons and seaward reefs; P. fraenatus hides under ledges and at the base of coral heads by day.",
         [["fb-pristiapogon-fraenatus", "Biology"]]
+      ],
+      "marks": [
+        ["See-through pinkish body with one dark stripe, eye to tail base", [["rls-pristiapogon-exostigma", "Clear to pink translucent with a single stripe that tapers from eye to mid tail base"], ["rls-pristiapogon-fraenatus", "Clear to pink translucent with a single black stripe that tapers from eye to mid tail base"]]],
+        ["Front edge of the first dorsal fin black", [["rls-pristiapogon-exostigma", "leading edge of first dorsal fin black."], ["rls-pristiapogon-fraenatus", "Leading edge of first dorsal fin blackish."]]]
       ]
     },
     "Foa": {
       "plain": [
         "Tiny cardinalfishes, about 3.5 cm, of quiet coastal bays on mud or silt with algae-covered rocks or soft corals; active at night.",
         [["fb-foa-fo", "Size, Biology"]]
+      ],
+      "marks": [
+        ["Mottled brown with darker, irregular bars", [["fb-foa-fo", "body mottled brownish with 5 darker irregular bars"]]],
+        ["A whitish spot where the pectoral fin meets the body", [["fb-foa-fo", "axil of pectoral fin with a whitish spot"]]]
       ]
     },
     "Sphaeramia": {
       "plain": [
         "Cardinalfishes of sheltered lagoon reefs, to 12 m, in small groups among live coral by day.",
         [["fao-apo", "Sphaeramia nematoptera, p. 2610"]]
+      ],
+      "marks": [
+        ["A black band between a yellow head and a spotted rear body", [["rls-sphaeramia-nematoptera", "Distinctive pattern of black band dividing yellow head from spots on rear of body."]]]
       ]
     },
     "Taeniamia": {
       "plain": [
         "Cardinalfishes of sheltered coastal reefs, often silty, in small groups among branching Acropora corals.",
         [["fb-taeniamia-melasma", "Biology"]]
+      ],
+      "marks": [
+        ["A black spot above the top rear corner of the gill cover", [["rls-taeniamia-melasma", "black spot behind upper operculum"], ["fb-taeniamia-melasma", "a large black spot above upper posterior edge of opercle"]]],
+        ["Fine wavy orange bars on a pale silvery body", [["rls-taeniamia-melasma", "Translucent pale silvery-grey with orange/yellow rear margins on scales, which create fine wavy vertical lines on body."], ["fb-taeniamia-melasma", "numerous narrow orange bars on side"]]]
       ]
     },
     "Pterois": {
@@ -1354,6 +1439,11 @@
       "plain": [
         "Goatfishes of sheltered bays and lagoons, on sand or silty sand near reefs; also common in estuaries.",
         [["fao-mul40", "Upeneus tragula, p. 3199"]]
+      ],
+      "marks": [
+        ["Oblique dark bars on both lobes of the tail", [["rls-upeneus-tragula", "oblique dark bars on upper and lower lobes of tail"], ["fb-upeneus-tragula", "oblique bars on caudal fin"]]],
+        ["A dark stripe from the snout through the eye to the tail base", [["rls-upeneus-tragula", "Dark stripe from snout to tail base"], ["fb-upeneus-tragula", "one red, brown or black mid-lateral body stripe from tip of snout through eye to caudal base"]]],
+        ["A dark blotch at the tip of the first dorsal fin", [["rls-upeneus-tragula", "dark blotch on tip of first dorsal"], ["fb-upeneus-tragula", "first dorsal fin with a large blotch around tip"]]]
       ]
     },
     "Synodus": {
@@ -1391,6 +1481,11 @@
       "plain": [
         "Snappers of coastal reefs, from 2 to 90 m, that feed on fishes and crustaceans; M. niger can gather in large schools.",
         [["fao-lut13", "Macolor macularis, p. 2897"], ["fao-lut14", "Macolor niger, p. 2898"]]
+      ],
+      "marks": [
+        ["Adults mostly blackish, paler on the belly", [["faocat-lut", "Colour: adults mainly blackish except lighter on belly"], ["rls-macolor-niger", "High dark body and rounded head."]]],
+        ["Young: black above, white below, white spots on the back", [["faocat-lut", "juveniles with a strongly contrasted pattern of mainly black dorsally and white ventrally, with white spots in black region of back and a black band through the eye."], ["rls-macolor-macularis", "Juvenile black with wide white stripe along side, second white stripe on belly, at least six large white patches on upper body"], ["rls-macolor-niger", "Juveniles also very similar to those of M. macularis , black with two white stripes along body, one on side and one on belly, and white blotches on back"]]],
+        ["Young: a black band through the eye", [["faocat-lut", "with white spots in black region of back and a black band through the eye."]]]
       ]
     },
     "Plectorhinchus": {
@@ -2249,6 +2344,10 @@
       "plain": [
         "Dottybacks of shallow reefs with surge or currents, near the shelter of coral or rock, often in silty places; they hunt small fishes.",
         [["fb-labracinus-cyclophthalmus", "Biology"]]
+      ],
+      "marks": [
+        ["Red eye with dark oblique lines below it", [["rls-labracinus-cyclophthalmus", "all with red eye and oblique dark lines underneath"]]],
+        ["Dark scales lined up in thin lengthwise lines", [["rls-labracinus-cyclophthalmus", "dark scales aligned in thin longitudinal lines extending from behind the head"]]]
       ]
     },
     "Pictichromis": {
@@ -2496,74 +2595,55 @@
     }
   },
   "none": {
-    "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo",
-    "Choerodon": "the FAO key (couplets 2, 4) sets it apart by spine counts, canine teeth and small cheek scales only: nothing seen on a photo",
-    "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo",
-    "Novaculoides": "the FAO key (2001) puts its species in Novaculichthys, whose colour there fits N. taeniourus only; FishBase describes its look, not what tells it from the other genera",
-    "Wetmorella": "the FAO key (couplet 10) sets it apart by the scales of the cheek and gill cover only: nothing seen on a photo",
-    "Pseudobalistes": "the FAO key (couplet 5) sets it apart by a bare patch at the front of the cheek only, hard to see on a photo",
+    "Mulloidichthys": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo; the yellow stripe from eye to tail base that Reef Life Survey (2026-11-19) gives both game species also runs, above a black one, on Parupeneus barberinus",
+    "Abudefduf": "the FAO key (couplets 19, 20) sets it apart by scale rows only: nothing seen on a photo; the black bars on a pale body that Reef Life Survey (2026-11-19) gives both game species are also on Dascyllus aruanus and D. melanurus",
+    "Amphiprion": "the FAO key (couplets 1, 2) sets it apart by scale counts and serrate gill covers only: nothing seen on a photo (its life with sea anemones is in its presentation); FishBase (2026-11-19) ties each game species to its host anemones, but Reef Life Survey says young Dascyllus trimaculatus live with anemones too, and FishBase says the same of young Amblypomacentrus",
+    "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
+    "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo; FishBase and Fishes of Australia (2026-11-19) give only dark brown markings and that it dives into sand: no clear photo feature",
     "Siganus": "the only genus of its family here: the family's IMR cues and ID marks tell it",
     "Platax": "the only genus of its family here: the family's IMR cues and ID marks tell it",
     "Zanclus": "the only genus of its family: the family's IMR cues and ID marks tell it",
     "Parapercis": "the only genus of its family here: the family's IMR cues and ID marks tell it",
-    "Abudefduf": "the FAO key (couplets 19, 20) sets it apart by scale rows only: nothing seen on a photo",
-    "Amphiprion": "the FAO key (couplets 1, 2) sets it apart by scale counts and serrate gill covers only: nothing seen on a photo (its life with sea anemones is in its presentation)",
-    "Plectroglyphidodon": "the FAO key (couplets 21, 22) sets it apart by gill-raker and spine counts only: nothing seen on a photo",
-    "Dischistodus": "the FAO key (couplet 16) sets it apart by the scales of the snout and a notch under the eye only: nothing seen on a photo",
-    "Amblypomacentrus": "the FAO key (couplet 14) sets it apart from Pomachromis only, by body depth and spine count: no game genus",
-    "Parachaetodon": "the FAO key (couplet 2) sets it apart by its lateral line and spine count only: nothing seen on a photo",
-    "Centropyge": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo",
-    "Pygoplites": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo",
-    "Pomacanthus": "the FAO key (couplets 1, 2) sets it apart by scale structure and size only: nothing seen on a photo",
-    "Chaetodontoplus": "the FAO key (couplets 1, 2) sets it apart by scale structure and size only: nothing seen on a photo",
-    "Apolemichthys": "the FAO key (couplet 4) sets it apart by gill-cover bones only: nothing seen on a photo",
-    "Epinephelus": "the FAO key (couplets 12, 18, 20) sets it apart from Cephalopholis by spine counts only: nothing seen on a photo",
-    "Plectropomus": "the FAO key (couplets 12, 13) sets it apart by spine counts and hidden spines only: nothing seen on a photo",
-    "Ostorhinchus": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo",
-    "Pristiapogon": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo",
-    "Foa": "the FAO key (couplets 11, 12) sets it apart by its lateral line and palate teeth only: nothing seen on a photo",
-    "Sphaeramia": "the FAO key (couplet 9) sets it apart by small spiny rays on the tail edges only, hard to see on a photo",
-    "Taeniamia": "the FAO key (2001) puts its species in Archamia, set apart by fin-ray counts only: nothing seen on a photo",
-    "Pteropterus": "not a genus in the FAO key (2001), and FishBase gives no comparison: no source read",
-    "Parupeneus": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
-    "Mulloidichthys": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
-    "Upeneus": "the FAO key (couplets 1, 3) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
-    "Macolor": "the FAO key (couplet 12) sets it apart by gill-raker counts only: nothing seen on a photo",
-    "Plectorhinchus": "the FAO key (couplet 3) sets it apart from Diagramma by fin and scale counts only: nothing seen on a photo",
-    "Caesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo",
-    "Pterocaesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo",
+    "Dischistodus": "the FAO key (couplet 16) sets it apart by the scales of the snout and a notch under the eye only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species its own pattern: some white with dark patches, one dark with a white patch",
+    "Centropyge": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species its own colours; small size alone is not seen on a photo",
+    "Epinephelus": "the FAO key (couplets 12, 18, 20) sets it apart from Cephalopholis by spine counts only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
+    "Ostorhinchus": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo; Reef Life Survey (2026-11-19) describes thirteen of its nineteen game species: stripes of different number and colour, one orange with a black tail band, one with a white dorsal margin; a black tail-base spot on several, as on Pristiapogon",
+    "Pteropterus": "not a genus in the FAO key (2001), and FishBase gives no comparison: no source read; FishBase (2026-11-19) gives pectoral-fin blotches that other lionfishes in play may share, and no comparison: not kept",
+    "Parupeneus": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo; Reef Life Survey's pages (2026-11-19) give each game species its own pattern, none shared",
+    "Plectorhinchus": "the FAO key (couplet 3) sets it apart from Diagramma by fin and scale counts only: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give each game species, and its young, its own pattern",
+    "Caesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo; the FAO fusilier catalogue (Carpenter 1988) splits the genera by the jaw bones only, its field key mixes Caesio and Pterocaesio, and the black pectoral-base spot Reef Life Survey gives its game species is on Pterocaesio tile too",
+    "Pterocaesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo; the FAO fusilier catalogue (Carpenter 1988) splits the genera by the jaw bones only, and its field key mixes Caesio and Pterocaesio; Reef Life Survey (2026-11-19) gives each game species its own stripes",
     "Scolopsis": "the only genus of its family here: the family's IMR cues and ID marks tell it",
     "Pseudanthias": "the only genus of its family here: the family's IMR cues and ID marks tell it",
     "Myripristis": "the only genus of its family here: the family's IMR cues and ID marks tell it",
     "Sphyraena": "the only genus of its family: the family's ID marks tell it",
     "Aulostomus": "the only genus of its family: the family's ID marks tell it",
     "Pempheris": "the only genus of its family here: the family's ID marks tell it",
-    "Nudiantennarius": "the FAO key (couplets 1 to 3) sets it apart by the skin's tiny spinules and how the dorsal spines are bound, hard to see on a photo",
+    "Nudiantennarius": "the FAO key (couplets 1 to 3) sets it apart by the skin's tiny spinules and how the dorsal spines are bound, hard to see on a photo; FishBase (2026-11-19) gives the near-naked skin and a long second dorsal spine, hard to see on a photo; the spot at the dorsal-fin base its Wikipedia page gives is also Abantennarius's mark",
     "Solenostomus": "the only genus of its family: the family's ID marks tell it",
     "Hippocampus": "the only genus of its family: the family's ID marks tell it",
     "Eurypegasus": "the only genus of its family here: the family's ID marks tell it",
-    "Paracentropogon": "the FAO key (couplets 35, 36) sets it apart from Ablabys by fin-ray, scale and gill-raker counts only, and FishBase gives no visible feature: nothing seen on a photo",
+    "Paracentropogon": "the FAO key (couplets 35, 36) sets it apart from Ablabys by fin-ray, scale and gill-raker counts only, and FishBase gives no visible feature: nothing seen on a photo; Fishes of Australia (2026-11-19) gives no summary of its look",
     "Dactyloptena": "the only genus of its family here: the family's ID marks tell it",
     "Uranoscopus": "the only genus of its family here: the family's ID marks tell it",
     "Opistognathus": "the only genus of its family here: the family's ID marks tell it",
-    "Gymnothorax": "the FAO key (couplet 5) sets it apart by slender, pointed teeth only, a couplet its own note calls troublesome and that some game species fail: nothing else seen on a photo",
-    "Meiacanthus": "the FAO key (couplet 5) sets it apart by grooved fangs and the gill opening only, and its two game species share no colour pattern in FishBase: nothing seen on a photo",
-    "Petroscirtes": "the FAO key (couplets 6 to 8) sets it apart by fin-ray counts and the gill opening only, and its game species share no visible feature in FishBase",
-    "Plagiotremus": "the FAO key (couplets 6, 7) sets it apart by fin-ray counts and the lateral line only, and its game species share no colour pattern in FishBase",
+    "Gymnothorax": "the FAO key (couplet 5) sets it apart by slender, pointed teeth only, a couplet its own note calls troublesome and that some game species fail: nothing else seen on a photo; Reef Life Survey (2026-11-19) describes seven of its twelve game species: spotted, speckled, barred or marbled, none shared",
+    "Meiacanthus": "the FAO key (couplet 5) sets it apart by grooved fangs and the gill opening only, and its two game species share no colour pattern in FishBase: nothing seen on a photo; Reef Life Survey (2026-11-19) gives its two game species different patterns, one mimicked by Plagiotremus laudandus",
+    "Petroscirtes": "the FAO key (couplets 6 to 8) sets it apart by fin-ray counts and the gill opening only, and its game species share no visible feature in FishBase; Reef Life Survey describes none of its game species, Fishes of Australia (2026-11-19) gives no summary",
+    "Plagiotremus": "the FAO key (couplets 6, 7) sets it apart by fin-ray counts and the lateral line only, and its game species share no colour pattern in FishBase; Reef Life Survey (2026-11-19) gives its game species different patterns: two striped and slender, one a mimic of Meiacanthus",
     "Plotosus": "the only genus of its family here: the family's ID marks tell it",
     "Priacanthus": "the only genus of its family here: the family's ID marks tell it",
-    "Liachirus": "the FAO guide lists it without a place in its key to the genera, and FishBase gives no visible feature: no source read gives a mark",
+    "Liachirus": "the FAO guide lists it without a place in its key to the genera, and FishBase gives no visible feature: no source read gives a mark; Reef Life Survey has no page for it, Fishes of Australia (2026-11-19) no summary",
     "Fistularia": "the only genus of its family: the family's ID marks tell it",
     "Echeneis": "the only genus of its family here: the family's ID marks tell it",
     "Tylosurus": "the only genus of its family here: the family's ID marks tell it",
     "Ptereleotris": "the only genus of its family here: the family's ID marks tell it",
-    "Labracinus": "the FAO key (couplet 6) sets it apart by lateral-line scale counts only, and FishBase gives no visible feature: nothing seen on a photo",
-    "Pseudochromis": "the FAO key (couplets 5 to 8) sets it apart by teeth, scales and ray counts only, and its two game species share no colour pattern in the sources read",
+    "Pseudochromis": "the FAO key (couplets 5 to 8) sets it apart by teeth, scales and ray counts only, and its two game species share no colour pattern in the sources read; Reef Life Survey (2026-11-19) has a pattern for one of its two game species only",
     "Pholidichthys": "the only genus of its family: the family's ID marks tell it",
     "Helcogramma": "the only genus of its family here: the family's ID marks tell it",
-    "Amblyeleotris": "the FAO key (couplets 40, 58) sets it apart by head papillae and fin-ray counts only, and its twelve game species differ in colour: nothing seen on a photo",
-    "Valenciennea": "the FAO key (couplet 41) sets it apart by its teeth and size only, and its three game species share no colour pattern in FishBase",
-    "Cryptocentrus": "the FAO key (couplet 62) sets it apart by the gill membranes only, and its three game species differ in colour: nothing seen on a photo",
-    "Hazeus": "the FAO key (couplets 16 to 19) sets it apart by stiff first dorsal spines and a scaled gill cover, hard to see on a photo, and FishBase gives no colour for its game species"
+    "Amblyeleotris": "the FAO key (couplets 40, 58) sets it apart by head papillae and fin-ray counts only, and its twelve game species differ in colour: nothing seen on a photo; Reef Life Survey and Fishes of Australia (2026-11-19) give bars or bands to most game species read, but A. latifasciata may lack them, three have no page, and Cryptocentrus fasciatus is barred too",
+    "Valenciennea": "the FAO key (couplet 41) sets it apart by its teeth and size only, and its three game species share no colour pattern in FishBase; Reef Life Survey (2026-11-19) gives its three game species different patterns",
+    "Cryptocentrus": "the FAO key (couplet 62) sets it apart by the gill membranes only, and its three game species differ in colour: nothing seen on a photo; Fishes of Australia (2026-11-19) gives bars to two game species, the third has no page",
+    "Hazeus": "the FAO key (couplets 16 to 19) sets it apart by stiff first dorsal spines and a scaled gill cover, hard to see on a photo, and FishBase gives no colour for its game species; Fishes of Australia (2026-11-19) has a pattern for one of its two game species only"
   }
 }
