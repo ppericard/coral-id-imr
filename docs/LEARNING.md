@@ -249,10 +249,9 @@ The photos of a question on unit n come from `model.js` `photoSet`:
   ability + shift − `aimOff(k, df)` − `PICKD.SINGLE` (one view alone) − the start's lean. The spread is
   √(`PICKD.SIGMA`² + u / (1 + answers / `CAL.N`)), wider for a photo few players have answered (`model.js` `calSd`).
 - **Photos never seen** get a bonus, bigger when the player is doing well on the unit (× (1 + 1.5 × the share right in
-  its last 5 answers)), the corals' IMR and Pierre's photos × 1.3 (`SUBJECTS` `tiers`), and a reference-level photo ×
-  the subject's `calib.ref`. **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`,
-  `memBucket`), so the least remembered come first; a colony counts as seen whatever view of it was shown
-  (`model.js` `colonyMem`).
+  its last 5 answers)) and a reference-level photo × the subject's `calib.ref`; never for who took the photo (rule
+  P1). **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`, `memBucket`), so the
+  least remembered come first; a colony counts as seen whatever view of it was shown (`model.js` `colonyMem`).
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
@@ -665,10 +664,10 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 ### Fish: easy, reference-like photos first, whoever took them
 
 The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
-`easyRank`): reference-level photos first (`core.js` `refLevel`: a reference source's own photo judged easy, or any
-photo judged 5 with the reference look: profile, whole, good light, true colours, sharp, one kind of fish), then by
-ease, then the most reference-like (`core.js` `refScore`), then a fixed hash of the file name, never by who took it
-(rule P1). In the draw a reference-level photo never seen weighs `calib.ref` (3) times more.
+`easyRank`): reference-level photos first (`core.js` `refLevel`: judged 4-5 with the reference look: profile, whole,
+good light, true colours, sharp, one kind of fish; never its route in), then by ease, then the most reference-like
+(`core.js` `refScore`), then a fixed hash of the file name, never by who took it (rule P1). In the draw a
+reference-level photo never seen weighs `calib.ref` (3) times more.
 
 ### The fish draw in big pools
 

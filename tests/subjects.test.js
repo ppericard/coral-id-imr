@@ -452,7 +452,7 @@ test('treeGen order and cover: the easiest, most reference-like photo first, who
     assert.strictEqual(C.easyRank(L, undefined, false)[0].f, L[0].f, `${g.id}: the list in easyRank order without licence`);
     L.slice(1).forEach((p, i) => {
       const a = L[i];
-      // A very easy reference photo (rep) first (core.js refFirst), then the ease, then refScore.
+      // A reference-level photo first (core.js refFirst), then the ease, then refScore.
       assert.ok(
         C.refFirst(a) < C.refFirst(p) ||
           (C.refFirst(a) === C.refFirst(p) &&
@@ -463,8 +463,9 @@ test('treeGen order and cover: the easiest, most reference-like photo first, who
     checked++;
   });
   assert.ok(checked > 27, `${checked} entries checked`);
-  // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the reference photo, then the one
-  // with more field-guide traits (profile, whole, good light...), then the list's order; the source never counts.
+  // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the one with more field-guide traits
+  // (profile, whole, good light...; the flag r weighs nothing), then the list's order; the source never
+  // counts.
   const T = {families: [{id: 'f:X', name: 'X', sci: ['Xidae'], circle: 1, species: ['s1']}]},
     Y = C.treeGen(T, {
       t99: [
@@ -477,7 +478,7 @@ test('treeGen order and cover: the easiest, most reference-like photo first, who
     });
   assert.deepStrictEqual(
     Y.gen['f:X'].views.wide.map(p => p.f),
-    // a5 reads the reference look (core.js refLevel: ease 5, profile, whole, good light, true colours, sharp): first.
+    // a5 reads the reference look (core.js refLevel: ease 4-5, profile, whole, good light, true colours, sharp): first.
     ['a5', 'b5', 'own5', 'own3', 'none']
   );
   assert.strictEqual(Y.gen['f:X'].cover, 'a5');
@@ -489,20 +490,21 @@ test('treeGen order and cover: the easiest, most reference-like photo first, who
     c1 = C.treeGen(T, {t99: eq}).gen['f:X'].cover,
     c2 = C.treeGen(T, {t99: eq.slice().reverse()}).gen['f:X'].cover;
   assert.strictEqual(c1, c2, 'the list order decides nothing');
-  // Reference level first (core.js refLevel): a source's reference photo (rep) judged very easy comes before an ease-5
-  // photo without the reference look; one under ease 4 does not; an ease-5 photo with the look is reference level
-  // whoever took it (Pierre's own here).
+  // Reference level first (core.js refLevel): a photo judged very easy (4 or 5) with the reference look comes before
+  // every other, whoever took it and whatever its route in (Pierre's own, a reference source's); a reference source's
+  // photo without the look (rep4) or under ease 4 (rep3) is not, and ranks by its ease.
   const R = C.treeGen(T, {
     t99: [
       {f: 'ownref', src: 'x', sp: 's1', own: true, e: 5, jt: 'p1g0sl1'},
       {f: 'own5', src: 'x', sp: 's1', own: true, e: 5, jt: 'o1g1sm1'},
       {f: 'rep3', src: 'x', sp: 's1', e: 3, jt: 'p1g0sl1r', rep: 'inaturalist'},
-      {f: 'rep4', src: 'x', sp: 's1', e: 4, jt: 'o1g0sm1r', rep: 'inaturalist'}
+      {f: 'rep4', src: 'x', sp: 's1', e: 4, jt: 'o1g0sm1r', rep: 'inaturalist'},
+      {f: 'rep4look', src: 'x', sp: 's1', e: 4, jt: 'p1g0sl1r', rep: 'inaturalist'}
     ]
   });
   assert.deepStrictEqual(
     R.gen['f:X'].views.wide.map(p => p.f),
-    ['ownref', 'rep4', 'own5', 'rep3']
+    ['ownref', 'rep4look', 'own5', 'rep4', 'rep3']
   );
   // Pierre's photo comes first when it is itself the easiest.
   const Z = C.treeGen(T, {
@@ -530,14 +532,14 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
     ['b', 'c', 'a']
   );
   assert.strictEqual(C.refScore('p1g0sl1'), 7);
-  assert.strictEqual(C.refScore('p1g0sl1r'), 15);
+  assert.strictEqual(C.refScore('p1g0sl1r'), 7, 'the flag r weighs nothing: the reference look is read from the photo');
   assert.strictEqual(C.refScore('o1g2mm1j'), 2);
   assert.strictEqual(C.refScore(''), 0);
   assert.strictEqual(C.refScore(undefined), 0);
-  // The subjects whose photo sources rank (rule P1): the corals only.
+  // No subject's photo sources rank (rule P1, Pierre 2026-11-18: no source priority, the corals included).
   assert.deepStrictEqual(
-    C.SUBJECTS.filter(s => s.tiers).map(s => s.id),
-    ['coral']
+    C.SUBJECTS.filter(s => 'tiers' in s).map(s => s.id),
+    []
   );
 });
 
@@ -666,7 +668,21 @@ test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
   assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
   assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
-  assert.ok(C.refLevel({f: 'x', e: 4, jt: 'o1g0sms', rep: 'inaturalist'}) && C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1'}));
+  // Read from the photo's ease (4 or 5) and look alone, never from its route in.
+  assert.ok(
+    C.refLevel({f: 'x', e: 4, jt: 'p1g0sl1'}) && C.refLevel({f: 'x', e: 5, jt: 'p1g0sm1'}) && C.refLevel({f: 'x', e: 4, jt: 'p1g0slsr'})
+  );
+  assert.ok(!C.refLevel({f: 'x', e: 3, jt: 'p1g0sl1r'}), 'under ease 4 never');
+  assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'o1g0sms', rep: 'inaturalist', lic: 'cc0'}), 'a reference source without the look is not one');
+  assert.ok(
+    !C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1j'}) && !C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1ca'}),
+    'no juvenile, camouflage or out of the water'
+  );
+  assert.strictEqual(
+    C.refLevel({f: 'x', e: 4, jt: 'p1g0sl1', rep: 'inaturalist'}),
+    C.refLevel({f: 'x', e: 4, jt: 'p1g0sl1'}),
+    'the route weighs nothing'
+  );
 });
 
 test('circle 3 by choice (Pierre, 2026-11-07 08:50; Q204): openState, the card once and once more after OPEN_AGAIN answers', () => {
