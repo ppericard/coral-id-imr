@@ -251,6 +251,8 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       solo: 0.5,
       warm: false,
       SHOWNQ: null,
+      R: 1, // no comeback (quiz.js answer hands quiz.js recordAnswer its recalls)
+      Rc: 1,
       tm: {rt: 3 + (i % 5)},
       GX: x => GEN[x],
       photoDiff: () => (i % 7) / 10 - 0.3,
