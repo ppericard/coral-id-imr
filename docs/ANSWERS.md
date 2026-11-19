@@ -1402,3 +1402,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sans forcément explicitement avoir un lien». A unit's card on a Learn list opens its sheet, photo and name included,
   plainly tappable, with no "Open the sheet" line, no ID marks heading and no sources there (they stay on the sheet).
   Applied: docs/decisions/2026-11-20-learn-cards-open-the-sheet.md, docs/spec/front-end.md, DESIGN.md, #1290.
+- **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
+  tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
+  devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
+  problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
+  judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
+  judging or boxing pass is measured first), #1287.
