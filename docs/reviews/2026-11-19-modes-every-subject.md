@@ -90,7 +90,7 @@ answers that are scored exactly like those of the same page for the corals.
    - Feature, L: comparable to #974, #1058, #1217, #1241, #1253: median 60 min (range 58 min-2.0 h).
 4. **Lab tools that ask a unit, on the subject on screen**: Type the genus, Blur reveal, Look-alike web. They read the
    subject's units through `GX` and `unlocked`, as #1241 and #1253 do; `labPlay` stops forcing the corals for these.
-   They stay Lab prototypes (rule U13). Feature, M: comparable to #986, #1056, #1159, #1204, #1218: median 60 min
+   They stay Lab prototypes (rule U13). Built: [decision](../decisions/2026-11-20-lab-tools-every-subject.md). Feature, M: comparable to #986, #1056, #1159, #1204, #1218: median 60 min
    (range 30 min-1.7 h).
 5. **Sea slug basics module**: the words of their ID marks (rhinophores, gills, cerata, mantle), sourced, as Fish basics
    is (`proto/fishbasics.js`). Content, M: comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14
