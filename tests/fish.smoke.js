@@ -3274,7 +3274,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
   // (11) Find the X: findTheX, above.
   const fx = await findTheX(b, base, errs);
   // (13) Same or different?: sameDifferent, above.
-  const sd = await sameDifferent(b, base, errs);
+  const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has

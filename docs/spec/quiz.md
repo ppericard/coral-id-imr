@@ -24,7 +24,7 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked is
   skipped (`live.js` `liveLog`); rule L4 lets it count without opening the unit: not built yet.
 - **Surprise card** (`wink`): counts nowhere.
-- **Not logged or scored**: the Tools (Lab prototypes, rule U13: Same or different? among them, below) and Memory.
+- **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?](basics.md#the-lab-protolabjs) too) and Memory.
 
 ## Typed questions
 
@@ -79,30 +79,6 @@ Free-text answers: `model.js` `TYPED`, `typedP`, `examTyped`; `quiz.js` `typeFor
   away); an exam begun without its typed answers needs them first (its count held at `EXAM.n`).
 - The Lab prototype `proto/type.js` (Tools › Type the genus) uses the same code. The admin's player journey shows a
   "Typed (recall)" row under Games.
-
-## Same or different? (Lab prototype)
-
-`proto/samediff.js`, Tools › Same or different? (`#tools/samediff`, rule U13: it stays in the Lab until Pierre's OK;
-Pierre, 2026-11-18: «to build, most useful first»). Two photos, untimed; the player taps **Same** (1) or **Different**
-(2). It runs on the subject on screen (rule S1) and counts nowhere: no answer, no log, no progress, no photo window
-(`SEENQ`), no clock; the code never calls `question`, `answer` or the recorders (`tests/samediff.test.js` checks).
-
-- **What is asked** (`sdPlan`, pure): the units are `unlocked()` (rule L4); the pairs are the subject's declared
-  look-alikes, `UNITS[SUBJ.id].pairs()` (never the data's, `dataLooks`, nor the mimicry class's), both units unlocked and
-  not named by one label (`choiceNames`, as the duels). A pair is drawn, then a coin: **Different** shows its two units
-  (sides in a random order), **Same** shows two observations of one of them. A unit with no unlocked look-alike is never
-  asked, so no unit is always "Same". None (a new player): the page says to meet a few units in the quiz.
-- **The photos** (`sdPhotos`, pure; `photo` in the page): each from `photoSet(n, null, 0, 2, 'compare', keep)`, the draw's
-  own choice aimed at the level, as a duel's (2 plausible choices); the closest view it shows (a close-up for a coral, the
-  one photo of a fish). **One view on both sides** (a colony beside a close-up would give the answer away), and for Same
-  **two observations** (rule P4's multi-photo case: `keep` leaves out the first one's `o`); the last 8 photos shown are left
-  out while others fit. A side with nothing to match draws another plan (12 tries, then the "meet a few" note).
-- **The screen**: the quiz's own stage, answers and feedback sheet (`.q.bleed.sdq`, `.qstage.qvs`, `.ans`, `#after`,
-  `fitStage`), so it fits one screen in every state (rule U2): the photos stacked on a phone, side by side from the tablet
-  class, the sheet at the bottom of a phone. Before the answer no name, source or tip shows and the enlarged view is blind
-  (rule P5); after it each photo carries its unit's name and source. The one decisive line is the quiz's own `fbLine`
-  (rule C3: the pair's sourced line, else the first ID tip), the tips of both units and the credits behind More, and the
-  report button (`m: 'samediff'`, rule U14).
 
 ## The feedback sheet
 

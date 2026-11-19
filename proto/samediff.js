@@ -89,8 +89,17 @@ LAB.add({
           <div class="ans sdans" role="group" aria-label="Same or different"><button type="button" class="plain" data-sd="same"><kbd>1</kbd>Same</button><button type="button" class="plain" data-sd="diff"><kbd>2</kbd>Different</button></div>
           <div id="after"></div>
         </aside></div>`;
-      const q = root.querySelector('.q');
-      fitStage();
+      const q = root.querySelector('.q'),
+        sig = viewKeys(),
+        // The quiz's layout (fitStage), then the stage's height for the CSS (--sdh): a photo's 4:3 box is never taller than
+        // the stage, whatever the window's shape (lab.css .sdq).
+        fit = () => {
+          fitStage();
+          const st = q.querySelector('.qstage');
+          if (st) st.style.setProperty('--sdh', st.clientHeight + 'px');
+        };
+      fit();
+      addEventListener('resize', fit, {signal: sig});
       const go = said => {
         if (answered) return;
         answered = true;
@@ -132,13 +141,13 @@ LAB.add({
           mp.hidden = !mp.hidden;
           mb.setAttribute('aria-expanded', String(!mp.hidden));
           mb.textContent = mp.hidden ? 'More' : 'Less';
-          if (isStacked()) fitStage();
+          if (isStacked()) fit();
         };
         const nb = q.querySelector('#next');
         nb.onclick = draw;
         nb.focus({preventScroll: true});
         if (isStacked()) window.scrollTo(0, 0);
-        fitStage();
+        fit();
       };
       q.querySelectorAll('[data-sd]').forEach(b => (b.onclick = () => go(b.dataset.sd)));
       q.querySelector('.qstage').onclick = e => {
@@ -161,7 +170,7 @@ LAB.add({
             go(k);
           }
         },
-        {signal: viewKeys()}
+        {signal: sig}
       );
     };
     draw();
