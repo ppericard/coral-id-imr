@@ -1007,7 +1007,8 @@ function vernSrcs(id, x) {
     else if (k === 'wiki' && S.wiki)
       L.push(a('https://en.wikipedia.org/wiki/' + encodeURIComponent(S.wiki.replace(/ /g, '_')), 'Wikipedia'));
   });
-  (x.web || []).forEach(w => L.push(a(w.u, String(w.t || '').split(/,| \(/)[0], w.t)));
+  // A source with no page (Pierre's own word, rule C2) is its title, not a link.
+  (x.web || []).forEach(w => L.push(w.u ? a(w.u, String(w.t || '').split(/,| \(/)[0], w.t) : esc(w.t || '')));
   return L.join(', ');
 }
 // A fish photo's taxon: the species it is in play for (sp), from R (TREEU.sps): its PDF name, the WoRMS name beside it

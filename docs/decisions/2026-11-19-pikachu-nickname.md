@@ -24,5 +24,21 @@ le mentionner, même si on indique que ce n'est pas forcément approprié."
 
 ## Consequences
 
-The point `seaslug-name-pikachu` is answered; the species data carries the nickname as above (a later data PR). No
-question about the nickname goes to Pierre again.
+The point `seaslug-name-pikachu` is answered; the species data carries the nickname as above (applied in the data PR
+that follows #1190). No question about the nickname goes to Pierre again. `curation.json` is Pierre's (rule A1), so the
+point's "Resolved" is his to press in the admin; the point's context says it is answered.
+
+Applied:
+
+- **Counting** (`tools/seaslug_source.json` `nicknames`, `tools/build_seaslugs.py`): the "pikachu" entry keeps its
+  redirect (*T. pacifica*) and gains `also: ["Thecacera pikachu"]`, counted by this decision and not by the redirect;
+  `build_seaslugs.py --nicknames` applies it to the recorded pages offline (there is no page cache to read them again).
+  The four pages that say "Pikachu" all write *T. pacifica* in full, so the nickname added no site to it: **no star and
+  no circle changes** (*T. pacifica* keeps its star and circle 1; *T. pikachu* gains 2 sites, a stars score of 0.34 and
+  stays out of the stars, circle 3; *T. picta*, circle 1, is untouched). A "Pikachu" with no species written would
+  belong to the genus *Thecacera*; the list counts species only and no page is in that case, so nothing counts a genus
+  (a genus count would be new machinery for no page).
+- **Names** (`tools/seaslug_names_src.json`): "Pikachu" was already a nickname of *T. pikachu* and *T. pacifica*;
+  *T. picta* gains it, as a nickname with a note ("often called so by divers here; not necessarily appropriate"),
+  shown beside the name on the sheets (`learn.js` `vernName`). Its source is Pierre's own word (rule C2: the content
+  editor's words carry a source), so that source has no page (`app.js` `vernSrcs` shows its title, not a link).
