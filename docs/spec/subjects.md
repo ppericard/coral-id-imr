@@ -50,8 +50,7 @@ the engine). Each record:
   [Sync and replay per subject](#sync-and-replay-per-subject));
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
   its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics)), `stats` (the sea slugs': the script
-  from which the app reads theirs), `tiers` (the
-  corals: photo sources rank, rule P1), `calib` (the draw's calibration), `analyses` (its Analyses report), `score` (the
+  from which the app reads theirs), `calib` (the draw's calibration), `analyses` (its Analyses report), `score` (the
   fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and
   `structure` (what the content editor may change, [content.md](content.md)), `start` (its first-launch question,
   [cards.md › One per subject](cards.md#one-per-subject));
