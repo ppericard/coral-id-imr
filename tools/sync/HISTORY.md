@@ -18,7 +18,7 @@ merged under another number). `## earlier` is the one entry from before the numb
 
 ## v201 (2026-11-20)
 
-The Look-alikes deck and Compare open to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `cmp` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: the pages only read content, so no answer is scored, replayed or logged differently; the copy of `core.js` in this script carries the new `pages` and the helper `montOf` (a subject's look-alike picks in curation.json), which only the app reads
+The sheet script's copy of `core.js` follows the app: the fish and the sea slugs open the Custom quiz tab (`SUBJECTS` `pages` `quiz-custom`; Pierre, 2026-11-19, Q437: «évidemment oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières»), and the page is no longer in `CLOSED_TREE`. Nothing the script computes changes: each subject's selection is one more `reefid-sync-<subject>-custom` key in the player's saved data, which the script stores as it stores every `reefid-sync-` key
 
 ## v200 (2026-11-19)
 
