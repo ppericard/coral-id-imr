@@ -326,6 +326,118 @@ async function findTheX(b, base, errs) {
   await c.close();
   return r.map(m => `find the X: ${m}`);
 }
+// (13) Same or different? (proto/samediff.js, the Lab) on the fish: the units of the declared look-alike pairs of three pairs
+// unlocked, every other family locked. 24 rounds: a photo only of an unlocked family; a Different shows the two families of a
+// declared pair (UNITS fish pairs), a Same two observations of one family (rule P4); both kinds come; the answers change no
+// progress, log or answer count (untimed, no effect on progress); one screen before and after the answer at 390 and 1280 px.
+async function sameDifferent(b, base, errs) {
+  const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-sd')) {
+        sessionStorage.setItem('fish-sd', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 777;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`same or different: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const open = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const P0 = UNITS[SUBJ.id].pairs().filter(([a, c]) => pool().includes(a) && pool().includes(c)),
+      met = [...new Set(P0.slice(0, 3).flat())];
+    introAdd(met, true);
+    location.hash = hr('lab-samediff');
+    return {pairs: P0.length, met};
+  });
+  if (open.pairs < 3) return [`same or different: ${open.pairs} declared fish pairs in play`];
+  await q.waitForSelector('#view .sdq [data-sd]', {timeout: 30000}).catch(() => {});
+  const fit = () =>
+    q.evaluate(() => {
+      const tab = document.querySelector('.sections'),
+        tabTop = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight;
+      return [...document.querySelectorAll('#view .sdq .qph, #view .sdq [data-sd], #view #after, #view #next')]
+        .map(e => [e.id || e.className, e.getBoundingClientRect()])
+        .filter(([, r]) => r.top < -1 || r.bottom > tabTop + 1)
+        .map(([n, r]) => `${n} ${Math.round(r.top)}..${Math.round(r.bottom)} of ${Math.round(tabTop)}`)
+        .concat(document.documentElement.scrollHeight > innerHeight + 1 ? ['the page scrolls'] : []);
+    });
+  const fails = [];
+  const r = await q.evaluate(() => {
+    const out = [],
+      ok = (x, m) => x || out.push(m),
+      rec = () =>
+        JSON.stringify([P, SYNC ? SYNC.log || null : null, store.get(LOG0, []), store.get(ANONQ, []), introMap(), answersSoFar()]),
+      before = rec(),
+      pairs = UNITS[SUBJ.id].pairs(),
+      met = unlocked(),
+      // The family a photo file belongs to, and the photo's record, among every family of the game.
+      find = f => {
+        for (const n of Object.keys(TREEU.gen)) {
+          const p = ((GX(n) || {views: {}}).views.wide || []).find(x => x.f === f);
+          if (p) return {n, p};
+        }
+        return null;
+      },
+      kinds = new Set();
+    for (let i = 0; i < 24; i++) {
+      const L = [...document.querySelectorAll('#view .sdq .qph img')].map(im => find(im.dataset.f));
+      if (L.length !== 2 || L.some(x => !x)) {
+        ok(false, `round ${i + 1}: photos ${L.length}, ${L.map(x => x && x.n)}`);
+        break;
+      }
+      const [a, c] = L,
+        same = a.n === c.n;
+      ok(
+        L.every(x => met.includes(x.n)),
+        `round ${i + 1}: a family not unlocked: ${a.n} ${c.n}`
+      );
+      if (same) ok(a.p.o !== c.p.o || !a.p.o, `round ${i + 1}: one observation twice (${a.p.o})`);
+      else
+        ok(
+          pairs.some(([x, y]) => (x === a.n && y === c.n) || (x === c.n && y === a.n)),
+          `round ${i + 1}: ${a.n} and ${c.n} are no declared pair`
+        );
+      kinds.add(same ? 'same' : 'diff');
+      document.querySelector(`#view .sdq [data-sd="${i % 3 ? 'same' : 'diff'}"]`).click();
+      const h3 = document.querySelector('#view #after h3');
+      ok(h3 && h3.classList.contains('ok') === ((i % 3 ? 'same' : 'diff') === (same ? 'same' : 'diff')), `round ${i + 1}: the verdict`);
+      document.getElementById('next').click();
+    }
+    ok(kinds.size === 2, `kinds seen: ${[...kinds]}`);
+    ok(rec() === before, 'playing it changed the record, log or answer count');
+    ok(unlocked().length === met.length && met.every(n => introduced(n)), 'playing it opened a unit');
+    return out;
+  });
+  fails.push(...r);
+  // One screen at 390 and 1280 px, before and after the answer.
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    const f0 = await fit();
+    await q.click('#view .sdq [data-sd="same"]');
+    await q.waitForSelector('#view .sdq.done #next', {timeout: 5000}).catch(() => {});
+    const f1 = await fit();
+    if (f0.length || f1.length) fails.push(`${w}px: not one screen, before ${JSON.stringify(f0)}, answered ${JSON.stringify(f1)}`);
+    await q.click('#view #next');
+    await q.waitForSelector('#view .sdq:not(.done) [data-sd]', {timeout: 8000}).catch(() => {});
+  }
+  await c.close();
+  return fails.map(m => `same or different: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3173,6 +3285,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
   // (11) Find the X: findTheX, above.
   const fx = await findTheX(b, base, errs);
+  // (13) Same or different?: sameDifferent, above.
+  const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -3505,7 +3619,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...sd, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

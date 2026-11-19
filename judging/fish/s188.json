@@ -89,8 +89,21 @@
    "keep": "best"
   },
   "fish-s188-cand-545406170": {
-   "code": "p1g1smk3",
-   "keep": "alt"
+   "code": "p1g1sl14",
+   "keep": "alt",
+   "crop": [
+    0.02,
+    0.21,
+    0.72,
+    0.582
+   ],
+   "bb": [
+    0.04,
+    0.2,
+    0.7,
+    0.58
+   ],
+   "note": "crop: the butterflyfish below and the dark parrotfish above leave the frame (Q430)"
   },
   "fish-s188-cand-270411087": {
    "code": "o1g1sl13",

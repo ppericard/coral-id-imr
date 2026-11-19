@@ -1,6 +1,8 @@
 # ID tips: 2-3 short cues per genus, condensed from the IMR Lecture 6 cues in data.json "imr"
 # (slide text, review slides, presenter's notes). Used everywhere tips are shown; the genus sheet also keeps the full lecture notes.
 # Format: Genus<TAB>tip | tip | tip   (applied by tools/apply_id_tips.py)
+# A genus the lecture slides do not cover (no "imr" notes) has a third column, "Coral Finder": its tips are condensed from
+# its Coral Finder criteria (data.json "crit", on the book pages "pages") and carry that source, never IMR's (rules C1, C2).
 # 2026-11-03, Pierre: Seriatopora, Lobactis, Heliofungia and Herpolitha corrected after the sources of the plain sentences
 # (reasons and sources: tools/apply_imr_corrections.py).
 Acropora	Axial corallite at branch tips | Cup-shaped radial corallites
@@ -39,3 +41,6 @@ Goniastrea	Paliform lobes | Shared walls, sub-angular corallites | Wall often lo
 Favites	Shared or separate walls; crowded, sub-rounded corallites | Extra-tentacular budding | Uneven colony surface
 Duncanopsammia	Like Turbinaria, but corallites about 6 mm | Thicker plates, less regular colony
 Alveopora	12 tentacles (Goniopora: 24) | Less dense skeleton than Goniopora
+Merulina	Thin plates in tiers, with small frilly upgrowths | Short valleys that fan out towards the edge	Coral Finder
+Cyphastrea	Small round cone corallites, 1-2 mm | Beads and spinules between them | Finer and neater than Astreopora	Coral Finder
+Halomitra	Free-living round dome, up to 50 cm | Widely spaced corallites | Margin often purple or pink	Coral Finder
