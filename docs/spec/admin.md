@@ -124,7 +124,17 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   (`core.js` `contentApply` under the published curation, `SAVED`: `admin.js` `unitBuild`), as the app does, so a
   look-alike pair or a circle edited there shows on Pairs, the Heatmap and the Journey (its photos and family pages stay
   those of the file as built, so a report on a photo of a family taken out of every circle still shows it); a Publish, a
-  rebase or another tab's Publish builds it again (`unitRefresh`);
+  rebase or another tab's Publish builds it again (`unitRefresh`). **One registry for every subject**: a page reads any
+  subject's units and photos through `admin.js` `reg(S)`, in this one shape (`reports.js` `repReg`'s: `gen`, `ph`,
+  `slate`, `fam`, `spid`, `spg`, `imr`, `groups`, `spu`); `regLoad(S)` reads a subject's files when its page asks, and
+  `regRec(S, n)` gives a unit's record for a pair's start (Pairs, the Heatmap). How a registry is read from a subject's
+  data is decided there and nowhere else, by the shape the subject declares (`SUBJECTS` `flat`): a subject with files
+  gets the object its files were read into (`UNITA`); a flat subject (the corals, `data.json`) gets one built in memory
+  from `data.json` and its genus pages' photos under the draft (`reports.js` `flatReg`, built again when the draft
+  changes; no file of its own, no format change), its `extra` the bonus genera of `data.json` `x`. Analyses (the mix-up
+  map, the units' names, the photo thumbnails), Pairs, the Heatmap, Photo stats › Taxa (the corals' half) and the
+  Journey read it (`tests/registry.test.js`); the Tree, Candidates, the photo review pages and the tiles still read each
+  side's own state (the study's steps 4-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
