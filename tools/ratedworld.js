@@ -943,7 +943,10 @@ async function main(o) {
   const cutAt = CB.cutInfo(budget, planned, reused + ended.results.length);
   if (cutAt) {
     console.log('\n' + CB.cutBanner(cutAt));
-    if (!runs.length) process.exit(3);
+    if (!runs.length) {
+      CB.writeEmptyCut(fs, o.out, {world: 'rated', subject: o.subject, seeds: o.seeds, seed0: o.seed0, questions: o.N}, cutAt);
+      process.exit(3);
+    }
   }
   runs.sort((a, b) => o.profiles.indexOf(a.profile) - o.profiles.indexOf(b.profile) || a.seed - b.seed);
   const secs = (Date.now() - t0) / 1000,

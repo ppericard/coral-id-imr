@@ -388,13 +388,14 @@ test(
     );
     assert.ok(r.status === 0 || r.status === 3, r.stderr);
     assert.match(r.stdout, /CUT at the 0\.05-minute budget/);
-    if (r.status === 0) {
-      const f = JSON.parse(fs.readFileSync(out, 'utf8'));
-      assert.strictEqual(f.cut.cut, true);
-      assert.strictEqual(f.cut.planned, 8);
-      assert.ok(f.cut.done < 8);
-      assert.strictEqual(f.budgetMin, 0.05);
-    }
+    // the file is written in both cases: with the runs done, or (exit 3, no job finished) with the cut and no runs
+    const f = JSON.parse(fs.readFileSync(out, 'utf8'));
+    assert.strictEqual(f.cut.cut, true);
+    assert.strictEqual(f.cut.planned, 8);
+    assert.ok(f.cut.done < 8);
+    assert.strictEqual(f.budgetMin, 0.05);
+    assert.strictEqual(f.runs.length, f.cut.done);
+    assert.strictEqual(r.status, f.runs.length ? 0 : 3);
     fs.rmSync(dir, {recursive: true});
   }
 );

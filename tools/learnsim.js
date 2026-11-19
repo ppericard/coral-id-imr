@@ -1719,7 +1719,10 @@ function openTable(runs) {
   const cut = CB.cutInfo(budget, planned, runs.length);
   if (cut) {
     console.log('\n' + CB.cutBanner(cut));
-    if (!runs.length) process.exit(3);
+    if (!runs.length) {
+      CB.writeEmptyCut(fs, OUT, {subject: SUBJECT, seeds: SEEDS, seed0: SEED0, questions: QN}, cut);
+      process.exit(3);
+    }
     NAMES.splice(0, NAMES.length, ...NAMES.filter(n => runs.some(r => r.profile === n))); // the profiles that have a run
   }
   const secs = (Date.now() - t0) / 1000,

@@ -143,6 +143,12 @@ function cutInfo(budget, planned, done) {
 const cutBanner = c =>
   `*** CUT at the ${c.budgetMin}-minute budget: ${c.done} of ${c.planned} runs done. The figures rest on those runs only: a partial result, never a verdict that needs the declared seeds (rule L11). ***`;
 
+// A run cut before any job finished still leaves its --out: the cut metadata and no runs, for a caller to read (the tool
+// then exits 3). meta: the file's usual header fields.
+function writeEmptyCut(fs, out, meta, cut) {
+  if (out) fs.writeFileSync(out, JSON.stringify({date: new Date().toISOString(), ...meta, budgetMin: cut.budgetMin, cut, runs: []}, null, 1));
+}
+
 // Level 3: why this run is one (a string), or null. world 'rated' or 'app'.
 function level3Reason({world, seeds, N}) {
   if (seeds > LEVEL2.seeds) return `${seeds} seeds (level 2 stops at ${LEVEL2.seeds})`;
@@ -172,4 +178,4 @@ function level3Gate({reason, go, runner, subject, world, seeds, N}) {
   return null;
 }
 
-module.exports = {MAX_MIN, CALIBRATION_FLOOR_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, fitOptions, plan, runPool, cutInfo, cutBanner, level3Reason, level3Gate, dispatchCommand};
+module.exports = {MAX_MIN, CALIBRATION_FLOOR_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, fitOptions, plan, runPool, cutInfo, cutBanner, writeEmptyCut, level3Reason, level3Gate, dispatchCommand};

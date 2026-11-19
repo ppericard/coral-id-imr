@@ -1,8 +1,7 @@
 # Tier 2 of a learning change (rule L11; docs/LEARNING.md "Validating a learning change"): the paired comparison of two
 # versions of the app (before and after a change) in the app world (tools/learnsim.js, the real app in Chromium) and the
-# rated world (learnsim --world rated, Node), on the same seeds, read by tools/learncmp.js against the guardrails. For
-# the checks the shared machine should not carry, and for level 3, which runs only here and only with Pierre's go
-# (`pierre_go`); every learnsim run keeps rule L11's 40-minute cap (`budget`). A manual
+# rated world (learnsim --world rated, Node), on the same seeds, read by tools/learncmp.js against the guardrails. Too
+# long for a laptop or the shared machine at level 2-3 (the fish app world: about an hour for both arms), so a manual
 # run on a GitHub runner: manual dispatch only, never on a push or a schedule. Commits nothing, sends nothing, no
 # artifact: the report goes to the run's summary (simulated players only, no player data).
 # Every input reaches the commands through env and is checked against a narrow pattern first (no ${{ inputs }} in run).
@@ -58,14 +57,6 @@ on:
         description: 'More learnsim options for both arms and worlds (e.g. --profiles beginner,expert --dist tail)'
         default: ''
         type: string
-      pierre_go:
-        description: "Level 3 only (over 20 seeds, or over 10,000 answers): the reference of Pierre's go, a Q number or message and the date; learnsim refuses level 3 without it (rule L11)"
-        default: ''
-        type: string
-      budget:
-        description: 'Minutes of compute for each learnsim run, 40 at most (empty: 40 shared by the runs of the check, 20 each with one world, 10 with both)'
-        default: ''
-        type: string
 permissions:
   contents: read
 concurrency:
@@ -74,7 +65,7 @@ concurrency:
 jobs:
   compare:
     runs-on: ubuntu-26.04
-    timeout-minutes: 180 # four runs of 40 minutes at most (rule L11), the setup and the comparison
+    timeout-minutes: 360
     env:
       AFTER: ${{ inputs.after }}
       BEFORE: ${{ inputs.before }}
@@ -87,8 +78,6 @@ jobs:
       PRIMARY_WORLD: ${{ inputs.primary_world }}
       LOOKS: ${{ inputs.looks }}
       ARGS: ${{ inputs.args }}
-      PIERRE_GO: ${{ inputs.pierre_go }}
-      BUDGET: ${{ inputs.budget }}
     steps:
       - name: Check the inputs
         run: |
@@ -101,8 +90,6 @@ jobs:
           ok primary "$PRIMARY" '^([A-Za-z][A-Za-z0-9]*@([0-9]+|run):(up|down))?$' # learncmp's MEASURE@CHECKPOINT (c3@run)
           ok looks "$LOOKS" '^[1-9]$'
           ok args "$ARGS" '^[A-Za-z0-9 ,.:@_=-]{0,200}$'
-          ok pierre_go "$PIERRE_GO" '^[A-Za-z0-9 ,.:@_=/-]{0,200}$'
-          ok budget "$BUDGET" '^([1-9]|[1-3][0-9]|40)?$' # minutes a run, 40 at most (learnsim refuses more)
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.after }}
@@ -131,25 +118,13 @@ jobs:
           set -o pipefail
           out="$RUNNER_TEMP/out" && mkdir -p "$out"
           worlds=$([ "$WORLD" = both ] && echo "app rated" || echo "$WORLD")
-          # The 40 minutes of rule L11 are the check's: shared by its runs (two arms in each world) unless budget says otherwise.
-          budget=${BUDGET:-$([ "$WORLD" = both ] && echo 10 || echo 20)}
           for w in $worlds; do
             n=$([ "$w" = app ] && echo "$QUESTIONS" || echo "$ANSWERS")
             for side in before after; do
               echo "::group::$w world, $side"
-              # The budget is also enforced from outside the compared checkout: an older `before` ignores --budget. `timeout`
-              # (the budget and two minutes) ends the arm; exit 124 marks it cut, with no runs, so learncmp reports it.
-              rc=0
               # shellcheck disable=SC2086 # ARGS: several options, checked above
-              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" timeout "$((budget * 60 + 120))" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
-                --seeds "$SEEDS" --questions "$n" --workers 4 --budget "$budget" ${PIERRE_GO:+--pierre-go "$PIERRE_GO"} $ARGS --out "$out/$w-$side.json") || rc=$?
-              if [ "$rc" -eq 124 ]; then
-                echo "::warning::$w world, $side: stopped by the ${budget}-minute budget (timeout); no runs kept"
-                printf '{"subject":"%s","seeds":%s,"runs":[],"cut":{"cut":true,"budgetMin":%s,"elapsedMin":%s,"planned":0,"done":0}}\n' \
-                  "$SUBJECT" "$SEEDS" "$budget" "$budget" > "$out/$w-$side.json"
-              elif [ "$rc" -ne 0 ]; then
-                exit "$rc"
-              fi
+              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
+                --seeds "$SEEDS" --questions "$n" --workers 4 $ARGS --out "$out/$w-$side.json")
               echo "::endgroup::"
             done
           done

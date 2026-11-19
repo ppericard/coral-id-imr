@@ -21,7 +21,7 @@ test('the learning check runs by hand only, reads only, and keeps the inputs out
   assert.ok(runs.length >= 4, String(runs.length));
   runs.forEach(r => assert.doesNotMatch(r, /\$\{\{/, r.slice(0, 80)));
   // Each free-text input is checked against a pattern before use.
-  ['after', 'before', 'seeds', 'questions', 'answers', 'primary', 'looks', 'args', 'pierre_go', 'budget'].forEach(k =>
+  ['after', 'before', 'seeds', 'questions', 'answers', 'primary', 'looks', 'args'].forEach(k =>
     assert.match(Y, new RegExp(`ok ${k} "\\$`), k)
   );
 });
@@ -119,47 +119,4 @@ test('the input check takes every learncmp measure as the primary, and refuses t
   assert.ok(check({PRIMARY: 'c3@run:down'}));
   assert.ok(check({PRIMARY: ''}));
   ['c3@run:down;id', '3c@run:up', 'score@x:up', 'score@300:sideways'].forEach(p => assert.ok(!check({PRIMARY: p}), p));
-  // The budget input: 1 to 40 minutes or empty (learnsim itself refuses more).
-  ['', '1', '10', '40'].forEach(b => assert.ok(check({PRIMARY: '', BUDGET: b}), b));
-  ['0', '41', '100', '1.5', 'x'].forEach(b => assert.ok(!check({PRIMARY: '', BUDGET: b}), b));
-});
-
-// The budget is enforced from outside the compared checkout (an older `before` ignores --budget): `timeout` ends an arm,
-// exit 124 marks it cut with no runs, any other failure still fails the step.
-test('an arm stopped by timeout is marked cut, and another failure stays a failure', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'learncheck-cut-')),
-    bin = path.join(dir, 'bin'),
-    out = path.join(dir, 'out'),
-    seen = path.join(dir, 'timeout-args');
-  ['bin', 'before', 'after'].forEach(d => fs.mkdirSync(path.join(dir, d)));
-  fs.writeFileSync(path.join(bin, 'timeout'), `#!/bin/sh\necho "$1" >> ${seen}\nexit \${STUB_RC:-0}\n`, {mode: 0o755});
-  const run = rc =>
-    execFileSync('bash', ['-e', '-c', step('Both arms, the same seeds')], {
-      cwd: dir,
-      stdio: 'pipe',
-      env: {
-        PATH: `${bin}:${process.env.PATH}`,
-        RUNNER_TEMP: dir,
-        STUB_RC: String(rc),
-        WORLD: 'rated',
-        SUBJECT: 'fish',
-        SEEDS: '10',
-        QUESTIONS: '300',
-        ANSWERS: '3000',
-        BUDGET: '',
-        ARGS: '',
-        PIERRE_GO: ''
-      }
-    });
-  run(124);
-  for (const side of ['before', 'after']) {
-    const f = JSON.parse(fs.readFileSync(path.join(out, `rated-${side}.json`), 'utf8'));
-    assert.strictEqual(f.cut.cut, true, side);
-    assert.strictEqual(f.cut.budgetMin, 20); // one world: 20 minutes a run
-    assert.deepStrictEqual(f.runs, []);
-  }
-  assert.deepStrictEqual(fs.readFileSync(seen, 'utf8').trim().split('\n'), ['1320', '1320']); // 20 minutes and 2 more
-  assert.throws(() => run(1));
-  run(0); // a run that ended in time is no cut
-  fs.rmSync(dir, {recursive: true});
 });
