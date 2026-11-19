@@ -46,8 +46,7 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   3. **every choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
      words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
      is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
-     agreed rubric, per-species photo pre-proposals, the fish families' sourced ID marks in our own words, published without
-     his prior check and corrected by him in place (2026-11-08); only a change to the process itself waits for him); the PR's
+     agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
      "Choices I made" section is empty;
   4. it rides a green merge train, alone or with other ready PRs, whose tree `main` then equals (rule W26: the train
      tests it on the current `main`, where Publish commits land without PRs), and goes in as a squash merge titled

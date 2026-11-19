@@ -1,7 +1,7 @@
-# The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING, published ID marks
+# The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING
 
-Date: 2026-11-19 (Manila, morning). PR: #1190. Rules touched: S1, W19, W14, L11, L12, AGENTS.md "Working mode" (the
-merge contract's decided processes), its index, ship checklist and Review guidelines. The rules say what holds now; this
+Date: 2026-11-19 (Manila, morning). PR: #1190. Rules touched: S1, W19, W14, L11, L12, AGENTS.md's index, ship checklist
+and Review guidelines. The rules say what holds now; this
 record keeps why and in whose words (each answer is also in [docs/ANSWERS.md](../ANSWERS.md)).
 
 ## One shared engine, differences declared in one place (S1)
@@ -39,10 +39,8 @@ figures are the minimum for point 2 (level 2's length); L12 says "the subject's 
 already said points 1, 3 and 4 (its *Source* now records that it prevails on them); it adds that the rated world runs
 at least LEARNING.md's level-2 length; L12 names the subject's default profiles. LEARNING.md and the tools are to align in later PRs.
 
-## Sourced ID marks published without his prior check (merge contract)
+## The #773 sentence, superseded (merge contract)
 
-Context: the fish families with no IMR cue got ID marks in our own words, each with its sources (#773, after the
-circle-1 family marks of #695). Decision: Pierre, 2026-11-08: "tu n'as pas besoin de ma validation avant de publier. On
-publie. Si tu penses que c'est pertinent, tu publies et moi je verrai à l'usage si c'est bon ou pas." Consequences: the
-fish families' sourced ID marks join the merge contract's decided processes: published, and he corrects them in place.
-The scope is his case (the fish families' marks); IMR-owned content stays costly to undo.
+Pierre, 08:05, on #773's "tu n'as pas besoin de ma validation avant de publier" (2026-11-08): "Cette règle a été
+largement remplacée par des règles plus récentes sur quand merger tout seul" (the merge contract's "easy to correct
+afterwards" rule, 2026-11-14); nothing is added to the decided processes.
