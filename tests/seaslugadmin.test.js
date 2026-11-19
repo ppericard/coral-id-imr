@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The sea slugs' admin at parity with the fish's: their Candidates (target and genus-level lists), their rubric's tag rows and words (core.js
-// SUBJECTS seaslug admin tags; admin.js tagWords, admin-fish.js tagRows), the f flag kept (autosort.js fishTag), their
+// SUBJECTS seaslug admin tags; admin.js tagRows, tagWords, tagText), the f flag kept (autosort.js fishTag), their
 // sheets' text slots (SUBJECTS seaslug content; core.js contentApply), an edited list keeping its lines' source numbers
 // only where a line is kept (core.js contentPut: rule C2), and their admin pages.
 const test = require('node:test'),
@@ -49,21 +49,47 @@ test("fishTag keeps the sea slugs' f flag (features hidden) and toggles it, in t
   assert.strictEqual(A.fishTag('p1g0sm1jr', 'c'), 'p1g0sm1jcr');
 });
 
-test("tagRows, tagFlags and tagWords: the sea slugs' rubric on the Tags rows and in words, the fish's unchanged", () => {
-  const adm = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
-    fis = fs.readFileSync(path.join(ROOT, 'admin-fish.js'), 'utf8'),
-    ctx = {esc: s => String(s), FISHS: null};
+// The admin's one reader of a subject's declared rubric (admin.js tagRows, tagFlags, tagWords, tagText), run in a vm.
+function rubricReader() {
+  const ctx = {esc: s => String(s), FISHS: null};
   vm.createContext(ctx);
   vm.runInContext(
-    block(adm, '// The rubric\'s tags in words (judging/FISH.md "Tags")', "// A unit's IMR tag:") +
-      block(fis, '// The rubric\'s code in words (judging/FISH.md "Tags")', "// Pierre's values on a photo") +
-      ';this.R={tagRows,tagFlags,fuTags,fishTagText,FROWS,FFLAGS_MINE};',
+    block(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'), '// The rubric a subject declares', "// A unit's IMR tag:") +
+      ';this.R={tagRows,tagFlags,tagList,tagText};',
     ctx
   );
-  const {tagRows, tagFlags, fuTags, fishTagText, FROWS, FFLAGS_MINE} = ctx.R;
-  // the fish: the rows as they were, and the count's words
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(tagRows(FI))), JSON.parse(JSON.stringify(FROWS)));
-  assert.strictEqual(tagFlags(FI), FFLAGS_MINE);
+  return ctx.R;
+}
+const plain = x => JSON.parse(JSON.stringify(x));
+
+test("tagRows, tagFlags and tagText: the sea slugs' rubric on the Tags rows and in words, the fish's as before", () => {
+  const {tagRows, tagFlags, tagList, tagText} = rubricReader(),
+    fuTags = (jt, S) => tagText(jt, S),
+    fishTagText = (jt, S) => tagText(jt, S, true);
+  // the fish: the seven rows, their values and the count's tooltips; the legacy count m and the tools' flags offered by none
+  const FR = plain(tagRows(FI));
+  assert.deepStrictEqual(
+    FR.map(r => [r[0], r[1], r[2].map(x => x[0]).join('')]),
+    [
+      [0, 'View', 'pohtd'],
+      [1, 'Whole', '10'],
+      [2, 'Light', 'gdn'],
+      [3, 'Colour loss', '0123'],
+      [4, 'Clarity', 'smb'],
+      [5, 'Size', 'lms'],
+      [6, 'Count', '1sokx']
+    ]
+  );
+  assert.deepStrictEqual(FR[6][2][0], ['1', 'One fish', 'One fish (others, if any, tiny and far)']);
+  assert.deepStrictEqual(FR[0][2][0], ['p', 'Profile'], 'a value with no tooltip has none');
+  assert.deepStrictEqual(
+    tagFlags(FI).map(x => x[0]),
+    ['j', 'c', 'w']
+  );
+  assert.deepStrictEqual(
+    tagList(FI, 'phase').map(x => x[0]),
+    ['', 'subadult', 'intermediate', 'terminal', 'female', 'male']
+  );
   const R = tagRows(SS),
     row = i => R.find(r => r[0] === i)[2];
   assert.deepStrictEqual(
@@ -94,6 +120,74 @@ test("tagRows, tagFlags and tagWords: the sea slugs' rubric on the Tags rows and
   // the Candidates' judged line says every value
   assert.strictEqual(fishTagText('d1g0sl1jf', SS), 'dorsal · large · juvenile · features hidden');
   assert.strictEqual(fishTagText('p1g0sl1', FI), 'profile · large');
+});
+
+// Rule S1, docs/reviews/2026-11-19-admin-one-engine.md Dup-9: every tree subject declares its whole rubric in SUBJECTS admin
+// tags (core.js treeRubric); the admin has no default of its own to fall back on.
+test('every tree subject declares its whole rubric: the seven positions, the flags, the phase row', () => {
+  const {tagRows, tagFlags, tagList, tagText} = rubricReader(),
+    trees = C.SUBJECTS.filter(S => !S.flat);
+  assert.ok(trees.length >= 2 && trees.includes(FI) && trees.includes(SS));
+  for (const S of trees) {
+    const T = S.admin.tags;
+    assert.ok(T, `${S.id}: admin.tags`);
+    assert.strictEqual(T.names.length, 7, `${S.id}: a name for each position`);
+    for (const k of [0, 1, 2, 3, 4, 5, 6, 'flags', 'phase']) {
+      assert.ok(Array.isArray(T[k]) && T[k].length, `${S.id}: admin.tags[${k}]`);
+      assert.deepStrictEqual([...new Set(T[k].map(e => e[0]))].length, T[k].length, `${S.id}: ${k} has a value twice`);
+      for (const [v, l, w, m] of T[k]) {
+        assert.ok(typeof v === 'string' && typeof l === 'string' && (w === undefined || typeof w === 'string'), `${S.id}: ${k} ${v}`);
+        assert.ok(
+          !m || (typeof m === 'object' && Object.keys(m).every(x => ['tip', 'full', 'said'].includes(x))),
+          `${S.id}: ${k} ${v} more`
+        );
+        // what a button offers has a label
+        if (!(m && m.said)) assert.ok(l, `${S.id}: ${k} ${v}: a label`);
+      }
+    }
+    // the rows and flags the admin offers are the declared ones, in order, but the values the tools write alone
+    assert.strictEqual(tagRows(S).length, 7);
+    assert.ok(tagRows(S).every(([i, n, o]) => n === T.names[i] && o.length === T[i].filter(e => !(e[3] && e[3].said)).length));
+    assert.deepStrictEqual(
+      plain(tagFlags(S)).map(x => x[0]),
+      T.flags.filter(e => !(e[3] && e[3].said)).map(e => e[0])
+    );
+    // a flag the tools write, said in words, offered by no button (a: out of water or a screen; p, r: the tools')
+    for (const k of ['a', 'p', 'r'])
+      assert.ok(
+        T.flags.some(e => e[0] === k && e[3] && e[3].said),
+        `${S.id}: flag ${k}`
+      );
+    assert.ok(tagList(S, 'phase').length >= 2);
+    // every value of the rows is one the game's code accepts (autosort.js FISH_TAGS), as the Tags buttons set it
+    tagRows(S).forEach(([i, , o]) =>
+      o.forEach(([v]) =>
+        assert.ok(A.fishSure({jt: 'p1g0sm1'.slice(0, i) + v + 'p1g0sm1'.slice(i + 1), e: 3, k: 'best'}), `${S.id} ${i}${v}`)
+      )
+    );
+  }
+  // the admin reads the declaration alone: a made-up subject's rows, flags and words are its own, whatever the fish's are
+  const X = {
+    admin: {
+      tags: {
+        names: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+        ...Object.fromEntries(
+          [0, 1, 2, 3, 4, 5, 6].map(i => [i, [['z', 'Zed' + i, i === 3 ? 'zeta' : '', {tip: 'tip', full: 'full' + i}]]])
+        ),
+        flags: [
+          ['q', 'Quill', 'quilled'],
+          ['t', '', '', {full: 'tool', said: true}]
+        ],
+        phase: [['', 'None']]
+      }
+    }
+  };
+  assert.deepStrictEqual(plain(tagRows(X)[3]), [3, 'D', [['z', 'Zed3', 'tip']]]);
+  assert.deepStrictEqual(plain(tagFlags(X)), [['q', 'Quill']]);
+  assert.strictEqual(tagText('zzzzzzzq', X), 'zeta · quilled');
+  assert.strictEqual(tagText('zzzzzzzqt', X, true), 'full0 · full1 · full2 · full3 · full4 · full5 · full6 · quilled · tool');
+  assert.strictEqual(tagText('', X), '');
+  assert.deepStrictEqual(plain(tagRows(null)), [], 'a subject with no declaration offers nothing');
 });
 
 test("the sea slugs' sheet slots: declared at every rank of their tree, their ID marks and notes editable", () => {
