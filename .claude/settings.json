@@ -26,6 +26,37 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" >/dev/null 2>&1 || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -46,6 +77,16 @@
           {
             "type": "command",
             "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/guard_bash.py 2>/dev/null)\" 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/agent_guard.py 2>/dev/null)\" 2>/dev/null || true",
             "timeout": 5
           }
         ]

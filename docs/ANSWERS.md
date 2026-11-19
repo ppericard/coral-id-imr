@@ -1174,3 +1174,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   integrator's scratchpad with the scores). On the observer's life stage, 11:43: "Il peut émettre un avis, mais son
   avis pèse beaucoup moins qu'un observateur humain, sauf s'il a des preuves solides". Applied: the judging rubric's
   wording, in the next judging PR; Q429-Q431 (contrast field, crops, the juvenile ease) wait for him.
+- **10:08, the models measured.** "Du coup il faut peut-être monter dans les efforts ou les modèles et faire de
+  nouveaux tests au lieu de default sur Opus high...". **10:09**, a question, not a decision: "Mais du coup qu'est-ce
+  qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement
+  (#1211); the integrator's answer, its call: a hook refuses an Agent launch without `model` and `effort`, every
+  launch is logged, and the brief prints the day's distribution, `tools/agent_guard.py` (#1209).
