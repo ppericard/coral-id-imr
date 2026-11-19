@@ -43,6 +43,10 @@ KNOWN = {
     '2026-11-19 06:50, the source weight': 'where applied not said (open PR #1195 carries rule P1 into the corals\' code)',
     '2026-11-19 06:59. The rename': 'an answer already given plus a docs pass; where applied not said',
     '2026-11-19 07:05. OK to this ledger': 'the ledger itself (decision record of #1188); not said in the entry',
+    '2026-11-19 08:53, Q424': 'where applied not said',
+    '2026-11-19 08:53, Q425': 'names its first step (#1198) without "Applied:"',
+    '2026-11-19 08:53, the answers ledger as': 'carried out by #1199 (this check); not said in the entry',
+    '2026-11-19 08:57, the order of work': 'names AGENTS.md "Questions to Pierre" without "Applied:"',
 }
 
 

@@ -82,7 +82,7 @@ needs a written reason next to the pin.
   every workflow; `python3 tools/stack_check.py --check` runs in CI. Run `--latest` at least weekly (the brief shows its
   count daily).
 - Dependabot (`.github/dependabot.yml`) proposes the GitHub Actions and `tools/requirements.txt` bumps, one grouped PR a
-  week at most per ecosystem. The integrator merges them once every check is green, rebased and squash-merged, with no
+  week at most per ecosystem. The integrator merges them once every check is green, up to date and squash-merged, with no
   Codex loop for a pure version bump, after reading the release notes of any new major (renamed inputs, permissions,
   the Pages artifact) and adapting the workflows in the same PR; for pip it bumps `stack.json` too. The PR runs only
   `checks.yml` and `smokes.yml`: after the merge, watch the next run of each workflow that runs on `main` only (Deploy Pages at once;
@@ -246,9 +246,9 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
   a PR merges through a green merge train, which tests it on the current `main` (rule W26). With one coral genus per line in `data.json`, edits to different genera
   merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
-- Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
-  Pierre's explicit go-ahead. On a PR branch, after the rebase on `origin/main`, `git push --force-with-lease` to your
-  own PR branch (or, for the integrator, to the PR branch it is about to merge) is allowed; never a plain `--force`.
+- **Never rebase a pushed branch and never force-push**, `main`, `release` or a PR branch, `--force-with-lease`
+  included: bring a PR up to date by merging `origin/main` into it (a merge commit). Never rewrite history without
+  Pierre's explicit go-ahead (GitHub blocks force pushes on `main` too, HANDOVER.md "Protect main").
 - The one history rewrite that shrank `.git` was done on 2026-11-08 (Pierre, 2026-11-02, 2026-11-08; HANDOVER.md "Photos
   out of the repo, step 3"): the photos left for Cloudflare R2, git keeps only those with no other backup. Any other
   rewrite needs Pierre's explicit go first, and a backup clone.
@@ -256,7 +256,7 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
   (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 
 *Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05; subject-neutral wording, 2026-11-06; merge train,
-2026-11-08 (Q305).
+2026-11-08 (Q305); merge, never rebase or force-push, 2026-11-19.
 
 ### W19
 
@@ -314,11 +314,11 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
 only the part your change touches (rule W14), one unit-test run at a time (`node tests/run.js`, rule W24), CI for the full
-runs. At most two open PRs per
+runs. One open PR per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
-Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight).
+Projects mode) still keeps one open PR and runs only the smoke part its change touches.
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight); one PR per agent, 2026-11-19.
 
 ### W23
 
