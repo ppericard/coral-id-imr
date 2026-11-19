@@ -577,29 +577,34 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 // judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
 // the flag r and no ease point (one judgement per photo, whatever its route in).
 // The typed flags j c a w (w, a visible watermark or text), as tools/fish_judge.py CODE; w caps nothing. Strong blur
-// (clarity b) at most 2 (judging/FISH.md "Strong blur", 2026-11-19).
+// (clarity b) at most 2 (judging/FISH.md "Strong blur", 2026-11-19). A juvenile (j) caps nothing (Q435, 2026-11-19).
 const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$/;
-const capOf = (code, phase, juvOk, rep) => {
+const capOf = (code, phase, rep) => {
   const [, v, w, l, k, cl, , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');
   let e = +e0;
-  if ((/j/.test(fl) && !juvOk) || n === 'x' || k === '3' || cl === 'b') e = Math.min(e, 2);
+  if (n === 'x' || k === '3' || cl === 'b') e = Math.min(e, 2);
   if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
   return {e, jt: code.slice(0, 7) + fl};
 };
-// The juvenile classes (fish.json juv, from tools/fish_source.json; the same rule as tools/fish_judge.py juv_early): a
-// juvenile is judged without the juvenile cap when its entry is class A or its species is in the entry's early list.
 const SPN = new Map(F.species.map(s => [s.id, [s.name, s.now].filter(Boolean)]));
-const JUV = Object.fromEntries(F.teach.map(t => [t.id, t.juv]));
-const juvEarly = (tid, p) => {
-  const j = JUV[tid];
-  if (!j || typeof j !== 'object') return false;
-  if (j.cls === 'A') return true;
-  return (j.early || []).some(x => (SPN.get(p.sp) || []).some(n => n === x || n.startsWith(x + ' ')));
-};
 // The test's copy of the caps (capOf) and tools/fish_judge.py cap() agree, strong blur included (2026-11-19).
-test('the caps: the test copy and tools/fish_judge.py cap() agree; strong blur (b) at most 2, soft (m) uncapped', () => {
-  const codes = ['p1g0sl15', 'p1g0ml15', 'p1g0bl15', 'p1g0bl13', 'p1g0bl11', 'h1g0bl15', 'p1g0bl1j5', 'p1n0bl15', 'p1g0sls5', 'p0g0ml15'];
+test('the caps: the test copy and tools/fish_judge.py cap() agree; strong blur (b) at most 2, soft (m) and juveniles uncapped', () => {
+  const codes = [
+    'p1g0sl15',
+    'p1g0ml15',
+    'p1g0bl15',
+    'p1g0bl13',
+    'p1g0bl11',
+    'h1g0bl15',
+    'p1g0bl1j5',
+    'p1n0bl15',
+    'p1g0sls5',
+    'p0g0ml15',
+    'p1g0sl1j5',
+    'p1g0sl1j4',
+    'p1g0sl1jc5'
+  ];
   const r = require('child_process').spawnSync(
     'python3',
     [
@@ -613,10 +618,10 @@ print(json.dumps([list(cap(c, False)) for c in json.loads(sys.argv[1])]))`,
   );
   assert.strictEqual(r.status, 0, r.stderr);
   const py = JSON.parse(r.stdout);
-  codes.forEach((c, i) => assert.deepStrictEqual(py[i], [capOf(c, false, false, null).e, capOf(c, false, false, null).jt], c));
+  codes.forEach((c, i) => assert.deepStrictEqual(py[i], [capOf(c, false, null).e, capOf(c, false, null).jt], c));
   assert.deepStrictEqual(
     py.map(x => x[0]),
-    [5, 5, 2, 2, 1, 2, 2, 2, 5, 3]
+    [5, 5, 2, 2, 1, 2, 2, 2, 5, 3, 5, 4, 3]
   );
 });
 test('judged photos: every code valid and once, crops inside the photo, 5 very easy photos in play per circle-1 entry', () => {
@@ -637,10 +642,10 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
   // Every circle-1 entry has at least 5 very easy photos in play, so its first questions take turns among them (the draw
   // strongly favours them at the start); fish-game.json alone holds them (no remote photo joins an entry short of them).
   c1.forEach(id => assert.ok((GM[id] || []).filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in play`));
-  // The rubric's caps on the judged codes (juveniles, the night livery, partial, head / tail / top views, camouflage, out
-  // of water, an unclear subject): never among the very easy photos.
+  // The rubric's caps on the judged codes (the night livery, partial, head / tail / top views, camouflage, out of water,
+  // an unclear subject): never among the very easy photos.
   Object.values(codes).forEach(([tid, c]) => {
-    const {e, jt} = capOf(c, false, true, null);
+    const {e, jt} = capOf(c, false, null);
     if (/[ca]/.test(jt.slice(7)) || /[htd]/.test(jt[0]) || jt[1] === '0' || jt[2] === 'n' || jt[3] >= '2' || jt[6] === 'x')
       assert.ok(e <= 3, `${tid} ${c}: ease ${e}`);
     if (jt[4] === 'b') assert.ok(e <= 2, `${tid} ${c}: strong blur at ease ${e}`);
@@ -648,8 +653,8 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
 });
 
 // The curated photos (tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
-// an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
-// livery, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
+// an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no night livery,
+// partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
 // write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js treePhotos: fish-game.json alone):
 // every circle-1 entry keeps at least 5 very easy photos.
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
@@ -692,10 +697,8 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
     assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
     const pass = !(p.f in (FC.ease || {})) || (S[p.f] && S[p.f].e === FC.ease[p.f] && S[p.f].jt === FC.tags[p.f]);
     if (!pass) return; // Pierre's own values stand (an ease he set is his choice)
-    const tid = entry.get(p.sp),
-      fl = p.jt.slice(7);
-    if ((/j/.test(fl) && !juvEarly(tid, p)) || p.jt[6] === 'x' || p.jt[3] === '3' || p.jt[4] === 'b')
-      assert.ok(p.e <= 2, `${p.f}: ${p.jt} at ease ${p.e}`);
+    const fl = p.jt.slice(7);
+    if (p.jt[6] === 'x' || p.jt[3] === '3' || p.jt[4] === 'b') assert.ok(p.e <= 2, `${p.f}: ${p.jt} at ease ${p.e}`);
     if (/[ca]/.test(fl) || p.jt[2] === 'n' || p.jt[3] === '2' || /[htd]/.test(p.jt[0]) || p.jt[1] === '0')
       assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
   });
