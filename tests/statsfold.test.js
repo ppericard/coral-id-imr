@@ -33,7 +33,7 @@ const POOL = {
 };
 const UP = {s091: 'f:Damselfishes', s088: 'f:Damselfishes', s244: 'f:Wrasses'};
 const pools = (s, P = POOL) =>
-  Object.entries(P).forEach(([k, v]) => (s.cache['pool3' + k] = JSON.stringify({p: v, u: k === 'fish' ? UP : {}})));
+  Object.entries(P).forEach(([k, v]) => (s.cache['pool4' + k] = JSON.stringify({p: v, u: k === 'fish' ? UP : {}})));
 const G = ['Acropora', 'Porites', 'Favia'];
 // The fish: questions at the family rank, and some at the species rank; each unit's photos.
 const FAM = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Wrasses'],
@@ -583,7 +583,7 @@ test("the replays read the snapshot: each player's record and the admin's list a
   // The replay's units and the slate (data.json, cached as gen_ and slate_ read them: the units under the content
   // editor's pairs, none here, through subjRpl_'s cache, design note v2 step 8).
   s.cache['scur1:coral'] = JSON.stringify({fp: '', c: {}});
-  s.cache['sgen4:coral:'] = JSON.stringify({
+  s.cache['sgen5:coral:'] = JSON.stringify({
     gen: {
       Acropora: {look: ['Porites'], fam: 'Acroporidae'},
       Porites: {look: ['Acropora']},

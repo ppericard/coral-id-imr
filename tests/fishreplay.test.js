@@ -34,8 +34,12 @@ test("treeReplayGen: the app's fish units, their look-alikes and family lines, f
   const X = ctx.treeGenera(C.treeGen(F, C.treePhotos(PH.photos, GM.photos, CUR), PH.sheet), F),
     // a species unit with the unit it starts from (its family: core.js abilityOf from)
     want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam, ...(g.from ? {from: g.from} : {})}])),
-    got = C.treeReplayGen(F);
+    all = C.treeReplayGen(F),
+    // the species by their scientific names (sci:) are the sheet's ahead of the app's units (SCI_SHEET; their app PR
+    // makes the app's and compares the whole list again): tests/scisheet.test.js checks them
+    got = Object.fromEntries(Object.entries(all).filter(([id]) => C.levelOf(id) !== 'sci'));
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));
+  assert.ok(Object.keys(all).some(id => C.levelOf(id) === 'sci'));
   assert.ok(['g:', 'f:', 's:'].every(p => Object.keys(got).some(id => id.startsWith(p))));
   assert.strictEqual(got['s:s091'].from, 'f:Damselfishes');
 });
@@ -70,9 +74,10 @@ test('treeReplayGen: a circle-2 genus is replayed as the app scores it', () => {
   const old = {...G};
   delete old['g:Centriscus'];
   assert.ok(!P(old)['g:Centriscus'], 'a script without it would not');
-  // the board's tree is the app's, the circle-2 genus in it
+  // the board's tree is the app's with the scientific species on (treeScoreTree sci; its app PR makes it the app's own),
+  // the circle-2 genus in it
   const T = C.treeBoardTree(F);
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(T)), JSON.parse(JSON.stringify(X.treeSp)));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(T)), JSON.parse(JSON.stringify(C.treeScoreTree(X, F, true, true))));
   assert.ok(T.s.some(e => e[1] === 'g:Aeoliscus'));
 });
 
@@ -85,7 +90,9 @@ test("treeReplayGen at the genus: the app's sea slug units, from seaslug.json al
     SG = C.treeGameRead(json('seaslug-game.json')),
     X = ctx.treeGenera(C.treeGen(SF, C.treePhotos(undefined, SG.photos, CUR.seaslug), undefined, C.unitRankOf(S)), SF),
     want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam}])),
-    got = S.replayed.gen(SF);
+    all = S.replayed.gen(SF),
+    // the species by their scientific names (sci:), ahead of the app's units (SCI_SHEET; tests/scisheet.test.js)
+    got = Object.fromEntries(Object.entries(all).filter(([id]) => C.levelOf(id) !== 'sci'));
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));
   const genera = Object.keys(got).filter(id => id.startsWith('g:'));
   assert.strictEqual(genera.length, SF.genera.length);

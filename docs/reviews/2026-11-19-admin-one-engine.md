@@ -188,6 +188,14 @@ green checks; refactors of this size probably run longer.
    Each step below lowers its numbers in its own PR.
 2. **The rubric declared for every subject** (Dup-9; admin M). Small and independent, so it can run in parallel with
    1. PR 5 needs it.
+   **Done** (spec/admin.md "Each subject's admin part"): the fish declare `admin.tags` as the sea slugs do, both through
+   `core.js` `treeRubric` (the shared rows once, the subject's views, light and flags beside); the admin reads it in one
+   place (`admin.js` `tagRows`, `tagFlags`, `tagWords`, `tagText`) and the review rows' view and phase buttons read it too.
+   Gone: the nine rubric constants and the four readers of the three copies (13 names), one `FISHS` read in `admin-fish.js`
+   (277 occurrences to 276, 150 names to 137) and the `admin.tags` flag of `tests/subject-neutral.test.js` FLAGS (it is
+   no longer one subject's). Checked against the old code on every value of every position and flag: the same rows,
+   words and flags for both subjects, but the fish's impossible letters `v` and `f` and the sea slugs' review view
+   buttons, which were the fish's and are now their own six views.
 3. **One registry `reg(S)` with a coral adapter** (Dup-2, Dup-10, Dup-11, Dup-21; admin L). The prerequisite for 4-8.
    No page changes.
 4. **One Tree** (Dup-1, second half; admin L): `renderTree(S)`, the builders declared in one place. Depends on 0 and
