@@ -99,7 +99,7 @@ its words, its files and its own settings and differences.
   `fish-game.json` (`fishCached`) waits for it at start-up. Meanwhile `dataPartial` (`UNITS` `partial`) holds `model.js`
   `domRecalcAll`, the one-time rebuild of an old record's bar, which reads the units' photo difficulties, until the whole
   data is in (`tests/fishhome.test.js`). `get` lists a tree subject's files (`f` its tree, `ph` its first photos, `gm` its
-  game photos, `ho` the fish's held-out set); the fish's three are in the `sw.js` shell, the sea slugs' are not. A
+  game photos); the fish's three are in the `sw.js` shell, the sea slugs' are not. A
   file that does not come (`json()` answers `{}`) is refused (`treeHome`, `treeLoad`), so nothing empty is kept and the
   app opens on the corals until a later try. `treeBuild` makes `TREEU` again whenever `build()` applies a new curation.
 - **The units.** `slate()`, the units the games teach and the progress counts (the corals' `slateOf(DATA)`; a tree

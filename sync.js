@@ -1546,7 +1546,10 @@ function signIn(name, pin, j) {
     try {
       localStorage.removeItem(ANONB);
     } catch (e) {}
-    return store.set('reefid-account', SYNC);
+    store.set('reefid-account', SYNC);
+    // no reload: the units are made again for the account's reserve at the next page change (app.js resSeen)
+    if (typeof resSeen === 'function') resSeen();
+    return;
   }
   // Each subject on its own. The corals (SUBJECTS anonBase) add only the delta from ANONB, the progress before the first
   // anonymous answer (an old sign-out's leftovers are in it); another subject adds all that is here (sign-out clears it).

@@ -156,6 +156,6 @@ test(".claude/settings.json runs main's copy of the guard before every Agent lau
   const pre = (s.hooks.PreToolUse || []).find(h => h.matcher === 'Agent');
   assert.ok(pre, 'a PreToolUse hook on Agent');
   const cmd = pre.hooks[0].command;
-  assert.match(cmd, /python3 -I -c "\$\(git show origin\/main:tools\/agent_guard\.py 2>\/dev\/null\)"/);
-  assert.match(cmd, /\|\| true$/, 'never blocks work by failing');
+  // Without origin/main the hook fetches it, or refuses: tests/hooks.test.js.
+  assert.match(cmd, /F=tools\/agent_guard\.py; .*git show "origin\/main:\$F".*python3 -I -c "\$S"/);
 });

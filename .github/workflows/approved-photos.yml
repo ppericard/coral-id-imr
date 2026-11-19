@@ -77,9 +77,6 @@ jobs:
       # the sheet-only photos, downloaded like the others). The files go to r2-upload/ (gitignored), uploaded below before
       # anything is committed.
       - run: python tools/fetch_approved.py --games --fish --out r2-upload
-      # The fish held-out set (fish-holdout.json, tools/holdout.py) from the new fish-game.json, committed with it so
-      # CI's --check holds: sticky, a new observation assigned by the same hash rule, one gone from play leaving the set.
-      - run: python tools/holdout.py
       # The sea slugs' game data (seaslug.json, seaslug-game.json) from the refreshed seaslug-cand.json and suggest.json:
       # a photo whose licence changed or that left the candidates leaves their game too (Codex review #987). Offline while
       # SEASLUG_R2 is off (above); on, the photos in play R2 lacks are downloaded into r2-upload/ (uploaded below).
@@ -117,7 +114,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add data.json cand.json excluded.json fish-game.json fish-holdout.json fish-photos.json fish-cand.json tools/fish_refs.json seaslug-cand.json seaslug.json seaslug-game.json img
+          git add data.json cand.json excluded.json fish-game.json fish-photos.json fish-cand.json tools/fish_refs.json seaslug-cand.json seaslug.json seaslug-game.json img
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -157,7 +154,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-holdout\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
