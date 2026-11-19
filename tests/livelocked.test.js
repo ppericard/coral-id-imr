@@ -95,6 +95,12 @@ test('a part opened by choice: a closed mark (a live answer on one of its units)
   assert.strictEqual(M.openShut('X'), false);
 });
 
+// Live answers on units not opened count: a coral rules version (rule D5), with no card (rule D6).
+test('a rules version for the live answers on units not opened, with no card', () => {
+  const e = C.RVS.find(x => /Live answers on units not opened count/.test(x.why));
+  assert.ok(e && e.v === 12 && e.msg === null);
+});
+
 // The other readers of "every unit met and asked" take the same predicate: the bonus genera's offer (app.js UNITS
 // corals sets due) and the all-met card (quiz.js allMetDue), as treeGate above.
 test("every reader of 'met and asked' reads askedOpen", () => {
