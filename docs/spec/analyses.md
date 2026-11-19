@@ -5,7 +5,7 @@ players learn), **precomputed, not on the phone**: a GitHub Action fits them eve
 the report in the sync sheet, and the admin only draws it. They measure; they change nothing in the app. This is the
 specification of what the code does now; why each part was decided is in [docs/decisions/](../decisions/README.md) and
 the PRs. The methods (the models, the multiple-testing correction, the visualisation study) are in
-[LEARNING.md](../LEARNING.md) "Multifactor analyses"; the views the admin reads live from the answer log (Stops, Answer
+[analyses-method.md](analyses-method.md); the views the admin reads live from the answer log (Stops, Answer
 log, Pairs, Heatmap) are in [admin-players.md › Live analyses](admin-players.md#live-analyses-from-the-answer-log).
 Tests: `tests/analysis*.test.js`.
 
@@ -60,7 +60,7 @@ nothing committed.
 The first 1000, 2000, 3000, … answers of the log in time order: round thousands only, never shifted by the count of the
 first report, none before 1000. Each is fitted alone, so the views show how every estimate and its interval moved (As the
 answers came in). They are kept as history: each is one more look at the same growing log, not a new study, so nothing is
-marked "new since the previous milestone" ([LEARNING.md](../LEARNING.md) "Multifactor analyses", Multiple testing).
+marked "new since the previous milestone" ([analyses-method.md](analyses-method.md), Multiple testing).
 
 The switch shows the round milestones (the last 5), the newest selected; the status line beside it names the subject,
 the newest milestone fitted, the subject's answers since it and the next one ("Corals: fitted on 2,000 answers · 729
@@ -153,7 +153,7 @@ subject's only from a reply that names it, else "No report yet") and only draws 
 another subject's side its words for the units are that subject's (`SUBJECTS` `analyses` `one`, `many`: "family or
 genus", "families and genera") and each unit is named, not shown by its id (`anWords`, after drawing), its look-alikes
 its own (`anGen`). Where its report tells the ranks asked apart (the fish's families, genera and species units:
-[LEARNING.md](../LEARNING.md) "Multifactor analyses", The rank asked), the
+[analyses-method.md](analyses-method.md), The rank asked), the
 views that list units draw each rank apart under "Family
 questions", "Genus questions", "Species questions" (`anRk`; words `anWords` leaves as they are), Formats adds a By the
 rank asked table and What makes a photo hard a Rank asked one, and the Overview ends on one line naming the Analyses
