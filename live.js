@@ -400,8 +400,8 @@ function liveJoin(code, msg = '') {
     </form>
     <div class="lvsign">${
       SYNC
-        ? `<p>✓ Signed in: your right answers count in your progress.</p>`
-        : `<p><b>Not signed in:</b> this game keeps nothing. Sign in to keep your right answers in your progress.</p><button class="next sec" type="button" id="lvsign">Sign in</button>`
+        ? `<p>✓ Signed in: your answers count in your progress.</p>`
+        : `<p><b>Not signed in:</b> this game keeps nothing. Sign in to keep your answers in your progress.</p><button class="next sec" type="button" id="lvsign">Sign in</button>`
     }</div>
     <p class="note lvhosting"><a class="linkish" href="${esc(hr('live-host'))}">Host a game</a> (trainers)</p>
   </div>`;
@@ -497,15 +497,15 @@ function liveDraw(j, key) {
     // Signed in by now with answers still waiting (a sign-in reloads the page: the waiting answers were kept per tab):
     // logged now.
     const flush = SYNC && LV.pend.length,
-      pend = LV.pend.filter(a => a.ok).length;
+      pend = LV.pend.length;
     $v.innerHTML = `<div class="live lvend">${head}<p class="lvbig">${liveNth(j.rank)} of ${j.of}</p>
       <p class="lvrank">${j.me.s} pts · ${j.me.r} right of ${j.n}</p>${liveTop(j.top, LV.name)}
       <div class="lvsign" id="lvkeep">${
         SYNC
           ? `<p>✓ Your answers count in your progress.</p>`
           : pend
-            ? `<p><b>Sign in to keep your ${pend} right answer${pend === 1 ? '' : 's'} in your progress.</b> Without it, this game keeps nothing.</p><button class="next" type="button" id="lvsign">Sign in</button>`
-            : `<p>Sign in next time to keep your right answers in your progress.</p>`
+            ? `<p><b>Sign in to keep your ${pend} answer${pend === 1 ? '' : 's'}, right or wrong, in your progress.</b> Without it, this game keeps nothing.</p><button class="next" type="button" id="lvsign">Sign in</button>`
+            : `<p>Sign in next time to keep your answers in your progress.</p>`
       }</div>
       <p><a class="next sec" href="${esc(hr('live'))}" id="lvagain">Join another game</a></p></div>`;
     const sb = document.getElementById('lvsign');
