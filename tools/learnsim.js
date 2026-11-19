@@ -11,7 +11,7 @@
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none]
 //                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
-//                          [--budget MIN] [--per-job SEC] [--pierre-go "his words, their date"]
+//                          [--budget MIN] [--per-job SEC] [--pierre-go "Q number or message, date"]
 // --budget MIN (rule L11, tools/checkbudget.js): minutes of compute, 40 at most and by default, in either world: the run
 // plans its jobs, estimates their time from one short calibration run (or --per-job SEC, a job's time at the full
 // length), refuses to start over the budget (saying which options would fit), and stops at the budget with the runs it
@@ -220,7 +220,7 @@ const SEEDS = Number(arg('seeds', 5)),
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
 // --budget MIN (rule L11): minutes of compute, 40 at most (the default), the run stopping there with what it has, marked
 // cut; --per-job SEC: a job's measured time at the full length, instead of the short calibration run that estimates it;
-// --pierre-go "his words, their date": level 3 (over 20 seeds, or over 10,000 answers in the rated world) runs only with
+// --pierre-go "Q number or message, date" (the reference of his go): level 3 (over 20 seeds, or over 10,000 answers in the rated world) runs only with
 // it, and only on a GitHub runner (tools/checkbudget.js).
 const BUDGET_MIN = CB.parseBudget(arg('budget', undefined)),
   PERJOB = arg('per-job', null) === null ? null : Number(arg('per-job', null)),

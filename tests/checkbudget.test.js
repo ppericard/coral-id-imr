@@ -234,8 +234,29 @@ test("level 3 runs only with Pierre's go on a GitHub runner; anywhere else it pr
 
 // The tool itself, without any run: its refusals come before the slot, the browser and the clock.
 const LEARNSIM = path.join(__dirname, '..', 'tools', 'learnsim.js'),
-  tool = (args, env = {}) =>
-    spawnSync(process.execPath, [LEARNSIM, ...args], {encoding: 'utf8', env: {...process.env, GITHUB_ACTIONS: '', ...env}, timeout: 60000});
+  tool = (args, env = {}) => {
+    const e = {...process.env, GITHUB_ACTIONS: '', ...env};
+    delete e.NODE_TEST_CONTEXT; // the child is not a test runner
+    return spawnSync(process.execPath, [LEARNSIM, ...args], {encoding: 'utf8', env: e, timeout: 120000});
+  };
+// A machine slot of its own for a run that takes one (as tests/slotguard.test.js does): one slot in dir, the load gate
+// off, outside the slot of the runner that started this test, so a busy machine never makes the test wait.
+const sandbox = dir => {
+  const stub = path.join(dir, 'calm-load.js');
+  fs.writeFileSync(stub, "require('os').loadavg = () => [0, 0, 0];\n");
+  const env = {
+    GITHUB_ACTIONS: '',
+    CI: '',
+    SMOKE_SLOT_DIR: path.join(dir, 'slots'),
+    SMOKE_SLOTS: '1',
+    SMOKE_SLOT_POLL: '50',
+    NODE_OPTIONS: '--require ' + stub,
+    REEFID_SLOT: '',
+    REEFID_SLOT_WRAP: '',
+    SLOT_MIN_FREE_GB: '0'
+  };
+  return env;
+};
 let hasPlaywright = true;
 try {
   require.resolve('playwright');
@@ -316,7 +337,7 @@ test(
         '--out',
         out
       ],
-      {GITHUB_ACTIONS: ''}
+      sandbox(dir)
     );
     assert.ok(r.status === 0 || r.status === 3, r.stderr);
     assert.match(r.stdout, /CUT at the 0\.05-minute budget/);

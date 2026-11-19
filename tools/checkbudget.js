@@ -8,7 +8,7 @@
 // - The budget is 40 minutes of compute at every level, on every machine; `--budget MIN` asks for less, never more. The
 //   clock starts when the compute does (after the machine slot is held), calibration included.
 // - Level 3 (more than 20 seeds, or more than 10,000 answers in the rated world: LEARNING.md's level-2 ceilings) runs
-//   only with Pierre's explicit go, `--pierre-go "his words, their date"`, and only on a GitHub runner
+//   only with Pierre's explicit go, `--pierre-go "Q512, 2026-11-20"` (the reference of his go: a Q number or message, and the date), and only on a GitHub runner
 //   (GITHUB_ACTIONS=true); anywhere else the tool prints the command that dispatches it there.
 'use strict';
 
@@ -151,7 +151,7 @@ function dispatchCommand({subject, world, seeds, N}) {
   return (
     'gh workflow run learncheck.yml -f after=<branch> -f before=main' +
     ` -f subject=${subject} -f world=${world} -f seeds=${seeds} -f ${world === 'rated' ? 'answers' : 'questions'}=${N}` +
-    " -f primary=<MEASURE@CHECKPOINT:up|down> -f pierre_go='<Pierre's go: his words and their date>'"
+    " -f primary=<MEASURE@CHECKPOINT:up|down> -f pierre_go='<the reference of Pierre's go: a Q number or message, and the date>'"
   );
 }
 
@@ -161,10 +161,10 @@ function level3Gate({reason, go, runner, subject, world, seeds, N}) {
   if (!runner)
     return (
       `Level 3 (${reason}) never runs on this machine (rule L11): only with Pierre's explicit go, on a GitHub runner, its duration announced first.\n` +
-      `Dispatch it there once he has said go (his words and their date in pierre_go):\n  ${dispatchCommand({subject, world, seeds, N})}`
+      `Dispatch it there once he has said go (the reference of his go, a Q number or message and the date, in pierre_go):\n  ${dispatchCommand({subject, world, seeds, N})}`
     );
   if (!go || !String(go).trim())
-    return `Level 3 (${reason}) needs Pierre's explicit go (rule L11): pass --pierre-go "his words, their date". Nothing ran.`;
+    return `Level 3 (${reason}) needs Pierre's explicit go (rule L11): pass --pierre-go "Q number or message, date" (the reference of his go). Nothing ran.`;
   return null;
 }
 
