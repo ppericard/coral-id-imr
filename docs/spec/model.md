@@ -162,7 +162,7 @@ fish's 30; LEARNING.md "The fish draw in big pools").
 **Photo memory** (`PMEM`, `famOf`, `pgMemW` in `model.js`; `core.js` `MEM`, `memBucket`, `memFam`, `memOf`): a question
 on photos the player has already been shown (`s.ps`: [shown, right]) is expected easier by the offset of their memory
 bucket (new 0, shown never right, right once, right twice or more), estimated by the sheet (`?stats=1` `mem`; the fixed
-prior with a script that does not serve it). Those offsets are the subject the sheet replays (`SUBJECTS` `replay`):
+prior with a script that does not serve it). Those offsets are the subject the sheet replays (`SUBJECTS` `offsets`):
 every use reads them through `model.js` `pmem()`, which gives any other subject the prior, so no coral offset touches a
 fish answer. The ability step, the global level, the logged `e`, the opening hold and the comeback all use that
 expectation; a right answer counts in the progress only for what memory does not explain (`pgMemW`); the photo draw
