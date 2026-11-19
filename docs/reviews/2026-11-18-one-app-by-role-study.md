@@ -4,9 +4,13 @@ Status: a design study with mockups. It changes no app code. The mockups are the
 prototype markup injected (section 9); they are not committed. Pierre's choices are the questions at the end (section
 10); the rest is the integrator's call once he has answered.
 
-**Where the questions stand (2026-11-19).** (f), the rename of the stored role ids, is dissolved by Q408 (groups carry
-an instance's rights, Admin stays outside the groups; section 10). (a), the entry's name "Workspace", is kept as the
-integrator's call, easy to correct. (b), (c) + (d) and (e) stay open, asked as Q422-Q424 on 2026-11-19.
+**Where the questions stand (2026-11-19): all of section 10 is settled.** (f), the rename of the stored role ids, is
+dissolved by Q408 (groups carry an instance's rights, Admin stays outside the groups). (a), the entry's name
+"Workspace", is kept as the integrator's call, easy to correct. (b), (c) + (d) and (e) were asked as Q422-Q424 and
+answered by Pierre on 2026-11-19 (08:53-08:54): Curators sort photos through the relay, with a log and Undo (Q422); a
+Trainer's view of their cohorts and a Manager's rights both work with the name + 4-digit code for now (Q423, against
+the recommendation for the Manager's rights); the token goes in the app's Admin section as the very last step, and
+`admin.html` goes (Q424).
 
 ## 1. Why this study
 
@@ -343,10 +347,16 @@ tests (AGENTS.md "Working mode").
 
 **State on 2026-11-19.**
 - **(a) Kept: "Workspace"** is the integrator's call (easy to correct): a name players meet only if they hold a role.
-- **(b) Open**, asked as **Q422** on 2026-11-19.
-- **(c) and (d) Open**, asked together as **Q423** on 2026-11-19 (one question: which rights the name + 4-digit code
-  covers).
-- **(e) Open**, asked as **Q424** on 2026-11-19.
+- **(b) Answered, Q422** (Pierre, 2026-11-19 08:53 and 08:54; docs/ANSWERS.md): "Pourquoi plus tard?", then "ok" to
+  building it with the Curators' relay, with a log and Undo (the recommendation, now not waiting: row 8 of section 7 is
+  no longer "if (b)"); and "C'est toi qui est responsable de l'ordre du développement. Fait juste au mieux."
+- **(c) and (d) Answered together, Q423** (Pierre, 2026-11-19 08:53): **B**, both a Trainer's view of their cohorts and
+  a Manager's rights with the name + 4-digit code: "Pour l'instant on n'a pas besoin de grosse sécurité. Ya rien de
+  critique. Mais oui, la meilleure connection doit être prévue dans la roadmap". (c) is the recommendation. **(d) goes
+  against it** (recommended no): the Manager's section does not wait for the better sign-in (row 9 of section 7, Q349),
+  which stays planned in the roadmap. The "question (c)" and "question (d)" cells of section 5's table are now yes.
+- **(e) Answered, Q424** (Pierre, 2026-11-19 08:53): **A**, the token in the app's Admin section as the very last step,
+  once the pages are protected, and `admin.html` goes: "ok" (the recommendation; row 15 of section 7).
 - **(f) Dissolved by Q408** (Pierre, 2026-11-19; docs/ANSWERS.md 2026-11-19, `docs/reviews/2026-11-18-groups-carry-rights-study.md`
   section 6, `docs/decisions/2026-11-19-groups-carry-rights.md`). Question 1 (OK, 06:50): groups carry settings and
   rights, a player's rights are the union of their groups', and the Roles tab and its role names go. Question 6
