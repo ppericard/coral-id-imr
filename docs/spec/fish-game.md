@@ -21,9 +21,10 @@ the PRs.
   enlarges in the shared viewer, `zoom`), and the sheets ([fish-sheets.md](fish-sheets.md)).
 - **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars
   ([the global score](#the-fish-global-score)), the fish's own leaderboard and achievements (`core.js` `FISH_ACH`).
-- **Not for fish**: the Look-alikes page, the Custom quiz, the Duel and Memory tabs (their addresses open the fish page
-  of the section: `subjPage`); Identify is the Fish ID Key's "coming soon" page; timed mode and size estimation (video ID,
-  EventMeasure) by design.
+- **The Duel tab** (`#fish/practice/duels`), on the family look-alike pairs (`UNITS.fish.pairs`).
+- **Not for fish yet**: the Look-alikes page, the Custom quiz, the Memory tab (`SUBJECTS` `closed` says why; their
+  addresses open the fish page of the section: `subjPage`); Identify is the Fish ID Key's "coming soon" page; timed
+  mode and size estimation (video ID, EventMeasure) by design.
 
 ### Circles and the gate
 
