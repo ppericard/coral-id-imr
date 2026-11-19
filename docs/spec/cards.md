@@ -225,8 +225,10 @@ achievement toast, then shown on the same question), not after a reload, and not
 
 A short question about how the game feels, asked now and then (`quiz.js` `PULSE`, `pulseDue`, `pulseAsk`; the bank in
 `core.js` `PULSEQ`, `pulsePick`, `pulseScore`, shared with the admin; LEARNING.md "What the players say about the
-difficulty"). State `reefid-pulse` = {at: the answers when the last one showed, q: its item, left: the round's items
-still to ask, x: 1 after "Not now", v: the current session {t0: its first answer's time, t: its last, n: its answers}}.
+difficulty"), in every subject. Each subject paces its own (`sDev('pulse')`, `reefid-<dev>pulse`) = {at: its answers
+when the last one showed, q: its item, left: the round's items still to ask, x: 1 after "Not now"}; the session is the
+device's, every answer of any subject in it: `reefid-pulse` `v` = {t0: its first answer's time, t: its last, n: its
+answers} (the first subject's own record too).
 
 - **When**: after an answer in the photo quiz (the custom quiz too, `photoQuiz`) and the duels, as a card at Next,
   before the next question is drawn (in a flow of answers, a prompt inside the feedback is missed). The answer arms Next
