@@ -163,8 +163,9 @@ and reports every failing one. Locally, run what your change can break, once:
 - **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.10.1 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
   bump a number, rules W15 and D3);
-  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
-  one smoke part your change touches** (below). Docs-only changes: no smoke.
+  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24) **without
+  the slow statistical tests tagged `slow`** (CI and the merge train run them); then **the one smoke part your change
+  touches** (below). Docs-only changes: no smoke.
 - **Full tier**: CI on the PR (no smoke for a docs-only PR, rule W12) and on the merge train (rule W26). Run every smoke
   locally only when CI is down. After a big interface change, the
   brand-new-player replay of rule W17 stays a separate manual step.
@@ -188,7 +189,8 @@ and reports every failing one. Locally, run what your change can break, once:
   entrance animation to wait for) unless the context asks otherwise (a check about motion, the brand-new player). Never
   run two smokes at once from one session; `SMOKE_SLOTS=n` changes the cap, CI ignores it.
 
-*Source:* test-suite review, 2026-11-04, approved by Pierre; the docs-only and train runs, Pierre, 2026-11-08 (Q305).
+*Source:* test-suite review, 2026-11-04, approved by Pierre; the docs-only and train runs, Pierre, 2026-11-08 (Q305); the
+`slow` tests out of the fast tier, 2026-11-19 (Q414).
 
 ### W15
 
@@ -260,7 +262,9 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 
 **A PR updates the docs that describe what it changes (the map or the spec it touches) and, when it carries out a
 decision, adds a short decision record in `docs/decisions/`, named YYYY-MM-DD-topic.md (context, the decision with Pierre's words,
-consequences). History stays in git and the PRs, never in the docs.** A change is not done until the docs say what the
+consequences). History stays in git and the PRs, never in the docs.** **A code comment says what the code does and why,
+in the present tense, in a few lines; a decision links its record in docs/decisions/; no version tags, dates, quotes or
+Q-numbers.** A change is not done until the docs say what the
 code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
 change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
 its status; deferred = add a row inside its section; new "don't do X" = Declined), `README.md` (anything a newcomer
@@ -274,7 +278,7 @@ ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every wo
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
 #1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
-history in the docs, 2026-11-18.
+history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409).
 
 ### W20
 
