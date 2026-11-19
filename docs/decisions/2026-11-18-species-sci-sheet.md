@@ -1,4 +1,4 @@
-# Species by scientific name on the sheet: the sci: key, one levels table, smaller faults logged by their kind
+# Species by scientific name on the sheet: the sci: key, smaller faults by kind
 
 Date: 2026-11-18. PR: #PRNUM. Rules or docs touched: docs/spec/sync.md, docs/LEARNING.md "One scorer", docs/SECURITY.md, docs/reviews/2026-11-18-species-step2-plan.md.
 

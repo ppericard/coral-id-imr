@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '..'),
   src = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
   F = JSON.parse(src('fish.json')),
   SF = JSON.parse(src('seaslug.json')),
-  FISH = C.subjectOf('fish'),
+  FSUBJ = C.subjectOf('fish'),
   SLUG = C.subjectOf('seaslug'),
   XF = C.treeGen(F, {}),
   XS = C.treeGen(SF, {}, undefined, C.unitRankOf(SLUG)),
@@ -89,7 +89,7 @@ test('the sea slugs: every species under its genus unit, Goniobranchus sp. 5 by 
 });
 
 test("the sheet's replay units: the scientific species of both subjects, every other unit as before", () => {
-  const G = FISH.replayed.gen(F),
+  const G = FSUBJ.replayed.gen(F),
     S = SLUG.replayed.gen(SF);
   SCF.forEach(u => assert.deepStrictEqual(G[u.id], {look: u.look, fam: u.fam, from: u.genus}));
   SCS.forEach(u => assert.deepStrictEqual(S[u.id], {look: u.look, fam: u.fam, from: u.genus}));
@@ -230,7 +230,7 @@ test('the board tree: each species in its own entry with its scientific unit; th
   const on = C.treeBoardTree(F),
     X = {...XF, gen: {...C.treeReplayGen(F), ...XF.gen}},
     before = C.treeScoreTree(X, F, true),
-    K = FISH.score;
+    K = FSUBJ.score;
   assert.deepStrictEqual(on.f, before.f);
   assert.deepStrictEqual(on.s.map(e => e[2]).sort(), SCF.map(u => u.id).sort(), 'every entry its scientific unit, every unit once');
   on.s.forEach(e => {
@@ -328,7 +328,7 @@ test('the sheet logs a scientific species answer with its mark, and replays it a
 
 test('the fish board ranks by the tree with the scientific species: a species learned by its scientific name counts', () => {
   const s = loadCodeGs({fetch, cacheMax: 100 * 1024}),
-    K = FISH.score,
+    K = FSUBJ.score,
     T = C.treeBoardTree(F),
     // a few families and genera, and scientific species learned
     P = {'f:Damselfishes': {ok: 9, ko: 0, mx: 1}, 'g:Chromis': {ok: 6, ko: 0, mx: 1}, '~level': {ok: 120, ko: 20, th: 1}};
@@ -349,8 +349,8 @@ test('the fish board ranks by the tree with the scientific species: a species le
 });
 
 test('the pooled statistics: a trusted answer on a scientific species rates its photo, one of another family is flagged', () => {
-  const files = FISH.pool.files.map(f => JSON.parse(src(f))),
-    FP = C.unitPool(FISH, files),
+  const files = FSUBJ.pool.files.map(f => JSON.parse(src(f))),
+    FP = C.unitPool(FSUBJ, files),
     dam = FP['f:Damselfishes'][0][0],
     bfly = FP['f:Butterflyfishes'][0][0],
     site = url => {
