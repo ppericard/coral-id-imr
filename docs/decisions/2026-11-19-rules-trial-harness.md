@@ -16,8 +16,9 @@ G5 on the model and effort of each agent launch. AGENTS.md already asks for both
   common dir, never committed; SubagentStart gives each subagent the Manila time and origin/main's core line (Explore
   and Plan load no CLAUDE.md); `tools/brief.py` warns when the checkout's instruction files differ from origin/main.
   Integrator's call: the log's fields and its place.
-- The launch guard (Pierre, 2026-11-19 10:09; the integrator's paraphrase: prose rules drift when nothing checks them,
-  so the model and effort rule gets a guard and a log): a launch without `model` or `effort` is refused, a fork
+- The launch guard, the integrator's call, its answer to Pierre's question (2026-11-19 10:09: «Que se serait-il passé
+  si je n'avais pas posé la question?») after his 10:08 «faire de nouveaux tests au lieu de default sur Opus high»:
+  prose rules drift when nothing checks them, so the model and effort rule gets a guard and a log: a launch without `model` or `effort` is refused, a fork
   excepted (it runs on its parent's); every launch is logged with its model, effort and description, never its
   prompt; the brief prints the day's distribution. Claude Code 2.1.327's Agent tool takes both parameters; the refusal
   names the keys it saw, so a launch whose hook input lacks `effort` shows at once.
