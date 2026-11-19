@@ -55,10 +55,20 @@ test('a later "Applied in #N" entry naming its question closes an entry; KNOWN h
   const stale = check(files, {'2026-11-19 06:10. Not numbered': 'why', '2026-11-19 07:00, Q999': 'gone'});
   assert.strictEqual(stale.status, 1, stale.out);
   assert.match(stale.out, /KNOWN "2026-11-19 07:00, Q999": no open ledger entry matches it any more: delete it/);
+  // An unnumbered entry is closed by quoting its first 24 characters, as the failure message says.
+  const open = check({'docs/ANSWERS.md': ledger('- **06:10, the ledger as data** (b3): "ok".')});
+  assert.match(open.out, /naming its Q, or quoting "06:10, the ledger as dat"/);
+  const closed = check({
+    'docs/ANSWERS.md': ledger(
+      '- **06:10, the ledger as data** (b3): "ok".',
+      '- **Applied in #1199:** 06:10, the ledger as data (the check).'
+    )
+  });
+  assert.strictEqual(closed.status, 0, closed.out);
 });
 
 test('every "#…" after "Applied" is a PR number', () => {
-  for (const tail of ['Applied: #N.', 'Applied: this PR.', 'Applied: #12a.'])
+  for (const tail of ['Applied: #N.', 'Applied: this PR.', 'Applied: #12a.', 'Applied: the rule (#N).'])
     assert.strictEqual(check({'docs/ANSWERS.md': ledger('- **06:00, Q904.** OK. ' + tail)}).status, 1, tail);
   const r = check({'docs/ANSWERS.md': ledger("- **06:00, Q904.** OK. Applied: #1130's Decisions, [a row](ROADMAP.md#fish).")});
   assert.strictEqual(r.status, 0, r.out);

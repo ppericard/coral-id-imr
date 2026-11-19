@@ -6,7 +6,8 @@
 
 1. The ledger: every docs/ANSWERS.md entry dated 2026-11-19 or later says where it is applied, "Applied: <doc or #PR>"
    (or "Applied in #N:"), or "no doc change" when it changes no doc. The ledger is append-only: an entry without one is
-   closed by a later entry "- **Applied in #N:** …" naming its question number (Q412…). Every "#…" after "Applied"
+   closed by a later entry "- **Applied in #N:** …" naming its question number (Q412…) or quoting its first 24
+   characters as the report prints them ("06:26. "Commence par essa"). Every "#…" after "Applied"
    is a PR number (#1199), never a placeholder (#N, "this PR"). KNOWN lists the entries that were in the ledger before
    this check and say neither, each with why; an entry of KNOWN that no longer matches an open entry fails, so the list
    only shrinks.
@@ -29,9 +30,10 @@ SINCE = '2026-11-19'
 APPLIED = re.compile(r'\bApplied(?: in #\d+)?:|\bno doc change\b', re.I)
 WAITING = re.compile(r'waiting on pierre|waits? for pierre|for pierre|open question', re.I)
 QNUM = re.compile(r'\bQ(\d+)\b')
+START = 24  # a closing entry names an unnumbered entry by its first characters, as the report prints them
 # Ledger entries of 2026-11-19 written before this check, with neither "Applied:" nor "no doc change". Key: the entry's
 # date and the start of its text, as the report prints it. Close one with a later "Applied in #N:" entry naming its Q
-# (or say so in a new entry), then delete its line here.
+# or quoting its first 24 characters, then delete its line here.
 KNOWN = {
     '2026-11-19 06:26. "Commence par essayer': "an instruction for that session's merges; where applied not said",
     '2026-11-19 06:37. "Par du principe': 'the allow-rule habit (INTEGRATOR "Habits"); where applied not said',
@@ -102,14 +104,15 @@ def check_ledger(entries):
         m = APPLIED.search(text) or re.search(r'\bapplied\b', head, re.I)  # "**07:59, Q418 applied.** #1171 …"
         if m:
             tail = text[m.start():] if m.re is APPLIED else text
-            bad = [r for r in re.findall(r'(?<![\w(/\]])#(\w+)', tail) if not re.fullmatch(r'[1-9]\d{0,5}', r)]
+            bad = [r for r in re.findall(r'(?<!\]\()(?<![\w/])#(\w+)', tail) if not re.fullmatch(r'[1-9]\d{0,5}', r)]
             if re.search(r'\bthis PR\b', tail, re.I):
                 bad.append('"this PR"')
             if bad:
                 fails.append('docs/ANSWERS.md:%d %s…: after "Applied", %s is not a PR number (#1234)' % (n, lab, ', '.join(bad)))
             continue
         qs = QNUM.findall(head)
-        if qs and any(all(re.search(r'\bQ%s\b' % q, c) for q in qs) for c in closers):
+        start = text.replace('**', '')[:START]
+        if any((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or start in c.replace('**', '') for c in closers):
             continue
         key = next((k for k in KNOWN if lab.startswith(k)), None)
         if key:
@@ -118,7 +121,7 @@ def check_ledger(entries):
             continue
         fails.append(
             'docs/ANSWERS.md:%d %s…: names no "Applied: <doc or #PR>" nor "no doc change"; the ledger is append-only: '
-            'add a later entry "- **Applied in #N:** Q…" naming it' % (n, lab)
+            'add a later entry "- **Applied in #N:** …" naming its Q, or quoting "%s"' % (n, lab, text.replace('**', '')[:START])
         )
     for k in KNOWN:
         if k not in used:

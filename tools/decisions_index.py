@@ -47,12 +47,13 @@ def table(recs):
 
 
 def split(readme):
-    """README.md as (before the rows, the rows, after them)."""
+    """README.md as (before the rows, the rows, after them). The rows include a merge's conflict markers, so --fix
+    rewrites a conflicted index whole."""
     i = readme.find(HEADER)
     if i < 0:
         raise SystemExit('docs/decisions/README.md: the index header "| Date | Record | PR |" and its rule line are missing')
     start = i + len(HEADER)
-    m = re.compile(r'(?:\|[^\n]*\n)*').match(readme, start)
+    m = re.compile(r'(?:(?:\||<{7}|={7}|>{7})[^\n]*\n)*').match(readme, start)
     return readme[:start], readme[start : m.end()], readme[m.end() :]
 
 
