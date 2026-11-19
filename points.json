@@ -261,6 +261,22 @@
       "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
     },
     {
+      "id": "cyphastrea-axial-corallite",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-19",
+      "title": "Cyphastrea branch tips: an axial corallite or not",
+      "q": "The Coral Finder says a branching Cyphastrea's tip corallite is like Acropora's but not different from the others; Corals of the World gives Cyphastrea decadia Acropora-like axial corallites. How should RAs tell a branching Cyphastrea from Acropora?",
+      "ctx": [
+        "Cyphastrea decadia is the one Cyphastrea confirmed in the Philippines (an iNaturalist Research Grade observation there and the Corals of the World checklist, checked 2026-11-19); the other Cyphastrea species have no Research Grade observation in the Philippines.",
+        "Until this is settled the Acropora / Cyphastrea pair has no tell-apart line (tools/coral_apart.json none): the feedback sheet shows the first ID tip."
+      ],
+      "src": [
+        {"t": "Coral Finder, p. 8"},
+        {"t": "Corals of the World (Veron et al.), Cyphastrea decadia factsheet", "u": "https://www.coralsoftheworld.org/species_factsheets/species_factsheet_summary/cyphastrea-decadia/"}
+      ]
+    },
+    {
       "id": "fish-clownfish-dorsal",
       "kind": "trainer",
       "subj": "fish",
