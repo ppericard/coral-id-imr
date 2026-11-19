@@ -30,8 +30,9 @@ Built, so that the format opens for the sea slugs as boxes arrive (integrator's 
   met and ready with three other units with a tile (L4).
 
 Not built, and why: no box pass (a change of the sea slug judging rubric, decided process), no box invented from the
-whole photo, nothing in `curation.json` (A1). The tile rule is the fish's (profile or slight oblique), so it keeps no
-dorsal photo, the sea slugs' commonest good view: a sea slug tile rule is to decide with the box pass.
+whole photo, nothing in `curation.json` (A1). The sea slug tile rule is the fish's plus the dorsal view, the sea slugs'
+commonest good one (integrator's call, easy to correct; 2,132 of the 3,014 photos pass). The box pass runs after a model
+measurement now under way (Pierre, 2026-11-20 06:42).
 
 ## Consequences
 

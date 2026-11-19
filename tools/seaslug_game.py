@@ -89,7 +89,7 @@ line:
     old files until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
   - the tile (Pierre, 2026-11-19, Q437: every game mode for every subject; Find the X, one name and four photos): a photo
     whose judgement carries the animal's box (suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
-    pass the fish's tile rule (fish_game.py tile_tags) carries bb, and its download (or, on R2 already, a run for the
+    pass the sea slugs' tile rule (tile_tags here: the fish's plus the dorsal view) carries bb, and its download (or, on R2 already, a run for the
     tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
     record then carrying xc (the tile's square) or xn (why not). No sea-slug judgement carries a box yet (judging/
     SEASLUG.md "no bb"), so no record has a tile and the app's Find the X (app.js UNITS tiles) is not drawn for the sea
@@ -215,6 +215,14 @@ def crop(j):
     plan)."""
     c = (j or {}).get('c')
     return list(c) if isinstance(c, list) and len(c) == 4 and list(c) != [0, 0, 1, 1] else None
+
+
+def tile_tags(jt):
+    """The sea slugs' tile rule: the fish's (tools/fish_game.py tile_tags) plus the dorsal view, the sea slugs' commonest good
+    one (a dorsal photo is read as a profile one: integrator's call, easy to correct; 2,132 of 3,014 photos pass)."""
+    import fish_game as FG
+    jt = jt or ''
+    return FG.tile_tags('p' + jt[1:] if jt[:1] == 'd' else jt)
 
 
 def phase(jt):
@@ -437,7 +445,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         ph = phase(jt)
         # The animal's box, for the Find the X tile (the fish's rule and cut, tools/fish_game.py tile_tags, tile_crop): a
         # judgement carrying one (bb, which no sea-slug judgement does yet) on a photo whose tags pass the tile rule.
-        bb = FG.box_of(f, None, sug) if FG.tile_tags(jt) else None
+        bb = FG.box_of(f, None, sug) if tile_tags(jt) else None
         return {'f': f, 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': t, 'sp': unit,
                 **({'gl': 1} if unit in gens else {}), 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
                 **({'e': int(e)} if e else {}), **({'jt': jt} if jt else {}), **({'ph': ph} if ph else {}),

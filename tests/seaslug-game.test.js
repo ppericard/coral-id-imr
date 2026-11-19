@@ -469,7 +469,8 @@ test(
   () => {
     const box = b => ({
         ...SUG,
-        'seaslug-1-cand-1': {...SUG['seaslug-1-cand-1'], bb: [0, 0, 1, 1]}, // a dorsal view: not a tile photo (the fish's rule)
+        'seaslug-1-cand-1': {...SUG['seaslug-1-cand-1'], bb: [0, 0, 1, 1]}, // a dorsal view: a tile photo (the sea slugs' rule)
+        'seaslug-1-cand-4': {...SUG['seaslug-1-cand-4'], bb: [0.05, 0.2, 0.95, 0.8]}, // a juvenile: never a tile photo
         'seaslug-1-cand-2': {...SUG['seaslug-1-cand-2'], bb: b}
       }),
       dir = world(box([0.05, 0.2, 0.95, 0.8])),
@@ -477,10 +478,13 @@ test(
     let r = r2run(dir, path.join(dir, 'up'));
     assert.deepStrictEqual([r.done, r.failed], [3, []]);
     let B = by();
-    assert.strictEqual(B[1].bb, undefined, 'a dorsal photo: no box kept');
+    assert.deepStrictEqual(B[1].bb, [0, 0, 1, 1], 'a dorsal photo keeps its box');
+    assert.strictEqual(B[1].xc.length, 4, 'and its tile');
+    assert.strictEqual(B[4].bb, undefined, 'a juvenile: no box kept');
     assert.deepStrictEqual([B[2].bb, B[2].xn, B[2].xc.length], [[0.05, 0.2, 0.95, 0.8], undefined, 4]);
     assert.ok(fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-2-x.webp')), 'the fifth file');
-    assert.ok(!fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-1-x.webp')));
+    assert.ok(fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-1-x.webp')));
+    assert.ok(!fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-4-x.webp')));
     // Offline (--check): the tile stays, nothing to do.
     let [text, todo] = offline(dir);
     assert.strictEqual(text, fs.readFileSync(path.join(dir, 'seaslug-game.json'), 'utf8'));
