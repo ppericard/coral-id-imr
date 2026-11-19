@@ -55,16 +55,20 @@ test('a later "Applied in #N" entry naming its question closes an entry; KNOWN h
   const stale = check(files, {'2026-11-19 06:10. Not numbered': 'why', '2026-11-19 07:00, Q999': 'gone'});
   assert.strictEqual(stale.status, 1, stale.out);
   assert.match(stale.out, /KNOWN "2026-11-19 07:00, Q999": no open ledger entry matches it any more: delete it/);
-  // An unnumbered entry is closed by quoting its first 24 characters, as the failure message says.
-  const open = check({'docs/ANSWERS.md': ledger('- **06:10, the ledger as data** (b3): "ok".')});
-  assert.match(open.out, /naming its Q, or quoting "06:10, the ledger as dat"/);
+  // An unnumbered entry is closed by its time and first three words, case and punctuation ignored, as the message says.
+  const open = check({'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".')});
+  assert.match(open.out, /naming its Q, or its time and first words "06:10 rule s1's wording"/);
   const closed = check({
-    'docs/ANSWERS.md': ledger(
-      '- **06:10, the ledger as data** (b3): "ok".',
-      '- **Applied in #1199:** 06:10, the ledger as data (the check).'
-    )
+    'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".', "- **Applied in #1190:** 06:10, Rule S1's wording (rule S1).")
   });
   assert.strictEqual(closed.status, 0, closed.out);
+  // Another time, or the words alone, close nothing; a word is matched whole.
+  for (const c of ["06:11, rule S1's wording", "rule S1's wording", "06:10, rule S1's wordings"])
+    assert.strictEqual(
+      check({'docs/ANSWERS.md': ledger('- **06:10, rule S1’s wording.** "ok".', '- **Applied in #1190:** ' + c + '.')}).status,
+      1,
+      c
+    );
 });
 
 test('every "#…" after "Applied" is a PR number', () => {

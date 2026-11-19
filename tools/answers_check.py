@@ -6,8 +6,8 @@
 
 1. The ledger: every docs/ANSWERS.md entry dated 2026-11-19 or later says where it is applied, "Applied: <doc or #PR>"
    (or "Applied in #N:"), or "no doc change" when it changes no doc. The ledger is append-only: an entry without one is
-   closed by a later entry "- **Applied in #N:** …" naming its question number (Q412…) or quoting its first 24
-   characters as the report prints them ("06:26. "Commence par essa"). Every "#…" after "Applied"
+   closed by a later entry "- **Applied in #N:** …" naming its question number (Q412…) or, unnumbered, its time and
+   first three words ("06:50, rule S1's wording"; case and punctuation ignored). Every "#…" after "Applied"
    is a PR number (#1199), never a placeholder (#N, "this PR"). KNOWN lists the entries that were in the ledger before
    this check and say neither, each with why; an entry of KNOWN that no longer matches an open entry fails, so the list
    only shrinks.
@@ -30,10 +30,10 @@ SINCE = '2026-11-19'
 APPLIED = re.compile(r'\bApplied(?: in #\d+)?:|\bno doc change\b', re.I)
 WAITING = re.compile(r'waiting on pierre|waits? for pierre|for pierre|open question', re.I)
 QNUM = re.compile(r'\bQ(\d+)\b')
-START = 24  # a closing entry names an unnumbered entry by its first characters, as the report prints them
+WORDS = 3  # a closing entry names an unnumbered entry by its time and first three words (needle())
 # Ledger entries of 2026-11-19 written before this check, with neither "Applied:" nor "no doc change". Key: the entry's
 # date and the start of its text, as the report prints it. Close one with a later "Applied in #N:" entry naming its Q
-# or quoting its first 24 characters, then delete its line here.
+# or its time and first words, then delete its line here.
 KNOWN = {
     '2026-11-19 06:26. "Commence par essayer': "an instruction for that session's merges; where applied not said",
     '2026-11-19 06:37. "Par du principe': 'the allow-rule habit (INTEGRATOR "Habits"); where applied not said',
@@ -78,6 +78,19 @@ def ledger(text):
     return res
 
 
+def words(text):
+    """The text as lower-case words, marks and punctuation dropped: "**06:50, rule S1’s wording.**" -> "06:50 rule
+    s1's wording"."""
+    text = text.lower().replace('’', "'")
+    return ' '.join(w.strip("'") for w in re.split(r"[^\w:']+", text) if w.strip("'"))
+
+
+def needle(text):
+    """How a closing entry names an entry: its time (when it starts with one) and its first WORDS words."""
+    w = words(text).split()
+    return ' '.join(w[: WORDS + 1] if w and re.fullmatch(r'\d\d:\d\d', w[0]) else w[:WORDS])
+
+
 def label(date, text):
     return '%s %s' % (date, text.replace('**', '')[:40].rstrip())
 
@@ -111,8 +124,8 @@ def check_ledger(entries):
                 fails.append('docs/ANSWERS.md:%d %s…: after "Applied", %s is not a PR number (#1234)' % (n, lab, ', '.join(bad)))
             continue
         qs = QNUM.findall(head)
-        start = text.replace('**', '')[:START]
-        if any((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or start in c.replace('**', '') for c in closers):
+        start = needle(text)
+        if any((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c) for c in closers):
             continue
         key = next((k for k in KNOWN if lab.startswith(k)), None)
         if key:
@@ -121,7 +134,7 @@ def check_ledger(entries):
             continue
         fails.append(
             'docs/ANSWERS.md:%d %s…: names no "Applied: <doc or #PR>" nor "no doc change"; the ledger is append-only: '
-            'add a later entry "- **Applied in #N:** …" naming its Q, or quoting "%s"' % (n, lab, text.replace('**', '')[:START])
+            'add a later entry "- **Applied in #N:** …" naming its Q, or its time and first words "%s"' % (n, lab, needle(text))
         )
     for k in KNOWN:
         if k not in used:
