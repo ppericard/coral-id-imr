@@ -30,7 +30,10 @@ const {
   memRecalc,
   PHOTO_BASE,
   photoLocal,
+  photoOnR2,
+  photoHasR2,
   photoFallback,
+  photoRetry,
   photoOnline,
   photoFileOf,
   photoAway,
@@ -156,12 +159,12 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
           {
             id: 'a' + n++,
             t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(),
-            // v31: the genus shown is the photos' genus (one colony a question), whose offset they share.
+            // The genus shown is the photos' genus (one colony a question), whose offset they share.
             g: ph[0].split('-')[0].replace(/^./, c => c.toUpperCase()),
             a: i % 3 ? 'Acropora' : 'Porites',
             ok: i % 3 ? 1 : 0,
             m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
-            // Every 5th: a plain "quiz" with 2 choices ("Again: A or B?" logged before 2026-11-02), rated 1 in 2 (v20).
+            // Every 5th: a plain "quiz" with 2 choices (an older log's "Again: A or B?"), rated 1 in 2.
             ch: i % 5 === 4 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
             ph: ph.join(' ')
           }
@@ -172,14 +175,14 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
   assert.deepStrictEqual(eloOf(rows), st.photos);
-  // v31: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
+  // The genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
   assert.deepStrictEqual(Object.keys(st.gd).sort(), ['Acropora', 'Favia', 'Porites']);
   assert.ok(
     Object.values(st.gd).some(o => o[0] !== 0),
     'the answers moved the genus offsets'
   );
-  // v26: the photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
+  // The photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
   assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
 });
@@ -271,13 +274,13 @@ test('takeTab: both tabs click before hearing of each other, then one takes back
 });
 
 test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 guess', () => {
-  // Ana has a record that counts (v17: signed in, clearly above chance) before the answer under test.
+  // Ana has a record that counts (signed in, clearly above chance) before the answer under test.
   const past = Array.from({length: 12}, (_, i) => ['Ana', 0, 'Porites', 'Porites', 1, 'quiz', 'porites-' + i]),
     E = (m, ok) => eloOf([...past, ['Ana', 1, 'Acropora', 'Acropora', ok, m, 'acropora-1']])['acropora-1'][0];
   // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.
   assert.ok(E('quiz|k2', 1) > E('quiz', 1));
   assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
-  // v20: a plain "quiz" with 2 genera in its choices ("Again: A or B?" before 2026-11-02) is a 2-choice question too.
+  // A plain "quiz" with 2 genera in its choices (an older log's "Again: A or B?") is a 2-choice question too.
   const E2 = ch => eloOf([...past, ['Ana', 1, 'Acropora', 'Acropora', 1, 'quiz', 'acropora-1', null, null, null, ch]])['acropora-1'][0];
   assert.strictEqual(E2('Acropora Porites'), E('quiz|k2', 1));
   assert.strictEqual(E2('Acropora Porites Favites Montipora'), E('quiz', 1));
@@ -299,7 +302,7 @@ test('photo ratings and confusions count only players clearly above chance, sign
     an ? 1 : 0
   ];
   const good = Array.from({length: 12}, (_, i) => R('Ana', i, 1, 'p-' + i));
-  // A device that never signed in counts under the same rule (v18): a real player yes, random clicks no.
+  // A device that never signed in counts under the same rule: a real player yes, random clicks no.
   const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, i % 4 ? 1 : 0, 'x-1', 1)),
     anonBot = Array.from({length: 12}, (_, i) => R('Zbot', 300 + i, 0, 'x-2', 1));
   assert.deepStrictEqual({...trustOf([...good, ...anon, ...anonBot])}, {Ana: true, Zed: true, Zbot: false});
@@ -325,7 +328,7 @@ test("v17: a beginner's answers move the photos more as their level settles; a r
     later = Array.from({length: 40}, (_, i) => R(20 + i, i % 5 ? 1 : 0, 'l-' + i)),
     L = [...early, ...later];
   assert.strictEqual(trustOf(L).Lea, true);
-  // A photo's own part (sheet v31: the served difficulty less its genus offset, which every Acropora photo shares).
+  // A photo's own part (the served difficulty less its genus offset, which every Acropora photo shares).
   const own = (rows, f) => eloOf(rows)[f][0] - genusOffsetsOf(rows).Acropora[0],
     e1 = own(L, 'e-1'),
     l5 = own(L, 'l-5');
@@ -459,13 +462,13 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });
 
-// The fish achievements (Pierre, 2026-11-04: about 14 general ones; rule L8): ids of their own in the shared record, so a
+// The fish achievements (rule L8): ids of their own in the shared record, so a
 // fish achievement never counts in the corals' list and back; every one reachable on the fish snapshot; none reachable on
 // an empty one (nothing for time or for opening the app).
 test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
   const {ACH, FISH_ACH, SEASLUG_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
-  // the 33 of 2026-11-08 less the 6 that wait for the scientific species names or Fish basics (fsp1, fsp10 and fsp50
-  // came with the species level's step 1)
+  // the fish set's 33 less the 6 that wait for the scientific species names or Fish basics (fsp1, fsp10 and fsp50 are
+  // in: the species level's step 1)
   assert.strictEqual(FISH_ACH.length, 27, String(FISH_ACH.length));
   const ids = [...ACH, ...FISH_ACH, ...SEASLUG_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
@@ -524,7 +527,7 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
   assert.ok(A.learn1 && A.fmet5 && !A.flearn1);
 });
 
-// The fish set around the global score (Pierre, 2026-11-08, Q259-Q263): each new condition at its threshold and not one
+// The fish set around the global score: each new condition at its threshold and not one
 // below; fpct25 retired; the % ones read the snapshot's pct (the global score, progress.js achSnap).
 test('fish achievements around the global score: the 10-point ladder, fpct25 retired, the new conditions', () => {
   const {FISH_ACH, ACH_LEARN, achFind, newAch} = require('../core.js');
@@ -588,7 +591,7 @@ test('fish achievements around the global score: the 10-point ladder, fpct25 ret
     }),
     []
   );
-  // Names: short, each its own (Pierre, 2026-11-08: "des noms sympas, rigolos, pour varier").
+  // Names: short, each its own, light and varied.
   const T = FISH_ACH.map(a => a.title);
   assert.strictEqual(new Set(T).size, T.length);
   assert.ok(
@@ -658,8 +661,8 @@ test('Contributions (Q65): a family apart, three tiers; one per photo, Other onl
   // Two devices of one player: both lists, each entry once; kept within CONTRIB_MAX.
   const M = mergeAch({_v: 2, _fb: ['r:a5', 'y.webp']}, {_v: 2, _fb: ['y.webp', 'z.webp'], fb1: 5}, 2);
   assert.deepStrictEqual([M._fb, M.fb1], [['r:a5', 'y.webp', 'z.webp'], 5]);
-  // One photo reported on each device before they synced (a quiz question here, its enlarged photo there): once (Codex
-  // review #579); a report on no photo by its id.
+  // One photo reported on each device before they synced (a quiz question here, its enlarged photo there): once; a
+  // report on no photo by its id.
   assert.deepStrictEqual(mergeAch({_fb: ['x.webp y.webp', 'r:a1']}, {_fb: ['x.webp', 'z.webp', 'r:a1', 'r:a2']}, undefined)._fb, [
     'x.webp y.webp',
     'r:a1',
@@ -703,7 +706,7 @@ test('Your feedback helped (Q66): the reports sent, those the admin marked done 
   });
   assert.deepStrictEqual(handledSeen(null, null), {});
   assert.deepStrictEqual(helpedDue({_rep: ['b2']}, handledSeen({}, {b2: {pr: 577}}), T), ['b2']);
-  // Anti-spam (Pierre, 2026-11-05): within 7 days of the last thanks, nothing; then everything handled since, in one.
+  // Anti-spam: within 7 days of the last thanks, nothing; then everything handled since, in one.
   const more = {...seen, 'rep:a1': 1, 'rep:3': 1};
   assert.deepStrictEqual(helpedDue(A, more, T + HELPED_GAP - 1), [], 'within the 7 days');
   assert.deepStrictEqual(take(A, more, T + HELPED_GAP), ['a1', '3'], 'grouped, once the 7 days are over');
@@ -715,7 +718,7 @@ test('Your feedback helped (Q66): the reports sent, those the admin marked done 
   assert.strictEqual(M._thxAt, T + HELPED_GAP);
   assert.deepStrictEqual(helpedDue(M, {'rep:a2': 1, 'rep:b1': 1}, T + 3 * HELPED_GAP), ['b1']);
   // 50 reports sent signed in and thanked, one more sent signed out on the device, then the sheet lists the 50 again:
-  // none thanked twice (Codex review #581: the lists' caps evicted a thanked id, which the sheet brought back).
+  // none thanked twice (the lists' caps must not evict a thanked id the sheet then brings back).
   const R = {},
     S50 = Array.from({length: 50}, (_, i) => 's' + i),
     done = Object.fromEntries([...S50, 'a1'].map(x => ['rep:' + x, 1]));
@@ -747,7 +750,8 @@ test('achRevoke and mergeAch: learned-based achievements taken back stay so thro
     'flearn10',
     'flearn30',
     'flearncore',
-    'sslearn1'
+    'sslearn1',
+    'sspct100'
   ]);
   const snap = (learned, group = false) => ({
     total: 40,
@@ -840,7 +844,7 @@ test('progress (PROG): a moving average weighed by what each answer proves; old 
   assert.strictEqual(scoreOf({pg: PROG.M}), 0.95);
   assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 2}}), 0.97);
   // An exam with its 5 right answers but not passed yet (begun before typed questions, waiting for its typed ones):
-  // never 100% before s.mx (Codex review #393).
+  // never 100% before s.mx.
   assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 5, t: 1}}), 0.99);
   assert.strictEqual(scoreOf({pg: 0.5, mx: 1}), 1);
   // Saved before s.pg: BKT's L is ignored, the last results replay from 0 (a right answer 2/3), never to the exam's entry;
@@ -1100,7 +1104,7 @@ test('mergeProgress and mergeUsers: the photo memory mark travels with the progr
   const m2 = mergeProgress(base, JSON.parse(JSON.stringify(base)), here);
   assert.deepStrictEqual([m2.A.pg, m2.A.pm], [here.A.pg, 1]);
   assert.strictEqual(memRecalc(m2.A, mem), false);
-  // Recalculated here only, while another device played on (Codex review #387): its model wins, a passed exam
+  // Recalculated here only, while another device played on: its model wins, a passed exam
   // included, and the recalculation is left to memRecalc, which applies to it after the merge.
   const far = {A: {...JSON.parse(JSON.stringify(base.A)), ok: 30, h: '1111111111', pg: 0.95, mx: 1}},
     m3 = mergeProgress(base, here, far);
@@ -1138,7 +1142,100 @@ test('photos from R2: the R2 address made local again, an element pointed at the
   assert.strictEqual(photoFallback(null), false);
 });
 
-// Photos out of the repo, step 1 of Pierre's rule of 2026-11-05: when R2 fails, a photo with an online original
+test('photos from R2: an address is on R2 only when its parsed origin is R2, never because R2 appears in it', () => {
+  const host = new URL(PHOTO_BASE).hostname,
+    file = 'img/acropora-wide-1-s.webp';
+  // On R2: the base and anything under it, with a query or a fragment, the host in capitals (URL lowers it).
+  assert.strictEqual(photoOnR2(PHOTO_BASE), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file + '?c=0_0_1_1.2#r1'), true);
+  assert.strictEqual(photoOnR2(`https://${host.toUpperCase()}/${file}`), true);
+  // Not on R2: look-alike hosts, R2's address in another URL's path, query or fragment, R2 before an @ (the user part),
+  // another scheme or port, a relative or unparsable address, anything not a string.
+  const lookAlikes = [
+    `https://evil-r2.example/${file}`,
+    `https://r2host.evil.com/${file}`,
+    `https://${host}.evil.com/${file}`,
+    `https://evil${host}/${file}`,
+    `https://evil.com/${PHOTO_BASE}${file}`,
+    `https://evil.com/?u=${PHOTO_BASE}${file}`,
+    `https://evil.com/#${PHOTO_BASE}${file}`,
+    `https://${host}@evil.com/${file}`,
+    `https://${host}:pw@evil.com/${file}`,
+    `http://${host}/${file}`,
+    `https://${host}:8443/${file}`,
+    file,
+    `//${host}/${file}`,
+    'https://',
+    'not a url ' + PHOTO_BASE,
+    '',
+    null,
+    undefined,
+    {toString: () => PHOTO_BASE}
+  ];
+  for (const u of lookAlikes) assert.strictEqual(photoOnR2(u), false, String(u));
+  // In a string (an src, a srcset, an inline style): true when one of its addresses is on R2.
+  const R = PHOTO_BASE + 'img/acropora-wide-1';
+  assert.strictEqual(photoHasR2(`${R}-s.webp 480w, ${R}-m.webp 960w`), true);
+  assert.strictEqual(photoHasR2(`--qbg:url('${R}-s.webp')`), true);
+  assert.strictEqual(photoHasR2(`img/x-s.webp 480w, ${R}-m.webp 960w`), true);
+  for (const u of lookAlikes.slice(0, 10)) {
+    assert.strictEqual(photoHasR2(u), false, u);
+    assert.strictEqual(photoHasR2(`--qbg:url('${u}')`), false, u);
+    assert.strictEqual(photoHasR2(`${u} 480w, img/x-m.webp 960w`), false, u);
+  }
+  assert.strictEqual(photoHasR2(null), false);
+  // photoFallback leaves an element with only look-alike addresses as it is.
+  const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = mk({src: u, srcset: `${u} 480w`, 'data-lo': u, style: `--qbg:url('${u}')`}),
+      before = {...el.a};
+    assert.strictEqual(photoFallback(el), false, u);
+    assert.deepStrictEqual(el.a, before, u);
+  }
+  // photoRetry: no retry (false, nothing marked) for an address not on R2; one retry for an R2 address, the probe asked
+  // from that same address after PHOTO_RETRY ms (timer and Image stubbed: node has neither a page nor its loads).
+  const img = (src, currentSrc) => ({...mk({src}), currentSrc, dataset: {}});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = img(u, u);
+    assert.strictEqual(
+      photoRetry(el, () => assert.fail('no fallback')),
+      false,
+      u
+    );
+    assert.deepStrictEqual(el.dataset, {}, u);
+  }
+  const el = img('img/x-m.webp', '');
+  assert.strictEqual(
+    photoRetry(el, () => {}),
+    false,
+    'a site photo: no R2 retry'
+  );
+  const timers = [],
+    probes = [],
+    keep = {setTimeout: global.setTimeout, Image: global.Image};
+  global.setTimeout = f => timers.push(f);
+  global.Image = function () {
+    probes.push(this);
+  };
+  try {
+    const r2 = img(R + '-m.webp', R + '-m.webp');
+    assert.strictEqual(
+      photoRetry(r2, () => {}),
+      true
+    );
+    assert.strictEqual(r2.dataset.r2try, '1');
+    timers.forEach(f => f());
+    assert.strictEqual(probes.length, 1);
+    assert.strictEqual(probes[0].src, R + '-m.webp');
+  } finally {
+    global.setTimeout = keep.setTimeout;
+    if (keep.Image === undefined) delete global.Image;
+    else global.Image = keep.Image;
+  }
+});
+
+// Photos out of the repo: when R2 fails, a photo with an online original
 // (iNaturalist, Pierre's own iNaturalist photos, FishBase) falls back to that original at a light size, never to img/;
 // a photo with none (IMR lecture photos, drawings) to the site's img/.
 test('photo fallback: the online original at a light size for an iNaturalist / FishBase photo, img/ for an IMR one', () => {
@@ -1246,7 +1343,7 @@ test('typed answers: spelling tolerance, old names, a word that is no genus, two
 });
 
 test('the spelling step: exact, close to the right name, close to another, nothing (typeVerdict), the letters to bold (typeDiff)', () => {
-  // A player's idea, Pierre 2026-11-05: a close typo of the right genus is retyped once (quiz.js typeBind); a close typo
+  // A close typo of the right genus is retyped once (quiz.js typeBind); a close typo
   // of another genus stays a wrong answer; the grading never changes.
   const {typeNamesOf, typeMatchIn, typeVerdict, typeDiff, typeNormAll} = require('../core.js'),
     D = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8')),
@@ -1365,7 +1462,7 @@ test('quantile and distOf: median and spread', () => {
   }
 });
 
-// The rename to IMR Reef ID (2026-11-03): the old storage keys move to their new names at start-up (migrateKeys), the
+// The rename to IMR Reef ID: the old storage keys move to their new names at start-up (migrateKeys), the
 // sheet's and progress files' old names are read as new (keysIn), and the sheet gets old-name copies (withLegacy).
 // rename-app: keep-begin
 const {KEYS, LEGACY_KEYS, keyRename, keyLegacy, migrateKeys, keysIn, withLegacy, ORG} = require('../core.js');
@@ -1521,7 +1618,7 @@ test('rename: data from the sheet or a file is read with the new names; the shee
 });
 // rename-app: keep-end
 
-// Codex review #428 (P2): the admin's account merge takes the union of the two first-launch histories, so the replay
+// The admin's account merge takes the union of the two first-launch histories, so the replay
 // after the merge applies each account's answers' priors (know@100 merged into imr@300: know's at 200).
 test('mergeUsers merges the first-launch histories (Codex review #428)', () => {
   const C = require('../core.js');

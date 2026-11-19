@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// The per-format offsets of the subject in play (model.js pfmt; Pierre, 2026-11-09): the sheet's PFMT (?stats=1 fmt) is
-// fitted on the corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is aimed and
-// scored with every format at 0 (the app's own expectation before any fit), never with a coral offset; the corals keep
-// PFMT, the very object, so their outcomes are the ones before. The same leak as the photo memory's (#790,
-// tests/fishmemory.test.js), fixed the same way. model.js and quiz.js run in a vm; the draw through tests/rareease.js.
+// The per-format offsets of the subject in play (model.js pfmt): the sheet's PFMT (?stats=1 fmt) is fitted on the
+// corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is aimed and scored with
+// every format at 0 (the app's own expectation before any fit), never with a coral offset; the corals keep PFMT, the
+// very object. The photo memory's offsets follow the same rule (tests/fishmemory.test.js). model.js and quiz.js run
+// in a vm; the draw through tests/rareease.js.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -15,7 +15,7 @@ const {engine} = require('./rareease.js');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const model = read('model.js'),
   quiz = read('quiz.js');
-// The live sheet's offsets of 2026-11-09 (?stats=1 fmt, fitted on the corals' answers).
+// Offsets as the live sheet gives them (?stats=1 fmt, fitted on the corals' answers).
 const CORAL = {
   k4: [0.15, 1306],
   k3: [1.23, 108],
@@ -68,6 +68,7 @@ function question(subject, F, {mode, chs, k}) {
     k,
     chs,
     seenPh: ph,
+    mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
     unseen: null,
     ph,
     solo: 0.5,
@@ -176,12 +177,11 @@ test('the game reads the per-format offsets only through pfmt (every browser fil
   assert.match(model, /aimOff\(k, fmtOff\(pfmt\(\), f\)\)/);
 });
 
-// No fish rules version for this change: it picks the offsets future fish answers are aimed and scored with, and moves no
-// saved progress. Every fish answer since the scorer (#632) is logged with its scoring record (sc: its format offsets o
-// and t), and the replay reads them as logged; a fish row logged without one takes the replay's fmt, which is none for a
-// subject the sheet does not rate (Code.gs replay_ st = {}, sync.js st = {}): already the prudent value. So a fish replay
-// rebuilds the same records whatever offsets it is served, the corals' or none, and a fish answer scored under the leak
-// (o 0.15, t -0.42) keeps the step it had.
+// No fish rules version: the offsets a fish answer is aimed and scored with move no saved progress. Every fish answer
+// is logged with its scoring record (sc: its format offsets o and t), and the replay reads them as logged; a fish row
+// logged without one takes the replay's fmt, which is none for a subject the sheet does not rate (Code.gs replay_
+// st = {}, sync.js st = {}): the prudent value. So a fish replay rebuilds the same records whatever offsets it is
+// served, the corals' or none, and a fish answer logged with a coral offset (o 0.15, t -0.42) keeps the step it had.
 test('saved fish progress does not move: the replay reads the logged format offsets', () => {
   const fam = ['f:Damselfishes', 'f:Wrasses', 'f:Gobies', 'f:Blennies'];
   const rows = Array.from({length: 48}, (_, i) => {

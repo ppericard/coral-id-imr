@@ -1,4 +1,4 @@
-// Live mode test (Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
+// Live mode test (docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
 // trainer page (1280 px) and three students (390 px), against the sync script on an in-memory sheet in this process
 // (tests/gas.js; each page's app.js sheetFetch answered through SHEET_STUB: rule D1, and any request that leaves the local
 // server is refused and counted). Checks:
@@ -161,6 +161,7 @@ async function shot(p, name) {
   await tp.waitForSelector('.lvbigcode', {timeout: 15000});
   const code = (await tp.textContent('.lvbigcode')).replace(/\D/g, '');
   check(/^\d{6}$/.test(code), `1: no code: ${code}`);
+  check(!!(await tp.$('.lvlobby svg.qr path')), '1: the lobby shows no QR code');
   const unitsOfSet = await tp.evaluate(() => LH.plan);
 
   // 2. Three students: one signed in with every unit of the set unlocked, two by a nickname.
@@ -285,6 +286,11 @@ async function shot(p, name) {
   check(
     sam.every(a => a[0] === 'Sam' && a[3] === 1 && a[1] === a[2] && a[4]),
     `4: Sam's live answers: ${JSON.stringify(sam)}`
+  );
+  // Each with its attempt id for the player and the question (live.js liveAid), so a reload never logs one twice.
+  check(
+    sam.every(a => /^l[0-9a-f]{10}q[0-9a-z]+$/.test(a[5])),
+    `4: Sam's live answers' ids: ${JSON.stringify(sam.map(a => a[5]))}`
   );
   check(!A.some(r => /Kai|Lia|~anon/.test(String(r[0])) && r[5] === 'live'), '4: a nickname’s live answer reached the sheet');
   const kai = await S[1].p.evaluate(

@@ -98,7 +98,7 @@ test('signFlip: exact over the sign patterns; the t interval over players', () =
 });
 
 test('a player left out: a coefficient only their answers move is not learnt from them (the fast path)', () => {
-  // Codex review #831: five players, an indicator only the left-out player has; their success rate 90% or 10%
+  // Five players, an indicator only the left-out player has; their success rate 90% or 10%
   const R = A.rng(2),
     rows = rate =>
       Array.from({length: 5}, (_, p) =>
@@ -125,8 +125,8 @@ test('a player left out: a coefficient only their answers move is not learnt fro
 });
 
 test('a player left out: their chance is averaged over the fitted players, not read at the average player', () => {
-  // Codex review #831: guess rate 0, the fixed part 1.5, two fitted players at -2 and +2 (the one left out at 0): the mean
-  // of their chances, 67.4%, not 81.8% at the average player
+  // Guess rate 0, the fixed part 1.5, two fitted players at -2 and +2 (the one left out at 0): the mean of their
+  // chances, 67.4%, not 81.8% at the average player
   const P = A.predictOut(
     [{p: 'X'}],
     () => ({eta: [1.5], F: [{name: 'player', L: ['A', 'B', 'X'], u: [-2, 2, 0]}]}),

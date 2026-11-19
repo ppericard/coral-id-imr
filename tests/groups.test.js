@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// Confusion groups (Pierre, 2026-11-14, Q350; docs/LEARNING.md "Confusion groups"; model.js GROUP, groupsOfRank,
+// Confusion groups (docs/LEARNING.md "Confusion groups"; model.js GROUP, groupsOfRank,
 // openPick, examOn): look-alike units grouped (declared pairs first and never split by the data, then average linkage on
 // the pooled score at CONF.TRAP, at most GROUP.MAX), a group's other members the next openings once one is met, a
 // declared pair the cap kept apart pulling its partner next, and a unit's exam waiting for its group partners. model.js
@@ -89,7 +89,7 @@ test('opening: a group partner of a unit met first; a declared pair the cap spli
     one.every(n => g.includes(n)),
     'partners first: ' + [...new Set(one)]
   );
-  // 2. The whole group met: a declared partner of it that the cap kept out is not pulled (Pierre, Q355, "ok pour B"); the
+  // 2. The whole group met: a declared partner of it that the cap kept out is not pulled; the
   // next opening is a new group or lone unit, drawn among everything left.
   const out = rest.filter(n => g.some(m => decl(m, n)));
   assert.ok(out.length, 'a declared pair split by the cap');
@@ -128,7 +128,7 @@ test('from zero: the first cards are drawn unit by unit; from the next card, a g
     const n = pick(false);
     if (ok.length) assert.ok(ok.includes(n), `after ${met.slice(0, start)}: ${n}, not a partner of theirs`);
   }
-  // Drawn unit by unit (Q355), the first cards are seldom a group: the first unit's partner among them in few runs.
+  // Drawn unit by unit, the first cards are seldom a group: the first unit's partner among them in few runs.
   assert.ok(together < 20, `first cards with the first unit's partner: ${together} of 40`);
 });
 
@@ -168,7 +168,7 @@ test('the groups follow the pooled stats (a new PCONF object) and the units in p
   run(e, 'PCONF = {...PCONF};');
   assert.notStrictEqual(groups(e), a, 'recomputed with the stats');
   assert.strictEqual(JSON.stringify(groups(e)), JSON.stringify(a), 'the same data, the same groups');
-  // An answer with the same units in play and the same stats: not built again (Codex review #871, the cost on phones).
+  // An answer with the same units in play and the same stats: not built again (the cost on phones).
   const b = groups(e);
   e.ctx.P['~level'] = {ok: 7, ko: 3};
   assert.strictEqual(groups(e), b, 'kept across answers while the units in play are the same');

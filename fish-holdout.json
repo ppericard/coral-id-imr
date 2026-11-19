@@ -1,6 +1,6 @@
 {
  "v": 1,
- "built": "2026-11-18",
+ "built": "2026-11-19",
  "about": "the fish observations held out of practice, by species, sized per exam unit (tools/holdout.py; ROADMAP \"A held-out photo set\"): never shown in practice, the mastery exam asks them first",
  "rule": {"unit": "exam", "target": 15, "keep": 8, "genusKeep": 8, "ratio": 0, "floor": 30, "salt": "fish-holdout"},
  "held": {

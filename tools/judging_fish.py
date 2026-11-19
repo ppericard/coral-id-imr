@@ -414,7 +414,7 @@ def cmd_rep(fields=("jt", "e")):
     """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
     judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
     judgement gets the flag r, one no longer tagged loses it, and the ease is the judgement's either way (no reference
-    ease point since 2026-11-17, Pierre). Only those entries change.
+    ease point). Only those entries change.
     fields ("codes": also u and n): re-applies a re-judge of some photos' codes, unsure fields and notes (the other
     species split of 2026-11-09, Q323) to the candidates already judged, without the whole species' --check (a species
     may hold new candidates not judged yet, which the import refuses); waiting or decided alike. The subject's (use):

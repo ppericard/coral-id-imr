@@ -1,14 +1,14 @@
-// Photos › Photo review › Light proposals on the fish side (#fish/photos/review/light-proposals; Pierre, 2026-11-14: "ok
-// pour (a)", docs/ROADMAP.md "Fish judging: a flash or lamp on a dark background is not a night shot"). After rubric 6
-// (Q308: a flash or a lamp on a dark background is good light, not a night shot) the judging pass re-judged its photos,
-// but 152 of Pierre's adds keep in curation.json fish.tags / fish.ease the tags and ease he took from the earlier
+// Photos › Photo review › Light proposals on the fish side (#fish/photos/review/light-proposals; docs/ROADMAP.md "Fish
+// judging: a flash or lamp on a dark background is not a night shot"; docs/decisions/2026-11-18-decisions-from-comments-3.md). With rubric 6 (a flash or a lamp on a dark
+// background is good light, not a night shot) the judging pass re-judged its photos, but some of the admin's adds keep
+// in curation.json fish.tags / fish.ease the tags and ease he took from the earlier
 // judgement: judging/fish-light-q308.json `curation`, [{photo, curated: [tags, ease], rejudged: [tags, ease]}], a
 // proposal only (rule A1). This view lists the ones still open, each with its photo, his tags and ease, the re-judged ones
 // in words, and Accept (the re-judged tags and ease into his draft, autosort.js fishSet: one Undo step) or Keep mine
 // (curation.json fish.kept {photo: 'q308'}: answered, never shown again); Accept all in one Undo step behind a confirm
 // (rule A2: bulk). His Publish sends it all. The view is in the switch only while a proposal is open (admin.js TABS:
 // its `live` option, hasPage).
-// A second set, the same way (Pierre, 2026-11-15: one judgement per photo): the photos judged twice
+// A second set, the same way (one judgement per photo: docs/ARCHITECTURE.md): the photos judged twice
 // (as a reference photo and as a candidate) whose copies disagreed were judged again once, and his adds whose tags and
 // ease still hold the earlier judgement get the new one as a proposal: judging/fish-one-judgement.json, Keep mine
 // recorded as 'one'. Each proposal carries its set (x.set); a photo proposed by two sets shows the later set's only.
@@ -17,7 +17,7 @@
 // tests/fishlight.test.js.
 (function (root) {
   const A = typeof module !== 'undefined' && module.exports ? require('./autosort.js') : root,
-    pid = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).fishPid;
+    pid = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).treePid;
   // The proposal sets, oldest first: the file the admin reads from the repository (GitHub contents API, as curation.json;
   // judging/ is not on the site), the name a Keep mine records, and the heading of its proposals (the light re-judge's
   // are grouped by light change instead).
@@ -58,8 +58,8 @@
     ]
   ];
   const LIGHT_FLAGS = {j: 'Juvenile', c: 'Camouflage', a: 'Out of water', w: 'Watermark', p: 'Phase', r: 'Reference photo'};
-  // The retired codes of the rubric, by position (judging/FISH.md "Tags"): count m ("other species, not sorted", before the
-  // split of 2026-11-09), read but never typed again. A proposal that would move a tag to one is never offered (lightLoad);
+  // The retired codes of the rubric, by position (judging/FISH.md "Tags"): count m ("other species, not sorted", split since
+  // into o and k), read but never typed again. A proposal that would move a tag to one is never offered (lightLoad);
   // his own code may still carry it (kept as his).
   const LIGHT_RETIRED = {6: 'm'};
   const lightRetired = x => Object.entries(LIGHT_RETIRED).some(([i, c]) => x.rejudged[0][i] === c && x.curated[0][i] !== c);
@@ -73,12 +73,12 @@
     return (P || []).filter(x => {
       const f = x.photo,
         sid = (F.add || {})[f];
-      return sid != null && A.fishOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
+      return sid != null && A.treePhotoOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
     });
   }
   // Accept: the re-judged tags and ease as his (fishSet each, so an auto-sort log entry gives the fields up: fishOwn).
   // keep: the node ids whose ★ cover the photo is and that he keeps as their cover although the proposal makes it a
-  // juvenile (lightCovers; Pierre's exception, 2026-11-15: autosort.js fishCoverJ), confirmed in the same Undo step.
+  // juvenile (lightCovers; autosort.js fishCoverJ), confirmed in the same Undo step.
   function lightAccept(F, x, keep) {
     let N = A.fishSet(A.fishSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
     (Array.isArray(keep) ? keep : []).forEach(id => (N = A.fishCoverJOk(N, id))); // not reduce's index
@@ -87,7 +87,7 @@
   // Whether a proposal makes its photo a juvenile (the j flag added: judging/FISH.md "Tags").
   const lightJ = x => !!x && x.rejudged[0].slice(7).includes('j') && !x.curated[0].slice(7).includes('j');
   // The nodes (curation.json fish genera ids) whose ★ cover is proposal x's photo, under either of its names (core.js
-  // fishPid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
+  // treePid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
   // is never a cover unless he confirms it, so Accept asks him first (the view) and the Tree page offers the confirmation.
   function lightCovers(F, x) {
     if (!lightJ(x)) return [];
@@ -239,8 +239,8 @@ function renderLight() {
     render();
     window.scrollTo(0, y);
   };
-  // A proposal that makes one of his ★ covers a juvenile (lightCovers): Pierre's question first (admin-covers.js JUV_Q,
-  // 2026-11-15), the cover's node named; yes keeps it as the cover, confirmed in the same Undo step; no accepts the tags
+  // A proposal that makes one of his ★ covers a juvenile (lightCovers): the juvenile question first (admin-covers.js
+  // JUV_Q), the cover's node named; yes keeps it as the cover, confirmed in the same Undo step; no accepts the tags
   // all the same, and the cover is then ignored as any juvenile's (the default applies; the Tree page asks again).
   const keepOf = (F, x) => {
     const ids = lightCovers(F, x);

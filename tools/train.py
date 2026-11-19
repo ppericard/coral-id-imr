@@ -5,12 +5,16 @@ bringing each one up to date. The integrator's tool, run from its checkout of th
     python3 tools/train.py --dry-run 801 803 805   # check the PRs and build the train locally; pushes and merges nothing
     python3 tools/train.py 801 803 805             # the real run: in the background, it waits for CI (about 4 min)
 
-In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, never a force-push; nothing is re-run):
+In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch and moves `release`, never a force-push;
+nothing is re-run):
 1. Each PR, in the order given: open, based on main, not a draft, no `needs-pierre` label, from this repository, every
    check green on its head, no file left in tools/sync/changes/ (a PR that changes Code.gs gets its VERSION first:
-   tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). The rest of
-   the merge contract (Codex findings answered, threads resolved, "Choices I made" empty) is the integrator's to check
-   before it names a PR here.
+   tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). From PR
+   BODY_FROM on, its description too (AGENTS.md "What players will see comes from Pierre"; Pierre, 2026-11-18):
+   "Choices I made" starts with None, and "Players see or play differently?" says No, or gives each change with Pierre's
+   words quoted and dated ("Pierre, 2026-11-18: «…»") or marked "integrator's call"; a STATUS handover ("STATUS: …")
+   and Dependabot's PRs are exempt. The rest of the merge contract
+   (Codex findings answered, threads resolved) is the integrator's to check before it names a PR here.
 2. Builds the train in a temporary worktree without the photos: origin/main, then each head merged in order. A conflict
    stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main, by main's copy
    of tools/sheet_version.py: no code from a PR's head runs on the integrator's machine.
@@ -23,10 +27,17 @@ In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, 
    another merge landed meanwhile, it stops, and the PRs not merged yet go in a new train.
 6. Checks that main's tree is the train's: what was tested is what went live. If not, it says so (exit 2): test main
    and fix forward.
+7. Only then moves the `release` branch to the commit main ended on after the last merge (the one whose tree the train
+   tested), creating `release` when it is missing: a plain push, so it can only fast-forward, never a force-push. The
+   sheet script (tools/sync/Code.gs `autoUpdate`) installs its code from `release`, not from `main`, so it only ever
+   takes code a green train tested (Pierre, 2026-11-18; docs/rules/sheet.md D3). The train is the only thing that
+   pushes `release`: nobody else does, by hand or from a workflow. If that push is refused it says so (exit 3): main
+   is merged and fine, `release` stays where it was and the next train moves it.
 Environment: TRAIN_REPO (default ppericard/coral-id-imr), TRAIN_POLL (seconds between two looks at CI, default 20),
-TRAIN_WAIT (seconds before giving up on CI, default 1800).
+TRAIN_WAIT (seconds before giving up on CI, default 1800), TRAIN_BODY_FROM (the first PR number whose description is
+checked, default BODY_FROM).
 """
-import argparse, json, os, shutil, subprocess, sys, tempfile, time
+import argparse, json, os, re, shutil, subprocess, sys, tempfile, time
 from datetime import datetime, timezone
 
 REPO = os.environ.get('TRAIN_REPO', 'ppericard/coral-id-imr')
@@ -35,10 +46,52 @@ WAIT = float(os.environ.get('TRAIN_WAIT', '1800'))
 WORKFLOWS = ('Checks', 'Smokes')  # the workflows a train push runs (.github/workflows/checks.yml, smokes.yml)
 GREEN = {'success', 'skipped', 'neutral'}
 CHANGES = 'tools/sync/changes'
+RELEASE = 'release'  # the branch the sheet script updates itself from; only this train moves it
+# PRs opened before the description check was written keep the older template: only later ones are checked.
+BODY_FROM = int(os.environ.get('TRAIN_BODY_FROM', '1117'))  # #1117 brought the check
+# Pierre's words, quoted and dated: "Pierre, 2026-11-18: «…»" (or "…", “…”), the date and the quote on the same item.
+QUOTE = re.compile(r'Pierre\b[^\n]{0,40}?\b20\d\d-\d\d-\d\d\b[^\n]*?(«[^»]+»|"[^"]+"|“[^”]+”)')
+CALL = re.compile(r"integrator['’]s call", re.I)
 
 
 class Stop(Exception):
     pass
+
+
+def section(body, title):
+    """The text under the `## <title>…` heading (comments removed), or None when there is no such heading."""
+    body = re.sub(r'<!--.*?-->', '', body or '', flags=re.S)
+    m = re.search(r'^##[ \t]+%s[^\n]*\n(.*?)(?=^##[ \t]|\Z)' % re.escape(title), body, re.M | re.S)
+    return m.group(1).strip() if m else None
+
+
+def exempt(p):
+    """PRs whose description is not the template's: a STATUS handover (title "STATUS: …", rule W26 sends it through a
+    train) and Dependabot's version bumps (rule W9)."""
+    return p.get('title', '').startswith('STATUS:') or (p.get('user') or {}).get('login') == 'dependabot[bot]'
+
+
+def body_problems(body):
+    """What the PR description lacks for the merge contract (AGENTS.md "Working mode"): [] when it is fine."""
+    why = []
+    choices = section(body, 'Choices I made')
+    if choices is None:
+        why.append('its description has no "Choices I made" section (.github/pull_request_template.md)')
+    elif not re.match(r'(?i)none\b', choices):
+        why.append('"Choices I made" is not None: those choices wait for Pierre')
+    sees = section(body, 'Players see')
+    if not sees:
+        why.append('"Players see or play differently?" is empty: write No, or each change with its source')
+    elif not re.match(r'(?i)no\b', sees):
+        # One item per list entry (-, *, + or 1. / 1)); a leading "Yes" or "Yes:" alone is no change.
+        items = [i for i in re.split(r'\n(?=\s*(?:[-*+]|\d+[.)])\s)', sees) if i.strip() and not re.fullmatch(r'(?i)\s*yes\s*[:.]?\s*', i)]
+        bad = [re.sub(r'^\s*(?:[-*+]|\d+[.)])\s*', '', i)[:60] for i in items if not (QUOTE.search(i) or CALL.search(i))]
+        if not items:
+            why.append('"Players see" says Yes but names no change: give each one with its source')
+        elif bad:
+            why.append('"Players see" names a change with neither Pierre\'s words quoted and dated nor "integrator\'s call": %s'
+                       % '; '.join('"%s…"' % b for b in bad))
+    return why
 
 
 def say(*a):
@@ -82,6 +135,8 @@ def ready(n, top):
         why.append('labelled needs-pierre: it waits for Pierre')
     if (p['head'].get('repo') or {}).get('full_name') != REPO:
         why.append('from another repository')
+    if int(n) >= BODY_FROM and not exempt(p):
+        why += body_problems(p.get('body'))
     sha = p['head']['sha']
     runs = api('commits/%s/check-runs?per_page=100' % sha).get('check_runs', [])
     if not runs:
@@ -160,6 +215,19 @@ def merge(n, sha, title, expect):
             time.sleep(POLL)
 
 
+def move_release(top, sha):
+    """Moves `release` to sha (main's commit after the last merge, whose tree the train tested): creates it when missing,
+    else a fast-forward. A plain push, never forced; the remote refuses anything but a fast-forward. Returns what it did."""
+    git('fetch', '-q', 'origin', 'main', cwd=top)  # sha is on main: have its objects here to push it
+    git('cat-file', '-e', sha + '^{commit}', cwd=top)
+    old = git('ls-remote', 'origin', 'refs/heads/' + RELEASE, cwd=top).split()
+    old = old[0] if old else ''
+    if old == sha:
+        return '%s is already at %s.' % (RELEASE, sha[:7])
+    git('push', '-q', 'origin', '%s:refs/heads/%s' % (sha, RELEASE), cwd=top)
+    return '%s %s: the sheet script takes its code from here.' % (RELEASE, 'moved %s -> %s' % (old[:7], sha[:7]) if old else 'created at ' + sha[:7])
+
+
 def run(numbers, dry):
     top = git('rev-parse', '--show-toplevel')
     git('fetch', '-q', 'origin', 'main', cwd=top)
@@ -178,8 +246,8 @@ def run(numbers, dry):
         say('Train on main %s: %s' % (base[:7], ', '.join('#%s %s' % (n, sha[:7]) for n, sha, _ in prs)))
         say('Train %s, tree %s' % (train[:7], tree[:7]))
         if dry:
-            say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order and compare main\'s tree.'
-                % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs)))
+            say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order, compare main\'s tree and move %s to the commit main ends on.'
+                % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs), RELEASE))
             return 0
         git('push', '-q', 'origin', 'HEAD:refs/heads/' + branch, cwd=wt)
         say('Pushed %s; waiting for %s.' % (branch, ' and '.join(WORKFLOWS)))
@@ -205,6 +273,11 @@ def run(numbers, dry):
         say('✗ main %s has tree %s, the train tested %s: test main now and fix forward.' % (expect[:7], got[:7], tree[:7]))
         return 2
     say('main %s: its tree is the train\'s, what was tested is what went live.' % expect[:7])
+    try:
+        say(move_release(top, expect))
+    except Stop as e:
+        say('✗ %s not moved (%s). main is merged and fine; %s stays where it was: the next train moves it, or ask why the push was refused.' % (RELEASE, e, RELEASE))
+        return 3
     return 0
 
 

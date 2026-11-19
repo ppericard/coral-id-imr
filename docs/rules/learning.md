@@ -69,16 +69,17 @@ every account, 2026-11-04; subject-neutral wording, groups for every subject, 20
 **One progression path for every game**: the photo quiz is the path that opens units (one at a time, for corals the ★
 rule L5, Open all); every other game or mode (the Duel tab, Memory, the custom quiz, any future game) draws only from
 the units the player has unlocked, `model.js` `unlocked()`, the one source of truth, and never opens a unit (no card
-from a game). A new game uses `unlocked()` too; the Tools' games through `proto/lab.js` `labPlay()` (the reference tools
+from a game). **Another mode's answers may count as evidence on a locked unit (live, the placement test), never opening it; the unit keeps
+them when the path opens it** (Pierre, 2026-11-18: live answers "count without unlocking", "ok"). A new game uses `unlocked()` too; the Tools' games through `proto/lab.js` `labPlay()` (the reference tools
 keep every unit; wrong choices may name any unit, as the quiz's). LEARNING.md "One progression path for every game".
 *Why:* one path for every game and mode, present and future, with no exception. *Source:* Pierre, 2026-11-04;
-subject-neutral wording, 2026-11-06.
+subject-neutral wording, 2026-11-06; evidence on a locked unit, 2026-11-18.
 
 ### L5
 
 **Corals: starred genera (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) are on the slate *because* they look like
 surveyed genera: never show them as a separate "not covered" group.** `shownGroup()` places them in the lecture group of
-their Coral Finder look-alikes (display only). On the path a starred genus opens only after the surveyed genera its card
+their look-alikes on the card (display only). On the path a starred genus opens only after the surveyed genera its card
 compares it to have been met; the references come from the data (`core.js` `starRefs`), never a list in code; Open all
 still opens everything at once. Every game follows that one path (rule L4), so this holds in the Duel tab, Memory and
 the custom quiz too.
@@ -93,7 +94,7 @@ first card and its sheet that it is not a hard coral nor on the IMR coral list, 
 genera (`BONUS`: Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) are offered once by a card when the player
 has met every slate genus (Add them / Not now; never in the first 10 answers of a visit or during a comeback, rule L1),
 and ⚙ Bonus genera On / Off any time (`Q.bon`); once on they open one at a time like slate genera (no threshold, no
-weight cap of their own); they never count in the progress, their ID tips are the Coral Finder's (labelled so), their
+weight cap of their own); they never count in the progress, their ID tips come from the book (labelled so), their
 game photos (Millepora's too) are Research Grade iNat (or Pierre's) only. Details: ARCHITECTURE.md "Bonus genera". The
 game genera (slate + Millepora + bonus) and the Key-only ones (the other `data.json` `x` genera) are defined once,
 `core.js` `BENTHIC`, `BONUS`, `slateOf()`, `gameOf()` (Python: `tools/genera.py`): use them, never
@@ -109,7 +110,7 @@ genus-specific case, 2026-11-03; subject-neutral wording, and no unit-specific c
 sharing no IMR growth form with it; fish: units from another shape group of the book), and its look-alikes come in one
 by one, and soon (one after the first right answer, all three after about 5: look-alikes are one of the ways units are
 learned), as the player's Elo ability on that unit rises (`FORMAT`, `trapsFor()`, `distractors()` in `app.js`). Duels
-stay look-alike pairs by design. Official look-alikes (corals: IMR / Coral Finder; fish: Pierre's declared look-alike
+stay look-alike pairs by design. Official look-alikes (corals: IMR / the book; fish: Pierre's declared look-alike
 groups in `fish.json`: Butterflyfishes ↔ Angelfishes; Snappers ↔ Coral Breams ↔ Emperors; Parrotfishes ↔ some Wrasses;
 Soldierfishes ↔ Squirrelfishes ↔ Cardinalfishes; Triggerfishes ↔ Filefishes) only *seed* the confusions: real player
 answers then decide which units get confused (confusion scores), pooled over every player first, then each player's own
@@ -167,12 +168,19 @@ valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods
 LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands). The PR
 declares the change's level with one line of why; the integrator checks it and may raise it; in doubt, the higher one.
 
+**Every check has a hard cap of 40 minutes of compute, at every level; when the agent reaches it, it stops and returns
+what it has.** Level 2 runs only the worlds the change touches (the rated world for the levels it touches; the app world
+only if it changes what the player sees); the rated world runs at least LEARNING.md's level-2 length.
+**Level 3 never runs on this machine**: only with Pierre's explicit go, on
+GitHub runners, with its duration announced first. An unclear result is reported as "the measure cannot tell", never
+escalated automatically.
+
 | Level | The change | The check |
 | --- | --- | --- |
 | 0 | no effect on learning: a wording, the UI, a test, code that gives the same answers | the unit tests and the CI smokes, no simulation |
 | 1 | small and local: one kind of unit, a rare situation, a constant nudged | the app world, the subject touched, its profiles × 5 seeds, 300 questions; the primary and the guardrails it can touch |
-| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | both worlds: the app world as level 1, the rated world 10 seeds per profile, long enough to reach the levels the change touches; every guardrail |
-| 3 | choosing a value, or a level 1 or 2 result close to a margin | 30-40 seeds in the app world, 40 in the rated world under both photo distributions; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the value chosen confirmed on fresh seeds |
+| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | the worlds the change touches: the rated world 10 seeds per profile, long enough to reach the levels the change touches; the app world as level 1 only if the change alters what the player sees; every guardrail |
+| 3 | choosing a value (Pierre's go and GitHub runners only; a close level 1 or 2 result is "the measure cannot tell", never a level 3 by itself) | 30-40 seeds in the app world, 40 in the rated world under both photo distributions; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the value chosen confirmed on fresh seeds |
 
 Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12). **The app world** is the
 real app on the real data (`tests/profiles.smoke.js`, `node tools/learnsim.js`); **the rated world** has photos, units
@@ -181,13 +189,13 @@ photos, a heavy-tailed variant beside), the engine running on them.
 
 **Progressive**: a large expected effect needs no high sensitivity; start with the level's fewest seeds and add seeds
 only when a result lands near a margin (unclear), by the rule declared before running (at level 2, the rated world 10,
-then 20 seeds; then level 3). The error is split over the looks declared, k of them: each look reads the one-sided
+then 20 seeds; then "the measure cannot tell"). The error is split over the looks declared, k of them: each look reads the one-sided
 bound at 1 − 0.10/k (two looks: 95%) and the primary at 0.05/k (Bonferroni), so stopping on a result keeps the 90%. Before running, declare one primary measure, its world, its checkpoint and its direction,
 and any cost the change is expected to bring (a guardrail it will move, with the bound accepted). Test the primary
 pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else
 100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm. Guardrails (LEARNING.md's table,
 the margins set once there): held when the one-sided 90% bound of the paired difference stays inside the margin; unclear
-goes one step up; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
+goes one step up within the cap, then is reported "the measure cannot tell"; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
 9% of cells with no effect). **Real data** (rule L12): inference per player (players are the statistical unit), never per answer.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
@@ -197,13 +205,15 @@ the model and its assumptions in the PR and check them. They are rare: taking th
 
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
-levels by possible effect, the rated world beside the app world, 2026-11-08.
+levels by possible effect, the rated world beside the app world, 2026-11-08; the 40-minute cap, level 2's worlds, level 3 off this machine, 2026-11-18, Q405
+("6h de calcul ne devrait JAMAIS arriver", 11-17); this rule over LEARNING.md and the tools on level 2's worlds, the cap
+and level 3's go, and level 3's tests, LEARNING.md's level-2 length the minimum, 2026-11-19 (Q415).
 
 ### L12
 
 **Check algorithm changes against the real players, not only the simulation** (rule L11, from level 1). Any change to the
 learning algorithm (Elo, progress, draw, opening, difficulty, typed questions…) is checked twice before its PR: in
-`tools/learnsim.js` (5 seeds, the four profiles: no learning path may break) and on the real answer log (read-only
+`tools/learnsim.js` (5 seeds, the subject's default profiles: no learning path may break) and on the real answer log (read-only
 replay of the sheet's Answers tab, or a saved extract kept outside the repo): the change must not move the app's
 estimates away from what players really do, and should bring them closer (next-answer log-loss and calibration,
 Expected against actual, overall and by level band and question format). Where a replay cannot judge a change (a
@@ -214,7 +224,8 @@ level is their global level (Elo) and their progress, never their success rate**
 for every player (docs/LEARNING.md "What each number measures"); the Elo settles only after many answers (shown from
 200), so say what a level rests on. Compare players with right − expected.
 *Why:* the real log caught many problems in these last days; two agents read a 75-83% success rate as "mid-level
-players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12.
+players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12; the
+subject's default profiles, 2026-11-19 (Q415).
 
 ### L13
 
@@ -225,7 +236,7 @@ time) and served to the app is preferred over recomputing it on each phone or in
 ### L14
 
 **Visual recognition and fast side-by-side comparison beat theory.** The 5-question observation routine is only for the
-very first contact. Corals: in the field people recognise genera by overall look; on photos they use the Coral Finder
+very first contact. Corals: in the field people recognise genera by overall look; on photos they use the field-guide
 book (in the app, the Coral ID Key, which follows it): growth form first, then a quick visual comparison of the
 candidates. Quiz feedback shows corallite traits and lecture cues, never growth form as the reason.
 *Source:* Pierre, by 2026-11-01; subject-neutral wording, 2026-11-06.

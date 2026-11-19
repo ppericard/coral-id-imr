@@ -1,14 +1,13 @@
-# Favites and its neighbours (Pierre, 2026-11-04, after a research report on Favites): sourced "Other sources" notes,
-# a corrected short description, the >8 mm size class, an IMR lecture line restored, and the WoRMS spelling of one
-# family name shown beside the IMR one. The IMR lines are kept as they are (rules C1, C2, C3); the notes cite only
-# species recorded in the Philippines (rule C6). Re-runnable:
+# Favites and its neighbours: sourced "Other sources" notes, a corrected short description, the >8 mm size class, an
+# IMR lecture line restored, and the WoRMS spelling of one family name shown beside the IMR one. The IMR lines are kept
+# as they are (rules C1, C2, C3); the notes cite only species recorded in the Philippines (rule C6). Re-runnable:
 #   python3 tools/apply_favites.py
 #
-# What was checked, 2026-11-04:
-# - Presence in the Philippines, by Pierre's rule (rule C6: (1) Research Grade by >= 3 distinct observers in
-#   the country, (2) >= 1 Research Grade there and the Corals of the World Philippine ecoregions, (3) confirmed near
-#   Dauin). iNaturalist Research Grade observations / distinct observers in the Philippines (place 6873), from the
-#   presence study of 2026-11-04; every species below is in Corals of the World's Philippine ecoregions:
+# What was checked:
+# - Presence in the Philippines, by rule C6 ((1) Research Grade by >= 3 distinct observers in the country, (2) >= 1
+#   Research Grade there and the Corals of the World Philippine ecoregions, (3) confirmed near Dauin). iNaturalist
+#   Research Grade observations / distinct observers in the Philippines (place 6873), from the presence study; every
+#   species below is in Corals of the World's Philippine ecoregions:
 #   F. pentagona 6 / 3 (clause 1), F. rotundata 4 / 3 (clause 1), F. colemani 6 / 2, F. valenciennesi 2 / 2, F. vasta 2 / 2,
 #   F. magnistellata 2 / 1, Paragoniastrea russelli 2 / 2, Goniastrea stelligera 2 / 2 (all clause 2). Not cited:
 #   F. abdita (no Research Grade record), Dipsastraea matthaii (none). Also named in ROADMAP's IMR flags: Coelastrea
@@ -25,8 +24,8 @@
 #   F. irregularis accepted (new combination: Kishi, Johnson & Fukami 2025, Zoologica Scripta 55: 349-367); the family
 #   Diploastraeidae Thiel, 1932 (no record "Diploastreidae").
 # - IMR Lecture 6, slide 65 (Google Slides copy): "ambiguous wall structure ... (e.g. F. rotundata, F. magnistellata)".
-# The IMR lecture line (imr) lives in the IMR instance's coral layer (tools/instances/imr/coral.json, since step 5 of
-# docs/reviews/2026-11-14-sheet-overlay-design.md): written there, then laid on data.json.
+# The IMR lecture line (imr) lives in the IMR instance's coral layer (tools/instances/imr/coral.json): written there,
+# then laid on data.json.
 import json, os
 from datajson import dump  # the one data.json layout (one genus per line)
 from instance import CORAL_AFTER, coral_compose, load_layer, write_layer  # the IMR instance's coral layer
@@ -36,7 +35,7 @@ P = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data.json')
 # genus -> field -> [(old, new)]; a pair whose old text is gone and new text is there is already applied.
 FIX = {
     'Favites': {
-        # Slide 65 names two species; the app had dropped the second (an omission, Pierre 2026-11-04).
+        # Slide 65 names two species: the line keeps both.
         'imr': [('(shared and separate in one colony, e.g. F. rotundata);',
                  '(shared and separate in one colony, e.g. F. rotundata, F. magnistellata);')],
         # Claude-made (tools/summaries.txt), not IMR wording.

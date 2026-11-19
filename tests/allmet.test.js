@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// Every unit in play met and none may open now (Pierre, 2026-11-12: "on lui dit qu'il a tout vu et ce qui vient ensuite";
-// quiz.js allMetDue, allMetNone; app.js UNITS fish done, fishNextOf): the condition on the opening's own candidates, and
-// the card's reason and words for each state of the fish path. The card itself, at the break at Next, once per reason, is
-// in tests/fish.smoke.js; its layout and keys in the pages smoke's card loop.
+// Every unit in play met and none may open now: the player is told they have seen everything and what comes next
+// (docs/FISH_PATH.md; quiz.js allMetDue, allMetNone; app.js UNITS fish done, fishNextOf): the condition on the
+// opening's own candidates, and the card's reason and words for each state of the fish path. The card itself, at the
+// break at Next, once per reason, is in tests/fish.smoke.js; its layout and keys in the pages smoke's card loop.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -77,7 +77,7 @@ test('fishNextOf: every family met: the families on their way, then the scientif
   assert.strictEqual(next({...base, c3: 3}).k, 'all');
 });
 
-// Codex review #851 (P1, rule D7): the card's device marks are the player's: signing out (and deleting one's own account,
+// Rule D7: the card's device marks are the player's: signing out (and deleting one's own account,
 // which clears the device the same way) removes them for every subject and reason, so the next player of a shared device
 // gets their own card. The reasons are fishNextOf's k (c3, beyond, all); the key is quiz.js ALLMET.KEY + k.
 test('all met: sign-out and account deletion clear its marks, for every subject and reason', () => {

@@ -9,7 +9,7 @@ const fs = require('fs'),
 
 // The node arguments: --test, the options given, then the files given or every tests/*.test.js (relative to the cwd).
 // A file is a script name, a glob or an existing path: an option's value given as the next argument
-// (--test-name-pattern merge) is none of them (Codex review #608).
+// (--test-name-pattern merge) is none of them.
 function args(argv) {
   const files = argv.filter(a => !a.startsWith('-') && (/\.[cm]?[jt]s$/.test(a) || a.includes('*') || fs.existsSync(a))),
     all = fs

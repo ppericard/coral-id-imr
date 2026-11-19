@@ -1,6 +1,8 @@
 # Keeps only look-alike pairs found in an existing reference and records the source of each pair (data.json gen[*].lsrc).
 # Sources, in order: the IMR lecture or the Coral Finder comparing the two genera in words; the same Coral Finder box;
 # the same IMR lecture group. Run once: python3 tools/apply_look_sources.py
+# The lecture's pairs (its words, its groups) are the IMR instance's layer since 2026-11-19 (tools/instances/imr/coral.json
+# pairs): dump() lays them on again, so a re-run gives the same data.json.
 import json
 from datajson import dump  # the one data.json layout (one genus per line)
 P='data.json'; d=json.load(open(P)); G=d['gen']

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The live mode (sheet v172; Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
+// The live mode (docs/reviews/2026-11-18-live-mode-design.md): Code.gs lv_ on the
 // in-memory sheet (rule D1): the trainer check (d) by the script's roles, never the page; the session's state machine;
 // the scoring (b): a right answer plus a speed bonus, timed from the moment the question reached that student; what a
 // student is sent (never the right answer before the reveal); the session in the cache only, never a sheet tab; and the
@@ -71,7 +71,7 @@ test('only an account with the trainer role starts a session, checked by the scr
     ['live start', IMR, 'ok']
   ]);
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
-  // The right is the trainer role's only: an owner or an editor without it is refused (Q364: rights are separate).
+  // The right is the trainer role's only: an owner or an editor without it is refused (rights are separate).
   save(s, 'Owen');
   grant(s, 'Owen', 'owner');
   grant(s, 'Owen', 'editor');
@@ -256,8 +256,7 @@ test('a student is sent their accepted answers once revealed, a reveal missed or
     a = s.lv('join', {code, nick: 'Ann'}),
     poll = (hx = 0) => s.lv('poll', {code, pid: a.pid, pk: a.pk, hx}),
     ans = (qi, c) => s.lv('answer', {code, pid: a.pid, pk: a.pk, qi, c});
-  // A subject in beta for a group is never hosted (none is today: the sea slugs opened to all on 2026-11-18, #1051; a
-  // group subject is made here).
+  // A subject in beta for a group is never hosted (a group subject is made here, whatever the real subjects are).
   run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'group'");
   assert.strictEqual(start(s, {s: 'seaslug'}).error, 'input');
   run(s, "CORE_.SUBJECTS.find(S => S.id === 'seaslug').open = 'all'");
@@ -323,9 +322,119 @@ function liveModule() {
   vm.createContext(ctx);
   const pure = /\/\/ pure: begin[\s\S]*?\/\/ pure: end/.exec(src);
   assert.ok(pure, 'live.js keeps its pure helpers between "// pure: begin" and "// pure: end"');
-  vm.runInContext(pure[0] + '\nthis.X = {LIVEGAME_SHEET, liveCode, liveShares, liveMissed};', ctx);
+  vm.runInContext(
+    pure[0] + '\nthis.X = {LIVEGAME_SHEET, liveCode, liveShares, liveMissed, qrMake, qrEc, qrFormat, qrLayout, qrSvg, QRV, qrMasks};',
+    ctx
+  );
   return ctx.X;
 }
+
+// A reader of our own, written for the test from the standard (it shares only the function-module map with the encoder):
+// the format bits and the mask, the zigzag, the blocks deinterleaved, every block's syndromes checked, the text parsed.
+function qrRead(X, m) {
+  const n = m.length,
+    v = (n - 17) / 4,
+    {fn} = X.qrLayout(v);
+  const bit = (r, c) => m[r][c];
+  let f = 0;
+  for (let i = 0; i < 6; i++) f |= bit(i, 8) << i;
+  f |= bit(7, 8) << 6;
+  f |= bit(8, 8) << 7;
+  f |= bit(8, 7) << 8;
+  for (let i = 9; i < 15; i++) f |= bit(8, 14 - i) << i;
+  let g = 0;
+  for (let i = 0; i < 8; i++) g |= bit(8, n - 1 - i) << i;
+  for (let i = 8; i < 15; i++) g |= bit(n - 15 + i, 8) << i;
+  assert.strictEqual(f, g, 'the two copies of the format bits agree');
+  const mask = [0, 1, 2, 3, 4, 5, 6, 7].find(k => X.qrFormat(k) === f);
+  assert.ok(mask !== undefined, 'the format bits are one of the eight');
+  const bits = [];
+  let up = true;
+  for (let c = n - 1; c > 0; c -= 2) {
+    if (c === 6) c = 5;
+    for (let i = 0; i < n; i++) {
+      const r = up ? n - 1 - i : i;
+      for (let d = 0; d < 2; d++) if (!fn[r][c - d]) bits.push(m[r][c - d] ^ (X.qrMasks[mask](r, c - d) ? 1 : 0));
+    }
+    up = !up;
+  }
+  const cw = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) cw.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  const [ec, groups] = [X.QRV[v][0], X.QRV[v][1]],
+    lens = groups.flatMap(([cnt, len]) => new Array(cnt).fill(len)),
+    blocks = lens.map(() => ({d: [], e: []}));
+  let k = 0;
+  for (let i = 0; i < Math.max(...lens); i++) lens.forEach((len, b) => i < len && blocks[b].d.push(cw[k++]));
+  for (let i = 0; i < ec; i++) blocks.forEach(b => b.e.push(cw[k++]));
+  // The syndromes: the block's polynomial (data then ec) is zero at α⁰ … α^(ec-1) when it is a codeword.
+  const mul = (a, b) => {
+    let r = 0;
+    for (; b; b >>= 1, a = a & 128 ? (a << 1) ^ 0x11d : a << 1) if (b & 1) r ^= a;
+    return r;
+  };
+  blocks.forEach(b => {
+    for (let i = 0, a = 1; i < ec; i++, a = mul(a, 2)) {
+      let s = 0;
+      for (const x of [...b.d, ...b.e]) s = mul(s, a) ^ x;
+      assert.strictEqual(s, 0, `syndrome ${i} of a block is zero`);
+    }
+  });
+  const data = blocks.flatMap(b => b.d),
+    str = data.map(x => x.toString(2).padStart(8, '0')).join('');
+  assert.strictEqual(str.slice(0, 4), '0100', 'byte mode');
+  const len = parseInt(str.slice(4, 12), 2);
+  let out = '';
+  for (let i = 0; i < len; i++) out += String.fromCharCode(parseInt(str.slice(12 + 8 * i, 20 + 8 * i), 2));
+  return out;
+}
+test('live.js: the QR code encoder (Reed-Solomon, format bits, layout) reads back to its text', () => {
+  const X = liveModule();
+  // The worked example every QR tutorial uses (HELLO WORLD, version 1-M): its error-correction codewords.
+  assert.deepStrictEqual(
+    Array.from(X.qrEc([32, 91, 11, 120, 209, 114, 220, 77, 67, 64, 236, 17, 236, 17, 236, 17], 10)),
+    [196, 35, 39, 119, 235, 215, 231, 226, 93, 23]
+  );
+  // The standard's format strings for level M, the eight masks.
+  const F = [
+    '101010000010010',
+    '101000100100101',
+    '101111001111100',
+    '101101101001011',
+    '100010111111001',
+    '100000011001110',
+    '100111110010111',
+    '100101010100000'
+  ];
+  F.forEach((s, k) => assert.strictEqual(X.qrFormat(k), parseInt(s, 2), `format bits, mask ${k}`));
+  // Round trips: every version, its largest text and a short one, then the address the lobby encodes.
+  const text = n => Array.from({length: n}, (_, i) => String.fromCharCode(97 + ((i * 7) % 26))).join('');
+  const cases = [
+    '',
+    'A',
+    'https://ppericard.github.io/coral-id-imr/#live?code=123456',
+    text(14),
+    text(26),
+    text(42),
+    text(62),
+    text(84),
+    text(106)
+  ];
+  const sizes = new Set();
+  for (const t of cases) {
+    const m = X.qrMake(t);
+    assert.ok(m, `a code for ${t.length} characters`);
+    sizes.add(m.length);
+    assert.ok(m.every(r => r.length === m.length && r.every(x => x === 0 || x === 1)));
+    assert.strictEqual(qrRead(X, m), t);
+    // The three corner squares' corners and the dark module.
+    assert.deepStrictEqual([m[0][0], m[0][m.length - 1], m[m.length - 1][0], m[m.length - 8][8]], [1, 1, 1, 1]);
+  }
+  assert.strictEqual(sizes.size, 6, 'every version 1 to 6 is used');
+  assert.strictEqual(X.qrMake('x'.repeat(107)), null, 'too long (version 7 and up are not built): no code');
+  assert.strictEqual(X.qrMake('€'), null, 'beyond Latin-1: no code');
+  const svg = X.qrSvg(X.qrMake('abc'), 'QR');
+  assert.ok(/^<svg class="qr" viewBox="0 0 29 29"/.test(svg) && svg.includes('fill="#fff"') && svg.includes('<path d="M'));
+});
 test('live.js: the gate is main’s script version + 1 or more; codes, shares and the most-missed questions', () => {
   const X = liveModule();
   const v = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]);
@@ -584,10 +693,14 @@ test('live.js: a live miss restarts the mastery exam of the unit shown and of th
     startStep: () => {},
     answeredAt: () => {},
     logAnswer: a => log.push(a),
-    save: () => {}
+    save: () => {},
+    // core.js answerId (an answer kept without its player id); quiz.js cvField (app.js contentVer: the units in force)
+    answerId: require('../core.js').answerId,
+    cvField: () => ({cv: 'clive1'})
   });
   const o = c => ({
     qi: 0,
+    pid: '0a1b2c3d4e',
     s: 'coral',
     t: 'Acropora',
     c,
@@ -599,6 +712,13 @@ test('live.js: a live miss restarts the mastery exam of the unit shown and of th
   assert.ok(!('ex' in P.Acropora) && !('ex' in P.Montipora), JSON.stringify(P));
   assert.deepStrictEqual(P.Porites.ex, {k: 1, v: []});
   assert.strictEqual(log[0].m, 'live');
+  // Its attempt id is the player's and the question's (live.js liveAid), its content version the units' in force.
+  assert.strictEqual(log[0].id, 'l0a1b2c3d4eq0');
+  assert.strictEqual(log[0].cv, 'clive1');
+  // An answer kept from before this field (no pid): a random attempt id.
+  const {pid, ...old} = o('Porites');
+  A.ctx.liveLog({id: 'coral'}, old);
+  assert.match(log[1].id, /^[a-z][a-z0-9]{15}$/);
 });
 
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {

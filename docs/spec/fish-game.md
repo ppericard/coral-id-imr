@@ -1,0 +1,127 @@
+# The fish game
+
+What a fish player gets, on the engine every subject shares ([subjects.md](subjects.md)): the units (the families of
+the reef fish ID book, then the scientific genera and the species), the circles and their gate, the surprise cards, the
+Learn page and My progress, and the global score. The fish content these read is in [fish.md](fish.md), the photos
+(`fish-game.json`, the photos in play, included) in [fish-photos.md](fish-photos.md), the sheets in
+[fish-sheets.md](fish-sheets.md); the plan behind the levels is [FISH_PATH.md](../FISH_PATH.md). This is the
+specification of what the code does now; why each part was decided is in [docs/decisions/](../decisions/README.md) and
+the PRs.
+
+## Fish players get
+
+- **The photo quiz** on the families (one photo per question, from one observation), with the first-meeting cards and
+  progressive opening, adaptive photos and choices (the identification key's groups first, then the look-alikes;
+  confusion scores from the player's own answers), "Again" and look-alike duels slipped into the quiz (the look-alike
+  pairs of the IMR fish presentation, `UNITS.fish.pairs`), progress per family with the levels and the silent mastery
+  exam, typed questions accepting the family's names, and the comeback after a break. Fish basics is step 0 of the Learn
+  path.
+- **Learn** = the fish families page (`learn.js` `viewFishList`: by the groups of the identification key in force, in
+  its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each photo
+  enlarges in the shared viewer, `zoom`), and the sheets ([fish-sheets.md](fish-sheets.md)).
+- **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars
+  ([the global score](#the-fish-global-score)), the fish's own leaderboard and achievements (`core.js` `FISH_ACH`).
+- **Not for fish**: the Look-alikes page, the Custom quiz, the Duel and Memory tabs (their addresses open the fish page
+  of the section: `subjPage`); Identify is the Fish ID Key's "coming soon" page; timed mode and size estimation (video ID,
+  EventMeasure) by design.
+
+### Circles and the gate
+
+**Every circle on the path and in the progress**: `UNITS.fish` `slate` = the families of circles 1, 2 and 3, `core`
+= circle 1 (what Open all opens, `model.js` `introLeft`), `gate` = `treeGate` (`model.js` `mayOpen`): circle 2 may open
+once every circle-1 family has been met and asked; circle 3 once `fishC3` holds (`app.js` `FISH_C3`: circle 1's Entries
+component of the global score at 55%, else, without that score, circle 1's plain mean at 50%) and the player said yes to
+its card or in My progress (`UNITS.fish` `opens`, the `beyond` choice); then the usual weighted opening (`openPick`, the
+IMR-tagged families first for a player who answered "I'm at IMR"). There is no ⚙ row for the circles.
+
+Once every unit in play is met and asked and none may open now, a calm card at the break at Next says so and what comes
+next, once per reason (`quiz.js` `allMetDue`, `allMetNone`, `allMetArm`, `allMetShow`; `UNITS` `done`, absent for the
+corals; `app.js` `fishNextOf`): `c3`, circle 3 not reached; `beyond`, circle 3 declined, once its offer will not come
+back (after a first "Not now" it comes back once, and no card is shown meanwhile); `all`, else: the families still
+without a game photo and the Scientific names state, else the exams. It is seen on the device under
+`reefid-fish-allmet-<k>` (cleared at sign-out and account deletion with the account's keys, `sync.js` `signOutClear`,
+rule D7) and on the account as the told token `allmet:<subject>-<k>`. Tests: `tests/allmet.test.js`.
+
+### Winks
+
+**Winks**, for every fish player, circle 1 included: a rare, late surprise card in the photo quiz (`quiz.js` `WINK`,
+`winkDue`, `winkShow`; `UNITS` `winks`: the wink families with a photo, in `fish.json`'s order, the whale shark then the
+thresher sharks). Wink i is due from `WINK.AT[i]` answers of the player's record (200, then 400) and at least the gap
+between the two after the last one shown, never over a card; each once per player across devices
+(`reefid-sync-fish-wink`, merged as a union). The card shows `fish.json`'s absurd choices and lines; its photo is
+Pierre's ★ Cover of the unit while in play (`coverP`), else one of the wink's chosen photos (`quiz.js` `winkPhoto`,
+`fish.json` `wink.photos` from `tools/fish_wink_photos.json`), never a bad photo. Its answer is logged and never counted
+([sync.md › Surprise cards' answers](sync.md#surprise-cards-answers)); docs/LEARNING.md "Winks".
+
+## Fish scientific genera
+
+`app.js` `treeGenera` adds one unit per genus of `fish.json` holding species of a family in play (key `g:<genus>`,
+`rank: 'genus'`, `one: 'genus'`, `parent` its family, its family's group as `forms`, its sibling genera as `look`, the
+IMR sub-entry's cues when one names it (else its own ID marks,
+[fish-sheets.md](fish-sheets.md#genus-presentation-and-id-marks)), its species and the family's photos of them) to
+`TREEU.gen`, and `TREEU.sci` lists them; the admin's `treeGen` is
+unchanged. The genera of circles 2 and 3 are in the game once the sheet replays them (`sciNow`, `sync.js` `generaOn`,
+rule D4). Tests: `tests/fishunits.test.js`.
+
+- **An opt-in set** of the fish (`sci`, `SUBJECTS` fish `optin`): offered once a family is at Advanced, ⚙ Scientific
+  names and My progress any time. `units()` is the genera of the families at Advanced plus those already met; `auto()`
+  (played whatever the set's state: `bonusList`) an IMR player's IMR genera (`imrg`: the IMR sub-entry names that genus
+  alone) from their family's Open Water plus those already met (`app.js` `sciOpen`; `model.js` `imrSaid`: ever answered
+  "I'm at IMR"); `all()` every genus in the game (`setOf`). `units()` reads the families at Open Water instead when the
+  player turned the set on by hand before any family was at Advanced (`Q.sciH`, set by `app.js` `bonusSet` from ⚙ or My
+  progress, synced with the choice). `rv` is the set's rules version, recorded with each choice as `Q.sciV` (synced with
+  it, `sync.js` `mergeSubject`), and `back` the one-time card to a player who turned it on under earlier rules (`quiz.js`
+  `bonusBackShow`).
+- **Kept in their rank**: `app.js` `rankOf(n)` ('' at the subject's own unit rank): `model.js` `distractors` keeps a
+  question's choices in the rank of the unit asked (for a ranked unit any unit of its rank may be a wrong choice:
+  `rankUnits`, every genus of the set, met ones first), `quiz.js` `typeMatch(text, rk)` reads a typed answer among that
+  rank's names (Chromis: the genus on a genus question, the Damselfishes otherwise), the prompt and the typed form use
+  the unit's `one`. Genera are never duel pairs (`UNITS.fish.pairs`), never on the families page (`page: false`), never
+  in the families' mean (`progPct`); they count in the fish global score (half a genus's bar is its species' scientific
+  credit: `core.js` `treeScore`, [below](#the-fish-global-score)).
+
+## Fish species, step 1: by common name
+
+docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, step 1, by common name".
+
+- **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
+  `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each record:
+  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl: []`, `noex`,
+  its family's photos of that species, `sci` its scientific name, `also` its listed names, `name` the player's first
+  common name (a getter, `cnFirst`). `TREEU.spl` lists them.
+- **Opening** (the species): the set `sp` in `UNITS` fish `sets` (`auto` only: no offer, no switch). `app.js` `spPlay`
+  gives each family at Advanced its species met and the next one, in its commonness order. **The rank share**
+  (docs/LEARNING.md "The rank share"): `model.js` `SHARE`, one rule for every unit with a `parent` (the fish scientific
+  genera and species; no subject named, rule S1): `sharesNow` gives per parent level the share m of its units in play at
+  their threshold (`shareAt` in a unit's record, else `LV_AT[SHARE.AT]`, Advanced) and the cap m^`SHARE.POW`; `shareW`
+  (in `weighted`) scales the drawn weights of the units hanging from that level to at most the cap of the total;
+  `shareRoom` lets one more of them open (`quiz.js` `planPhoto`'s `fresh`, `tools/ratedworld.js` the same) only while
+  they take less of the draw (`drawW` of the units met) than the cap. A unit with no parent, or whose parent is no unit
+  of the game, is never touched (the slate, the coral bonus genera, the sea slugs' genera, whose family is only their
+  structure); nor are `app.js` `shareFree`'s (an IMR player's IMR genera; the set turned on by hand early). `model.js`
+  `ability` and `quiz.js` `answer` pass `from`, so a species never answered starts from its family (`core.js`
+  `abilityOf`); `model.js` `examOn` skips a `noex` unit.
+- **Display and typing**: a choice shows its common name, the scientific name in small type under it (`quiz.js`
+  `question`, `.csn`; `app.js` `uplain`: a unit with `sci` is upright). Typed answers read every listed and regional name
+  as the unit's (`UNITS` fish `names`, `cnTypeNames`). `model.js` `choiceKeys` keeps a wrong choice off any listed name
+  of the target.
+- **Score and gate**: the tree with the species (`TREEU.treeSp`, `treeScoreTree(X, F, true)`) only when `app.js` `spOn`
+  (`sync.js` `speciesOn`: `TREE_SHEET` and `SPECIES_SHEET`, rule D4). The sheet's replay lists the species units with
+  their `from` (`core.js` `treeReplayGen`), so a species picked wrongly and a species' start replay as the game scores
+  them.
+- **Rest**: the first species card carries the milestone line (the set's `card`, a function of the unit). The
+  achievements fsp1, fsp10 and fsp50 read `achSnap` `setsAdv.sp`. A species unit opens its species sheet (`treeSheets`
+  `spOf` reads `s:s091`).
+
+## The fish global score
+
+docs/FISH_PATH.md "My progress (fish)", docs/LEARNING.md "Fish: the global score, built". `core.js` `treeScore(P, T, K)`,
+one computation over the subject's tree (`core.js` `treeScoreTree`, built with `TREEU`, `UNITS.fish.tree()`: the
+families with their weight and circle, the species packed by genus while they have no unit of their own, `null` common
+names for a species with none) with the subject's constants (`SUBJECTS` fish `score`, the one switch): the % shown
+(`pct`), `raw`, the components (`entries`, `genera`, `common`, `scientific`, `S`, `credit`), the same per circle (`by`)
+and every unit's own bar (`units`). Species weights: `core.js` `rankWeights` (1/√ of the rank by observers near Dauin,
+`present.dauinU`, ties sharing their mean rank). The tree is sent to the sheet, which ranks the fish leaderboard by it.
+`model.js` `headScore` and `headPct` give the headline (the header pill, My progress's ring and its three bars
+`progress.js` `scoreBars`, the fish % achievements, the update card, the leaderboard); `progPct` stays the plain mean of
+a list's bars. The circle-3 threshold reads its circle-1 Entries component (`app.js` `FISH_C3`, `fishC3`).

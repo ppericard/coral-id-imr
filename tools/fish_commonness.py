@@ -66,7 +66,7 @@ class Names:
     only when no species has it as one of those (WoRMS lists Chaetodon lunulatus as a synonym of C. lunula)."""
 
     def __init__(self, fish):
-        # str keys: fish.json read back has them, the full build's fresh tree has int AphiaIDs (its synonyms were missed).
+        # str keys: fish.json read back has them, the full build's fresh tree has int AphiaIDs (left as int, its synonyms are missed).
         self.ref = {str(k): v for k, v in fish.get("ref", {}).items()}
         self.primary = {}
         for s in fish["species"]:
@@ -223,7 +223,7 @@ def fetch(fish, net):
         sp = [S[i] for i in t.get("species", []) if S[i].get("inat")]
         if sp:
             # Counted per taxon, then given to every species on it: two species of the index can share one iNaturalist
-            # taxon (s104 / s105 on 559534, Codex #497).
+            # taxon (s104 / s105 on 559534).
             entries.append((t, sp, sorted({s["inat"] for s in sp})))
     alltaxa = sorted({x for _, _, taxa in entries for x in taxa})
     rows = {ring: [] for ring in RINGS}

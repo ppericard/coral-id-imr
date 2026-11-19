@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The points to handle (Pierre, 2026-11-05): points.json's shape (written by agents, read by the admin's To do › Points)
+// The points to handle: points.json's shape (written by agents, read by the admin's To do › Points)
 // and the list's order (points.js, shared with admin.js).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -30,11 +30,11 @@ test('points.json: the Astrea question first, with its 7 photos to show, each in
   walk(C);
   assert.deepStrictEqual(
     p.photos.map(x => x.t),
-    // 5-7: the photos Pierre flagged in his reports of 2026-11-05 (two "?", one "Astrea?").
+    // 5-7: the photos flagged in the players' reports (two "?", one "Astrea?").
     ['Astrea curta', 'Favites colemani', 'Plesiastrea peroni', 'Favites colemani', 'Astrea curta', 'Astrea curta', 'Favites valenciennesi']
   );
   p.photos.forEach(x => assert.ok(F.has(x.f), `${x.f} is not a photo of data.json or cand.json`));
-  // Pierre's own F. colemani observation (iNaturalist 406194912) is the fourth.
+  // The admin's own F. colemani observation (iNaturalist 406194912) is the fourth.
   assert.match(p.photos[3].o, /observations\/406194912$/);
 });
 

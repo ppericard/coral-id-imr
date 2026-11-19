@@ -1,5 +1,5 @@
-# The four files of every site photo (Pierre, 2026-11-01: lighter photos for the slow connections common in the
-# Philippines), long side in px, WebP:
+# The four files of every site photo (lighter photos for the slow connections common in the Philippines), long side in
+# px, WebP:
 #   img/{f}.webp     1600 px  enlarged view, big or dense screens
 #   img/{f}-m.webp    960 px  game and sheet photos on phones and laptops
 #   img/{f}-s.webp    480 px  cards, the backdrop while the bigger file loads, data saver
@@ -7,10 +7,10 @@
 # The app picks the smallest file that covers each photo's box (app.js `fit`, `srcset`). Every tool that writes photos
 # uses save().
 #
-# Where they live (Photos out of the repo, Pierre's rule of 2026-11-05; docs/ROADMAP.md, docs/ARCHITECTURE.md "Photos"):
+# Where they live (docs/ARCHITECTURE.md "Photos"):
 # the app reads every photo from the Cloudflare R2 bucket (core.js PHOTO_BASE, same img/ paths). git keeps only the
 # photos with no other backup (IMR lecture photos, page art): a photo whose record has an online
-# original (src: iNaturalist, Pierre's own iNaturalist photos, FishBase) and is downloaded (no r) lives on R2 only
+# original (src: iNaturalist, the admin's own iNaturalist photos, FishBase) and is downloaded (no r) lives on R2 only
 # (online()); tools/fetch_approved.py uploads it there, never to img/, and tools/r2_sync.sh never deletes from the bucket.
 # A tool that reads a photo's pixels opens path(f, size): the file in img/, or a copy from R2 kept in tools/.cache/r2/.
 #
@@ -47,7 +47,7 @@ def save(im, f, folder=IMG):
         t.save(os.path.join(folder, f'{f}{suf}.webp'), 'WEBP', quality=q, method=5)
 
 
-# Pierre's rotation (curation.json rot {f: 90 | 180 | 270}, fish.rot for the fish: degrees clockwise; Pierre, 2026-11-08)
+# The admin's rotation (curation.json rot {f: 90 | 180 | 270}, fish.rot for the fish: degrees clockwise)
 # and his crop (crop {f: [l, t, r, b]}, fractions of the ORIGINAL photo) compose one way: the crop is cut from the
 # original first, then the cut is turned. So a crop never changes when the photo is turned (the crop box turns with the
 # photo), the judging pass's proposed crops stay valid, and the admin draws the same thing: object-view-box (the crop,
@@ -239,10 +239,10 @@ def check(folder=IMG, recs=None):
     bad = []
     miss = [f + suf for f in photos(folder) for suf in SUFFIXES[1:] if f + suf + '.webp' not in names]
     if miss: bad.append(f'{len(miss)} photo file(s) missing (run python3 tools/photos.py): ' + ', '.join(miss[:10]))
-    # git is the only backup of these: they never leave img/ (Pierre, 2026-11-05).
+    # git is the only backup of these: they never leave img/.
     gone = sorted(f + suf for f in gitonly(recs) for suf in SUFFIXES if f + suf + '.webp' not in names)
     if gone: bad.append(f'{len(gone)} file(s) of photos with no online original missing from img/ (git is their only backup): ' + ', '.join(gone[:10]))
-    # A photo with an online original lives on R2 only (Photos out of the repo, step 2): never back in img/.
+    # A photo with an online original lives on R2 only: never back in img/.
     back = sorted(f for f in online(recs) if any(f + suf + '.webp' in names for suf in SUFFIXES))
     if back: bad.append(f'{len(back)} photo(s) with an online original in img/: they live on R2 only (tools/r2_move.py --apply): ' + ', '.join(back[:10]))
     return bad
@@ -250,7 +250,7 @@ def check(folder=IMG, recs=None):
 
 if __name__ == '__main__':
     if '--r2-list' in sys.argv or '--r2-tiles' in sys.argv:
-        # One name a line, nothing at all for none (tools/r2_sync.sh would read an empty line as a file: Codex review #826).
+        # One name a line, nothing at all for none (tools/r2_sync.sh would read an empty line as a file).
         L = sorted(online() if '--r2-list' in sys.argv else tiles())
         if L:
             print('\n'.join(L))

@@ -963,6 +963,24 @@
         {"t": "docs/reviews/2026-11-17-seaslug-undescribed-species-study.md §3.2, §6"},
         {"t": "tools/seaslug_lit_source.json (labels)"}
       ]
+    },
+    {
+      "id": "coral-finder-starred-pages",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-18",
+      "title": "Coral Finder 2022: do its pages compare Merulina with Hydnophora, and Duncanopsammia with Turbinaria?",
+      "q": "On the Coral Finder 2022 pages, is Merulina compared in words with Hydnophora (pages 11-12, 17, 51, 62, 75), and Duncanopsammia with Turbinaria (page 50, also 9 and 74)? If so, on which page and by which feature? And on which page is the comment that sets Herpolitha (elongate) apart from the dome-shaped mushroom corals such as Halomitra (page 65 or 66)?",
+      "ctx": [
+        "The four starred genera Alveopora, Merulina, Halomitra and Duncanopsammia have no card in Learn's Look-alikes deck: their look-alike pair cites only a shared Coral Finder box, and the deck takes only pairs a source compares in words (rule C2).",
+        "Coral Finder 2022 on Pierre's Drive is scanned with no text layer, so an agent could not read it. The earlier printing on his Drive (2009, look-alike pages 1-29) compares Alveopora with Goniopora (12 against 24 tentacles) and, in a page comment, Herpolitha with the dome-shaped free-living corals; it does not compare Merulina with Hydnophora, and its Duncanopsammia is the branching D. axifuga (D. peltata was then Turbinaria peltata).",
+        "Pages given here are data.json's pages for each genus. The study: docs/reviews/2026-11-18-classic-lookalike-pairs.md section 6.2."
+      ],
+      "src": [
+        {"t": "Coral Finder 2022 (R. Kelley, BYOGUIDES), Pierre's Drive copy"},
+        {"t": "Coral Finder, earlier printing (R. Kelley, 2009), Pierre's Drive copy"},
+        {"t": "Study 2026-11-18, classic look-alike pairs, section 6.2"}
+      ]
     }
   ]
 }

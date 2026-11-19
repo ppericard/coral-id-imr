@@ -149,12 +149,12 @@ test('the admin draws no “new since the previous milestone” count', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
   assert.ok(!/newly|'#New'|Clear since the previous milestone/.test(src), 'a milestone is another look at the same log, not a new finding');
   assert.ok(/B: 199, Bh: 0, bse: 1/.test(src), 'Recompute here: 199 draws, normal intervals');
-  // rule A2 (Codex review #588): the method stays behind the admin "?", not on the page
+  // rule A2: the method stays behind the admin "?", not on the page
   assert.ok(!/class="note">Each milestone/.test(src), 'no explanatory text on the page');
 });
 
-// Codex review #588: a bootstrap draw that leaves out every answer with a feature cannot estimate it; the warm start
-// must not hand back the full fit's value as if it were a draw.
+// A bootstrap draw that leaves out every answer with a feature cannot estimate it; the warm start must not hand back
+// the full fit's value as if it were a draw.
 test('a warm-started draw without a feature gives no value for it (not the full fit’s)', () => {
   const R = A.rng(3),
     D = [];
@@ -192,7 +192,7 @@ test('a warm-started draw without a feature gives no value for it (not the full 
   assert.ok(seen.filter(x => x[0]).every(x => isFinite(x[1])));
 });
 
-// Codex review #588: an effect smaller than its sesoi, unresolved after the correction, never says fewer answers than
+// An effect smaller than its sesoi, unresolved after the correction, never says fewer answers than
 // it has would settle it.
 test('answers needed after the correction: never fewer than the answers already in', () => {
   const res = {
@@ -210,7 +210,7 @@ test('answers needed after the correction: never fewer than the answers already 
   assert.ok(e.need > 1000, `${e.need} answers for an effect unresolved with 1000`);
 });
 
-// Codex review #588: typed answers are read as right answers against the choice questions' (another guess floor), so
+// Typed answers are read as right answers against the choice questions' (another guess floor), so
 // they are tested and corrected on that contrast, not on the recognition coefficient against 0.
 test('typed answers: the verdict shown is the corrected test of the contrast shown', () => {
   const se = 0.1,
@@ -238,7 +238,7 @@ test('typed answers: the verdict shown is the corrected test of the contrast sho
   assert.notStrictEqual(r.P.v, 'clear', 'as many right answers: no clear effect, whatever the recognition coefficient');
 });
 
-// Codex review #588 (3rd pass): an adjusted p capped at 1 no longer gives the level the effect faces; the answers needed
+// An adjusted p capped at 1 does not give the level the effect faces; the answers needed
 // must still reach a verdict when its interval shrinks as 1/sqrt(n).
 test('answers needed after the correction reach a verdict, even when the adjusted p is capped at 1', () => {
   const build = eff => ({
@@ -262,7 +262,7 @@ test('answers needed after the correction reach a verdict, even when the adjuste
   assert.notStrictEqual(e2.v, 'thin', `${e.need} answers: still undecided (adjusted p ${e2.pa})`);
 });
 
-// Codex review #591: Recompute here on an empty log (no milestone and, with 0 answers, no live point) gives a report with
+// Recompute here on an empty log (no milestone and, with 0 answers, no live point) gives a report with
 // no point at all; the page treats it as no report ("No report yet"), never reading a milestone that is not there.
 test('admin: a report without any point counts as no report', () => {
   const vm = require('vm'),
@@ -283,7 +283,7 @@ test('admin: a report without any point counts as no report', () => {
   assert.strictEqual(vm.runInContext('ANLOC = {rep: ONE}; anRep()', ctx), one);
 });
 
-/* ---------- Structure views (the multifactor visualisation study of 2026-11-05; Pierre's Q70-Q77) ---------- */
+/* ---------- Structure views (docs/reviews/2026-11-05-multifactor-viz-study.md) ---------- */
 test('entOf: two entangled conditions read as hard to tell apart, an independent one does not', () => {
   const R = A.rng(5),
     nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),

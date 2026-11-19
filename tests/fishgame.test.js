@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// The curated fish game photos (admin plan PR 7): tools/fish_game.py, run by the Candidate photos workflow, downloads the
-// photos Pierre put in play (curation.json fish, core.js fishOn) into the R2 upload folder and writes fish-game.json;
-// core.js fishPhotos plays them (the stopgap list it once put them in place of, entry by entry, retired on 2026-11-15). Offline: a made-up fixture,
-// the originals served by a stub (never iNaturalist, FishBase or R2). The download needs python3 with Pillow
-// (tools/requirements.txt, installed by checks.yml).
+// The curated fish game photos: tools/fish_game.py, run by the Candidate photos workflow, downloads the photos Pierre
+// put in play (curation.json fish, core.js treePhotoOn) into the R2 upload folder and writes fish-game.json; core.js
+// treePhotos plays them. Offline: a made-up fixture, the originals served by a stub (never iNaturalist, FishBase or
+// R2). The download needs python3 with Pillow (tools/requirements.txt, installed by checks.yml).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -13,7 +12,7 @@ const test = require('node:test'),
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-// maxBuffer: fish-game.json passed the 1 MB default once the curated photos grew (ENOBUFS, 2026-11-06).
+// maxBuffer: fish-game.json is above the 1 MB default (ENOBUFS).
 const py = code =>
   execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {
     cwd: ROOT,
@@ -160,7 +159,7 @@ test(
     ['', '-m', '-s', '-t'].forEach(s => assert.ok(files.includes(`fish-s001-cand-101${s}.webp`), s));
     const G = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'));
     assert.deepStrictEqual(Object.keys(G.photos), ['t01', 't02']);
-    // Entry order: the entry's species order, then the easiest (never Pierre's own by priority, Q148).
+    // Entry order: the entry's species order, then the easiest (never Pierre's own by priority).
     assert.deepStrictEqual(
       G.photos.t01.map(p => p.f),
       ['fish-s001-cand-102', 'fish-s001-cand-101', 'fish-s002-cand-201']
@@ -186,7 +185,7 @@ test(
       ['s003', 3, 'o1g1sm1'],
       'a Not this photo in play for its new species, under that entry'
     );
-    // Named after its new species (the WoRMS name), never the identification Pierre corrected (Codex review #614); the
+    // Named after its new species (the WoRMS name), never the identification Pierre corrected; the
     // others keep their source's name.
     assert.strictEqual(by['fish-s001-cand-105'].t, 'Thalassoma wrassii');
     assert.strictEqual(by['fish-s001-cand-101'].t, 'Fishus s001');
@@ -209,7 +208,7 @@ test(
       p = G3.photos.t01.find(x => x.f === 'fish-s001-cand-102');
     assert.deepStrictEqual([p.cr, p.iv], [[0.1, 0.1, 0.9, 0.9], 1]);
     assert.ok(!G3.photos.t01.some(x => x.f === 'fish-s002-cand-201'));
-    // Pierre turns the cropped one a quarter right (fish.rot; Pierre, 2026-11-08): it comes again, cut then turned (the
+    // Pierre turns the cropped one a quarter right (fish.rot): it comes again, cut then turned (the
     // left half, 2:3, becomes 3:2), its crop kept, iv 1; back upright it comes once more, ro gone, iv 2.
     const at = (k, f) => JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8')).photos[k].find(x => x.f === f);
     cur.fish.rot = {'fish-s001-cand-101': 90};
@@ -232,7 +231,7 @@ test(
   }
 );
 
-test('fish_game.py fish_on and pid agree with core.js fishOn and fishPid', () => {
+test('fish_game.py fish_on and pid agree with core.js treePhotoOn and treePid', () => {
   const F = CUR.fish,
     cases = [...Object.keys(F.add), 'fish-s003-cand-301'].flatMap(f => ['s001', 's002', 's003'].map(s => [f, s]));
   const got = JSON.parse(
@@ -241,12 +240,12 @@ F = json.loads(${JSON.stringify(JSON.stringify(F))})
 print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo']]))`)
   );
   assert.deepStrictEqual(got, [
-    ...cases.map(([f, s]) => C.fishOn(F, f, s)),
-    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo'].map(C.fishPid)
+    ...cases.map(([f, s]) => C.treePhotoOn(F, f, s)),
+    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo'].map(C.treePid)
   ]);
-  // A FishBase reference or sheet photo (fb<stem>, tools/fish_refs.py) and its candidate are one photo (Codex review #660).
+  // A FishBase reference or sheet photo (fb<stem>, tools/fish_refs.py) and its candidate are one photo.
   assert.deepStrictEqual(got.slice(-6), ['i123', 'i123', 'i123', 'bFiwra_u0', 'bFiwra_u0', 'some-photo']);
-  // So Pierre's rejection of the candidate keeps its reference copy out of the game (core.js fishPhotos).
+  // So Pierre's rejection of the candidate keeps its reference copy out of the game (core.js treePhotos).
   const ref = {
       f: 'fbFiwra_u0',
       sp: 's003',
@@ -258,17 +257,16 @@ print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.
     },
     cur = {...CUR, fish: {...CUR.fish, seen: {...CUR.fish.seen, 'fish-s003-cand-fb-Fiwra_u0': 1}}};
   assert.ok(
-    C.fishPhotos({}, {t01: [ref]}, CUR).t01.some(p => p.f === ref.f),
+    C.treePhotos({}, {t01: [ref]}, CUR).t01.some(p => p.f === ref.f),
     'in play while the candidate is not rejected'
   );
-  assert.ok(!C.fishPhotos({}, {t01: [ref]}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
-  assert.ok(!C.fishPhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'and out of the first photos alike');
+  assert.ok(!C.treePhotos({}, {t01: [ref]}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
+  assert.ok(!C.treePhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'and out of the first photos alike');
 });
 
-// The photos that enter play by themselves (Pierre, 2026-11-06, Q180 and Q199: a candidate judged sure; a reference photo
-// judged sure on the same rubric, whatever its reference level, 2026-11-08, Q212; treated exactly like the photos he
-// adds, hosted on R2): the same download, listed with auto, out once he rejects, excludes or moves the photo; never the
-// same photo or (a reference photo) observation twice.
+// The photos that enter play by themselves (a candidate judged sure; a reference photo judged sure on the same rubric,
+// whatever its reference level; treated exactly like the photos he adds, hosted on R2): the same download, listed with
+// auto, out once he rejects, excludes or moves the photo; never the same photo or (a reference photo) observation twice.
 const AUTO_SUG = {
   fish: {
     ...SUG.fish,
@@ -305,9 +303,9 @@ function autoWorld() {
   w('curation.json', cur);
   w('suggest.json', AUTO_SUG);
   fs.mkdirSync(path.join(dir, 'tools'));
-  // 308: a cover judged 4, no point more for being one (Pierre, 2026-11-17), reference level by its look and ease, as
-  // 309: judged 4 with the look and no rep, in like a candidate (Q212) and reference level the same: the route weighs
-  // nothing (Pierre, 2026-11-18); 310, 314, 315: on candidate 301's observation (Q218: in once judged against it, so 310, not judged
+  // 308: a cover judged 4, no point more for being one, reference level by its look and ease, as 309: judged 4 with the
+  // look and no rep, in like a candidate and reference level the same: the route weighs nothing; 310, 314, 315: on
+  // candidate 301's observation (in once judged against it, so 310, not judged
   // against it yet, out; 314, judged alt, in; 315, judged dup, out); 311: other kinds of fish too (P3: out); 312: out
   // of the water (out); 313: a hard one, head-on, dim and soft, judged 2 (in, as a candidate would be).
   w('tools/fish_refs.json', {
@@ -321,7 +319,7 @@ function autoWorld() {
         REF(313, 9313, {from: 'taxon'}),
         REF(314, 9301, {from: 'taxon'}),
         REF(315, 9301, {from: 'taxon'}),
-        // 316 then 317, one new observation: 316 judged dup of 317 stays out whatever the order (Codex review #715).
+        // 316 then 317, one new observation: 316 judged dup of 317 stays out whatever the order.
         REF(316, 9316, {from: 'taxon'}),
         REF(317, 9316, {from: 'taxon'})
       ]
@@ -370,9 +368,9 @@ test(
           .map(p => [p.f, p])
       );
     assert.deepStrictEqual([r.done, r.wait, r.n], [11, 0, 12]);
-    // Pierre's 5 as before, the sure best and alt of the candidates, the reference photos judged sure (below the reference
-    // level too: Q212); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a reference
-    // photo on an observation in play unless judged no duplicate of its photos (Q218).
+    // Pierre's 5 adds of the fixture, the sure best and alt of the candidates, the reference photos judged sure (below the
+    // reference level too); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a
+    // reference photo on an observation in play unless judged no duplicate of its photos.
     assert.deepStrictEqual(Object.keys(by).sort(), [
       'fi308',
       'fi309',
@@ -403,9 +401,9 @@ test(
     assert.deepStrictEqual([C.refLevel(by.fi308), C.refLevel(by.fi313)], [true, false]);
     assert.deepStrictEqual([by.fi313.auto, by.fi313.e, by.fi313.jt], ['ref', 2, 'h1d0mm1']);
     assert.ok(!by['fish-s001-cand-101'].auto, "Pierre's own adds carry no auto");
-    // In the game (core.js fishPhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
+    // In the game (core.js treePhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
     const cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8')),
-      shown = c => (C.fishPhotos({}, G.photos, c, FISH).t02 || []).map(p => p.f);
+      shown = c => (C.treePhotos({}, G.photos, c, FISH).t02 || []).map(p => p.f);
     ['fish-s003-cand-301', 'fish-s003-cand-302', 'fi308'].forEach(f => assert.ok(shown(cur).includes(f), f));
     const no = (k, f) => ({...cur, fish: {...cur.fish, [k]: {...(cur.fish[k] || {}), [f]: k === 'out' ? 'x' : 1}}});
     assert.ok(!shown(no('seen', 'fish-s003-cand-301')).includes('fish-s003-cand-301'), 'rejected');
@@ -422,7 +420,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
       );
     assert.deepStrictEqual(
       got,
-      curs.map(c => recs.map(p => C.fishIn(c.fish, p, C.fishGone(c))))
+      curs.map(c => recs.map(p => C.treePhotoIn(c.fish, p, C.treeGone(c))))
     );
     // Pierre rejects one: the next run takes it out of the list.
     fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
@@ -432,7 +430,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
   }
 );
 
-// Pierre's word stands over a photo in play by itself (Codex review #674): an automatic add of the auto-sort he undid
+// Pierre's word stands over a photo in play by itself: an automatic add of the auto-sort he undid
 // (log code '-a...', autosort.js fishUndo) keeps the photo out, and his explicit full-photo crop [0, 0, 1, 1] beats the
 // pass's proposed crop.
 test("fish_game.py: an undone auto add stays out, and Pierre's full-photo crop beats the proposal", () => {
@@ -450,16 +448,15 @@ print(json.dumps({r['f']: c for r, c, _ in todo}))`)
   assert.ok(!('fish-s003-cand-302' in got), 'an undone auto add stays out');
   assert.strictEqual(got['fish-s003-cand-301'], null, 'his full-photo crop, not the proposal');
   const rec = {f: 'fish-s003-cand-302', sp: 's003', auto: 'cand'};
-  assert.ok(!C.fishIn(cur.fish, rec, C.fishGone(cur)), 'core.js agrees');
-  assert.ok(C.fishIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.fishGone(cur)));
+  assert.ok(!C.treePhotoIn(cur.fish, rec, C.treeGone(cur)), 'core.js agrees');
+  assert.ok(C.treePhotoIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.treeGone(cur)));
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// core.js fishPhotos: the photos in play (fish-game.json) alone; fish-photos.json's first photos (the same records) only
-// while the game list is not in. The stopgap of remote iNaturalist photos, which joined an entry short of 5 very easy
-// curated photos, is retired (Pierre, 2026-11-15).
+// core.js treePhotos: the photos in play (fish-game.json) alone; fish-photos.json's first photos (the same records) only
+// while the game list is not in. No remote iNaturalist photo joins an entry short of very easy curated photos.
 const ph = (f, k = {}) => ({f, o: 'https://www.inaturalist.org/observations/' + f, src: INAT(f.replace(/\D/g, '') || 1), ...k});
-test('fishPhotos: the photos in play alone, however few very easy; the first photos only until fish-game.json is in', () => {
+test('treePhotos: the photos in play alone, however few very easy; the first photos only until fish-game.json is in', () => {
   const easy = n => Array.from({length: n}, (_, i) => ph(`fish-s001-cand-${500 + i}`, {sp: 's001', e: 4}));
   const game = {
       t01: [...easy(5), ph('fish-s001-cand-599', {sp: 's001', e: 2})],
@@ -471,7 +468,7 @@ test('fishPhotos: the photos in play alone, however few very easy; the first pho
         add: Object.fromEntries([...Object.values(game), ...Object.values(first)].flat().map(p => [p.f, p.sp]))
       }
     },
-    out = C.fishPhotos(first, game, cur);
+    out = C.treePhotos(first, game, cur);
   assert.deepStrictEqual(
     out.t01.map(p => p.f),
     game.t01.map(p => p.f)
@@ -484,17 +481,17 @@ test('fishPhotos: the photos in play alone, however few very easy; the first pho
   assert.ok(!('t03' in out), 'the first photos are not read once the game list is in');
   assert.ok(!('FISHPH' in C), 'no minimum to fill from elsewhere');
   // fish-game.json not in yet (Home before it, or it cannot come): the first photos.
-  assert.deepStrictEqual(Object.fromEntries(Object.entries(C.fishPhotos(first, {}, cur)).map(([t, L]) => [t, L.map(p => p.f)])), {
+  assert.deepStrictEqual(Object.fromEntries(Object.entries(C.treePhotos(first, {}, cur)).map(([t, L]) => [t, L.map(p => p.f)])), {
     t01: ['fish-s001-cand-500'],
     t02: ['fish-s003-cand-500'],
     t03: ['fish-s009-cand-3']
   });
   // No curation loaded yet: the lists as they are.
-  assert.strictEqual(C.fishPhotos(first, game, null).t01.length, 6);
-  assert.strictEqual(C.fishPhotos(undefined, undefined, null).t01, undefined);
+  assert.strictEqual(C.treePhotos(first, game, null).t01.length, 6);
+  assert.strictEqual(C.treePhotos(undefined, undefined, null).t01, undefined);
 });
 
-test('fishPhotos: Pierre’s curation applies at once, to the photos in play and to the first photos', () => {
+test('treePhotos: Pierre’s curation applies at once, to the photos in play and to the first photos', () => {
   const game = {
       t01: [
         ph('fish-s001-cand-11', {sp: 's001', e: 4}),
@@ -515,16 +512,16 @@ test('fishPhotos: Pierre’s curation applies at once, to the photos in play and
     want = ['fish-s001-cand-11', 'fish-s001-cand-12', 'fish-s001-cand-16'];
   // 13 and 14 rejected after the last run, 15 excluded everywhere: out at once.
   assert.deepStrictEqual(
-    C.fishPhotos({}, game, cur).t01.map(p => p.f),
+    C.treePhotos({}, game, cur).t01.map(p => p.f),
     want
   );
   assert.deepStrictEqual(
-    C.fishPhotos(game, {}, cur).t01.map(p => p.f),
+    C.treePhotos(game, {}, cur).t01.map(p => p.f),
     want,
     'the first photos alike'
   );
   // A curated photo moved by Not this to another species leaves its old species at once.
-  const moved = C.fishPhotos({}, game, {fish: {...cur.fish, seen: {}, out: {'fish-s001-cand-12': 's005'}}});
+  const moved = C.treePhotos({}, game, {fish: {...cur.fish, seen: {}, out: {'fish-s001-cand-12': 's005'}}});
   assert.deepStrictEqual(
     moved.t01.map(p => p.f),
     ['fish-s001-cand-11', 'fish-s001-cand-13', 'fish-s001-cand-14', 'fish-s001-cand-15', 'fish-s001-cand-16']
@@ -532,7 +529,7 @@ test('fishPhotos: Pierre’s curation applies at once, to the photos in play and
 });
 
 test('fish-game.json: the layout tools/fish_game.py writes, only photos in play, downloaded (no r), in the R2 list', () => {
-  const G = C.fishGameRead(read('fish-game.json')), // its records whole (the file's short form)
+  const G = C.treeGameRead(read('fish-game.json')), // its records whole (the file's short form)
     text = fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8');
   assert.strictEqual(G.v, 1);
   // Written in the short form (tools/fish_short.py): no iNaturalist observation address in full.
@@ -556,13 +553,13 @@ test('fish-game.json: the layout tools/fish_game.py writes, only photos in play,
     });
 });
 
-// The offline plan of the command line (Codex review #715: it unpacked one value fewer than inputs gives).
+// The offline plan of the command line (it unpacks every value inputs gives).
 test('fish_game.py --plan: prints the photos in play and what to download, offline, writing nothing', () => {
   const out = execFileSync('python3', ['tools/fish_game.py', '--plan'], {cwd: ROOT, encoding: 'utf8'});
   assert.match(out, /^in play: \d+ photos over \d+ species \(Pierre's adds \d+, candidates judged sure \d+, reference photos \d+\)/);
 });
 
-// The tiles (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix; judging/FISH.md "The fish's
+// The tiles (the square photos of "Find the X" and Matrix; judging/FISH.md "The fish's
 // box"): a photo in play whose tags pass the tile rule and that has the fish's box gets a 360 px square, {f}-x.webp, cut
 // around the fish; kept when the fish fills 70% of it and the box is 320 px wide in the original.
 test('fish_game.py tile_crop: the box plus 10% squared, inside the frame; a long fish keeps its square; res and cut refused', () => {
@@ -604,7 +601,7 @@ print(json.dumps([G.tile_crop(b, W, H, fr) for b, W, H, fr in cases]))`)
   const [l7, , r7] = got[6][0];
   assert.ok(l7 >= 0 && r7 <= 0.5, JSON.stringify(got[6]));
   // The tile rule on the tags: profile or slight oblique, whole, good light, colour loss 0-1, sharp, large or medium, one
-  // fish, no j, c or a (Q321 D4).
+  // fish, no j, c or a.
   const tags = [
     'p1g0sl1',
     'o1g1sm1r',
@@ -697,7 +694,7 @@ test(
       r3 = run(dir, path.join(dir, 'up3'));
     assert.deepStrictEqual([r3.done, r3.calls.length], [0, 0]);
     assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'), before);
-    // A changed box waits for the next run when the run's room is taken (limit): its old tile is no longer named meanwhile.
+    // A changed box waits for the next run when the run's room is taken (limit): its old tile is not named meanwhile.
     judge({'fish-s001-cand-102': [0.1, 0.1, 0.95, 0.8], 'fish-s003-cand-fb-Fiwra_u0': [0, 0.05, 0.85, 0.95]});
     const r4 = run(dir, path.join(dir, 'up4'), 0);
     assert.deepStrictEqual([r4.done, r4.wait, r4.calls.length], [0, 2, 0]); // 107 too (refused at each download)
@@ -725,8 +722,8 @@ test('tools/fish_judge.json boxes: [left, top, right, bottom] inside the photo',
   assert.deepStrictEqual(bad, []);
 });
 
-// Codex review #826: a doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by
-// itself, proposed by the auto-sort) when nothing else is doubted; any other doubt keeps it out, as before.
+// A doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by itself, proposed by
+// the auto-sort) when nothing else is doubted; any other doubt keeps it out.
 test('unsure bb: the tile withheld, the candidate still in play by itself (fish_game.py cand_sure, autosort.js fishSure)', () => {
   const {fishSure} = require('../autosort.js'),
     j = u => ({jt: 'p1g0sm1', e: 4, k: 'best', bb: [0.1, 0.1, 0.9, 0.9], ...(u ? {u} : {})}),
@@ -748,12 +745,12 @@ print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases])
   );
 });
 
-// Codex review #826: the R2 lists print nothing for none (tools/r2_sync.sh would read an empty line as a file), and the
+// The R2 lists print nothing for none (tools/r2_sync.sh would read an empty line as a file), and the
 // script skips an empty name anyway.
 test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2list-'));
   fs.mkdirSync(path.join(dir, 'tools'));
-  // tools/photos.py and every tools module it imports at its top (tools/fish_short.py, #819), so it runs from the copy.
+  // tools/photos.py and every tools module it imports at its top (tools/fish_short.py), so it runs from the copy.
   const src = fs.readFileSync(path.join(ROOT, 'tools/photos.py'), 'utf8'),
     mods = [...src.matchAll(/^import ([\w, ]+)/gm)].flatMap(m => m[1].split(',').map(x => x.trim()));
   ['photos', ...mods]
@@ -778,7 +775,7 @@ test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name
   assert.strictEqual(r, '');
 });
 
-// Codex review #826: the tiles of photos already in play are fetched as the downloads are: FishBase's one at a time.
+// The tiles of photos already in play are fetched as the downloads are: FishBase's one at a time.
 test('fish_game.py: the tile-only pass asks FishBase one photo at a time', {skip: !pil && 'Pillow missing'}, () => {
   const dir = world(),
     w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o)),
@@ -822,17 +819,17 @@ print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').lis
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// fish-photos.json, written by the same run (Pierre, 2026-11-15: the stopgap retired, the sheet-only photos to R2): its
-// first photos are fish-game.json's records (on R2 already), at most FIRST per entry, the adults and the easiest first;
-// a sheet-only photo still remote is downloaded in the four sizes like a game photo and listed without r (its src, the
-// original, kept for the fallback; its credit, licence and observation exactly as they were); a species with a photo in
-// play loses its sheet-only photo; a rerun with nothing new writes the same bytes.
+// fish-photos.json, written by the same run (no remote photo, the sheet-only photos on R2): its first photos are
+// fish-game.json's records (on R2 already), at most FIRST per entry, the adults and the easiest first; a sheet-only
+// photo still remote is downloaded in the four sizes like a game photo and listed without r (its src, the original,
+// kept for the fallback; its credit, licence and observation exactly as they were); a species with a photo in play
+// loses its sheet-only photo; a rerun with nothing new writes the same bytes.
 const read2 = (dir, f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 
-// The first photos in core.js easyRank's order (Codex review #931): the reference-level photos (core.js refLevel) before
-// the rest, whatever their source flag, then the easiest; Pierre's cover and one photo per family before them. On t52's
-// shape: ten ease-3 photos of a FishBase main picture's kind (rep) and two ease-5 photos with the reference look, no rep,
-// which an order by the rep flag left out of the eight.
+// The first photos in core.js easyRank's order: the reference-level photos (core.js refLevel) before the rest, whatever
+// their source flag, then the easiest; Pierre's cover and one photo per family before them. The fixture: ten ease-3
+// photos of a FishBase main picture's kind (rep) and two ease-5 photos with the reference look, no rep, which an order by
+// the rep flag would leave out of the eight.
 test('fish_game.py first_photos: the reference-level photos first, as core.js easyRank; covers and families kept', () => {
   const rec = (f, sp, e, jt, k = {}) => ({f, sp, e, jt, ...k}),
     L = [
@@ -860,7 +857,7 @@ print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys
       )
     ).map(p => p.f);
   const got = first(L, cur);
-  // His cover on a juvenile: after the adults, unless he confirmed it (coverJ: autosort.js fishCoverJ; Pierre, 2026-11-15).
+  // His cover on a juvenile: after the adults, unless he confirmed it (coverJ: autosort.js fishCoverJ).
   const LJ = L.map(p => (p.f === 'fish-s1-cand-300' ? {...p, jt: 'p1g0sm1j'} : p));
   assert.notStrictEqual(first(LJ, cur)[0], 'fish-s1-cand-300', 'a juvenile cover not confirmed: not first');
   const curJ = {fish: {genera: {'f:A': {cover: 'fish-s1-cand-300', coverJ: 'fi300'}}}};
@@ -874,9 +871,8 @@ print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys
   );
   assert.ok(!C.refLevel(L[0]) && C.refLevel(L[10]));
 });
-// A watermarked photo (judged flag w, Q373) after its unit's adults without one (Pierre, 2026-11-15, Q379: the default
-// cover avoids them, app.js seenCover since #968, which reads the first photos until fish-game.json is in; on 2026-11-15
-// the genus units Gnathodentex, Neochirus and Dendrochirus had only watermarked first photos). Its units: the photo's
+// A watermarked photo (judged flag w) after its unit's adults without one (the default cover avoids them: app.js
+// seenCover reads the first photos until fish-game.json is in). Its units: the photo's
 // genus and its family (fish.json). Three cases: a unit with an adult without one, a unit whose adults all carry one
 // (order unchanged), and his ★ cover on a watermarked photo (first all the same, rule A1, with an adult without one of its
 // unit among the first photos).
@@ -916,7 +912,7 @@ print(json.dumps(G.first_photos({'t11': json.loads(sys.argv[1])}, json.loads(sys
   assert.ok(at('fish-s1-cand-2') < at('fish-s1-cand-1'), 'g:A1: the photo without a watermark first');
   assert.ok(at('fish-s1-cand-2') < at('fish-s2-cand-4'), "f:A: the family's photo without a watermark before g:A2's");
   assert.ok(at('fish-s3-cand-7') < at('fish-s3-cand-6'), 'f:B (no genus): the photo without a watermark first');
-  // 2. A unit whose adults all carry one: easyRank's order as before (the reference level first), never pushed back.
+  // 2. A unit whose adults all carry one: easyRank's order (the reference level first), never pushed back.
   assert.strictEqual(got[0], 'fish-s4-cand-8', "f:C's photos all watermarked: its reference-level photo leads");
   assert.ok(at('fish-s4-cand-9') < at('fish-s1-cand-1'), "f:C's second before the watermarked photos pushed back");
   // the leads, one per family, then the rest: none of them watermarked but f:C's
@@ -924,7 +920,7 @@ print(json.dumps(G.first_photos({'t11': json.loads(sys.argv[1])}, json.loads(sys
   assert.strictEqual(got[got.length - 1], 'fish-s1-cand-3', 'the juvenile last');
   // 3. His ★ cover on a watermarked photo: first all the same (his choice, rule A1); his unit's photo without one still
   // among the first photos, for the default card.
-  const mine = first({fish: {genera: {'g:A1': {cover: 'fi1'}}}}); // under its other name (core.js fishPid)
+  const mine = first({fish: {genera: {'g:A1': {cover: 'fi1'}}}}); // under its other name (core.js treePid)
   assert.strictEqual(mine[0], 'fish-s1-cand-1', 'his watermarked cover first');
   assert.ok(mine.includes('fish-s1-cand-2'), 'with the photo of his unit without a watermark');
   assert.deepStrictEqual(new Set(mine), new Set(L.map(p => p.f)), 'every photo kept (fewer than FIRST)');
@@ -962,7 +958,7 @@ test(
       })
     );
     const r = run(dir, out),
-      G = C.fishGameRead(read2(dir, 'fish-game.json')),
+      G = C.treeGameRead(read2(dir, 'fish-game.json')),
       P = read2(dir, 'fish-photos.json');
     assert.strictEqual(r.done, 6, 'the five game photos and the sheet-only one');
     ['', '-m', '-s', '-t'].forEach(s => assert.ok(fs.existsSync(path.join(out, `fi999${s}.webp`)), s));

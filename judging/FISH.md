@@ -116,23 +116,21 @@ no-source caps go with it (ROADMAP). The juvenile tag stays on every photo.
 
 ## Reference photos
 
-Pierre, 2026-11-05: a photo that a reference source uses to represent the species (FishBase's main picture of the
-species, iNaturalist's taxon cover) represents it well: such photos are easy to identify, so they should come early in
-the quiz for a beginner, and they suit the sheets. The data tags them (`rep`: `"fishbase"` or `"inaturalist"`, on
-`fish-cand.json` candidates and `fish-photos.json` sheet photos; `tools/fetch_fishbase.py`, `tools/fetch_fish.py --rep`).
-The judge never types anything for it and judges the photo on what it shows; the tool adds the flag `r`, which
-**never changes the ease** (`tools/fish_judge.py` `cap`): one judgement per photo, whatever its route in (Pierre,
-2026-11-17, on #942; from 2026-11-05 to then it added one ease point, which gave 423 photos judged both ways one point
-more as a reference photo than as a candidate). The flag weighs nothing in the order either (`core.js` `refScore`:
-"'référence' devrait être déduit des caractéristiques de la photo, pas un tag", Pierre, 2026-11-17), nor in the
-reference level (below, Pierre, 2026-11-18): it records the route, which only decides the download order
-(`tools/fish_game.py` `tier`). `python3 tools/judging_fish.py rep` re-applies the flag to the judged candidates after a new
-tag. Where the source is FishBase, the photo page (`o`) gives the author and the licence.
+A photo that a reference source uses to represent the species (FishBase's main picture of the species, iNaturalist's
+taxon cover) is a strong hint of a good photo, and enters the base first; once in, it is judged and placed on what it
+shows, like any other photo (rule P1; [the decision](../docs/decisions/2026-11-19-fish-reference-from-photo.md)). The
+data tags them (`rep`: `"fishbase"` or `"inaturalist"`, on `fish-cand.json` candidates and `fish-photos.json` sheet
+photos; `tools/fetch_fishbase.py`, `tools/fetch_fish.py --rep`). The judge never types anything for it and judges the
+photo on what it shows; the tool adds the flag `r`, which **never changes the ease** (`tools/fish_judge.py` `cap`): one
+judgement per photo, whatever its route in. The flag weighs nothing in the order (`core.js` `refScore`) nor in the
+reference level (below): it records the route, which only decides the download order (`tools/fish_game.py` `tier`).
+`python3 tools/judging_fish.py rep` re-applies the flag to the judged candidates after a new tag. Where the source is
+FishBase, the photo page (`o`) gives the author and the licence.
 
 **The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
 species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
 FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
-iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every genus the game has (every circle's, as `app.js` `fishGenera` has them; circle 1's alone until
+iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every genus the game has (every circle's, as `app.js` `treeGenera` has them; circle 1's alone until
 2026-11-18; `--genera`: only the genera with no reference photo yet, the rest kept) and every
 entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: all
 of them for a species, Pierre, 2026-11-08, Q229; the first for a genus or a family) that pass the game photo rules on
@@ -152,10 +150,8 @@ already in play** (another photo of it is a game photo) is judged against that o
 
 **Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`, `autosort.js` `fishRec`): a photo judged very
 easy (4-5) whose tags read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever
-took it and whatever its route in (Pierre, 2026-11-18: "La source ne devrait pas être le critère principal de 'référence'
-même si ça peut être un fort indice. L'ensemble des photos de référence doit avoir des qualités intrinsèques, basées sur
-des critères objectifs"; until then a `rep` photo judged 4-5 was one without the look); one kind of fish only (count `1`
-or `s`: never other species in view, `o` or `k`, nor an unclear subject, rule P3). A
+took it and whatever its route in (rule P1); one kind of fish only (count `1` or `s`: never other species in view, `o`
+or `k`, nor an unclear subject, rule P3). A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
 
@@ -189,11 +185,10 @@ Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: 
   Pierre's adds keep his tags and ease (`curation.json`, rule A1): where the new judgement changes the ease, the juvenile
   flag or whether the photo may play, it is proposed to him in the admin's Photo review › Light proposals, "One judgement
   per photo" (`judging/fish-one-judgement.json`, 38 photos; `admin-light.js` `LIGHT_SETS`).
-- **The route's ease point, gone (2026-11-17)**: the reference flag `r` came with one ease point from the record's
-  `rep`, which only the reference record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover;
-  `tools/fish_refs.json` every photo of the taxon page), so the same code gave a photo one point more as a reference photo
-  than as a candidate. Pierre chose to align (2026-11-17, #942's question, A); the point is gone on every route ("Reference
-  photos" above).
+- **The same ease on every route**: the reference flag `r` comes from the record's `rep`, which only the reference
+  record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json` every
+  photo of the taxon page); it adds nothing to the ease, so the same code gives the same ease whichever way the photo
+  came in ("Reference photos" above).
 
 ## Watermark (2026-11-15)
 
@@ -246,12 +241,12 @@ choices per family in the app" has the details.
   Pierre's ★ covers, and none has tags he set himself.
 - **Every band-kind photo has now been looked at.**
 - **The third pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of what Home can show.
-  - The set was computed with the app's own code. `fishBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
+  - The set was computed with the app's own code. `treeBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
     with `fish-game.json` in and on a first launch (`fish-photos.json` alone). The ratings re-sort only within each of
     `easyRank`'s two groups (reference-level photos first, then the others). So for each photo, an order favouring it
     was built (it first in its group, the photos that would beat it last), and `tilePhoto` was run on that order.
   - What Home can show is every photo `tilePhoto` returns that way, plus every band-kind photo (`landPool`). From that
-    were taken out the photos the first two passes looked at (by `core.js` `fishPid`): the tagged ones, every band-kind
+    were taken out the photos the first two passes looked at (by `core.js` `treePid`): the tagged ones, every band-kind
     photo of `fish-game.json` at #961's merge, and #956's Home draws (cover, card photo, `tilePhoto`, `landPool`)
     rebuilt at its merge in both orders.
   - New photos since #961: none. No photo entered `fish-game.json` since then, and `fish_game.py --plan` has none
@@ -286,6 +281,12 @@ choices per family in the app" has the details.
     No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
 - **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
   pools, or new code that lets Home show other photos.
+- **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
+  `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
+  photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
+  (nothing to download: the flag is its only change).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
@@ -350,7 +351,7 @@ crop, `fill`). Pierre checks the first tiles on one contact sheet (Q321 D4); aft
   start, a harder one comes rarely (until then, `model.js` `easyFirst` showed only the ease 4-5 photos before Open Water).
 - **The order photos are met in** (`core.js` `easyRank`, Pierre, 2026-11-06): the card's photo, the first photo of each
   list and the auto-sort's order are the easiest first, then the most reference-like by these tags (`refScore`:
-  profile, whole, good light, no colour loss, sharp, large, one fish; the flag `r` weighs nothing since 2026-11-17),
+  profile, whole, good light, no colour loss, sharp, large, one fish; the flag `r` weighs nothing),
   never by who took the photo nor by its route in.
 - **The order the entries open**: the starter core first (`fish.json` `start`), then the existing rule, easiest and
   most common first (`openPick`): an entry's difficulty is the mean of its photos' difficulty, so the judged ease
@@ -399,7 +400,7 @@ reference photos) or a fish out of the water (flag `a`) → stays out; the legac
 16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
 hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
 is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
-with Not this leaves the game at once, `core.js` `fishIn`). The admin's auto-sort still puts the same sure judgements
+with Not this leaves the game at once, `core.js` `treePhotoIn`). The admin's auto-sort still puts the same sure judgements
 into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
 agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
 while a wrong sure decision costs the players.
@@ -409,7 +410,7 @@ while a wrong sure decision costs the players.
 Pierre, 2026-11-09 (Q323): of the photos with other kinds of fish he had accepted, some show them with no risk of
 confusing them with the main fish, others where the confusion is real. The one code `m` became two, and both automatic
 routes follow the same rule (`autosort.js` `fishSure`, `tools/fish_game.py` `judged_sure`, through `core.js`
-`FISH_COUNT`; `tests/otherspecies.test.js`):
+`TREE_COUNT`; `tests/otherspecies.test.js`):
 
 - `o` **no confusion risk** (in play): the other fish could not be taken for the main one at the level the game asks
   (its family, or its genus for a circle-1 species, whose genus is a unit too): it is clearly not the subject (much

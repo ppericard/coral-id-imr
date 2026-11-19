@@ -88,7 +88,7 @@ test('the 27 IMR entries are level 1, circle 1, in the order of the IMR presenta
   c1.forEach(t => assert.strictEqual(t.level, 1, t.name));
 });
 
-// Identification groups (Pierre, 2026-11-04; rule S3): the key in force for this deployment's region
+// Identification groups (rule S3): the key in force for this deployment's region
 // (tools/fish_source.json deploy.key among keys; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish
 // groups. Every teaching node in the game (any circle, winks aside) carries one of its groups, unless the source marks it
 // as waiting (keyGroup null with keyWhy); fish.json is as `build_fish.py --regroup` gives it.
@@ -202,10 +202,10 @@ test('circles: 1, 2 or 3 in the game; barracudas, trumpetfishes, shrimpfishes an
   };
   assert.deepStrictEqual(
     F.teach.filter(t => t.circle === 2).map(t => t.name),
-    ['Barracuda', 'Trumpetfishes', 'Shrimpfishes', 'Sweepers'] // the last three: Pierre, 2026-11-08 (Q216)
+    ['Barracuda', 'Trumpetfishes', 'Shrimpfishes', 'Sweepers'] // the last three: Pierre's choice
   );
   GAME.filter(s => ['Sphyraenidae', 'Carangidae', 'Mugilidae'].includes(fam(s))).forEach(s => assert.ok(s.circle > 1, s.name));
-  // A species is in its family's circle, its teaching node's, whatever its source (Pierre, 2026-11-08, Q214).
+  // A species is in its family's circle, its teaching node's, whatever its source.
   F.teach.forEach(t => t.species.forEach(id => assert.strictEqual(SP.get(id).circle, t.circle, `${id} in ${t.name}`)));
 });
 
@@ -287,14 +287,14 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
       assert.ok(Number.isInteger(s.inat), `${s.name}: iNaturalist id`);
       assert.strictEqual(p.ph, true, `${s.name} in the game but not confirmed in the Philippines`);
     } else assert.ok(p.ph === false || /no circle|^not confirmed near Dauin$/.test(s.out), `${s.name}: out (${s.out}) but confirmed`);
-    // Confirmed near Dauin (Pierre, 2026-11-03): his own there, 2+ Research Grade observers there, or the IMR reference list.
+    // Confirmed near Dauin: his own there, 2+ Research Grade observers there, or the IMR reference list.
     if (s.inat) {
       assert.strictEqual(p.near, p.nearBy.length > 0, `${s.id}: near and nearBy disagree`);
       assert.strictEqual(p.nearBy.includes('imr'), !!s.pdf, `${s.id}: imr iff in the PDF list`);
       assert.strictEqual(p.nearBy.includes('observers'), p.dauinU >= 2, `${s.id}: observers iff 2+ observers near Dauin`);
     }
     // Circle 3, and every species off the IMR list (dauin, wink), only once confirmed near Dauin; such a species takes its
-    // family's circle (Pierre, 2026-11-08, Q214), its teaching node's.
+    // family's circle, its teaching node's.
     if (s.circle === 3 || ['dauin', 'wink'].includes(s.src))
       assert.ok(s.out || p.near, `${s.id} ${s.name}: in the game but not confirmed near Dauin`);
     if (s.out === 'not confirmed near Dauin') assert.ok(!p.near, `${s.id}: out as not confirmed near Dauin, but confirmed`);
@@ -317,7 +317,7 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
 
 // A PDF spelling shown another way, only by Pierre's decision (tools/fish_source.json species `shown`, its reason and date
 // in `shownWhy`; tools/build_fish.py shown_name): s278, printed "Neoniphon argentus" in the PDF, is shown as Neoniphon
-// argenteus, the spelling of FishBase, WoRMS and iNaturalist, with no "now" note (Pierre, 2026-11-14). The PDF spelling
+// argenteus, the spelling of FishBase, WoRMS and iNaturalist, with no "now" note. The PDF spelling
 // stays in the source's name; every lookup by id still finds the species' data (common names, facts, photos, presence),
 // and the PDF spelling typed still reads as the species (a slip within the tolerance).
 test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling point, its data intact', () => {
@@ -343,7 +343,7 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   assert.strictEqual(s.now, undefined);
   assert.strictEqual(s.check, undefined);
   // Its data, all found by id: common names, size and depth, presence, iNaturalist taxon, family and genus.
-  // iNaturalist's default first, the PDF's (its IMR name) second and marked (Q376 (a)).
+  // iNaturalist's default first, the PDF's (its IMR name) second and marked.
   assert.deepStrictEqual(s.cn, [['Silver squirrelfish'], ['Clearfin squirrelfish']]);
   assert.strictEqual(s.cni, 1);
   assert.strictEqual(s.common, 'Clearfin squirrelfish');
@@ -370,8 +370,8 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   });
   // Typed: the name shown exactly, the PDF spelling as a slip of it; both read as the species.
   const C = require('../core.js'),
-    X = C.fishGen(F, {}, {}),
-    N = C.fishTypeNames(X.gen, C.subjectOf('fish').typeDrop, C.fishNameIndex(F)),
+    X = C.treeGen(F, {}, {}),
+    N = C.treeTypeNames(X.gen, C.subjectOf('fish').typeDrop, C.treeNameIndex(F)),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   assert.deepStrictEqual([m('Neoniphon argenteus').exact, m('Neoniphon argenteus').sc], [true, ['s278']]);
   assert.deepStrictEqual([m('Neoniphon argentus').exact, m('Neoniphon argentus').sc], [false, ['s278']]);
@@ -405,8 +405,8 @@ print(json.dumps(out))
   ]);
 });
 
-// Species order inside an entry: the commonness index (Pierre, 2026-11-04; docs/FISH_PATH.md "Species order: the commonness
-// index", tools/fish_commonness.py): the most commonly met around Dauin first, each species of a teaching node with its
+// Species order inside an entry: the commonness index (docs/FISH_PATH.md "Species order: the commonness index",
+// tools/fish_commonness.py): the most commonly met around Dauin first, each species of a teaching node with its
 // index (cmi, 0-1), its sub-entries in the same order; fish.json is as `build_fish.py --commonness` gives it.
 test('species order inside an entry follows the commonness index', () => {
   F.teach.forEach(t => {
@@ -426,7 +426,7 @@ test('species order inside an entry follows the commonness index', () => {
     );
   });
   // The IMR 24 most sighted lead their entries unless the field counts say otherwise (weights 3 / 2 / 1): Pierre's
-  // examples from the review, the threespot dascyllus and the lemon damsel first among damselfish, the threadfin anthias
+  // examples, the threespot dascyllus and the lemon damsel first among damselfish, the threadfin anthias
   // before the purple one.
   const name = id => SP.get(id).name;
   const dams = F.teach.find(t => t.id === 't01').species.map(name);
@@ -480,8 +480,8 @@ print(json.dumps({'order': [i for i, _, _ in a], 'idx': {i: round(x, 4) for i, x
 });
 
 // A field source naming a species by a WoRMS synonym finds it whether the reference tree's keys are str (fish.json read
-// back) or int (the full build's fresh tree): until 2026-11-08 the full build missed the synonyms (Flavocaranx bajad,
-// "Carangoides bajad" in the field counts, got another index than --commonness gave it).
+// back) or int (the full build's fresh tree): Flavocaranx bajad, "Carangoides bajad" in the field counts, gets the same
+// index from both builds.
 // iNaturalist's taxon search misses some short names (Foa fo: 30 "foam" taxa); the build then asks the autocomplete, and
 // only then (a name the search finds is asked once).
 test('build: a species the iNaturalist search misses is found by the autocomplete', () => {
@@ -522,7 +522,7 @@ print(json.dumps(out))
   assert.deepStrictEqual(JSON.parse(r.stdout), [5, 5]);
 });
 
-// Two species of the index on one iNaturalist taxon (Codex #497: s104 / s105 both on 559534) get the same counts, in
+// Two species of the index on one iNaturalist taxon (as s104 / s105 both on 559534) get the same counts, in
 // whatever order they come; fetch() uses the client it is given.
 test('commonness fetch: species sharing an iNaturalist taxon all get its counts', () => {
   const code = `
@@ -546,10 +546,9 @@ print(json.dumps(out))
   for (const k of ['ab', 'ba']) assert.deepStrictEqual(o[k], {a: [7, 3, 3, 3], b: [7, 3, 3, 3]}, k);
 });
 
-// The starter core and the judged photos (Pierre, 2026-11-04: the fish beta opened on the wrong families and on photos
-// too hard for a beginner; judging/FISH.md, tools/fish_judge.py).
+// The starter core and the judged photos (judging/FISH.md, tools/fish_judge.py).
 const PH = read('fish-photos.json').photos,
-  GM = require('../core.js').fishGameRead(read('fish-game.json')).photos,
+  GM = require('../core.js').treeGameRead(read('fish-game.json')).photos,
   JUDGE = read('tools/fish_judge.json');
 test('start: the starter core, four easy circle-1 entries from Pierre’s fish-ID design, in fish.json and its source', () => {
   const byId = new Map(F.teach.map(t => [t.id, t]));
@@ -576,8 +575,8 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
   );
 });
 // judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
-// the flag r and no ease point (one judgement per photo, whatever its route in: Pierre, 2026-11-17).
-// The typed flags j c a w (w, a visible watermark or text: Q373), as tools/fish_judge.py CODE; w caps nothing.
+// the flag r and no ease point (one judgement per photo, whatever its route in).
+// The typed flags j c a w (w, a visible watermark or text), as tools/fish_judge.py CODE; w caps nothing.
 const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$/;
 const capOf = (code, phase, juvOk, rep) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
@@ -612,9 +611,8 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
     assert.ok(f in codes, `${f}: a crop without a judgement`);
     assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
   });
-  // Every circle-1 entry has at least 5 very easy photos in play (Pierre, 2026-11-04), so its first questions take turns
-  // among them (the draw strongly favours them at the start). Until 2026-11-15 the stopgap list (fish-photos.json, remote
-  // iNaturalist photos judged here) joined an entry short of them; it is retired, so fish-game.json alone must hold them.
+  // Every circle-1 entry has at least 5 very easy photos in play, so its first questions take turns among them (the draw
+  // strongly favours them at the start); fish-game.json alone holds them (no remote photo joins an entry short of them).
   c1.forEach(id => assert.ok((GM[id] || []).filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in play`));
   // The rubric's caps on the judged codes (juveniles, the night livery, partial, head / tail / top views, camouflage, out
   // of water, an unclear subject): never among the very easy photos.
@@ -625,11 +623,11 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
   });
 });
 
-// The curated photos (admin plan PR 7, tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
+// The curated photos (tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
 // an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
 // livery, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
-// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json alone):
-// every circle-1 entry keeps at least 5 very easy photos (Pierre, 2026-11-04).
+// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js treePhotos: fish-game.json alone):
+// every circle-1 entry keeps at least 5 very easy photos.
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
   const {execFileSync} = require('child_process'),
     C = require('../core.js'),
@@ -652,14 +650,14 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
       )
     ),
     entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
-  // Pierre's adds in play, then the photos that entered by themselves (Q180, Q199: candidates judged sure, reference-level
-  // photos; tests/fishgame.test.js checks the routes on a fixture). A species met only on the surprise cards keeps its 5
-  // best (Q372: tools/fish_game.py wink_trim, tests/winkstock.test.js), the auto-sort's adds among the others.
+  // Pierre's adds in play, then the photos that entered by themselves (candidates judged sure, reference-level photos;
+  // tests/fishgame.test.js checks the routes on a fixture). A species met only on the surprise cards keeps its 5 best
+  // (tools/fish_game.py wink_trim, tests/winkstock.test.js), the auto-sort's adds among the others.
   const wink = new Set(F.teach.filter(t => t.wink).flatMap(t => t.species || []));
   assert.strictEqual(
     plan.filter(p => !p.auto && !wink.has(p.sp)).length,
     Object.keys(FC.add || {}).filter(
-      f => !wink.has(FC.add[f]) && C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)
+      f => !wink.has(FC.add[f]) && C.treePhotoOn(FC, f, FC.add[f]) && !C.treeOther((FC.tags || {})[f], (S[f] || {}).jt)
     ).length,
     'every photo Pierre has in play is listed, but other species one could take for the subject (Q323)'
   );
@@ -677,10 +675,10 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
       assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
   });
   // The game once the workflow has downloaded the plan (fish-game.json is filled after a Publish): by teaching entry, as
-  // tools/fish_game.py lays it out; fishGen gives each photo to its species' family.
+  // tools/fish_game.py lays it out; treeGen gives each photo to its species' family.
   const G = {};
   plan.forEach(p => (G[entry.get(p.sp)] = G[entry.get(p.sp)] || []).push(p));
-  const X = C.fishGen(F, C.fishPhotos(PH, G, CUR));
+  const X = C.treeGen(F, C.treePhotos(PH, G, CUR));
   X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
 });
 
@@ -715,20 +713,20 @@ test('juvenile classes: every circle-1 entry classed, with sources, as in the so
   ['t04', 't14'].forEach(id => assert.match(c1.find(t => t.id === id).juv.by, /^Pierre, 2026-11-04/));
 });
 
-// Curated common names (Pierre, 2026-11-04: 1 to 3 per species; published as selected, 2026-11-08, Q313; docs/FISH_PATH.md
-// "Common names"; tools/fish_common.py): the count, the PDF's name first (rule C1), the sources, no name listed twice and
+// Curated common names (1 to 3 per species, published as selected; docs/FISH_PATH.md "Common names";
+// tools/fish_common.py): the count, the PDF's name first (rule C1), the sources, no name listed twice and
 // the selection's --check are in tests/fishcommon.test.js with fish.json cn and the game's use of them; here, the
 // selection's own rules.
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
-  // The IMR name (imr: its place; iNaturalist's default comes first since Q376 (a)).
+  // The IMR name (imr: its place; iNaturalist's default comes first).
   assert.strictEqual(P.s132.names[P.s132.imr].name, "Russell's snapper");
   assert.ok(P.s132.names[P.s132.imr].alt.includes('Russelss’s snapper'));
   assert.strictEqual(P.s008.names[P.s008.imr].name, 'Eastern triangular butterflyfish');
   assert.ok(P.s008.names[P.s008.imr].alt.includes('Eastern triangular'));
 });
 
-// Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a
+// FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a
 // name accepted as a spelling (alt) counts in the shared-name check (Dascyllus trimaculatus' "Three spot damsel" is
 // Pomacentrus tripunctatus' PDF name); a spelling that links two groups merges them (Antennarius striatus).
 test('common names: FishBase main name, shared spellings, linked spellings', () => {
@@ -745,7 +743,7 @@ test('common names: FishBase main name, shared spellings, linked spellings', () 
   );
 });
 
-// The game's units (Pierre, 2026-11-06 13:04 and 13:38; docs/reviews/2026-11-06-fish-units-plan.md): the book's
+// The game's units (docs/reviews/2026-11-06-fish-units-plan.md): the book's
 // families, then genera and species; the IMR course a tag (imr: IMR's name) on the families and genera it teaches.
 test('families: the book’s, every game species in exactly one, Amphiprion in the Damselfishes, Diploprion in the Soapfishes', () => {
   const FAM = new Map(F.families.map(f => [f.id, f])),
@@ -806,7 +804,7 @@ test('the IMR tag: IMR’s name on the 27 families and the genera IMR names; the
   });
 });
 
-// Pierre's declared look-alike groups of families (2026-11-06, from experience: the instance's layer, look): every pair
+// Pierre's declared look-alike groups of families (from experience: the instance's layer, look): every pair
 // of a group a look-alike both ways, its source beside IMR's in lsrc; they seed the traps and the confusion groups until
 // pooled fish answers exist (rule L7). An id that is not a family stops the build.
 test('declared look-alikes: Pierre’s family groups both ways, sourced; an unknown family stops the build', () => {
@@ -843,10 +841,10 @@ test('declared look-alikes: Pierre’s family groups both ways, sourced; an unkn
   assert.match(r.out, /f:Nofishes is not a family/);
 });
 
-// The units' reference photos (tools/fish_refs.py, judging/FISH.md "Reference photos"; Pierre, 2026-11-06: the covers
-// and first photos are reference photos, whoever took them): what iNaturalist shows to represent a species, genus or
+// The units' reference photos (tools/fish_refs.py, judging/FISH.md "Reference photos"; the covers and first photos are
+// reference photos, whoever took them): what iNaturalist shows to represent a species, genus or
 // family, taken only when it passes the game photo rules; once judged, in its entry's game photos with rep, and the
-// card's photo (core.js fishGen cover) is a reference photo wherever one is among the entry's easiest.
+// card's photo (core.js treeGen cover) is a reference photo wherever one is among the entry's easiest.
 test('reference photos: game photo rules, in play once judged, the cover where one is among the easiest', () => {
   const C = require('../core.js'),
     R = read('tools/fish_refs.json').photos,
@@ -862,7 +860,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(p.lic), `${p.f}: licence ${p.lic}`);
       assert.ok(p.for.length, `${p.f}: the units it stands for`);
       if (p.via) {
-        // FishBase (Pierre, 2026-11-06: in automatically when its licence allows): its main picture carries rep.
+        // FishBase (in automatically when its licence allows): its main picture carries rep.
         assert.ok(p.via === 'fishbase' && (!p.rep || p.rep === 'fishbase'), `${p.f}: FishBase's rep`);
         assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[^/]+$/, p.f);
         assert.match(p.a, /^\(c\) .+, via FishBase, some rights reserved \(CC BY-NC 4\.0\)$/, p.f);
@@ -877,11 +875,10 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       }
     })
   );
-  // In play through fish-game.json (tools/fish_game.py ref_play, auto "ref"; the stopgap list that took them until
-  // 2026-11-15 is retired): each one is listed in tools/fish_refs.json for a species of its entry, judged, and of one kind
-  // of fish (rule P3).
+  // In play through fish-game.json (tools/fish_game.py ref_play, auto "ref"): each one is listed in tools/fish_refs.json
+  // for a species of its entry, judged, and of one kind of fish (rule P3).
   const CUR = read('curation.json'),
-    played = C.fishPhotos(PH, GM, CUR);
+    played = C.treePhotos(PH, GM, CUR);
   Object.entries(GM).forEach(([tid, L]) =>
     L.filter(p => p.auto === 'ref').forEach(p => {
       assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
@@ -895,20 +892,20 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       .some(p => p.auto === 'ref'),
     'reference photos in play'
   );
-  [C.fishGen(F, PH), C.fishGen(F, played)].forEach(X =>
+  [C.treeGen(F, PH), C.treeGen(F, played)].forEach(X =>
     Object.values(X.gen).forEach(g => {
       const L = g.views.wide,
         top = Math.max(...L.map(p => p.e || 3));
       // Reference level (core.js refLevel): judged very easy (4-5) with the reference look, whatever the photo's route in.
-      // Below it, the flag r no longer picks the cover among the easiest (Pierre, 2026-11-17: refScore reads the photo).
+      // Below it, the easiest first: the flag r picks nothing (refScore reads the photo).
       if (L.some(p => C.refLevel(p))) assert.ok(C.refLevel(L.find(p => p.f === g.cover)), `${g.id}: its cover is not reference level`);
       else assert.strictEqual(L[0].e || 3, top, `${g.id}: the easiest first`);
     })
   );
 });
 
-// The name index's kind words (tools/fish_names.py, written into fish.json vn by build_fish.py; Pierre, 2026-11-09,
-// Q319, Q320): what the species' names give, each family with its role (k: 2 of its species or more, or all of them;
+// The name index's kind words (tools/fish_names.py, written into fish.json vn by build_fish.py): what the species'
+// names give, each family with its role (k: 2 of its species or more, or all of them;
 // w: known only), never a word of a "False ..." name, never a family's own name.
 test('fish.json vn: the kind words of the species names, as tools/fish_names.py gives them', () => {
   require('child_process').execFileSync('python3', ['tools/fish_names.py', '--check'], {cwd: require('path').join(__dirname, '..')});
@@ -934,7 +931,7 @@ test('fish.json vn: the kind words of the species names, as tools/fish_names.py 
   );
 });
 
-// Photos from another iNaturalist taxon (fish_source.json photoTaxon; Pierre, 2026-11-14, Q354 b): the build copies the
+// Photos from another iNaturalist taxon (fish_source.json photoTaxon): the build copies the
 // field as written and keeps the species' IMR name and its own taxon (inat: presence, commonness, links); the candidates
 // come from the photo taxon (tools/fetch_fish.py photo_taxon, tests/fishphotos.test.js).
 test('photoTaxon: copied from the source as written; the IMR name and its own inat kept', () => {
@@ -956,7 +953,7 @@ test('photoTaxon: copied from the source as written; the IMR name and its own in
       `${s.id}: one species per taxon`
     );
   }
-  // Q354 b: the two Pacific forms.
+  // The two Pacific forms.
   assert.deepStrictEqual(built.map(s => [s.id, s.name, s.inat, s.photoTaxon.inat, s.photoTaxon.name]).sort(), [
     ['s088', 'Chromis agilis', 1316764, 1313512, 'Pycnochromis pacifica'],
     ['s244', 'Halichoeres marginatus', 102056, 1474879, 'Halichoeres annularis']

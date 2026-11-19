@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The faster typed-answer reading (performance pass, 2026-11-09): core.js typeDist keeps three rows of its matrix
-// instead of the whole one, typeMatchIn skips a name whose length is further from the text's than its tolerance, and
-// typeElse reads its lists' names once per norm. Each gives exactly the answers of the code before, kept here as the
-// reference: the same distances, matches and nudges on the real fish and coral names, their slips and random texts.
+// The faster typed-answer reading: core.js typeDist keeps three rows of its matrix instead of the whole one,
+// typeMatchIn skips a name whose length is further from the text's than its tolerance, and typeElse reads its lists'
+// names once per norm. Each gives exactly the answers of the plain code, kept here as the reference: the same
+// distances, matches and nudges on the real fish and coral names, their slips and random texts.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -10,7 +10,7 @@ const test = require('node:test'),
 const C = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 
-// The code before the pass, word for word.
+// The plain code the fast one replaces, word for word.
 function distRef(a, b) {
   const d = Array.from({length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
@@ -86,11 +86,11 @@ const F = read('fish.json'),
   D = read('data.json');
 // The fish species' common names as entries (several per species, some shared), and the coral genera with their old
 // names (core.js typeNamesOf), each with texts: every name, slips of them, random letters, short and empty ones.
-const fishNames = [];
+const treeNames = [];
 F.species.forEach(s =>
   [s.common, ...(s.cn || []).flat()]
     .filter(Boolean)
-    .forEach((n, i) => fishNames.push({k: C.typeNormAll(n), g: s.id, old: i ? n : '', alt: i ? 1 : 0}))
+    .forEach((n, i) => treeNames.push({k: C.typeNormAll(n), g: s.id, old: i ? n : '', alt: i ? 1 : 0}))
 );
 const coralNames = C.typeNamesOf(
   [...Object.keys(D.gen), ...Object.keys((D.x || {}).gen || {})],
@@ -107,7 +107,7 @@ const textsOf = (raw, n = 120) => [
 ];
 
 test('typeDist: the distances of the whole matrix, on names and slips of every length', () => {
-  const raw = [...fishNames.map(x => x.k), ...coralNames.map(x => x.k)];
+  const raw = [...treeNames.map(x => x.k), ...coralNames.map(x => x.k)];
   for (let i = 0; i < 3000; i++) {
     const a = rnd() < 0.5 ? pick(raw) : slip(pick(raw)),
       b = rnd() < 0.3 ? slip(a) : pick(raw);
@@ -122,7 +122,7 @@ test('typeMatchIn: the same reading as before, fish common names and coral gener
   const fishRaw = F.species.flatMap(s => [s.common, ...(s.cn || []).flat()]).filter(Boolean);
   // a sample of the fish names (the reference reads every name of the list at every text: slow on all of them)
   // (two made-up entries as close to one text: a "which one?")
-  const fishSome = [...fishNames.filter((_, i) => i % 4 === 0), {k: 'reefgobyx', g: 'z1', old: ''}, {k: 'reefgobyy', g: 'z2', old: ''}];
+  const fishSome = [...treeNames.filter((_, i) => i % 4 === 0), {k: 'reefgobyx', g: 'z1', old: ''}, {k: 'reefgobyy', g: 'z2', old: ''}];
   let near = 0,
     exact = 0,
     close = 0,
@@ -130,8 +130,8 @@ test('typeMatchIn: the same reading as before, fish common names and coral gener
   [...textsOf(fishRaw.filter((_, i) => i % 7 === 0)), 'Reef goby z'].forEach(t => {
     const m = C.typeMatchIn(fishSome, t, C.typeNormAll),
       ref = matchRef(fishSome, t, C.typeNormAll);
-    // A name two species share (Twotone / Two-tone wrasse) reads as both since Q319 (shared), where the code before
-    // read "which one?" (near) on the same species: the sample meets one since the main names came first (Q376).
+    // A name two species share (Twotone / Two-tone wrasse) reads as both (shared), where the reference reads "which
+    // one?" (near) on the same species: the sample meets one because the main names come first.
     if (m && m.shared) assert.deepStrictEqual([...m.shared].sort(), [...ref.near].sort(), t);
     else assert.deepStrictEqual(m, ref, t);
     if (!m) none++;
@@ -155,7 +155,7 @@ test('typeElse: the same nudge as before, read twice (the names kept from the fi
       rank: () => 'family',
       own: g => (g.length % 2 ? 'Damselfish' : '')
     };
-  const other = fishNames.filter((_, i) => i % 6 === 0),
+  const other = treeNames.filter((_, i) => i % 6 === 0),
     raw = [...x.sci.slice(0, 40), ...x.common.slice(0, 80), ...other.map(o => o.old).filter(Boolean)];
   const kinds = new Set();
   for (let r = 0; r < 2; r++)

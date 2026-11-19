@@ -1,12 +1,12 @@
 require('./slot.js').testGuard();
-// The sea slugs' genus look-alikes (Pierre, 2026-11-17, Q390 D, on the survey docs/reviews/2026-11-17-seaslug-lookalikes-
-// survey.md): the genus pairs a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers)
-// enter as declared look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show
-// enter as data look-alikes, which the players' answers can drop; the species pairs wait for the species level.
+// The sea slugs' genus look-alikes (the survey docs/reviews/2026-11-17-seaslug-lookalikes-survey.md): the genus pairs
+// a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers) enter as declared
+// look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show enter as data
+// look-alikes, which the players' answers can drop; the species pairs wait for the species level.
 // - tools/seaslug_game.py genus_looks writes them into seaslug.json (genus look, dlook, lsrc) from
 //   tools/seaslug_lookalikes_cand.json;
-// - app.js fishGenera reads them (look, decl, lsrc, dl), model.js seeds the data look-alikes (dataSeed, isDataLook,
-//   dataLooks, confPrior), learn.js lists them on the sheets with their sources (fishGenusLooks).
+// - app.js treeGenera reads them (look, decl, lsrc, dl), model.js seeds the data look-alikes (dataSeed, isDataLook,
+//   dataLooks, confPrior), learn.js lists them on the sheets with their sources (treeGenusLooks).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -107,32 +107,32 @@ test('seaslug.json: the declared genus pairs across families of the survey, each
   // the pairs only iNaturalist shows, among them the survey's (§6.1)
   ['Hexabranchus', 'Phyllidia'].forEach(o => assert.ok(byName.Goniobranchus.dlook.includes(byName[o].id), o));
   assert.ok(byName.Chromodoris.dlook.includes('g:Nembrotha'));
-  // the species pairs wait: the one decided species pair (Q377) is the only species look
+  // the species pairs wait: the one decided species pair is the only species look
   assert.deepStrictEqual(
     F.species.filter(s => s.look).map(s => s.name),
     ['Hexabranchus lacer', 'Hexabranchus sanguineus']
   );
 });
 
-// app.js fishGenera as the app has it, on the real tree.
+// app.js treeGenera as the app has it, on the real tree.
 const SEA = C.subjectOf('seaslug'),
-  GM = C.fishGameRead(json('seaslug-game.json')),
+  GM = C.treeGameRead(json('seaslug-game.json')),
   ctx = {
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
 vm.createContext(ctx);
 vm.runInContext(
-  block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+  block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
   ctx
 );
-const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(SEA, json('curation.json'))), undefined, C.unitRankOf(SEA));
-ctx.fishGenera(X, F);
+const X = C.treeGen(F, C.treePhotos({}, GM.photos, C.treeCur(SEA, json('curation.json'))), undefined, C.unitRankOf(SEA));
+ctx.treeGenera(X, F);
 
-test('app.js fishGenera: the declared look-alikes join the siblings and the confusion groups, the data ones are seeds', () => {
+test('app.js treeGenera: the declared look-alikes join the siblings and the confusion groups, the data ones are seeds', () => {
   F.genera.forEach(G => {
     const g = X.gen[G.id],
       sib = F.genera.filter(o => o.family === G.family && o.id !== G.id).map(o => o.id);
@@ -143,9 +143,9 @@ test('app.js fishGenera: the declared look-alikes join the siblings and the conf
   });
   // the sea slug subject's duel pairs (app.js UNITS seaslug pairs): the declared pairs, each once
   const pairs = new Function(
-    'FISH',
+    'TREEU',
     'return ' +
-      block(src('app.js'), "Object.values(FISH ? FISH.gen : {})\n        .filter(g => g.rank === 'genus')", '),\n', {through: 0}) +
+      block(src('app.js'), "Object.values(TREEU ? TREEU.gen : {})\n        .filter(g => g.rank === 'genus')", '),\n', {through: 0}) +
       ')'
   )(X);
   const want = F.genera.flatMap(G => (G.look || []).filter(o => G.id < o).map(o => [G.id, o]));
@@ -198,13 +198,13 @@ test('model.js: a seeded pair is a data look-alike from the start, on the declar
   // mixed up 8 times in 20: still one
   M = model({'A|B': [20, 8]});
   assert.ok(M.isDataLook('A', 'B'));
-  // a pair nobody seeded still needs CONF.N offers and the trap score (core.js dataLook), as before
+  // a pair nobody seeded still needs CONF.N offers and the trap score (core.js dataLook)
   assert.ok(!model({'A|D': [10, 8]}).isDataLook('A', 'D'));
   assert.ok(model({'A|D': [20, 8]}).isDataLook('A', 'D'));
 });
 
-// learn.js fishGenusLooks: the sheet's list, on made-up units.
-test('learn.js fishGenusLooks: the declared ones with their sources, then the data ones while they stand', () => {
+// learn.js treeGenusLooks: the sheet's list, on made-up units.
+test('learn.js treeGenusLooks: the declared ones with their sources, then the data ones while they stand', () => {
   const L = src('learn.js'),
     c = {
       GX: id => ({'g:A': {}})[id],
@@ -216,9 +216,9 @@ test('learn.js fishGenusLooks: the declared ones with their sources, then the da
     };
   vm.createContext(c);
   vm.runInContext(
-    block(L, 'function fishGenusLooks(g, T) {', '\n}\n', {through: 1, file: 'learn.js'}) +
-      block(L, 'const fishGenusLooksOn = ', '\n', {through: 1, file: 'learn.js'}) +
-      '\nthis.f = fishGenusLooks; this.on = fishGenusLooksOn;',
+    block(L, 'function treeGenusLooks(g, T) {', '\n}\n', {through: 1, file: 'learn.js'}) +
+      block(L, 'const treeGenusLooksOn = ', '\n', {through: 1, file: 'learn.js'}) +
+      '\nthis.f = treeGenusLooks; this.on = treeGenusLooksOn;',
     c
   );
   const T = {gen: {'g:A': {}, 'g:B': {}, 'g:C': {}, 'g:D': {}}, go: id => (id === 'g:A' ? 'f:A' : id)},

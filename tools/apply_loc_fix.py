@@ -1,7 +1,7 @@
-# Location labels corrected by hand (Pierre, 2026-11-04, after the presence analysis): game photos whose `loc` says the
-# Philippines but whose iNaturalist observation is elsewhere. The five Anacropora photos below come from observations by
+# Location labels corrected by hand, found by the presence analysis: game photos whose `loc` says the Philippines but
+# whose iNaturalist observation is elsewhere. The five Anacropora photos below come from observations by
 # tomas_cedhagen in Sabah, Malaysia (place guesses "Sabah, MY", "Kampong Mantanani, Sabah", "Baik Island, Malaysia";
-# iNaturalist's places for them do not include the Philippines, place 6873, checked 2026-11-04). They become `world`, so
+# iNaturalist's places for them do not include the Philippines, place 6873). They become `world`, so
 # the presence rule applies to them as to any photo taken abroad (admin "out of rule" flag, presence.js). Re-runnable:
 #   python3 tools/apply_loc_fix.py
 import json, os, re, sys

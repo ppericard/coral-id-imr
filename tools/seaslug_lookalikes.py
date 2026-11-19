@@ -253,7 +253,7 @@ def pull(get, tree, source, today=None, log=print, parts=PARTS, prev=None, L=Non
 def pull_inat(get, tree, source, today=None, log=print):
     """The 'inat' part: the genera's ids, the observations and the similar species in both scopes, the partners."""
     roots, place = source['roots'], source['place']
-    sp = {s['inat']: s for s in tree['species'] if s.get('inat')}  # a species with no name yet has no taxon (Q389)
+    sp = {s['inat']: s for s in tree['species'] if s.get('inat')}  # a species with no name yet has no taxon
     log(f'pull: {len(sp)} species')
     gen = genus_ids(get, sp)
     names = sorted({g['name'] for g in tree['genera']})
@@ -348,7 +348,7 @@ def build(L, tree, source, P):
                 alias.setdefault(x, s['name'])
     byid = {s['inat']: s['name'] for s in L['species'] if s.get('inat')}
     game = {s['name'] for s in tree['species']}
-    gid = {s['inat']: s['name'] for s in tree['species'] if s.get('inat')}  # a species with no name yet has no taxon (Q389)
+    gid = {s['inat']: s['name'] for s in tree['species'] if s.get('inat')}  # a species with no name yet has no taxon
     ggame = {g['name'] for g in tree['genera']}
     gconf = {s['genus'] for s in L['species']}
     gfam = {s['genus']: s['family'] for s in L['species']}
