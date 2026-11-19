@@ -98,8 +98,15 @@
    "keep": "best"
   },
   "fish-s378-cand-683492286": {
-   "code": "p1g0ssk2",
-   "keep": "best"
+   "code": "p1g1ml14",
+   "keep": "best",
+   "crop": [
+    0.32,
+    0.35,
+    0.76,
+    0.62
+   ],
+   "note": "crop: the clownfish below leaves the frame; a shrimp's legs at the right edge (Q430)"
   },
   "fish-s378-cand-19529547": {
    "code": "o1g0sl13",

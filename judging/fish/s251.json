@@ -105,8 +105,15 @@
    "keep": "best"
   },
   "fish-s251-cand-603728341": {
-   "code": "p1g2slk2",
-   "keep": "best"
+   "code": "p1g2ml13",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.12,
+    1.0,
+    0.62
+   ],
+   "note": "crop: the fish below leaves the frame (Q430)"
   },
   "fish-s251-cand-683145700": {
    "code": "o1g1sm13",
@@ -157,11 +164,11 @@
    "keep": "best"
   },
   "fish-s251-cand-481978878": {
-   "code": "p1g0sm1j2",
+   "code": "p1d1mloj3",
    "keep": "best"
   },
   "fish-s251-cand-458789773": {
-   "code": "p1g0sl1j3",
+   "code": "p1g0ml1j3",
    "keep": "best"
   },
   "fish-s251-cand-458789772": {
@@ -173,7 +180,7 @@
    "keep": "best"
   },
   "fish-s251-cand-222901786": {
-   "code": "p1g0sm1j4",
+   "code": "p1g0sl1j4",
    "keep": "best"
   },
   "fish-s251-cand-690720205": {

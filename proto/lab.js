@@ -23,6 +23,9 @@ const LAB_ICONS = {
   gallery:
     '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
   idkey: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5"/>',
+  // A fish under a magnifier (the Fish ID Key).
+  fishkey:
+    '<circle cx="10" cy="10" r="7"/><path d="m20.5 20.5-5.5-5.5M6 10c1.2-1.6 2.6-2.4 4-2.4s2.6.8 3.4 2.4c-.8 1.6-2 2.4-3.4 2.4S7.2 11.6 6 10zM6 10l-1.5-1.2M6 10l-1.5 1.2"/>',
   type: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   pairs: '<rect x="3" y="6" width="10" height="14" rx="2"/><path d="M9 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6"/>',
   // Two photos side by side with an equals sign between them.
@@ -31,6 +34,9 @@ const LAB_ICONS = {
   // Three squares and a circle: three of a kind and the odd one out.
   oddone:
     '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><circle cx="17.25" cy="17.25" r="4.25"/>',
+  // Four photos over a row of names (Matrix, the game: the Feature matrix keeps `matrix`).
+  matrixgame:
+    '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><path d="M3 15h4M9 15h4M15 15h6M3 19.5h6M11 19.5h4M17 19.5h4"/>',
   // A card over a dimmed screen (the cards and pop-ups mock-up).
   cards:
     '<rect x="2.5" y="3.5" width="19" height="17" rx="2"/><rect x="6.5" y="7" width="11" height="10" rx="1.5"/><path d="M9 10.5h6M9 13.5h4"/>'
@@ -43,6 +49,7 @@ const LAB = {
   list: [],
   files: [
     'idkey',
+    'fishkey',
     'basics',
     'fishbasics',
     'map',
@@ -58,6 +65,7 @@ const LAB = {
     'pairs',
     'samediff',
     'oddone',
+    'matrixgame',
     'gallery',
     'cards'
   ],
@@ -243,8 +251,9 @@ function viewLab(h) {
   }
   const [id, ...args] = h.slice(4).split('|');
   const p = LAB.list.find(x => x.id === id);
-  // A Tools address of no tool here (a graduated one included: it lives in its section): the Tools page.
-  if (id && (!p || GRADUATED[id])) {
+  // A Tools address of no tool here (a graduated one included: it lives in its section), or of a tool not offered to this
+  // player (`on`: the Fish ID Key, while its subject is not open to them): the Tools page.
+  if (id && (!p || GRADUATED[id] || (p.on && !p.on()))) {
     location.replace(hr('lab'));
     return;
   }
@@ -257,7 +266,9 @@ function viewLab(h) {
   const votes = labVotes();
   // A prototype marked `admin` (a design mock-up for the owner, e.g. cards) is listed in the admin's browser only; its
   // link works for anyone.
-  const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
+  const order = LAB.files
+    .map(f => LAB.list.find(x => x.id === f))
+    .filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN) && (!p.on || p.on()));
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id] && p.hub !== false);
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>

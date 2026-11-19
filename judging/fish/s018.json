@@ -21,8 +21,15 @@
    "keep": "best"
   },
   "fish-s018-cand-742441732": {
-   "code": "p1g1ssk2",
-   "keep": "best"
+   "code": "p1g0mm1j4",
+   "keep": "best",
+   "crop": [
+    0.02,
+    0.02,
+    0.45,
+    0.45
+   ],
+   "note": "crop: the yellow fish below leaves the frame (Q430)"
   },
   "fish-s018-cand-635493032": {
    "code": "p1g1sm14",
@@ -121,8 +128,15 @@
    "keep": "best"
   },
   "fish-s018-cand-608257782": {
-   "code": "p1g0ssk1",
-   "keep": "best"
+   "code": "p1g0sl1j4",
+   "keep": "best",
+   "crop": [
+    0.55,
+    0.32,
+    0.79,
+    0.68
+   ],
+   "note": "crop: the soldierfish, the fish above left, the dark fish at right and a small one below leave the frame (Q430)"
   },
   "fish-s018-cand-485120060": {
    "code": "p1g1ss12",
@@ -185,7 +199,7 @@
    "keep": "best"
   },
   "fish-s018-cand-341284630": {
-   "code": "p0g0sm1j3",
+   "code": "p1g0mm1j3",
    "keep": "best"
   },
   "fish-s018-cand-730800159": {

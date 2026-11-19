@@ -145,7 +145,7 @@
    "keep": "best"
   },
   "fish-s270-cand-456026673": {
-   "code": "p1g0sl1j4",
+   "code": "p1g0sl1j5",
    "keep": "best"
   },
   "fish-s270-cand-456026705": {
@@ -161,8 +161,15 @@
    "keep": "dup"
   },
   "fish-s270-cand-626136903": {
-   "code": "o1g1ssk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.235,
+    0.05,
+    0.52,
+    0.48
+   ],
+   "note": "crop: the parrotfish at left and the wrasse below leave the frame (Q430)"
   },
   "fish-s270-cand-626136920": {
    "code": "o1g1ssx1",
@@ -234,7 +241,7 @@
    "keep": "dup"
   },
   "fish-s270-cand-456026723": {
-   "code": "p1g0sl1j3",
+   "code": "p1g0sl1j4",
    "keep": "alt"
   },
   "fish-s270-cand-456026729": {
@@ -242,16 +249,23 @@
    "keep": "dup"
   },
   "fish-s270-cand-439326472": {
-   "code": "p1g0sl1j3",
+   "code": "p1d0ml1j3",
    "keep": "best"
   },
   "fish-s270-cand-350151": {
-   "code": "o1g0sm1j3",
+   "code": "p1g0sl1j4",
    "keep": "best"
   },
   "fish-s270-cand-330076956": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "o1g1ml12",
+   "keep": "best",
+   "crop": [
+    0.45,
+    0.08,
+    0.95,
+    0.6
+   ],
+   "note": "crop: the dark fishes and the other cleaner wrasse leave the frame (Q430)"
   },
   "fish-s270-cand-729414607": {
    "code": "p1g1smk2",
@@ -278,7 +292,7 @@
    "keep": "best"
   },
   "fish-s270-cand-64586726": {
-   "code": "p1g0sl1j3",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s270-cand-666265069": {
@@ -314,7 +328,7 @@
    "keep": "best"
   },
   "fish-s270-cand-581660823": {
-   "code": "p1g0sl1j3",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s270-cand-430595676": {
@@ -326,7 +340,7 @@
    "keep": "best"
   },
   "fish-s270-cand-456027125": {
-   "code": "p1g0sm1j4",
+   "code": "p1d0ml1j3",
    "keep": "best"
   },
   "fish-s270-cand-476255385": {

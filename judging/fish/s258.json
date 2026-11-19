@@ -97,7 +97,7 @@
    "keep": "best"
   },
   "fish-s258-cand-450795247": {
-   "code": "p1g0sm1j3",
+   "code": "p1g1ml1j3",
    "keep": "best"
   },
   "fish-s258-cand-318722873": {
@@ -237,8 +237,15 @@
    "keep": "dup"
   },
   "fish-s258-cand-376525687": {
-   "code": "p1g1sskj1",
-   "keep": "best"
+   "code": "p1g1ml1j3",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.3,
+    0.85,
+    0.72
+   ],
+   "note": "crop: the anthias above leaves the frame (Q430)"
   },
   "fish-s258-cand-450795283": {
    "code": "d1g1sm1j3",

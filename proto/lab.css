@@ -4297,6 +4297,250 @@ body:has(.ikstart:not([hidden])) main {
   }
 }
 
+/* Fish ID Key (proto/fishkey.js): the search and the families' index in a sticky side column from tablet up, the species
+   on the right; on a phone the search stays at the top and the index folds. */
+.fklayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.fkside {
+  position: sticky;
+  top: var(--hdr-h, 56px);
+  z-index: 2;
+  background: var(--bg);
+  padding: 8px 0;
+  margin: -8px 0 0;
+}
+.fkbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fkbar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.fkcount {
+  flex: none;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fkidx {
+  margin-top: 8px;
+}
+.fkidx summary {
+  cursor: pointer;
+  font-family: var(--display);
+  font-weight: 600;
+  padding: 6px 0;
+}
+.fkidx[open] {
+  max-height: 55vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.fkig {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.fkgh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.fkjump {
+  display: inline-block;
+  margin: 0 12px 0 0;
+  min-height: 32px;
+  font-size: var(--fs-s);
+  text-align: left;
+}
+.fkjump small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.fkgroup > h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 4px;
+  font-size: var(--fs-l);
+}
+.fkgroup:first-child > h3 {
+  margin-top: 4px;
+}
+.fkgh .gn,
+.fkgroup > h3 .gn {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: hsl(var(--g, 200) 40% 88%);
+  color: hsl(var(--g, 200) 50% 24%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 30% 68%);
+  font-size: var(--fs-s);
+}
+:root[data-theme='dark'] :is(.fkgh, .fkgroup > h3) .gn {
+  background: hsl(var(--g, 200) 25% 24%);
+  color: hsl(var(--g, 200) 55% 84%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 25% 40%);
+}
+.fkfam {
+  scroll-margin-top: calc(var(--hdr-h, 56px) + 76px);
+  border-top: 1px solid var(--line);
+  padding: 8px 0 4px;
+}
+.fkfam h4 {
+  margin: 4px 0 6px;
+  font-size: var(--fs-m);
+  line-height: 1.35;
+}
+.fksci {
+  font-weight: 400;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.fksheet,
+.fkmeta a {
+  font-weight: 400;
+  font-size: var(--fs-s);
+}
+.fkgen h5 {
+  margin: 8px 0 4px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--muted);
+}
+.fklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.fksp {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  scroll-margin-top: calc(var(--hdr-h, 56px) + 76px);
+}
+.fkth {
+  position: relative;
+  display: block;
+  width: 96px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--photo-bg);
+  cursor: zoom-in;
+}
+.fkth img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fknone {
+  cursor: default;
+}
+.fkn {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--scrim);
+  color: var(--on-photo);
+  font-size: var(--fs-xs);
+}
+.fkt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fkname {
+  font-size: var(--fs-m);
+  user-select: all;
+}
+.fkworms,
+.fkmeta {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.fksrc {
+  margin-top: 24px;
+}
+.fkfam[hidden],
+.fkgen[hidden],
+.fkgroup[hidden],
+.fksp[hidden],
+.fkig[hidden],
+.fkjump[hidden] {
+  display: none;
+}
+@media (min-width: 600px) {
+  .fklayout {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 24px;
+  }
+  .fkside {
+    top: calc(var(--hdr-h, 56px) + 10px);
+    max-height: calc(100vh - var(--hdr-h, 56px) - 20px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 0 6px 0 0;
+    margin: 0;
+  }
+  .fkidx summary {
+    display: none;
+  }
+  .fkidx[open] {
+    max-height: none;
+    overflow: visible;
+  }
+  .fkjump {
+    display: block;
+    min-height: 0;
+    padding: 3px 0;
+  }
+  .fkfam,
+  .fksp {
+    scroll-margin-top: calc(var(--hdr-h, 56px) + 12px);
+  }
+}
+@media (min-width: 1024px) {
+  .fklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+  }
+  .fksp {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+  .fkth {
+    width: 132px;
+  }
+}
+
 /* Odd one out (proto/oddone.js): Find the X's four square tiles (app.css .fxt, quiz.js fitStage). Most photos here are shown
    whole, not as the fish's square cut, so each tile has a blurred copy of its photo behind it, as the quiz's photos do (no
    black bars): the same for the four, so no tile looks different from the others. */
@@ -4317,6 +4561,70 @@ body:has(.ikstart:not([hidden])) main {
 }
 @media (min-width: 1024px) {
   .q.ooq.done .qtop {
+    display: flex;
+  }
+}
+
+/* Matrix (proto/matrixgame.js): Find the X's tiles (as Odd one out's above, a blurred copy of the photo behind each) with the
+   five names beside them as the quiz's answers (app.css .ans). The tile and the name taken wait ringed in the accent colour; a
+   pair that is right keeps its tile named and ringed in --good (app.css .fxt.fok), its name ticked; a wrong one shows its
+   cross on the tile and the name until the next tap. The pair's line sits under the names, the round's end is the quiz's own
+   sheet. */
+.q.mxq .fxt::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background: var(--qbg, var(--photo-bg)) center/cover;
+  filter: blur(22px) brightness(0.55);
+}
+.q.mxq .fxt > button[data-c] {
+  position: relative;
+}
+.q.mxq .fxt.fsel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 4px solid var(--accent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.mxans button.sel {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.mxans button.ok:disabled {
+  opacity: 1;
+}
+.mxans > button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1024px) {
+  .mxans > button:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+.mxst:empty {
+  display: none;
+}
+.mxst .fb {
+  padding: 8px 12px;
+}
+.mxst .fb h3 {
+  margin-bottom: 2px;
+  font-size: var(--fs-l);
+}
+/* Round over, on a phone or tablet: the sheet is at the bottom and the stage takes the space above it, so the prompt and the
+   names would only peek out above the sheet. */
+.q.mxq.done .qtop,
+.q.mxq.done .mxans {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .q.mxq.done .qtop {
+    display: flex;
+  }
+  .q.mxq.done .mxans {
     display: flex;
   }
 }

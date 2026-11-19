@@ -169,7 +169,7 @@
    "keep": "best"
   },
   "fish-s051-cand-464596530": {
-   "code": "o1g0sl1j2",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s051-cand-464596534": {
@@ -197,7 +197,7 @@
    "keep": "dup"
   },
   "fish-s051-cand-380948527": {
-   "code": "p1g0sm1j3",
+   "code": "p1d0ml1j3",
    "keep": "best"
   },
   "fish-s051-cand-389684640": {
@@ -225,8 +225,15 @@
    "keep": "best"
   },
   "fish-s051-cand-605459689": {
-   "code": "p1g1smk2",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.33,
+    0.41,
+    1.0,
+    1.0
+   ],
+   "note": "crop: the rabbitfish above leaves the frame (Q430)"
   },
   "fish-s051-cand-761940789": {
    "code": "p1g1mss2",

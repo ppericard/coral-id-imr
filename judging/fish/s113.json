@@ -9,7 +9,7 @@
    "keep": "dup"
   },
   "fish-s113-cand-420838392": {
-   "code": "p1g0sm1j3",
+   "code": "o1g0ml1j3",
    "keep": "best"
   },
   "fish-s113-cand-535273352": {
@@ -41,7 +41,7 @@
    "keep": "dup"
   },
   "fish-s113-cand-327411837": {
-   "code": "p1g0sm1j3",
+   "code": "p1g0mm1j3",
    "keep": "best"
   },
   "fish-s113-cand-496628383": {
@@ -125,11 +125,18 @@
    "keep": "dup"
   },
   "fish-s113-cand-251136498": {
-   "code": "o1g1sskj1",
-   "keep": "best"
+   "code": "p1g1bm1j2",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.3,
+    0.72,
+    0.7
+   ],
+   "note": "crop: the large dark fish below leaves the frame (Q430)"
   },
   "fish-s113-cand-160129454": {
-   "code": "p1g0sl1j3",
+   "code": "p1g0mloj3",
    "keep": "best"
   },
   "fish-s113-cand-419346062": {

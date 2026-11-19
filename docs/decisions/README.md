@@ -58,8 +58,11 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-19 | [Photo stats › Difficulty for the fish: one page for every subject with ratings of its own](2026-11-19-admin-difficulty-every-subject.md) | #1270 |
+| 2026-11-19 | [Admin opening on a phone: curation.json read raw and kept by sha, suggest.json no longer holds a Players page back](2026-11-19-admin-opening.md) | #1271 |
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
 | 2026-11-19 | [Every answer of Pierre's reaches its doc, and an append-only ledger of his answers](2026-11-19-answers-ledger.md) | #1188 |
+| 2026-11-19 | [What the auto-sort proposed reads the newer judgement; a photo it set aside has a route back](2026-11-19-auto-proposals-newer-judgement.md) | #1259 |
 | 2026-11-19 | [Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file](2026-11-19-autosort-followup.md) | #1183 |
 | 2026-11-19 | [CI speed, second step: the admin 1280 smoke in three groups balanced by the measured time of each part](2026-11-19-ci-admin-split.md) | #1243 |
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
@@ -70,7 +73,9 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
 | 2026-11-19 | [Doc size marks: a warning to check the doc, never a wall; ROADMAP keeps its open items, the decisions index is whole](2026-11-19-doc-size-marks.md) | #1255 |
 | 2026-11-19 | [The duel achievement counts a right Again like a right duel](2026-11-19-duel-ach-again.md) | #1227 |
+| 2026-11-19 | [Fish photos: a full-size look when the judge doubts; the juvenile re-rate's tag doubts settled](2026-11-19-fish-full-size-look.md) | #1269 |
 | 2026-11-19 | [The fish genus page's "Don't confuse with" lists sourced pairs only](2026-11-19-fish-genus-dont-confuse.md) | #1171 |
+| 2026-11-19 | [Fish ID Key for EventMeasure: every IMR PDF species, by key group, family and genus, in the Lab](2026-11-19-fish-id-key-lab.md) | #1258 |
 | 2026-11-19 | [Juveniles (fish and sea slugs): no ease cap; the judged ease is the starting point](2026-11-19-fish-juvenile-no-cap.md) | #1237 |
 | 2026-11-19 | [The fish juveniles sourced per species: a class label for the analyses and a line on the species sheet](2026-11-19-fish-juveniles-sourced.md) | #1235 |
 | 2026-11-19 | [Fish name roots, circles 2-3: every genus rooted or skipped](2026-11-19-fish-name-roots.md) | #1248 |
@@ -89,8 +94,10 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [learnsim fish profiles: species known by the IMR cheatsheet and commonness, values assumed until fitted](2026-11-19-learnsim-fish-species.md) | #1251 |
 | 2026-11-19 | [Live answers on units not opened count, opening nothing; answers before a card are never its question](2026-11-19-live-locked-units.md) | #1234 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
+| 2026-11-19 | [Matrix: a Lab prototype, four photos and five names, two taps, a free retry, untimed, no effect on progress](2026-11-19-matrix-lab.md) | #1262 |
 | 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
+| 2026-11-19 | [Every game mode for every subject: the Duel tab first, a closed mode names its reason](2026-11-19-modes-every-subject.md) | #1265 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
 | 2026-11-19 | [Odd one out: a Lab prototype, three of a unit and one intruder, untimed, no effect on progress](2026-11-19-odd-one-out-lab.md) | #1253 |
 | 2026-11-19 | [One answer recorder for every game: the photo quiz and the live game record through quiz.js recordAnswer](2026-11-19-one-answer-recorder.md) | #1213 |
@@ -100,6 +107,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [The measured block: photo values computed once from the pixels, in measured.json](2026-11-19-photo-measured-block.md) | #1229 |
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [The privacy page: a short notice, the points the law asks for, no internal detail](2026-11-19-privacy-short.md) | #1095 |
+| 2026-11-19 | [The ROADMAP holds every decision: the backlog recount applied, the row details back in the rows, the check reads ROADMAP items](2026-11-19-roadmap-holds-every-decision.md) | #1264 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
 | 2026-11-19 | [The rules core: AGENTS.md cut to what every task holds, the index to docs/rules/, S1 and L6 merged](2026-11-19-rules-core.md) | #1217 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
@@ -109,6 +117,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
+| 2026-11-19 | [Sea slug ID marks for every circle-2 genus](2026-11-19-seaslug-marks-circle2.md) | #1238 |
 | 2026-11-19 | [Sea slug ID marks for circle 3: 30 of 32 genera, a line from one game species written "as X. y"](2026-11-19-seaslug-marks-circle3.md) | #1236 |
 | 2026-11-19 | [Sea slug species sheets: sourced ID marks, shown as drafts until Pierre validates them](2026-11-19-seaslug-species-marks.md) | #1263 |
 | 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |

@@ -428,7 +428,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   copies the names into `seaslug.json` (`en`, `ensrc`). `tests/seaslug-names.test.js`.
 - **`seaslug_cues.py`, `seaslug_cues.json`**: the sourced ID marks: `seaslug_cues.json` holds, by genus and by family, 1
   to 3 short visible features in our words (`marks`, each line with its sources: `src` {t, u} and where in it), and
-  `none`, a circle-1 genus left without marks and why. `seaslug_cues.py` (`apply`, run by `tools/seaslug_game.py`
+  `none`, a genus left without marks and why. `seaslug_cues.py` (`apply`, run by `tools/seaslug_game.py`
   `build`) checks them (a source on every line, https, at most 80 characters, no number, a species named only among the
   genus's game species, rule C6; every circle-1 genus in marks or none; every source used) and puts `marks`, `msrc`,
   `mby` on `seaslug.json`'s genera and families, as on a fish genus (`tools/fish_genus_marks.json`), so the fish engine

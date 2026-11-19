@@ -59,6 +59,7 @@ const SHELL = [
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...[
     'idkey',
+    'fishkey',
     'basics',
     'fishbasics',
     'map',
@@ -74,6 +75,7 @@ const SHELL = [
     'pairs',
     'samediff',
     'oddone',
+    'matrixgame',
     'gallery',
     'cards'
   ].map(f => `proto/${f}.js?v=84`)

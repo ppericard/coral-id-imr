@@ -17,8 +17,15 @@
    "keep": "best"
   },
   "fish-s103-cand-727976935": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "p1g1bl1j2",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.6,
+    0.85,
+    1.0
+   ],
+   "note": "crop: the damselfish and the chromis above leave the frame (Q430)"
   },
   "fish-s103-cand-692375039": {
    "code": "p1g1sms3",
@@ -113,7 +120,7 @@
    "keep": "best"
   },
   "fish-s103-cand-59090644": {
-   "code": "p1g0sloj4",
+   "code": "p1g0sl1jw4",
    "keep": "best"
   },
   "fish-s103-cand-350284394": {
@@ -121,7 +128,7 @@
    "keep": "best"
   },
   "fish-s103-cand-458620176": {
-   "code": "p1g1sl1j2",
+   "code": "p1g0bl1j2",
    "keep": "best"
   },
   "fish-s103-cand-458620182": {

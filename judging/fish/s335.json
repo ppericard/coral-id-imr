@@ -57,8 +57,15 @@
    "keep": "best"
   },
   "fish-s335-cand-689549889": {
-   "code": "p1g2bmk1",
-   "keep": "best"
+   "code": "p1g1bl12",
+   "keep": "best",
+   "crop": [
+    0.27,
+    0.23,
+    0.85,
+    0.75
+   ],
+   "note": "crop: the butterflyfishes above and at right leave the frame (Q430)"
   },
   "fish-s335-cand-689549944": {
    "code": "p1g2bsm1",
@@ -173,7 +180,7 @@
    "keep": "best"
   },
   "fish-s335-cand-18154499": {
-   "code": "p1n0sl1j4",
+   "code": "p1g0sl1jw4",
    "keep": "best"
   },
   "fish-s335-cand-243481470": {
@@ -197,8 +204,15 @@
    "keep": "best"
   },
   "fish-s335-cand-521427480": {
-   "code": "p1g0smk1",
-   "keep": "best"
+   "code": "p1g1bl12",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.44,
+    0.75,
+    0.85
+   ],
+   "note": "crop: the surgeonfishes at left and below leave the frame (Q430)"
   },
   "fish-s335-cand-471327992": {
    "code": "p1d3bs11",

@@ -121,7 +121,7 @@
    "keep": "best"
   },
   "fish-s174-cand-306588050": {
-   "code": "p1g1sl1j3",
+   "code": "p1g0ml1j4",
    "keep": "best"
   },
   "fish-s174-cand-306588036": {
@@ -193,8 +193,15 @@
    "keep": "best"
   },
   "fish-s174-cand-579364549": {
-   "code": "o1g1smkj1",
-   "keep": "best"
+   "code": "p1g1sl1j4",
+   "keep": "best",
+   "crop": [
+    0.34,
+    0.15,
+    0.63,
+    0.69
+   ],
+   "note": "crop: the damselfish at left and the cardinalfish below leave the frame (Q430)"
   },
   "fish-s174-cand-265926236": {
    "code": "p1g0sm1j3",
