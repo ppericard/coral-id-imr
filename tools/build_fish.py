@@ -121,6 +121,7 @@ SPMARKS = ROOT / "tools" / "fish_species_marks.json"  # the species' own ID mark
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
+JUVS = ROOT / "tools" / "fish_juveniles.json"  # the juveniles per species: class label, sheet line, sources (juveniles)
 OUT = ROOT / "fish.json"
 CUR = ROOT / "curation.json"  # read only, for show_rootless: the content editor's circle edits
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
@@ -797,6 +798,7 @@ def add_families(o, key, declared=()):
     fish_names.apply(o, {"keys": [key] if key else []})
     lookalikes(o)
     species_marks(o)
+    juveniles(o)
     return o
 
 
@@ -895,6 +897,105 @@ def species_marks(o, path=None):
         sys.exit(f"{p.name}: game species with neither marks nor a reason in none: {', '.join(lost)}")
     if set(S) - used:
         sys.exit(f"{p.name}: sources never used: {', '.join(sorted(set(S) - used))}")
+
+
+JUV_CLS = ("off", "finer", "bold", "like")  # never A/B/C: the entries' classes (fish.json juv) stay the draw's alone
+
+
+def juv_entry_class(t, s):
+    """The class a species takes from its IMR entry's juvenile classes (t: its teaching node, s: the species), as
+    tools/fish_juveniles.json "classes" words it: class A or early -> bold, B -> off, late -> finer for Halichoeres and
+    Thalassoma ("alike across species"), off for the others (the mimics), C -> like; None otherwise."""
+    j = (t or {}).get("juv") or {}
+    names = [n for n in (s["name"], s.get("now")) if n]
+    has = lambda L: any(n == x or n.startswith(x + " ") for x in L or [] for n in names)
+    if j.get("cls") == "A" or has(j.get("early")):
+        return "bold"
+    if j.get("cls") == "B":
+        return "off"
+    if has(j.get("late")):
+        return "finer" if s["name"].split()[0] in ("Halichoeres", "Thalassoma") else "off"
+    return "like" if j.get("cls") == "C" else None
+
+
+def juveniles(o, path=None):
+    """The juveniles per species (tools/fish_juveniles.json, hand-kept from the sourcing of 2026-11-19, every line and
+    class with its source and quote; Pierre, 2026-11-19, Q435), checked and written into fish.json species jv {c (the
+    class label: off, finer, bold, like), line (one plain sentence on the juvenile, shown on its species sheet:
+    learn.js juvNote), src [{t, u}] (the line's sources), look (the id of a look-alike a source names)}. A label for the
+    analyses only: the draw, the ease and the judging read the entries' classes (juv), never jv (tests/fishjuv.test.js).
+    Stops on: a species not in the game, a class not one of four, a class by source or a line without a sourced quote,
+    a class by entry that is not its entry's, a look-alike not a game species present in the Philippines, or a line
+    naming a species of a game genus that is not one (rule C6)."""
+    p = Path(path) if path else JUVS
+    doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    if set(doc) - {"about", "read", "classes", "species", "none"}:
+        sys.exit(f"{p.name}: keys about, read, classes, species and none only")
+    if doc and set(doc.get("classes", {})) != set(JUV_CLS):
+        sys.exit(f"{p.name}: classes defines {', '.join(JUV_CLS)}")
+    for s in o["species"]:
+        s.pop("jv", None)
+    by = {s["name"]: s for s in o["species"]}
+    node = {}
+    for t in o["teach"]:
+        for i in t["species"]:
+            node.setdefault(i, t)
+    genera = {g["name"] for g in o.get("genera", [])}
+
+    def game_ph(s):
+        return bool(s and s.get("circle") and (s.get("present") or {}).get("ph"))
+
+    for n, x in (doc.get("species") or {}).items():
+        s = by.get(n)
+        bad = lambda why: sys.exit(f"{p.name} {n}: {why}")
+        if not s or not s.get("circle"):
+            bad("not a game species of fish.json")
+        if set(x) - {"cls", "by", "entry", "line", "differs", "look", "ease", "src"}:
+            bad("keys cls, by, entry, line, differs, look, ease and src only")
+        src = x.get("src") or []
+        for r in src:
+            if set(r) != {"t", "u", "q"} or not str(r["u"]).startswith("https://") or not str(r["q"]).strip() or not str(r["t"]).strip():
+                bad("a source is {t, u (https), q (its quote)}")
+        c = x.get("cls")
+        if c is not None:
+            if c not in JUV_CLS:
+                bad(f"cls is one of {', '.join(JUV_CLS)}")
+            if x.get("by") == "source":
+                if not src:
+                    bad("a class by source needs a sourced quote")
+            elif x.get("by") == "entry":
+                if juv_entry_class(node.get(s["id"]), s) != c or x.get("entry") != node[s["id"]]["id"][:3]:
+                    bad(f"a class by entry is its entry's ({juv_entry_class(node.get(s['id']), s)}, {node[s['id']]['id'][:3]})")
+            else:
+                bad("by is source or entry")
+        for k in ("line", "differs", "ease"):
+            if x.get(k) is not None and (not str(x[k]).strip() or not src):
+                bad(f"{k} without a sourced quote")
+        if not c and not x.get("line"):
+            bad("neither a class nor a line: list it in none")
+        line = x.get("line") or ""
+        # a species name: a game genus and a Latin-looking epithet ("Pomacentrus damsel" is words, not a species)
+        for g, e in re.findall(r"\b([A-Z][a-z]+) ([a-z]+(?:us|um|a|is|i|es|ens|ans|or|ax|ex|ix|ys))\b", line):
+            if g in genera and not game_ph(by.get(f"{g} {e}")):
+                bad(f"its line names {g} {e}, not a game species present in the Philippines (rule C6)")
+        look = None
+        if x.get("look") is not None:
+            lk = by.get(x["look"])
+            if not game_ph(lk) or lk is s:
+                bad(f"look {x['look']}: not a game species present in the Philippines")
+            look = lk["id"]
+        jv = {}
+        if c:
+            jv["c"] = c
+        if x.get("line"):
+            jv["line"] = x["line"]
+            jv["src"] = list({r["u"]: {"t": r["t"], "u": r["u"]} for r in src}.values())
+        if look:
+            jv["look"] = look
+        s["jv"] = jv
+    for n in doc.get("none") or []:
+        if n not in by or n in (doc.get("species") or {}):
+            sys.exit(f"{p.name}: none {n}: not a species of fish.json, or also in species")
 
 
 def lookalikes(o, path=None):
@@ -1244,7 +1345,7 @@ def dumps(o):
 
 
 def main():
-    global NET, GMARKS, SPMARKS, CUR
+    global NET, GMARKS, SPMARKS, CUR, JUVS
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1259,7 +1360,10 @@ def main():
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
     ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     ap.add_argument("--spmarks", help=argparse.SUPPRESS)  # tests: another species marks file (fish_species_marks.json)
+    ap.add_argument("--juveniles", help=argparse.SUPPRESS)  # tests: another juveniles file (fish_juveniles.json)
     a = ap.parse_args()
+    if a.juveniles:
+        JUVS = Path(a.juveniles)
     if a.marks:
         GMARKS = Path(a.marks)
     if a.spmarks:

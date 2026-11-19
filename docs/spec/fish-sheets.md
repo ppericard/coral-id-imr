@@ -55,11 +55,12 @@ single-species genus row:
 - the scientific name first (the PDF name), its common name, "now … in WoRMS" when WoRMS renamed it;
 - its family and genus, "★ IMR most sighted #n", "On the IMR reference list" and "Confirmed near Dauin" or "Not
   confirmed near Dauin" (`present.near`, rule C8's words); its size and depth ([below](#size-and-depth));
-- its ID marks, as drafts ([below](#species-id-marks));
+- its ID marks, as drafts (`marks`, `msrc`, `mby`, `mdraft`; [decision](../decisions/2026-11-19-fish-species-marks.md));
 - its rank in its family by the commonness index (`cmi`);
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
+- "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
@@ -89,15 +90,6 @@ its type, the depth range; never its web pages), into `tools/fish_facts.json`; `
 sheet shows "Up to 10 cm · 1-36 m deep" with the source (`spFacts`; a length type other than total length in words), the
 family sheet the range of its species' largest sizes (`famSizes`); nothing is shown for a species neither source gives.
 
-## Species ID marks
-
-Each game species has 1 to 3 adult ID marks telling it from its genus's other game species, or a reason in `none`:
-`tools/fish_species_marks.json` (format in its `about`; each mark with the page's words it rests on), agent drafts
-until Pierre validates them; look-alikes and ease words are kept there, not shown yet.
-`add_families` (`species_marks`) builds them into `fish.json` species (`marks`, `msrc`, `mby`, `mdraft`) with the genus
-marks' checks, plus look-alikes in the Philippines and every game species covered (`--spmarks`: tests).
-`learn.js` `marksBox`, the genus marks' box, shows them with "Draft, not yet reviewed" while `mdraft`.
-
 ## Genus common names
 
 `tools/fish_genus_names.json` (`genera` {id: {common, from, word}}), only where a widely used one exists: `from: imr`,
@@ -126,3 +118,10 @@ of any circle without a presentation, or with neither marks nor a reason (`--mar
 another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks a genus unit's tips (`qt`) under "ID
 marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
 `learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `treeRoot`).
+
+## Juveniles per species
+
+`tools/fish_juveniles.json`, each species' juvenile from external sources with their quotes, is built into `fish.json`
+species `jv` {c: off, finer, bold or like, line, src, look} by `tools/build_fish.py` `juveniles`, which checks it; the
+sheet shows `line` (`learn.js` `juvNote`). The class is a label for the analyses: nothing in the draw, the ease or the
+judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2026-11-19-fish-juveniles-sourced.md).

@@ -1,7 +1,7 @@
 # Fish species sheets: sourced adult ID marks, shown as drafts until Pierre validates them
 
-Date: 2026-11-19. PR: #1232. Rules or docs touched: C1, C2, C3, C5, C6, S1; docs/spec/fish-sheets.md "Species ID
-marks", ROADMAP "Fish sheets at three levels".
+Date: 2026-11-19. PR: #1232. Rules or docs touched: C1, C2, C3, C5, C6, S1; docs/spec/fish-sheets.md "The species
+sheet", ROADMAP "Fish sheets at three levels".
 
 ## Context
 
@@ -31,6 +31,10 @@ Choices made while building, not decided with Pierre, each easy to change (integ
 
 ## Consequences
 
+- Each game species has 1 to 3 adult marks telling it from its genus's other game species, or a reason in `none`
+  (`tools/fish_species_marks.json`, format in its `about`, each mark with the page's words it rests on); `add_families`
+  builds them into `fish.json` species (`marks`, `msrc`, `mby`, `mdraft`; `--spmarks`: tests); `learn.js` `marksBox`,
+  the genus marks' box, shows them with "Draft, not yet reviewed" while `mdraft`.
 - `tools/build_fish.py` `species_marks` checks every line (a source and its words, no number, 80 characters, only
   game species of its genus named) and that every game species has marks or a reason; `tests/speciesmarks.test.js`.
 - Six new points in `points.json` (names, sources, a trainer question), none settled.

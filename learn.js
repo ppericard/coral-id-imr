@@ -386,7 +386,7 @@ function viewGenus(name) {
       <div class="idbox">
         ${plainLine(g)}${esrcP(g, 'plain')}
         ${g.x ? `<div class="tipbox"><h3>ID tips${g.qsrc && g.qsrc.t ? '' : ` <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span>`}</h3>${tipsList(g)}</div>` : ''}
-        ${tipsIn || g.mn ? `<div class="tipbox">${tipsIn ? `<h3>ID tips (IMR)${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
+        ${tipsIn || g.mn ? `<div class="tipbox">${tipsIn ? `<h3>${g.tl || 'ID tips (IMR)'}${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
         ${rootLine(g, slateOf(DATA))}
         ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}${esrcP(g, 'imr')}</div>` : ''}
         ${imr.length ? '' : cfList}
@@ -1183,6 +1183,16 @@ function treeGenusRow(g, flat) {
 // FishBase's length types other than total length (species LTypeMaxM), in words.
 const LTYPE = {SL: 'standard length', FL: 'fork length', WD: 'disc width', OT: '(another measure)'};
 const srcA = x => `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`;
+// A sourced juvenile line (the family sheet's juv.note, the species sheet's jv.line: tools/fish_juveniles.json), its
+// sources numbered after it: src a list of URLs or of {t, u}; lead a few words before it, extra after the numbers.
+const juvNote = (text, src, {lead = '', extra = ''} = {}) =>
+  `<p class="fjuv">${lead}${esc(text)}${(src || [])
+    .map(x => (typeof x === 'string' ? {u: x} : x))
+    .map(
+      (x, i) =>
+        ` <a class="srcn" href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener" title="${esc(x.t || 'Source ' + (i + 1))}">[${i + 1}]</a>`
+    )
+    .join('')}${extra}</p>`;
 // The source the content editor gave with his edit of slot k of record r (core.js contentApply esrc: optional, shown
 // with the slot when given): esrcOf its record, esrcIn a few words after a text, esrcP a line
 // after a list; '' without one. esrcT its words alone, for a line inside a link (a look-alike card).
@@ -1311,14 +1321,7 @@ function treeFamily(f) {
     jsec =
       phase || f.juv || juv.length
         ? `<h3>Juveniles and phases</h3>${phase ? `<ul class="crit">${f.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="note">IMR fish presentation${f.sl ? ', ' + slideLine(f.sl) : ''}</p>${esrcP(f, 'phase')}` : ''}${
-            f.juv && f.juv.note
-              ? `<p class="fjuv">${esc(f.juv.note)}${(f.juv.src || [])
-                  .map(
-                    (x, i) =>
-                      ` <a class="srcn" href="${esc(safeUrl(x))}" target="_blank" rel="noopener" title="Source ${i + 1}">[${i + 1}]</a>`
-                  )
-                  .join('')}${esrcIn(f, 'juv.note')}</p>`
-              : ''
+            f.juv && f.juv.note ? juvNote(f.juv.note, f.juv.src, {extra: esrcIn(f, 'juv.note')}) : ''
           }${juv.length ? `<div class="ftiles juv">${juv.map(p => `<figure class="ftile">${treePic(p, flat, p.t || 'Juvenile')}<figcaption><i>${esc(p.t || '')}</i><span>Juvenile</span></figcaption></figure>`).join('')}</div>` : ''}`
         : '';
   $v.innerHTML = `<p class="lede">${sheetWord('famLede') ? sheetWord('famLede')(f) : `One family of ${key ? esc(key.short) : 'the identification key'} on one page, under its English name, its scientific name or names below. The <b>ID tips (IMR)</b> are the IMR fish presentation's. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next family.'}</p>
@@ -1482,6 +1485,7 @@ function fishSpecies(s) {
           }`
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
+    ${s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''}
     ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
     ${glooks.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${glooks.map(L => treeGenusLookCard(g, T, L)).join('')}</div></section>` : ''}
     <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p></details>

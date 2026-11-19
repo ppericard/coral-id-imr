@@ -1089,6 +1089,170 @@
         {"t": "Coral Finder, earlier printing (R. Kelley, 2009), Pierre's Drive copy"},
         {"t": "Study 2026-11-18, classic look-alike pairs, section 6.2"}
       ]
+    },
+    {
+      "id": "fish-juv-parrotfish-striped",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Parrotfish juveniles: \"striped, alike across species\"?",
+      "q": "The Parrotfish entry's juvenile note says small juveniles are striped and alike across species. Bellwood & Choat (1989), which the note cites, write that their 24 species can all be told apart as juveniles but two pairs, and some juveniles are not striped. Should the note stay as it is?",
+      "ctx": [
+        "tools/fish_source.json t08 juv (class B): \"Small juveniles are striped, alike across species, and change pattern as they grow.\"",
+        "Bellwood & Choat 1989 (abstract): \"All species can be identified to the species level with the exception of two pairs of closely related species.\"",
+        "Fishes of Australia: Cetoscarus ocellatus juveniles \"are white with a broad orange band around the head, a black ocellus on the dorsal fin\"; Scarus niger juveniles \"are dark greenish black, covered in small white spots\"; Scarus altipinnis \"small juveniles have a striped to mottled body with a distinctive yellow head\" (Reef Life Survey: S. prasiognathos has \"very similar juveniles\").",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5): the entry keeps class B in the game; as a label, its species are Off, except S. altipinnis, Finer rank from its own source."
+      ],
+      "src": [
+        {"t": "Bellwood & Choat 1989, Records of the Australian Museum 41(1): 1-41", "u": "https://journals.australian.museum/bellwood-and-choat-1989-rec-aust-mus-411-141/"},
+        {"t": "Fishes of Australia, Cetoscarus ocellatus", "u": "https://fishesofaustralia.net.au/home/species/390"},
+        {"t": "Fishes of Australia, Scarus niger", "u": "https://fishesofaustralia.net.au/home/species/926"},
+        {"t": "Fishes of Australia, Scarus altipinnis", "u": "https://fishesofaustralia.net.au/home/species/399"},
+        {"t": "Reef Life Survey, Scarus altipinnis", "u": "https://reeflifesurvey.com/species/scarus-altipinnis/"}
+      ]
+    },
+    {
+      "id": "fish-juv-monotaxis-emperor",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Emperor juveniles: Monotaxis grandoculis barred, the adult silvery",
+      "q": "The Emperor entry's juvenile note says juveniles are not very different from the adults. Fishes of Australia describes Monotaxis grandoculis juveniles with broad dark bars, a black bar through the eye and orange-red tail lobes, while FishBase gives the adult as silvery grey. Does the note hold for Monotaxis?",
+      "ctx": [
+        "tools/fish_source.json t11 juv (class B, Pierre, 2026-11-04): \"Not very different from adults but not specific at all: early juveniles share a few patterns of stripes and bands, told apart by close examination.\" It cites Fishes of Australia 2756, the Monotaxis grandoculis page.",
+        "Fishes of Australia 2756: \"Juveniles have 3 broad dark brown to blackish bars or saddles on the body (rear two extending onto dorsal fin), a black bar through the eye and an orange to reddish band along the outer caudal-fin lobes.\" FishBase: \"Color of adult silvery grey with narrow dark scale margins\".",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Monotaxis grandoculis", "u": "https://fishesofaustralia.net.au/home/species/2756"},
+        {"t": "FishBase, Monotaxis grandoculis", "u": "https://www.fishbase.se/summary/Monotaxis-grandoculis.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-rabbitfish-class-c",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Rabbitfish juveniles: like the adults?",
+      "q": "The Rabbitfish entry's juvenile note says juveniles look similar to the adults. The Siganus corallinus page it cites says small juveniles have narrow blue vertical lines that break up into the adult's eyespots. Should the note stay as it is?",
+      "ctx": [
+        "tools/fish_source.json t07 juv (class C): \"Juveniles look similar to the adults (Siganus puellus); same body plan.\" It cites Fishes of Australia 4733, the Siganus corallinus page.",
+        "Fishes of Australia 4733: \"Small juveniles have narrow blue vertical lines on the sides that fragment into ocelli with growth.\" FishBase: \"Very small juveniles (up to 50 mm SL) may have vertical blue lines on side, fragmenting into the ocelli with increase in size.\"",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Siganus corallinus", "u": "https://fishesofaustralia.net.au/home/species/4733"},
+        {"t": "FishBase, Siganus corallinus", "u": "https://www.fishbase.se/summary/Siganus-corallinus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-spadefish-resemblance",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Spadefish juveniles: a resemblance \"suggested, not established\"?",
+      "q": "The Spadefish entry's juvenile note says a resemblance to floating leaves or flatworms has been suggested, not established. Fishes of Australia states it for three species. Should the note say so, in the source's words?",
+      "ctx": [
+        "tools/fish_source.json t04 juv (class A, Pierre, 2026-11-04): \"A resemblance to floating leaves or flatworms has been suggested, not established.\"",
+        "Fishes of Australia: Platax orbicularis \"Small juveniles are yellowish to reddish-brown and resemble leaves drifting amongst flotsam\"; P. teira \"Very small juveniles are brownish and resemble floating leaves\"; P. pinnatus \"They mimic a toxic flatworm in shape, colour and movement.\"",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5): the Spadefish keep class A, and Bold as a label."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Platax orbicularis", "u": "https://fishesofaustralia.net.au/home/species/2208"},
+        {"t": "Fishes of Australia, Platax teira", "u": "https://fishesofaustralia.net.au/home/species/2210"},
+        {"t": "Fishes of Australia, Platax pinnatus", "u": "https://fishesofaustralia.net.au/home/species/2209"}
+      ]
+    },
+    {
+      "id": "fish-juv-iniistius-dea-photos",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Iniistius dea juveniles: one published image is I. pavo",
+      "q": "Fishes of Australia says a published image of an Iniistius dea juvenile (Kuiter's) is a juvenile I. pavo. Are the game's 13 juvenile photos of I. dea all I. dea?",
+      "ctx": [
+        "Fishes of Australia 294: \"Kuiter's image of Iniistius dea is a juvenile Iniistius pavo.\"",
+        "The game has 13 juvenile photos under Iniistius dea and 36 under I. pavo (fish-game.json, 2026-11-19). Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
+      ],
+      "src": [{"t": "Fishes of Australia, Iniistius dea", "u": "https://fishesofaustralia.net.au/home/species/294"}]
+    },
+    {
+      "id": "fish-juv-frogfish-black-orange",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "The black, orange-spotted juvenile frogfish: Antennarius maculatus, not A. pictus?",
+      "q": "Frogfish.ch writes that the black frogfish with orange-yellow spots, long taken for the juvenile of Antennarius pictus, is the juvenile of A. maculatus (Pietsch 2018). Are the game's 13 juvenile photos under A. pictus all A. pictus?",
+      "ctx": [
+        "Frogfish.ch, the Antennarius pictus group: \"The black frogfish with orange-yellow spots and bluish fins was long thought to be the juvenile of A. pictus. According to T. Pietsch 2018 (University of Waschington) this is the juvenile of the Warty Frogfish.\" It adds: \"the juvenile of the Giant-Frogfishes looks nearly the same as the Warty Frogfish - only the lure is different\".",
+        "The game has 13 juvenile photos under Antennarius pictus and 21 under A. maculatus (fish-game.json, 2026-11-19). The A. pictus sheet line gives no colour. Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
+      ],
+      "src": [{"t": "Frogfish.ch, the Antennarius pictus group", "u": "https://frogfish.ch/Antennarius-pictus-group.html"}]
+    },
+    {
+      "id": "fish-juv-iniistius-pavo-ocelli",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Iniistius pavo juveniles: two or three dorsal eyespots?",
+      "q": "FishBase gives Iniistius pavo juveniles two large eyespots in the dorsal fin; Fishes of Australia gives three. Which count holds for the juveniles at Dauin?",
+      "ctx": [
+        "FishBase: \"Juveniles with black anal fin and two large ocelli, thinly edged with white, in dorsal fin\". Fishes of Australia 296: \"Juveniles have elongate anterior dorsal-fin spines forming a 'flag\" and three ocelli along the dorsal fin.\"",
+        "The species sheet's juvenile line says \"eyespots\", with no count. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "FishBase, Iniistius pavo", "u": "https://www.fishbase.se/summary/Iniistius-pavo.html"},
+        {"t": "Fishes of Australia, Iniistius pavo", "u": "https://fishesofaustralia.net.au/home/species/296"}
+      ]
+    },
+    {
+      "id": "fish-juv-halichoeres-biocellatus-ocelli",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Halichoeres biocellatus juveniles: two or three dorsal eyespots?",
+      "q": "Reef Life Survey tells Halichoeres biocellatus juveniles from H. marginatus and H. melanurus by three dorsal-fin eyespots; FishBase gives the juveniles a pair. Which count holds?",
+      "ctx": [
+        "Reef Life Survey: \"Juveniles distinguished from H. marginatus (Dusky Wrasse) and H. melanurus (Hoeven's Wrasse) by having 3 dorsal fin ocelli and a black spot on the tail base.\" FishBase: \"Juveniles and sub adults have a pair of ocelli on the dorsal fin which disappears with growth\".",
+        "The species sheet's juvenile line says \"two or three, the sources differ\". Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "Reef Life Survey, Halichoeres biocellatus", "u": "https://reeflifesurvey.com/species/halichoeres-biocellatus/"},
+        {"t": "FishBase, Halichoeres biocellatus", "u": "https://www.fishbase.se/summary/Halichoeres-biocellatus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-hemigymnus-melapterus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Hemigymnus melapterus juveniles: two descriptions",
+      "q": "Fishes of Australia describes the juvenile as greenish-brown with a diagonal white bar behind the pectoral fin; Reef Life Survey gives females and juveniles the adult's two-tone body, juveniles with a yellow tail. Which describes the juveniles seen at Dauin?",
+      "ctx": [
+        "Fishes of Australia 245: \"Juveniles are greenish-brown with a diagonal white bar behind the pectoral fin, before developing the pale anterior and dark posterior bicolor pattern.\"",
+        "Reef Life Survey: \"Females and juveniles with a two tone body, head and fore body silver, divided by an oblique white bar from a black rear body with light vertical streaks on scales, dark patch behind eye and juveniles with a yellow tail.\"",
+        "Until it is settled, the species sheet gives both descriptions, each with its source. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Hemigymnus melapterus", "u": "https://fishesofaustralia.net.au/home/species/245"},
+        {"t": "Reef Life Survey, Hemigymnus melapterus", "u": "https://reeflifesurvey.com/species/hemigymnus-melapterus/"}
+      ]
+    },
+    {
+      "id": "fish-juv-ctenochaetus-binotatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Ctenochaetus binotatus juveniles: easily recognised, or easily confused?",
+      "q": "A regional dive survey group calls the juveniles easily recognised by the yellow tail and the blue ring around the eye; FishBase's morphology page says the species is likely to be confused with closely related species. Which holds for the juveniles?",
+      "ctx": [
+        "Solitary Islands Underwater Research Group: \"juveniles often seen in the Solitary Islands Marine Park, easily recognised by the yellow caudal fin and blue ring around the eye.\" FishBase, morphology: \"Ease of Identification likely to be confused with closely related species.\"",
+        "As a label (no effect on the game) it is Bold, from the juvenile-specific statement. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "Solitary Islands Underwater Research Group, Ctenochaetus binotatus", "u": "https://www.surg.org.au/species/ctenochaetus-binotatus-randall-1955/"},
+        {"t": "FishBase, Ctenochaetus binotatus, morphology", "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6012&GenusName=Ctenochaetus&SpeciesName=binotatus"}
+      ]
     }
   ]
 }
