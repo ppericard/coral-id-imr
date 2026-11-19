@@ -7,8 +7,10 @@ require('./slot.js').testGuard();
 // by its place in SUBJECTS (SUBJ === SUBJECTS[k], S === CORE_.SUBJECTS.find(...)) but the lines listed in ALLOWED, each
 // with its ROADMAP row. A SUBJECTS field true for exactly one subject (a feature switched on for that subject alone, such
 // as replay) is a test on that subject wherever it is read: it is listed in FLAGS, with what it switches and its ROADMAP
-// row; its reads, direct or through core.js replaySubject and replayedSubjects, are not listed line by line. UNITS
-// members are each subject's own by design and are not checked here.
+// row; its reads, direct or through core.js replaySubject and replayedSubjects, are not listed line by line. The same for
+// a field of a subject's `admin` part set for one subject only (admin.autosort, admin.tags...). UNITS members are each
+// subject's own by design and are not checked here. The admin and Learn pages, where the subjects still have code of their
+// own, are counted in tests/subject-neutral-admin.test.js.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -56,7 +58,25 @@ const FLAGS = [
     "the sheet's first replay path and opening hold, the pooled statistics read in the app, the sign-in baseline, the one-tap question and the apology card",
     ONE_ENGINE
   ],
-  ['achFeats', "the feats (runs, Sharp eye, corallites) kept by this subject's answers only (progress.js)", ONE_ENGINE]
+  ['achFeats', "the feats (runs, Sharp eye, corallites) kept by this subject's answers only (progress.js)", ONE_ENGINE],
+  // The admin's own: one subject's part of SUBJECTS admin. The admin pages that fork on them are counted in
+  // tests/subject-neutral-admin.test.js (docs/reviews/2026-11-19-admin-one-engine.md).
+  [
+    'admin.autosort',
+    'the fish auto-sort: writes its part of the curation at each admin load (admin.js fishAutoRun, autosort.js fishRun)',
+    ONE_ENGINE
+  ],
+  ['admin.csrc', "the sources of the corals' Candidates swiper (admin.js FB.srcs, CSRC); the tree subjects read their own", ONE_ENGINE],
+  [
+    'admin.target',
+    "the sea slugs' photos in play per species that its Candidates fill up to (autosort.js fishTarget; the fish's by tier)",
+    ONE_ENGINE
+  ],
+  [
+    'admin.tags',
+    "the sea slugs' rubric rows where they differ from the fish's default (admin-fish.js FROWS, judging/SEASLUG.md)",
+    ONE_ENGINE
+  ]
 ];
 
 // The checks, pure, so the planted cases below prove that each one bites.
@@ -82,8 +102,14 @@ function exceptions(allowed, src, roadmap) {
   }
   return bad;
 }
+// A top-level field counts when it is true for exactly one subject; a field of `admin` (autosort, target, tags, csrc) when it
+// is set (truthy) for exactly one, named 'admin.<field>', since a number or an object switches a feature on as much as true.
 function flags(subjects, listed, roadmap) {
-  const one = new Set([...new Set(subjects.flatMap(S => Object.keys(S)))].filter(k => subjects.filter(S => S[k] === true).length === 1)),
+  const on = (S, k) => (k.startsWith('admin.') ? !!(S.admin || {})[k.slice(6)] : S[k] === true),
+    keys = new Set(
+      subjects.flatMap(S => [...Object.keys(S).filter(k => k !== 'admin'), ...Object.keys(S.admin || {}).map(k => 'admin.' + k)])
+    ),
+    one = new Set([...keys].filter(k => subjects.filter(S => on(S, k)).length === 1)),
     bad = [];
   for (const k of one)
     if (!listed.some(([f]) => f === k)) bad.push(`SUBJECTS ${k} is true for one subject only: list it in FLAGS, with its ROADMAP row`);
@@ -163,6 +189,27 @@ test('rule S1: the checks catch what they are for (planted cases)', () => {
       ROADMAP
     ),
     []
+  );
+  // a field of `admin` set for one subject only (a number, an object), declared or not, stale; one set for two is no flag
+  const nested = [
+    {id: 'a', admin: {cur: '', t: 12, o: {x: 1}, two: 1}},
+    {id: 'b', admin: {cur: 'b', two: 1}},
+    {id: 'c', admin: {cur: 'c', t: 0}}
+  ];
+  assert.match(flags(nested, [], ROADMAP).join('\n'), /SUBJECTS admin\.t is true for one subject only/);
+  assert.match(flags(nested, [], ROADMAP).join('\n'), /SUBJECTS admin\.o is true/);
+  assert.ok(!/admin\.(two|cur)/.test(flags(nested, [], ROADMAP).join('\n')), 'a field set for two subjects, or for none');
+  assert.match(
+    flags(
+      nested,
+      [
+        ['admin.t', 'why', ONE_ENGINE],
+        ['admin.o', 'why', ONE_ENGINE],
+        ['admin.two', 'why', ONE_ENGINE]
+      ],
+      ROADMAP
+    ).join(),
+    /stale flag, SUBJECTS admin\.two/
   );
   // an exception: its line gone, its row gone or absent
   assert.match(exceptions([['progress.js', 'no such line', ONE_ENGINE]], read, ROADMAP).join(), /stale exception/);

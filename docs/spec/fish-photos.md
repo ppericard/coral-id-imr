@@ -385,7 +385,11 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 
   Both are listed with `auto` (`cand` / `ref`; a reference photo keeps `from`), downloaded, cropped and written in the
   four sizes like his adds, and uploaded to R2 by the same workflow, which also runs on a change to
-  `tools/fish_game.py`, so such a change is downloaded and uploaded at its merge.
+  `tools/fish_game.py`, so such a change is downloaded and uploaded at its merge. The crop: his, else the pass's (a
+  candidate's `c`; a reference photo's `tools/fish_judge.json` `crops`, or its candidate judgement's crop when that gives
+  one, `tools/fish_judge.py` `one_crops`), since a code with a crop reads the photo as cropped. So a photo with a fish one
+  could take for the subject near its edge plays once a crop takes that fish out, the subject whole and at least medium
+  (Pierre, 2026-11-19, Q430; `judging/FISH.md` "A proposed crop"): the judge codes the cropped photo, never `k`.
 - **Other species in view**: a photo whose count in force is other species one could take for the subject (`k`), or the
   legacy `m` not sorted yet, is never in play, his adds included. The count in force is his tag, his legacy `m` refined
   by the judging pass's `o` or `k` (`core.js` `treeCount`, `treeOther`; `tools/fish_game.py` `count_of`, `other_out`,
