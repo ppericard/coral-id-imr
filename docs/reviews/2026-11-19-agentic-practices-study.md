@@ -4,7 +4,8 @@
 is changed by this PR: it proposes, Pierre decides (AGENTS.md "Writing a rule down"). No question number is assigned
 here: the integrator numbers the questions of §7 when it asks them.
 
-**Pour Pierre : le résumé en français est à la fin (§9), avec les questions (§7).**
+**For Pierre: the short summary is at the end (§9), the questions in §7.** The summary is in English here (rule W1);
+the French version goes to him in the chat.
 
 ## 1. The request and the base
 
@@ -490,23 +491,21 @@ committing the integrator's tools (c1), the recovery hooks (c2), the check-ins (
   Codex's reading of a 24 KB AGENTS.md in practice; the effort figures cover first commit to green checks only, and a
   rewrite's cost to Pierre is not measured.
 
-## 9. Résumé pour Pierre
+## 9. Summary for Pierre
 
-- J'ai lu les règles, la doc et l'historique des PR, et les bonnes pratiques publiées (Anthropic, OpenAI, recherche).
-- Le constat le plus net (d'après la doc de Claude Code, vu dans une session) : l'outil ne charge tout seul que
-  CLAUDE.md (9 lignes). AGENTS.md, Rule 0 et l'index des règles ne sont lus que si l'agent décide de les ouvrir ; un
-  sous-agent ne les reçoit pas non plus.
-- Le volume : environ 172 règles, 267 lignes « jamais / toujours / doit », 23 000 tokens à lire pour l'intégrateur
-  (47 000 avec le registre complet). La doc d'Anthropic vise moins de 200 lignes ; la recherche montre que le suivi
-  baisse quand les consignes s'accumulent, et que le milieu est le moins lu.
-- Cinq contradictions vivantes (ex. W18 autorise rebase et force-push, INTEGRATOR les interdit) : le modèle en choisit
-  une au hasard.
-- Les règles qui tiennent sont celles qu'un outil vérifie ; celles qui rechutent (heredocs, attentes, noms) sont de la
-  prose.
-- Tes décisions du 18 au soir sur l'audit des règles (1-5 et 8) : ce matin, seule la 5 est appliquée. Même problème
-  que les questions reposées, un cran plus haut.
-- Options, de légère à radicale, pour chaque sujet (§5) : appliquer ce qui est décidé ; un noyau court chargé
-  automatiquement + fichiers par thème + garde-fous ; ou une réécriture complète.
-- Ma recommandation : la voie du milieu (question 1, B), pas à pas. Rien n'est supprimé sans ton accord.
-- Trois questions en §7 : jusqu'où aller, le registre des réponses en données vérifiées, et deux règles qui se
-  contredisent (rebase / force-push, PR par agent).
+- I read the rules, the docs and the PR history, and the published practices (Anthropic, OpenAI, research).
+- The clearest finding (from Claude Code's documentation, seen in one session): the tool loads only CLAUDE.md (9
+  lines) by itself. AGENTS.md, Rule 0 and the rule index are read only if an agent decides to open them; a subagent
+  does not get them either.
+- The volume: about 172 rule items, 267 "never / always / must" lines, about 23,000 tokens for the integrator to read
+  (47,000 with the full ledger). Anthropic's docs aim under 200 lines; research shows that adherence falls as
+  instructions pile up, and that the middle is read least.
+- Five live contradictions (e.g. W18 allows rebase and force-push, INTEGRATOR forbids them): the model picks one.
+- The rules that hold are the ones a tool checks; the ones that relapse (heredocs, waiters, names) are prose.
+- Your decisions of the 18th evening on the rules audit (1-5 and 8): this morning only 5 is applied. The same problem
+  as the re-asked questions, one level up.
+- Options from light to radical for each area (§5): apply what is decided; a short core loaded by itself, topic files
+  on demand and guards; or a full rewrite.
+- My recommendation: the middle way (question 1, B), step by step. Nothing is deleted without your OK.
+- Three questions in §7: how far to go, the answers ledger as checked data, and two rules that contradict each other
+  (rebase / force-push, PRs per agent).
