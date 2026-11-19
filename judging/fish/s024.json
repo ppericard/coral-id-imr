@@ -147,8 +147,15 @@
    "keep": "best"
   },
   "fish-s024-cand-594026352": {
-   "code": "p1g0smk2",
-   "keep": "best"
+   "code": "p1g0ml1j4",
+   "keep": "best",
+   "crop": [
+    0.3,
+    0.17,
+    0.68,
+    0.555
+   ],
+   "note": "crop: the damselfishes around leave the frame (Q430)"
   },
   "fish-s024-cand-169148877": {
    "code": "p1g0slo4",

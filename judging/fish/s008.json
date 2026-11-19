@@ -53,8 +53,15 @@
    "keep": "dup"
   },
   "fish-s008-cand-753075935": {
-   "code": "p1g1ssk2",
-   "keep": "best"
+   "code": "p1d1ml13",
+   "keep": "best",
+   "crop": [
+    0.36,
+    0.37,
+    0.68,
+    0.66
+   ],
+   "note": "crop: the damselfishes above leave the frame (Q430)"
   },
   "fish-s008-cand-630806619": {
    "code": "p1d1sm13",

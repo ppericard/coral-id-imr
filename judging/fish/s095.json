@@ -117,8 +117,15 @@
    "keep": "best"
   },
   "fish-s095-cand-587049188": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1mlo3",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.15,
+    0.78,
+    0.95
+   ],
+   "note": "crop: the dark fish at right leave the frame; a small dark shape in the reef stays (o) (Q430)"
   },
   "fish-s095-cand-533802649": {
    "code": "o1d3ml11",

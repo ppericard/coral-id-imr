@@ -37,8 +37,15 @@
    "keep": "best"
   },
   "fish-s332-cand-277430665": {
-   "code": "p1g2ssk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.3,
+    0.6,
+    0.62
+   ],
+   "note": "crop: the dark parrotfish below left leaves the frame (Q430)"
   },
   "fish-s332-cand-388474362": {
    "code": "p1g2sm13",
