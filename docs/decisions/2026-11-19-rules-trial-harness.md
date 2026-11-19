@@ -1,6 +1,6 @@
 # The rules core trial's harness, and a guard on agent launches: model and effort set, every launch logged
 
-Date: 2026-11-19 (Manila). PR: #NNNN. Rules or docs touched: `.claude/settings.json` (four hooks), `tools/instr_log.py`,
+Date: 2026-11-19 (Manila). PR: #1209. Rules or docs touched: `.claude/settings.json` (four hooks), `tools/instr_log.py`,
 `tools/agent_guard.py`, `tools/brief.py`, `docs/spec/tools.md`, `tools/README.md`, INTEGRATOR "Working with Pierre".
 
 ## Context
