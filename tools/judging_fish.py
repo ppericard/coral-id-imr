@@ -19,9 +19,11 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
     python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
-    python3 tools/judging_fish.py codes            re-apply the judging files' codes, keep, phase, unsure fields and
-                                                   notes to the candidates already judged in suggest.json "fish" (a
-                                                   re-judge of some photos, e.g. the other species split, Q323)
+    python3 tools/judging_fish.py codes            re-apply the judging files' codes, keep, phase, crop, box, unsure
+                                                   fields and notes to the candidates already judged in suggest.json
+                                                   "fish" (a re-judge of some photos, e.g. the other species split, Q323;
+                                                   the crops that save a photo, Q430), dating the pass of each species
+                                                   it changed (the auto-sort's route back reads that date)
     python3 tools/judging_fish.py one [--check]    one judgement per photo (Pierre, 2026-11-15): copy the candidate
                                                    judgement of a photo that is also a reference photo onto its copy in
                                                    tools/fish_judge.json (code and keep); --check lists the divergences
@@ -411,18 +413,21 @@ def cmd_import(names, only_check, by):
     sys.exit(1 if bad else 0)
 
 
-def cmd_rep(fields=("jt", "e")):
+def cmd_rep(fields=("jt", "e"), stamp=False):
     """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
     judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
     judgement gets the flag r, one no longer tagged loses it, and the ease is the judgement's either way (no reference
     ease point). Only those entries change.
-    fields ("codes": also u and n): re-applies a re-judge of some photos' codes, unsure fields and notes (the other
-    species split of 2026-11-09, Q323) to the candidates already judged, without the whole species' --check (a species
-    may hold new candidates not judged yet, which the import refuses); waiting or decided alike. The subject's (use):
-    suggest.json "seaslug" and judging/seaslug/ for the sea slugs, whose codes also re-apply the egg rule."""
+    fields ("codes": also u and n, the crop c and the fish's box bb): re-applies a re-judge of some photos' codes, crops,
+    unsure fields and notes (the other species split of 2026-11-09, Q323; the crops that save a photo, Q430) to the
+    candidates already judged, without the whole species' --check (a species may hold new candidates not judged yet,
+    which the import refuses); waiting or decided alike. A re-judge (stamp) dates the pass of each species it changed
+    ("by" {species: {fish: {at}}}, as the import does): the auto-sort's route back reads it (autosort.js sortBack: a photo
+    it set aside comes back only on a judgement made since). The subject's (use): suggest.json "seaslug" and
+    judging/seaslug/ for the sea slugs, whose codes also re-apply the egg rule."""
     S = load("suggest.json", {}) or {}
     Sf = S.get(SUBJECT) or {}
-    n = 0
+    n, changed = 0, set()
     for sid, L in CAND.items():
         j = load(f"{JDIR.replace(os.sep, '/')}/{sid}.json")
         if not j:
@@ -439,11 +444,18 @@ def cmd_rep(fields=("jt", "e")):
                     else:
                         old.pop(k, None)
                 n += 1
+                changed.add(sid)
+    if stamp:
+        today = datetime.date.today().isoformat()
+        for sid in changed:
+            b = S.setdefault("by", {}).setdefault(sid, {}).setdefault(SUBJECT, {"by": globals().get("BY", "claude"), "n": 0})
+            b["at"] = today
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
-    what = "Reference flag" if fields == ("jt", "e") else "Codes, keep, phase, unsure fields and notes"
-    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"{SUBJECT}\".")
+    what = "Reference flag" if fields == ("jt", "e") else "Codes, crops, keep, phase, unsure fields and notes"
+    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"{SUBJECT}\""
+          + (f", the pass of {len(changed)} species dated {today}." if stamp and changed else "."))
 
 
 def one_fix(text, D):
@@ -582,7 +594,7 @@ if __name__ == "__main__":
     elif rest[:1] == ["rep"]:
         cmd_rep()
     elif rest[:1] == ["codes"]:
-        cmd_rep(("jt", "e", "k", "ph", "u", "n", "egg"))
+        cmd_rep(("jt", "e", "k", "ph", "c", "bb", "u", "n", "egg"), stamp=True)
     elif rest[:1] == ["one"]:
         cmd_one("--check" in a)
     elif rest[:1] == ["watermark"]:

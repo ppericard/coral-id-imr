@@ -110,9 +110,10 @@
   // iNaturalist experts got the species wrong; only his click writes it, never an agent or the auto-sort, and such a
   // photo is never proposed again), tags {f: jt}, ease {f: 1-5}, phase {f}, crop {f: [l, t, r, b]} (judging/FISH.md),
   // auto {day: {f: code}} (the fish auto-sort's log). Coral keys are never touched.
-  // Fish log codes: [?|-] a|r [tepc] [@t]: a proposed in, r set aside; ? a Check (not applied, shown blind), - undone
-  // (never applied again); after an a, the fields the run wrote (t tags, e ease, p phase, c crop: a value the admin had
-  // already given is not written, so not listed, and an Undo leaves it alone); @t when he answered or corrected it.
+  // Fish log codes: [?|-] a|b|r [tepc] [@t]: a proposed in, r set aside, b brought back (its own r taken back into play
+  // after a newer sure judgement: sortBack); ? a Check (not applied, shown blind; never a b), - undone (never applied
+  // again); after an a or a b, the fields the run wrote (t tags, e ease, p phase, c crop: a value the admin had already
+  // given is not written, so not listed, and an Undo leaves it alone); @t when he answered or corrected it.
   const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
   // Observations in play per species: 8 per circle-1 species, 12 for the cheatsheet's 24 most sighted (fish.json cs), at
   // most 20. The auto-sort proposes up to the target; the admin adds beyond it. A species met only on the surprise cards
@@ -123,8 +124,8 @@
   // record the admin reads (fishSpecies tgt).
   const fishTarget = sp => (sp && sp.tgt > 0 ? sp.tgt : sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
-    const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
-    if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
+    const m = /^([?-]?)([abr])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
+    if (!m || (m[3] && (m[2] === 'r' || m[1] === '?')) || (m[2] === 'b' && m[1] === '?')) return null;
     const w = Object.keys(FISHW).filter(k => m[3].includes(FISHW[k]));
     return {check: m[1] === '?', undone: m[1] === '-', kind: m[2], ...(w.length ? {w} : {}), ...(m[4] ? {t: parseInt(m[4], 36)} : {})};
   }
@@ -157,7 +158,7 @@
       .forEach(f => {
         const {day, d} = I[f],
           p = fishMine(F, f),
-          a = d.kind === 'a' ? 'add' : 'reject';
+          a = d.kind === 'r' ? 'reject' : 'add';
         if (!p || d.undone) return;
         const ok = a === p,
           t = d.t == null ? null : d.t;
@@ -176,19 +177,45 @@
   // never forced). The rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
   const {refScore, refLevel, easyRank, rightsRank, treePhotoOn, treePhotoIn, treeGone, treePid, TREE_COUNT, treeOther} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
-  function fishRun(cands, sug, species, F, day, keepOn = true) {
+  // The one route back (Pierre, 2026-11-19, Q438): a photo the run set aside comes back into play when a newer judgement
+  // is a sure add (a crop that saves it, judging/FISH.md "A crop that saves a photo"). Its sure add, or null, when all
+  // of these hold:
+  // - its log code is the run's own plain reject, exactly 'r': a Check ('?r'), an Undo ('-r'), or a time (@t: he answered
+  //   or corrected it) means he touched it, and his own Reject of a photo the run had set aside marks it '-r' (fishReject);
+  // - it is still set aside only (seen 1), not added, excluded or moved with Not this, and he gave it no tags nor crop
+  //   (the new code is read on the judge's crop: one of his would describe another photo);
+  // - its judgement was made on or after the day of the reject (at(f): its pass's date, suggest.json "by" {key: {fish:
+  //   {at}}}; with none, never), and is a sure add now (fishSure). A reject is logged only from a sure reject, so a sure
+  //   add judged since is a new judgement, never a rule read anew.
+  function sortBack(F, x, f, j, at) {
+    if (!x || x.code !== 'r' || (F.seen || {})[f] !== 1 || (F.add || {})[f] || (F.exclude || {})[f] || (F.out || {})[f]) return null;
+    if ((F.tags || {})[f] != null || (F.crop || {})[f] != null) return null;
+    const d = typeof at === 'function' ? at(f) : null;
+    if (!d || d < x.day) return null;
+    const s = fishSure(j);
+    return s && s.keep === 'add' ? s : null;
+  }
+  // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack); without it, no photo comes
+  // back. A photo it brings back is no longer set aside: it is added like an add (code b and the fields written) while its
+  // species has room, else it waits as a candidate (code b alone), which the game plays as any sure candidate.
+  function fishRun(cands, sug, species, F, day, keepOn = true, at = null) {
     F = F || {};
     const I = fishIdx(F),
       busy = f => fishMine(F, f) || I[f],
       plan = [];
     Object.entries(cands || {}).forEach(([sid, L]) =>
       (L || []).forEach(p => {
-        if (!p || !p.f || busy(p.f)) return;
+        if (!p || !p.f) return;
+        if (busy(p.f)) {
+          const s = sortBack(F, I[p.f], p.f, (sug || {})[p.f], at);
+          if (s) plan.push({sid, p, s, check: false, back: true});
+          return;
+        }
         const s = fishSure((sug || {})[p.f]);
         if (s) plan.push({sid, p, s, check: autoCheck(p.f)});
       })
     );
-    const R = {add: 0, reject: 0, check: 0, full: 0, off: 0};
+    const R = {add: 0, back: 0, reject: 0, check: 0, full: 0, off: 0};
     if (!plan.length) return {F, R};
     plan.sort(
       (a, b) =>
@@ -215,7 +242,7 @@
         N[k] = {...(N[k] || {}), [f]: v};
         return FISHW[k];
       };
-    plan.forEach(({sid, p, s, check}) => {
+    plan.forEach(({sid, p, s, check, back}) => {
       const f = p.f;
       if (check) {
         L[f] = s.keep === 'add' ? '?a' : '?r';
@@ -224,15 +251,18 @@
       if (!keepOn) return R.off++;
       if (s.keep === 'add') {
         const r = (room[sid] = room[sid] || new Set()),
-          o = p.o || f;
-        if (!r.has(o)) {
-          if (r.size >= Math.min(fishTarget((species || {})[sid]), FISHT.cap)) return R.full++;
-          r.add(o);
-        }
+          o = p.o || f,
+          fit = r.has(o) || r.size < Math.min(fishTarget((species || {})[sid]), FISHT.cap);
+        if (!fit && !back) return R.full++;
+        if (back) {
+          delete N.seen[f];
+          R.back++;
+        } else R.add++;
+        if (!fit) return (L[f] = 'b');
+        r.add(o);
         N.add[f] = sid;
         const c = fishCopy({...p, f}, {jt: s.tags, ph: s.phase}, F);
-        L[f] = 'a' + put('tags', f, c.tags) + put('ease', f, s.ease) + put('phase', f, c.phase) + put('crop', f, s.crop);
-        R.add++;
+        L[f] = (back ? 'b' : 'a') + put('tags', f, c.tags) + put('ease', f, s.ease) + put('phase', f, c.phase) + put('crop', f, s.crop);
       } else {
         N.seen[f] = 1;
         L[f] = 'r';
@@ -242,16 +272,18 @@
     // A map the run created and left empty goes; one that was there stays (as {}: merge3 reads a missing map as removed).
     if (!F.add && !Object.keys(N.add).length) delete N.add;
     if (!F.seen && !Object.keys(N.seen).length) delete N.seen;
-    if (R.add + R.reject + R.check) N.auto = {...(F.auto || {}), [day]: L};
-    return {F: R.add + R.reject + R.check ? N : F, R};
+    const n = R.add + R.back + R.reject + R.check;
+    if (n) N.auto = {...(F.auto || {}), [day]: L};
+    return {F: n ? N : F, R};
   }
 
   // One fish auto decision taken back (the admin's Undo in the Auto details, as the coral autoUndo; rule A1: every auto
   // decision undoable one by one). sid: the candidate's species (its fish-cand.json list). What the run wrote leaves the
   // fish part, and only that: the add while it still names that species, and the fields its code lists (fishOwn takes
   // off those he set since). Never compared with the pass's judgment, which a new pass may have replaced. The log marks
-  // the decision undone ('-'): never applied again, the photo waits as a candidate. Emptied maps stay as {} (fishOut
-  // leaves them out of the file), so the Publish merge (merge3) removes these entries only.
+  // the decision undone ('-'): never applied again, the photo waits as a candidate, or, brought back (b), is set aside
+  // again (seen). Emptied maps stay as {} (fishOut leaves them out of the file), so the Publish merge (merge3) removes
+  // these entries only.
   function fishUndo(F, f, sid) {
     const x = fishIdx(F)[f];
     if (!x || x.d.check || x.d.undone) return F;
@@ -261,10 +293,14 @@
         N[k] = {...N[k]};
         delete N[k][f];
       };
-    if (x.d.kind === 'a') {
+    if (x.d.kind === 'r') drop('seen', v => v === 1);
+    else {
       drop('add', v => v === sid);
       (x.d.w || []).forEach(k => drop(k));
-    } else drop('seen', v => v === 1);
+    }
+    // A photo it brought back (b) is set aside again, as its own reject had left it, unless the admin moved it to another
+    // species since (Not this): that choice, and an add there, stay his.
+    if (x.d.kind === 'b' && !(N.out || {})[f]) N.seen = {...(N.seen || {}), [f]: 1};
     N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
     return N;
   }
@@ -274,7 +310,7 @@
     const x = fishIdx(F)[f],
       c = FISHW[field];
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
-    return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
+    return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[abr][tepc]*?)${c}`), '$1')}}};
   }
   // When the admin answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the
   // agreement window follows the order he answered in, as autoStamp does for the corals. fishSigs: his keep on each
@@ -573,13 +609,17 @@
     return N;
   }
   // The admin's Reject (✕), from the swiper or on a photo in play (pure): "seen", and the add taken off when it was in play.
+  // On a photo the auto-sort had set aside (its log code a plain 'r': a Not this taken back left it waiting), the reject is
+  // his own from then on: the code is marked '-r', so the route back (sortBack) never takes his decision for the run's.
   function fishReject(F, f) {
     F = F || {};
-    const N = {...F, seen: {...(F.seen || {}), [f]: 1}};
+    const N = {...F, seen: {...(F.seen || {}), [f]: 1}},
+      x = fishIdx(F)[f];
     if (N.add && f in N.add) {
       N.add = {...N.add};
       delete N.add[f];
     }
+    if (x && x.code === 'r') N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-r'}};
     return N;
   }
   // The admin's × (excluded for good, imports skip it): "exclude", and the add taken off.
@@ -1392,6 +1432,7 @@
     fishIdx,
     fishMine,
     fishCompare,
+    sortBack,
     fishRun,
     fishUndo,
     fishOwn,
