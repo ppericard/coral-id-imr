@@ -408,7 +408,8 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
             N[k][f] = v
     for f, (day, m) in last.items():
         j = (sug or {}).get(f)
-        if m.group(1) or not j or f not in rec:
+        # A photo he moved with Not this is his: the judgement was of it as its first species' candidate.
+        if m.group(1) or not j or f not in rec or (F.get('out') or {}).get(f):
             continue
         p, sid = rec[f]
         sure = cand_sure(j) or cand_out(j)

@@ -54,6 +54,10 @@ test('read_cur: the fields the auto-sort copied read the newer judgement; his ow
   assert.deepStrictEqual([out.tags.f2, out.ease.f2], ['p1g1sl1', 2]);
   // fj: a juvenile by its source: the copy keeps the j flag as the auto-sort writes it (autosort.js fishCopy)
   assert.deepStrictEqual([out.tags.fj, out.ease.fj], ['p1g1sl1j', 4]);
+  // He moved f1 with Not this and added it to its new species: the first species' judgement no longer reads on it.
+  const moved = A.fishAdd(A.fishNotThis(cur.fish, 'f1', 's2', 's1'), 'f1', 's2', null),
+    mv = readCur({fish: moved}, cand, {...sug, f1: {jt: 'p1g1slk', e: 4, k: 'best'}}, by('2026-11-19')).fish;
+  assert.deepStrictEqual([mv.add.f1, mv.tags.f1, mv.ease.f1, 'f1' in (mv.seen || {})], ['s2', 'p1d1sl1', 2, false]);
   // An edit of his takes the letter off (autosort.js fishOwn): his value stands.
   const mine = {
     fish: {
