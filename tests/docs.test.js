@@ -699,9 +699,7 @@ test('every living doc stays within its size and line-length budget', () => {
 const SUBJECT_DOCS = ['README.md', 'privacy.html'];
 // A doc known to be behind SUBJECTS, with why: its check must fail until it is fixed, and an entry that now passes fails
 // so it is deleted.
-const SUBJECT_DOCS_BEHIND = {
-  'privacy.html': "its notice for the three subjects is a separate change that waits for Pierre's reading"
-};
+const SUBJECT_DOCS_BEHIND = {};
 const subjectProblems = f => {
   const text = read(f).replace(/\s+/g, ' ').toLowerCase();
   const bad = [];
