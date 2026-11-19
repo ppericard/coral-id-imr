@@ -1240,7 +1240,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **20:34, Q437 (open Compare, pairs, the custom quiz and the duel to fish and sea slugs, in shared code).** «évidemment
   oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est du code
   commun». Every game mode opens to every subject, in shared code. Applied: the modes PR(s).
-- **20:34, Q438 (the route back; the integrator's recommendation).** «OK pour ta recommandation». Applied: the
+- **20:34, Q438 (about 694 fish candidates the auto-sort rejected as `k`, confusion possible: a route back when a newer
+  judgement saves one by a crop, like any auto-sort proposal, undoable).** «OK pour ta recommandation». Applied: the
   route-back PR.
 - **20:34, the doc size limits.** «Alors tu parles d'alléger la roadmap, en l'occurrence la roadmap, il faut augmenter
   sa taille limite hein, s'il y a besoin. La roadmap, elle peut très bien devenir très longue. Ça serait dommage, enfin
