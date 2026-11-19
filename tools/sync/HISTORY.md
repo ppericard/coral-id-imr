@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v191 (2026-11-19)
+
+A typed miss counts in the pooled confusions: `stats_` and the fold (`statsStep_`) now add each trusted player's typed answer that names another unit (`|t`, no choices) to its pair as offered once and mixed up, through `core.js` `confAdd`, the one rule the admin's `confusionOf` follows too; before, `?stats=1` `conf` counted only the pairs offered among the choices, while the player's own record already counted a typed mix-up (`pairConf`). "I don't know" and right typed answers add nothing. The fold rebuilds at this version. A coral row logged before its scoring record rebuilds its mix-ups term and look-alike test from the pooled pairs, so the embedded core.js appends coral rules version 11 (`RVS`, no card: rules D5, D6): every coral player is replayed once, the leaderboards included (rule D8); a row with its scoring record replays as before. The fish and the sea slugs replay with no pooled pairs: no rules version for them (ROADMAP "Typed answers, what is left"; the integrator's calls, 2026-11-18 and 2026-11-19, docs/decisions/2026-11-18-typed-answers-rest.md)
+
 ## v190 (2026-11-19)
 
 Comments only, no behaviour change: the comments of the script and of its embedded core.js say what the code does now and why, in short, with pointers to the docs instead of dated quotes, question numbers, version tags and review references (rule W19; Pierre's go for the clean-up, 2026-11-18). The code is token for token the same once comments are stripped; the decisions that were only in the comments moved to `docs/decisions/2026-11-18-decisions-from-code-comments.md`

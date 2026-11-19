@@ -51,7 +51,8 @@
     }
     return out;
   }
-  // The matrix: C, confusionOf's {pair, dir}; typed, noChoiceMixups' typed {"shown|answered": n}; rec(n), a unit's record
+  // The matrix: C, confusionOf's {pair (the pooled pairs the game plays with, typed mix-ups included: the order and dl),
+  // dir (the choices only: the cells)}; typed, noChoiceMixups' typed {"shown|answered": n}; rec(n), a unit's record
   // ({fam}); prior(a, b), the pair's start [name, rate] (admin.js pairPrior); roster, the subject's units, each on the map
   // even with no answer yet (its row and column empty: missing data shows); blockOf(u), the block a unit
   // sits in, its record's fam by default (another subject's lower ranks: the unit of the rank above); supOf(u), the group
