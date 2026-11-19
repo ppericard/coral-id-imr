@@ -19,10 +19,14 @@ const check = (files, known = {}) => {
     fs.mkdirSync(path.dirname(path.join(root, f)), {recursive: true});
     fs.writeFileSync(path.join(root, f), text);
   }
-  const r = spawnSync('python3', ['-B', TOOL, '--check', '--root', root, '--known', JSON.stringify(known)], {encoding: 'utf8', timeout: 5000});
+  const r = spawnSync('python3', ['-B', TOOL, '--check', '--root', root, '--known', JSON.stringify(known)], {
+    encoding: 'utf8',
+    timeout: 5000
+  });
   return {status: r.status, out: r.stdout + r.stderr};
 };
-const ledger = (...entries) => '# Ledger\n\n## 2026-11-18\n\n- **10:00, Q800.** Old, before the check.\n\n## 2026-11-19\n\n' + entries.join('\n') + '\n';
+const ledger = (...entries) =>
+  '# Ledger\n\n## 2026-11-18\n\n- **10:00, Q800.** Old, before the check.\n\n## 2026-11-19\n\n' + entries.join('\n') + '\n';
 
 test('an entry from 2026-11-19 names where it is applied, or "no doc change"', () => {
   const ok = check({
@@ -42,7 +46,9 @@ test('an entry from 2026-11-19 names where it is applied, or "no doc change"', (
 });
 
 test('a later "Applied in #N" entry naming its question closes an entry; KNOWN holds the rest and only shrinks', () => {
-  const files = {'docs/ANSWERS.md': ledger('- **06:00, Q904.** OK.', '- **06:10.** Not numbered.', '- **Applied in #1190:** Q904 (rule W14).')};
+  const files = {
+    'docs/ANSWERS.md': ledger('- **06:00, Q904.** OK.', '- **06:10.** Not numbered.', '- **Applied in #1190:** Q904 (rule W14).')
+  };
   const r = check(files, {'2026-11-19 06:10. Not numbered': 'why'});
   assert.strictEqual(r.status, 0, r.out);
   assert.match(r.out, /^known +docs\/ANSWERS\.md:\d+ 2026-11-19 06:10\. Not numbered\.…: why$/m);

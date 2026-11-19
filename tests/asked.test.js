@@ -23,7 +23,7 @@ const ROOT = tree({
     '',
     '## 2026-11-19',
     '',
-    '- **06:50, Q901.** The game keeps its élève badge: "ça reste". Applied: rule U99.',
+    '- **06:50, Q901.** The game keeps its élève badge: "ça reste". Applied: the badge rule.',
     '- **06:59.** The rename waits: "Pas maintenant", the domain',
     '  later. Applied: no doc change.',
     ''
@@ -53,7 +53,7 @@ test("a ledger entry's wrapped lines belong to it, a phrase is one term, typogra
   const out = run('rename', 'later');
   assert.match(out, /docs\/ANSWERS\.md:6 .*\n.*The rename waits.*\n.*later\. Applied: no doc change\./, out);
   assert.match(last(run('"pas maintenant"')), /— 1 hit$/);
-  assert.match(last(run('pierre\'s word')), /— 1 hit$/);
+  assert.match(last(run("pierre's word")), /— 1 hit$/);
 });
 
 test('--any takes an entry holding one of the terms; --max limits what is printed, never the count', () => {

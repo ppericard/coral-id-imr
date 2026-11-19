@@ -44,6 +44,9 @@ Conventions that hold across them:
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre. The session hooks run it (`--short`, `--time`) |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `effort.py` | Measures the agent time of merged PRs, so an estimate cites comparable ones; `--check FILE.md` checks a study |
+| `asked.py` | Searches the answers ledger, the rules and the decision records before any question to Pierre |
+| `answers_check.py` | Every ledger answer names its doc; nothing answered is cited as waiting (the docs test) |
+| `decisions_index.py` | Writes the decisions index from the records (`--fix`, `--check`) |
 | `slot.py` | The machine-slot guard for heavy Python tools (`tests/slot.js` is the lock) |
 | `health.py`, `infra.json` | The hourly Health workflow: the live site, the sheet script, the infrastructure numbers against their free-tier limits |
 
