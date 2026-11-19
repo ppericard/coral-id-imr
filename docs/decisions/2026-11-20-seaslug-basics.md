@@ -1,6 +1,6 @@
 # Sea slug basics: the basics module for the sea slugs, and Basics open for them
 
-Date: 2026-11-20. PR: #TBD. Rules or docs touched: S1, C1, C2, C3, C5, C6, L14, P3, U2, D3; docs/spec/basics.md, docs/spec/seaslugs.md,
+Date: 2026-11-20. PR: #1286. Rules or docs touched: S1, C1, C2, C3, C5, C6, L14, P3, U2, D3; docs/spec/basics.md, docs/spec/seaslugs.md,
 ROADMAP "Every game mode for every subject", docs/reviews/2026-11-19-modes-every-subject.md (PR 5).
 
 ## Context
