@@ -16,7 +16,16 @@ Labels (rule W11): **[read]** = taken from the page or the PDF itself; **[not re
 - **A species is named only when it is one of the genus's game species** (rule C6). The five named, each in
   `tools/seaslugs.json` and so confirmed in the Philippines by rule C8 (Research Grade observers in the Philippines):
   *Goniobranchus kuniei* (124 observers, near Dauin too), *G. geometricus* (155, near Dauin too), *Hypselodoris tryoni*
-  (169, near Dauin too), *Thecacera pacifica* (14, near Dauin too), *Phestilla melanobrachia* (39).
+  (169, near Dauin too), *Thecacera pacifica* (14, near Dauin too), *Phestilla melanobrachia* (39). The circle-2 pass
+  (2026-11-19) names fourteen more, each in `tools/seaslugs.json` (observers in the Philippines): *Favorinus japonicus*
+  (17, near Dauin too), *F. tsuruganus* (76, near Dauin too), *Ceratosoma tenue* (41, near Dauin too), *C. trilobatum*
+  (31, near Dauin too), *Miamira alleni* (46), *M. sinuata* (28, near Dauin too), *Thorunna daniellae* (19), *Discodoris boholiensis* (52, near Dauin too), *Cadlinella ornatissima* (51),
+  *Plakobranchus ocellatus* (30, near Dauin too), *Bermudella brunneomaculata* (36), *Diversidoris crocea* (69, near
+  Dauin too), *Mexichromis multituberculata* (51, near Dauin too), *M. trilineata* (48).
+- **A feature a source gives of one or two game species only** is a mark that names them: a structural feature (a
+  shape, a fold, a ridge, the tubercles) or the animal on its food or in its place; a movement a still photo cannot
+  show is not one (the gill waving of *Thorunna*, Codex on #1238), nor a species' colour pattern alone. A sheet of a species outside the game is not
+  used (rule C6).
 - **A genus with no photo feature in the sources read gets no mark**, and its reason in `none`, never a guess.
 
 ## 2. Coverage
@@ -24,7 +33,7 @@ Labels (rule W11): **[read]** = taken from the page or the PDF itself; **[not re
 | | Genera with marks | In `none` |
 |---|---|---|
 | Circle 1 (24) | 22: *Chromodoris*, *Goniobranchus*, *Hypselodoris*, *Doriprismatica*, *Phyllidia*, *Reticulidia*, *Jorunna*, *Nembrotha*, *Tambja*, *Thecacera*, *Pteraeolidia*, *Phyllodesmium*, *Chelidonura*, *Pleurobranchus*, *Hexabranchus*, *Costasiella*, *Phestilla*, *Melibe*; *Halgerda*, *Elysia*, *Thuridilla*, *Coryphellina* (2026-11-19) | 2: *Ardeadoris*, *Caloria* |
-| Circle 2 (22) | 2: *Phyllidiella* (Brunckhorst's key), *Phyllidiopsis* (Brunckhorst's genus account and table, 2026-11-19) | |
+| Circle 2 (22) | 22: *Phyllidiella* (Brunckhorst's key), *Phyllidiopsis* (Brunckhorst's genus account and table, 2026-11-19); the circle-2 pass (2026-11-19, §3b): *Favorinus*, *Dolabella*, *Aplysia*, *Aegires*, *Ceratosoma*, *Miamira*, *Glossodoris*, *Sagaminopteron*, *Thorunna*, *Discodoris*, *Cadlinella*, *Tubulophilinopsis*, *Samla*, *Armina*, *Roboastra*, *Plakobranchus*, *Longibranchus*, *Bermudella*, *Diversidoris*, *Mexichromis* | |
 | Circle 3 (32) | 30 (2026-11-19, §6): *Asteronotus*, *Atagema*, *Baeolidia*, *Bornella*, *Bulbaeolidia*, *Cabangus*, *Colpodaspis*, *Cratena*, *Cyerce*, *Dendrodoris*, *Dermatobranchus*, *Doto*, *Euselenops*, *Gymnodoris*, *Janolus*, *Mariaglaja*, *Marioniopsis*, *Murphydoris*, *Notobryon*, *Notodoris*, *Odontoglaja*, *Pelagella*, *Philinopsis*, *Platydoris*, *Sclerodoris*, *Stylocheilus*, *Tenellia*, *Tomoberthella*, *Trapania*, *Tyrannodoris* | 2: *Taringa*, *Verconia* |
 
 Families with marks: Phyllidiidae, Plakobranchidae (the parapodia, which *Elysia* and *Thuridilla* share; Gosliner 1995
@@ -34,7 +43,13 @@ tells the two genera apart by where they live and their rhinophores), and Pleuro
 external descriptions read are of *A. egretta*, whose white, yellow-rimmed pattern SEASLUG.WORLD says other genera share
 ("internally it is clearly distinct"); Rudman 1984's diagnosis was not read. *Caloria*: the Sea Slug Forum's sheet for
 *Caloria indica* (as *Phidiana indica*) says its genus "cannot be resolved at present"; no source read gives a feature of
-the genus, and its type species is Mediterranean (rule C6).
+the genus, and its type species is Mediterranean (rule C6). The circle-2 pass searched the Internet Archive's BioStor
+scans for both names once more: none for *Ardeadoris*; for *Caloria* only a paper on Mediterranean species (rule C6).
+
+**Circle 2: *Diversidoris* and *Mexichromis*** have no genus feature in the sources read (both defined by their DNA in
+Johnson & Gosliner 2012), so their marks name their game species: the mantle fold of *D. crocea* (the Sea Slug Forum's
+*Noumea crocea* sheet), the tubercles of *M. multituberculata* and the sponge *M. trilineata* lives and feeds on (its
+*Pectenodoris trilineata* sheet).
 
 ## 3. The sources used
 
@@ -48,6 +63,26 @@ the genus, and its type species is Mediterranean (rule C6).
 | **Sea Slug Forum** (Rudman and contributors, Australian Museum, 1998-2010), the fact sheets at `https://www.seaslugforum.net/find/<code>`: `chroanna`, `chrowill`, `chrokuni`, `mantflap`, `risbtryo`, `glosatro`, `retihalg`, `jorufune`, `nembkuba`, `nembcham`, `tambmoro`, `pteriant`, `phylbria`, `chelamoe`, `pleufors`, `hexasang`, `meliviri`, `thurline` | **[read]**, one page every 2 s, a generic User-Agent | The colour groups of *Chromodoris*; the wide mantle overlap and the mantle flapping of today's *Goniobranchus*; the tall body and the trailing pairs of the former *Risbecia* (today's *Hypselodoris*); the black-rimmed wavy mantle of today's *Doriprismatica atromarginata*; *Reticulidia* against *Phyllidia*; the papillate back of *Jorunna*; the ascidian food of *Nembrotha*, the bryozoan food of every *Tambja*; the farmed zooxanthellae and white juveniles of *Pteraeolidia*; the soft-coral food and zooxanthellae of *Phyllodesmium*; the shields and parapodia of *Chelidonura*; the side gill of the pleurobranchs; the separate, non-retractile gills and the swimming of *Hexabranchus*; the oral veil of *Melibe*; the parapodia of *Thuridilla* | Its names predate the revisions: each line says the name today in its "where" (*Glossodoris atromarginata* now *Doriprismatica*, *Risbecia tryoni* now *Hypselodoris*, *Chromodoris kuniei* and *C. geometrica* now *Goniobranchus*). Its *Pteraeolidia ianthina* sheet (1998) covers the genus as then understood; the Philippine species is *P. semperi* (the literature scan's §4.7): the marks used are of the genus. The fact sheets read carry their original text and the Museum's copyright; no foreign content was seen on them |
 | **SEASLUG.WORLD** (Kimoto Nobuhiko), species pages [*Thecacera pacifica*](https://en.seaslug.world/species/thecacera_pacifica), [*Phestilla melanobrachia*](https://en.seaslug.world/species/phestilla_melanobrachia), [*Elysia marginata*](https://en.seaslug.world/species/elysia_marginata) | **[read]** | The finger-like appendages beside the gills of *T. pacifica*; *Phestilla* a coral-feeding genus, *P. melanobrachia* on *Tubastraea*; the bordered parapodia of *E. marginata* | No genus page; its species pages say little of the genus |
 | **Wikipedia**, [*Costasiella*](https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1384690062) (revision 1384690062) | **[read]** through the API | The smooth, simple rhinophores with dull tips, after Swennen 2007's diagnosis of the genus | Cited at a fixed revision; Swennen 2007 itself was not read |
+
+### 3b. The circle-2 pass (2026-11-19)
+
+Each source **[read]** from its own text (the OCR of a BioStor scan on the Internet Archive, a Plazi treatment, a PDF
+or a Sea Slug Forum page saved and read), never from a search summary.
+
+| Source | Read | What it gave |
+|---|---|---|
+| **Willan 1983**, *Description of the aeolid nudibranch Favorinus tsuruganus Baba and Abe, 1964 from eastern Australia*, Journal of the Malacological Society of Australia 6: 71-79, BioStor scan ([archive.org/details/biostor-266362](https://archive.org/details/biostor-266362)) | **[read]**, OCR | *Favorinus*: cerata grouped in arches (p. 72); "All Favorinus species have rhinophores that carry ornamentation of some type": bulbs, lamellae or, in *F. tsuruganus*, large flanges (pp. 74-75); *F. tsuruganus* "principally eats the eggs of other nudibranchs" (note added in proof) |
+| **Fahey & Gosliner 2004**, *A phylogenetic analysis of the Aegiridae*, Proc. Calif. Acad. Sci. 55(34): 613-689 ([archive.org/details/biostor-144012](https://archive.org/details/biostor-144012)) | **[read]**, OCR | *Aegires* diagnosis (p. 618): firm body, numerous blunt pedunculate tubercles, rhinophores from cylindrical sheaths with tubercles around the rims, the gill protected by tuberculate lobes |
+| **Gosliner 1996**, *Phylogeny of Ceratosoma, with descriptions of two new species*, Proc. Calif. Acad. Sci. 49(3): 115-126 ([archive.org/details/biostor-3280](https://archive.org/details/biostor-3280)) | **[read]**, OCR | Characters 5 and 6 (p. 123): the lobed mantle margin and the posterior glandular protuberance of most *Ceratosoma*; *C. alleni* (now *Miamira alleni*) with pustules over the body |
+| **Matsuda & Gosliner 2018**, *Glossing over cryptic species*, Zootaxa 4444(5): 501-529, [doi:10.11646/zootaxa.4444.5.1](https://doi.org/10.11646/zootaxa.4444.5.1) | **[read]**, the publisher's PDF | *Glossodoris* diagnosis: a broad body, semi-permanent undulations around the mantle margin, the gill often in double spirals; the undulations "characteristic of all Glossodoris" (*G. buko*) |
+| **Gosliner 1989**, *Revision of the Gastropteridae*, The Veliger 32(4): 333-381 ([archive.org/details/biostor-131922](https://archive.org/details/biostor-131922)) | **[read]**, OCR | *Sagaminopteron*: "either brightly colored or bear special resemblance to their sponge prey" (p. 376), sponge feeders (p. 334), a prominent medial siphonal crest (p. 378) |
+| **Zamora-Silva & Malaquias 2018**, *Molecular phylogeny of the Aglajidae head-shield sea slugs*, Zool. J. Linn. Soc. 183: 1-51, [doi:10.1093/zoolinnean/zlx064](https://doi.org/10.1093/zoolinnean/zlx064) | **[read]**, Plazi's treatment of *Tubulophilinopsis* (p. 40) | A crest-like frontal elevation of the head shield, frontal eyes in small unpigmented rings, short rounded caudal lobes, the long tubular buccal bulb |
+| **Ardila & Valdés 2004**, *The genus Armina in the southern Caribbean*, The Nautilus 118(4): 131-138 ([archive.org/details/biostor-101092](https://archive.org/details/biostor-101092)) | **[read]**, OCR | Introduction (p. 131): arminids flattened, narrower behind, the back with longitudinal ridges or pustules; *Armina*: a continuous anterior mantle margin, the rhinophores close together. Only the family's and the genus's features are used, no Caribbean species (rule C6) |
+| **Korshunova, Fletcher & Martynov 2025**, *The endless forms are the most differentiated*, Zool. J. Linn. Soc. 204(4), [doi:10.1093/zoolinnean/zlaf057](https://doi.org/10.1093/zoolinnean/zlaf057) | **[read]**, Plazi's treatment of the Eubranchidae | *Longibranchus* diagnosis: a single ceras per row, smooth rhinophores (the other characters internal) |
+| **Gosliner 2004**, *Phylogenetic systematics of Okenia, Sakishimaia, Hopkinsiella and Hopkinsia*, Proc. Calif. Acad. Sci. 55(5): 125-161 ([archive.org/details/biostor-110161](https://archive.org/details/biostor-110161)) | **[read]**, OCR | *O. brunneomaculata* (now *Bermudella brunneomaculata*, WoRMS): rhinophores with well-spaced lamellae, found on ctenostome bryozoans under large foliose sponges (p. 129); character 11, its rhinophoral lamellae well separated (p. 155). The features of its clade (p. 158) are not used: the clade's link to the genus *Bermudella* was not read in a source |
+| **Sea Slug Forum**, more fact sheets: `favojap`, `dolaauri`, `aplysioidea`, `ceratenu`, `ceratril`, `cerasinu`, `saganigr`, `thordani`, `discboho`, `cadlorna`, `philgard`, `robograc`, `placocel`, `noucroc`, `meximult`, `pecttril` | **[read]**, 2 s apart | *F. japonicus* on *Aplysia* eggs, its colour from its food; *Dolabella*'s sloping back shield and mottled camouflage; the sea hares' parapodial lobes, rolled rhinophores and purple ink; the recurved dorsal horn of most *Ceratosoma* and the lobes of *C. tenue* and *C. trilobatum*; the tubercles of *C. sinuatum* (now *Miamira sinuata*); *S. nigropunctatum* camouflaged on its sponge; the narrow mantle skirt and the pointed foot of *T. daniellae* (its gill waving, which `thorfurt` shows too, is not seen on a still photo); the visceral ridge and mantle skirt of *D. boholiensis*; the pink-tipped tubercles of *C. ornatissima*; the head crest of the tubular-bulb *Philinopsis* (now *Tubulophilinopsis*); the enrolled oral tentacles of every *Roboastra*, a predator of other sea slugs; the parapodia and habitat of *P. ocellatus*; the mantle fold of *Noumea crocea* (now *Diversidoris crocea*); the scattered tubercles of *M. multituberculata*; *Pectenodoris trilineata* (now *Mexichromis trilineata*) in groups on its food sponge |
+
+*Samla* uses Korshunova et al. 2017's diagnosis, already cited for its tell-apart line.
 
 ## 4. Read, not used
 
@@ -80,6 +115,19 @@ the genus, and its type species is Mediterranean (rule C6).
   Library's text of Gosliner 1995 (a browser check; the same scan read on the Internet Archive); Wikipedia's API (429,
   "too many requests", on the one batched request; not retried); Furfaro et al. 2016 (*Caloria elegans*, Mediterranean:
   a search summary only).
+- **2026-11-19, the circle-2 pass, read, not used**: the Sea Slug Forum's `favomira` (*F. mirabilis* colours),
+  `diveaura` and `armisemp` (species outside the game, rule C6), `aegivill` (*Aegires* small, on calcareous sponges: not
+  a photo feature), `aegiretidae` and `gastropteridae` (topic pages, no text on looks), `ceragrac`, `glosrufo`,
+  `gloshiku`, `sagapsyc`, `thorfurt`, `thorhalo`, `durvpusi`, `philpils`, `seahares`, `swimming` (species colours, or what a source
+  above says); Johnson & Gosliner 2012 again (its *Ceratosoma*, *Miamira*, *Glossodoris*, *Mexichromis*, *Thorunna*,
+  *Diversidoris* and *Cadlinella* entries: clades, no external feature); Wikipedia's *Ceratosoma* page (classification
+  only); Plazi's *Mexichromis* treatment (Tibiriçá et al. 2017, a radula); WoRMS (*Bermudella*, *B. brunneomaculata*:
+  the names accepted today).
+- **2026-11-19, the circle-2 pass, not read**: the Sea Slug Forum's genus or family codes guessed (`ceratosoma`,
+  `favorinus`, `dolabella`, `noumcroc`, `glossodoris`, `arminidae`, `aplysia`, `aplysiidae`, `chromodorididae`,
+  `facelinidae`: 404); the University of Barcelona's copy of Paz-Sedano et al. 2024 (*Bermudella* resurrected; a page
+  that needs a browser); Valdés & Gosliner 1999 (*Miamira*) and Rudman 1986, 1987 and 1988 (*Glossodoris*,
+  *Diversidoris*, *Ceratosoma*), cited by the sheets read, not looked for.
 - **Not read**: Pola, Cervera & Gosliner 2008, the *Nembrotha* revision (Scientia Marina, its PDF answered 503 to the
   fetch, and its certificate chain failed for a plain download); Sea Slugs of Hawaii, Phyllidiidae page (503); Rudman
   1984's review of the chromodorid genera (Zoological Journal of the Linnean Society, paywalled); Gosliner, Valdés &
@@ -87,8 +135,7 @@ the genus, and its type species is Mediterranean (rule C6).
 
 ## 5. What is left
 
-- **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*), circle 2 and circle 3's two: the 2018 field guide would
-  settle many; Rudman 1984 (the chromodorid genera, *Ardeadoris* among them), Pola et al. 2008 (*Nembrotha*, *Tambja*,
+- **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*) and circle 3's two (*Taringa*, *Verconia*): the 2018 field guide would settle many; Rudman 1984 (the chromodorid genera, *Ardeadoris* among them), Pola et al. 2008 (*Nembrotha*, *Tambja*,
   *Roboastra*) and Gosliner & Willan 1991 (Flabellinidae) are the papers to read next, each where it opens.
 - ***Caloria indica*'s genus**: the Sea Slug Forum says it cannot be settled (also placed in *Learchis*, *Hervia*,
   *Facelina* and *Phidiana*): a nomenclature point for `points.json` (rule C5).
@@ -182,6 +229,15 @@ User-Agent:
   (1): one fetch each. Refused by the site: the Biodiversity Heritage Library (a browser check; BioStor's copy of the same
   scan on the Internet Archive was read instead), the Australian Faunal Directory (a CAPTCHA) and Wikipedia's API (429),
   neither tried again. No refusal came from the session's network proxy.
+
+**2026-11-19, 16:15-17:00 Manila** (the circle-2 genera), a generic User-Agent:
+- Web searches (7): *Tubulophilinopsis*, *Longibranchus*, *Bermudella*, Gosliner 2004 (*Okenia*), Matsuda & Gosliner
+  2018, Fahey & Gosliner 2004, *Mexichromis*, each by its scientific names; five of them in two parallel batches (three,
+  then two), the others one at a time. The Internet Archive's search for BioStor scans by title words (9, 2 s apart).
+- Sea Slug Forum: `specieslist.htm` (twice), `general.htm` and 46 pages at `/find/<code>` (10 answered 404), 2 s apart.
+- Internet Archive (6 OCR texts and their metadata), Plazi (3 treatments), Zootaxa (1 PDF), PLoS ONE (Johnson &
+  Gosliner 2012, XML), Crossref (1 DOI lookup), WoRMS (2 name lookups), Wikipedia (1 page), the University of
+  Barcelona's repository (1): one fetch each, one at a time. No refusal came from the session's network proxy.
 
 **2026-11-19, 16:15-17:00 Manila** (the circle-3 genera), each request one at a time, a generic User-Agent, no
 iNaturalist request (rule C7: another agent ran at the same time):
