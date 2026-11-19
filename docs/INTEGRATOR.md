@@ -121,7 +121,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   ordinary code (a test fix, docs, bringing a PR up to date), the lightest one only for mechanical work that passed
   the sample test (data fetches, conversions); the strongest model for anything judged (learning, content, design,
   reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
-  resolution, one species) before looking, and judge the species under target first.
+  resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
+  in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
+- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
+  runs out, take the next decided ROADMAP rows the agents can move alone; never invent a study to fill the time.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
 - **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.
