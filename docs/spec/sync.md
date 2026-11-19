@@ -459,7 +459,7 @@ app's `treeGen` and `treeGenera` build them (`tests/fishreplay.test.js`), cached
 `seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
 corals' only); every fish answer is logged with its scoring record and replays as the game scored it.
 
-**The species by their scientific names** (vNEXT; the app opens them from `SCI_SHEET`, rule D4;
+**The species by their scientific names** (v198; the app opens them from `SCI_SHEET`, rule D4;
 docs/reviews/2026-11-18-species-step2-plan.md): both subjects' units also hold one unit per species under a genus
 unit, `sci:` and the species id in letters and digits (`core.js` `LEVELS`, `spUnitId`, `treeSpUnits` `'sci'`:
 `sci:s091`, `sci:xgoniobranchussp5`), with the other scientific species of its family as its look-alikes, its family's

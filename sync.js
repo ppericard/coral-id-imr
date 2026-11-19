@@ -122,7 +122,7 @@ const generaOn = () => sheetV() >= GENERA_SHEET;
 // §2.2): they may open, and count in the global score, only once the sheet replays them as the game scores them, a
 // smaller fault included (SCI_SHEET: core.js treeReplayGen, treeSpUnits 'sci', PART; its leaderboard tree with them,
 // treeBoardTree); before, they stay closed (rule D4). The one predicate the app's species rules will read (its app PR).
-const SCI_SHEET = 197;
+const SCI_SHEET = 198;
 const sciOn = () => sheetV() >= SCI_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();

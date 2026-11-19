@@ -1,7 +1,7 @@
 # Species by their scientific names, fish and sea slugs: the plan of step 2
 
 **Status: every question answered (Q394-Q398); the sheet PR of section 5 built (`claude/sci-sheet`, sheet script
-vNEXT: the `sci:` units of both subjects in the replay and the board's tree, Q394's smaller faults, the gate `SCI_SHEET`);
+v198: the `sci:` units of both subjects in the replay and the board's tree, Q394's smaller faults, the gate `SCI_SHEET`);
 the app PR, the names rows, the exams and the ultimate exam next.** Written on 2026-11-17 in the
 evening, Manila time, on `origin/main` at 444d4e61, the day #975 (step 1, sheet script v161) was merged. Pierre answered
 on 2026-11-17 in the evening and on 2026-11-18 in the morning; the answers are recorded where each question stood
