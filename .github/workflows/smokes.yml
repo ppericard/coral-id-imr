@@ -1,5 +1,5 @@
-# The Playwright smoke tests, one job per smoke file, in parallel on separate runners (pages and admin in two halves
-# each), installing Playwright with npm into a temporary folder; the repo keeps no
+# The Playwright smoke tests, one job per smoke file, in parallel on separate runners (pages, fish and admin in
+# groups), installing Playwright with npm into a temporary folder; the repo keeps no
 # package.json. A pull request that changes only docs skips them
 # (paths-ignore below: every changed file must match for the run to be skipped); the Checks workflow, tests/docs.test.js
 # included, still runs on it. A merge train's push (train/*, tools/train.py) always runs every smoke: it is the
@@ -31,7 +31,8 @@ jobs:
       # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
       # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
       # tests/smokeparts.test.js, which reads this file, fails when a group is in no job here; admin.smoke.js runs whole at 390, in three groups at
-      # 1280, SMOKE_W one width each).
+      # 1280, SMOKE_W one width each). The groups are balanced by the time of each part, which a run prints ("admin.smoke part
+      # photos: 122 s"); the matrix's longest job sets the time of every merge train, so measure before moving a part.
       matrix:
         include:
           - name: pages main
@@ -76,16 +77,16 @@ jobs:
             w: '1280'
             part: main
             what: Admin demo test at 1280 px, main (admin.html?demo, every page, Analyses, To do, Activity, Health; made-up data, nothing sent)
-          - name: admin 1280 actions
+          - name: admin 1280 photos
             smoke: admin
             w: '1280'
-            part: actions
-            what: Admin demo test at 1280 px, actions (Analyses' Formats, sort and milestones, views remembered, To do, Hidden, the view filter; made-up data, nothing sent)
-          - name: admin 1280 more
+            part: photos
+            what: Admin demo test at 1280 px, photos (Growth form, Candidates, the auto-sort, Publish, the difficulty bands' colours; made-up data, nothing sent)
+          - name: admin 1280 rest
             smoke: admin
             w: '1280'
-            part: more
-            what: Admin demo test at 1280 px, players and photos (Players' actions, Candidates, the auto-sort, Publish; made-up data, nothing sent)
+            part: rest
+            what: Admin demo test at 1280 px, rest (Analyses' Formats, sort and milestones, views remembered, To do, Hidden, the view filter; Players' actions and journeys; Sign out sealing the draft; made-up data, nothing sent)
           - name: profiles
             smoke: profiles
             what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
