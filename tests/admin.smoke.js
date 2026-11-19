@@ -364,6 +364,98 @@ async function sealPart(b, base, fails) {
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }
+// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): suggest.json, the largest file a Players
+// page would wait for, is held back by the test. Opened on Players › Activity (the default), the page draws without it and
+// the suggestions follow (admin.js sugLater: laid over the candidates, the auto-sort run), and a page that needs them, asked
+// for before they are in, shows Loading… and then draws; opened on a page that needs them, it waits for them as it always did.
+// Once, at 1280.
+async function loadPart(b, base, fails) {
+  const F = 'load: ',
+    lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await lc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  let held = null,
+    asked = 0;
+  await lc.route(
+    u => u.href.startsWith(base) && u.pathname === '/suggest.json',
+    async r => {
+      asked++;
+      if (held) await held.p;
+      r.continue();
+    }
+  );
+  const hold = () => {
+    const h = {};
+    h.p = new Promise(ok => (h.go = ok));
+    held = h;
+    asked = 0;
+    return h;
+  };
+  const errs = [],
+    open = async hash => {
+      const p = await lc.newPage();
+      p.on('pageerror', e => errs.push(e.stack || e.message));
+      await p.goto(base + 'admin.html?demo' + hash);
+      return p;
+    },
+    shown = (p, re) =>
+      p
+        .waitForFunction(re => re.test(document.getElementById('view').innerText), re, {timeout: 60000})
+        .then(
+          () => true,
+          () => false
+        ),
+    late = p => p.evaluate(() => typeof SUG_LATE === 'function'),
+    laid = p =>
+      p.evaluate(
+        () =>
+          Object.values(DATA.cand)
+            .flat()
+            .some(x => x.j) && Object.keys((SUG || {}).cand || {}).length > 0
+      );
+  // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
+  let h = hold(),
+    p = await open('');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
+  if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
+    fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
+  await p.waitForFunction(() => Object.keys(SHEET_READS).length === 0, null, {timeout: 30000}).catch(() => {});
+  await p.waitForTimeout(1500);
+  if (!asked) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
+  h.go();
+  await p.waitForFunction(() => SUG_LATE === null, null, {timeout: 30000}).catch(() => fails.push(F + 'the suggestions never came in'));
+  if (!(await laid(p))) fails.push(F + 'the suggestions were not laid over the candidates when they came late');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity was lost when the suggestions came in');
+  await p.close();
+  // 2. a page that needs them, asked for at once: Loading…, then it draws
+  h = hold();
+  p = await open('');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw (gate check)');
+  await p.evaluate(() => (location.hash = '#photos/candidates'));
+  if (!(await shown(p, /^\s*Loading/))) fails.push(F + 'a page that needs the suggestions drew without them');
+  if (!(await late(p))) fails.push(F + 'the suggestions were already in (gate check is void)');
+  h.go();
+  await p
+    .waitForFunction(() => SUG_LATE === null && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {timeout: 60000})
+    .catch(() => fails.push(F + 'the page that waited for the suggestions never drew'));
+  if (!(await laid(p))) fails.push(F + 'the page drew before the suggestions were laid');
+  await p.close();
+  // 3. opened on a page that needs them: nothing is drawn, nothing started, until they are in (as before)
+  h = hold();
+  p = await open('#photos/candidates');
+  await p.waitForTimeout(1500);
+  if (!asked) fails.push(F + 'a page that needs the suggestions did not ask for them at once');
+  if (await p.evaluate(() => typeof DRAFT !== 'undefined' && !!DRAFT && !!DRAFT.genera))
+    fails.push(F + 'a page that needs the suggestions started without them');
+  h.go();
+  await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+  if ((await late(p)) || !(await laid(p))) fails.push(F + 'opened on Candidates, the suggestions were not laid at the start');
+  await p.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await lc.close();
+}
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], photos: ['photos'], rest: ['actions', 'players', 'seal']}),
     ws = slot.widths(WIDTHS);
@@ -6128,7 +6220,7 @@ async function sealPart(b, base, fails) {
           felt.forEach(x => (x.style.display = ''));
           const plain = [],
             tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode());)
+          for (let n; (n = tw.nextNode()); )
             if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
               plain.push(n.textContent.trim().slice(0, 80));
           return {
@@ -9669,6 +9761,7 @@ async function sealPart(b, base, fails) {
     await finish();
   }
   if (ws.includes(1280) && run.has('seal')) await timed('seal', () => sealPart(b, base, fails));
+  if (ws.includes(1280) && run.has('seal')) await timed('load', () => loadPart(b, base, fails));
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.

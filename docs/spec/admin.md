@@ -282,6 +282,26 @@ The draft button carries the status: "● Publish" with a draft (its title lists
   need; a refused token drops them. Health and the Journey ask for the pages opened together with the answer log.
   Nothing read from the sheet is stored on the device. `tests/admin.smoke.js` checks the reads through the demo's call
   log (`admin-demo.js` `DEMO_CALLS`).
+- **What the first page waits for** (Pierre, 2026-11-19: the admin "takes longer and longer to open" on his phone, worst
+  after a long absence). Cold, on a phone profile (CPU x4, 1.6 Mbps, 150 ms), opening on Activity is bandwidth first:
+  the scripts (0.56 MB gzipped), `curation.json` through the GitHub API, the answer log (1 MB gzipped, 6 MB of JSON for 39,000
+  answers) and `data.json` and the small files, about 3.1 MB before the page draws; the rest is the main thread parsing
+  and laying them. Two things were taken off that line:
+  - `curation.json` (2.7 MB, over the contents API's 1 MB) is read as the blob's **raw bytes** (`ghText`, media type
+    `application/vnd.github.raw+json`: 0.54 MB gzipped, measured on GitHub on 2026-11-19) instead of base64 inside
+    JSON (0.89 MB gzipped, and 3.6 MB to decode); the base64 reply stays the fallback. Its text is kept in the browser's
+    Cache Storage under the blob's sha (`blobText`, `reefid-admin-blobs`, the latest only: a sha never changes its blob):
+    the next visit and every Publish (`fresh()` re-reads it) ask GitHub for the sha only. Public data (the file is on the
+    site), not the declined copy of players' data (ROADMAP "Declined for now"). Not in the demo.
+  - `suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
+    work of laying them over the candidates) is read by the photo pages, the Inbox count and the auto-sorts, never by a
+    Players page (`sugOwn`). Opened on a Players page (the default), `start()` does not wait for it: the candidates' laying
+    (`sugCands`) and the auto-sorts (`sugRun`) are left in `SUG_LATE`, run by `sugLoad` once the sheet's reads are in and the
+    page is idle (`sugLater`), or at once when a page that needs them is asked for (`render()`'s gate: Loading… until
+    then). Opened on any other page it waits for them as before. Until they are in, the header's Inbox count leaves out the
+    suggestions (it comes up with the laying, a few seconds after Activity).
+  The fish auto-sort still reads `fish-cand.json` (10 MB) and `fish.json` at idle after that (a 1-second block on a phone
+  profile): left, ROADMAP "Admin opening".
 - **Memos**: `photos` / `own` / `cands` walk every genus and are memoized per draft state, kept from page to page:
   `render()` clears them only when the draft differs from the one they were computed for (`memoFresh`), and photos or
   candidates sent to another genus are indexed once per state (`sentTo`); code that changes `DRAFT` and then reads them

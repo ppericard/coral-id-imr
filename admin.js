@@ -688,6 +688,17 @@ const gh = (path, opts = {}) =>
     if (!r.ok) throw new Error(j.message || `GitHub error ${r.status}`);
     return j;
   });
+// The text of a GitHub path in its raw media type (a blob comes as its own bytes, not as base64 inside JSON: 0.54 MB gzipped
+// for curation.json instead of 0.89 MB, and nothing to decode).
+const ghText = (path, opts = {}) =>
+  fetch(API + path, {
+    cache: 'no-store',
+    ...opts,
+    headers: {Accept: 'application/vnd.github.raw+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}
+  }).then(async r => {
+    if (!r.ok) throw new Error(`GitHub error ${r.status}`);
+    return r.text();
+  });
 const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
 // ghfile: begin
@@ -700,8 +711,29 @@ async function ghFile(path) {
     throw e;
   });
   if (!f) return null;
-  const b64 = f.content ? f.content : (await gh(`/git/blobs/${f.sha}`)).content;
-  return {text: fromB64(b64), sha: f.sha};
+  return {text: f.content ? fromB64(f.content) : await blobText(f.sha), sha: f.sha};
+}
+// A blob never changes under its sha: its text is kept in the browser's Cache Storage under that sha (the latest only),
+// so the next visit and the next Publish skip the download (curation.json: 0.54 MB gzipped). It is public data (curation.json is on the site). Any failure of the cache: the download, as before. Not in the demo.
+async function blobText(sha) {
+  const key = '/__blob/' + sha;
+  let c = null;
+  try {
+    c = typeof caches === 'object' && caches && !(typeof DEMO !== 'undefined' && DEMO) ? await caches.open('reefid-admin-blobs') : null;
+    const h = c && (await c.match(key));
+    if (h) return await h.text();
+  } catch (e) {
+    c = null;
+  }
+  // Its raw bytes; the base64 reply when that fails.
+  const text = await ghText(`/git/blobs/${sha}`).catch(async () => fromB64((await gh(`/git/blobs/${sha}`)).content));
+  try {
+    if (c) {
+      await Promise.all((await c.keys()).map(k => c.delete(k)));
+      await c.put(key, new Response(text, {headers: {'Content-Type': 'text/plain'}}));
+    }
+  } catch (e) {}
+  return text;
 }
 // ghfile: end
 async function checkToken() {
@@ -3628,6 +3660,12 @@ function render() {
   // Away from Tree, its node is forgotten: coming back (Back, a link) is a new address that shows its genus or species
   // again.
   if (!treeOf(cur)) TT_SEL = null;
+  // The suggestions are still on their way (the admin opened on a Players page): any other page waits for them, then draws.
+  if (SUG_LATE && !sugOwn(cur)) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    sugLoad();
+    return;
+  }
   document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A view with work of its own, on screen for a subject of its rank (liveOf): drawn even with no work left. Opened from its
   // address, it can come before its script is in (as a journey, below).
@@ -7690,6 +7728,44 @@ function download() {
 }
 
 /* ---------- Start ---------- */
+// The judging agent's suggestions (suggest.json: 3.5 MB, the largest file a Players page would wait for, 0.4 MB gzipped,
+// and the work of laying them over the candidates) are read by the photo pages, the Inbox count and the auto-sort, never
+// by a Players page (sugOwn: where the admin opens, Activity). An admin that opens there does not wait for them: start()
+// leaves the laying and the auto-sort in SUG_LATE, run once the sheet's reads are in (sugLater), or at once when a page
+// that reads them is asked for (render's gate: Loading… until then).
+const sugOwn = h => /^players\//.test(h),
+  landing = () => (([S, p]) => admRoute(p, S))(subjOfHash(hashNow())),
+  sugGet = () =>
+    fetch('suggest.json', {cache: 'no-cache'})
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+let SUG_LATE = null,
+  SUG_P = null;
+function sugLoad() {
+  if (!SUG_LATE) return Promise.resolve();
+  return (SUG_P =
+    SUG_P ||
+    sugGet().then(j => {
+      const run = SUG_LATE;
+      SUG_LATE = null;
+      SUG = j;
+      try {
+        run();
+      } finally {
+        memoReset();
+        sugOwn(cur) ? status() : render();
+      }
+    }));
+}
+// Once the sheet's reads are in (the page the admin opened on is drawn with them) and the page is idle.
+function sugLater() {
+  let n = 0;
+  const t = setInterval(() => {
+    if (Object.keys(SHEET_READS).length && ++n < 40) return;
+    clearInterval(t);
+    'requestIdleCallback' in window ? requestIdleCallback(sugLoad, {timeout: 3000}) : setTimeout(sugLoad, 500);
+  }, 250);
+}
 async function start() {
   const hd = document.querySelector('header');
   if (hd && window.ResizeObserver)
@@ -7719,6 +7795,7 @@ async function start() {
             console.warn(`${u} not loaded:`, e.message);
             return {};
           })).then(j => (j && j[k]) || {});
+  const late = sugOwn(landing());
   let CJ;
   try {
     let PJ;
@@ -7728,9 +7805,9 @@ async function start() {
       side('forms.json', 'gf'),
       side('forms.json', 'gunsure'),
       side('picks.json', 'feat'),
-      fetch('suggest.json', {cache: 'no-cache'})
-        .then(r => (r.ok ? r.json() : {}))
-        .catch(() => ({})),
+      // The judging agent's suggestions (3.5 MB, 0.4 MB gzipped): a Players page does not read them, so it opens without them
+      // and they follow (sugLater); every other page waits for them as before.
+      late ? {} : sugGet(),
       loadSaved(),
       side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
       // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
@@ -7772,21 +7849,6 @@ async function start() {
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   // The judging agent's candidate pass (suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
   // older guess, its quality and growth form become the dashed first guesses, the rest orders the swiper (jw, candQueue).
-  const SC = (SUG && SUG.cand) || {};
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const j = SC[p.f];
-      if (!j) return;
-      p.j = j;
-      if (j.v) p.vg = j.v;
-      // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
-      if (j.q) AUTOQ[p.f] = j.q;
-      if (j.fm) {
-        AUTOF[p.f] = j.fm;
-        (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
-      }
-    });
   // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to the admin, with the reason.
   const SH = Object.values(DATA.cand)
     .flat()
@@ -7794,12 +7856,29 @@ async function start() {
     .map(p => METRICS[p.f][0])
     .sort((a, b) => a - b);
   MREF = SH.length ? {all: SH, lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null;
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const mf = p.j && metFlag(autoSure(p.j), p.j, METRICS[p.f], MREF);
-      if (mf) p.mf = mf;
-    });
+  const sugCands = () => {
+    const SC = (SUG && SUG.cand) || {};
+    Object.entries(DATA.cand).forEach(([n, L]) =>
+      L.forEach(p => {
+        const j = SC[p.f];
+        if (!j) return;
+        p.j = j;
+        if (j.v) p.vg = j.v;
+        // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
+        if (j.q) AUTOQ[p.f] = j.q;
+        if (j.fm) {
+          AUTOF[p.f] = j.fm;
+          (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
+        }
+        const mf = metFlag(autoSure(j), j, METRICS[p.f], MREF);
+        if (mf) p.mf = mf;
+        // Laid late, the registry below has copied the photo already: the copy the candidate's own genus made gets them too.
+        const c = PHOTOS[p.f];
+        if (c && c.genus === n) Object.assign(c, {j: p.j, ...(p.vg ? {vg: p.vg} : {}), ...(p.mf ? {mf: p.mf} : {})});
+      })
+    );
+  };
+  if (!late) sugCands();
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
   if (DATA.x) Object.assign(DATA.gen, DATA.x.gen);
@@ -7894,15 +7973,24 @@ async function start() {
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
   // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
   // Only for an admin who can publish (read-only shows the published curation as it is).
-  const ar = TOKEN && autoRun();
-  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-  // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
-  // which would share the line and the main thread with the first page. One Undo step.
-  const fishLater = () =>
-    fishAutoRun().then(R => {
-      if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
-    });
-  'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  const sugRun = () => {
+    const ar = TOKEN && autoRun();
+    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+    // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
+    // which would share the line and the main thread with the first page. One Undo step.
+    const fishLater = () =>
+      fishAutoRun().then(R => {
+        if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+      });
+    'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  };
+  // Opened on a Players page: the suggestions, their laying and the auto-sorts follow (sugLater), or sooner (render's gate).
+  if (late)
+    SUG_LATE = () => {
+      sugCands();
+      sugRun();
+    };
+  else sugRun();
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
@@ -8015,6 +8103,7 @@ async function start() {
     });
   new MutationObserver(fid).observe($v, {childList: true, subtree: true});
   render();
+  if (late) sugLater();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
