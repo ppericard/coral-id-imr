@@ -56,8 +56,11 @@ function appTree(A) {
     block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const X = C.treeGen(A, {});
-  return {tree: ctx.treeGenera(X, A).treeSp, slate: [...X.c1, ...X.c2, ...X.c3]};
+  const X = C.treeGen(A, {}),
+    Y = ctx.treeGenera(X, A);
+  // sci: the tree with the scientific species on (core.js treeScoreTree sci), as the leaderboard's and the admin's are
+  // ahead of the app's (SCI_SHEET; their app PR makes it the app's own)
+  return {tree: Y.treeSp, sci: C.treeScoreTree(Y, A, true, true), slate: [...X.c1, ...X.c2, ...X.c3]};
 }
 
 const LEARN = 'f:Soldierfishes';
@@ -65,7 +68,10 @@ const LEARN = 'f:Soldierfishes';
 // among look-alikes, as the sheet logs them.
 function log(A, who) {
   const G = C.treeReplayGen(A),
-    U = Object.keys(G).sort(),
+    // no species by its scientific name: the app asks none until its app PR (SCI_SHEET)
+    U = Object.keys(G)
+      .filter(u => C.levelOf(u) !== 'sci')
+      .sort(),
     out = [];
   let x = 11;
   const rnd = () => (x = (x * 48271) % 2147483647) / 2147483647;
@@ -124,7 +130,7 @@ const IN = F.families.find(f => f.circle === 3 && !f.wink).id,
     const X = admin(rows, saved, c),
       pg = X.progOf({id: 'aid1', name: 'Ana Demo', learned: 0}, true, S);
     // (made in the vms' realms: compared as JSON)
-    assert.strictEqual(JSON.stringify(X.M.tree), JSON.stringify(app.tree), "the admin's tree is the app's");
+    assert.strictEqual(JSON.stringify(X.M.tree), JSON.stringify(app.sci), "the admin's tree is the app's, the scientific species on");
     assert.strictEqual(JSON.stringify(X.M.slate), JSON.stringify(app.slate), "the admin's slate is the app's");
     assert.ok(appPct > 0 && appLearned > 0, 'the fixture moves the score and learns a family');
     assert.strictEqual(pg.pct, appPct, 'Progress: the fish % the app shows');

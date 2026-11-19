@@ -138,8 +138,8 @@ test('?stats=1&s=seaslug: the sea slugs’ own statistics, the reply naming them
   assert.deepStrictEqual(plain(run('statsSubjects_()')), ['coral', 'fish', 'seaslug']);
   assert.strictEqual(run("statsTab_('seaslug')"), 'Stats Sea slugs');
   assert.strictEqual(run("statsProp_('seaslug')"), 'STATS_FOLD_seaslug');
-  // the pools cached in parts, the sea slugs' too (pool3seaslug: about 110 KB)
-  assert.match(String(a.cache.pool3seaslug), /^#\d+$/);
+  // the pools cached in parts, the sea slugs' too (pool4seaslug: about 110 KB)
+  assert.match(String(a.cache.pool4seaslug), /^#\d+$/);
 });
 
 // The app's side: sync.js loadOwnStats asks for the sea slugs' statistics and keeps a reply naming them, model.js

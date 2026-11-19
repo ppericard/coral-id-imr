@@ -14,7 +14,7 @@ const DAY = 864e5,
 // The opening hold's tolerance as model.js sets it (INTRO.SLACK), which the comeback's sum takes too.
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
   SLACK = Number(/const INTRO = \{[\s\S]*?\bSLACK: ([\d.]+)/.exec(SRC)[1]);
-function model({P = {}, th = {}, answers = 0, slack = SLACK} = {}) {
+function model({P = {}, th = {}, answers = 0, slack = SLACK, closed = () => false} = {}) {
   const src = SRC,
     pick = (a, b) => cut(src, a, b),
     hold = /const holdNext = [\s\S]*?;\n/.exec(src.slice(src.indexOf('const holdNext')))[0],
@@ -34,6 +34,7 @@ function model({P = {}, th = {}, answers = 0, slack = SLACK} = {}) {
       slateGenera: () => Object.keys(P).filter(n => n !== '~level'),
       bonusList: () => [],
       asked: n => !!((P[n] || {}).ok || (P[n] || {}).ko),
+      closed, // model.js: a unit closed by One at a time or answered live before its card
       answersSoFar: () => answers,
       sDev: n => 'reefid-' + n, // the corals' device keys (app.js sDev)
       store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}
@@ -125,6 +126,11 @@ test('a visit starts after 30 minutes without an answer: the floor of 10 answers
   const N = model({P: {}});
   N.rustNow();
   assert.ok(!N.noOpen());
+  // A player whose only answers are a live game's on units still closed (rule L4; model.js introLive): no comeback, no
+  // floor, so the first cards come (Codex review #1234).
+  const L = model({P: player(5, 40 * MIN), answers: 5, closed: () => true});
+  assert.strictEqual(L.rustNow(), false);
+  assert.ok(!L.noOpen() && L.cb().r === 0);
 });
 
 test('comeback stop rule: a CUSUM that right answers melt and misses keep going; it ends at 0', () => {
@@ -231,6 +237,23 @@ test('comeback questions: the surest genera until one is right, then the most ru
     dd = s.dd;
   M.answeredAt(s, true);
   M.answeredAt(s, true);
+  // An answer recorded late (a live game's, given an hour ago) leaves the later time in place.
+  const at0 = s.at;
+  M.answeredAt(s, false, at0 - 3600e3);
+  assert.strictEqual(s.at, at0);
+  // Days answered right count once each, in order: yesterday then today counts 2; yesterday's right answer recorded
+  // late after them counts nothing more and leaves the last day today, and today's next right answer adds nothing
+  // (Codex review #1234).
+  const today = Date.now(),
+    yday = today - DAY,
+    t = {};
+  M.answeredAt(t, true, yday);
+  M.answeredAt(t, true, today);
+  assert.deepStrictEqual([t.dd, t.dl], [2, M.dayNo(today)]);
+  M.answeredAt(t, true, yday + 1000);
+  assert.deepStrictEqual([t.dd, t.dl, t.at], [2, M.dayNo(today), today]);
+  M.answeredAt(t, true, today + 1000);
+  assert.strictEqual(t.dd, 2);
   // Recall right after the answer: 1 at the same millisecond, a hair under it one tick later (recallAt reads the clock
   // again, and the clock can tick between the two calls).
   assert.ok(M.recallAt('g3') > 1 - 1e-6 && s.dd === dd + (s.dl === M.dayNo() ? 1 : 0) && s.dl === M.dayNo());
