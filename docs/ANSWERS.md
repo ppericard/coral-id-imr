@@ -27,8 +27,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 ## 2026-11-05
 
 - **Q3.** (paraphrase; the governance round's numbering, which may be that PR's own) A choice presented with a
-  recommendation is never merged on silence; decided game changes still merge without waiting (Pierre, 2026-11-05,
-  "clarified" in the PR). Applied: #558. Changed by 2026-11-14 (ship what is easy to correct).
+  recommendation is never merged on silence; decided game changes still merge without waiting (Pierre, 2026-11-05; the
+  PR says clarified). Applied: #558. Changed by 2026-11-14 (ship what is easy to correct).
 - **Q5.** (paraphrase; same caveat) Screenshots go to him as files in the chat. Applied: #558; AGENTS.md Questions to
   Pierre.
 - **Q83.** (paraphrase) Withdrawn: the progress is too generous beyond the look-alikes; the number of genera in mind
@@ -137,11 +137,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   (closed, not merged), #646, #596.
 - **Q110.** the code is subject-agnostic, applied to corals only. (paraphrase). Applied: #611 (closed, not merged),
   #596.
-- **Q140.** Writing the study: Pierre's request of 2026-11-06 (relayed by the integrator), his clarifications at 07:18
-  and 07:25, and Q140, which he approved as a simulation. (paraphrase). Applied: #641, #646.
 
 ## 2026-11-06
 
+- **Q140.** Writing the study: Pierre's request of 2026-11-06 (relayed by the integrator), his clarifications at 07:18
+  and 07:25, and Q140, which he approved as a simulation. (paraphrase). Applied: #641, #646.
 - **07:30, Q138.** Q138 (approved by Pierre on 2026-11-06 as Q146; review
   docs/reviews/2026-11-06-engine-algorithms-review.md §3, §5, §10). The expectation's guess model, 1/k + (1 − 1/k) σ(θ −
   d), gets the formats wrong. On the real log, questions showing 4 choices of which 2… (paraphrase). Applied: #638,
@@ -154,9 +154,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   fish player, with no announcement). Every fish family in the game counts in progress, circles 2 and 3 included
   (replacing the old rule that circles 2 and 3 never count); the circles open after the IMR families. Applied: #669,
   #703, #730; FISH_PATH.md; rules/ui.md U7.
-- **15:02, Q177.** Pierre, 2026-11-07 08:50-08:52: circle-3 fish families were opening one by one by themselves at the
-  Q177 threshold; he wants circle 3 to be an option the player can decline and unlock later, notably from My progress.
-  (paraphrase). Applied: #703, #669, #706, #1067.
 - **15:14, Q178.** Reference photos in play once judged at the reference level: #660 (Pierre, 2026-11-06; Q178/Q179).
   (paraphrase). Applied: #663, #667, #672, #679, #681.
 - **15:14, Q179.** Fish calibration ref = 3, early = 1.5: Pierre, 2026-11-06 15:14 (Q179, yes). (paraphrase). Applied:
@@ -324,9 +321,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   is rules version 9. Applied: #646, #689.
 - **Q200.** recalculate fish units under the new bar on the device, silently, keeping learned marks. (paraphrase).
   Applied: #688, #734, #689.
+- **Q252.** (paraphrase) The standing RARE rule (Pierre, 2026-11-06 14:17, Q252), as applied in #729 and #1093: before
+  Open Water and for variants not released, the window keeps a full-weight colony rather than force a held-back one (the
+  integrator's call, following that rule and the variants' ramp, Q391 a). Applied: #1093, #729, #735.
 
 ## 2026-11-07
 
+- **08:50, Q177.** (paraphrase) Pierre, 2026-11-07 08:50-08:52: circle-3 fish families were opening one by one by
+  themselves at the Q177 threshold (2026-11-06); he wants circle 3 to be an option the player can decline and unlock
+  later, notably from My progress. Applied: #703, #669, #706, #1067.
 - **08:06, Q203.** "you can validate" (Pierre, 2026-11-07 08:06, Q203, #694): the 14 fish achievements and their names,
   as listed in the PR. Applied: #694, #697.
 - **09:03, Q205.** (paraphrase) Open Water instead of Advanced for the scientific genera (rec. A): Pierre, 2026-11-07
@@ -474,9 +477,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q250.** "OK pour les textes" (Pierre, 2026-11-08, Q250, #728): the two nudge texts. Applied: #728.
 - **Q251.** "OK pour rajouter une nouvelle colonne" (Pierre, 2026-11-08, Q251, #728): the new Answers column Rejected
   tries (column X, after Scoring). Applied: #728.
-- **Q252.** Before Open Water and for variants not released, the window keeps a full-weight colony rather than force a
-  held-back one: integrator's call. It follows the standing RARE rule (Pierre, 2026-11-06 14:17, Q252) and the variants'
-  ramp (Q391 a), which the window… (paraphrase). Applied: #1093, #729, #735.
 - **Q253.** Silent: "pour l'instant on le passe en silencieux" (Pierre, 2026-11-08, #730, on how current players learn
   of the new fish score). The ? text on My progress explains the score. Applied: #730.
 - **Q254.** the circle-1 Entries component at 55%, OK. (paraphrase). Applied: #730, #1067.
@@ -533,11 +533,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q288.** "je valide les réécritures [...] je suis ta recommandation de garder les libellés reformulés." (Pierre,
   2026-11-08, Q288, #744): the new wording of the 67 texts and the three reworded Coral ID Key box labels. Applied:
   #744, #751.
-- **Q289.** "les couvertures que j'ai choisies [...] ce sont soit ce qu'on mettrait en niveau 5, soit en niveau 4. Donc
+- **Q289.** « les couvertures que j'ai choisies [...] ce sont soit ce qu'on mettrait en niveau 5, soit en niveau 4. Donc
   si ce n'est pas le cas, c'est qu'il y a un problème en termes de jugement. Parce que je considère qu'elles sont toutes
-  hyper visibles et du niveau d'une…" (Pierre, 2026-11-08, Q289, #739; cut there in the PR): the first-meeting card
-  shows his ★ Cover too, even where it is not what the automatic choice would take (12 of his 28 picks are below
-  reference level in a family that has a reference-level photo). Applied: #739, #1128, #751,
+  hyper visibles et du niveau d'une référence. » (Pierre, 2026-11-08, Q289, #739): the first-meeting card shows his ★
+  Cover too, even where it is not what the automatic choice would take (12 of his 28 picks are below reference level in
+  a family that has a reference-level photo). Applied: #739, #1128, #751,
   decisions/2026-11-18-decisions-from-comments-tests-2.md.
 - **Q290.** « On peut utiliser ma couverture pour la carte. » (Pierre, 2026-11-08, Q290, #739; "we can use my cover for
   the card"), of the Thresher sharks' surprise card: a wink's card shows its unit's ★ Cover when he picked one, written
@@ -575,6 +575,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   #804.
 - **Q306.** #753's look OK; the one-tap flip chip under 380 px signed out OK. (paraphrase). Applied: #754, #753, #804.
 - **Q307.** None (Pierre's OK, 2026-11-08 ~16:05 Manila, Q306 and Q307, below). (paraphrase). Applied: #753, #754, #804.
+- **Q308.** Rubric 6 (Pierre, 2026-11-08, Q308) for the light tag. (paraphrase). Applied: #780, #781, #759, #796, #797.
+- **Q311.** "judge and merge tonight; judged photos enter the game under today's rules" (Pierre, 2026-11-08, Q311,
+  #803): judge the new families' next species with their candidates and reference photos, and put the sure ones in play;
+  decided process (AGENTS.md merge contract). Applied: #797, #802, #803, #781, #796.
+- **Q312.** "Oui, cette nuit" (Pierre, 2026-11-08, Q312, #774): every answer row now says which device sent it, so the
+  admin's analyses and the coming Visits page can tell a player's devices apart (not used by any reader in this PR).
+  Applied: #774, #804.
+- **Q313.** "Publie, je corrige à l'usage" (Pierre, 2026-11-08, Q313, #778): publish without his prior check. Applied:
+  #778, #834, #954, #828, #892.
 
 ## 2026-11-09
 
@@ -609,17 +618,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q208.** (paraphrase) Decided by Pierre on 2026-11-09 (option A, families met first): once a player has accepted the
   Scientific names offer, no new scientific-genus card opens while a family in play is still not met. (On 2026-11-08 he
   had set it aside.) Applied: #822, #713, #1067, #752, #751.
-- **Q308.** Rubric 6 (Pierre, 2026-11-08, Q308) for the light tag. (paraphrase). Applied: #780, #781, #759, #796, #797.
 - **Q309.** The same tools on a reported photo as on its page: Pierre, 2026-11-09 (quoted above); Q309, 2026-11-08 (one
   action bar for every report). (paraphrase). Applied: #823, #785, #934, #1132, #804.
-- **Q311.** "judge and merge tonight; judged photos enter the game under today's rules" (Pierre, 2026-11-08, Q311,
-  #803): judge the new families' next species with their candidates and reference photos, and put the sure ones in play;
-  decided process (AGENTS.md merge contract). Applied: #797, #802, #803, #781, #796.
-- **Q312.** "Oui, cette nuit" (Pierre, 2026-11-08, Q312, #774): every answer row now says which device sent it, so the
-  admin's analyses and the coming Visits page can tell a player's devices apart (not used by any reader in this PR).
-  Applied: #774, #804.
-- **Q313.** "Publie, je corrige à l'usage" (Pierre, 2026-11-08, Q313, #778): publish without his prior check. Applied:
-  #778, #834, #954, #828, #892.
 - **Q314.** Codex's limit lifted with credits. (paraphrase). Applied: #806, #804.
 - **Q315.** option (2), a time intensity per photo in the prior part of photoDiff (fades as the photo's own answers come
   in); option (1) only as the declared comparison, never stacked; two variants tested, time intensity from all answers
@@ -749,12 +749,17 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   B' commit is reverted. Applied: #941.
 - **Q357.** (paraphrase) Pierre, 2026-11-15, accepted the design: numbers over all the data, stored, never simplified
   (the per-player state kept in the Stats tab, as in #882). Applied: #971, #941.
-- **Q358.** (paraphrase) One judgement per photo; STATUS (2026-11-15) also records that he asks not to hesitate to
-  question his choices and to make proposals. Applied: #941.
-- **Q359.** (Pierre, 2026-11-15, #977, #988) Circles and look-alike pairs are per-instance content, set by the
-  organisation's content editor: "Circles will necessarily be per instance … it's the person in the organisation
-  responsible for the content"; look-alike pairs: "Look-alike pairs: likely yes … it will depend on how people teach
-  them". Applied: #977, #945, #983, #988, #952.
+- **Q358.** "Oui il doit y avoir un seul jugement par photo. Mes jugements jusqu'ici n'étaient pas forcément basés sur
+  toutes les photos qu'on a en jeu donc n'hésite pas à les remettre en question et à faire de meilleures propositions.
+  Donc refait un seul jugement." (Pierre, 2026-11-15, #942; "Yes, there must be a single judgement per photo. My
+  judgements so far were not necessarily based on all the photos we have in play, so don't hesitate to question them and
+  make better proposals. So, redo a single judgement."): one judgement per photo, re-judged by an agent; he accepted the
+  integrator's recommendation (C). Applied: #941, #942.
+- **Q359.** (Pierre, 2026-11-15; translated, his words in quotes in docs/reviews/2026-11-14-sheet-overlay-design.md;
+  #977, #988) Circles and look-alike pairs are per-instance content, set by the organisation's content editor. Circles:
+  "Circles will necessarily be per instance … defined according to what IMR decided … it's the person in the
+  organisation responsible for the content." Look-alike pairs, likely yes: "It will depend on how people teach them."
+  Applied: #977, #945, #983, #988, #952.
 - **Q360.** #925: credit the lecture photos now (#939), no request to Corals of the World yet; permission or
   replacements (STATUS; paraphrase except quoted words). Applied: #941.
 - **Q361.** (paraphrase) Licence refresh: weekly for the other photographers only, since he does not change his own
@@ -764,11 +769,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q363.** when a content editor changes circles or pairs, everyone's progress is recalculated from the answer log,
   silently (rules D5, D6, D8, D9). Built as the stamp replay, with no card. (paraphrase). Applied: #977, #957, #988,
   #983, #952.
-- **Q364.** "rights are separate in theory. The platform admin may grant himself a role, and the grant is logged."
-  (Pierre, 2026-11-15, the sheet overlay note's (j), answer B, #981). Recorded at (j) and in the ROADMAP row, since
-  neither held it yet. Applied: #981, #957, #1049, #952, #1098.
-- **Q365.** "the pilot sign-in (name + 4-digit code) is enough for now." (Pierre, 2026-11-15, the note's (k), answer A,
-  #981). Recorded at (k) and in the ROADMAP row. Applied: #981, #957, #952, #1098, #949.
+- **Q364.** (paraphrase) Option B of the sheet overlay note's question (j): rights are separate in theory; the platform
+  admin may grant himself a role, and the grant is logged (Pierre, 2026-11-15). Recorded at (j) and in the ROADMAP row,
+  since neither held it yet. Applied: #981, #957, #1049, #952, #1098.
+- **Q365.** (paraphrase) Option A of the note's question (k): the pilot sign-in (a name and a 4-digit code) is enough
+  for now (Pierre, 2026-11-15). Recorded at (k) and in the ROADMAP row. Applied: #981, #957, #952, #1098, #949.
 - **Q366.** the stored format of the note's section 6 is OK: (paraphrase). Applied: #977, #952, #988, #957, #986.
 - **Q367.** "ok pour A" (Pierre, 2026-11-15, Q367, #951): the tolerance on the comeback's sum (0.1 an answer) added to
   the opening hold, the rest of the comeback kept; points (b), (c) and (f) stay unchanged and are re-measured. Applied:
@@ -843,9 +848,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   "ok" (Pierre, 2026-11-17, #1039). On the 2018 guide, the same morning: "D'autant plus que je sais que le livre de 2018
   est déjà largement en retard par rapport aux connaissances actuelles." Applied: #1039, #1047, #1031, #1053, #1035,
   rules/content.md C8.
-- **One judgement per photo; reference read from the photo.** "ok" to A on #942, one judgement per photo (Pierre,
-  2026-11-17, #1045); "En vrai 'référence' devrait être déduit des caractéristiques de la photo, pas un tag" (Pierre,
-  2026-11-17, #1045). Applied: #1045; rules/photos.md P1.
+- **One judgement per photo; reference read from the photo.** "ok" to A on #942, one judgement per photo, no reference
+  ease point (Pierre, 2026-11-17 about 17:40 Manila, #1045; see also Q358); "En vrai 'référence' devrait être déduit des
+  caractéristiques de la photo, pas un tag" (Pierre, 2026-11-17, #1045). Applied: #1045; rules/photos.md P1.
 - **Easy-to-undo choices are the integrator's.** "Fais les choix tout seul si ils sont facile à revenir dessus" (Pierre,
   2026-11-17, #1050). Applied: AGENTS.md Working mode (#1063).
 - **Beta flags** (paraphrase): fish out of beta, sea slugs open to every player in beta, Remove all. Applied:
@@ -917,8 +922,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   reported, never escalated. Applied: rules/learning.md L11 (#1086).
 - **Q406.** (paraphrase) The corals move onto the tree engine, their ids unchanged: the principle agreed, a detailed
   plan to him first. Applied: decisions/2026-11-18-architecture-steps-3-4.md; STATUS (#1068).
-- **#1045 aligns down.** (paraphrase) No reference ease point on any route; Pierre said "ok" in #1045 (see One judgement
-  per photo, 2026-11-17). Applied: #1045.
+- **#1045 aligns down.** "ok" (Pierre, 2026-11-18 morning, #1045, on which way A aligns): the 423 photos judged both
+  ways align down, no reference ease point on any route. Applied: #1045.
 - **Admin draft, model B** (paraphrase): the draft in one IndexedDB store, every write one transaction. Applied: #1078;
   ROADMAP Sign out keeps the draft.
 - **Agents that count.** "C'est des agents en lecture seule", "ça évite aussi de trop charger la machine lors des tests"
