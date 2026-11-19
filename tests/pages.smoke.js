@@ -1872,6 +1872,15 @@ async function signin(base) {
       const txt = await p.$eval('.delacct', e => e.innerText);
       if (!/every answer you gave/.test(txt) || !/cannot be undone/.test(txt))
         fails.push('delete account: the page does not say what is deleted');
+      if (
+        !/Four things stay/.test(txt) ||
+        !/removed accounts/.test(txt) ||
+        !/audit log/.test(txt) ||
+        !/backups/.test(txt) ||
+        !/Notes tab/.test(txt) ||
+        (await p.$$('.delacct a[href="privacy.html"]')).length < 1
+      )
+        fails.push('delete account: the page does not say everything that stays, with the privacy notice linked');
       await p.fill('.delform input[name=code]', '1111');
       await p.click('.delform button[type=submit]');
       const wrong = await p.$eval('.delacct [role=status]', e => e.textContent);
@@ -2022,6 +2031,10 @@ async function signin(base) {
             : {rank: '#3', heads: [], lists: [['Other P', 'Cohort Q', 'Anna*']], more: [], wide: false};
         if (JSON.stringify({rank, ...B}) !== JSON.stringify(want))
           fails.push(`scoped boards (${v} v${N}): ${JSON.stringify({rank, ...B})}`);
+        // The general board's help says what is true since #1113 (no "Apart"): everyone is on it, whatever their groups.
+        const help = await p.evaluate(() => $helpbox.textContent);
+        if (!/shows everyone, whatever their groups/.test(help) || /group's only/.test(help))
+          fails.push(`board help text (${v}): ${help.slice(0, 400)}`);
       }
     );
   // Player groups' boards (sheet GROUPS_SHEET): the boards of Anna's own groups first (by the ids her
