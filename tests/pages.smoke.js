@@ -1507,7 +1507,9 @@ async function signin(base) {
     try {
       await fn(p);
     } catch (e) {
-      fails.push('sign-in: ' + String(e.message).split('\n')[0]);
+      // The line of the step that threw says which scenario it was (a bare "Execution context was destroyed" does not).
+      const at = (String(e.stack).match(/pages\.smoke\.js:\d+/) || [''])[0];
+      fails.push('sign-in: ' + String(e.message).split('\n')[0] + (at ? ` (at ${at})` : ''));
     }
     await c.close();
   };
@@ -1889,10 +1891,17 @@ async function signin(base) {
       await p.waitForSelector('#dyes', {timeout: 3000});
       if (JSON.parse(await p.evaluate(() => localStorage.getItem('test-sheet-log') || '[]')).some(x => x.del))
         fails.push('delete account: sent before the second step');
+      // The app signs the device out, moves to the done page (location.replace: the same document, the hash only) and then
+      // reloads (sync.js viewDeleteAccount). The hash and the page are already true before the reload starts, so waiting on
+      // them alone let the next evaluate run in the document being replaced ("Execution context was destroyed", about 3 runs
+      // in 10 on a loaded machine). The page is stamped before the click; the new document is the one without the stamp.
+      await p.evaluate(() => (window.oldDoc = 1));
       await p.click('#dyes');
-      await p.waitForFunction(() => location.hash === '#about/delete-account/done' && document.querySelector('.delacct'), null, {
-        timeout: 15000
-      });
+      await p.waitForFunction(
+        () => !window.oldDoc && window.APP_READY && location.hash === '#about/delete-account/done' && document.querySelector('.delacct'),
+        null,
+        {timeout: 15000}
+      );
       const s = await p.evaluate(() => ({
         page: document.querySelector('.delacct').innerText,
         account: localStorage.getItem('reefid-account'),

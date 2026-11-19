@@ -71,6 +71,11 @@ const server = http.createServer((req, res) => {
     try {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      // The player's id is the reserve's seed (core.js reserveOf: each player's own exam photos, out of the games): the app
+      // makes a random one with crypto, which Math.random below does not reach, so every run was another player with
+      // other photos in the games and at the exam (the exam's 5th question missing, a colony out of the draw). A fixed
+      // one (JSON, as the app's store reads it) makes it the same player and the same photos each run.
+      localStorage.setItem('reefid-anon-id', JSON.stringify('drawsmoke1'));
     } catch (e) {}
     // Same draws every run (as profiles.smoke.js): unseeded, a rarely drawn question (the 5th exam question of a 97%
     // genus) may not come within the 400 answers.
@@ -491,6 +496,13 @@ const server = http.createServer((req, res) => {
       if (P[t].pm !== 1 || memRecalc(P[t], PMEM) || !(P[t].pg > before))
         fails.push(`after the recalculation, a right answer: ${before} -> ${P[t].pg} (pm ${P[t].pm})`);
     }
+    // The session's window (model.js SEENQ: the photos of the last questions shown; NEXTQ: those planned) is state the
+    // checks above leave behind: a colony in it waits while another can be drawn, so a colony the earlier questions had
+    // shown came up exactly 0 in the two checks below (PR #1231: Acropora 0 against 0.0467; Anacropora 0 against 0). Which
+    // colony it held followed the random stream. Both checks draw from an empty window, given back after them.
+    const win = [SEENQ, NEXTQ];
+    SEENQ = [];
+    NEXTQ = null;
     // Spread the repeats: in the genus with the fewest game photos, every photo already shown, all right twice but one
     // colony's never right: that colony comes up more often than when all are equally known (a soft factor, never a
     // filter: the photos all known still come up).
@@ -546,15 +558,17 @@ const server = http.createServer((req, res) => {
         ps0 = Object.fromEntries(ks.flatMap(k => C[k].map(x => [x.f, [1, 1]]))),
         ps = {...ps0, ...Object.fromEntries(C[ca].slice(1).map(x => [x.f, undefined]))},
         rate = CAL.RATE,
-        share = (c, rt) => {
+        share = (c, rt, N = 20000) => {
           CAL.RATE = rt;
-          // 10000 draws: at 2000 a share near 0.05 moved by 0.01 from one run to the next, past the 1.3 ratio below.
+          // N draws: the share of a colony is near 0.05, so its count carries a relative error of about 1 / sqrt(N * 0.05),
+          // and the ratio of two shares one of sqrt(2) times that: at 10000 draws 6.3% (the 1.3 bar is 4.1 sigma off the
+          // equal shares: one run in 25000), at 20000 4.5% (5.9 sigma: one in 10^8). 150 runs of 10000 measured 5.5%.
           let hit = 0;
-          for (let i = 0; i < 10000; i++) {
+          for (let i = 0; i < N; i++) {
             P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
             if (photoSet(n).shown.some(x => key(x) === c)) hit++;
           }
-          return hit / 10000;
+          return hit / N;
         };
       Object.keys(ps).forEach(f => ps[f] === undefined && delete ps[f]);
       const a = share(ca, 0),
@@ -563,10 +577,11 @@ const server = http.createServer((req, res) => {
       // The exploration share: one colony never seen (its photos left out of ps), every calibration question shows it.
       const cn = ks.find(k => k !== ca && k !== cb);
       C[cn].forEach(x => delete ps[x.f]);
-      const e = share(cn, 1);
+      const e = share(cn, 1, 2000);
       CAL.RATE = rate;
       if (!(e > 0.99)) fails.push(`${n}: a calibration question showed the colony never seen ${e} of the time`);
     }
+    [SEENQ, NEXTQ] = win;
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
     const v0 = examSet(t).shown[0];

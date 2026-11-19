@@ -78,7 +78,7 @@
   // - any field in `u` (unsure): the admin's;
   // - a near-duplicate: rejected;
   // - the subject not obvious (count x), other species one could take for it at the game's rank (count k: rule P3) or
-  //   out of the water (flag a): rejected;
+  //   out of the water, a photo of a screen or a video capture (flag a, judging/FISH.md): rejected;
   // - other species in view, not sorted yet (count m): his, never added; other species with no risk of confusion (count
   //   o): added like one fish. The counts it may add are core.js TREE_COUNT.play, as tools/fish_game.py judged_sure.
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames).

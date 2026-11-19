@@ -2,14 +2,16 @@
 
 Pierre's standing rules on the subjects (corals, fish) and on fish content. The specs live in
 [ARCHITECTURE.md](../ARCHITECTURE.md) "Subjects", "The beta group" and "Fish content", and in
-[FISH_PATH.md](../FISH_PATH.md). The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
+[FISH_PATH.md](../FISH_PATH.md); [spec/subjects.md](../spec/subjects.md), [spec/fish.md](../spec/fish.md). The index
+of every rule is in [README.md](README.md#the-index).
 
 ### S1
 
-**Every subject runs on one shared engine. A difference between subjects is declared and named in one place, whatever its
-form (data, a parameter, a feature switched on for some subjects, or a patch), and never hidden in the shared code as a
-test on the subject** (`tests/subject-neutral.test.js` finds no test on the subject in the shared code outside its listed
-exceptions, each with its ROADMAP row). **Anything in beta, a subject or a feature, may open to a group first.** While its
+**Shared and modular by default: one engine, no special case for one unit or one subject.** An exception is allowed
+when it is declared and named in one place, with its reason. A test lists every exception, and an undeclared exception
+makes it fail (`tests/subject-neutral.test.js`). The integrator decides an exception as a choice that is easy to
+correct, and writes it in the PR with its reason. An exception that touches players' progress or the data format goes
+to Pierre. **Anything in beta, a subject or a feature, may open to a group first.** While its
 access is "group" (a subject: `SUBJECTS` `open: 'group'`), only the admin and the members of its group see it; everyone
 else keeps the default, their saved choice and progress kept (a subject: the subject switch, rule U12, shows only while a
 player has two subjects or more, never in ⚙, and anyone else opens on the default subject; `app.js` `subjMine`,
@@ -17,7 +19,7 @@ player has two subjects or more, never in ⚙, and anyone else opens on the defa
 is managed in the admin (a subject's on its Players page; ARCHITECTURE.md "The beta group").
 *Why:* one engine serves every subject cleanly; what is not ready for every player opens to a group first.
 *Source:* Pierre, 2026-11-03 (one engine), 2026-11-04 (beta, its group), 2026-11-07 (a general rule for anything in beta);
-one shared engine, differences declared in one place, 2026-11-19.
+no unit-specific code, 2026-11-06 (Q169); shared and modular by default, with rule L6's first line, 2026-11-19.
 
 ### S2
 
