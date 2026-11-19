@@ -80,3 +80,7 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
 - **08:18.** On README's credit line for the Coral Finder 2022 ("no photo of the book is used. It stays a cited
   source…"): "Je suis pas sur que c'est une bonne chose de mettre ça en avant. Maintenant c'est juste une source comme les
   autres". Applied: the line is gone from README's credits; the book is cited where it is used, like any source.
+- **09:04, priority.** On the rules overhaul (Q425 B: the AGENTS.md loading, the rest of the approved audit, the search
+  before any question and the ledger check, a short core with topic files and guards, fewer index conflicts): «ça c'est
+  une priorité. Parce qu'en attendant on continue de développer avec les anciennes règles». Applied: the integrator's
+  order of work (#1198, #1117, #1199, the core proposal).
