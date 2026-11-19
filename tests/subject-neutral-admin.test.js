@@ -119,7 +119,7 @@ const COUNTS = {
     'admin-nodephotos.js': 2,
     'admin.js': 46,
     'home.js': 2,
-    'learn.js': 17,
+    'learn.js': 14,
     'progress.js': 1,
     'proto/basics.js': 3,
     'proto/idkey.js': 2

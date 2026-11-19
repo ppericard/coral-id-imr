@@ -213,6 +213,34 @@ test('a file cut by the budget is marked in the report (rule L11, tools/checkbud
   assert.doesNotMatch(L.report(L.compare(before, after)), /CUT/);
 });
 
+test('an arm cut before any run finished leaves no primary to read; only that case, for row and population primaries', () => {
+  const cut = {cut: true, budgetMin: 10, planned: 0, done: 0},
+    stub = {subject: 'fish', budgetMin: 10, cut, runs: []};
+  const R = L.compare(before, stub, {primary: {at: ['hard', 300], dir: 'down'}});
+  assert.strictEqual(R.primary, null);
+  assert.deepStrictEqual(R.primarySkipped, {m: 'hard', cp: 300, dir: 'down', sides: ['after']});
+  assert.strictEqual(R.pairs, 0);
+  assert.match(L.report(R), /\*\*Primary hard@300, down, not read: the after arm was cut before any run finished, so no pair exists\.\*\*/);
+  assert.strictEqual(L.compare(before, stub, {primary: {at: ['rateErr', 300], dir: 'down'}}).primarySkipped.m, 'rateErr');
+  // No primary declared: the guardrails are reported as before, nothing skipped.
+  assert.strictEqual(L.compare(before, stub).primarySkipped, null);
+  // A file with no cut mark and nothing in common still throws; so does a cut file that holds runs but no pair.
+  assert.throws(
+    () => L.compare(before, {...stub, cut: undefined}, {primary: {at: ['rateErr', 300], dir: 'down'}}),
+    /no seed both files hold/
+  );
+  assert.throws(() => L.compare(before, {...stub, cut: undefined}, {primary: {at: ['hard', 300], dir: 'down'}}), /do not both reach/);
+  assert.throws(
+    () =>
+      L.compare(
+        before,
+        {...after, cut, pop: undefined, runs: after.runs.slice(0, 1).map(r => ({...r, seed: 99}))},
+        {primary: {at: ['rateErr', 300], dir: 'down'}}
+      ),
+    /no seed both files hold/
+  );
+});
+
 test('the command line prints the Markdown report', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'learncmp-')),
     fb = path.join(dir, 'b.json'),
