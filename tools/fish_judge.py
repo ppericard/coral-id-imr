@@ -4,8 +4,8 @@
 The judgements live in tools/fish_judge.json (one code per photo, e.g. "p1g0sm14": view, whole, light, colour loss,
 clarity, size, count, flags, ease 1-5; for some photos a proposed crop [l, t, r, b], curation.json's crop format; the
 fish's box; keep, a reference photo judged against its observation's photos). tools/fish_game.py reads them for the
-reference photos it puts in play (ref_play: cap, then its judged_sure), tools/judging_fish.py for the candidates (cap,
-juv_early). Until 2026-11-15 this script also wrote them into the stopgap list of fish-photos.json (retired: every fish
+reference photos it puts in play (ref_play: cap, then its judged_sure), tools/judging_fish.py for the candidates (cap).
+Until 2026-11-15 this script also wrote them into the stopgap list of fish-photos.json (retired: every fish
 photo in play is on R2, fish-game.json). The sea slugs' rubric (judging/SEASLUG.md) is the same code with its own
 differences (RUBRICS; cap and with_flag take the subject): tools/judging_fish.py --subject seaslug judges their candidates.
 This script:
@@ -48,6 +48,8 @@ NEW_COUNT = "1sokx"
 # or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
 # hidden), which caps nothing; strong blur (clarity b) caps nothing there (blur2: the clarity letters capped at 2, the
 # fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only).
+# A juvenile (j) caps nothing in either rubric (Q435, Pierre, 2026-11-19: the judged ease is the starting point and the
+# players' answers decide; judging/FISH.md "Juveniles").
 RUBRICS = {
     "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd", "blur2": "b"},
     "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
@@ -71,14 +73,13 @@ WANT = 5  # at least 5 very easy photos per circle-1 entry
 # judgement per photo: docs/decisions/2026-11-19-fish-reference-from-photo.md).
 
 
-def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
+def cap(code, phase, rep=None, subject="fish"):
     """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
-    juv_ok: the photo's juveniles show early (juv_early: its entry's class A, or its species in the entry's early list), so
-    the juvenile flag caps nothing. rep: the photo's `rep` (a reference source shows it for the species: FishBase's main
-    picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement per photo,
-    whatever its route in).
-    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": the same caps, but a dorsal view caps nothing
-    and strong blur neither (blur2)."""
+    A juvenile (flag j) caps nothing (Q435). rep: the photo's `rep` (a reference source shows it for the species:
+    FishBase's main picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement
+    per photo, whatever its route in).
+    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": a dorsal view caps nothing, strong blur
+    neither (blur2)."""
     R = RUBRICS[subject]
     m = R["code"].match(code)
     if not m:
@@ -87,7 +88,7 @@ def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
     e = int(e)
     # Strong blur (b: the outline or pattern smeared) is a hard photo, kept in play (judging/FISH.md "Strong blur").
-    if ("j" in fl and not juv_ok) or n == "x" or loss == "3" or clarity in R["blur2"]:
+    if n == "x" or loss == "3" or clarity in R["blur2"]:
         e = min(e, 2)
     # The phase flag p caps nothing (a sex or colour phase is a species-level difficulty; an Anthias or a parrotfish is
     # easy to call one at the family level), kept for the species questions and explanation cards.
@@ -95,17 +96,6 @@ def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     if set(fl) & set("ca") or light == "n" or loss == "2" or v in R["views3"] or w == "0":
         e = min(e, 3)
     return e, code[:7] + fl
-
-
-def juv_early(juv, names):
-    """True when a juvenile of these species names (its fish.json name and WoRMS name) is judged without the juvenile
-    cap: the entry's juv class is A, or a name is, or is in, a genus or species of its early list (fish.json juv,
-    from tools/fish_source.json: the juvenile classes of 2026-11-04). Everything else keeps the cap."""
-    if not isinstance(juv, dict):
-        return False
-    if juv.get("cls") == "A":
-        return True
-    return any(n == x or n.startswith(x + " ") for x in juv.get("early", []) for n in names if n)
 
 
 def load_src():

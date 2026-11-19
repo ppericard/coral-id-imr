@@ -92,7 +92,7 @@ print(json.dumps({'codes': codes, 'keep': keep, 'play': {r['f']: [r['e'], r['jt'
                   'in': sorted(r['f'] for _, r, _, _ in G.in_play(cur, cand, sug, fish, refs, codes, keep))}))`
     );
     // The build reads the candidate judgement, never the reference copy: 1 an adult (4, and 4 as a reference photo too:
-    // no point for the route), 2 a juvenile (capped at 2); 3 waits while its judgement is unsure; 4 keeps its candidate's dup; 5 has
+    // no point for the route), 2 a juvenile (judged 2); 3 waits while its judgement is unsure; 4 keeps its candidate's dup; 5 has
     // no candidate judgement and keeps its own; 6's doubt is on its box only, which withholds no judgement.
     assert.deepStrictEqual(out.codes, {fi1: 'p1g0sl14', fi2: 'p1g0sl1j2', fi4: 'p1g0sl14', fi5: 'o1g0sm13', fi6: 'p1g0sl15'});
     assert.deepStrictEqual(out.keep, {fi1: 'best', fi2: 'best', fi4: 'dup', fi6: 'best'});

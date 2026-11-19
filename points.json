@@ -261,6 +261,22 @@
       "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
     },
     {
+      "id": "cyphastrea-axial-corallite",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-19",
+      "title": "Cyphastrea branch tips: an axial corallite or not",
+      "q": "The Coral Finder says a branching Cyphastrea's tip corallite is like Acropora's but not different from the others; Corals of the World gives Cyphastrea decadia Acropora-like axial corallites. How should RAs tell a branching Cyphastrea from Acropora?",
+      "ctx": [
+        "Cyphastrea decadia is the one Cyphastrea confirmed in the Philippines (an iNaturalist Research Grade observation there and the Corals of the World checklist, checked 2026-11-19); the other Cyphastrea species have no Research Grade observation in the Philippines.",
+        "Until this is settled the Acropora / Cyphastrea pair has no tell-apart line (tools/coral_apart.json none): the feedback sheet shows the first ID tip."
+      ],
+      "src": [
+        {"t": "Coral Finder, p. 8"},
+        {"t": "Corals of the World (Veron et al.), Cyphastrea decadia factsheet", "u": "https://www.coralsoftheworld.org/species_factsheets/species_factsheet_summary/cyphastrea-decadia/"}
+      ]
+    },
+    {
       "id": "fish-clownfish-dorsal",
       "kind": "trainer",
       "subj": "fish",
@@ -694,6 +710,113 @@
         {"t": "WoRMS, Ferdauia ferdau", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1802000"},
         {"t": "iNaturalist, Ferdauia", "u": "https://www.inaturalist.org/taxa/1359822"},
         {"t": "tools/taxonomy.json fish gen.Ferdauia (tools/taxonomy.py, 2026-11-15)"}
+      ]
+    },
+    {
+      "id": "fish-pomacentrus-armillatus",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Pomacentrus armillatus and P. opisthostigma: two species in the game, one in WoRMS and FishBase",
+      "q": "The IMR reference list names both Pomacentrus armillatus (Borneo damsel) and P. opisthostigma (Brown damsel), and the game asks them as two species. WoRMS and FishBase treat P. armillatus as a synonym of P. opisthostigma. Does IMR tell them apart, and by what?",
+      "ctx": [
+        "fish.json: P. armillatus (s105) and P. opisthostigma (s104) carry the same WoRMS record (AphiaID 277163); the app shows \"now Pomacentrus opisthostigma in WoRMS\" on P. armillatus (rule S2). The IMR names stay in the app (rules C1, S2).",
+        "FishBase's page for P. armillatus opens P. opisthostigma (read 2026-11-19, the species marks' sourcing).",
+        "The species sheets: P. opisthostigma has a sourced ID mark (FishBase: \"a relatively non-descript brown colouration, an orange pectoral-fin axil; dorsal-fin ocellus persists in adults\"); P. armillatus has none until this is settled (tools/fish_species_marks.json none)."
+      ],
+      "src": [
+        {"t": "WoRMS, Pomacentrus opisthostigma", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=277163"},
+        {"t": "FishBase, Pomacentrus opisthostigma", "u": "https://www.fishbase.se/summary/Pomacentrus-opisthostigma.html"},
+        {"t": "FishBase, Pomacentrus armillatus (opens P. opisthostigma)", "u": "https://www.fishbase.se/summary/Pomacentrus-armillatus.html"}
+      ]
+    },
+    {
+      "id": "fish-naso-species-plates",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Naso minor and N. thynnoides: one tail plate in FishBase, two scalpels in IMR's cue",
+      "q": "IMR's cue for the unicornfishes says two scalpels on the tail base. FishBase's pages for Naso minor and N. thynnoides speak of a single plate. Should RAs expect one plate on these two species?",
+      "ctx": [
+        "IMR cue for Naso (Unicornfish): \"Two scalpels on the tail base\"; the app shows it as written (rule C1).",
+        "FishBase, Naso thynnoides: \"Peduncular plate single, with a semicircular, retrorsely curved keel.\"",
+        "FishBase, Naso minor: \"Fresh specimens with yellow caudal fin and blackish peduncular plate\" (one plate named).",
+        "The species ID marks name no number of plates: N. minor's mark is its yellow tail fin only, N. thynnoides' its shape and eye (tools/fish_species_marks.json). The same question from the FAO species guide's key to Naso, for the genus, may be another point of the list (the genus marks' work)."
+      ],
+      "src": [
+        {"t": "IMR fish presentation, Unicornfish cue"},
+        {"t": "FishBase, Naso thynnoides", "u": "https://www.fishbase.se/summary/Naso-thynnoides.html"},
+        {"t": "FishBase, Naso minor", "u": "https://www.fishbase.se/summary/Naso-minor.html"}
+      ]
+    },
+    {
+      "id": "fish-amphiprion-annamensis",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Amphiprion annamensis: the sources describe it as A. polymnus",
+      "q": "The game has Amphiprion annamensis (seen near Dauin), accepted in WoRMS. FishBase sends its name to A. polymnus and Reef Life Survey has no page for it, so its only descriptions are A. polymnus's. Can A. polymnus's description stand for it on its sheet, or does IMR tell them apart?",
+      "ctx": [
+        "fish.json: Amphiprion annamensis (s533), WoRMS AphiaID 1804594, confirmed near Dauin by observers; A. polymnus is not in the game.",
+        "FishBase's page for A. annamensis opens A. polymnus; Reef Life Survey has no page under A. annamensis (read 2026-11-19, the species marks' sourcing).",
+        "Its sheet has no ID mark of its own until this is settled (tools/fish_species_marks.json none)."
+      ],
+      "src": [
+        {"t": "WoRMS, Amphiprion annamensis", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1804594"},
+        {"t": "FishBase, Amphiprion annamensis (opens A. polymnus)", "u": "https://www.fishbase.se/summary/Amphiprion-annamensis.html"},
+        {"t": "Reef Life Survey, Amphiprion polymnus", "u": "https://reeflifesurvey.com/species/amphiprion-polymnus/"}
+      ]
+    },
+    {
+      "id": "fish-amphiprion-percula-place",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Clown anemonefish: Reef Life Survey tells A. percula from A. ocellaris mainly by place",
+      "q": "Reef Life Survey says Amphiprion percula and A. ocellaris are almost identical and tells them apart mainly by place: A. percula east of Torres Strait, A. ocellaris west of it. The IMR reference list has both. Which name do RAs give the clown anemonefish at Dauin?",
+      "ctx": [
+        "Reef Life Survey, A. percula: \"Almost identical to A. ocellaris (Western Clown Anemonefish), but sometimes with wider black margins around white bars and shorter 1st dorsal fin. Distinguished by location, found east of Torres Strait, including on the Great Barrier Reef.\"",
+        "Reef Life Survey, A. ocellaris: \"Also differs by location, occuring west of Torres Strait.\"",
+        "fish.json: both are game species; A. percula is confirmed near Dauin by the IMR reference list (rule C8). Each species sheet shows its own marks (the wider or narrower black edges, the dorsal fin's height), as drafts."
+      ],
+      "src": [
+        {"t": "Reef Life Survey, Amphiprion percula", "u": "https://reeflifesurvey.com/species/amphiprion-percula/"},
+        {"t": "Reef Life Survey, Amphiprion ocellaris", "u": "https://reeflifesurvey.com/species/amphiprion-ocellaris/"}
+      ]
+    },
+    {
+      "id": "fish-platax-batavianus-head",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Platax batavianus: concave or convex head profile?",
+      "q": "FishBase gives large adults of Platax batavianus a concave snout profile; Reef Life Survey gives it a convex head profile with a large hump. Which should its sheet say?",
+      "ctx": [
+        "FishBase, Platax batavianus: \"Snout profile of large adults (above 40 cm) concave, with prominent bony swelling between eyes.\"",
+        "Reef Life Survey, Platax batavianus: \"convex head profile, developing large hump and a squarer body shape in adults than other batfishes.\"",
+        "Its species marks use Reef Life Survey's hump and squarer body, not the profile's shape (tools/fish_species_marks.json)."
+      ],
+      "src": [
+        {"t": "FishBase, Platax batavianus", "u": "https://www.fishbase.se/summary/Platax-batavianus.html"},
+        {"t": "Reef Life Survey, Platax batavianus", "u": "https://reeflifesurvey.com/species/platax-batavianus/"}
+      ]
+    },
+    {
+      "id": "fish-valenciennea-puellaris-side",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Valenciennea puellaris: orange spots, a stripe, or dots and dashes on the side?",
+      "q": "Three sources draw the side of Valenciennea puellaris differently: a row of large orange spots (FishBase, Pacific fish), a blue-edged orange stripe along the lower sides (Fishes of Australia), dots and dashes (Reef Life Survey). Which pattern do RAs see at Dauin?",
+      "ctx": [
+        "FishBase: \"pale grey body color for Pacific fish with row of large orange spots on side, a series of dash-like markings below\".",
+        "Fishes of Australia: \"a blue-edged orange stripe along the lower sides, a series of orange dashes along the upper sides\".",
+        "Reef Life Survey: \"Bright gold/orange dots and dashes on side and light blue spots on head.\" Its species mark follows Reef Life Survey (tools/fish_species_marks.json)."
+      ],
+      "src": [
+        {"t": "FishBase, Valenciennea puellaris", "u": "https://www.fishbase.se/summary/Valenciennea-puellaris.html"},
+        {"t": "Fishes of Australia, Valenciennea puellaris", "u": "https://fishesofaustralia.net.au/home/species/177"},
+        {"t": "Reef Life Survey, Valenciennea puellaris", "u": "https://reeflifesurvey.com/species/valenciennea-puellaris/"}
       ]
     },
     {

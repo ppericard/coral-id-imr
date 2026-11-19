@@ -117,6 +117,7 @@ FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_f
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
 GROOTS = ROOT / "tools" / "fish_genus_roots.json"  # the genus name roots, from The ETYFish Project (add_families: genus_root)
 GMARKS = ROOT / "tools" / "fish_genus_marks.json"  # the genera's own presentation and ID marks, sourced (genus_marks)
+SPMARKS = ROOT / "tools" / "fish_species_marks.json"  # the species' own ID marks, sourced, drafts (species_marks)
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
@@ -735,7 +736,7 @@ def add_families(o, key, declared=()):
     # against the data.
     gnames = dict(json.loads(GNAMES.read_text(encoding="utf-8")).get("genera", {})) if GNAMES.exists() else {}
     # The genus name roots (tools/fish_genus_roots.json): root, checked (genus_root); every
-    # circle-1 genus has one or a reason in skip.
+    # genus (circles 1-3) has one or a reason in skip.
     groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
     # The genera's own presentation and ID marks (tools/fish_genus_marks.json): plain, marks, msrc, mby, checked
@@ -768,8 +769,8 @@ def add_families(o, key, declared=()):
             sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
         if rt:
             r["root"] = genus_root(g, rt, r)
-        elif r["circle"] == 1 and g not in rskip:
-            sys.exit(f"tools/fish_genus_roots.json: circle-1 genus {g} has neither a root nor a reason in skip")
+        elif g not in rskip:
+            sys.exit(f"tools/fish_genus_roots.json: genus {g} has neither a root nor a reason in skip")
         mk = mks.pop(g, None)
         if mk is not None:
             r.update(genus_marks(g, mk, r, g in mnone, gmk.get("src", {}), msrc_used, [sp[i] for i in x["species"]]))
@@ -797,8 +798,106 @@ def add_families(o, key, declared=()):
     # names shown and the families whose species carry them, fish.json vn.
     fish_names.apply(o, {"keys": [key] if key else []})
     lookalikes(o)
+    species_marks(o)
     juveniles(o)
     return o
+
+
+def species_marks(o, path=None):
+    """The species' own ID marks (tools/fish_species_marks.json, adults, agent drafts until Pierre validates them) as
+    fish.json species fields: marks (1 to 3 visible features), msrc (each source once, {t, u}), mby ({marks: [[msrc
+    indexes] per mark]}, as a genus's) and mdraft (1 while the file says draft). Every game species has marks or a reason
+    in none. The build stops on anything else (rules C2, C3, C6): a mark without a source or without the page's words it
+    rests on, a mark with a number (a count is never a photo cue), a line too long, a species named that is not a game
+    species of its genus, a look-alike that is not a species of fish.json confirmed in the Philippines (present.ph)."""
+    p = Path(path) if path else SPMARKS
+    x = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    for s in o["species"]:
+        for k in ("marks", "msrc", "mby", "mdraft"):
+            s.pop(k, None)
+    if not x:
+        return
+    if set(x) - {"about", "draft", "src", "species", "none"}:
+        sys.exit(f"{p.name}: keys about, draft, src, species and none only")
+    S, used = x.get("src", {}), set()
+    byname = {s["name"]: s for s in o["species"]}
+    game = {s["name"]: s for s in o["species"] if s.get("circle")}
+    gsp = {}
+    for n in game:
+        gsp.setdefault(n.split()[0], []).append(n)
+
+    def bad(name, why):
+        sys.exit(f"{p.name} {name}: {why}")
+
+    def refs(name, what, rr):
+        if not rr:
+            bad(name, f"'{what}' has no source")
+        for q in rr:
+            if not (isinstance(q, list) and len(q) == 2 and q[0] in S and isinstance(q[1], str) and q[1].strip()):
+                bad(name, f"'{what}': a source is [a key of src, the page's words it rests on]")
+            s = S[q[0]]
+            if not str(s.get("t", "")).strip() or not str(s.get("u", "")).startswith("https://"):
+                bad(name, f"src {q[0]}: t and an https u")
+            used.add(q[0])
+
+    def named(name, text):
+        g = name.split()[0]
+        for ini, ep in re.findall(r"\b([A-Z])\. ([a-z]+)", text):
+            if ini != g[0] or f"{g} {ep}" not in game:
+                bad(name, f"'{ini}. {ep}' is not a game species of {g} (rule C6)")
+        for full in re.findall(r"\b[A-Z][a-z]+ [a-z]+", text):
+            if full in byname and (full.split()[0] != g or full not in game):
+                bad(name, f"'{full}' is not a game species of {g} (rule C6)")
+
+    sp, none = x.get("species", {}), x.get("none", {})
+    for name, r in sp.items():
+        if name not in game:
+            bad(name, "not a game species of fish.json")
+        if name in none:
+            bad(name, "both marks and a reason in none")
+        if set(r) - {"marks", "look", "ease"}:
+            bad(name, "keys marks, look and ease only")
+        marks = r.get("marks") or []
+        if not 1 <= len(marks) <= 3 or any(not (isinstance(m, list) and len(m) == 2) for m in marks):
+            bad(name, "1 to 3 marks, each [words, sources]")
+        for t, rr in marks:
+            if not isinstance(t, str) or not t.strip() or len(t) > 80 or t != " ".join(t.split()):
+                bad(name, f"'{t}': a line of at most 80 characters")
+            if re.search(r"\d", t):
+                bad(name, f"'{t}': a mark with a number: a count is never a photo cue")
+            named(name, t)
+            refs(name, t, rr)
+        for L in r.get("look") or []:
+            if not (isinstance(L, list) and len(L) == 2):
+                bad(name, "a look-alike is [species, sources]")
+            o2 = byname.get(L[0])
+            if not o2 or not (o2.get("present") or {}).get("ph") or L[0] == name:
+                bad(name, f"look-alike {L[0]}: not a species of fish.json confirmed in the Philippines (rule C6)")
+            refs(name, L[0], L[1])
+        if r.get("ease") is not None:
+            refs(name, "ease", [r["ease"]])
+        s = game[name]
+        msrc, by = [], []
+        for t, rr in marks:
+            ix = []
+            for q in rr:
+                e = {"t": S[q[0]]["t"], "u": S[q[0]]["u"]}
+                if e not in msrc:
+                    msrc.append(e)
+                if msrc.index(e) not in ix:
+                    ix.append(msrc.index(e))
+            by.append(ix)
+        s["marks"], s["msrc"], s["mby"] = [m[0] for m in marks], msrc, {"marks": by}
+        if x.get("draft"):
+            s["mdraft"] = 1
+    for name, why in none.items():
+        if name not in game or not isinstance(why, str) or not why.strip():
+            bad(name, "none: a game species and its reason")
+    lost = sorted(n for n in game if n not in sp and n not in none)
+    if lost:
+        sys.exit(f"{p.name}: game species with neither marks nor a reason in none: {', '.join(lost)}")
+    if set(S) - used:
+        sys.exit(f"{p.name}: sources never used: {', '.join(sorted(set(S) - used))}")
 
 
 JUV_CLS = ("off", "finer", "bold", "like")  # never A/B/C: the entries' classes (fish.json juv) stay the draw's alone
@@ -1248,7 +1347,7 @@ def dumps(o):
 
 
 def main():
-    global NET, GMARKS, CUR, JUVS
+    global NET, GMARKS, SPMARKS, CUR, JUVS
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1262,12 +1361,15 @@ def main():
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
     ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
+    ap.add_argument("--spmarks", help=argparse.SUPPRESS)  # tests: another species marks file (fish_species_marks.json)
     ap.add_argument("--juveniles", help=argparse.SUPPRESS)  # tests: another juveniles file (fish_juveniles.json)
     a = ap.parse_args()
     if a.juveniles:
         JUVS = Path(a.juveniles)
     if a.marks:
         GMARKS = Path(a.marks)
+    if a.spmarks:
+        SPMARKS = Path(a.spmarks)
     if a.curation:
         CUR = Path(a.curation)
     if a.rootless:
@@ -1315,8 +1417,8 @@ def main():
 
 def show_rootless(o):
     """The genera the content editor's circle edits (curation.json, read, never written) bring into circle 1 with no
-    name root: the build requires one only of the base's circle-1 genera (add_families), so these show none on their
-    sheet. Each says its skip reason when tools/fish_genus_roots.json has one."""
+    name root: the build requires a root or a reason of every genus (add_families), so these show none on their sheet
+    for the reason tools/fish_genus_roots.json skip gives."""
     cur = json.loads(CUR.read_text(encoding="utf-8")) if CUR.exists() else {}
     skip = json.loads(GROOTS.read_text(encoding="utf-8")).get("skip", {}) if GROOTS.exists() else {}
     rl = fish_inforce.rootless(o, cur, skip)
