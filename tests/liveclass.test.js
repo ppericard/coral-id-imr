@@ -667,7 +667,7 @@ function recApp(P, calls, extra = {}) {
     PICKD: {SINGLE: 0.5},
     inSubject: (sid, f) => f(),
     GX: n => (P[n] ? {} : null),
-    introLive: n => calls.push('introLive ' + n), // model.js: a unit the path has not opened is marked, stays closed
+    introReady: () => true,
     st: n => P[n],
     // A file ending in -c is a corallites photo (view macro).
     photoLook: f => ({f, view: /-c$/.test(f) ? 'macro' : 'wide'}),
@@ -781,11 +781,7 @@ test('live.js: a live answer is recorded as the photo quiz records the same answ
     if (c === 'Acropora') assert.strictEqual(P1.Acropora.cor, 1);
     assert.deepStrictEqual(copy(P1.Acropora.ro), ['acropora-1']);
     // The same steps in the same order, and the same log row but its mode and attempt id.
-    // (live.js's own step first: the mark of a unit the path has not opened, model.js introLive.)
-    const rows = calls =>
-      calls
-        .filter(x => !/^introLive /.test(x))
-        .map(x => (typeof x === 'object' ? {...x, m: '-', id: '-'} : x.replace(/ (quiz|live)$/, ' -')));
+    const rows = calls => calls.map(x => (typeof x === 'object' ? {...x, m: '-', id: '-'} : x.replace(/ (quiz|live)$/, ' -')));
     assert.deepStrictEqual(rows(live), rows(quiz), c);
     assert.ok(live.some(x => x.m === 'live' && x.id === 'l0a1b2c3d4eq3'));
     // What the live copy left out before: a right answer clears its variant groups and checks the achievements (with
@@ -813,24 +809,6 @@ test('quiz.js recordAnswer: a right Again counts for the duel achievement as a r
     A.ctx.recordAnswer({cur, mq, target: 'Acropora', c, k: chs.length, chs, ph: [{f: 'acropora-1', view: 'wide'}]});
     assert.strictEqual(P.Acropora.du, du, `${mq} ${c}`);
   }
-});
-
-// Rule L4: a live answer on a unit the path has not opened counts (scored, logged, replayable) and opens nothing:
-// liveLog marks it (model.js introLive, tests/intro.test.js) before the game's recorder, never skips it.
-test('live.js: an answer on a unit not opened is marked, then recorded and logged like any other', () => {
-  const calls = [],
-    P = {Acropora: {ok: 0, ko: 0}, Montipora: {ok: 2, ko: 0}, Porites: {ok: 1, ko: 1}, Pocillopora: {ok: 0, ko: 1}};
-  const A = recApp(P, calls);
-  const o = {qi: 1, pid: '0a1b2c3d4e', s: 'coral', t: 'Acropora', c: 'Acropora', ph: ['acropora-1'], chs: CHS, rt: 3};
-  assert.strictEqual(A.ctx.liveLog({id: 'coral'}, o), 'ok');
-  assert.strictEqual(calls[0], 'introLive Acropora', 'marked before it is recorded');
-  const row = calls.find(x => typeof x === 'object');
-  assert.ok(row && row.m === 'live' && row.g === 'Acropora' && row.ok === 1 && row.sc, 'logged with its scoring record');
-  assert.strictEqual(P.Acropora.ok, 1, 'counted in its record');
-  // A unit the subject does not have: still left out.
-  calls.length = 0;
-  assert.strictEqual(A.ctx.liveLog({id: 'coral'}, {...o, t: 'Nowhere'}), 'skip');
-  assert.deepStrictEqual(calls, []);
 });
 
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {

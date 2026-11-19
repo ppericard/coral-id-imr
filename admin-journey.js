@@ -429,13 +429,12 @@ function renderJourney(name, anonId = '') {
     // a progress reset while the sheet keeps every answer; the count only for events without a time.
     before = (tm, n) => (tm ? R.filter(r => r[1] < tm).length : n),
     openN = offer && offer.open ? before(offer.t, offer.at) : null,
-    // The kind kept with the card; an older card's is guessed from readiness and the answer count. 'live': no card, a
-    // unit answered in a live game before the path opened it (model.js introLive), never counted as a card.
+    // The kind kept with the card; an older card's is guessed from readiness and the answer count.
     kindOf = e =>
       !e
         ? ''
         : e[3]
-          ? {s: 'start', c: 'card', a: 'all', b: 'back', l: 'live'}[e[3]] || 'card'
+          ? {s: 'start', c: 'card', a: 'all', b: 'back'}[e[3]] || 'card'
           : !e[1]
             ? 'card'
             : openAt != null && e[0] === openAt
@@ -452,7 +451,7 @@ function renderJourney(name, anonId = '') {
     // (jOffSlate), at the first one's time: byKind counts the slate's only.
     offCards = Object.entries(
       Object.keys(CM)
-        .filter(g => !J.slate.has(g) && !['back', 'live'].includes(kindOf(CM[g])))
+        .filter(g => !J.slate.has(g) && kindOf(CM[g]) !== 'back')
         .sort((a, b) => cardT(CM[a]) - cardT(CM[b]))
         .reduce((o, g) => ((o[jOffSlate(g, J.slate)] = o[jOffSlate(g, J.slate)] || []).push(g), o), {})
     ).map(([w, L]) => [

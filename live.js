@@ -5,8 +5,8 @@
 // Three parts: the pure helpers (tested: tests/liveclass.test.js), the channel (LIVE_CH: the one module that talks to the
 // script, polled; a WebSocket service could take its place without touching the screens) and the screens.
 // Signed-in students' answers count in their progress: recorded as any game answer (quiz.js recordAnswer, as quiz.js
-// answer does: the scorer, the marks, the log, the achievements), mode 'live', on every unit of the subject: one the path
-// has not opened counts too and stays closed (rule L4; model.js introLive). A nickname keeps nothing: its answers wait in this page's memory
+// answer does: the scorer, the marks, the log, the achievements), mode 'live', on the units they have unlocked only
+// (rule L4: no game opens a unit). A nickname keeps nothing: its answers wait in this page's memory
 // and are logged only if the player signs in on the end screen.
 
 // pure: begin
@@ -604,7 +604,7 @@ function liveCatch(j) {
   if (SYNC && LV.pend.length) liveFlush();
 }
 // The waiting answers logged, one drain at a time (a poll and the end screen never log one twice): each leaves LV.pend
-// only once logged, or left out on purpose (a unit the subject does not have, a subject not open); one that failed (no connection for its
+// only once logged, or left out on purpose (a unit not unlocked: rule L4); one that failed (no connection for its
 // subject's data) stays for the next try. Resolves how many were logged.
 let LVF = null;
 function liveFlush() {
@@ -645,9 +645,8 @@ function liveKeep(n0 = 0) {
 }
 // One live answer into the signed-in player's progress and answer log through the recorder every counted answer takes
 // (quiz.js recordAnswer: the scorer, the marks, the log, the achievements), in the question's subject (inSubject), mode
-// 'live'. On any unit of a subject the player may open: one the path has not opened counts without opening (rule L4;
-// liveLog). Resolves 'ok' once logged, 'skip' when left out on purpose (a unit the subject does not have, a subject the
-// player may not open), 'fail' when it could
+// 'live'. Only on a unit the player has unlocked (rule L4: no game opens a unit) in a subject they may open. Resolves
+// 'ok' once logged, 'skip' when left out on purpose (that rule, a subject the player may not open), 'fail' when it could
 // not be done now (signed out, the subject's data did not come: liveFlush tries again). An error while scoring counts as
 // a 'skip', never tried again: part of it may already be in the progress.
 function liveRecord(o) {
@@ -668,9 +667,7 @@ function liveLog(S, o) {
     r = inSubject(S.id, () => {
       const t = o.t,
         c = o.c;
-      if (!GX(t)) return 'skip';
-      // A unit the path has not opened: its answers count and it stays closed until its card (rule L4; model.js introLive).
-      introLive(t);
+      if (!GX(t) || !introReady(t)) return 'skip';
       const ph = o.ph.map(f => photoLook(f) || {f});
       // The game's own recorder (quiz.js recordAnswer): the scorer, the exam and learned marks, the variant groups, the
       // opening hold, the first-launch check, the log, the achievements. Not a comeback question (R 1: the live game
