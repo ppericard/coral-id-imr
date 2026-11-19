@@ -11,7 +11,9 @@ It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
-of a limit; in the short brief only when one warns or the check failed), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass. The hooks run main's reviewed copy
+of a limit; in the short brief only when one warns or the check failed), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass.
+When this checkout's CLAUDE.md, AGENTS.md or .claude/ instructions differ from origin/main it says so (agents load this
+copy), and it counts today's Agent launches by model and effort from tools/agent_guard.py's log. The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
@@ -402,6 +404,59 @@ def questions():
     return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
 
 
+# --- What loads here, and the agents launched today (the rules core trial; AGENTS.md "The right model and effort") -----
+# Agents load this checkout's CLAUDE.md, AGENTS.md and .claude/, not origin/main's: a stale or changed copy is said in
+# one line (the proposal's G13). tools/agent_guard.py logs every Agent launch in the git common dir; the brief counts
+# today's (Manila) by model and effort. Counts only: a launch's description is never printed.
+
+INSTR_PATHS = ['CLAUDE.md', 'AGENTS.md', '.claude/settings.json', '.claude/rules', '.claude/agents']
+LAUNCH_LOG = 'claude-agent-launches.jsonl'
+
+
+def drift():
+    """The instruction files of this checkout that differ from origin/main; [] when equal or unknown. Never raises."""
+    try:
+        r = subprocess.run(['git', '-C', ROOT, 'diff', '--name-only', 'origin/main', '--'] + INSTR_PATHS,
+                           capture_output=True, text=True, timeout=3)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    return r.stdout.split() if r.returncode == 0 else []
+
+
+def drift_note(files):
+    return ('⚠ instructions here differ from origin/main (%s): agents load this checkout\'s copy; merge origin/main '
+            'into it unless that is the point (a trial)' % ', '.join(files))
+
+
+def launches(at):
+    """Today's Agent launches (Manila) as one line, or None when none was logged. Never raises."""
+    try:
+        r = subprocess.run(['git', '-C', ROOT, 'rev-parse', '--git-common-dir'], capture_output=True, text=True, timeout=3)
+        path = os.environ.get('AGENT_LOG') or (os.path.join(os.path.abspath(os.path.join(ROOT, r.stdout.strip())), LAUNCH_LOG)
+                                               if r.returncode == 0 else None)
+        day = manila_now(at).date()
+        ok, refused = {}, 0
+        with open(path, encoding='utf8') as f:
+            for line in f:
+                try:
+                    e = json.loads(line)
+                    if datetime.fromisoformat(e['t']).astimezone(MANILA).date() != day:
+                        continue
+                except (ValueError, KeyError, TypeError):
+                    continue
+                if not e.get('ok'):
+                    refused += 1
+                    continue
+                k = '%s/%s' % (e.get('model') or ('fork' if e.get('type') == 'fork' else '?'), e.get('effort') or '-')
+                ok[k] = ok.get(k, 0) + 1
+    except (OSError, TypeError, subprocess.TimeoutExpired):
+        return None
+    if not ok and not refused:
+        return None
+    dist = ', '.join('%s %d' % kv for kv in sorted(ok.items(), key=lambda kv: (-kv[1], kv[0])))
+    return 'Agent launches today: %d (%s)%s' % (sum(ok.values()), dist or 'none', '; %d refused' % refused if refused else '')
+
+
 def fish_todo():
     """(photos, species) of the fish candidates waiting for the judging pass: not decided by Pierre (curation.json fish
     add, seen, exclude, out) and not judged (suggest.json fish), as tools/judging_fish.py todo counts them; the automatic
@@ -433,6 +488,11 @@ def result(f):
 
 def brief(short, at):
     lines = [time_line(at)]
+    drifted = drift()
+    if drifted and short:  # the short brief has 5 lines: on the time line
+        lines[0] += ' · ' + drift_note(drifted)
+    elif drifted:
+        lines.append(drift_note(drifted))
     pool = ThreadPoolExecutor(max_workers=16)
     have_gh = shutil.which('gh') is not None
     url = sync_url()
@@ -511,6 +571,11 @@ def brief(short, at):
     else:
         q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
         lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    al = launches(at)
+    if al and short:
+        lines[-1] += ' · ' + al
+    elif al:
+        lines.append(al)
     ft = None if short else fish_todo()
     if ft and ft[0]:
         lines.append('Fish candidates waiting for the judging pass: %d in %d species (python3 tools/judging_fish.py todo)' % ft)
