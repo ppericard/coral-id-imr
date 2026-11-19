@@ -148,7 +148,7 @@ module.exports = async function labGamesCheck(p, w, fails, tag = '', rounds = 4)
       await screen('Blur reveal', 'fresh', k, '#view .rvstage, #view .choice, #view .chips');
       // a wrong tap on odd rounds, the right one on even
       const pick = k % 2 ? (ch.find(c => c[0] !== t) || ch[0])[0] : t;
-      await p.click(`#view .choice[data-c="${pick.replace(/"/g, '\\"')}"]`);
+      await p.evaluate(c => [...document.querySelectorAll('#view .choice')].find(b => b.dataset.c === c).click(), pick);
       await p.waitForSelector('#view #rvres #rvnext', {timeout: 5000}).catch(() => {});
       const res = await p.evaluate(() => (document.getElementById('rvres') || {}).textContent || '');
       const nm = (met.find(m => m[0] === t) || [0, t])[1];
