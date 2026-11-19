@@ -82,6 +82,7 @@ Newest first.
 | 2026-11-19 | [Decisions found in the comments of tests/ (sixth pass)](2026-11-19-decisions-from-comments-tests-6.md) | #1157 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (fifth pass)](2026-11-19-decisions-from-comments-tests-5.md) | #1153 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
+| 2026-11-18 | [Typed answers, the rest: typed mix-ups in the pooled pairs (coral rules version 11), the typed text in admin Pairs](2026-11-18-typed-answers-rest.md) | #1116 |
 | 2026-11-18 | [Decisions kept from code comments: Pierre's words that were only in core.js and Code.gs](2026-11-18-decisions-from-code-comments.md) | #1121 |
 | 2026-11-18 | [The coral calibration set: 50 photos drawn a little more often until each has 20 answers](2026-11-18-coral-calibration-set.md) | #1130 |
 | 2026-11-18 | [Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits](2026-11-18-architecture-steps-3-4.md) | #1146 |

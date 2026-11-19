@@ -218,6 +218,64 @@ test('a row logged before the scorer still replays by its logged e (the inversio
   assert.ok(Object.keys(R.P).every(g => R.P[g].ok + R.P[g].ko >= 0));
 });
 
+// Typed mix-ups in the pooled pairs (core.js confAdd; docs/decisions/2026-11-18-typed-answers-rest.md): the pooled
+// pairs the sheet serves change, and a row logged before its scoring record rebuilds its mix-ups term and look-alike
+// test from them, so the change appends a coral rules version (rule D5) and the sheet replays every coral player once;
+// a row with its record replays as the game scored it.
+test('typed mix-ups in the pooled pairs: a rules version, the rows before the scorer replayed with them, the rows with it unchanged', () => {
+  // The coral rules versions run with no gap, the last one for this change, with no card (rule D6).
+  C.RVS.forEach((x, i) => assert.strictEqual(x.v, i + 1, 'rules versions run with no gap'));
+  const last = C.RVS.at(-1);
+  assert.strictEqual(last.v, C.RV);
+  assert.strictEqual(C.rvOf('coral'), C.RV);
+  assert.ok(/Typed mix-ups in the pooled pairs/.test(last.why) && /confAdd/.test(last.why), last.why);
+  assert.strictEqual(last.msg, null);
+  // The pooled pairs before (the choices only) and after: trusted players typed B for A twelve times (confAdd). Every
+  // other pair is pooled as often mixed up, so the player's own excess (the mix-ups term, confGap) is on A / B alone.
+  const before = Object.fromEntries(G.flatMap((x, i) => G.slice(i + 1).map(y => [x + '|' + y, [100, 60]])));
+  before['A|B'] = [60, 6];
+  const after = JSON.parse(JSON.stringify(before));
+  for (let i = 0; i < 12; i++) C.confAdd(after, 'A', 'B', 0, 'quiz|t', '');
+  assert.deepStrictEqual(after['A|B'], [72, 18]);
+  assert.ok(C.confScore(before['A|B'], C.CONF.LOOK) < C.CONF.TRAP && C.confScore(after['A|B'], C.CONF.LOOK) >= C.CONF.TRAP);
+  for (const seed of [3, 11, 29]) {
+    const {P, log} = session(seed, 160),
+      rows = log.map(a => C.logRow(a, 'me')),
+      // The same answers logged before the scorer (no sc) and before the app logged its mix-ups term in e (CF_LOGGED):
+      // replayed from their logged e, with the replay's own mix-ups term and look-alike test from the pooled pairs.
+      old = log
+        .map((a, i) => {
+          const x = {...a, t: new Date(C.CF_LOGGED - 1e3 - (log.length - i) * 60e3).toISOString()};
+          delete x.sc;
+          return x;
+        })
+        .map(a => C.logRow(a, 'me')),
+      L0 = [],
+      L1 = [],
+      R0 = C.replayProgress(old, {gen: GEN, conf: before, onAnswer: (r, x) => L0.push([r[2], r[10], x.cf])}).me.P,
+      R1 = C.replayProgress(old, {gen: GEN, conf: after, onAnswer: (r, x) => L1.push([r[2], r[10], x.cf])}).me.P;
+    assert.ok(
+      L0.some((x, i) => x[2] !== L1[i][2]),
+      `seed ${seed}: the mix-ups term of a question with the pair among its choices moves`
+    );
+    assert.notDeepStrictEqual(R1, R0, `seed ${seed}: the rows before the scorer replay differently under the new pairs`);
+    assert.ok(
+      ['A', 'B'].some(g => JSON.stringify(R1[g]) !== JSON.stringify(R0[g])),
+      `seed ${seed}: a genus of the pair moves`
+    );
+    // Only the pair's questions move: the rows that never meet A or B replay the same.
+    const noAB = old.filter(r => !/^[AB]$/.test(r[2]) && !/\b[AB]\b/.test(r[10]) && !/^[AB]$/.test(r[3]));
+    assert.deepStrictEqual(
+      C.replayProgress(noAB, {gen: GEN, conf: after}).me.P,
+      C.replayProgress(noAB, {gen: GEN, conf: before}).me.P,
+      `seed ${seed}: rows that never meet the pair replay the same`
+    );
+    // With their scoring record: the state the game had, under either pairs.
+    same(C.replayProgress(rows, {gen: GEN, conf: before}).me.P, P, `seed ${seed}, pairs before`);
+    same(C.replayProgress(rows, {gen: GEN, conf: after}).me.P, P, `seed ${seed}, pairs after`);
+  }
+});
+
 // One surprise, counted once: the genus shown moves by its own Elo step only; the level's step on the same answer reaches
 // the other genera (their levelMove), never the genus that was answered.
 test("scoreAnswer: an answer moves its genus once; the level's step on it reaches only the other genera", () => {
