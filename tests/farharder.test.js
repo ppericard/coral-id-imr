@@ -21,7 +21,8 @@ const load = (stats, gd) => {
       block(src, 'const nAns = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'const photoStats = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'function farHarder(play) {', '\n}\n', {file: 'admin.js', through: true}),
-      'this.out = {RATE, FAR, farHarder};'
+      block(src, 'function farFrom(play, ST, G, unitOf) {', '\n}\n', {file: 'admin.js', through: true}),
+      'this.out = {RATE, FAR, farHarder, farFrom};'
     ].join('\n'),
     ctx
   );
@@ -56,4 +57,31 @@ test('farHarder: 1.5 logits or more above the genus after 5 answers or more, the
     ['x']
   );
   assert.deepStrictEqual(load(null, {}).farHarder(play), []);
+});
+
+test('farFrom: a tree subject’s photo against the offset of the unit it was rated at (the sheet’s fifth element), not its row’s', () => {
+  // [difficulty, weighed answers, weighed right, answers, the unit whose offset the difficulty carries]
+  const ST = {
+      a: [2.25, 4, 1, 5, 'f:A'], // rated at its family: residual 1.75
+      b: [1.25, 6, 2, 6, 'g:B'], // rated at its genus (offset -0.5): residual 1.75, though its family's offset is 0.75
+      c: [1.25, 6, 2, 6, 'f:B'], // residual 0.5: within
+      d: [3.5, 3, 1, 4, 'f:A'], // 4 answers: not yet
+      e: [3.0, 6, 2, 6, 'g:None'] // a unit the sheet has no offset for: none
+    },
+    G = {'f:A': [0.5, 30], 'f:B': [0.75, 20], 'g:B': [-0.5, 8]},
+    play = ['a', 'b', 'c', 'd', 'e', 'zz'].map(f => ({f, u: f === 'b' || f === 'c' ? 'f:B' : 'f:A'})),
+    {farFrom} = load(ST, G);
+  const L = farFrom(play, ST, G, p => (ST[p.f] || [])[4]);
+  assert.deepStrictEqual(
+    L.map(p => [p.f, p.r, p.gd, p.u]),
+    [
+      ['b', 1.75, -0.5, 'f:B'],
+      ['a', 1.75, 0.5, 'f:A']
+    ],
+    'a tie on the gap: the one with more answers first, then the order given'
+  );
+  assert.deepStrictEqual(
+    farFrom([], ST, G, () => 'f:A'),
+    []
+  );
 });
