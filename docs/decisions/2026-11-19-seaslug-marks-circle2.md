@@ -1,4 +1,4 @@
-# Sea slug ID marks for the circle-2 genera: genus revisions and Sea Slug Forum sheets, every circle-2 genus marked
+# Sea slug ID marks for every circle-2 genus
 
 Date: 2026-11-19. PR: #1238. Rules or docs touched: tools/seaslug_cues.json, seaslug.json,
 docs/reviews/2026-11-18-seaslug-cues-sources.md, docs/spec/tools.md, docs/ROADMAP.md.
