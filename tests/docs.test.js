@@ -615,7 +615,7 @@ const DOC_MARKS = {
   'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
   'docs/ROADMAP.md': [128, 1600], // a row keeps what is left and the figures to decide on, however long (2026-11-19)
   'docs/HANDOVER.md': [23, 3140],
-  'docs/INTEGRATOR.md': [22, 210],
+  'docs/INTEGRATOR.md': [24, 210], // + the habit for a doc past its mark (2026-11-19)
   'docs/ANSWERS.md': [200, 200], // append-only ledger: it grows by an entry per answer, never cut
   'docs/BACKUP.md': [13, 150],
   'docs/DATA.md': [10, 410],
@@ -647,7 +647,7 @@ const DOC_MARKS = {
   'docs/spec/fish-game.md': [12, 130],
   'docs/spec/fish-sheets.md': [10, 130],
   'docs/spec/seaslugs.md': [12, 130],
-  'docs/spec/tools.md': [47, 130],
+  'docs/spec/tools.md': [49, 130], // + brief.py's marks line (2026-11-19)
   'docs/spec/analyses.md': [26, 130],
   'docs/spec/analyses-method.md': [34, 130], // moved from LEARNING.md, 2026-11-19
   'docs/spec/loading.md': [16, 130],
