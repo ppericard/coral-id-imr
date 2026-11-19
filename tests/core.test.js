@@ -30,7 +30,10 @@ const {
   memRecalc,
   PHOTO_BASE,
   photoLocal,
+  photoOnR2,
+  photoHasR2,
   photoFallback,
+  photoRetry,
   photoOnline,
   photoFileOf,
   photoAway,
@@ -1137,6 +1140,99 @@ test('photos from R2: the R2 address made local again, an element pointed at the
   assert.strictEqual(f.a.style, "--qbg:url('img/acropora-wide-1-s.webp')");
   assert.strictEqual(photoFallback(mk({src: inat})), false, 'nothing to do on a photo not from R2');
   assert.strictEqual(photoFallback(null), false);
+});
+
+test('photos from R2: an address is on R2 only when its parsed origin is R2, never because R2 appears in it', () => {
+  const host = new URL(PHOTO_BASE).hostname,
+    file = 'img/acropora-wide-1-s.webp';
+  // On R2: the base and anything under it, with a query or a fragment, the host in capitals (URL lowers it).
+  assert.strictEqual(photoOnR2(PHOTO_BASE), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file), true);
+  assert.strictEqual(photoOnR2(PHOTO_BASE + file + '?c=0_0_1_1.2#r1'), true);
+  assert.strictEqual(photoOnR2(`https://${host.toUpperCase()}/${file}`), true);
+  // Not on R2: look-alike hosts, R2's address in another URL's path, query or fragment, R2 before an @ (the user part),
+  // another scheme or port, a relative or unparsable address, anything not a string.
+  const lookAlikes = [
+    `https://evil-r2.example/${file}`,
+    `https://r2host.evil.com/${file}`,
+    `https://${host}.evil.com/${file}`,
+    `https://evil${host}/${file}`,
+    `https://evil.com/${PHOTO_BASE}${file}`,
+    `https://evil.com/?u=${PHOTO_BASE}${file}`,
+    `https://evil.com/#${PHOTO_BASE}${file}`,
+    `https://${host}@evil.com/${file}`,
+    `https://${host}:pw@evil.com/${file}`,
+    `http://${host}/${file}`,
+    `https://${host}:8443/${file}`,
+    file,
+    `//${host}/${file}`,
+    'https://',
+    'not a url ' + PHOTO_BASE,
+    '',
+    null,
+    undefined,
+    {toString: () => PHOTO_BASE}
+  ];
+  for (const u of lookAlikes) assert.strictEqual(photoOnR2(u), false, String(u));
+  // In a string (an src, a srcset, an inline style): true when one of its addresses is on R2.
+  const R = PHOTO_BASE + 'img/acropora-wide-1';
+  assert.strictEqual(photoHasR2(`${R}-s.webp 480w, ${R}-m.webp 960w`), true);
+  assert.strictEqual(photoHasR2(`--qbg:url('${R}-s.webp')`), true);
+  assert.strictEqual(photoHasR2(`img/x-s.webp 480w, ${R}-m.webp 960w`), true);
+  for (const u of lookAlikes.slice(0, 10)) {
+    assert.strictEqual(photoHasR2(u), false, u);
+    assert.strictEqual(photoHasR2(`--qbg:url('${u}')`), false, u);
+    assert.strictEqual(photoHasR2(`${u} 480w, img/x-m.webp 960w`), false, u);
+  }
+  assert.strictEqual(photoHasR2(null), false);
+  // photoFallback leaves an element with only look-alike addresses as it is.
+  const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = mk({src: u, srcset: `${u} 480w`, 'data-lo': u, style: `--qbg:url('${u}')`}),
+      before = {...el.a};
+    assert.strictEqual(photoFallback(el), false, u);
+    assert.deepStrictEqual(el.a, before, u);
+  }
+  // photoRetry: no retry (false, nothing marked) for an address not on R2; one retry for an R2 address, the probe asked
+  // from that same address after PHOTO_RETRY ms (timer and Image stubbed: node has neither a page nor its loads).
+  const img = (src, currentSrc) => ({...mk({src}), currentSrc, dataset: {}});
+  for (const u of lookAlikes.slice(0, 10)) {
+    const el = img(u, u);
+    assert.strictEqual(
+      photoRetry(el, () => assert.fail('no fallback')),
+      false,
+      u
+    );
+    assert.deepStrictEqual(el.dataset, {}, u);
+  }
+  const el = img('img/x-m.webp', '');
+  assert.strictEqual(
+    photoRetry(el, () => {}),
+    false,
+    'a site photo: no R2 retry'
+  );
+  const timers = [],
+    probes = [],
+    keep = {setTimeout: global.setTimeout, Image: global.Image};
+  global.setTimeout = f => timers.push(f);
+  global.Image = function () {
+    probes.push(this);
+  };
+  try {
+    const r2 = img(R + '-m.webp', R + '-m.webp');
+    assert.strictEqual(
+      photoRetry(r2, () => {}),
+      true
+    );
+    assert.strictEqual(r2.dataset.r2try, '1');
+    timers.forEach(f => f());
+    assert.strictEqual(probes.length, 1);
+    assert.strictEqual(probes[0].src, R + '-m.webp');
+  } finally {
+    global.setTimeout = keep.setTimeout;
+    if (keep.Image === undefined) delete global.Image;
+    else global.Image = keep.Image;
+  }
 });
 
 // Photos out of the repo: when R2 fails, a photo with an online original

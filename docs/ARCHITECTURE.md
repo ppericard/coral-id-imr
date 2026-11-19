@@ -27,8 +27,9 @@ main ──> Deploy Pages: build_site.py (players' curation, stamps, minify) ─
   `curation-play.json`: [loading.md](spec/loading.md#the-players-copy-of-the-curation).
 - **Speed on poor connections and low-end phones**: [spec/loading.md](spec/loading.md), measured with `tools/perf.js`
   and `tools/syncperf.js`.
-  - **Load order in tiers** (**1 Home**, **2 the photo quiz**, **3 the photos of the next quiz questions**,
-    **4 the sheet's reads**, **5 the rest**), Home's doors before the data, the loading bar:
+  - **Load order in tiers** (**1 Home**, **2 the photo quiz**, **3 the photos of the next quiz questions, then the
+    Learn pages**, **4 the sheet's reads**, **5 the rest**, the Lab's stylesheet with it), Home's doors before the data,
+    the loading bar:
     [loading.md › Load order in tiers](spec/loading.md#load-order-in-tiers).
   - **Start-up** without waiting for the curation, the units built once, the cached leaderboard, the fonts:
     [loading.md › Start-up](spec/loading.md#start-up).
@@ -188,6 +189,7 @@ to game.
   [data.md › `data.json`](spec/data.md#datajson-the-served-source-of-truth).
 - **`curation.json` (Pierre-owned; never overwrite in a PR)**: [data.md](spec/data.md#curationjson-pierres-choices).
 - **Suggestion files** and their precedence: [data.md](spec/data.md#suggestion-files).
+- **The calibration set** (`calibration-set.json`): [data.md](spec/data.md#the-calibration-set-calibration-setjson).
 - **Presence of coral species**, **Share-alike coral photos**:
   [data.md](spec/data.md#presence-of-coral-species-presencejson), [share-alike](spec/data.md#share-alike-coral-photos).
 - **Photo rights tie-break**, the rights facet, **The licence refresh**: [data.md › Photo rights](spec/data.md#photo-rights).

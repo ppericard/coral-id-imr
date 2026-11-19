@@ -6,16 +6,18 @@ Pierre's standing rules on the subjects (corals, fish) and on fish content. The 
 
 ### S1
 
-**A subject differs only by a field of `core.js` `SUBJECTS` or a function of `app.js` `UNITS`; the engine works on the
-current subject (`SUBJ`, `P`, `Q`) and never names or tests which one it is** (`tests/subject-neutral.test.js` holds it,
-each exception with its ROADMAP row). **Anything in beta, a subject or a feature, may open to a group first.** While its
+**Every subject runs on one shared engine. A difference between subjects is declared and named in one place, whatever its
+form (data, a parameter, a feature switched on for some subjects, or a patch), and never hidden in the shared code as a
+test on the subject** (`tests/subject-neutral.test.js` finds no test on the subject in the shared code outside its listed
+exceptions, each with its ROADMAP row). **Anything in beta, a subject or a feature, may open to a group first.** While its
 access is "group" (a subject: `SUBJECTS` `open: 'group'`), only the admin and the members of its group see it; everyone
 else keeps the default, their saved choice and progress kept (a subject: the subject switch, rule U12, shows only while a
 player has two subjects or more, never in ⚙, and anyone else opens on the default subject; `app.js` `subjMine`,
 `subjOpen`, `subjAt`). Once it opens to everyone (`open: 'all'`), its beta label may stay (`SUBJECTS` `beta`). The group
 is managed in the admin (a subject's on its Players page; ARCHITECTURE.md "The beta group").
 *Why:* one engine serves every subject cleanly; what is not ready for every player opens to a group first.
-*Source:* Pierre, 2026-11-03 (one engine), 2026-11-04 (beta, its group), 2026-11-07 (a general rule for anything in beta).
+*Source:* Pierre, 2026-11-03 (one engine), 2026-11-04 (beta, its group), 2026-11-07 (a general rule for anything in beta);
+one shared engine, differences declared in one place, 2026-11-19.
 
 ### S2
 

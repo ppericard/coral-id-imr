@@ -45,6 +45,9 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
 
 The sync's tests: [sync.md › Tests](sync.md#tests).
 
+- CI's Checks runs `checks` (everything but the unit tests) beside two shards, `unit tests (k/2)`
+  (`node --test --test-shard=k/2`: every file in one shard; `tests/smokeparts.test.js` checks the list). Locally the
+  suite stays one run: `node tests/run.js` (rule W24).
 - `tests/photos.test.js` checks the photo rules on the real data and curation.
 - The Playwright smokes run in CI's smoke jobs (`smokes.yml`):
   - `tests/pages.smoke.js` opens the main routes, two malformed links and `admin.html?readonly` at 390 and 1280 px,
@@ -59,6 +62,8 @@ The sync's tests: [sync.md › Tests](sync.md#tests).
     do › All (Health's line first, reports, errors), the Where to look banner, Put back in Hidden and the genus page's
     view filter, then opens a player, merges two names, deletes one, checks the reports in To do, Skip and Reject in
     Candidates and Publish, and fails if a call reaches the sync script or GitHub or a real admin storage key is written.
+  - `tests/fish.smoke.js` group `fresh` plays five brand-new fish players (one seed each, a context each) side by side:
+    all at once on CI, two at a time in a local slot.
 
 ## Repository attributes
 

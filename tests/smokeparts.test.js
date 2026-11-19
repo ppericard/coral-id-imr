@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // SMOKE_PART) runs each of its groups at each width its jobs run (SMOKE_W; none: every width): a job without a group
 // runs them all, otherwise a job per group. No job names a group the smoke does not have. tests/slot.js parts
 // already fails when a part is in no group; this is the other half: a group in no job would run on no runner, and the
-// PR would go green without it.
+// PR would go green without it. The same holds for the unit tests' shards in checks.yml (below).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -81,4 +81,47 @@ test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run 
   );
   assert.match(yml, /\n  push:\n    branches: \['train\/\*'\]\n/, 'smokes.yml: every smoke on a train push');
   assert.match(checks, /\n  push:\n    branches: \['train\/\*'\]\n/, 'checks.yml: the checks on a train push');
+});
+
+// The unit tests run in shards (checks.yml, the unit job): its matrix lists the shards k, its command runs k/n over every
+// tests/*.test.js. The shards cover every file only when the list is 1 to n: a shard left out would run its files on no
+// runner, and the PR would go green without them. {ks, n, name, shard, runs}: the list, n, the job's name, whether SHARD
+// is the matrix's shard, and the count of node --test runs in the whole file.
+function shards(src) {
+  const at = src.indexOf('\n  unit:\n'),
+    u = at < 0 ? '' : src.slice(at),
+    list = /\n\s+shard: \[([\d, ]+)\]\n/.exec(u),
+    cmd = /\n\s+node --test --test-shard="\$SHARD\/(\d+)" tests\/\*\.test\.js\n/.exec(u + '\n');
+  return {
+    ks: list ? list[1].split(',').map(Number) : [],
+    n: cmd ? +cmd[1] : 0,
+    name: (/\n {4}name: (.+)\n/.exec(u) || [])[1] || '',
+    shard: /\n\s+SHARD: \$\{\{ matrix\.shard \}\}\n/.test(u),
+    runs: (src.match(/^\s*(?:- )?(?:run: *)?node --test\b/gm) || []).length // a command, not a comment
+  };
+}
+test('checks.yml: the unit-test shards cover every test file, and nothing else runs them', () => {
+  const s = shards(fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8'));
+  assert.ok(s.n >= 1, 'checks.yml: no unit job running node --test --test-shard="$SHARD/n" tests/*.test.js');
+  assert.deepStrictEqual(
+    s.ks,
+    Array.from({length: s.n}, (_, i) => i + 1),
+    `checks.yml: the shards ${s.ks} are not 1 to ${s.n}`
+  );
+  assert.ok(s.shard, 'checks.yml: SHARD is not the matrix shard');
+  assert.strictEqual(s.name, `unit tests (\${{ matrix.shard }}/${s.n})`, 'checks.yml: the unit job names its shard out of n');
+  assert.strictEqual(s.runs, 1, 'checks.yml: one node --test run, the shards');
+});
+test('the shard guard reads what it guards', () => {
+  const y = n =>
+    `jobs:\n  checks:\n    steps:\n  unit:\n    name: unit tests (\${{ matrix.shard }}/${n})\n    strategy:\n      matrix:\n        shard: [1, 2]\n    steps:\n      - name: Unit tests\n        env:\n          SHARD: \${{ matrix.shard }}\n        run: |\n          node --test --test-shard="$SHARD/${n}" tests/*.test.js\n`;
+  assert.deepStrictEqual(shards(y(2)), {ks: [1, 2], n: 2, name: 'unit tests (${{ matrix.shard }}/2)', shard: true, runs: 1});
+  assert.deepStrictEqual(shards(y(3)).n, 3);
+  assert.deepStrictEqual(shards('jobs:\n  checks:\n    steps:\n      - run: node --test tests/*.test.js\n'), {
+    ks: [],
+    n: 0,
+    name: '',
+    shard: false,
+    runs: 1
+  });
 });

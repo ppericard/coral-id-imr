@@ -46,8 +46,11 @@ iNaturalist photos, FishBase), at a light size, never the original file: iNatura
 file, `medium` (500 px) for 480 px, `large` (1024 px) for 960 and 1600 px, FishBase's one file as it is (`core.js`
 `photoOnline`). A photo with none (the IMR lecture photos, the page art) moves to the same file on the site's `img/`.
 `photoFallback` rewrites `src`, `srcset`, `data-lo` and the game backdrop's inline style through `photoAway`, which finds
-the photo's record by the file name in the address (`photoFileOf`) in an index of every photo record (`photoIndex`);
-`photoFail` in `app.js` is a capture listener on `document`, before every other; the admin has the same.
+the photo's record by the file name in the address (`photoFileOf`) in an index of every photo record (`photoIndex`).
+Both act only on an R2 address, told by parsing it as a URL (`photoOnR2`: its origin is `PHOTO_BASE`'s, compared
+whole; `photoHasR2` tests each address of a `srcset` or style so): an address that only names R2 in its path, query or
+user part, or a look-alike host, is left alone. `photoFail` in `app.js` is a capture listener on `document`, before
+every other; the admin has the same.
 
 - Without a service worker, `R2` then turns false and `AWAY` true for the rest of the visit, so the next photos go there
   directly (`loc()`, `resized()`; the quiz preloads, which are no page elements, do the same in `pump()`).

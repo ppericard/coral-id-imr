@@ -86,6 +86,23 @@ const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
 // u: calU(), passed in by a caller that reads it once for many photos (photoSet).
 const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+// The calibration set (calibration-set.json, written by tools/calibset.js, read by app.js into CALSET: {subject id:
+// {unit: [photo files]}}; docs/LEARNING.md "The calibration set"): a fixed set of game photos, each weighing CSET.B
+// times as much while the sheet's plain count of its answers is under CSET.N, so each gathers the answers that measure
+// its difficulty, for a placement test built on them later. photoSet applies it only on a unit the player holds and to
+// a photo within one width of the question's target: it never pulls a photo that does not suit the player. A normal
+// question in every way: the factor multiplies the photo's weight and nothing else (its targeting, memory, format and
+// scoring are any photo's). A subject without a set, or a file that could not come, draws as before (factor 1).
+const CSET = {B: 2, N: 20};
+let CALSET = {},
+  SETF = null;
+// The current subject's members, one Set, made again when the subject or the file changes.
+const setFiles = () => {
+  if (!SETF || SETF.s !== SUBJ.id || SETF.c !== CALSET)
+    SETF = {s: SUBJ.id, c: CALSET, f: new Set(Object.values((CALSET && CALSET[SUBJ.id]) || {}).flat())};
+  return SETF.f;
+};
+const setBonus = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals), so in a big pool the floor's
 // mass does not drown the prior's lean.
@@ -128,7 +145,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
       .filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
-  const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
+  // The calibration set's factor (setBonus, in w below) holds to the same condition, and to a photo within one width of
+  // the target, so it never pulls a photo onto a genus still being learned or away from the player's level
+  // (docs/LEARNING.md "The calibration set").
+  const held = level(n)[0] !== 'new' && !shaky(n),
+    calQ = !shift && held && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n, shift),
     s = P[n] || {},
     ro = s.ro || [],
@@ -157,7 +178,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
       k = mem[p.o || p.f];
-    let r = Math.exp((-x * x) / 2) * calBonus(p);
+    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
@@ -1475,11 +1496,18 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // fish, judging/FISH.md) adds its own prior: (PDIFF.MID - ease) x the subject's calibration ease (SUBJECTS calib,
 // core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
 // photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
+// A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
+// rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
+// keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
+// has since left (moved or renamed): it then takes its current genus's offset.
 const PDIFF = {W: 5, MID: 3};
+const gdOff = n => (PGD[n] || [0])[0] || 0;
 function photoDiff(n, p) {
-  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f];
-  return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
+  if (!o) return prior;
+  const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
+  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W);
 }
 // Progress of a genus (s.pg, a moving average of its answers; core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress
 // (moving average) and mastery"): each answer weighs what it proves, w from 0 to 1, by core.js pgRightW, pgMissW and
@@ -1900,6 +1928,66 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
   // (e.g. AD skipped while D could not join yet, then D joined through E).
   C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
   return C.sort((x, y) => y.w - x.w);
+}
+// ---------- Look-alike pairs, shared by the quiz and the Learn pages ----------
+// The quiz (its duels, mix-up montage and cards) and My progress read these, so they come with the quiz's tier; the Learn
+// pages (learn.js: Look-alikes, the genus sheets, the Genera page) read them too and come later (docs/spec/loading.md
+// "Load order in tiers").
+// Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
+// in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
+// genera reads the same references (weighted, above: a ★ genus opens after the genera its card names).
+function shownGroup(n) {
+  return lectureGroup(DATA, n);
+}
+const starNote = n => {
+  const L = starRefs(DATA, n);
+  return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
+};
+// The look-alike pairs of the slate (data.json gen look, either genus listing the other), each [A, B] in alphabetical
+// order, once: the duels (app.js UNITS pairs) and the Look-alikes deck (learn.js classics).
+function pairs() {
+  const seen = new Set(),
+    out = [];
+  Object.keys(DATA.gen).forEach(a =>
+    DATA.gen[a].look.forEach(b => {
+      const k = [a, b].sort().join('|');
+      if (DATA.gen[b] && !seen.has(k)) {
+        seen.add(k);
+        out.push(k.split('|'));
+      }
+    })
+  );
+  return out;
+}
+// The source that compares a and b (data.json lsrc), from whichever genus lists the other; '' when none.
+const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
+// Classic look-alikes: the pairs a source compares in so many words, the IMR lecture (lsrc "IMR Lecture 6...") or the
+// Coral Finder text ("Coral Finder p. ..."): the Look-alikes deck (learn.js classics) and a duel's weight (quiz.js
+// duelPick).
+const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+// How many times this player gave one of a and b for the other, both ways (P conf).
+const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
+// The two photos of two genera that make the best side by side (the quiz's mix-up montage, quiz.js; the Look-alikes
+// montages, learn.js montage): same growth form first, then nearest the front and, when the photos come from all zoom
+// levels ("All"), the nearest zoom levels. The same form is looked for in every photo of the lists, not only the first
+// 6, so a plate genus is shown beside a plate look-alike when one exists; "x" (form not visible) matches nothing.
+// Without a same-form pair, the best pair among the first 6 of each list.
+const ZOOM = {wide: 0, medium: 1, macro: 2};
+function photoPair(LA, LB, fa, fb) {
+  let best = null;
+  const A = fa ? [fa] : LA,
+    B = fb ? [fb] : LB;
+  const gap = (x, y) => (x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0);
+  A.forEach((x, i) =>
+    B.forEach((y, j) => {
+      const same = !!x.form && x.form !== 'x' && x.form === y.form;
+      if (!same && (i >= 6 || j >= 6)) return;
+      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
+      if (!best || sc < best[0]) best = [sc, x, y];
+    })
+  );
+  return best ? [best[1], best[2]] : [];
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();

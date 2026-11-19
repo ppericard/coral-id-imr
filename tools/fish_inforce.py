@@ -18,6 +18,9 @@ tests/structure.test.js:
   or genus), a teaching node left with no family in a circle with none, and every look-alike line to it dropped.
 The look-alike pairs the editor adds or withdraws are not read here: no photo tool reads them.
 
+rootless is the build's report of the genera a circle edit brings into circle 1 with no name root (tools/build_fish.py,
+after its other reports).
+
     from fish_inforce import in_force    # fish = in_force(fish, curation)
 """
 import copy
@@ -93,3 +96,15 @@ def in_force(fish, cur):
         tc = {t['id']: t.get('circle') for t in out.get('teach') or []}
         out['start'] = [i for i in fish['start'] if tc.get(i) == 1]
     return out
+
+
+def rootless(fish, cur, skip=None):
+    """The genera a circle edit brings into circle 1 that have no name root: [(genus name, family id, reason or None)]
+    in the genera's order. The build requires a root (or a reason in tools/fish_genus_roots.json skip) only of the
+    base's circle-1 genera, so such a genus shows no name-root line on its sheet; this is the report of them (reason:
+    the skip entry's, None when the genus has neither a root nor a reason)."""
+    skip = skip or {}
+    base = {g['id']: g.get('circle') for g in fish.get('genera') or []}
+    return [(g['name'], g['family'], skip.get(g['name']))
+            for g in in_force(fish, cur).get('genera') or []
+            if g.get('circle') == 1 and base.get(g['id']) != 1 and not g.get('root')]

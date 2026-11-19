@@ -41,13 +41,12 @@ is the design's shorthand, and internal identifiers may keep it.
   - Otherwise an optional level, offered like the coral bonus genera: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
-- **The path is a tree, not a line** (Pierre, 2026-11-04, later; replaces the linear "families, then common names, then genus, then
-  species" wording of the same day):
-  - **trunk**: the families (the IMR entries, level 1);
-  - **branch A**: the species by **common name**;
-  - **branch B**: the **scientific genus names**, then the **species scientific names**.
-  A player goes along one branch or both, by the names they chose ("Which names a player learns").
-- **Scientific genus names, the first step of branch B** (Pierre, 2026-11-04, decided in principle, to design; replaces "No Latin genus
+- **Two independent teaching trees** (Pierre, 2026-11-18: "Ce sont 2 arbres pédagogiques indépendants"), equal in rank, each with
+  its own progress and switch; neither is the base of the other, and what one shows of the other's names is information:
+  - **the common-name tree**: the families (level 1), then the species by **common name**;
+  - **the scientific tree**: the **scientific genus names**, then the **species scientific names**.
+  A player learns one tree or both, by the names they chose ("Which names a player learns").
+- **Scientific genus names, the first step of the scientific tree** (Pierre, 2026-11-04, decided in principle, to design; replaces "No Latin genus
   level" of 2026-11-03): an intermediate step before knowing every species's scientific name, e.g. a photo, then 4 genus names
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
@@ -82,15 +81,18 @@ is the design's shorthand, and internal identifiers may keep it.
   Surgeonfishes (Q220); a photo of another genus of the family keeps the family as its answer (Q221). Every player with that
   answer, existing ones included (Pierre, 2026-11-08), and anyone who ever answered it, whatever the answer now (Q227: the
   fallback card had moved strong IMR players to "I know reef fish well"). docs/LEARNING.md "Fish: scientific genera".
-- **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
-  scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
-  instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
-- In branch B the species scientific names then come as a question format whose share rises with each species' progress (schedule
+- **The right genus alone is a smaller fault** (Pierre, 2026-11-17, Q394 A; replaces the partial credit of 2026-11-04): when a
+  species' scientific name is asked and the player types the right genus only, it counts as a quarter of a miss on the species'
+  scientific name, never a gain ("Questions and choices at the species level").
+- In the scientific tree the species scientific names then come as a question format whose share rises with each species' progress (schedule
   below, for a player learning both names; a player learning scientific names only sees them alone).
 
 ## Which names a player learns (Pierre, 2026-11-04)
 
-- The player chooses, at the fish welcome and any time in ⚙: **common names**, **scientific names**, or **both**.
+- The player chooses, at the fish welcome and any time on the fish's **"What I learn"** card (My progress; a Home line opens it), not
+  in ⚙ (Pierre, 2026-11-18, Q396, Q400 D): **common names**, **scientific names**, or **both**. Each names row is on or off, a
+  families-only player allowed (Q404 A); a row turned on comes as its parent reaches the usual threshold (Q401 A); a row turned off
+  stops being asked and its units keep their bars (Q402 A).
 - **"I'm at IMR (Research Assistant programme)"** = both, with scientific names early (EventMeasure takes scientific names).
 - **One score scale for everyone**, whatever the choice, so the leaderboards stay comparable ("My progress (fish)").
 
@@ -340,8 +342,8 @@ For a player learning both names (a player learning one kind sees only that one)
   there are many fish answers, they are **computed automatically per species** from the measured difficulty of answering it with the common
   name against the Latin name (a species whose Latin name is hard moves to Latin later).
 - The same display applies to the four choices and to the feedback. The feedback always shows both names.
-- The species' mastery exam (Instructor) is all Latin, with at least `TYPED.exam` (2) typed Latin answers. **To be rethought** (Pierre,
-  2026-11-04; open question 5).
+- **The species exams** (Pierre, 2026-11-17 and 2026-11-18, Q395; open question 5): a family exam at species level kept by a hidden
+  checklist, and an ultimate exam, the only way from 99% to 100% ([species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §3).
 - The display is logged (a mode suffix), so the sheet and the admin can rate the formats apart once fish answers are logged.
 - **Milestones celebrated** (Pierre, 2026-11-04): two moves each get a milestone card, like the existing major achievement toasts and
   cards: (1) the first unlock of species names, even if it concerns only one or two entries at first (species names open entry by entry,
@@ -357,10 +359,10 @@ For a player learning both names (a player learning one kind sees only that one)
   - a wrong pick **inside the same entry** never counts against the entry;
   - a wrong pick in **another entry** counts against both entries and both species (rule L2);
   - a right species answer is logged on the species; the entry keeps its own questions (no double count).
-- **A common name typed where Latin is asked counts as half a fault** (Pierre, 2026-11-04: the common name is easy to look up, but it is
-  still not the Latin). Decided in principle, **to study before building** (open question 3). **It must not be gameable** (Pierre,
-  2026-11-04): typing common names must never advance the scientific-name progress. Accepting a common name sometimes shows partial
-  learning, but when the scientific name is what is tested, it must be given at some point.
+- **A common name typed where Latin is asked counts as half a miss, the genus alone as a quarter**, on the species' scientific name,
+  never a gain (Pierre, 2026-11-17, Q394 A; open question 3; the common name is easy to look up, but it is still not the Latin). The
+  sizes are starting values, read on the real answers later. **It must not be gameable** (Pierre, 2026-11-04): typing common names
+  must never advance the scientific-name progress; when the scientific name is what is tested, it must be given at some point.
 
 ## The fish welcome question and the IMR answer (Pierre, 2026-11-04)
 
@@ -478,7 +480,7 @@ Gaps before species questions ship:
 - **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319); since Q381 (2026-11-15) any name two species carry stays on both, 11 in all ("Common names").
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; a shared name right for the species asked, never two choices of one label (Q381).
-- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), and since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked). From v189 the app uses the pooled photo difficulty, unit offsets and pair counts for fish in play (`SUBJECTS` `fish` `stats`); the photo memory offsets and the format offsets stay the prior and none (`SUBJECTS` `replay: false`), and the confusion views below wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
 
@@ -741,32 +743,22 @@ on families only to an IMR RA with every species open:
 
 ## Open questions for Pierre
 
-Questions 1, 2, 4 and 6 are answered; 3 and 5 are still open as designs (the fish exams, the typed common name).
+Every question here is answered (3: Q394 A; 5: Q395).
 
 1. **"Twospot wrasse"**: **settled** (Pierre, 2026-11-09, Q319, Q381): the name is right for both species (see "Duplicate common names" above); nothing is asked of IMR.
 2. The display-schedule thresholds and the IMR shift. **Answered (Pierre, 2026-11-04)**: the starting values from learnsim; later,
    with many answers, computed automatically per species from the measured difficulty of answering it with the common name against the
    Latin name ("Name-display schedule").
-3. A typed **common** name on a species question that asks for Latin. **Decided in principle (Pierre, 2026-11-04): it counts, as half a
-   fault** (the common name is easy to look up, but it is still not the Latin); the feedback shows the Latin name. **To study before
-   building**, starting values from learnsim:
-   - the Elo step with a graded outcome 0.5: `core.js` `eloStep` already has the form outcome − expected, but reads `good` as a yes / no
-     (`good ? 1 : 0`), so a 0.5 would count as right today; the right / miss counts (`s.ok`, `s.ko`) that size its step, the volatility
-     (`s.vr`) and the response-time weight (`rtWeight`, right answers only; typed answers already at 1) need a rule for a half;
-   - the progress moving average: `pgStep` has the same yes / no reading, and the weight differs for a right answer (`pgWeight`, from the
-     choices) and a miss (`pgMissW`, from the photo's difficulty): which one a half takes; the record of recent results (`s.h`, `1` / `0`);
-   - the expected success: what the ~80% target and the one-tap checks compare against when a question can end in a half;
-   - the exam (all Latin): does a half count as a miss that restarts the exam, or only as no pass?
-   - the sheet's replay: the half must be logged as such (a mark on the answer), and becomes a rules version (`RVS`) once fish answers
-     are replayed.
-   - **Constraint: not gameable** (Pierre, 2026-11-04): typing common names must never advance the scientific-name progress. Ideas to
-     weigh, none decided: the half credit counts for the species' common-name stage but never for its scientific stage; a "now type the
-     scientific name" retry on the same question; a credit that shrinks for repeated common answers on the same species.
+3. A typed **common** name, or the genus alone, on a species question that asks for Latin. **Answered (Pierre, 2026-11-17, Q394 A)**:
+   both are smaller faults on the species' scientific name, never a gain: a common name half a miss, the genus alone a quarter; the
+   feedback shows the Latin name; the sizes are starting values, read on the real answers later. It stays **not gameable** (Pierre,
+   2026-11-04): typing common names never advances the scientific-name progress.
 4. Species in the leaderboard and achievements. **Answered (Pierre, 2026-11-04)**: the fish leaderboard ranks by the global fish score
    ("My progress (fish)"), then the fish Elo; achievements: about 14 general fish ones plus a separate set of harder "hunt" ones, designed
    later ("Both subjects in one app").
-5. **The fish exams, to be rethought** (Pierre, 2026-11-04; open, to design): an exam per species, or per entry (family)? Pierre's idea:
-   a family's exam is about 20 questions on only the hard fish of that family, answered directly with the scientific name.
+5. **The fish exams. Answered (Pierre, 2026-11-17 and 2026-11-18, Q395)**: species exams of two kinds, a family exam at species level
+   kept by a hidden checklist (no threshold on the boxes) and an ultimate exam (100 to 200 questions, 95% to pass), the only way from 99%
+   to 100% ([species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §3).
 6. **The fish open-all card and the IMR answer.** **Answered (Pierre, 2026-11-04)**: "I'm at IMR" = both names, scientific names early
    (the adaptive difficulty still holds them back); Open all in two steps, "Danger zone" (families and genera) then, only if still too
    easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").

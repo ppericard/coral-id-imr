@@ -17,9 +17,10 @@ const M = json('tools/seaslug_cues.json'),
   T = json('seaslug.json');
 const G = Object.fromEntries(T.genera.map(g => [g.name, g])),
   FM = Object.fromEntries(T.families.map(f => [f.name, f]));
-// The specialist sources read (the Sea Slug Forum, SEASLUG.WORLD, a paper by its DOI) and Wikipedia at a fixed revision.
+// The specialist sources read (the Sea Slug Forum, SEASLUG.WORLD, a paper by its DOI, a paper with no DOI by its BioStor
+// scan on the Internet Archive) and Wikipedia at a fixed revision.
 const HOSTS =
-  /^https:\/\/(www\.seaslugforum\.net\/find\/|en\.seaslug\.world\/species\/|doi\.org\/|en\.wikipedia\.org\/w\/index\.php\?title=[^&]+&oldid=\d+$)/;
+  /^https:\/\/(www\.seaslugforum\.net\/find\/|en\.seaslug\.world\/species\/|doi\.org\/|archive\.org\/details\/biostor-\d+$|en\.wikipedia\.org\/w\/index\.php\?title=[^&]+&oldid=\d+$)/;
 
 // The tool's verdict on a made-up tree and cues (its error text, '' when it passes).
 const verdict = (cues, tree) => {
