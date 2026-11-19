@@ -1237,3 +1237,29 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
+- **20:34, Q437 (game modes for every subject).** «Question 437, évidemment oui, il faut ouvrir tous les modes de jeu
+  aux différentes matières, à toutes les matières. Et oui, c'est du code commun.» Applied: ROADMAP "Game modes" (its
+  lead). The rest of that message (the ROADMAP's size limit, Q438) is not recorded here.
+- **20:45-20:48, the backlog recount.** «Et t'es sûr que sur les 151, notamment où il y en avait en attente de ma
+  réponse, ou en attente de données ou d'un tiers, ou des simples idées, j'ai pas donné moi des réponses justement pour
+  les débloquer»; «c'était pas que des réponses à des questions, hein, c'était aussi des commentaires, c'était aussi des
+  messages directs». The recount found 35 of the inventory's open rows answered or decided; the ROADMAP becomes the one
+  list and the inventory a dated snapshot; tools/answers_check.py fails a later entry that names a ROADMAP item without
+  the ROADMAP or a PR after "Applied". Applied: ROADMAP (the rows below); docs/reviews/2026-11-18-backlog-inventory.md.
+- **21:10, recorded late: inventory P2 (2026-11-18 morning).** "P2 B for now" (paraphrase, STATUS 00f82557c, #1068).
+  The inventory's P2 is the lecture-photo study's (d): ask the IMR trainer which of the 34 untraced photos are IMR's own.
+  What option B said is not recorded anywhere read: to confirm with Pierre. Applied: ROADMAP "Trace IMR lecture photos
+  to their original source".
+- **21:10, recorded late: inventory C12 and L3.** C12 "A+D" (2026-11-18, entry "Lecture photos" above); L3 is answered
+  by Q405 and Q415 (above). Applied: ROADMAP "IMR lecture photos never upscaled; the Corals of the World captures
+  replaced by their originals" (Next) and ROADMAP "Rule L11's check tool under the 40-minute cap" (Next).
+- **21:10, recorded late: inventory L8.** "L8 no" (2026-11-18, entry "Inventory items L8, L14" above). Applied: ROADMAP
+  "Declined" (the exam at a hard quantile, the exam over two visits).
+- **21:10, recorded late: inventory D6 (2026-11-18 morning).** "D6 three wordings" (paraphrase, STATUS 00f82557c,
+  #1068): rules C2 and D5 one line each, "ok"; the Coral Finder out of the rules but rule C2 (Q294). Applied: #1086.
+- **21:10, recorded late: inventory S9 (2026-11-18 morning).** "#1061 both built now" (paraphrase, STATUS 00f82557c,
+  #1068): the sea slugs' look-alike line editor and their Structure. Applied: #1075.
+- **21:10, recorded late: the 2026-11-18 entries that said "to update" or "to do".** No source priority (inventory
+  C1): the corals' code, #1195. No morning report (inventory D7): INTEGRATOR.md, #1192. Inventory L14, game modes, the
+  domain waits, role names: ROADMAP, #1192. Two teaching trees: FISH_PATH.md, #1192. Handovers: INTEGRATOR.md, #1192.
+  Applied: #1192, #1195.
