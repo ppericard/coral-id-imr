@@ -267,8 +267,8 @@ given, never judged by the pass.
   photos, so a photo keeps its tags when it moves from the candidates to the game.
 - **Sure decisions** (`autosort.js` `fishSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
   phase and crop, whatever the ease; dup, the subject not obvious (count `x`), other species one could take for the
-  subject (count `k`) or not a live fish seen in the water (flag `a`: out of the water, a screen, a video capture) →
-  reject; the legacy count `m` (other species, not sorted yet) →
+  subject (count `k`) or not a live fish seen in the water (flag `a`: out of the water, a screen or print, an aquarium,
+  a video capture) → reject; the legacy count `m` (other species, not sorted yet) →
   Pierre's, never added. They go through the coral auto-sort's path (the draft, the `auto` log, 1-in-20 Checks with
   `autoCheck`, agreement per field), and the sure adds are **in play by themselves**, hosted on R2 like his own adds
   ("The photos in play" below). `fetch_fish.py` `sure_out` mirrors the rejects for its room count

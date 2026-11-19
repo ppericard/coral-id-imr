@@ -127,10 +127,18 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   rebase or another tab's Publish builds it again (`unitRefresh`);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort));
+- `tags`, for every tree subject (the fish, the sea slugs), its whole rubric, declared and never defaulted: the seven
+  positions of a photo's tag code (`names` and, by position, `[value, label, words, more]`), the flags and the phase row;
+  `core.js` `treeRubric` writes down what the tree subjects share once (the whole, colour loss, clarity, size and count
+  rows, the tools' flags, the phases; the count takes the subject's noun) and the subject declares what differs (its
+  views, its light, the flags Pierre may set). The admin reads it in one place: `admin.js` `tagRows` (the Tags buttons),
+  `tagFlags`, `tagWords` and `tagText` (a code in words: the short line says what makes a photo harder, the Candidates'
+  judged line adds a value's `full` words), and the review rows' view and phase buttons read the same
+  ([admin-tree.md › The sea slugs](admin-tree.md#the-sea-slugs));
 - `origins` and `csrc`, its photo origins (the filter bar's chips) and its candidate sources; `obs`, its word for
-  observations; `target` and `tags` for the sea slugs ([admin-tree.md › The sea slugs](admin-tree.md#the-sea-slugs)).
+  observations; `target` for the sea slugs.
 
-A field of `admin` set for one subject only (`autosort`, `csrc`, `target`, `tags`) is listed in `tests/subject-neutral.test.js`
+A field of `admin` set for one subject only (`autosort`, `csrc`, `target`) is listed in `tests/subject-neutral.test.js`
 `FLAGS` with what it switches on, like the top-level ones. **The admin and the Learn pages still hold code of each
 subject's own** (the fish and sea slugs' pages next to the corals', `ASUBJ.rank === 'family'`, `S.sheets ? FISHA : DATA`,
 `FISHS`, `DATA.gen`...): `tests/subject-neutral-admin.test.js` counts every such test per file and lists every such

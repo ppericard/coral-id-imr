@@ -596,6 +596,51 @@ async function oddOne(b, base, errs) {
   await c.close();
   return fails.map(m => `odd one out: ${m}`);
 }
+// (15) Matrix (proto/matrixgame.js, the Lab) on the fish: twelve families unlocked, the photos stubbed (its tiles are its choices);
+// tests/matrixgame.check.js plays the rounds at 390 and 1280 px (four photos of four unlocked families, five names, a wrong pair
+// kept nowhere, a retry free, the end sheet, one screen in every state, no progress, log or answer count changes).
+async function matrixGame(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-mx')) {
+        sessionStorage.setItem('fish-mx', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`matrix: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const n = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => gamePics(n, 'wide').length)
+      .slice(0, 12);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (n < 6) return [`matrix: ${n} fish families with a photo`];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./matrixgame.check.js')(q, w, fails, 'fish', 8);
+  }
+  await c.close();
+  return fails.map(m => `matrix: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3480,6 +3525,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
   // (14) Odd one out: oddOne, above.
   const oo = run.has('main') ? await oddOne(b, base, errs) : [];
+  // (15) Matrix: matrixGame, above.
+  const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -3812,7 +3859,23 @@ async function freshSeed(b, base, errs, seed, fresh) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...sd, ...oo, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [
+    ...out,
+    ...ui,
+    ...rv,
+    ...fresh,
+    ...fx,
+    ...sd,
+    ...oo,
+    ...mx,
+    ...cold,
+    ...grp,
+    ...all,
+    ...welcome,
+    ...hello,
+    ...flag,
+    ...early
+  ];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
