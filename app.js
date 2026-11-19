@@ -1182,6 +1182,15 @@ const sciPart = (text, t) => {
   );
   return w.length > 1 && gn.includes(nm(w[0])) && !ep.has(nm(w.slice(1).join(' '))) ? 'g' : '';
 };
+// The top n species of circle 1 by their scientific names (UNITS fish top: Dauin's top 20, fdauin20, Q261: circle 1
+// only for now), the most seen near Dauin first (present.dauinU, the observers near Dauin, as the score's weights; ties
+// by the commonness order, cmi), from L (sciSpAll: none while the level is off).
+const sciTop = (L, n) =>
+  L.map(u => [u, (TREEU && TREEU.sps && TREEU.sps[GX(u).sp]) || {}])
+    .filter(([, s]) => s.circle === 1)
+    .sort(([, a], [, b]) => ((b.present || {}).dauinU || 0) - ((a.present || {}).dauinU || 0) || (b.cmi || 0) - (a.cmi || 0))
+    .slice(0, n)
+    .map(([u]) => u);
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate).
 const sciUp = () =>
@@ -2699,6 +2708,8 @@ const UNITS = {
     ],
     // The milestone of the first species met by its scientific name (SCI_SP card; docs/FISH_PATH.md "Name-display
     // schedule", milestones: "You've unlocked scientific names: questions of this kind start coming", 2026-11-04).
+    // Dauin's top 20 by their scientific names (progress.js achSnap top; core.js FISH_ACH fdauin20).
+    top: () => sciTop(sciSpAll(), 20),
     sciCard:
       '<b>You’ve unlocked scientific names.</b> Questions of this kind start coming: a genus you know well (Advanced) now brings its species, by their scientific names, the most met around Dauin first.'
   },

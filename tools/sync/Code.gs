@@ -8165,6 +8165,9 @@ const CORE_ = (function () { const module = {exports: {}};
     ['fpct40', 'Down the wall', '40% fish progress', 2, '📈', s => s.pct >= 40],
     ['fpct50', 'Family reunion', '50% fish progress: what knowing every family for sure is worth', 3, '📈', s => s.pct >= 50],
     ['fpct60', 'Blue water', '60% fish progress', 3, '📈', s => s.pct >= 60],
+    // 70% needs the species by their scientific names (families, genera and common names top out lower; Q259-Q264, the
+    // name Q299).
+    ['fpct70', 'Twilight zone', '70% fish progress', 3, '📈', s => s.pct >= 70],
     // The scientific genera (an opt-in set, SUBJECTS optin sci).
     [
       'fsci5',
@@ -8186,6 +8189,25 @@ const CORE_ = (function () { const module = {exports: {}};
       3,
       '🐟',
       s => ((s.setsAdv || {}).sp || 0) >= 50
+    ],
+    // The species named by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md §2.6): named once the
+    // scientific name's bar reaches Advanced (Q262); the names Q299's.
+    ['fspsci1', 'Binomial', 'A species at Advanced level (80%+) by its scientific name', 1, '🏷️', s => ((s.setsAdv || {}).ssp || 0) >= 1],
+    [
+      'fboth25',
+      'Bilingual',
+      '25 species at Advanced level or above by both their common and scientific names',
+      2,
+      '🐟',
+      s => (s.both || 0) >= 25
+    ],
+    [
+      'fdauin20',
+      'Local legend',
+      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      3,
+      '🗺️',
+      s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The sea slug achievements, modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level,
