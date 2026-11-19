@@ -108,15 +108,16 @@ Every scientific genus in play has a short presentation and its ID cues, sourced
 for, in every circle (the surprise cards' families aside), written from the FAO species identification guide for the
 Western Central Pacific (vols 3 to 6, 1999 and 2001: each family's key to the genera, or its key to the species where it
 has none, and the species accounts) and FishBase species pages (where the guide splits genera by counts only, a visible
-feature FishBase gives for the genus's only game species, or for each of them); only features seen on a photo, never a
-count.
+feature FishBase gives for the genus's only game species, or for each of them); where neither gives one, Reef Life Survey,
+FishBase or Fishes of Australia species pages or an FAO species catalogue, a ref's where then being the page's words verbatim, checked by
+script; only features seen on a photo, never a count.
 
 `add_families` (`genus_marks`) builds them into `fish.json` genera (`plain`, `marks`, `msrc` each source once, `mby`
 {plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues (rule C1:
 they stay apart), a mark with a number, a line too long, a species named that is not one of its own, or a genus in play
 of any circle without a presentation, or with neither marks nor a reason (`--marks`, a hidden flag, points the build at
 another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks a genus unit's tips (`qt`) under "ID
-marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
+marks (" and its sources' short names (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
 `learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `treeRoot`).
 
 ## Juveniles per species
