@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v193 (2026-11-19)
+
+The embedded `core.js` applies rule P1 to the corals (Pierre, 2026-11-18: "No source priority. A photo is never forced or boosted for who took it, Pierre's own included"): `applySlots` orders a genus's photos in each view by quality, Poor last, whoever took them (core.js `easyRank`'s ties: the licence where the order allows it, then a fixed hash), instead of IMR lecture photos, then Pierre's own, then other observers; the Coral ID Key's extra photos no longer leave out IMR and his own photos; the corals' `SUBJECTS` entry loses `tiers`, the draw's × 1.3 for a never-seen IMR or own photo. The script uses `applySlots` only for which photos are in play (the photo exposure per player, `POOLS.slots`), and every genus and view keeps the same game photos: nothing the script reads, writes, replays or serves changes; no gate and no rules version
+
 ## v192 (2026-11-19)
 
 `core.js` `refScore` and `refLevel` (copied here) read a fish photo's reference look from its tags and its judged ease alone: the flag `r` (a reference source shows the photo for its species) no longer weighs 8 points in the tie-break after the ease (Pierre, 2026-11-17: "'référence' devrait être déduit des caractéristiques de la photo, pas un tag"), and a reference source's photo judged very easy is no longer reference level without the look (Pierre, 2026-11-18: "La source ne devrait pas être le critère principal de 'référence' même si ça peut être un fort indice. L'ensemble des photos de référence doit avoir des qualités intrinsèques, basées sur des critères objectifs"). Nothing the script computes changes: it reads no fish photo order
