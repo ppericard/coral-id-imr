@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Privacy notice (2026-11-01): what IMR Reef ID stores and where. Also the privacy policy link of the Google Cloud
-     project that lets the sync script update itself (docs/HANDOVER.md). No script on this page. -->
+<!-- Privacy notice: what IMR Reef ID keeps about players, why, who sees it, how long, and how to have it deleted (the
+     short version, Pierre 2026-11-19). Also the privacy policy link of the Google Cloud project that lets the sync
+     script update itself (docs/HANDOVER.md). No script on this page. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy · IMR Reef ID</title>
-<meta name="description" content="What IMR Reef ID stores about you, where, and how to have it deleted.">
+<meta name="description" content="What IMR Reef ID keeps about you, why, and how to have it deleted.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
   :root{--bg:#f2f5f6;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d}
@@ -27,68 +28,32 @@
 <main>
   <p><a href="./">← IMR Reef ID</a></p>
   <h1>Privacy</h1>
-  <p class="muted">IMR Reef ID, a training tool for identifying corals and reef fish, and sea slugs (in beta), at the Institute for Marine Research (IMR), Dauin, Philippines. Run by Pierre Pericard. Last updated 19 November 2026 (the sea slugs, live games, the backups, what stays after an account is deleted).</p>
+  <p class="muted">IMR Reef ID, a training tool for identifying corals, reef fish and sea slugs (in beta), at the Institute for Marine Research (IMR), Dauin, Philippines. Run by Pierre Pericard. Last updated 19 November 2026.</p>
 
   <div class="card">
-  <h2>Without signing in</h2>
-  <p>Your progress and settings are kept in your browser, on your device (local storage). Your answers in the games, with the same details as listed under "If you sign in" below, are also sent, without any name or code, under a random id made on your device, to the Google Sheets spreadsheet described below. With them go the answer you gave to the app's first question (how much you already know) and the date you last reset your progress, and the spreadsheet works out a progress record from your answers, kept under the same random id. Once there are enough answers to show real play (not random clicks), they help rate how hard each photo is and which genera get mixed up, as everyone's do. If you sign in later, they are attached to your name.</p>
-  <p>The app also sends a few short technical reports, signed in or not: see <a href="#technical">Technical reports</a> below.</p>
-
-  <h2>If you sign in</h2>
-  <p>You sign in with a name of your choice and a 4-digit code. The following is then saved in a Google Sheets spreadsheet owned by Pierre Pericard, through a Google Apps Script:</p>
+  <h2>What is kept</h2>
   <ul>
-    <li>your name, and your code in a scrambled form (a hash): the code itself is not stored;</li>
-    <li>your progress in each subject (corals, fish, sea slugs), your settings in the app and your answer to the app's first question (how much you already know);</li>
-    <li>each answer you give in the games, live games included (see Live games): what was shown (a coral genus, a fish family, genus or species, or a sea slug genus, with the fish or sea slug species in the photo) and the level it was asked at, your answer, the choices offered, the photos shown (and, where you tap the photo that matches a name, the photo you tapped), the game, the time and your device's time zone offset (to tell morning from evening where you are), how many seconds you took and whether you enlarged a photo; on a question where you type the name, what you typed (and any name the app turned down before it), and whether you retyped a misspelt name right;</li>
-    <li>with each answer, a few details the app works out or adds: a random id for the answer (so that one sent twice is counted once), how the game scored it (for example how hard the photos were rated, and how many were new to you), your estimated chance of being right and your estimated level at that moment, and a short code for the version of the course content the app held;</li>
-    <li>your progress (%) and whether you want to be on the leaderboard.</li>
+    <li>If you sign in: your name, your 4-digit code in a scrambled form (the code itself is not stored), your settings, your progress and the answers you give in the games, live games included.</li>
+    <li>If you do not sign in: your answers and progress, under a random id made on your device, with no name.</li>
+    <li>Short usage and technical reports (which pages you open, how the app loaded, errors), never with your name.</li>
+    <li>The problem reports and feedback you send.</li>
   </ul>
-  <p>This is used to save your progress across devices, to let the app's administrators follow the training, and to rate how hard each photo is. The photo ratings and the game statistics use anonymous ids, not names. An anonymous id is made from a name with a secret key kept in the script's settings, outside the spreadsheet and its backups: the same name always gives the same id, so one player's rows can be read together, but the spreadsheet alone does not say whose they are. Pierre, who holds the key, can work out the id of a name. Apart from the leaderboard and the live games below, only the app's administrators see names.</p>
-  <p>Once a week (and whenever Pierre asks for one) a copy of the whole spreadsheet, every tab, so every name and answer described here, is saved as a backup in Pierre Pericard's own private cloud storage (pCloud, a file storage service). The backups started on 18 November 2026. No time after which old copies are deleted has been set. They are opened only to restore the spreadsheet if it is lost.</p>
+  <p>No advertising, no tracking scripts, no cookies, no e-mail address, no location.</p>
 
-  <h2>Which pages you open</h2>
-  <p>The app itself counts which of its pages you open during a visit (for example the quiz, the genus sheets, Genera, My progress), how many times and for how long each one is on screen, which genus sheets you open, how you reached each one (from a quiz answer, the Learn pages, My progress or elsewhere) and whether you had already been asked that genus, and how many questions you had answered by then. It also says how big the app's window was on your screen, rounded to 10 pixels (for example 360 × 660), the screen's sharpness (its pixel ratio, to one decimal) whether the device was held upright or sideways, and which of five width ranges its narrow side falls in (up to 360, 361 to 390, 391 to 414, 415 to 600 pixels, or wider): this helps fit the games to the screens players really use. It also counts, as four plain numbers, how many answers you saw the feedback of, how often you opened More after an answer, how long the answer stayed on screen (at most two minutes each) and how often you tapped a link in it, never which answer or which genus. When you leave or switch away from the app, this short summary is sent, with a random id of the visit, to the same spreadsheet, filed with your answers: under the same random id as your answers if you are not signed in; if you are, your name and code go with it so they can be checked, and only the anonymous id of your account is kept with the summary, never your name. The device id of the technical reports (below) is kept with it too. It contains no text you typed, no photos and no location. It is used only to see how the app is used (for example whether the genus sheets help) and to improve the course. No tracking script or outside service is involved, and nothing is shared.</p>
+  <h2>Why</h2>
+  <p>To save your progress across devices, to let IMR's trainers follow the training, to rate how hard each photo is, and to fix and improve the app.</p>
 
-  <h2 id="technical">Technical reports</h2>
-  <p>Your device also makes a second random id of its own, the device id. The short reports below are sent under it to the same spreadsheet, signed in or not, never with your name. Each one carries the page of the app you were on, the app version and the type of browser (for example "Chrome 130 mobile").</p>
-  <ul>
-    <li><b>Once a visit, how the app loaded</b>: the first page you opened and the next one, whether and when you opened the quiz, how many seconds the first page and the first quiz photo took to appear, the speed of your connection as the app measured it, how much was downloaded, whether the app came from the copy kept on your device, whether the photo Saver was on, the theme (light or dark), the width of the window, whether the app was opened from its icon on your home screen or in a browser tab, and the name of the GitHub server that delivered the app (it tells roughly which region it came from). This helps make the app load faster on slow connections and shows how it is used.</li>
-    <li><b>The first page after Home</b>: once a visit, how many seconds after Home appeared you opened your first page from it, which page it was, whether its files had not all arrived yet, and whether the welcome tour was running.</li>
-    <li><b>When something goes wrong</b>: an error (its message and where it happened in the app's code), a photo that does not load, or a save that fails.</li>
-    <li><b>An app that did not update</b>: if your device keeps running an older version of the app, the spreadsheet notes it (the version, and how long the page had stayed open), at most once every few hours.</li>
-    <li><b>The one-tap question and the tips</b>: now and then, after an answer, the app asks whether the questions are too easy, about right or too hard. It reports that the question was shown and, if you tap an answer, your answer, with the game, how many questions you had answered in this game session, how many of your last 10 were right, your level and how many of the course's corals, fish or sea slugs you have met. You can ignore the question (Not now). The "Did you know?" tips are reported the same way: shown, and which button you tapped.</li>
-  </ul>
-  <p><b>How the device id is linked to you.</b> On its own, the device id says nothing about who you are. But each summary of the pages you open is filed with both the device id and the anonymous id of your answers (or of your account, if you are signed in), as said above. Each answer you give is also stored with the device id of the device you gave it on, signed in or not. So the app's administrators can see which answers were given on a device, and which technical reports came from it, for example to fix a problem for the person who met it, or to see on how many devices someone plays. Your name is never stored with these reports. If you delete your account, your answers and page summaries go with it, so its device ids are no longer linked to you. If an administrator deletes an account but keeps its answers anonymously (they then only help rate the photos), the device id is removed from those answers.</p>
+  <h2>Who sees it</h2>
+  <p>Pierre Pericard and the app's administrators at IMR. If you sign in, your name, progress and level appear on the app's leaderboards; you can leave them in ⚙ Settings, Leaderboard: Off. In a live game, everyone in the room sees the name you type there and the top scores. Nothing is sold or shared with anyone else.</p>
 
-  <h2>Leaderboard</h2>
-  <p>If you sign in, your name, your progress (%) and your Elo score (your level, computed from your answers) appear on the public leaderboard of the app (🏆), one per subject (corals, fish, sea slugs), where anyone using the app can see them. If you are in a group that has its own leaderboard (a cohort, the IMR staff), you also appear on it, under the group's name; the general leaderboard shows everyone, whatever their groups. Everyone can see every leaderboard. You can leave them all at any time: ⚙ Settings, Leaderboard: Off. An administrator can also keep a player off every leaderboard. Nothing else about you is shown there.</p>
-
-  <h2>Live games</h2>
-  <p>A trainer can run a live game: everyone in the room answers the same photo questions at the same time, after typing the game's 6-digit code and a name (any name, up to 20 characters; if you are signed in, the form suggests your first name, and you can change it). That name is not tied to your account. The name, your answers, how fast you gave them and your points are kept only in the sync script's short-term memory (its cache), never in the spreadsheet and so never in the backups: each is kept for at most 6 hours after it was last changed, and a game cannot go on longer than 6 hours. The trainer sees every name in the game with its points; everyone in it sees the five best scores with their names, their own rank, and how many chose each answer. Your browser keeps the game for that tab only, until you close it. If you are not signed in, the game keeps nothing else: your answers are saved only if you sign in on the end screen. If you are signed in, your answers about what you have already unlocked count in your progress and are saved like any other answer (above), marked as from a live game. When someone starts a game, the spreadsheet's audit log notes it under the anonymous id of their account; it can also note a try by an account that is not allowed to run one.</p>
-
-  <h2>Notes Pierre writes by hand</h2>
-  <p>In a tab of the spreadsheet called Notes, Pierre can write lines by hand for the app's cards, for example a few words under an apology. Every signed-in device receives these lines and keeps them in its browser, and a card shows the one that belongs to it. They are his own words, not data the app collected, but a line can name a player, and deleting an account does not remove a line.</p>
-
-  <h2>Problem reports and feedback</h2>
-  <p>When you report a problem or send feedback, the report, your note and your name (if you give it or are signed in) are saved in the same spreadsheet, so the photos and texts can be fixed.</p>
-
-  <h2>What is not collected</h2>
-  <p>No advertising, no third-party analytics or tracking scripts, no cookies, no e-mail address, no location (the app never asks your device where you are). Nothing is sold or shared with anyone else.</p>
-
-  <h2>Other services the pages load from</h2>
-  <p>Like any website, these see your device's IP address when they serve a file: GitHub Pages (the app itself and its fonts), Cloudflare (the photos of every subject, from its R2 storage), iNaturalist (some coral photos, and the original of any photo whose copy on Cloudflare cannot be reached; iNaturalist's photos are served from its open-data storage at Amazon), FishBase (the same, for some fish photos) and Google (the sync script, which receives everything the app sends to the spreadsheet, signed in or not, and runs the live games). The photo services only serve files: no answer, name, progress or report is ever sent to them.</p>
+  <h2>Where and how long</h2>
+  <p>In a Google Sheets spreadsheet owned by Pierre Pericard, for as long as your account exists, with a weekly backup copy in his private cloud storage. The app is served by GitHub Pages and its photos by Cloudflare, iNaturalist and FishBase, which only serve files. Your progress is also kept in your browser.</p>
 
   <h2>Deleting your data</h2>
-  <p>Sign out in ⚙ to clear the app from your device. To delete your account, do it yourself in the app: About and credits, <a href="./#about/delete-account">Delete my account</a> (signed in, with your code; the app asks twice). You can also ask Pierre Pericard at IMR, or open an issue at <a href="https://github.com/ppericard/coral-id-imr/issues">github.com/ppericard/coral-id-imr</a>.</p>
-  <p>Either way, <b>everything</b> is deleted: your name, your saved progress and settings, every answer you gave, your problem reports and feedback, the summaries of the pages you opened, your place on every leaderboard, your groups, and any role your account had. Your name also disappears from the app's technical logs, and from the statistics reports, which are computed again without your account. When you delete it yourself, the device you used is signed out and cleared too. Four things are left:</p>
-  <ul>
-    <li>your name and your scrambled code, in a list of removed accounts, so that a device still signed in with them is told the account was deleted instead of creating it again;</li>
-    <li>the audit log's notes about your account (a role given or taken away, a live game started or refused, what an administrator did to your account or tried to do with it), under your anonymous id and not your name;</li>
-    <li>the weekly backup copies made before the deletion, which still hold your data: no time has been set for deleting them, and they are opened only to restore the spreadsheet;</li>
-    <li>a line Pierre wrote by hand in the Notes tab (see above), if it names you.</li>
-  </ul>
-  <p>A name typed in a live game is not tied to your account and is gone at most 6 hours after it was last changed.</p>
-  <p>You may instead ask Pierre to <b>keep your answers anonymously</b>: the same is deleted, except that your answers and your reports are kept without your name, under your anonymous id (and the answers without their device id). The answers are then used only to rate how hard each photo is and which genera get mixed up, never as a player; the reports only to fix the photos and texts they are about.</p>
+  <p>Delete your account yourself in the app: About and credits, <a href="./#about/delete-account">Delete my account</a>. Your name, progress, answers, reports and leaderboard places are deleted. What remains: your name in a list of removed accounts (so a device still signed in is told), the audit log's notes about your account under an anonymous id, and the backup copies made before the deletion. Signing out in ⚙ clears the app from your device.</p>
+
+  <h2>Contact</h2>
+  <p>To see, correct or delete your data, or for any question: Pierre Pericard at IMR, or an issue at <a href="https://github.com/ppericard/coral-id-imr/issues">github.com/ppericard/coral-id-imr</a>.</p>
   </div>
 </main>
 </body>
