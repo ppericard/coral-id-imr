@@ -173,8 +173,9 @@ e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the
 the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
 subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
 Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
-means what the game scored, wherever it is replayed. What only the game knows (exam, hold) is in
-`quiz.js` `recordAnswer`, for every game.
+means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the
+hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
+`liveLog`).
 
 ### Response time
 
