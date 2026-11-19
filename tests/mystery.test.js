@@ -18,14 +18,16 @@ const ROOT = path.join(__dirname, '..'),
 // The subject's rule, read from app.js UNITS: its mystery function, run on an answer.
 const rule = (from, to) => {
   const part = block(APP, from, to, {file: 'app.js'}),
-    m = part.match(/\n {4}mystery: ([^\n]+),\n/);
+    m = part.match(/\n {2,4}mystery: ([^\n]+),\n/);
   assert.ok(m, `no mystery in ${from.trim()}`);
   return vm.runInNewContext(`(${m[1]})`);
 };
 
 test('UNITS: the corals mask for "new" only, the fish for everyone', () => {
+  // the fish's from the tree subjects' shared members (TREE_UNITS), spread into their entry
   const coral = rule('const UNITS = {\n  coral: {', '\n  fish: {'),
-    fish = rule('\n  fish: {', '\n};\n');
+    fish = rule('const TREE_UNITS = {', '\n};\n');
+  assert.match(block(APP, '\n  fish: {', '\n  },\n', {file: 'app.js'}), /^\n {2}fish: \{\n {4}\.\.\.TREE_UNITS,\n/);
   assert.strictEqual(coral('new'), true, 'a player new to corals sees them');
   for (const c of ['imr', 'know', null]) assert.strictEqual(coral(c), false, `${c}: the genera as before`);
   for (const c of ['new', 'imr', 'know', null]) assert.strictEqual(fish(c), true, `${c}: every fish player`);
