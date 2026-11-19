@@ -1,6 +1,6 @@
 # Fish genus marks from more sources: Reef Life Survey, FishBase, Fishes of Australia, an FAO catalogue
 
-Date: 2026-11-19. PR: #TBD. Rules or docs touched: tools/fish_genus_marks.json, fish.json, docs/spec/fish-sheets.md,
+Date: 2026-11-19. PR: #1260. Rules or docs touched: tools/fish_genus_marks.json, fish.json, docs/spec/fish-sheets.md,
 tests/genusmarks.test.js.
 
 ## Context
