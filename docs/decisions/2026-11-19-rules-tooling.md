@@ -32,4 +32,5 @@ and f1). The decisions index and the ledger are shared files every parallel PR a
 - No `merge=union` for the ledger: a local merge honours it (`tools/train.py` builds trains that way), but GitHub's own
   merge is not known to (a scratch repository showed a bare `git merge-tree` honours it only when it reads the
   attributes from a commit that holds them), and a train that builds clean locally would then be refused by GitHub
-  halfway. It can come back once a probe on GitHub shows its merges honour it.
+  halfway. It can come back once a probe on GitHub shows its merges honour it. (Later the same day #1215 added it for
+  local merges anyway; a PR can still show a conflict on GitHub, see docs/INTEGRATOR.md "The shared index files".)
