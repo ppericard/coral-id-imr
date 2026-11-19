@@ -1,6 +1,6 @@
 # The Look-alikes deck and Compare for every subject
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: S1, C2, L14; docs/spec/front-end.md "The pages" (Learn ›
+Date: 2026-11-19. PR: #1278. Rules or docs touched: S1, C2, L14; docs/spec/front-end.md "The pages" (Learn ›
 Look-alikes), docs/spec/fish-game.md, `docs/reviews/2026-11-19-modes-every-subject.md` (PR 3), ROADMAP "Every game mode
 for every subject".
 
