@@ -544,8 +544,9 @@ test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/
 // the PR that carried it out, holds a decision, links to files that exist and has a row in the index.
 test('every decision record has its date, its PR, a decision, working links and a row in the index', () => {
   const dir = path.join(ROOT, 'docs', 'decisions');
-  const index = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
-  const records = fs.readdirSync(dir).filter(f => f !== 'README.md');
+  const olderPath = path.join(dir, 'OLDER.md'); // the rows past the newest 40 (tools/decisions_index.py)
+  const index = fs.readFileSync(path.join(dir, 'README.md'), 'utf8') + (fs.existsSync(olderPath) ? fs.readFileSync(olderPath, 'utf8') : '');
+  const records = fs.readdirSync(dir).filter(f => f !== 'README.md' && f !== 'OLDER.md');
   assert.ok(records.length > 0, 'docs/decisions/ holds no record');
   for (const f of records) {
     assert.match(f, /^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$/, f + ': named YYYY-MM-DD-topic.md (lowercase, hyphens)');
@@ -646,7 +647,7 @@ const DOC_BUDGET = {
   'docs/spec/photos.md': [18, 130], // + "No more candidates", moved whole from the rules (its ID retired)
   'docs/spec/player-reports.md': [8, 130],
   'docs/spec/deploy.md': [6, 130],
-  'docs/decisions/README.md': [12, 200], // the index grows by a row per record (about 150 bytes): 12 KB from #1199
+  'docs/decisions/README.md': [12, 200], // the newest 40 rows only (about 9 KB); the older ones are in OLDER.md
   'docs/rules/README.md': [9, 180], // the index of every rule, moved from AGENTS.md (#1200)
   'docs/rules/admin.md': [5, 230],
   'docs/rules/content.md': [9, 220],
@@ -672,7 +673,8 @@ const DOC_BUDGET = {
 const RECORD_BUDGET = [8, 200];
 const CHANGE_BUDGET = [8, 4000];
 // Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
-const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
+// The older decisions index likewise: a row per record, written by tools/decisions_index.py.
+const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md'), path.join('docs', 'decisions', 'OLDER.md')]);
 const budgetOf = f => {
   const key = f.split(path.sep).join('/');
   if (DOC_BUDGET[key]) return DOC_BUDGET[key];
