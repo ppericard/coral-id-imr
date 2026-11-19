@@ -25,7 +25,7 @@ développer avec les anciennes règles». The questions for him are in §5, in F
 
 ## 0. In short
 
-- **The core is AGENTS.md cut to 147 lines** (from 265; 12.5 KB from 24.7 KB; longest line 120 characters), loaded by
+- **The core is AGENTS.md cut to 150 lines** (from 265; 12.9 KB from 24.1 KB; longest line 119 characters), loaded by
   every session and every subagent but Explore and Plan through #1198's `@AGENTS.md` import. It holds Rule 0 in
   Pierre's words, the merge contract, how to work with Pierre (questions, the ledger, model and effort, data), one
   line for each rule that applies to every task, the table of topic files, and Codex's review guidelines. Its full
@@ -33,8 +33,8 @@ développer avec les anciennes règles». The questions for him are in §5, in F
 - **Every rule keeps its home** in `docs/rules/`; no product rule is touched. The index of every rule (one line each,
   72 lines of AGENTS.md today) moves to `docs/rules/README.md`.
 - **Counts** (§2.1 lists every rule ID and every AGENTS.md item exactly once). Of the 87 rule IDs: **29 have their own
-  line in the core**, 3 are merged into core lines (W2, W5, W25), **55 are read on demand** from their topic file; by
-  class **K 67, G 17, M 3, D 0**. Of AGENTS.md's 30 items: 25 have their substance in the core; K 18, G 5, M 4, T 1
+  line in the core**, 1 is merged into a core line (W5 into W19), **57 are read on demand** from their topic file; by
+  class **K 69, G 17, M 1, D 0**. Of AGENTS.md's 30 items: 25 have their substance in the core; K 18, G 5, M 4, T 1
   (the index, moved whole), H 1 (history), D 1 (Projects mode, deletion already approved). **New guards: 13**
   (§2.4), each enforcing a rule already decided. **Deletions proposed: none** beyond those Pierre already approved.
 - **Topic files load on demand** by path if the trial shows it works in our worktrees: Claude Code's `.claude/rules/`
@@ -51,205 +51,215 @@ développer avec les anciennes règles». The questions for him are in §5, in F
 
 ## 1. The core: the proposed AGENTS.md, in full
 
-Measured on the text below: 147 lines, 12.5 KB, longest line 120 characters (AGENTS.md on `main`: 265 lines, 24.7 KB,
-32 lines over 120). CLAUDE.md stays as #1198 leaves it (13 lines: Rule 0 first, `@AGENTS.md`, the integrator's pointer
-to INTEGRATOR.md): 160 lines load at start. The headings and bold labels other files cite stay ("Working mode", 15
-citations; "Every answer reaches its doc"; "Writing a rule down"; "Data access"; "Read on demand"; the Rule 0 anchor);
-`#the-rules` stays a heading (10 citations). The marks follow the text (§1.1).
+Measured on the text below: 150 lines, 12.9 KB (KiB, as `tests/docs.test.js` counts), longest line 119 characters
+(AGENTS.md on `main`: 265 lines, 24.1 KB, 32 lines over 120). CLAUDE.md stays as #1198 leaves it (13 lines: Rule 0
+first, `@AGENTS.md`, the integrator's pointer to INTEGRATOR.md): 163 lines load at start. The headings and bold
+labels other files cite stay ("Working mode", 15 citations; "Every answer reaches its doc"; "Writing a rule down";
+"Data access"; "Read on demand"; the Rule 0 anchor). "The rules" stays a heading, so `#the-rules` still resolves; B
+re-points its 10 citations to the index (§4). The marks follow the text (§1.1).
 
 ```markdown
 # AGENTS.md: the constitution
 
-Core v1: what every agent holds in every task, loaded with CLAUDE.md (`@AGENTS.md`). Each rule has a stable ID and one
-home under [`docs/rules/`](docs/rules/); the index of every rule is [docs/rules/README.md](docs/rules/README.md); read
-the file your task touches ("Read on demand"). State: [docs/STATUS.md](docs/STATUS.md); outside GitHub:
-[docs/HANDOVER.md](docs/HANDOVER.md); the documentation map: [README.md](README.md).
+Core v1: what every agent holds in every task. Each rule's home is under `docs/rules/`, indexed in
+[docs/rules/README.md](docs/rules/README.md); state: [docs/STATUS.md](docs/STATUS.md); off GitHub: HANDOVER.md.
 
 ## The project in five lines
 
-- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no framework, no build step in development; the deploy
-  stamps versions: [docs/PAGES.md](docs/PAGES.md)) at <https://ppericard.github.io/coral-id-imr/>. It teaches three
-  subjects (`core.js` `SUBJECTS`: corals, reef fish, sea slugs; benthos next).
-- Corals: the **39 genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines; 34 surveyed, 5 starred
-  look-alikes) and **Millepora**, 40 in the games and the progress (`slateGenera()` in `app.js`).
-- Owner: **Pierre Pericard** (GitHub `ppericard`). Users: Pierre and the Research Assistants (RAs) he trains, mostly on
-  phones. ReefRecall is a separate project: code, data or features move between the two only when he asks.
-- RAs label top-down benthic photos to genus in **ReefCloud**: growth form alone is never enough, the app teaches genus
-  recognition. Path: **Learn → Practice → Identify**, plus **My progress** and Pierre's **admin** (`admin.html`).
+- **IMR Reef ID**: a static web app (plain HTML/CSS/JS, no framework, no build step in development; the deploy stamps
+  versions: [docs/PAGES.md](docs/PAGES.md)), <https://ppericard.github.io/coral-id-imr/>; subjects in `core.js`
+  `SUBJECTS` (corals, reef fish, sea slugs). Corals: the 39 IMR slate genera and Millepora, 40 (`slateGenera()`).
+- Owner: **Pierre Pericard** (`ppericard`), IMR, Dauin. Users: Pierre and the Research Assistants (RAs) he trains, on
+  phones mostly, who label photos to genus in **ReefCloud**: the app teaches genus recognition (**Learn → Practice →
+  Identify**, **My progress**, Pierre's **admin**). ReefRecall is separate: nothing moves between the two unasked.
 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
 > **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
 > after 04:00; everything else goes on as normal, agents included.**
 
-- The time is the hooks' (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`), never a guess.
-- "Asks nothing": no question, review or file that calls for his answer; a question waits in STATUS "Questions for
-  Pierre" for the morning. *Why:* his evenings, sleep and health. *Source:* Pierre, 2026-11-04, 11-15, 11-19 (#1191).
+- The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
+  never a guess. "Asks nothing": no question, review or file that calls for his answer; a question waits in STATUS.
 
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 
 **The only place that says who merges and when.** The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md).
 
 - **One integrator.** The main agent of a session is the integrator: it starts subagents, each on its own branch,
-  worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the review loop (rule W23)
-  and report to the integrator; **subagents never merge**.
-- **Launch decided work at once**, never hold it in a queue; only a real dependency waits. The machine is protected by
-  `tests/slot.js` (rule W24), not by holding agents back.
-- **The merge contract.** The integrator merges a PR on its own, at any hour, only when all hold: (1) every check green
-  on the head, no failed job re-run to get green, its merge train green (rules W23, W26); (2) every Codex finding fixed
-  or answered, every thread resolved; (3) every choice is the integrator's call (easy to correct) or already decided
-  with Pierre: a standing rule, a ROADMAP row he agreed with its spec, his words quoted and dated in "Decisions", or a
-  decided process (agreed and its first results checked: its outputs ship without asking item by item; a change to
-  the process waits); "Choices I made" is empty; (4) it goes in through a green train as a squash merge `… (#N)`; a
-  PR that changes `Code.gs` gets its `VERSION` from the integrator first (rule D3).
-- **Easy to correct afterwards: the integrator decides** and lists it in Decisions as "integrator's call": a layout, a
-  wording players read, a visible setting or default, a design option, a name in the code, a test, the fix of something
-  plainly broken, an implementation detail. After a merge that changes what players meet, tell Pierre in one line what
-  went live (information, not a question).
-- **What players will see comes from Pierre; how it is built is the agents'.** The PR says each change players will
-  see with his words quoted and dated, or marks it "integrator's call" when easy to correct; if none of his decisions
+  worktree and PR (rule W22), checks and merges their work. Subagents build, test, run the review loop (rule W23) and
+  report; **subagents never merge**.
+- **Launch decided work at once**, never hold it in a queue; only a real dependency waits (two PRs on the same files).
+  The machine is protected by `tests/slot.js` (rule W24), not by holding subagents back.
+- **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold: (1) every
+  check is green on the current head, no failed job was re-run to get green (rule W23), its merge train is green (rule
+  W26); (2) every Codex finding is fixed or answered, every review thread resolved; (3) every choice in it is the
+  integrator's call (easy to correct, below) or was already decided with Pierre: a standing rule, a ROADMAP row he
+  agreed with its spec, his words (quoted with their date in "Decisions"), or a decided process (once he agreed how a
+  thing is done and checked the first results, its outputs ship without asking him item by item, e.g. fish photo
+  judging on the agreed rubric; only a change to the process waits for him); "Choices I made" is empty; (4) it rides a
+  green merge train as a squash merge `… (#N)`; a `Code.gs` PR gets its `VERSION` from the integrator first (rule D3).
+- **The integrator decides the small choices; Pierre the ones costly to undo.** **Easy to correct afterwards** ships
+  under the contract, listed in Decisions as "integrator's call" ("easy to correct" when players see it): a layout, a
+  wording players read, a visible setting or default, a design option, a name inside the code, a test, the fix of
+  something plainly broken, an implementation detail. After a merge that changes what players meet or how the game
+  behaves, tell Pierre in one line what went live (information, not a question).
+- **What players will see comes from Pierre; how it is built is the agents'.** Each change players will see is said in
+  the PR with his words quoted and dated, or marked "integrator's call" when easy to correct; if none of his decisions
   says it, ask him one question first. Checked by `tools/train.py` (the template's "Players see").
-- **Costly to undo: the PR waits for Pierre** (a data format or structure other code will follow, a migration, an
-  effect on players' records that cannot be reverted, content the IMR owns): a question; merge once he has answered.
+- **Costly to undo: the PR waits for Pierre** (a data format or a structure other code will follow, a migration, an
+  effect on players' records or progress that cannot be reverted, content the IMR owns): a question; the integrator
+  merges once he has answered, his answer in the PR. A PR that holds only decided things merges under the contract,
+  whatever it touches.
 - **Always ask first**, even when it looks decided: anything destructive or irreversible (history rewrite, deleting
-  data, bulk changes to his curation, the sheet's column layout), money, accounts or access, project data sent out.
+  data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, any of the
+  project's data sent outside it (photo addresses, names, the sheet's data).
 
 ## Working with Pierre
 
-- **In French, Pierre is "tu"**; only the chat with him is in French, everything produced is in English (rule W1).
-- **Questions to Pierre**: in batches (unless one blocks work), in French; each with one or two lines of context, the
-  question, screenshots as files when visual, and a recommendation, so he answers in a word; never the order of work.
-  A number (Q1, Q2…, never reset, the last in STATUS) only if its answer commits the future **and** will be cited.
-  Every answer, numbered or not, is quoted in the PR's Decisions. When to ask: Rule 0.
-- **Every answer reaches its doc, and the answers ledger**: it is applied to the document it changes in the PR that
-  records it and added to [docs/ANSWERS.md](docs/ANSWERS.md). Before any question, search the ledger, the rules and
-  `docs/decisions/`: an answer found there is applied, never asked again.
-- **Research uses every useful source without asking** (paced, rule C7); a query holds only public terms, never the
-  project's data; every source used is cited (rule C2).
-- **Estimates are in agent time**, reviews and checks included, never human days or weeks; an estimate quoted from
-  elsewhere is converted first.
-- **The right model and effort for each task**: the table in docs/INTEGRATOR.md, at every agent launch (`model`,
-  `effort`); in doubt the stronger one; a task that turns out harder is relaunched one step up. **A lighter model** does
-  bulk work only after a sample of 50-100 items run by the strongest model and the candidates, against a threshold set
-  first; a random sample of the bulk is redone by the strong model; the PR reports the figures. The lightest model is
-  never used for a judgment (photo judging included).
+- **In French, Pierre is "tu"**, never "vous"; only the chat with him is in French, all else in English (rule W1).
+- **Questions to Pierre**: in batches (unless one blocks work), in French, each with one or two lines of context, the
+  question, screenshots as files when visual, a recommendation; only what is costly to undo (the rest ships), never
+  the order of work. **A number** (Q1, Q2…, never reset, the last in STATUS) only when the answer commits the future
+  (players' learning or game, the engine's model, data or privacy, rights, a rule's substance, an irreversible action,
+  a big cost) **and** will be cited; else asked plainly. Subagents apply the same tests. Every answer is quoted in the
+  PR's Decisions. When to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger**: each answer is applied to the document it changes in the PR
+  that records it and added to [docs/ANSWERS.md](docs/ANSWERS.md). Before any question, the integrator searches the
+  ledger, the rules and `docs/decisions/`; an answer found there is applied, never asked again.
+- **Research uses every useful source without asking** (web search engines, guides, forums, publishers, databases and
+  their APIs; paced, rule C7); a query holds only public terms, never the project's data; every source is cited (C2).
+- **Estimates are in agent time** (reviews and checks included), never human days or weeks; convert any quoted one.
+- **The right model and effort for each task**, at every agent launch (`model`, `effort`; table in INTEGRATOR):
+  design, architecture, the learning engine, security and rule wording with consequences: Opus 5.5, high (Fable 5.2
+  only where Opus at high effort measurably falls short); ordinary code (game formats, admin pages, fixes, docs):
+  Sonnet 5.5, medium to high; mechanical, repetitive work: Haiku 5.5, low, after the sample test. In doubt, the
+  stronger one; a task that turns out harder is relaunched one step up. Opus 5.5 is the integrator's model.
+- **Model choice by measurement**: a task for a lighter model is first run on 50-100 items by the strongest model and
+  the candidates; the cheapest that meets a threshold set beforehand does the bulk; a small random sample of the bulk
+  is redone by the strong model to catch drift; the PR reports the figures.
 - **No permission prompts for Pierre**: files only with Write and Edit, never shell commands that embed code
   (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code); a script is written with Write, run by name.
-- **One writer for `docs/STATUS.md`**: the integrator; subagents put their questions and state in their report.
+- **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop); subagents report instead.
 - **Data access**: any agent may read the sync sheet (read-only, real names included); writing to it is the
-  integrator's only, with Pierre's explicit one-off permission. Names never go into anything committed (rule D2).
+  integrator's only, with Pierre's explicit one-off permission for that one correction. Names: rule D2.
 - **Reports and events**: at every session start and every morning, the integrator reads the sheet's Reports and
-  Events since the last check and gives Pierre a short summary with real names (Rule 0 decides when).
-- **`needs-pierre`** marks a PR that waits for Pierre (opened ready, never a draft); removed with his answer.
+  Events since the last check and gives Pierre a short summary with real names, leaving out what he already handled.
+- **`needs-pierre`** marks a PR that waits for Pierre: a reminder, not the source of truth; opened ready, never a
+  draft. Before merging, read the PR's open questions; remove the label with the step that records his answer.
 
 ## Every task
 
 - **Say what you checked and how**; a guess is labelled as a guess (rule W11).
 - **Never contradict or "correct" the IMR course** (rule C1). **Never invent categories or information**; every clue
-  carries its source (rule C2). Discrepancies between sources go to `points.json`, never settled by an agent (rule C5).
-- **One shared engine**: a difference between subjects is declared and named in one place, never a hidden test on the
-  subject (rule S1).
+  carries its source (rule C2). Discrepancies between sources go to `points.json`; never settle them (rule C5).
+- **One shared engine**: a difference between subjects is declared and named in one place, never hidden (rule S1).
 - **Player names: real in chat, anonymous in the repo** (rule D2). **Tests never reach the real sheet** (rule D1).
 - **Never change `curation.json` automatically or in a PR**; an agent may propose a change (rule A1).
-- **`Code.gs` or `core.js` changed**: one changes file, the integrator assigns `VERSION` at merge (rule D3); the app
-  never gets ahead of the sheet script (rule D4); a change that moves progress appends a rules version (rule D5).
+- **A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge** (rule D3);
+  **the app never gets ahead of the sheet script** (D4); **every progress-rule change appends a rules version** (D5).
 - **The simplest algorithm that works**; checks proportionate to the change, valid statistics, a hard cap of 40
-  minutes of compute, level 3 never on this machine (rule L11); algorithm changes checked on the real log (rule L12).
+  minutes of compute, level 3 never on this machine (rule L11). **Check algorithm changes on the real log too** (L12).
 - **Never edit `?v=`, `LAB_V` or `sw.js` `V`** (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
-- **A test with the logic you change** (rule W12); the fast tier before each push and the one smoke part you touch
-  (rule W14); UI: look at it, light and dark, phone and desktop (rule W17).
+- **A test with the logic you change** (rule W12); the fast tier before each push, the one smoke part you touch (rule
+  W14); UI: look at it, light and dark, phone and desktop (rule W17).
 - **A worktree of your own from a fresh `origin/main`**, files staged by name, one open PR per agent (rule W22); to
-  bring a PR up to date, merge `origin/main` into it, never rebase or force-push (rule W18).
-- **Heavy runs take the machine slot** (`tests/slot.js`, rule W24).
-- **PR from the template**, Decisions filled; `@codex review` after each push, every finding fixed or answered, never
-  re-run a failed job (rule W23); every PR merges through a green merge train (rule W26).
-- **Docs in the same PR** (rule W19): the map or spec it touches; a decision carried out gets a record in
-  `docs/decisions/`; ideas discussed but not built go into ROADMAP; history stays in git, never in the docs.
-- **No work sleeps on a branch** (rule W6). **Fix by default**; never re-ask what was answered (rule W7). Never list
-  Pierre's curation choices item by item; remind once, never nag (rule W10).
-- **Bounded cost** (rule W27): at most four agents that write code or run tests (read-only studies on top), PRs from
-  `main` only, two Codex rounds then cut the scope.
+  bring a PR up to date, merge `origin/main` into it, never rebase or force-push (rule W18). **Heavy runs take the
+  machine slot** (`tests/slot.js`, rule W24).
+- **PR from the template**, Decisions filled; `@codex review` after each push; fix or answer every finding; never
+  re-run a failed job (rule W23). **Every PR merges through a green merge train** (rule W26).
+- **Docs in the same PR** (rule W19): a decision carried out gets a short record in `docs/decisions/`; every idea
+  discussed but not built goes into ROADMAP; history stays in git and the PRs, never in the docs.
+- **No work sleeps on a branch** (rule W6). **Fix by default; never re-ask what was answered** (rule W7). **Never list
+  Pierre's curation choices item by item; remind once, never nag** (rule W10).
+- **Bounded cost: at most four agents that write code or run tests (read-only studies on top), PRs from `main` only,
+  two Codex rounds then cut the scope** (rule W27).
 
 ## The rules
 
-Pierre's standing rules: follow them over your own taste; when in doubt, ask him. **Writing a rule down** (Pierre,
-2026-11-05): keep his scope and meaning; never generalise beyond the case he spoke about nor harden it; unsure of the
-scope, ask; the wording of a new or changed rule goes to him for his OK. A rule is its imperative line, *Why:* in one
-line, *Source:* Pierre, date (+ #PR); his sentence goes in the PR or its decision record, never in the rule. A friction
-first gets a guard (hook, test, tool check); prose only when no guard is possible. A rule holds for every subject
-unless marked **Corals:**; *unit* and *taxon*: [docs/rules/README.md](docs/rules/README.md).
+Pierre's standing rules: follow them over your own taste; when in doubt, ask him. The full rule, its *Why* and
+*Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never
+generalise beyond the case he spoke about nor harden it; unsure of the scope, ask; the wording of a new or changed rule
+goes to him for his OK. A rule is its imperative line, *Why:* one short line in our words, *Source:* Pierre, date
+(+ #PR); his sentence and its context go in the PR description, never in the rule. A friction first gets a guard
+(hook, test, tool check); prose only when no guard is possible. A rule holds for every subject unless marked
+**Corals:**; *unit* and *taxon* are defined in [docs/rules/README.md](docs/rules/README.md).
 
 ## Read on demand
 
-| Touching… | Read |
-| --- | --- |
-| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md) C1-C8; ARCHITECTURE "Tools" |
-| Photos, candidates | [photos](docs/rules/photos.md) P1-P6; ARCHITECTURE "Photos" |
-| Draw, Elo, progress, learning values | [learning](docs/rules/learning.md) L1-L15; [LEARNING.md](docs/LEARNING.md) |
-| Pages, layout, CSS | [ui](docs/rules/ui.md) U1-U14; [DESIGN.md](docs/DESIGN.md) |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md) A1-A5; ARCHITECTURE "Admin back-office" |
-| Fish, sea slugs, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md) S1-S3; [FISH_PATH.md](docs/FISH_PATH.md) |
-| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md) D1-D9; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W1-W27 |
-| Why something was decided | [docs/decisions/](docs/decisions/README.md) |
+IMR content, sources, presence, iNaturalist tools: [content](docs/rules/content.md) (C1-C8). Photos, candidates:
+[photos](docs/rules/photos.md) (P1-P6). The draw, Elo, progress, any learning value: [learning](docs/rules/learning.md)
+(L1-L15). Pages, layout, CSS: [ui](docs/rules/ui.md) (U1-U14). The admin, `curation.json`, Analyses:
+[admin](docs/rules/admin.md) (A1-A5). Fish, sea slugs, `SUBJECTS`, `UNITS`: [subjects](docs/rules/subjects.md)
+(S1-S3). `Code.gs`, sync, the progress engine: [sheet](docs/rules/sheet.md) (D1-D9). Tests, versions, `data.json`,
+PRs, the merge train: [ship](docs/rules/ship.md) (W1-W27). Why: [docs/decisions/](docs/decisions/README.md).
 
 ## Review guidelines
 
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`) (rule S1).
-- No real player or staff name anywhere in the repo, tests included: pseudonyms or made-up names (rule D2).
-- A feature that needs sheet script version N turns on only when the script reports `v >= N` (rule D4).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects
+  is declared and named in one place (rule S1).
+- No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up
+  names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
+- A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before
+  (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).
-- A PR never edits `Code.gs` `const VERSION`, its line 1 or `tools/sync/HISTORY.md`: it adds one
-  `tools/sync/changes/<branch>.md` (rule D3).
+- A PR never edits `Code.gs` `const VERSION` nor its line 1 or `tools/sync/HISTORY.md` (the version history): a
+  `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at
+  merge (rule D3).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
 ```
 
 ### 1.1 The marks, part by part
 
-Changes are against AGENTS.md on `main` with #1198 and #1117 applied.
+The marks are mechanical: a part is **V** only when a script (scratchpad, not committed) finds its whole text,
+whitespace aside, in AGENTS.md as #1198 and #1117 leave it or in a rule file; everything else is **E**, unless it is
+**S**. Eleven parts are V: Rule 0's sentence, "Always ask first", the review guidelines' heading and their eight items
+(all kept whole: Codex does not read the topic files). Every other part is E: today's words, shortened or joined, with
+the same substance. For each E part, what was cut and where it lives (a home under `docs/rules/` or a record, never
+INTEGRATOR alone):
 
-- **Header ("Core v1…")**: E. New pointer text; "Core v1" is also the trial's canary (§3). The index moves out.
-- **The project in five lines**: E. Shortened, the facts kept; the rename's history left to git.
-- **Rule 0, the sentence**: V. Pierre's sentence (2026-11-19 08:09, «ok pour cette phrase»).
-- **Rule 0, two bullets**: E. The time source and "asks nothing" kept; the history of its rewordings goes to its record
-  (`docs/decisions/2026-11-19-rule0-first-message.md`, #1191); a *Why* and *Source* line in the rule format.
-- **Working mode heading, "the only place"**: V.
-- **One integrator**: V, in shorter sentences.
-- **Launch decided work at once**: E. Its pointer to rule W14 becomes W24, the slot rule.
-- **The merge contract (1)-(4)**: E. The same four conditions; the examples of a decided process (fish photo judging,
-  per-species pre-proposals) and the train's mechanics move to rule W26 and INTEGRATOR.
-- **Easy to correct afterwards**: E. The same list; Pierre's two quotes go to a decision record ("Writing a rule down":
-  his sentence never in the rule).
-- **What players will see comes from Pierre**: S, approved. #1117's bullet, shortened (Pierre, 2026-11-18, «ok, lance
-  les quatre»).
-- **Costly to undo**: E. The same cases.
-- **Always ask first**: V. It absorbs rule W2's "ask first before destructive or irreversible actions" (a duplicate).
-- **"tu"**: E. Merged with rule W1's line.
-- **Questions to Pierre**: E. The same two tests, batches, context, recommendation; "asked plainly without a number"
-  and "past numbers stay" are left to INTEGRATOR, which already restates them.
-- **Every answer reaches its doc**: V.
-- **Research**: E. The same; the list of kinds of sources dropped.
-- **Estimates in agent time**: V.
-- **Model and effort; a lighter model**: E. The same table reference and sample test; rule W25's "the lightest model
-  never for a judgment" merged in (a duplicate); Pierre's quotes to the record.
-- **No permission prompts**: E. The same; #1117's "Enforced: `tools/guard_bash.py`" sentence moves to the guard's line.
-- **One writer for STATUS**: V.
-- **Data access**: E. The same permissions; how a subagent without the connector gets data, and real-data checks,
-  move next to rule D2 in `docs/rules/sheet.md`.
-- **Reports and events**: E. The same duty; the tab names stay in INTEGRATOR.
-- **`needs-pierre`**: E. The same; "read the PR's open questions before merging" goes to INTEGRATOR (a habit).
+- **Header ("Core v1…")**: new pointer text; "Core v1" is also the trial's canary (§3). The index moves to
+  `docs/rules/README.md`.
+- **The project in five lines**: facts kept, shortened; the rename's history and the address change left to ROADMAP
+  and git.
+- **Rule 0, the bullet**: the time source and "asks nothing" kept; the history of its rewordings is in its record
+  (`docs/decisions/2026-11-19-rule0-first-message.md`, #1191); what a waiting question holds is in "Questions to
+  Pierre".
+- **Working mode heading**: kept; "the only place" kept; INTEGRATOR's description shortened.
+- **One integrator; launch at once**: kept, shorter; the slot detail ("one Playwright run at a time per 2 cores") is
+  rule W24's.
+- **The merge contract (1)-(4)**: the four conditions whole; one of the two examples of a decided process kept (fish
+  photo judging); "the train tests it on the current `main`, where Publish commits land without PRs" is rule W26's,
+  "squash merge" rule W18's.
+- **Easy to correct; costly to undo**: the lists and both permissive clauses whole ("ships under the contract"; "A PR
+  that holds only decided things merges under the contract, whatever it touches"); Pierre's two quotes go to a record
+  (rule format: "his sentence and its context go in the PR description, never in the rule").
+- **What players will see comes from Pierre**: **S, approved**: #1117's bullet, shortened (Pierre, 2026-11-18, «ok,
+  lance les quatre»); its *Source* and story are in #1117's record.
+- **"tu"**: joined with rule W1's line.
+- **Questions to Pierre**: the two tests and their list of what "commits the future" whole, "only what is costly to
+  undo (the rest ships)", batches, context, recommendation, subagents' questions, every answer in Decisions; "past
+  numbers stay as they are" and "he may ask for more" go to the topic file of the questions, ship.md beside W7.
+- **Every answer reaches its doc; research; estimates**: shortened; the sources list kept; "(Pierre, 2026-11-17)" and
+  the other dates go to the *Source* format.
+- **Model and effort; model by measurement**: the three-row mapping Pierre asked to have in the "règles hautes" kept
+  in the core; Anthropic's sources stay in INTEGRATOR beside its table; the threshold's content ("agreement and
+  serious errors") and the example tasks go to rule W25 in ship.md; Pierre's quotes to a record.
+- **No permission prompts**: the rule whole; its *Why* (prompts Pierre cannot judge) is in #1117's guards record.
+- **One writer for STATUS; data access; reports and events; `needs-pierre`**: the duties whole; "never appended",
+  the subagent-without-connector route, the names put back for Pierre, real-data checks, the tab names (`err`, "save
+  failed", old app versions) and the last check's time go to `docs/rules/sheet.md` beside D2; "Pierre does not browse
+  GitHub" goes to W6, which already describes the label.
 - **Every task** (W11, C1, C2, C5, S1, D2, D1, A1, D3-D5, L11, L12, W15, W16, W12, W14, W17, W22, W18, W24, W23, W26,
-  W19, W6, W7, W10, W27): V or E. Each is today's index line in AGENTS.md (V) or that line joined with its neighbour
-  (E); W18 and W22 as #1198 words them; W19's line carries W5 ("ideas … go into ROADMAP"); W27 keeps `main`'s wording
-  (the cap: §5).
-- **The rules, "Writing a rule down"**: V (Pierre, 2026-11-05).
-- **The rules, "A friction first gets a guard…"**: S, approved: the rules audit's decision 4 (2026-11-18 evening).
-- **Read on demand**: E. The same rows; each spec link moves into its topic file's header, which holds most already.
-- **Review guidelines**: V. Two items shortened (S1's second half, D2's "never keep a note off GitHub"); both stay
-  whole in their rules.
+  W19, W6, W7, W10, W27): each line is today's AGENTS.md index line or Ship checklist item, joined with a neighbour or
+  shortened; W18 and W22 as #1198 words them; W19's line carries W5's substance; W27 keeps `main`'s wording (the cap:
+  §5); S1's line is shortened and its whole text stays in the review guidelines.
+- **The rules**: "Writing a rule down" whole; **"A friction first gets a guard…": S, approved** (the rules audit's
+  decision 4, 2026-11-18 evening).
+- **Read on demand**: the same rows as a paragraph; each spec link moves into its topic file's header (B adds those
+  missing).
 
 ## 2. Where every other rule goes
 
@@ -325,10 +335,10 @@ lost; **D** deleted. Guards G1-G13 are in §2.4; "exists" means the check is on 
 | D8 | K | no | V | sheet.md |
 | D9 | K | no | V | sheet.md |
 | W1 | K | yes | E | ship.md; absorbs AGENTS.md's "tu" and INTEGRATOR's "Language" (the dictation slips stay there) |
-| W2 | M | no | E | into the core's "Always ask first" and W7 ("work autonomously"); ID retired |
+| W2 | K | no | E | ship.md; its "ask first before destructive" half points to the core's "Always ask first" |
 | W3 | K | no | V | ship.md |
 | W4 | K | no | V | ship.md |
-| W5 | M | no | E | into W19, which already says "deferred = add a row"; its words stay in W19's core line; ID retired |
+| W5 | M | no | E | into W19 with its words ("with its source and status… development ideas only"); ID retired |
 | W6 | G | yes | E | ship.md, one line; `tools/brief.py` lists the branches (exists), #1117's `tools/night.py` too |
 | W7 | K | yes | E | ship.md; "check ROADMAP and PR descriptions" becomes the ledger search (AGENTS.md, 07:05) |
 | W8 | K | no | V | ship.md |
@@ -348,7 +358,7 @@ lost; **D** deleted. Guards G1-G13 are in §2.4; "exists" means the check is on 
 | W22 | K | yes | E | ship.md as #1198 words it; the Projects sentence deleted (approved, audit 3) |
 | W23 | G | yes | E | ship.md; G1; the REST notes to INTEGRATOR |
 | W24 | G | yes | E | ship.md, two lines; the details in `tests/slot.js`'s header (exists) |
-| W25 | M | no | E | into the core's model-and-effort bullet and INTEGRATOR's table; ID retired |
+| W25 | K | no | E | ship.md; gains the sample test's threshold detail; its model sentence points to the core's |
 | W26 | G | yes | E | ship.md, two lines; the mechanics in `tools/train.py`'s docstring (exists) |
 | W27 | G | yes | S | ship.md; G4, G9, G10; the "ask back" line per audit decision 2 (note 3); the cap: §5 |
 
@@ -363,30 +373,30 @@ easy to correct and say which; ask back only when both readings are costly to un
 | --- | --- | --- | --- | --- |
 | Rule 0, the sentence | K | yes | V | |
 | Rule 0, the intro (its rewordings) | H | no | E | its decision record (#1191) |
-| Rule 0, the bullets | M | yes | E | into the core's two Rule 0 lines |
+| Rule 0, the bullets | M | yes | E | into the core's one Rule 0 bullet |
 | The project in five lines | K | yes | E | shortened |
-| One integrator | K | yes | V | |
+| One integrator | K | yes | E | |
 | Launch decided work at once | K | yes | E | |
 | The merge contract | G | yes | E | G1 |
 | Easy to correct afterwards | K | yes | E | quotes to a record |
 | What players will see (#1117) | G | yes | S | `tools/train.py`'s "Players see" check (in #1117); approved |
 | Costly to undo | K | yes | E | |
-| Always ask first | K | yes | V | absorbs W2 |
+| Always ask first | K | yes | V | W2 points to it |
 | Research uses every source | G | yes | E | G6 |
-| Estimates in agent time | K | yes | V | `tools/effort.py --check` covers the studies (exists) |
+| Estimates in agent time | K | yes | E | `tools/effort.py --check` covers the studies (exists) |
 | Model and effort per task | G | yes | E | G5 |
 | Model choice by measurement | K | yes | E | |
 | No permission prompts | G | yes | E | `tools/guard_bash.py` (in #1117) |
-| One writer for STATUS | K | yes | V | |
+| One writer for STATUS | K | yes | E | "never appended" to sheet.md beside D2 |
 | "tu" | M | yes | E | into W1's core line |
 | Questions to Pierre | K | yes | E | INTEGRATOR's "Questions" becomes a pointer to it |
-| Every answer reaches its doc | K | yes | V | |
+| Every answer reaches its doc | K | yes | E | |
 | Data access | K | yes | E | its details next to D2 |
 | Reports and events | K | yes | E | |
 | Dependabot | M | no | E | into W9 |
 | `needs-pierre` | K | yes | E | |
 | claude.ai Projects mode | D | no | S | deleted: approved, audit decision 3 ("Projects mode") |
-| The rules, Writing a rule down | K | yes | V | plus audit decision 4's line (S, approved) |
+| The rules, Writing a rule down | K | yes | E | whole, plus audit decision 4's line (S, approved) |
 | The rule index (72 lines) | T | no | E | `docs/rules/README.md` |
 | Read on demand | K | yes | E | |
 | Ship checklist | M | no | E | into the "Every task" lines; item 1 deleted (note 4) |
@@ -412,7 +422,7 @@ Read on 2026-11-19 (Claude Code 2.1.327 in this container), in the raw text of e
   `@AGENTS.md` makes the core load with CLAUDE.md; InstructionsLoaded "does fire when a `CLAUDE.md` imports your
   `AGENTS.md`, with `load_reason` set to `include`" (<https://code.claude.com/docs/en/hooks>).
 - **Size.** "target under 200 lines per CLAUDE.md file. Longer files consume more context and reduce adherence"
-  (memory page). CLAUDE.md with the core: 160 lines.
+  (memory page). CLAUDE.md with the core: 163 lines.
 - **Path-scoped rules exist.** `.claude/rules/*.md` with a `paths:` list in YAML frontmatter; "A path-scoped rule loads
   when Claude uses the Read, Write, or Edit tool on a matching file" (or `cat` or `head` on one file); "Each pattern is
   relative to the rule's base directory", for project rules "the directory that contains the rule's `.claude`
@@ -469,11 +479,13 @@ to load it); `omitClaudeMd` agents (they would lose the core).
 
 ### 2.3 Merged as duplicates
 
-W2 into "Always ask first" and W7; W5 into W19; W25 into the model-and-effort bullet; AGENTS.md's "tu" into W1, its
-Dependabot bullet into W9, its Rule 0 bullets into the two core lines, its Ship checklist into the "Every task" lines;
-D5's "No card" bullet into D6; U4 the one home of the test widths. The retired IDs (W2, W5, W25) go on
-`tests/docs.test.js`'s retired list and their citations are updated in the same PR. INTEGRATOR's restatements of
-AGENTS.md (Rule 0, questions, names, the hard limits) become pointers (§2.5).
+One rule ID: W5 into W19, its words carried over (W19 already says "deferred = add a row inside its section"); the
+retired ID goes on `tests/docs.test.js`'s retired list and its citations are updated, in D1 (§4). Not merged: W2
+(its "work autonomously: branch, build, test, open PRs and fix findings without asking" is said nowhere else) and W25
+(its quota practices are its own); each keeps its ID and points to the core for the half the core holds. Within the
+texts: AGENTS.md's "tu" into W1's line, its Dependabot bullet into W9, its Rule 0 bullets into one core bullet, its
+Ship checklist into the "Every task" lines; D5's "No card" bullet into D6; U4 the one home of the test widths.
+INTEGRATOR's restatements of AGENTS.md (Rule 0, questions, names, the hard limits) become pointers (§2.5).
 
 ### 2.4 Guards: what each one checks, beside the rule it enforces
 
@@ -494,6 +506,9 @@ names check, which is parked). A rule a guard enforces then says "Enforced: <gua
 - **G5, a PreToolUse hook on `Agent` and `.claude/agents/`** (E). Rule: "the integrator applies the table … at every
   agent launch (the Agent tool's `model` and `effort`)". Denies a launch that sets neither `model` and `effort` nor a
   `subagent_type` whose definition sets them; three definitions (design, ordinary code, mechanical) carry the table.
+  Unknown: the hooks page lists the Agent tool's `tool_input` as `prompt`, `description`, `subagent_type` and `model`,
+  no `effort`, though the sub-agents page documents a per-call `effort`. A deny that cannot see `effort` would block
+  every launch, so E4's first test logs a real launch's `tool_input`; if `effort` is not there, G5 checks `model` only.
 - **G6, a PreToolUse hook on `WebFetch` and `WebSearch`** (E). Rule: research, "a query holds only public terms …
   never the project's data". Denies a URL or a query holding the R2 photo host, the sheet's id or a repository `img/`
   path.
@@ -551,6 +566,18 @@ Run 1 happens after #1198, #1117 and the harness PR (A in §4) are merged, on th
 run 2 on the topic PR's branch (C), before C merges. Each run records `claude --version` (2.1.327 here; the documented
 features need 2.1.292 or later).
 
+**Untested: the child session itself.** Whether `create_session` with `source_revision` loads that branch's
+instructions and hooks, whether it stops on a trust prompt, and whether its main agent reports back (the integrator
+reads its transcript with `list_events` either way) are not known. Its first step is therefore T0: the child prints
+`git rev-parse HEAD` and quotes CLAUDE.md's first line; a wrong branch stops the run. **Fallback** if the child
+session does not work: B is a docs PR that one train reverts, so it merges once Pierre has OK'd the list, and run 1
+happens in the first new integrator session after it, which the integrator reports before anything else relies on
+the core; run 2 the same way after C.
+
+**Not loaded and not tested: docs/INTEGRATOR.md.** The integrator reads it because CLAUDE.md and the core tell it to,
+not through an import (an import would load its 20 KB into every subagent). This proposal moves nothing into it that
+a rule needs: every clause the core cuts goes to a rule file or a record (§1.1).
+
 **The harness** (PR A). An InstructionsLoaded hook appends `time, session_id, agent_id, agent_type, file_path,
 load_reason, globs, trigger_file_path, cwd` to `.git/claude-instructions.jsonl` of the shared repository (one file for
 every worktree, never committed); `python3 tools/instr_log.py --report --since T` prints, per agent, what loaded and
@@ -569,7 +596,9 @@ why. The canary is the core's first words ("Core v1"): no brief contains them.
 - **T5, run 2, the subagent of T2.** It reads the first lines of `tools/sync/Code.gs` in its worktree, then quotes
   rule D3's first sentence without opening `docs/rules/`. Pass: exact, and the log shows `path_glob_match` for the
   sheet rules with a `trigger_file_path` inside the worktree. Three canary rules with the patterns `tools/sync/**`,
-  `**/tools/sync/**` and `.claude/worktrees/*/tools/sync/**` show which form matches.
+  `**/tools/sync/**` and `.claude/worktrees/*/tools/sync/**` show which form matches. **And no topic file loads with
+  `session_start`**: the memory page says a rule whose frontmatter does not parse loads "as if it had no `paths`",
+  which would put every topic file in every session.
 - **T6, run 2, the child's main agent.** The same read in the main checkout. Pass: the same entries, with a
   `trigger_file_path` in the main checkout.
 - **T7, any long integrator session after B merges.** Its first auto-compaction. Pass: the log holds `compact` entries
@@ -594,17 +623,20 @@ trial's waits come on top), each the median of the merged PRs it cites.
 
 - **A, the trial harness**: `tools/instr_log.py`, the InstructionsLoaded and SubagentStart hooks, G13, tests. Needs
   #1198 and #1117. Tooling S: median 4 min (#916, #965, #1003, #1072, #1103).
-- **Run 1**: T1-T4 on B's branch in a child session. Needs A. Study S: median 11 min (#979, #1064, #1081, #1097, #1185).
-- **B, the core**: AGENTS.md as in §1; the index to `docs/rules/README.md`; G12; G11's line budget; W2, W5 and W25
-  retired with their citations. Needs Pierre's OK on the list (§5) and run 1. Docs+tooling L: median 1.6 h (#906,
-  #1047, #1075, #1087, #1133).
-- **C, the topic files on demand**: `paths:` and `.claude/rules/` links (T1), or `tools/topic_hook.py` (T2). Needs B,
-  and run 2 on its branch. Docs+tooling S: median 13 min (#896, #912, #916, #965, #1011).
+- **Run 1**: T0-T4 on B's branch in a child session. Needs A. Study S: median 11 min (#979, #1064, #1081, #1097, #1185).
+- **B, the core**: AGENTS.md as in §1; the index to `docs/rules/README.md`, whose budget (1 KB, lines of 150) is
+  raised in `tests/docs.test.js`; G12; G11's line budget; the ten links to `AGENTS.md#the-rules` in the rule files and
+  elsewhere re-pointed to the index (the anchor still resolves, so no test would catch them); the spec links each
+  topic file's header lacks; the cut clauses carried to their homes (§1.1). Needs Pierre's OK on the list (§5) and run
+  1. Docs+tooling L: median 1.6 h (#906, #1047, #1075, #1087, #1133).
+- **C, the topic files on demand**: `paths:` frontmatter in every rule file and `.claude/rules/` links (T1), or
+  `tools/topic_hook.py` and its entry in `.claude/settings.json` (T2). Needs B, and run 2 on its branch.
+  Docs+tooling S: median 13 min (#896, #912, #916, #965, #1011).
 - **Run 2**: T5-T6 on C's branch. Needs C's branch. Study S: median 11 min (#979, #1064, #1081, #1097, #1185).
-- **D1, `ship.md`**: audit decisions 2 and 3, the merges, the obsolete items, history to records. Needs B. Docs L:
-  median 50 min (#933, #947, #1033, #1089, #1140).
+- **D1, `ship.md`**: audit decisions 2 and 3, W5 into W19 (the ID retired, its citations updated), the obsolete
+  items, history to records. Needs C. Docs L: median 50 min (#933, #947, #1033, #1089, #1140).
 - **D2, the other rule files**: L11's method to LEARNING, D3's steps to `--help`, D5 and D6, P1-P3, L1, U7, D2's
-  data-access details. Needs B. Docs M: median 12 min (#892, #903, #944, #1080, #1190).
+  data-access details. Needs C. Docs M: median 12 min (#892, #903, #944, #1080, #1190).
 - **D3, INTEGRATOR**: pointers, the habits a guard replaced, the obsolete notes. Needs B. Docs M: median 12 min
   (#892, #903, #944, #1080, #1190).
 - **E1, G1 and G10 in `tools/train.py`.** Needs A. Tooling M: median 15 min (#960, #1040, #1144, #1157, #1160).
@@ -615,10 +647,12 @@ trial's waits come on top), each the median of the merged PRs it cites.
   #1157, #1160).
 - **F, G11's word budget (14,000).** Needs D1-D3. Tooling S: median 4 min (#916, #965, #1003, #1072, #1103).
 
-**Order.** A, then run 1; B after Pierre's OK and run 1; C and the guard PRs E1-E4 in parallel with B's review (they
-touch no rule text); run 2 on C's branch; D1, D2 and D3 after B, each naming in one line the guards merged by then; F
-last, when the cut words are known. The agent cap stays as `main` words it until §5's point 2 is settled. A Codex
-finding that comes back after two rounds cuts the PR's scope (rule W27).
+**Order.** A first, then run 1; B after Pierre's OK and run 1; then C (it edits every rule file's header, so it runs
+alone on them), run 2 on C's branch, and D1, D2, D3 after C (D1 and D2 touch different files and may run together),
+each naming in one line the guards merged by then; F last, when the cut words are known. The guard PRs E1-E3 run in
+parallel with B and C after A: they touch no rule text. Three PRs edit `.claude/settings.json` (A, E4, and C if it
+takes T2): they go one after another, A first, never two open at once. The agent cap stays as `main` words it until
+§5's point 2 is settled. A Codex finding that comes back after two rounds cuts the PR's scope (rule W27).
 
 ## 5. Questions for Pierre (French, ready to paste)
 
@@ -630,7 +664,7 @@ No deletion is asked: none is proposed beyond those already approved.
 Pierre, deux points sur le noyau des règles (Q425 B), sans numéro :
 
 1. La liste de ce qui va dans le noyau (ce que tu voulais voir avant toute formulation). Le noyau, c'est AGENTS.md
-   réduit de 265 à 147 lignes, chargé par chaque agent et sous-agent. Il contient :
+   réduit de 265 à 150 lignes, chargé par chaque agent et sous-agent. Il contient :
    - la Règle 0 avec ta phrase telle quelle ;
    - le contrat de merge : qui merge et quand ; ce qui est facile à corriger part, ce qui est coûteux t'attend ;
      demander d'abord pour le destructif, l'argent, les accès, les données envoyées dehors ; ce que les joueurs
@@ -641,10 +675,10 @@ Pierre, deux points sur le noyau des règles (Q425 B), sans numéro :
    - une ligne par règle qui vaut pour toute tâche : W11, C1, C2, C5, S1, D1, D2, A1, D3, D4, D5, L11, L12, W15,
      W16, W12, W14, W17, W22, W18, W24, W23, W26, W19, W6, W7, W10, W27 ;
    - le tableau des fichiers thème et la liste de relecture de Codex.
-   Les 55 autres règles (C3, C4, C6-C8, P1-P6, L1-L10, L13-L15, U1-U14, A2-A5, S2, S3, D6-D9, W3, W4, W8, W9, W13,
-   W20, W21) restent mot pour mot dans leur fichier thème, lu quand l'agent touche les fichiers concernés. Aucune
-   règle supprimée, aucune durcie. Trois doublons fusionnés dans les règles qui disent déjà la même chose (W2, W5,
-   W25).
+   Les 57 autres règles (C3, C4, C6-C8, P1-P6, L1-L10, L13-L15, U1-U14, A2-A5, S2, S3, D6-D9, W2, W3, W4, W8, W9,
+   W13, W20, W21, W25) restent dans leur fichier thème, lu quand l'agent touche les fichiers concernés. Aucune règle
+   supprimée, aucune durcie. Un seul doublon fusionné : W5 (noter dans la ROADMAP les idées discutées mais pas
+   construites) passe dans W19, qui le dit déjà, avec ses mots.
    Recommandation : ok.
 
 2. Seulement si le chat du 18 au soir ne le tranche pas : le plafond d'agents (W27). La règle dit «au plus quatre
@@ -672,11 +706,15 @@ AGENTS.md "Questions to Pierre").
 - **Measured:** the core's lines, bytes and longest line on the text of §1 (`wc`, `awk`); the counts of §0 from the
   tables of §2.1 (a scratch script that also checks every rule ID appears once); the effort figures with
   `tools/effort.py --estimate` on 2026-11-19; the existing guards named in §2 exist on `main`, file by file, or in
-  #1117's diff.
+  #1117's diff; the V marks of §1.1 by a scratch script that looks for each part's whole text in AGENTS.md and the rule
+  files as #1198 and #1117 leave them.
 - **Observed once, in this session:** a subagent in a worktree got the main checkout's CLAUDE.md, and the main
   checkout is on a session branch. Not observed: AGENTS.md imported (#1198 is not merged), a path-scoped rule loading,
   a hook firing in a subagent.
 - **Not checked:** whether `**` in a `paths:` pattern crosses `.claude/worktrees/` (T5); whether a symlinked rule keeps
   its frontmatter's `paths:` (T5 too); the chat of 2026-11-18 evening (only its paraphrase); ARCHITECTURE and the
-  specs that D1 and D2 will edit; Codex's behaviour with a shorter AGENTS.md. The core's one-line forms were compared
-  with today's index lines and rule texts by reading, not by a tool.
+  specs that D1 and D2 will edit; Codex's behaviour with a shorter AGENTS.md; whether a child session made with
+  `create_session` loads its branch's instructions and hooks (T0, with a fallback); whether the Agent tool's
+  `tool_input` carries `effort` (E4's first test); how reliably the integrator reads docs/INTEGRATOR.md (by
+  instruction, not loaded). That an E part keeps its rule's substance was judged by reading, part by part; only V is
+  checked by a tool.
