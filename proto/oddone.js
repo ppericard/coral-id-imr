@@ -107,7 +107,7 @@ LAB.add({
           const top = stage.getBoundingClientRect().top,
             room = Math.floor(aft.getBoundingClientRect().top - top - 8),
             low = Math.max(...[...stage.children].map(f => f.getBoundingClientRect().bottom)) - top;
-          if (low <= room) return;
+          if (low <= room + 2) return; // (a pixel or two of rounding is no overlap)
           const side = Math.max(40, Math.min(room, Math.floor((stage.clientWidth - 3 * 8) / 4)));
           stage.style.height = side + 'px';
           stage.style.setProperty('--fx', side + 'px');
