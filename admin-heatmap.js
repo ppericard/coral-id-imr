@@ -1,16 +1,15 @@
-// Analyses › Difficulty › Heatmap (#analyses/difficulty/heatmap; Pierre, 2026-11-14, Q123 m: "m (confusion heatmaps) for
-// the corals first", docs/reviews/2026-11-05-fish-confusion-study.md question m): every unit against every unit, read live
+// Analyses › Difficulty › Heatmap (#analyses/difficulty/heatmap; docs/reviews/2026-11-05-fish-confusion-study.md
+// question m; docs/ARCHITECTURE.md "Analyses"): every unit against every unit, read live
 // from the answer log as Pairs is (admin.js statsConf: the same confusionOf and noChoiceMixups, memoised once per log).
 // Rows: the unit shown (the photo's); columns: the unit answered. A cell: the times the column was answered when it was
 // offered beside the row (core.js confusionOf dir, [offered, answered]), and its rate shrunk toward the pair's start as
 // Pairs' Score is (confScore toward pairPrior: declared look-alike, same family, other; the study's §4.2, the same
 // confScore and CONF.W at every level). The units in blocks of their family (their record's fam, the prior's own field,
 // the study's "entry and genus blocks"; never by growth form, rule C4), the biggest block first, each block ordered so the
-// pairs mixed up most sit side by side (heatOrder). Typed mix-ups (no choices, so no rate) apart, as Pairs keeps them
-// (#876). A cell opens the pair on the site's compare page when the subject has one. Only the subjects whose admin pages
-// name it (core.js SUBJECTS admin pages): the corals first, then the fish (Pierre, 2026-11-14, Q123 m: "the fish, once
-// their admin pages name the view"), then the sea slugs (their genera, in their family's block, the families in their
-// taxonomic group: supOf, the tree's taxa).
+// pairs mixed up most sit side by side (heatOrder). Typed mix-ups (no choices, so no rate) are listed apart, as on
+// Pairs. A cell opens the pair on the site's compare page when the subject has one. Only the subjects whose admin pages
+// name it (core.js SUBJECTS admin pages; docs/decisions/2026-11-18-decisions-from-comments-3.md); the sea slugs' genera sit in their family's block, the families in their
+// taxonomic group (supOf, the tree's taxa).
 // A subject with units at several ranks (SUBJECTS sheets: the fish's families, genera, species) has one matrix per rank
 // the log asked (heatRanks: a rank switch, a rank on it once one of its questions is logged; the choices of a question
 // are of the rank asked, so no pair crosses two ranks: heatRank keeps a rank's pairs), its units in blocks of the rank
@@ -20,13 +19,13 @@
 // Every view says what it can conclude (rule A5): under CONF.N offers a cell is hatched, and while most cells offered are
 // (heatNeed), a line says not enough data yet, with about the answers it would take.
 //
-// One player's map (Pierre, 2026-11-14, Q123 m: "the per-player heatmaps"): the same map from that player's answers only, a
+// One player's map: the same map from that player's answers only, a
 // filter on the view (?player=<anonymous id>; rule A2: same information, a filter), picked over the map (heatPlayers) or
 // opened from the Mix-ups card of their Journey; their part of the cells above, by the same rules (their answers count once
 // they are above chance, core.js trustOf, as for everyone). A deleted, merged or archived account has no answers here
 // (rule D7: admin.js rowsOf), so it shows nothing.
 //
-// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, heatPlayers, HEAT) runs in Node too:
+// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, heatPlayers, heatLab, heatUp, HEAT) runs in Node too:
 // tests/heatmap.test.js.
 (function (root) {
   const K = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
@@ -54,7 +53,7 @@
   }
   // The matrix: C, confusionOf's {pair, dir}; typed, noChoiceMixups' typed {"shown|answered": n}; rec(n), a unit's record
   // ({fam}); prior(a, b), the pair's start [name, rate] (admin.js pairPrior); roster, the subject's units, each on the map
-  // even with no answer yet (its row and column empty: missing data shows; Codex review #889); blockOf(u), the block a unit
+  // even with no answer yet (its row and column empty: missing data shows); blockOf(u), the block a unit
   // sits in, its record's fam by default (another subject's lower ranks: the unit of the rank above); supOf(u), the group
   // a unit's block sits in, when the subject sorts its blocks into groups (the families in their taxonomic group: the
   // tree's taxa), the blocks of one group then in one run, the biggest group first, as the blocks. Returns {units in display
@@ -141,7 +140,7 @@
   // (withCh): n cells offered, lo of them under N offers (hatched: the colour still mostly the pair's start), the offers
   // they lack to reach N (short), and about the answers with choices that would bring them there (need: the offers they
   // lack over the offers an answer has brought a cell so far, every new offer landing on a short cell; an estimate at
-  // today's mix of formats, not a bound: a four-choice answer brings more offers than a duel, Codex review #1012). thin:
+  // today's mix of formats, not a bound: a four-choice answer brings more offers than a duel). thin:
   // most cells offered are under N, so the map as a whole is not enough data yet.
   function heatNeed(cell, withCh, N = K.CONF.N) {
     const L = Object.values(cell || {}),
@@ -156,7 +155,7 @@
       thin: 2 * lo.length > L.length
     };
   }
-  // The players a map can be drawn for (one player's map, Q123 m: "the per-player heatmaps"): the ids of R, a subject's rows
+  // The players a map can be drawn for (one player's map): the ids of R, a subject's rows
   // with the answers a deleted, merged or archived account left already out (admin.js rowsOf, rule D7), each [id, label,
   // signed in]: the signed-in ones (users, the player list's {name, id}) by name, then the devices that never signed in by
   // their anonymous id, the latest to answer first, as Players lists them.
@@ -173,7 +172,14 @@
         .map(id => [id, id, 0])
     ];
   }
-  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers};
+  // A unit of another subject's registry (FA: reports.js repReg) by its name: its record's (a family), a fish species
+  // unit (s:s091) its scientific name, else its id's prefix off.
+  const heatLab = (FA, n) =>
+    FA && FA.gen[n] ? FA.gen[n].name : FA && FA.spu && FA.spu[n] ? FA.spu[n].name : String(n).replace(/^[a-z]:/, '');
+  // The unit above a unit in the registry: a fish species unit its genus (FA.spu), a species by its sheet id (s:<name>)
+  // its genus, a genus its family; undefined where it has none.
+  const heatUp = (FA, n) => FA && (((FA.spu || {})[n] || {}).genus || (FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n] || undefined);
+  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers, heatLab, heatUp};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
@@ -197,7 +203,7 @@ function statsHeat() {
     FA = many ? unitRegOf(S) : null,
     typedOn = SF.hm === 'typed',
     // the ranks the log asked (heatRanks), the one on screen (SF.hr, kept per browser; the first by default) and its
-    // place among the subject's ranks (0: its top rank, even when the log asked only a lower one: Codex review #1012)
+    // place among the subject's ranks (0: its top rank, even when the log asked only a lower one)
     ranks = heatRanks(R, S.sheets),
     rk = ranks.find(r => r[0] === SF.hr) || ranks[0],
     ri = rk ? Object.keys(S.sheets).indexOf(rk[0]) : 0;
@@ -255,7 +261,7 @@ function statsHeat() {
     return;
   }
   // a unit's name: a coral genus as it is, another subject's unit by its name (its registry), else its id's prefix off
-  const lab = n => (many ? (FA && FA.gen[n] ? FA.gen[n].name : String(n).replace(/^[a-z]:/, '')) : n),
+  const lab = n => (many ? heatLab(FA, n) : n),
     // trust and the pairs over the subject's whole log, as Pairs reads them; then the rank's part (heatRank)
     // (one player's: their part, by the same rules; each memo kept apart by pk)
     C0 = ofAns('conf:' + S.id + pk, () => confusionOf(R)),
@@ -272,7 +278,7 @@ function statsHeat() {
         k = g && g.ig && (FA.groups || []).find(x => x.n === g.ig);
       return k ? `${k.n}. ${k.title}` : '';
     },
-    up = n => FA && ((FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n]),
+    up = n => heatUp(FA, n),
     blockOf = many ? (ri ? n => (up(n) ? lab(up(n)) : '') : grp) : undefined,
     // below its top rank, the families' blocks in their taxonomic group where its tree sorts them so (its taxa: a family's
     // tg, the Learn page's headings), the group of the nearest unit above that has one
@@ -298,7 +304,7 @@ function statsHeat() {
     href = (a, b) => (cmpOn ? `./#${routeOut(`cmp-${a < b ? a + '|' + b : b + '|' + a}`, S)}` : ''),
     withCh = Rr.filter(r => r[10]).length,
     // the offers an answer brings a cell, over the answers the cells count: the trusted players' only, as confusionOf
-    // keeps them (Codex review #1012)
+    // keeps them
     tr = ofAns('trust:' + S.id + pk, () => trustOf(R)),
     nd = heatNeed(M.cell, Rr.filter(r => r[10] && tr[r[0]]).length);
   const kp = kpis([

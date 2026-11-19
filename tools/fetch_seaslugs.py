@@ -104,11 +104,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line
-from rights import rights_rank  # noqa: E402  0 own or open, 1 NC (Q270)
+from rights import rights_rank  # noqa: E402  0 own or open, 1 NC
 from fetch_fish import (API, DEAD, FIELDS, LICENCES, LOC, PH, STAGE, TAXA, Net, hord, lic_ok, obs_url, pages,  # noqa: E402
                         phase_obs, prefetch, queries, tier_of, trim, usable_obs)
 import inat  # noqa: E402  the batched counts (rule C7)
-from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule C8 and the label rule beside it (Q389)
+from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule C8 and the label rule beside it
 
 SRC = ROOT / "tools" / "seaslugs.json"
 INFORMAL = ROOT / "tools" / "seaslug_informal.json"
@@ -116,12 +116,12 @@ CAND = ROOT / "seaslug-cand.json"
 CACHE = ROOT / "tools" / ".cache" / "seaslug_photos.json"
 PREFIX = "seaslug"
 CIRCLES = (1, 2, 3)  # the circles in the game (tools/seaslug_game.py CIRCLES): their genera are the genus units
-AGREE = 2  # current identifications at the genus or below it that make a genus-level observation agreed (Q389 (1))
+AGREE = 2  # current identifications at the genus or below it that make a genus-level observation agreed
 GL_FIELDS = FIELDS + ",taxon.ancestor_ids,identifications.current,identifications.taxon.id,identifications.taxon.ancestor_ids"
 GL_BATCH = 30  # genera a genus-level search asks at once (rule C7)
 GL_PAGES = 60  # pages of 200 a genus-level search reads at most (the Philippines: some 6,800 genus-level observations)
 EGG_BATCH = 200  # observations asked again by id in one request (eggs_back; rule C7)
-# eggs_back's fields: GL_FIELDS and the observation fields, whose label says a species with no name (Codex review #1046)
+# eggs_back's fields: GL_FIELDS and the observation fields, whose label says a species with no name
 ID_FIELDS = GL_FIELDS + ",ofvs.field_id,ofvs.name,ofvs.value"
 SUGGEST = ROOT / "suggest.json"  # the judgements: suggest.json "seaslug" (tools/judging_fish.py --subject seaslug)
 
@@ -213,7 +213,7 @@ def species_of(src, circles, only=()):
             and (not only or s["name"] in only or str(s["inat"]) in only)]
 
 
-# ---------------------------------------------------------------- genus-level photos and the species with no name (Q389)
+# ---------------------------------------------------------------- genus-level photos and the species with no name
 
 
 def agreement(o):
@@ -554,7 +554,7 @@ def run(args):
                 jobs += [(s["key"], have.get(s["key"], []), target(s, T)[0], "inf", s["genus"], s["field"])
                          for s in inf["species"]]
             if args.genus_level:
-                # each genus's own target, the very variable genera's 30 included (gl_target; Codex review #1048)
+                # each genus's own target, the very variable genera's 30 included (gl_target)
                 jobs += [(g, have.get(g, []), gl_target(g, T), "gl", g, None) for g in game_genera(src) if not only or g in only]
             back(jobs)
             if args.informal:
@@ -577,7 +577,7 @@ def run(args):
         # The egg masses' observations first (their next photo keeps their place; not with --own: his search only).
         back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
                                            s.get("genus"), None) for s in S])
-        # Pierre's own for every species with room for them (his search, asked together: rule C7), then the general one.
+        # The admin's own for every species with room for them (his search, asked together: rule C7), then the general one.
         prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, egg)], ["own"])
         if not own_only:
             prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), egg) < target(s, T)[0]], ["ph"])

@@ -1,5 +1,5 @@
 // An in-memory localStorage for the pages a Playwright tool drives in one long synchronous evaluate (tools/learnsim.js).
-// Why (2026-11-08, ROADMAP "learnsim: long runs crash"): learnsim plays every answer of a run inside one page.evaluate,
+// Why: learnsim plays every answer of a run inside one page.evaluate,
 // so the page's event loop never turns until the run ends. Each answer writes the answer log twice (sync.js LOG0 and
 // ANONQ, up to 2,000 answers, about 290,000 characters each), and every localStorage write goes through the browser,
 // whose traffic back queues in the renderer until the loop ends: measured, 1.5 MB of native memory an answer (3.6 MB
@@ -10,7 +10,7 @@
 // app or the tools depends on: core.js travelData collects the keys into an object), and the items as the
 // object's own enumerable properties (so {...localStorage} and Object.entries(localStorage) give the items, never the
 // methods), and the browser's quota: a write that would take it past LS_QUOTA characters (keys and values) throws
-// QuotaExceededError and changes nothing, as Chromium does (measured 2026-11-08 on the Playwright Chromium the tools use:
+// QuotaExceededError and changes nothing, as Chromium does (measured on the Playwright Chromium the tools use:
 // 5,242,880 characters, 10 MiB at two bytes a character). window.__lsPeak keeps the most characters it ever held.
 // Installed with ctx.addInitScript(memStorage) before any other init script; tests/memstorage.test.js checks it.
 function memStorage(w = typeof window === 'undefined' ? globalThis : window) {

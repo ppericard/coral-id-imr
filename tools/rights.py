@@ -31,7 +31,7 @@ def rights_class(p):
     if not p:
         return "nc"
     if p.get("imr"):
-        # traced to its original source (data.json course pg, #925): its site's terms, non-commercial
+        # traced to its original source (data.json course pg): its site's terms, non-commercial
         return "nc" if p.get("pg") else "imr"
     if p.get("cf"):
         return "book"

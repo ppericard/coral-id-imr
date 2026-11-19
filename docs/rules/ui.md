@@ -98,8 +98,8 @@ question armed first), a tip waiting for a later break when the question is due.
 
 **Home = two big doors only** ("Learn & practise", "Identify a coral"), plus one credit line under them, all in one
 screen; Learn & practise is the primary door, Identify the secondary one (DESIGN.md "Footer and credits", "Home
-hierarchy"). **One relaxation**: one more row, the Corals | Fish subject switch at the top of Home (with its twin, the
-subject chip in the header), shown only to the admin until fish opens to players (rule S1); still one screen (DESIGN.md
+hierarchy"). **One relaxation**: one more row, the subject switch at the top of Home (with its twin, the
+subject chip in the header), shown when a player can open two or more subjects (rule S1); still one screen (DESIGN.md
 "Subject switch"). Phones: bottom tab bar, no Tools/Lab tab (hammer icon in header).
 *Source:* Pierre, 2026-11-03; the relaxation, 2026-11-04.
 

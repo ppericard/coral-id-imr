@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// Photos › Tree, a node's sheet text (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 2;
-// Pierre, 2026-11-15, Q359 and Q366): the pure part. Each node's rows (every declared slot of its rank, a keyed slot once
+// Photos › Tree, a node's sheet text (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md): the pure
+// part. Each node's rows (every declared slot of its rank, a keyed slot once
 // per line the base holds, his entry and its state, then what is never applied), which nodes have a sheet in the app, the
 // box's text as a slot's value, and the edits to check (stale and orphaned) the bar counts.
 const test = require('node:test'),
@@ -12,7 +12,7 @@ const C = require('../core.js'),
 const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
   S = C.SUBJECTS.find(x => x.content && x.pool.files[0] === 'fish.json'),
-  T = C.fishTree(F),
+  T = C.treeSheets(F),
   BF = F.families.find(f => (f.cues || []).length && (f.look || []).length && !f.wink),
   e = (v, was, x = {}) => ({v, was, t: 1, ...x});
 
@@ -78,8 +78,8 @@ test('his entries on the rows: fresh, hidden, stale, absorbed, and what is never
   // An entry under a renamed id (t01 → f:Damselfishes) shows on the new id's page, its stored id kept for Restore.
   const D = sheetSlots(S, F, {nodes: {t01: {note: e('From the old id', null)}}}, 'f:Damselfishes').find(r => r.slot === 'note');
   assert.deepStrictEqual([D.v, D.eid, D.state], ['From the old id', 't01', 'fresh']);
-  // Its new id's own entry too: the old one is shadowed, listed after, and each row has a key of its own on the page (Codex
-  // review #957: one map by slot sent the live row's Restore to the orphan).
+  // Its new id's own entry too: the old one is shadowed, listed after, and each row has a key of its own on the page, so
+  // the live row's Restore never reaches the orphan.
   const R2 = sheetSlots(S, F, {nodes: {t01: {note: e('old', null)}, 'f:Damselfishes': {note: e('new', null)}}}, 'f:Damselfishes'),
     N2 = R2.filter(r => r.slot === 'note');
   assert.deepStrictEqual(
@@ -99,7 +99,7 @@ test('which nodes have a sheet in the app: families but the winks, genera the ap
   assert.ok(sheetOwn(F, BF.id));
   assert.ok(wink, 'a wink family in fish.json');
   assert.ok(!sheetOwn(F, wink.id));
-  // nor its species or genera: the app sends them to the families list (Codex review #957)
+  // nor its species or genera: the app sends them to the families list
   assert.ok(wink.species.length && wink.species.every(s => !sheetOwn(F, s)), wink.species.join(' '));
   assert.ok(wink.genera.every(g => !sheetOwn(F, g)));
   assert.ok(lone && !sheetOwn(F, lone.id), 'a genus sent to its species or family');

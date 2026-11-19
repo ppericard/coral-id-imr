@@ -160,6 +160,23 @@ As the fish's split (Q323), on sea slugs: `o` when the other sea slug cannot be 
 blurred, cut, or plainly another shape), `k` when it is about as large, sharp and central and could be named instead.
 When in doubt, `k` with `unsure` and a note.
 
+## Look-alike hints from the literature (the species a photo may really show)
+
+From the [literature scan](../docs/reviews/2026-11-17-seaslug-literature-scan.md) §5.5. They change no code, keep or
+ease: the label stays the iNaturalist identification (rule C5). A photo that fits one gets a `note` (no `unsure`), for a
+later species level to check; the cues are the sources', never shown to players (rule C6):
+
+- ***T. pacifica***: black spots all over the body and plain black tips are *T. pikachu* (*T. pacifica*: no body spots,
+  blue-white tips with a black band below; seaslug.world after Pola et al. 2026, doi:10.11646/zootaxa.5793.1.9).
+- ***C. dianae***: before 2021 every *C. alcalai* was identified *C. dianae*, so an older photo may show either
+  (seaslug.world after Gosliner 2021); no photo cue is cited.
+- ***P. picta***, ***P. coelestis***: a white animal with one oval black area and yellow-tipped tubercles fits
+  *P. ovata* (Wägele et al. 2025, doi:10.3897/zookeys.1245.153046), not confirmed in the Philippines (rule C8): a note
+  only.
+- **One name, several species** (*Pteraeolidia semperi*, *Coryphellina exoptata*, *Samla bicolor*, *Phyllidiella
+  pustulosa*, *Thuridilla gracilis*, *Costasiella kuroshimae*, *Jorunna funebris*, *Plakobranchus ocellatus*): a
+  species-level photo is a photo of the complex, sure at the genus level. Nothing to add.
+
 ## Candidates: the judging files
 
 `judging/seaslug/<taxon id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:

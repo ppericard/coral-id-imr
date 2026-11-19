@@ -3,78 +3,71 @@
 **The one place for where things stand.** Written by the integrator only (subagents report to it and never edit this
 file), overwritten at each stop, never appended; at most about 100 lines (`tests/docs.test.js`). What can be computed
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
-`python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
+`python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions. **Pierre's answers live in
+[ANSWERS.md](ANSWERS.md)** (append-only; AGENTS.md "Every answer reaches its doc"): search it, the rules and
+docs/decisions/ before asking him anything. This file only cites answers.
 
-Written 2026-11-18, about 10:00 Manila, by the integrator. **A new integrator starts here, then reads
-[INTEGRATOR.md](INTEGRATOR.md).**
+Written 2026-11-19, about 08:30 Manila, by the integrator. **A new integrator starts here, then reads
+[INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
-Last checked: reports and events: 2026-11-17 ~06:15 Manila (none needing action).
+Last checked: reports and events: 2026-11-19 ~06:25 Manila (nothing new to report; the "empty card closed: feedback"
+event was fixed by #1189).
 
 ## Now
 
-Main: sheet script **v172** (#1049). Every PR merges through a train, even alone (#1001). `npx --yes prettier@3.10.1`
-(the machine's default is 3.8.1). Agents (W27): at most 4 that write code or run tests (conflicts, machine load); read-only studies on top (Pierre,
-2026-11-18: "C'est des agents en lecture seule", "ça évite aussi de trop charger la machine lors des tests"; the
-rule's wording follows in the rules PR).
+Main: sheet script **v189** (#1148); #1121 carries v190. The container restarted at ~08:24: every agent and train
+running then was relaunched (below). Trains: `tools/train.py`, one at a time; scratchpad helpers (lost on a new
+session): `prstate.sh` (PR state line), `train_after_photos.sh` / `train_queue.sh` (wait for Candidate photos or the
+running train, then train), `resolve_append.py` (append-only conflicts in ANSWERS.md: main's lines, then the branch's).
 
-- **Merged 11-18**: #1051 fish out of beta, sea slugs open to all; #1060, #1061, #1062 sea slug stats, admin, WoRMS
-  (v167-v169); #1053 (v170); #1050 staff and cohort boards (v171); #1049 live mode v1 (v172); #1069 minify at deploy
-  (live: app.js 256 → 103 KB); #1072 `--assign` fold fix; #1074 presentations for all 107 circle 2-3 fish genera (77
-  with ID marks); the three reviews #1064 gaps, #1065 [inventory](reviews/2026-11-18-backlog-inventory.md), #1066
-  [architecture](reviews/2026-11-18-architecture-code-review.md).
-- **In flight**: #1057 held-out set (v173 assigned; Codex threads being fixed) → #1067 genera c2-3 (its 40-min app-world
-  recheck waits for a slot) ; #1076 gate floor (architecture step 2); #1075 sea slug Structure and look-alike line
-  editor (needs a sheet version); admin sign-out seal model B (agent); #1073 smoke deflake; #1070 fish reference photos
-  for every circle (review). Studies: live prep page, several photos on a phone (agents); #1071 What I learn (answered).
-- **Queue for free slots** (in order): #1067's recheck; an anonymous viewport size in the pages-opened summary; Fish
-  basics from the IMR decks (Pierre's Drive folder, `Fish Identification_2026`); lecture photos never upscaled and the
-  86 Corals of the World captures replaced by their originals with exact credit (C12 A+D); sea slug achievements 60-100%;
-  small fixes (tour, look-alike account names, About version line, Try again on a failed tier); a rules PR (below);
-  #1045 `refLevel` from the photo's traits; the What I learn card; game modes as quiz formats in order (Same or
-  different?, Odd one out, Down the tree, Life stages matched, then Sort them, Virtual dive); architecture steps 3-4,
-  then the corals on the tree engine (plan to Pierre first).
-- **Infrastructure watch** (Pierre: the domain becomes urgent "quand l'infrastructure qu'on utilise ne suivra plus";
-  no December deadline): R2 size (6.3 of 10 GB on 11-15), the sheet's rows, quotas and timings, Pages size; alert early.
-- Estimates are in agent time (Pierre, 2026-11-18: never human days or weeks).
+- **Merged 2026-11-19 morning**: #1179, #1170, #1175, #1185 (one-engine audit), #1177, #1130, #1188 (answers ledger
+  and rule), #1187 (v188, photo host check), #1183, #1176, #1181, #1171 (Q418 b), #1189 (feedback card), #1148 (v189,
+  fish pooled stats), #1190 (rule wordings S1, W19 comments, W14 slow tier, L11/L12; Pikachu and Q408 records).
+- **In a train**: #1192 (docs pass: Pierre's decisions into ROADMAP, FISH_PATH, INTEGRATOR, studies) and #1121
+  (comments of core.js and Code.gs, v190).
+- **Waiting for Codex, then trains one at a time** (all append to ANSWERS.md: re-merge main with
+  `resolve_append.py` after each): #1191 (Rule 0: Pierre's day starts with his first message after 04:00), #1194
+  (README: the Coral Finder book a source like any other), #1193 (ANSWERS.md history 11-03 to 11-18; fix its "07:10"
+  for #1171 to 07:59 and the stray "Q427").
+- **Agents running**: #1195 (rule P1 applied to the corals' code: no source boost, no tag; L11 level 1); level-2
+  checks for #1116 (Q411: merge unless a loss; is a rules version needed?) and #1093; #1117 (record the rules-audit
+  answers, align its night guard with the new Rule 0) and #1186 (bring the open-points study in line); the study
+  "long-term agentic development practices" (Pierre 08:24: options for a big edit of the rules, all options open).
+- **Today's lesson**: answers recorded only in STATUS and PR descriptions never reached the living docs, so questions
+  were asked again (the rename, Pikachu, the source weight). Fixed by ANSWERS.md (#1188, #1193) and the decisions pass
+  (#1192, #1190). Three process changes (a search tool before any question, studies with no open questions, an
+  automatic consistency check) wait for the agentic-practices study, which covers them with more options.
 
 ## Next
 
-1. The in-flight PRs and the queue above, four code agents at a time.
-2. Rules PR, all approved 2026-11-18: Q405 (L11: a hard 40-min cap per check at every level; level 2 only the worlds
-   the change touches; level 3 never on this machine, only with Pierre's go on GitHub runners; an unclear result is
-   reported, never escalated); AGENTS.md "Estimates are in agent time…"; P1 (reference = intrinsic, objective
-   qualities; a source is a hint and a guarantee of evaluation, never a placement criterion, every subject; reference
-   sources enter the base first); C2 and D5 lines; the Coral Finder out of the rules (Q294).
-3. Species step 2 (#1041) for fish and sea slugs: two independent teaching trees (common: families → species;
-   scientific: genera → species), the `sci:` key, the family checklist exam, the ultimate exam.
+1. Trains as above; then the one-engine audit's steps 1-2 (`docs/reviews/2026-11-19-one-engine-audit.md` §3: S1 test
+   hardening and a shared tree `UNITS` base; `replay` split into named parameters, `FISH_C3` declared), no progress
+   moved.
+2. The game-modes audit (scratchpad `modes-audit.md`; to commit as a study): one shared answer recorder for the quiz
+   and live; live answers on locked units counted without opening them (rule L4, 2026-11-18); the duel achievement on
+   the Again; a "what each mode counts" doc. Progress-moving rows (format term in the sheet's photo ratings, time
+   median per format, hold/comeback with the offset) go to Pierre with level-2 and L12 figures.
+3. The fish judging pass on the 8 new candidates; Pikachu in the data (both *Thecacera pikachu* and *T. pacifica*;
+   *T. picta* mentioned as locally so called); a PR for branch `claude/tricky-pairs` (rule W6).
 
 ## Questions for Pierre
 
-Answered 2026-11-18 morning: #1057 A; #1067 C (content first); #1045 down, and P1's wording; Q400 D (card on My
-progress, a Home line opens it); Q401 A; Q402 A; Q403 no switch (variants are required, only delayed); Q404 A (every
-names row can be off, families only allowed; two independent trees); Q405; #1061 both built now; seal model B now;
-Fish basics from his Drive; C1 (no source priority at all); D6 three wordings; D7 closed (no morning report); C12 A+D;
-P2 B for now; sea slug achievements ok + 60-100%; seven modes built, most useful first; multi-photo study and viewport
-measure; Q406 corals on the tree engine, ids unchanged (principle; detailed plan first).
+Answered this morning (ANSWERS.md 2026-11-19): Q407, Q408 (with 5 and 6 changed), Q409, Q410, Q414, Q415, Q416,
+Q417, S1's wording, the ledger rule, Rule 0's end, #773 superseded, README's Coral Finder line.
 
-Still open:
+- **Q411** #1116 typed mix-ups in the pooled pairs: level 2 running; the integrator merges unless it confirms a loss.
+- Still open (unnumbered): #1045 items 4 and 6; #1099 item 1; #1093 (level 2 running); #1095 three points; #1098
+  (a)-(f); #1041 §6; the architecture review (a)-(g), (i); the app-gaps review (a)-(j). Search ANSWERS.md first.
 
-- **Professionalise** (no deadline now): (a)-(e) of the study, and B6 the sheet on an IMR Workspace account.
-- **Architecture review's other questions** (b)-(i): curation split, one id scheme, sync by answers, D1; later.
-- **Studies to come**: live prep page, several photos on a phone, the formats' frequency criteria.
-- **To read, easy to undo**: #1043 achievements; #1048 gl 30; #1049 live answer on a locked unit counts in nothing,
-  points 100+100; #1050 one cohort per player; #1052 cue wording; #1061 target 12; #1074 marks ≤ 3, looser bar.
-
-Last question number: Q406
+Last question number: Q418
 
 ## Pierre's hands
 
-- **Roles**: grant himself the trainer role (Players › Staff) to host a live game and be on the staff board.
-- **pCloud backup**: Script properties › `PCLOUD_UPLOAD_CODE`; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
-- **In the admin**: Light and Cover proposals, then Publish; Points (key labels, circles, the 7 literature points);
-  the 8 unsure fish candidates; the Q354 points for an IMR trainer.
-- Check the "Coral ID analyses" token's type and the R2 token's scope; protect `main`; renew the admin GitHub token
-  before late January 2027.
+- **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
+- **Roles**: grant himself the trainer role to host a live game.
+- **In the admin**: Light and Cover proposals, then Publish; Points; the 8 unsure fish candidates; the 16
+  non-Philippine *A. pyroferus* juvenile photos and `fbAcpyr_j0`.
+- Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
 
@@ -82,6 +75,5 @@ Last question number: Q406
 
 ## Last stop
 
-2026-11-18 ~10:00 Manila: after the morning's question round. A design study's first run (~06:43) may have sent a few
-page loads to the real sheet (Events tab); later runs block it. Old player-data extracts may remain in the session
-scratchpad (`data/`): delete them, never commit them.
+2026-11-19 ~08:30 Manila: handover after the container restart. Scratchpad: `ledger-status.md`, `ledger-prs.md`,
+`reconcile-plan.md`, `answers-history.md` (the decisions pass), `modes-audit.md`; no real names in them.

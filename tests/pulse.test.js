@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The one-tap question (Pierre, 2026-11-03: varied questions about the same concept, asked now and then): the bank and
+// The one-tap question (varied questions about the same concept, asked now and then): the bank and
 // its rotation (core.js PULSEQ, pulsePick, pulseScore) and the spacing (quiz.js PROMPT, promptOk, PULSE, pulseDue, run in
 // Node on stubs, as tests/intro.test.js runs model.js).
 const test = require('node:test');
@@ -47,7 +47,7 @@ test('the bank: 4 to 6 one-tap items, each answer on the difficulty or the feel 
       for (const v of [d, f]) assert.ok(v === null || (v >= -1 && v <= 1));
       assert.deepStrictEqual(pulseScore(it.id, k), {d, f});
     }
-    // easy / ok / hard keep their v19 meaning wherever they are used: the sheet's Detail keeps only those three.
+    // easy / ok / hard keep their one meaning wherever they are used: the sheet's Detail keeps only those three.
     for (const [k, , d] of it.a) if (['easy', 'ok', 'hard'].includes(k)) assert.strictEqual(d, {easy: -1, ok: 0, hard: 1}[k]);
   }
   // Both scales are covered, each by at least two items; difficulty from both sides.
@@ -57,7 +57,7 @@ test('the bank: 4 to 6 one-tap items, each answer on the difficulty or the feel 
   const sides = PULSEQ.filter(it => it.a.every(a => a[2] === null || a[2] >= 0) && it.a.some(a => a[2] > 0)).length,
     easySides = PULSEQ.filter(it => it.a.every(a => a[2] === null || a[2] <= 0) && it.a.some(a => a[2] < 0)).length;
   assert.strictEqual(sides, easySides, 'as many one-sided items towards hard as towards easy');
-  // Rows from before the bank (no item id) are the first item's.
+  // Rows with no item id (logged without the bank) are the first item's.
   assert.deepStrictEqual(pulseScore('', 'hard'), {d: 1, f: null});
   assert.deepStrictEqual(pulseScore('nope', 'hard'), {d: null, f: null});
   assert.deepStrictEqual(pulseScore('fun', 'hard'), {d: null, f: null});

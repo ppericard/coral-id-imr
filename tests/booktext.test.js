@@ -36,6 +36,8 @@ function texts() {
       for (const f of ['crit', 'qt']) (g[f] || []).forEach((c, i) => out.push([`${src}.${n}.${f}.${i}`, c]));
       if (g.sum) out.push([`${src}.${n}.sum`, g.sum]);
       for (const [k, v] of Object.entries(g.lsrc || {})) out.push([`${src}.${n}.lsrc.${k}`, v]);
+      // the pairs' tell-apart lines (tools/coral_apart.json), partly from the Coral Finder criteria
+      for (const [k, v] of Object.entries(g.ap || {})) out.push([`${src}.${n}.ap.${k}`, v]);
     }
   for (const grp of [...DATA.key, ...DATA.x.groups]) {
     out.push([`key.${grp.id}.name`, grp.name]);

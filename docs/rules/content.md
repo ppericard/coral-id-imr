@@ -18,18 +18,25 @@ are silently not reproduced and mentioned to Pierre only. When a source is old, 
 
 **Never invent categories or information.** Groupings come only from existing references: IMR Lecture 6 groups (1-11),
 Coral Finder 2022 categories/boxes, the 7 IMR growth forms, or a mix. Every clue, label or pair carries its source
-(slide number, CF page/box).
-*Why:* Claude-made look-alike "families" were rejected. *Source:* Pierre, by 2026-11-01.
+(slide number, CF page/box). An instance's content editor's own words, pairs and circles carry a source when they give
+one; the editor asks for one when a fact is added.
+*Why:* Claude-made look-alike "families" were rejected. *Source:* Pierre, by 2026-11-01; the content editor's, 2026-11-18 ("ok").
 
 ### C3
 
 **An ID tip is short, simple and understandable by everyone, whatever its source** (IMR or another one): one tip or
 a few essentials. The tips are what the app puts forward: the **ID tip** (`gen[g].qt`; corals: from
-`tools/id_tips.txt`) is shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box. The
+`tools/id_tips.txt`) is shown on the cards, in the ID tips view and in the comparisons in a highlighted box. The
 technical, descriptive detail of what separates a unit from another goes on its sheet (corals: the full lecture cues,
 `gen[g].imr`, incl. review slides and presenter notes, appear there under "IMR lecture notes").
-*Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone.
-*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05; subject-neutral wording, 2026-11-06.
+**The answer's feedback sheet shows the verdict, the photo's own species line and one decisive line**: the line telling
+the right answer from the player's answer, or, after a right answer, the cue telling it from a look-alike among the
+choices, else its first ID tip. Everything else (the IMR ID tips, the Coral ID Key criteria, the mnemonic, links) sits
+behind "More". No line is ever made by comparing trait tags (rule C2).
+*Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone, and feedback that shows
+one line, the one that settles the answer, gets read.
+*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05; subject-neutral wording, 2026-11-06; the feedback sheet's
+one decisive line, 2026-11-18 ("ok", the feedback sheet study's recommendation (e), PR #1097).
 
 ### C4
 
@@ -37,7 +44,7 @@ technical, descriptive detail of what separates a unit from another goes on its 
 way to group or pick genera: a list of genera is A-Z, the slate order or the IMR lecture groups. Photos use the 7 IMR
 (AIMS lifeform) forms: Branching, Tabulate, Encrusting, Foliose/Plating, Massive, Submassive, Mushroom (+ "x" too close
 to tell, + a separate "polyps extended" flag); one form per photo, the dominant visible one. The polyps flag ✿ only for
-polyps visibly extended at colony scale, only for the Coral Finder "extended by day" genera (Alveopora, Duncanopsammia,
+polyps visibly extended at colony scale, only for the book's "extended by day" genera (Alveopora, Duncanopsammia,
 Goniopora, Heliofungia, Plerogyra, Tubastraea), never on macro photos.
 *Why:* many genera take 3-4 forms or more; only the solitary mushroom corals keep one.
 *Source:* Pierre, by 2026-11-01; grouping by form, 2026-11-03 (the custom quiz's selection screen); subject-neutral

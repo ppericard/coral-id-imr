@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// tools/taxonomy.json, the build-time reference of names (Pierre, 2026-11-05, Q49: built from the taxonomy study's
-// section 5, small form; "it must not weigh on the app": the app never loads it), refreshed by tools/taxonomy.py; the
-// Corals of the World mapping of Plesiastrea versipora to P. peroni (Q50); the watch list (Q51). Needs python3, like
+// tools/taxonomy.json, the build-time reference of names (built from the taxonomy study's section 5, small form; the app
+// never loads it), refreshed by tools/taxonomy.py; the Corals of the World mapping of Plesiastrea versipora to P. peroni;
+// the watch list. Needs python3, like
 // the other checks; never asks the network (a stubbed WoRMS and iNaturalist for the build).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -46,7 +46,7 @@ test('taxonomy.json: the shape of each record, small, and never loaded by the ap
   // Small: about 50 KB of corals and 120 KB of fish (one record per fish.json species), build time only.
   const kb = fs.statSync(path.join(ROOT, 'tools/taxonomy.json')).size / 1024;
   assert.ok(kb < 220, `taxonomy.json is ${Math.round(kb)} KB`);
-  // Build time only (Pierre, 2026-11-05): no app or admin file reads it, and the service worker does not keep it.
+  // Build time only: no app or admin file reads it, and the service worker does not keep it.
   const app = fs.readdirSync(ROOT).filter(f => /\.(js|html)$/.test(f));
   app.forEach(f => assert.ok(!fs.readFileSync(path.join(ROOT, f), 'utf8').includes('taxonomy.json'), `${f} reads taxonomy.json`));
 });
@@ -222,7 +222,7 @@ print(json.dumps({"ch": ch, "log": b["log"][-1]}))`);
   assert.deepStrictEqual(R.log, {date: '2026-12-01', what: 'gen Pachyseris worms.fam: Agariciidae -> Pachyseridae'});
 });
 
-// Codex review #570: the dates of the data are read after the build fetched it, so a first run or a --refresh is
+// The dates of the data are read after the build fetched it, so a first run or a --refresh is
 // dated with its own fetch, and an offline rerun keeps those dates.
 test('taxonomy.py: the refreshed dates and the log are those of the fetch the build made', () => {
   const R = py(`FAM = "Pachyseridae"
@@ -239,7 +239,7 @@ print(json.dumps({"refreshed": sec["refreshed"], "log": sec["log"][0]["date"]}))
   assert.strictEqual(R.log, '2026-12-01');
 });
 
-// Codex review #570: a candidate Pierre approved is served (curation.json genera[n].add, core.js applyCuration), so
+// A candidate the admin approved is served (curation.json genera[n].add, core.js applyCuration), so
 // its species name is a photo name too.
 // Every candidate, approved (data.json) or waiting (cand.json): the admin flags a candidate's name too (names.json).
 test('taxonomy.py: the photo names include every candidate, approved or waiting', () => {
@@ -267,7 +267,7 @@ test('taxonomy.py --offline never asks the network: a reply missing from the cac
   assert.match(r.stderr, /--offline: not cached: https:\/\/api\.inaturalist\.org\/v1\/taxa\/1/);
 });
 
-// Second PR (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49): the tools read the file, the admin its extract.
+// The tools read the file, the admin its extract (ROADMAP "Taxonomy reference").
 const {nameFlag} = require('../presence.js');
 
 test('names.json: the admin extract, in step with taxonomy.json; the admin reads it, never taxonomy.json', () => {

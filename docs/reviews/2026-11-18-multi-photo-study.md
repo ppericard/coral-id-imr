@@ -123,7 +123,7 @@ gaps, a 44 px prompt bar with a ✕ to leave (a 44 px target), the header (49) a
 | 1. 2 × 2, answered, a short sheet (header and tab bar shown) | 169 | 176 | 196 | `mock-grid-fishodd-chrome-done-short-*` |
 | 1b. four full-width strips, cut on the fish's box | 344 × 155 (65 × 29 mm) | 374 × 148 | 398 × 161 | `mock-strips-fishodd-*` |
 | 1c. 2 × 2 portrait cells (no chrome) | 169 × 236 | 184 × 257 | 196 × 274 | `mock-portrait-slugodd-*` |
-| 1d. 2 × 2 with the reference outlined (Life stages) | 169 | 184 | 196 | `mock-ref2x2-*` |
+| 1d. 2 × 2 with the reference outlined (Life stages) <!-- effort-ok: layout name --> | 169 | 184 | 196 | `mock-ref2x2-*` |
 | **2. one large (4:3) + three small** | 344 × 258 + 3 × 110 (21 mm) | 374 × 281 + 3 × 120 (20 mm) | 398 × 299 + 3 × 128 (20 mm) | `mock-one3-*` |
 | **3. swipe, one at a time** (the next one peeks in) | 301 × 562 | 327 × 536 | 348 × 587 | `mock-swipe-slugodd-*` |
 | 3b. the pair stacked, header and tab bar shown | 344 × 233 (65 × 44 mm) | 352 × 220 | 392 × 245 | `mock-pair-fishsame-chrome-*` |
@@ -150,7 +150,7 @@ four ≈ 15 mm wide, whatever the model, because CSS px (and Flutter's dp) are d
    fish (butterflyfish, angelfish, batfish) loses its fins top and bottom; strips suit fish whose box is at least about
    1.6 times wider than tall [my reading], and never corals or sea slugs seen from above. **Variant 1c**, portrait cells,
    uses the height for sea slugs seen from above (often portrait photos, `ar` 0.8) but needs the chrome hidden and crops a
-   fish in profile. **Variant 1d** puts Life stages matched in the same grid: the juvenile or female outlined, every
+   fish in profile. **Variant 1d** <!-- effort-ok: layout name --> puts Life stages matched in the same grid: the juvenile or female outlined, every
    photo at the two-across size.
 2. **One large photo with three small ones.** The large one is a good reference (65 × 49 mm); the three small ones are
    at the three-across size, about 20 mm. The three emperor-group adults (*P. imperator*, *P. sexstriatus*,
@@ -215,7 +215,7 @@ least half the slot, an `m` fish a quarter [computed].
 |---|---|---|---|
 | **Same or different?** | 3b, the pair stacked, Same / Different (48 px buttons), a short sheet once answered | Every subject and every view | the one-photo question on the first photo's unit |
 | **Odd one out** | 1, the 2 × 2 squares, a short sheet | Every subject: fish on their `subject` frames (the tiles today), sea slugs once framed, corals on any view: one view for the four (all corallites, all close-ups, all colonies) or mixed views | the one-photo question |
-| **Life stages matched** | 1d, the 2 × 2 with the juvenile or female outlined | Fish species with a phase photo (`fish-game.json` `ph`: 2,929 juvenile, 1,226 male, 427 female photos [measured]), each on its `subject` frame (none of them has one yet) | the one-photo question on the species |
+| **Life stages matched** | 1d <!-- effort-ok: layout name -->, the 2 × 2 with the juvenile or female outlined | Fish species with a phase photo (`fish-game.json` `ph`: 2,929 juvenile, 1,226 male, 427 female photos [measured]), each on its `subject` frame (none of them has one yet) | the one-photo question on the species |
 | **Down the tree** | one photo, 4 names, the steps as chips above the photo | Fish (families, genera, species); sea slugs once their genera and species are units (their tree has the three ranks in `seaslug.json` [read]); corals have no rank below the genus | none needed |
 
 **Corals** (Pierre, 2026-11-18, answer (a): "On pourrait très bien avoir un odd one out avec que des corallites ou des
@@ -264,7 +264,7 @@ Subject-neutral (rule S1): written on photo fields, frames and the slot's size, 
 
    | Slot | 360 × 690 | 390 × 664 | 414 × 715 | Passes |
    |---|---|---|---|---|
-   | 2 × 2 (1, 1d), `subject` frame: 0.7 × 169 / 184 / 196 | 118 | 129 | 137 | shape, blocks, pattern |
+   | 2 × 2 (1, 1d <!-- effort-ok: layout name -->), `subject` frame: 0.7 × 169 / 184 / 196 | 118 | 129 | 137 | shape, blocks, pattern |
    | 2 × 2, no frame, `l`: 0.5 × side | 85 | 92 | 98 | shape and blocks only |
    | 2 × 2, a corallite photo: 1/6 × side, per corallite | 28 | 31 | 33 | fine feature |
    | three across (2), `subject` frame: 0.7 × 110 / 120 / 128 | 77 | 84 | 90 | shape and blocks only |
@@ -322,30 +322,47 @@ besoin".
   phases, then the sea slugs; then the `feature` frames with the short answered sheet; the `context` frames later, with
   the virtual dive.
 
-## 7. Effort, in agent time
+## 7. Effort, measured with `tools/effort.py`
 
-Hours of agent work, reviews and the Codex rounds included [guess, one agent; the passes' rate is untimed until a first
-sheet is: about 150-250 photos an agent hour on 9-photo sheets is assumed].
+Agent time [measured]: for each step I picked the type and the size band from the files it will touch (the type is the
+one `tools/effort.py` gives a merged PR touching them: engine for `core.js`, `model.js`, `quiz.js`; admin; feature for
+the other app files; content for data; tooling for `tools/` and `tests/`; the band is the lines changed: XS up to 20, S
+up to 100, M up to 400, L up to 1,500, XL above; the band is my reading). The time is what
+`python3 tools/effort.py --estimate TYPE BAND` prints: the five closest merged PRs, their median and 25-75% range, from
+the branch's first commit to green checks (the Codex rounds and their fixes are inside it). The earlier hours were
+guesses and are gone, with the photo rate they assumed for the bulk passes.
 
-| Step, in Pierre's order | Hours |
-|---|---|
-| 1. The frame format: the build writes `fr` from the judging files, the 425 fish boxes moved to `subject` frames, the tiles cut from them for every subject, Pierre's fixes laid over from `curation.json`, tests | 6-8 |
-| 2. The admin's fix tool: a photo's frames drawn on the photo page, adjust or delete, Undo, Publish (rules A1, A2) | 6-8 |
-| 3. Reports that name the frame (the report dialog, the admin's To do; a sheet column if one is needed: rules D3, D4) | 2-4 |
-| 4. The `subject` pass: the fish's juveniles and phases (about 2,300 photos pass the other tile tags), then the sea slugs (about 1,800) | 16-27 |
-| 5. The short answered sheet for multi-photo questions (names on the photos, "look here"); it also fixes today's Find the X answered state | 3-4 |
-| 6. The `feature` pass, first coverage: the criteria as ids from the sourced cues, then the frames on circle 1 (corallites, rhinophores and gills, a fish's marks) | 15-25 |
-| 7. Eligibility fields and the size floor in the planner (the `SUBJECTS` field, the per-view default scale) | 4-6 |
-| 8. The data rule: per format and view, the strongest players' share against chance, the engine's drop, its check (rules L11, L12) | 5-8 |
-| **Same or different?** (planner, the pair stacked, 2-choice scoring and its log format, P4's wording, the smoke) | 6-8 |
-| **Odd one out** (reuses Find the X's gate; coral views as part of the difficulty; scoring under rule L2) | 6-9 |
-| **Life stages matched** (layout 1d, phases from `ph`, after step 4) | 6-8 |
-| **Down the tree** (multi-step question, a partial credit per step, the global score's components, the sheet's replay: rules D3-D5) | 10-14 |
-| The four as Practice entries (one page with four doors, rule L4's one path) | 3-4 |
-| Later: the `context` frames, with the virtual dive | not sized |
+**Bulk work run by a light model gets no figure.** The measured PRs are code PRs; a pass over N photos (a framing pass,
+a judging pass) depends on the batch size, and no sheet of nine photos has been timed yet. Steps 4 and the frames of
+step 6 are that: about 2,300 fish photos and about 1,800 sea slug photos for step 4, a first coverage of circle 1 for
+step 6. Time the first sheet, then size the rest from it.
+
+| Step, in Pierre's order | Type, band (what it touches) | Measured agent time |
+|---|---|---|
+| 1. The frame format: the build writes `fr` from the judging files, the 425 fish boxes moved to `subject` frames, the tiles cut from them for every subject, Pierre's fixes laid over from `curation.json`, tests | content+tooling L (`tools/` builds, fish and sea slug data files, tests) | comparable to #826, #906, #980, #1032, #1069: median 43 min (range 29 min-49 min) |
+| 2. The admin's fix tool: a photo's frames drawn on the photo page, adjust or delete, Undo, Publish (rules A1, A2) | admin L (`admin.js` photo page, `admin-covers.js`) | comparable to #777, #844, #889, #895, #906: median 38 min (range 30 min-43 min) |
+| 3. Reports that name the frame (the report dialog, the admin's To do; a sheet column if one is needed: rules D3, D4) | feature M (`reports.js`, `app.js`; a `Code.gs` column would make it sheet) | comparable to #832, #899, #911, #986, #1056: median 18 min (range 5 min-30 min) |
+| 4. The `subject` pass: the fish's juveniles and phases (about 2,300 photos pass the other tile tags), then the sea slugs (about 1,800) | bulk work, light model | no figure: the measured PRs are code PRs, and bulk work depends on the batch size |
+| 5. The short answered sheet for multi-photo questions (names on the photos, "look here"); it also fixes today's Find the X answered state | engine M (`quiz.js`, `app.css`) | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| 6. The `feature` pass, first coverage: the criteria as ids from the sourced cues, then the frames on circle 1 (corallites, rhinophores and gills, a fish's marks) | the criteria ids: content+tooling S (cue files, `tools/`); the frames: bulk work, light model | criteria ids: comparable to #868, #869, #894, #972, #1011: median 17 min (range 13 min-33 min); the frames: no figure, bulk work |
+| 7. Eligibility fields and the size floor in the planner (the `SUBJECTS` field, the per-view default scale) | engine M (`core.js` `SUBJECTS`, `quiz.js` planner) | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| 8. The data rule: per format and view, the strongest players' share against chance, the engine's drop, its check (rules L11, L12) | engine M (`core.js`, `quiz.js`, a check run) | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| **Same or different?** (planner, the pair stacked, 2-choice scoring and its log format, P4's wording, the smoke) | engine L (`quiz.js`, `core.js`, `app.css`, a smoke) | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) |
+| **Odd one out** (reuses Find the X's gate; coral views as part of the difficulty; scoring under rule L2) | engine L (`quiz.js`, `model.js`, `core.js`) | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) |
+| **Life stages matched** (layout 1d, phases from `ph`, after step 4) <!-- effort-ok: layout name --> | engine M (`quiz.js`, `model.js`) | comparable to #820, #822, #828, #873, #938: median 45 min (range 29 min-1.6 h) |
+| **Down the tree** (multi-step question, a partial credit per step, the global score's components, the sheet's replay: rules D3-D5) | engine L (`quiz.js`, `core.js`, copied to `Code.gs` by `tools/sync_core.py`) | comparable to #861, #885, #957, #1047, #1075: median 2.9 h (range 1.6 h-3.2 h) |
+| The four as Practice entries (one page with four doors, rule L4's one path) | feature S (`app.js`) | comparable to #849, #854, #909, #917, #929: median 19 min (range 14 min-30 min) |
+| Later: the `context` frames, with the virtual dive | not sized | not sized |
 
 Same or different? and Odd one out on the fish tiles and the coral views need only steps 5 and 7; they can be built
-while steps 1-4 run. Total for everything sized: about 90-140 agent hours.
+while steps 1-4 run.
+
+- **Total of the sized steps, code only: about 14 h of agent time.** It is the sum of the medians above (nine rows at 17
+  min to 45 min, three at 2.9 h), each cited in its row, e.g. #861 and #820. A sum of medians is not a measured figure,
+  and the ranges do not add up. <!-- effort-ok: the sum of the medians cited in the rows -->
+- **The earlier total** was 90-140 agent hours, a guess. <!-- effort-ok: the superseded guess, quoted --> It included
+  31-52 hours for the two bulk passes (steps 4 and 6), which have no measured figure; without them it was 59-88 hours
+  for the same code and admin work, against 14 h measured (#861, #820).
 
 ## 8. Screenshots
 

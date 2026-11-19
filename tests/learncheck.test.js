@@ -32,7 +32,7 @@ test('both arms run the same learnsim options, and learncmp of the version with 
   assert.match(Y, /node after\/tools\/learncmp\.js "\$out\/\$w-before\.json" "\$out\/\$w-after\.json"/);
 });
 
-// Codex review #791: learnsim loads Playwright before it reads --world, so the package is installed for every world
+// Learnsim loads Playwright before it reads --world, so the package is installed for every world
 // (Chromium for the app world only); and the primary goes to its own world only.
 const {execFileSync} = require('child_process'),
   os = require('os');
@@ -90,7 +90,7 @@ test('the primary is passed to its own world only', () => {
   fs.rmSync(dir, {recursive: true});
 });
 
-// Codex review #791: a measure name with a digit (learncmp's c3) is a valid primary; anything else stays refused.
+// A measure name with a digit (learncmp's c3) is a valid primary; anything else stays refused.
 test('the input check takes every learncmp measure as the primary, and refuses the rest', () => {
   const check = env =>
     (() => {
