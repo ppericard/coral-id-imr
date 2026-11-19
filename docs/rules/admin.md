@@ -1,8 +1,9 @@
 # Admin rules
 
 Pierre's standing rules on his back-office (`admin.html`) and his curation (`curation.json`). The spec of every tab,
-view and address: [ARCHITECTURE.md](../ARCHITECTURE.md) "Admin back-office", "Analyses", "Auto-sort". The index of
-every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
+view and address: [ARCHITECTURE.md](../ARCHITECTURE.md) "Admin back-office", "Analyses", "Auto-sort";
+[spec/admin.md](../spec/admin.md), [spec/analyses.md](../spec/analyses.md). The index of every rule is in
+[README.md](README.md#the-index).
 
 ### A1
 
