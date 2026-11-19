@@ -360,6 +360,18 @@ test("live answers before a unit's card: its card's question comes as any card's
   assert.ok(
     off.result().live.n === 8 && off.result().live.rec === 0 && !Object.keys(off.ctx.P).some(n => n !== '~level' && off.M.asked(n))
   );
+  // The trainer's questions do not depend on the student's arm: recorded or not, the same 40 questions, photos and
+  // choices, and the same answers (Codex review #1234).
+  const arm = o => {
+    const p = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+    p.liveRun(40, o);
+    return p;
+  };
+  const on = arm(false),
+    no = arm(true);
+  assert.ok(on.result().live.rec > 0 && no.result().live.rec === 0);
+  assert.deepStrictEqual(on.liveQs, no.liveQs);
+  assert.strictEqual(on.result().live.ok, no.result().live.ok);
 });
 
 // The judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.

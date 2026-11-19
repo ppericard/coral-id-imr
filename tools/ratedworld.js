@@ -645,18 +645,29 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   // version-1 app records nothing, nor does off (learnsim --liveoff). live: {n, ok, rec, hold: the opening hold's sum
   // after them}.
   const live = {n: 0, ok: 0, rec: 0, hold: null};
+  const trainer = {},
+    liveQs = []; // the live questions asked (playerOf liveQs: the tests)
   const liveRun = (n, off = false) => {
     for (let j = 0; j < n; j++) {
       tick();
       const list = ctx.pool(),
         left = list.filter(u => !M.introduced(u));
       if (!left.length) break;
-      const t = left[Math.floor(r() * left.length)],
+      const t = left[Math.floor(r() * left.length)];
+      // The question as the trainer's page builds it, on the trainer's own record (an empty one here), never the
+      // student's: both arms of a paired comparison see the same questions (Codex review #1234).
+      const own = ctx.P;
+      let wrong, chs, set;
+      ctx.P = trainer;
+      try {
         wrong = M.distractors(t, list, 2, () => true);
-      if (wrong.length < 3) continue;
-      const chs = ctx.shuffle([t, ...wrong.slice(0, 3)]),
-        set = M.photoSet(t, null, 0, 4, 'k4'),
-        ph = ((set && set.shown) || []).slice(0, 2);
+        chs = wrong.length < 3 ? null : ctx.shuffle([t, ...wrong.slice(0, 3)]);
+        set = chs && M.photoSet(t, null, 0, 4, 'k4');
+      } finally {
+        ctx.P = own;
+      }
+      if (!chs) continue;
+      const ph = ((set && set.shown) || []).slice(0, 2);
       if (!ph.length) continue;
       const d = mean(ph.map(p => trueD(t, p))),
         c = r() < pRec(t, d, ph.length === 1) ? t : chs[Math.floor(r() * chs.length)],
@@ -705,6 +716,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       } else teach(t);
       live.n++;
       live.ok += ok ? 1 : 0;
+      liveQs.push([t, ...chs, ...ph.map(p => p.f)].join(' '));
     }
     live.hold = Math.round(vm.runInContext('HOLDS', ctx) * 1000) / 1000;
   };
@@ -727,7 +739,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     qs,
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   });
-  return {step, result, ctx, M, G, trueD, liveRun};
+  return {step, result, ctx, M, G, trueD, liveRun, liveQs};
 }
 
 // The sheet's photo Elo in the rated world (--app sheet; rule L11): a population of players, one per

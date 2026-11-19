@@ -1400,9 +1400,12 @@ function comebackStep(R, th, d, k, good) {
 // answer recorded late never reads as given after a card shown since (askedOpen).
 function answeredAt(s, good, now = Date.now()) {
   s.at = Math.max(Number(s.at) || 0, now);
-  if (good && s.dl !== dayNo(now)) {
+  // A day counts once, and only after the last one counted: an answer recorded late on an earlier day neither counts
+  // it again nor moves the last day back (Codex review #1234).
+  const d = dayNo(now);
+  if (good && !(s.dl >= d)) {
     s.dd = (s.dd || 0) + 1;
-    s.dl = dayNo(now);
+    s.dl = d;
   }
   if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
 }

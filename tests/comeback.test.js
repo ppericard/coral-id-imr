@@ -241,6 +241,19 @@ test('comeback questions: the surest genera until one is right, then the most ru
   const at0 = s.at;
   M.answeredAt(s, false, at0 - 3600e3);
   assert.strictEqual(s.at, at0);
+  // Days answered right count once each, in order: yesterday then today counts 2; yesterday's right answer recorded
+  // late after them counts nothing more and leaves the last day today, and today's next right answer adds nothing
+  // (Codex review #1234).
+  const today = Date.now(),
+    yday = today - DAY,
+    t = {};
+  M.answeredAt(t, true, yday);
+  M.answeredAt(t, true, today);
+  assert.deepStrictEqual([t.dd, t.dl], [2, M.dayNo(today)]);
+  M.answeredAt(t, true, yday + 1000);
+  assert.deepStrictEqual([t.dd, t.dl, t.at], [2, M.dayNo(today), today]);
+  M.answeredAt(t, true, today + 1000);
+  assert.strictEqual(t.dd, 2);
   // Recall right after the answer: 1 at the same millisecond, a hair under it one tick later (recallAt reads the clock
   // again, and the clock can tick between the two calls).
   assert.ok(M.recallAt('g3') > 1 - 1e-6 && s.dd === dd + (s.dl === M.dayNo() ? 1 : 0) && s.dl === M.dayNo());
