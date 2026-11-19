@@ -307,35 +307,34 @@ test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBas
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test('reference photos: rep adds the flag r and one ease point, the caps applied after it; iNaturalist covers tagged', () => {
+test('reference photos: rep adds the flag r, never an ease point; iNaturalist covers tagged', () => {
   const out = JSON.parse(
     execFileSync(
       'python3',
       [
         '-c',
         `import sys, json; sys.path.insert(0, 'tools')
-from fish_judge import cap, REP_BONUS
+from fish_judge import cap
 from fetch_fish import tag_rep
 from judging_fish import entry
 L = [{'f': 'fish-s1-cand-7'}, {'f': 'fish-s1-cand-8', 'rep': 'inaturalist'}, {'f': 'fish-s1-cand-fb-X_m0', 'via': 'fishbase', 'rep': 'fishbase'}]
 n = tag_rep(L, 7)
-print(json.dumps([REP_BONUS, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbase'), cap('p1g0sm15', False, rep='inaturalist'),
+print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbase'), cap('p1g0sm15', False, rep='inaturalist'),
                   cap('p1g0sm1j4', False, rep='fishbase'), cap('h1g0sm14', False, rep='fishbase'), cap('p1g0sm13', True, rep='fishbase'),
                   n, [p.get('rep') for p in L], entry('s001', {'code': 'p1g0sm13', 'keep': 'best'}, 'fishbase')]))`
       ],
       {cwd: ROOT, encoding: 'utf8'}
     )
   );
-  assert.strictEqual(out[0], 1);
   assert.deepStrictEqual(out[1], [3, 'p1g0sm1']);
-  assert.deepStrictEqual(out[2], [4, 'p1g0sm1r'], 'a medium reference photo joins the very easy ones');
-  assert.deepStrictEqual(out[3], [5, 'p1g0sm1r'], 'never above 5');
+  assert.deepStrictEqual(out[2], [3, 'p1g0sm1r'], 'the same judgement, the same ease, whatever the route in');
+  assert.deepStrictEqual(out[3], [5, 'p1g0sm1r']);
   assert.deepStrictEqual(out[4], [2, 'p1g0sm1jr'], 'a juvenile stays capped at 2');
   assert.deepStrictEqual(out[5], [3, 'h1g0sm1r'], 'a head-on view stays capped at 3');
-  assert.deepStrictEqual(out[6], [4, 'p1g0sm1pr'], 'with the phase flag');
+  assert.deepStrictEqual(out[6], [3, 'p1g0sm1pr'], 'with the phase flag');
   assert.strictEqual(out[7], 1);
   assert.deepStrictEqual(out[8], ['inaturalist', null, 'fishbase'], 'the cover tagged, a stale tag removed, FishBase keeps its own');
-  assert.deepStrictEqual(out[9], {jt: 'p1g0sm1r', e: 4, k: 'best'});
+  assert.deepStrictEqual(out[9], {jt: 'p1g0sm1r', e: 3, k: 'best'});
   // autosort.js fishSure takes the flag (the fish auto-sort reads suggest.json "fish").
   const {fishSure} = require('../autosort.js');
   assert.deepStrictEqual(fishSure({jt: 'p1g0sm1r', e: 4, k: 'best'}), {keep: 'add', tags: 'p1g0sm1r', ease: 4, phase: null, crop: null});
