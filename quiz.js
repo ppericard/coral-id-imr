@@ -622,34 +622,42 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-// tap: a Find the X's photo tapped (question), logged as pa; null for any other question.
-function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
-  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
-  // a comeback question takes its genus's recall as it is now.
-  if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
-  // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
-  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
-  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
-  // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
-  // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
-  // against it as a wrong pick does, and the mix-up is counted.
-  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null;
-  TYPEDQ = null;
+// One answer recorder (docs/spec/quiz.md "What each mode counts"): what every counted answer does to the player's record
+// and the answer log, whatever its game: the photo quiz, the custom quiz and the Duel tab (answer, below) and a live game
+// (live.js liveLog). No screen: the caller keeps its own (the feedback, the prompts, the session's tally).
+// cur: the game; mq: the mode logged; target, c: the unit shown and the one given ('' none); k: the plausible choices,
+// chs: the choices offered ([] typed); ph: the photos shown (a corallites hint included), unseen: the hint left closed;
+// cor: a corallites photo in view; exq: a mastery exam question; tq: the typed question (TYPEDQ); warm: a comeback
+// question, R and Rc its recalls (1 otherwise); mu: the unit a photo of the mimicry class resembles; tm: {rt, zm} the
+// seconds and a photo enlarged; id, at: the attempt id and time (answerId and now by default); tap: a Find the X's photo
+// tapped. Returns {res, s, h0}: the scorer's result, the unit's record, the opening hold before this answer.
+function recordAnswer({
+  cur,
+  mq,
+  target,
+  c,
+  k,
+  chs,
+  ph,
+  unseen = null,
+  cor = false,
+  exq = false,
+  tq = null,
+  warm = false,
+  R = 1,
+  Rc = 1,
+  mu = null,
+  tm = {},
+  id,
+  at,
+  tap = null
+}) {
   const good = c === target,
     s = st(target),
-    chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
-  const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
-  // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
-  // Infinity: the expected success has no 1/k floor).
-  const nc = $v.querySelectorAll('[data-c]').length || 4,
-    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+    first = !((s.ok || 0) + (s.ko || 0)), // the genus's first answer (model.js startStep)
+    seenPh = ph.filter(p => p !== unseen);
   // A wrong answer changes what comes next ("Again", traps, the exam): the questions chosen ahead are chosen again.
   if (!good) dropPlans();
-  session.n++;
-  session.h = [...session.h, good].slice(-10);
-  pulseNote();
-  if (good) session.ok++;
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
   mxRecalc(() => {
     memRecalc(s, pmem());
@@ -657,44 +665,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   });
   const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
-  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
-  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
-  // the opening hold is the one the question really had.
-  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-    seenPh = ph.filter(p => p !== unseen),
-    // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
-    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
-    mu = mimUnit(target, seenPh[0]);
   // One scorer (core.js scoreAnswer; docs/LEARNING.md "One scorer"): the question as the game had it, logged as its
   // scoring record (sc, core.js scoreLog) so the full replay meets this very state. d0: the photo difficulty (photoDiff);
   // fam: the memory of the photos seen before this answer (famOf; a hint left closed unseen; pgMemW, pgMissW); cf: the
   // known mix-ups (confTerm); look: a look-alike among the choices (pgWeight); R, Rc: the recalls on a comeback
   // (recallAt); hint: corallites revealed after the answer, seen not recognised; df: the format's offset (fmtOf, fmtOff).
-  // No exam question in the custom quiz.
-  const exq = EXAMQ === target && cur !== CUSTOM_H;
-  // The mode's suffixes (docs/ARCHITECTURE.md "Answers columns", its Mode suffixes), the sheet reading |kN at the end:
-  // |x: a mastery exam question (never |kN: an exam has every trap);
-  // |kN: a photo-quiz question with fewer than 4 choices ("Again: A or B?"), rated as N choices;
-  // |d: a duel slipped into the photo quiz (CONTRAST);
-  // |f: a Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): ph its own photo only, ch the four
-  //   photos' units, a and pa the unit and the photo tapped;
-  // |c: a comeback question (model.js comebackOf), in the hold with its own e (|w: the old gentle restart, old rows);
-  // |s: the custom quiz, right after quiz: rated as the photo quiz, told apart by the admin.
-  const mq =
-    modeBase(cur) +
-    (photoQuiz(cur) && AUTOD ? '|d' : '') +
-    // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
-    (photoQuiz(cur) && FINDX ? '|f' : '') +
-    (warm ? '|c' : '') +
-    // |h: a held-out photo shown (core.js treeHeld: only the mastery exam asks them, so …|h|x),
-    // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
-    // any answer.
-    (ph.some(p => p && p.ho) ? '|h' : '') +
-    (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
-    // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its
-    // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
-    (tq ? '|t' : '') +
-    (exq ? '|x' : '');
   const q = scoreIn({
     t: target,
     c,
@@ -708,8 +683,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     fam: famOf(target, seenPh),
     cf: confTerm(target, chs, k),
     look: () => pgLook(target, chs, mu),
-    R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
-    Rc: warm && !good && GX(c) ? recallAt(c) : 1,
+    R,
+    Rc,
     p: startP(),
     sec: tm.rt,
     // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
@@ -729,17 +704,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
   });
   const res = scoreAnswer(P, q),
-    {th0, dm} = res,
-    rT = q.R;
+    {th0, dm} = res;
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // A right answer clears its photos' variant groups from those the answer log left (model.js varRight, varLeft).
   if (good) varRight(target, seenPh);
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
-  // genus as the answer for another one.
-  // (exq, above: never from the custom quiz.)
-  EXAMQ = null;
+  // genus as the answer for another one (rule L9).
   // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100), and a right answer on each
   // variant group the unit has (model.js varLeft, examPassed: the exam asks them, its count held the same way).
@@ -774,21 +746,18 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed.
-  const spShown = speciesShown(ph.filter(p => p !== unseen));
+  const spShown = speciesShown(seenPh);
   const ans = {
-    // Its attempt id (core.js answerId): sent as it is at every try, so the sheet logs it once.
-    id: answerId(),
-    t: new Date().toISOString(),
+    // Its attempt id (core.js answerId; live.js liveAid): sent as it is at every try, so the sheet logs it once.
+    id: id || answerId(),
+    t: at || new Date().toISOString(),
     g: target,
     a: c,
     ok: good ? 1 : 0,
     m: mq, // the mode, built before the scorer (its format's offset, df)
     // A corallites hint left closed is not logged: it was not seen when answering (the sheet rates and counts as
     // recognised only the photos the player saw).
-    ph: ph
-      .filter(p => p !== unseen)
-      .map(p => p.f)
-      .join(' '),
+    ph: seenPh.map(p => p.f).join(' '),
     ch: chs.join(' '),
     e: Math.round(100 * res.e) / 100,
     th: th0,
@@ -836,24 +805,102 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   const h0 = HOLDS;
   holdStep(ans.e, good);
   startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
-  // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
-  if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
-  if (warm) comebackStep(rT, th0, dm, k, good);
+  if (warm) comebackStep(q.R, th0, dm, k, good);
   answeredAt(s, good);
   // Every subject's answers go to the sheet. A subject the
   // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
   // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
   logAnswer(ans);
   save();
-  // Achievements on the photos seen before answering: a corallites hint left closed is not one.
+  // Achievements on the photos seen before answering: a corallites hint left closed is not one. The runs and Sharp eye
+  // count in the photo quiz only (progress.js achRunIn), so a live answer neither extends nor breaks a run.
   // progress.js (tier 4, index.html) may come after the first answers of a first visit: its start-up check (achCheck)
   // then counts what they earned.
-  if (typeof achAfter === 'function')
-    achAfter(
-      good,
-      ph.filter(p => p !== unseen),
-      cur
-    );
+  if (typeof achAfter === 'function') achAfter(good, seenPh, cur);
+  return {res, s, h0};
+}
+// tap: a Find the X's photo tapped (question), logged as pa; null for any other question.
+function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
+  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
+  // a comeback question takes its genus's recall as it is now.
+  if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
+  // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
+  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
+  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+  // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
+  // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
+  // against it as a wrong pick does, and the mix-up is counted.
+  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null;
+  TYPEDQ = null;
+  const good = c === target,
+    s = st(target),
+    chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
+  // Infinity: the expected success has no 1/k floor).
+  const nc = $v.querySelectorAll('[data-c]').length || 4,
+    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+  session.n++;
+  session.h = [...session.h, good].slice(-10);
+  pulseNote();
+  if (good) session.ok++;
+  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
+  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
+  // the opening hold is the one the question really had.
+  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
+    seenPh = ph.filter(p => p !== unseen),
+    // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
+    mu = mimUnit(target, seenPh[0]);
+  // No exam question in the custom quiz.
+  const exq = EXAMQ === target && cur !== CUSTOM_H;
+  // The mode's suffixes (docs/spec/sync.md "Mode"), the sheet reading |kN at the end:
+  // |x: a mastery exam question (never |kN: an exam has every trap);
+  // |kN: a photo-quiz question with fewer than 4 choices ("Again: A or B?"), rated as N choices;
+  // |d: a duel slipped into the photo quiz (CONTRAST);
+  // |f: a Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): ph its own photo only, ch the four
+  //   photos' units, a and pa the unit and the photo tapped;
+  // |c: a comeback question (model.js comebackOf), in the hold with its own e (|w: the old gentle restart, old rows);
+  // |s: the custom quiz, right after quiz: rated as the photo quiz, told apart by the admin.
+  const mq =
+    modeBase(cur) +
+    (photoQuiz(cur) && AUTOD ? '|d' : '') +
+    // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
+    (photoQuiz(cur) && FINDX ? '|f' : '') +
+    (warm ? '|c' : '') +
+    // |h: a held-out photo shown (core.js treeHeld: only the mastery exam asks them, so …|h|x),
+    // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
+    // any answer.
+    (ph.some(p => p && p.ho) ? '|h' : '') +
+    (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
+    // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its
+    // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
+    (tq ? '|t' : '') +
+    (exq ? '|x' : '');
+  // Scored, kept and logged as every counted answer is (recordAnswer, live.js liveLog too).
+  const {h0} = recordAnswer({
+    cur,
+    mq,
+    target,
+    c,
+    k,
+    chs,
+    ph,
+    unseen,
+    cor,
+    exq,
+    tq,
+    warm,
+    R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
+    Rc: warm && !good && GX(c) ? recallAt(c) : 1,
+    mu,
+    tm,
+    tap
+  });
+  // (exq, above: never from the custom quiz.)
+  EXAMQ = null;
+  // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
+  if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back

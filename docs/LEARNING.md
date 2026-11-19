@@ -158,7 +158,7 @@ A wrong answer counts against both units (rule L2), but differently:
 
 ### One scorer
 
-Every answer is scored by one function, `core.js` `scoreAnswer`, in the live game (`quiz.js` `answer`) and in every
+Every answer is scored by one function, `core.js` `scoreAnswer`, in the game (`quiz.js` `recordAnswer`) and in every
 full replay of the answer log (the sheet's, the admin's, a device's: `core.js` `replayProgress`), so a rule is written
 once and both give the same state. Its inputs, as the game had them:
 
@@ -173,8 +173,8 @@ e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the
 the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
 subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
 Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
-means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the hold) stays in
-`quiz.js` `answer`.
+means what the game scored, wherever it is replayed. What only the game knows (exam, hold) is in
+`quiz.js` `recordAnswer`, for every game.
 
 ### Response time
 

@@ -34,8 +34,8 @@ admin's Journey).
   groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
 
 The runs and Sharp eye count only in the normal photo quiz (its Again, typed questions and slipped-in duels included),
-never in the custom quiz or the Duel tab: an answer there neither extends nor breaks the run (`achAfter(good, ph, cur)`,
-`achRunIn`).
+never in the custom quiz, the Duel tab or a live game: an answer there neither extends nor breaks the run
+(`achAfter(good, ph, cur)`, `achRunIn`); its other achievements count as anywhere.
 
 Descriptions say what the player can now do ("You told two look-alikes apart"); counts stay counts. Achievements are
 only added: nothing takes one back but the recount below (a learned mark taken away keeps them: below).
@@ -70,7 +70,7 @@ card (`achDot`) and a "New" tag on `#leaderboard/achievements`, which clears the
 
 **The record** (`reefid-sync-ach`, a `reefid-sync` key, so synced): `{id: time, _run, _best, _cor, _hard, _gone,
 _basics, _fb, _rep, _thx, _thxAt}` (the fish's done feat `_fbasics` too). `achSnap()` builds the snapshot; `achAfter()`
-runs after each answer (the run of right answers, one-off feats; `quiz.js` `answer` passes the game, `cur`);
+runs after each answer (the run of right answers, one-off feats; `quiz.js` `recordAnswer` passes the game, `cur`);
 `mergeSaved()` unions two devices' records with `achMerge` / `core.js` `mergeAch` (each achievement with its earliest
 date, the best run kept, the current run this device's).
 

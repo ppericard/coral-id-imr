@@ -88,11 +88,15 @@ test('the app: every answer logged gets its attempt id from answerId (live: live
   // No answer id made the old way anywhere an answer is logged.
   assert.doesNotMatch(quiz, /id: Date\.now\(\)\.toString\(36\)/);
   assert.doesNotMatch(live, /id: Date\.now\(\)\.toString\(36\)/);
-  assert.strictEqual((quiz.match(/^\s+id: answerId\(\),$/gm) || []).length, 2, 'quiz.js answer and winkAnswer');
+  // quiz.js recordAnswer (the photo quiz's answers and the live ones: live.js passes its liveAid) and winkAnswer.
+  assert.strictEqual((quiz.match(/^\s+id: answerId\(\),$/gm) || []).length, 1, 'quiz.js winkAnswer');
+  assert.strictEqual((quiz.match(/^\s+id: id \|\| answerId\(\),$/gm) || []).length, 1, 'quiz.js recordAnswer');
   assert.ok(live.includes('id: liveAid(o.pid, o.qi),'));
   assert.ok(live.includes('{qi: x.qi, pid: LV.pid, s: j.s,'), 'the waiting answer keeps its player id');
-  assert.strictEqual((quiz.match(/^\s+\.\.\.cvField\(\)$/gm) || []).length, 2, 'quiz.js answer and winkAnswer');
-  assert.strictEqual((live.match(/^\s+\.\.\.cvField\(\)$/gm) || []).length, 1);
+  assert.strictEqual((quiz.match(/^\s+\.\.\.cvField\(\)$/gm) || []).length, 2, 'quiz.js recordAnswer and winkAnswer');
+  // live.js logs through quiz.js recordAnswer: no log row of its own.
+  assert.strictEqual((live.match(/^\s+\.\.\.cvField\(\)$/gm) || []).length, 0);
+  assert.ok(live.includes('recordAnswer({'));
   // Both of sync.js's sends go through logOut (core.js: cv left out below CV_SHEET).
   const sync = read('sync.js');
   assert.ok(sync.includes('answers: log.map(a => logOut(a, sheetV())),'));

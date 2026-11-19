@@ -247,7 +247,9 @@ test('a family question, and the corals: the spelling message as before (no comm
 });
 
 test('answer logs the refused texts (rj) with a typed answer, nothing when there were none', () => {
-  const a = cut(quiz, 'function answer(', '\nfunction ', {file: 'quiz.js'});
+  // The log row is built by quiz.js recordAnswer, which answer() hands its typed question (tq).
+  const a = cut(quiz, 'function recordAnswer(', '\nfunction ', {file: 'quiz.js'});
+  assert.match(cut(quiz, 'function answer(', '\nfunction ', {file: 'quiz.js'}), /recordAnswer\(\{[^}]*\n\s+tq,\n/);
   assert.match(a, /\.\.\.\(tq && tq\.rj && tq\.rj\.length \? \{rj: tq\.rj\.slice\(0, TYPEDQ_RJ\)\} : \{\}\),/);
   assert.match(quiz, /\(m, text, sp, rj\) => \{\n\s+Object\.assign\(TYPEDQ \|\| \{\}, \{m, text, sp, rj(, [^}]*)?\}\);/);
 });
