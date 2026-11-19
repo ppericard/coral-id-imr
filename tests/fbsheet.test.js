@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// The short feedback sheet (Pierre, 2026-11-18, rule C3; docs/reviews/2026-11-18-feedback-sheet-study.md): its one decisive
-// line (quiz.js pairLine, pairText, fbLine), the sheet's shape (fbBody: verdict, species line and one line outside the More
-// panel, the rest inside it, More and Next on one row) and the montage without its two notes. Run from quiz.js itself.
+// The short feedback sheet (rule C3; docs/reviews/2026-11-18-feedback-sheet-study.md): its one decisive line (quiz.js
+// pairLine, pairText, fbLine), the sheet's shape (fbBody: verdict, species line and one line outside the More panel, the
+// rest inside it, More and Next on one row) and the montage without its two notes. Run from quiz.js itself.
 // node --test tests/fbsheet.test.js
 const test = require('node:test');
 const assert = require('node:assert');
@@ -51,7 +51,7 @@ const GEN = {
   Merulina: {sum: 'A summary, not a tip', look: ['Porites']},
   's:s091': {name: 'Ternate chromis', rank: 'species', qt: null, lk: []}
 };
-// a fish record has its IMR sub-entries and phases (core.js fishGen), none here
+// a fish record has its IMR sub-entries and phases (core.js treeGen), none here
 Object.values(GEN)
   .filter(g => g.name)
   .forEach(g => Object.assign(g, {sub: [], phase: []}));
@@ -84,7 +84,7 @@ test('a pair line is the one a record gives for its look-alike: IMR first (lk), 
     t: 'Angelfish: spine on the gill cover, iridescent blue',
     s: 'IMR'
   });
-  // an edited line names the source the editor gave, after IMR (Q359 a, e)
+  // an edited line names the source the editor gave, after IMR
   assert.strictEqual(pairLine('f:Angelfishes', 'f:Butterflyfishes').s, 'IMR; a made-up source');
   // a pair IMR does not declare: our own line and the family's sources (rule C2), never IMR's name
   assert.deepStrictEqual(plain(pairLine('f:Surgeonfishes', 'f:Rabbitfishes')), {

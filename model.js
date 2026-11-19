@@ -86,6 +86,23 @@ const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
 // u: calU(), passed in by a caller that reads it once for many photos (photoSet).
 const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+// The calibration set (calibration-set.json, written by tools/calibset.js, read by app.js into CALSET: {subject id:
+// {unit: [photo files]}}; docs/LEARNING.md "The calibration set"): a fixed set of game photos, each weighing CSET.B
+// times as much while the sheet's plain count of its answers is under CSET.N, so each gathers the answers that measure
+// its difficulty, for a placement test built on them later. photoSet applies it only on a unit the player holds and to
+// a photo within one width of the question's target: it never pulls a photo that does not suit the player. A normal
+// question in every way: the factor multiplies the photo's weight and nothing else (its targeting, memory, format and
+// scoring are any photo's). A subject without a set, or a file that could not come, draws as before (factor 1).
+const CSET = {B: 2, N: 20};
+let CALSET = {},
+  SETF = null;
+// The current subject's members, one Set, made again when the subject or the file changes.
+const setFiles = () => {
+  if (!SETF || SETF.s !== SUBJ.id || SETF.c !== CALSET)
+    SETF = {s: SUBJ.id, c: CALSET, f: new Set(Object.values((CALSET && CALSET[SUBJ.id]) || {}).flat())};
+  return SETF.f;
+};
+const setBonus = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals), so in a big pool the floor's
 // mass does not drown the prior's lean.
@@ -128,7 +145,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
       .filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
-  const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
+  // The calibration set's factor (setBonus, in w below) holds to the same condition, and to a photo within one width of
+  // the target, so it never pulls a photo onto a genus still being learned or away from the player's level
+  // (docs/LEARNING.md "The calibration set").
+  const held = level(n)[0] !== 'new' && !shaky(n),
+    calQ = !shift && held && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n, shift),
     s = P[n] || {},
     ro = s.ro || [],
@@ -157,7 +178,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
       k = mem[p.o || p.f];
-    let r = Math.exp((-x * x) / 2) * calBonus(p);
+    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
@@ -291,15 +312,34 @@ const varHome = n => {
 };
 const varAtOf = (n, v) => ((GX(n) || {}).varAt || {})[v] || ((GX(varHome(n)) || {}).varAt || {})[v] || VAR_AT[v] || [0, 0];
 const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
+// The mimicry class (docs/LEARNING.md "The mimicry class"): a photo of a species a source says resembles another (its
+// home's mim, app.js mimLay: its juvenile photos, or every photo) comes into its unit's draw on its unit's bar from Open
+// Water once a unit of the species it resembles is met (MIM_AT.met), and at Advanced while none is (MIM_AT.alone), so it
+// never waits on a unit the player may not open. The draw only: its kind and its group for "Learned" stay its phase's
+// (core.js varKindOf, varUnit), as the sheet's replay reads them. A pair inside the unit asked (two blennies of one
+// family, asked as the family) holds nothing back: the photo asks the same name as its model. The model's units met are
+// counted without the unit asked and its home, so a genus waits on the model's genus, not on the family they share.
+const MIM_AT = {met: [0.5, 0.8], alone: [0.8, 0.8]};
+// mimIn: the entry of photo p among a unit's entries L, null for none.
+const mimIn = (L, p) => (L && p && L.find(m => m.sp === p.sp && (m.st !== 'juvenile' || phaseOf(p) === 'juvenile'))) || null;
+const mimOf = (n, p) => mimIn((GX(varHome(n)) || {}).mim, p);
+const mimAt = (m, n) => (m.m.some(id => id !== n && id !== varHome(n) && GX(id) && introduced(id)) ? MIM_AT.met : MIM_AT.alone);
 // The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
-// kind's ramp on the unit's bar (genScore), 1 for a photo with no variant; on, whether anything is held back: false when
-// nothing is, or when fewer than PICKD.VARIETY observations of L are at full weight (the fallback: nothing held back, f
-// then 1 everywhere).
+// kind's ramp on the unit's bar (genScore), a photo of the mimicry class its own ramp (mimOf, mimAt), 1 for a photo with
+// no variant; on, whether anything is held back: false when nothing is, or when fewer than PICKD.VARIETY observations of L
+// are at full weight (the fallback: nothing held back, f then 1 everywhere).
 function varOf(n, L) {
   const juv = (GX(varHome(n)) || {}).juv,
     F = {},
+    ML = (GX(varHome(n)) || {}).mim,
+    MF = new Map(),
     kind = p => varKindOf(p, juv),
     f0 = p => {
+      const m = ML ? mimIn(ML, p) : null;
+      if (m && !m.m.includes(n)) {
+        if (!MF.has(m)) MF.set(m, varRamp(genScore(n), mimAt(m, n)));
+        return MF.get(m);
+      }
       const v = kind(p);
       if (!v) return 1;
       if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));
@@ -308,9 +348,53 @@ function varOf(n, L) {
   const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
 }
+// The mimicry class drilled (docs/LEARNING.md "The mimicry class"). mimUnit: on a question about unit t, the unit at t's
+// rank of the species a photo p of the class resembles (its entry's m), the trap that photo sets; null for a photo of no
+// class, or when the pair sits inside t (two blennies asked as their family).
+const mimUnit = (t, p) => {
+  const m = p ? mimOf(t, p) : null,
+    u = m ? m.m.find(x => GX(x) && rankOf(x) === rankOf(t)) : null;
+  return u && u !== t ? u : null;
+};
+// Whether unit n's draw gives some photo keep accepts a weight now (varOf: the variants' and the class's ramps), so a
+// drill kept to such photos never shows one its unit still holds back (photoSet draws at random when all weigh 0).
+const drawHas = (n, keep) => {
+  const L = ['wide', 'medium', 'macro'].flatMap(v => gamePics(n, v)).filter(p => gamePhotoOk(n, p)),
+    V = varOf(n, L);
+  return L.some(p => keep(p) && V.f(p) > 0);
+};
+// The photos a pair's drill shows on its unit n (photoSet keep): on the resembling side's units (app.js mimLay u) the
+// photos of the class, on the side resembled (m) its species at the stage that is resembled; never, as on the card, a
+// photo taken outside the region of a species whose look varies by region (ra, rb: loc world); null for another unit.
+const mimSide = (m, n) =>
+  m.u.includes(n)
+    ? p => mimIn([m], p) === m && !(m.ra && p.loc === 'world')
+    : m.m.includes(n)
+      ? p => p.sp === m.pair.b && ((m.pair.st || {}).b !== 'juvenile' || phaseOf(p) === 'juvenile') && !(m.rb && p.loc === 'world')
+      : null;
+// The keep of pair id's drill on unit n of the two units asked (an Again or a duel), when that side's draw holds such a
+// photo now; null otherwise (any photo of n, as for every pair).
+const mimKeep = (id, pair, n) => {
+  const m = id ? pair.flatMap(x => (GX(varHome(x)) || {}).mim || []).find(e => e.pair.id === id) : null,
+    k = m ? mimSide(m, n) : null;
+  return k && drawHas(n, k) ? k : null;
+};
+// The class's duels among the units of list, at the subject's own rank as every duel: [a, b] for each entry of a family a
+// whose species resembled is of another family b of list, its pair's id in mim, once ok(m) holds and both sides' draws
+// hold their photos now (drawHas), so its two sides take turns as in any duel.
+function mimPairs(list, ok = () => true) {
+  const out = [];
+  for (const a of list.filter(x => !rankOf(x)))
+    for (const m of (GX(a) || {}).mim || []) {
+      const b = m.fb;
+      if (b !== a && list.includes(b) && ok(m) && drawHas(a, mimSide(m, a)) && drawHas(b, mimSide(m, b)))
+        out.push(Object.assign([a, b], {mim: m.pair.id}));
+    }
+  return out;
+}
 // The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several, its held-out
 // photos (g.held) among them: the exam draws from those first, and the variant groups (varUnitOf) read the unit's
-// photos whole, as the sheet's replay does (core.js fishVarTable, made without the set).
+// photos whole, as the sheet's replay does (core.js treeVarTable, made without the set).
 function examPics(n) {
   const g = GX(n),
     two = g.levels === 2,
@@ -327,7 +411,7 @@ function examPics(n) {
 // of unit n (core.js VAR_GROUPS: juveniles, sexes and colour phases) with a photo released by its mastery (varOf) and
 // none answered right yet (s.ps). While one is left, the exam's next question draws its photo (examSet) and the exam is
 // not passed (examPassed); [] for a unit with no variant (the corals). Through core.js varUnit and varLeftOf, as the
-// sheet's replay (rules D8, D9: core.js fishVarTable, replayedOf), so the app and the sheet decide alike.
+// sheet's replay (rules D8, D9: core.js treeVarTable, replayedOf), so the app and the sheet decide alike.
 function varUnitOf(n) {
   if (!GX(n)) return null;
   const {need, pics} = examPics(n);
@@ -355,8 +439,8 @@ function varRight(n, L) {
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
-// The held-out photos (the fish: fish-holdout.json, core.js fishHeld; docs/LEARNING.md "The held-out photos in the
-// game"): a unit's held list (g.held, core.js fishGen), never in its views, so no game, card, sheet or list shows them.
+// The held-out photos (the fish: fish-holdout.json, core.js treeHeld; docs/LEARNING.md "The held-out photos in the
+// game"): a unit's held list (g.held, core.js treeGen), never in its views, so no game, card, sheet or list shows them.
 // Only the mastery exam asks them (examSet), unannounced and counted like any answer, logged |h (quiz.js answer).
 // shownAll: the photos this player was ever shown, on any unit of the subject (each unit's s.ps: {file: [shown, right]}).
 const shownAll = () =>
@@ -549,7 +633,7 @@ const shareRoom = n => {
     t = Object.values(S.w).reduce((a, x) => a + x, 0);
   return c >= 1 || (c > 0 && (t > 0 ? g / t : 0) < c);
 };
-// The opening's pace (docs/LEARNING.md "After the collapsed runs of 2026-11-03", item 1): the genera opened on a card
+// The opening's pace (docs/LEARNING.md "One opening rule", "Opening pace"): the genera opened on a card
 // (the first cards, or one of their own) in the last OPEN.WIN answers, as at `at` (the answers count at which the
 // question will show).
 const openRecent = (at = answersSoFar()) =>
@@ -603,7 +687,7 @@ const laterWaits = fresh => {
 // A unit in no group is a lone unit; a declared pair the cap kept apart pulls nothing. MAX 3: the size of the
 // interleaving studies.
 const GROUP = {MAX: 3};
-// A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js fishGenera: a fish scientific
+// A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js treeGenera: a fish scientific
 // genus's `look` holds every sibling genus by construction, its `decl` the genera of its IMR sub-entry), else `look`.
 const declaredOf = n => (GX(n) || {}).decl || (GX(n) || {}).look || [];
 const declared = (t, n) => declaredOf(t).includes(n) || declaredOf(n).includes(t);
@@ -798,7 +882,7 @@ const introReady = n => {
 // "I've had the IMR lecture": an RA has seen every genus in the lecture, so one card at a time would hold them back. On
 // the first cards and in My progress, one tap opens at once, without cards, every unit the lecture teaches (app.js
 // UNITS core: the fish circle 1; the corals' whole slate). The bonus genera (opt-in, app.js BONUS) and the later fish
-// circles (app.js fishGate) still open one at a time.
+// circles (app.js treeGate) still open one at a time.
 const unitsNow = () => (typeof UNITS === 'object' && UNITS[SUBJ.id]) || {};
 const slateCore = () => (unitsNow().core || slateGenera)();
 const introLeft = () => slateCore().filter(n => !introduced(n));
@@ -1255,7 +1339,7 @@ const misses = h => [...h].filter(x => x === '0').length;
 // first-launch answer's level (startV().p, core.js playerStart); the sheet replays that prior too, so an adopted replay
 // never takes back what the game did live.
 const startP = () => startV().p;
-// A unit whose record names the unit it starts from (from: a fish species, its family; core.js fishSpUnits) starts from
+// A unit whose record names the unit it starts from (from: a fish species, its family; core.js treeSpUnits) starts from
 // that unit's ability when never answered (core.js abilityOf).
 const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
@@ -1412,11 +1496,18 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // fish, judging/FISH.md) adds its own prior: (PDIFF.MID - ease) x the subject's calibration ease (SUBJECTS calib,
 // core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
 // photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
+// A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
+// rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
+// keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
+// has since left (moved or renamed): it then takes its current genus's offset.
 const PDIFF = {W: 5, MID: 3};
+const gdOff = n => (PGD[n] || [0])[0] || 0;
 function photoDiff(n, p) {
-  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f];
-  return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
+  if (!o) return prior;
+  const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
+  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W);
 }
 // Progress of a genus (s.pg, a moving average of its answers; core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress
 // (moving average) and mastery"): each answer weighs what it proves, w from 0 to 1, by core.js pgRightW, pgMissW and
@@ -1424,8 +1515,10 @@ function photoDiff(n, p) {
 // typed, in full) and the look-alikes (in full when a genus it gets confused with is among the choices, PROG.LOOK
 // otherwise). A miss weighs in full on a photo at the player's level, less on a harder one; a right answer on a known
 // photo, only what memory does not explain. Photo difficulty is left out of a right answer's weight (docs/LEARNING.md).
-// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look).
-const pgLook = (t, chs) => chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
+// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look), or
+// also, the unit the photo of the mimicry class resembles (mimUnit).
+const pgLook = (t, chs, also = null) =>
+  chs.some(n => n !== t && GX(n) && (n === also || pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
 function pgWeight(t, chs, k) {
   return pgRightW(k, pgLook(t, chs));
 }
@@ -1609,14 +1702,14 @@ function confOf(t, n) {
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
-// Known mix-ups (docs/LEARNING.md "After the collapsed runs of 2026-11-03", 3a): a question on t among choices that hold a
+// Known mix-ups (docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a
 // genus this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits:
 // the player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
 // step, the progress and the photo's aim all take it. Only with 3 or more plausible choices (k): on 2-choice contrast
 // questions it made the prediction worse.
 const confTerm = (t, chs, k) =>
   k >= 3 ? Math.max(0, ...chs.filter(n => n !== t && GX(n)).map(n => confGap(pairConf(P, t, n), pooledConf(t, n)))) : 0;
-// Look-alikes from the data (core.js dataLook; docs/LEARNING.md "After the collapsed runs of 2026-11-03"): a pair no
+// Look-alikes from the data (core.js dataLook; docs/LEARNING.md "Look-alikes from the data"): a pair no
 // source declares, offered together CONF.N times or more and mixed up so often that its pooled score (pooledConf)
 // reaches CONF.TRAP. Such pairs join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus
 // sheet's "Don't confuse with" (learn.js lookHub). A seeded pair (dataSeed: one iNaturalist's identifications show) is
@@ -1628,7 +1721,7 @@ const isDataLook = (a, b) => {
   const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
   return !!c && c[0] >= CONF.N && dataLook(c, pooledConf(a, b));
 };
-// The data look-alikes a subject's data seeds (app.js fishGenera dl: the sea slug genera only iNaturalist's
+// The data look-alikes a subject's data seeds (app.js treeGenera dl: the sea slug genera only iNaturalist's
 // identifications show as look-alikes, tools/seaslug_game.py genus_looks), either way round.
 function dataSeed(a, b) {
   return ((GX(a) || {}).dl || []).includes(b) || ((GX(b) || {}).dl || []).includes(a);
@@ -1653,7 +1746,7 @@ const labelKey = x =>
     .replace(/[^a-z]/g, '');
 const choiceKey = n => labelKey((GX(n) || {}).name || n);
 // The labels a choice must not carry on a question about unit t: its own, and every other name its record lists (also:
-// a fish species' listed common names with their spellings, app.js fishGenera), since each of them names t too
+// a fish species' listed common names with their spellings, app.js treeGenera), since each of them names t too
 // (typed, any of them is right). Outside IMR, "Longnose butterflyfish" is the main name of F. longirostris and
 // a listed name of F. flavissimus: never a wrong choice on a photo of F. flavissimus.
 const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map(labelKey)].filter(Boolean));
@@ -1735,10 +1828,23 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
 // Elo, the progress and the photo's aim (aimOff) count a guess as 1 in (target + the plausible wrong choices) while traps
 // are few (0 or 1): easy choices from other growth forms are not plausible, so such a question is scored as a 2- or
 // 3-choice one (a right answer there proves less, and its photo is harder). From 2 traps on, every choice counts.
-const plausibleK = (t, choices) => {
+// also: the unit a photo of the mimicry class makes a trap (mimUnit), plausible on that photo whatever its scores.
+const plausibleK = (t, choices, also = null) => {
   const tf = imrFormsOf(t);
-  return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
+  return Math.max(2, choices.filter(n => n === t || n === also || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
 };
+// The choices ch of a question on t with u, the unit its photo of the mimicry class resembles (mimUnit), among them: in
+// the place of the wrong choice that carries u's label, else of the weakest look-alike among them (the traps trapsFor
+// gave, as distractors finds them), so the question keeps its number of traps, else of the one least confused with t;
+// ch itself when u is there.
+function mimTrap(t, ch, u) {
+  const W = ch.filter(n => n !== t);
+  if (!u || ch.includes(u) || !W.length) return ch;
+  const look = W.filter(n => confusable(t, n) || pooledConf(t, n) >= CONF.TRAP),
+    least = L => L.reduce((a, n) => (confOf(t, n) < confOf(t, a) ? n : a)),
+    out = W.find(n => choiceKey(n) === choiceKey(u)) || least(look.length ? look : W);
+  return ch.map(n => (n === out ? u : n));
+}
 // Custom quiz (docs/LEARNING.md "Custom quiz: the photo quiz on the genera the player picks"): the photo quiz limited to
 // the genera the player picks (quiz.js quizCustom, planPhoto), with all its rules but the mastery exam (rule L9: the
 // selection may hold no look-alike); only the genus asked and the wrong choices change:
@@ -1822,6 +1928,66 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
   // (e.g. AD skipped while D could not join yet, then D joined through E).
   C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
   return C.sort((x, y) => y.w - x.w);
+}
+// ---------- Look-alike pairs, shared by the quiz and the Learn pages ----------
+// The quiz (its duels, mix-up montage and cards) and My progress read these, so they come with the quiz's tier; the Learn
+// pages (learn.js: Look-alikes, the genus sheets, the Genera page) read them too and come later (docs/spec/loading.md
+// "Load order in tiers").
+// Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
+// in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
+// genera reads the same references (weighted, above: a ★ genus opens after the genera its card names).
+function shownGroup(n) {
+  return lectureGroup(DATA, n);
+}
+const starNote = n => {
+  const L = starRefs(DATA, n);
+  return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
+};
+// The look-alike pairs of the slate (data.json gen look, either genus listing the other), each [A, B] in alphabetical
+// order, once: the duels (app.js UNITS pairs) and the Look-alikes deck (learn.js classics).
+function pairs() {
+  const seen = new Set(),
+    out = [];
+  Object.keys(DATA.gen).forEach(a =>
+    DATA.gen[a].look.forEach(b => {
+      const k = [a, b].sort().join('|');
+      if (DATA.gen[b] && !seen.has(k)) {
+        seen.add(k);
+        out.push(k.split('|'));
+      }
+    })
+  );
+  return out;
+}
+// The source that compares a and b (data.json lsrc), from whichever genus lists the other; '' when none.
+const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
+// Classic look-alikes: the pairs a source compares in so many words, the IMR lecture (lsrc "IMR Lecture 6...") or the
+// Coral Finder text ("Coral Finder p. ..."): the Look-alikes deck (learn.js classics) and a duel's weight (quiz.js
+// duelPick).
+const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+// How many times this player gave one of a and b for the other, both ways (P conf).
+const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
+// The two photos of two genera that make the best side by side (the quiz's mix-up montage, quiz.js; the Look-alikes
+// montages, learn.js montage): same growth form first, then nearest the front and, when the photos come from all zoom
+// levels ("All"), the nearest zoom levels. The same form is looked for in every photo of the lists, not only the first
+// 6, so a plate genus is shown beside a plate look-alike when one exists; "x" (form not visible) matches nothing.
+// Without a same-form pair, the best pair among the first 6 of each list.
+const ZOOM = {wide: 0, medium: 1, macro: 2};
+function photoPair(LA, LB, fa, fb) {
+  let best = null;
+  const A = fa ? [fa] : LA,
+    B = fb ? [fb] : LB;
+  const gap = (x, y) => (x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0);
+  A.forEach((x, i) =>
+    B.forEach((y, j) => {
+      const same = !!x.form && x.form !== 'x' && x.form === y.form;
+      if (!same && (i >= 6 || j >= 6)) return;
+      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
+      if (!best || sc < best[0]) best = [sc, x, y];
+    })
+  );
+  return best ? [best[1], best[2]] : [];
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();

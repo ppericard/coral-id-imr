@@ -226,10 +226,10 @@
         }[k]
     );
 
-  // The fish's own families in their identification groups: the key's groups that hold families in the game (FISH.groups,
+  // The fish's own families in their identification groups: the key's groups that hold families in the game (TREEU.groups,
   // never numbered here), each family with its cover photo, the way the families page shows them (learn.js viewFishList).
   const groupsShown = () =>
-    ((FISH && FISH.groups) || []).map(gr => ({gr, units: slateGenera().filter(n => GX(n).group === gr.n)})).filter(x => x.units.length);
+    ((TREEU && TREEU.groups) || []).map(gr => ({gr, units: slateGenera().filter(n => GX(n).group === gr.n)})).filter(x => x.units.length);
   const groupView = ({gr, units}) => {
     const flat = [];
     return {
@@ -338,11 +338,11 @@
       all: false,
       pick: 'The identification groups',
       get say() {
-        const k = FISH && FISH.key;
+        const k = TREEU && TREEU.key;
         return `Fish books sort the reef fish into groups, mostly by body shape. These are the groups of ${k ? k.short : 'the identification key'}, the book the IMR course follows. Tap a group to see its families.`;
       },
       get src() {
-        const k = FISH && FISH.key;
+        const k = TREEU && TREEU.key;
         return `${k ? 'Identification groups: ' + k.cite + '. ' : ''}${DECK}: the course teaches the families by shape groups.`;
       },
       get views() {

@@ -1,10 +1,9 @@
 require('./slot.js').testGuard();
-// Player groups (sheet v179; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre arbitraire de
-// groupes"; "Staff" is not a role): one group model replaces the beta groups, the one cohort per player and the staff
-// (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and two settings, board and beta
-// (docs/decisions/2026-11-18-no-apart-groups.md); a player is in any number of groups. Every subject's board reply gives the general board,
-// everyone (rows), and each board group's, its members (groups); the migration (ONCE_ groups) makes the
-// groups of the data before, nothing lost. Against the in-memory sheet only (rule D1); made-up names.
+// Player groups ("Staff" is not a role): one group model in place of the beta groups, the one cohort per player and the
+// staff (Code.gs groupState_, groupDo_, groupBoards_). A group has a name and two settings, board and beta
+// (docs/decisions/2026-11-18-no-apart-groups.md); a player is in any number of groups. Every subject's board reply gives
+// the general board, everyone (rows), and each board group's, its members (groups); the migration (ONCE_ groups) makes
+// the groups of the older data, nothing lost. Against the in-memory sheet only (rule D1); made-up names.
 const test = require('node:test'),
   assert = require('node:assert'),
   vm = require('vm');
@@ -157,7 +156,7 @@ test('no apart: the general board shows everyone, each group board all its membe
     );
   });
   assert.strictEqual(s.sheets['Group settings'].rows[1][3], 0, 'the Apart column written 0');
-  // A row an older script wrote with Apart 1 (the staff of v179) changes nothing.
+  // A row an older script wrote with Apart 1 (its staff) changes nothing.
   s.sheets['Group settings'].rows[1][3] = 1;
   run(s, 'boardsDrop_()');
   assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve']);
@@ -262,7 +261,7 @@ test('rule D7: a merge joins every group of the merged name to the kept one; a d
   );
 });
 
-// The migration (ONCE_ groups, rule W3): the data before v179, written as the script before wrote it.
+// The migration (ONCE_ groups, rule W3): the data of a script without player groups, written as that script wrote it.
 function before() {
   const s = five();
   save(s, 'Fay', 3, '9999');

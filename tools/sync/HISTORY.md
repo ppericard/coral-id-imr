@@ -16,9 +16,21 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v189 (2026-11-19)
+
+The fish's own pooled statistics are read by the app from this version (`core.js` `SUBJECTS` `fish` `stats`, `FISHST_SHEET`): `?stats=1&s=fish` has served their photo ratings, unit offsets and pair counts from the `Stats Fish` snapshot since v137, rated at the rank each question asked, and the app now asks for them (`sync.js` `loadOwnStats`) and keeps a reply that names the fish and comes from this version or later, as it does for the sea slugs' (admin plan PR 11). Each photo of a `?stats=1` reply now carries a 5th element, the unit whose offset is in its served difficulty (`statsOut_`, `core.js` `eloOf`): a fish photo is shown at several ranks, so the app swaps that unit's offset for the one of the unit it asks (`model.js` `photoDiff`; Codex review #1148); a coral photo has one genus, so nothing changes for the corals but a photo rated last under a genus it has since left (moved or renamed), which takes its current genus's offset. The replay of the fish's progress still reads no pooled number, a row carrying the scoring record it was scored with
+
+## v188 (2026-11-19)
+
+The embedded `core.js`'s photo fallback tells an R2 address by parsing it as a URL: `photoOnR2` compares its origin with `PHOTO_BASE`'s whole (and its path under the base's), `photoHasR2` tests each address of a `src`, `srcset` or inline style so, and `photoFallback` and `photoRetry` use them instead of looking for `PHOTO_BASE` anywhere in the text, so an address that only names R2 in its path, query or user part, or a look-alike host, is no R2 photo (the CodeQL alert "Incomplete URL substring sanitization" that held #1121; the integrator's call, 2026-11-19, as agreed in `docs/STATUS.md`: fix the check, no dismissal). The script itself never runs these page functions: nothing it reads, writes, replays or serves changes; no gate and no rules version
+
+## v187 (2026-11-19)
+
+The tree engine's names in the embedded `core.js` and in the script's own calls: the code every tree subject runs through is named `tree*` instead of `fish*` (`CORE_.treeGen`, `treePhotos`, `treeGameRead`, `treeReplayGen`, `treeBoardTree`, `treeVarTable`, `treeStructure`, `treePid`, `treeSheets`…), and the corals' `SUBJECTS` entry says it is the flat subject (`flat`), which the app asks instead of comparing a pool file's name (architecture review of 2026-11-18, step 3; the integrator's call, a name inside the code). Nothing the script reads, writes, replays or serves changes; no gate and no rules version
+
 ## v186 (2026-11-18)
 
-Comments only, no behaviour change: the comments of the script and of its embedded core.js say what the code does now and why, in short, with pointers to the docs instead of dated quotes, question numbers, version tags and review references (rule W19; Pierre's go for the clean-up, 2026-11-18). The code is token for token the same once comments are stripped; the decisions that were only in the comments moved to `docs/decisions/2026-11-18-decisions-from-code-comments.md`
+The Divemaster achievement texts of the learning milestones (the genus, family and sea slug guide entries, and the comment above them) now say 85%, the mastery exam's entry the code uses (`DOM.EX`), instead of 95%, the top of the progress bar. Texts only: no behaviour change
 
 ## v185 (2026-11-18)
 

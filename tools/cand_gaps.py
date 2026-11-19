@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402  (data.json + cand.json, as fetch_local.py reads them)
-from excluded import excluded, set_aside  # noqa: E402  (photos Pierre excluded for good, set aside by the pre-sort)
+from excluded import excluded, set_aside  # noqa: E402  (photos the admin excluded for good, set aside by the pre-sort)
 from genera import game_genera  # noqa: E402  (core.js gameOf: the slate, Millepora, the bonus genera)
 
 
@@ -28,7 +28,7 @@ def short(minimum=5):
     Key-only genera are left out: tools/fetch_local.py refills them only up to what their sheet can show."""
     d = load_all()
     cand = d.get("cand") or {}
-    # Waiting = not decided yet, as fetch_local.py counts them (Codex review #365): not added, not rejected
+    # Waiting = not decided yet, as fetch_local.py counts them: not added, not rejected
     # (curation.json seen 'cand:f'), not sent away (out), not excluded.
     cur = json.loads((ROOT / "curation.json").read_text())
     gens = list((cur.get("genera") or {}).values())
@@ -65,7 +65,7 @@ def findable(g):
     if not tid:  # fetch_local.py skips it too
         return 0, 0
     for where in (DAUIN, PHILIPPINES):
-        # The same first page as the fetcher (votes order, 200; Codex review #366).
+        # The same first page as the fetcher (votes order, 200).
         url = f"https://api.inaturalist.org/v1/observations?taxon_id={tid}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200"
         for o in _get(url)["results"]:
             if ph_ok(o, tid) and any(photo_ok(ph) and str(ph["id"]) not in used and not excluded(photo_id=ph["id"]) for ph in o["photos"]):
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     for g, n, views, f in rows:
         more = ""
         if f:
-            # The fetcher looks elsewhere in the Philippines only for genera with few Dauin photos, unless --ph-all
-            # (Codex review #366): say which command finds them.
+            # The fetcher looks elsewhere in the Philippines only for genera with few Dauin photos, unless --ph-all:
+            # say which command finds them.
             ph_all = f[1] and dauin_n(g) >= POOR
             more = f", new observations: {f[0]} near Dauin, {f[1]} elsewhere in the Philippines; run: python3 tools/fetch_local.py{' --ph-all' if ph_all else ''} {g}"
         print(f"{g}: {n} waiting {views if views else ''}{more}".rstrip())

@@ -5,95 +5,95 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-18, about 21:40 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-19, about 05:20 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work (Pierre, 11:08).
 
 Last checked: reports and events: 2026-11-18 ~16:20 Manila (nothing new since the 11/17 report, already handled).
 
 ## Now
 
-Main: sheet script **v185** (#1113); the script updates from `release`, which only the train moves. Trains:
+Main: sheet script **v187** (#1146); the script updates from `release`, which only the train moves. Trains:
 `tools/train.py`, one at a time. Agents: at most 4 that write code or run tests, studies on top; model per the table
 (#1086); files only with Write/Edit; no scheduled reminders from agents (they land in the integrator's session).
 
-- **Merged since 18:45**: #1108 Fish basics (v182; the deck's two picture slides, converted by Pierre, confirm the
-  tails, markings and shapes), #1111, #1114 live lobby QR code, #1104 docs PR 1 (its three wordings confirmed by the
-  integrator as factual), #1110 short feedback sheet (v183), #1112 sea slug achievements 60-100% (v184), #1118
-  groups-carry-rights study, #1113 no "apart" groups (v185), #1120 docs PR 7, #1122, #1124 comment cleanup 2.
-- **Merging, one chain at a time** (scratchpad q30, q31): #1125 inat test flake, #1127 comment cleanup tools/tests,
-  then #1115 docs PR 2 (its train was red: the no-apart record lacked its PR line; fixed), #1123 docs PR 3 (history
-  out of ARCHITECTURE, 760 → 659 KB), #1126 comment cleanup front rest. Then #1121 comment cleanup core.js + Code.gs
-  (next version, assigned with #1123's tool), #1119 sourced tell-apart lines (merge main first: quiz.js, Code.gs),
-  #1128, the admin.js cleanup. #1117 (hooks, from the analysis session) waits for its 6 Codex threads.
-- **Agents running (3)**: coral calibration set (#1080, Opus), comment cleanup tests 2 (#1128), admin.js cleanup.
-  After #1115 merges, every open PR's decision record needs "Date: YYYY-MM-DD. PR: #N." and an index row (docs test).
-  Slips tonight: force-push (live agent), heredocs and pipes (docs and cleanup agents), `gh api` for PRs; a scheduled
-  reminder from an agent fired here. The integrator queued an old head of #1113 once (50 min lost): queue only after
-  the push shows on GitHub, and only one queue chain at a time.
+- **Merged since 03:35**: #1167, #1164, #1159, #1161, #1166, #1173 (admin smoke waits 60 s on Analyses: the cause of
+  #1168's red train), #1168 (taxonomy refresh), #1172 (inventory recheck: `docs/reviews/2026-11-19-backlog-recheck.md`,
+  pick work from it, not the 11-18 snapshot), #1174 (watermark pass 4), #1169 (admin Taxa view).
+  Then #1178 (A. wallaceae presence), #1180 (coral near-dup suggestions), #1182 (this STATUS's previous version).
+- **No agent running** (stopped at 04:52 to save quota). Their work, each with a commit "WIP, not reviewed, not tested"
+  to finish (docs, record, Codex) before any merge: #1177 (CI speed, I7), #1181 (circle-1 genera with no name root),
+  #1183 (auto-sort A7), branch `claude/tricky-pairs` (L24 f, no PR).
+- **To merge, each brought up to date with main first** (merge origin/main, keep both decision index rows, docs test,
+  CI Prettier set, `@codex review`, then `tools/train.py`, one at a time; the old session's helper scripts are gone):
+  #1130 (Q412 answered: merge; conflicts with main), #1148 (Q413 answered: merge; 2 Codex threads open), #1170, #1176,
+  then #1179. #1175 (load order): its train failed on `smoke (net)` after the merge with main: find the cause.
+- **To redo**: #1171 to option (b) (Q418). **#1121**: no dismissal; fix `photoFallback`/`photoRetry` with
+  `new URL(u).hostname` in a small PR first (next sheet version), then #1121 (comment on #1121). Waiting: #1117 (6
+  Codex threads), #1116 (Q411).
+- **Pierre, 05:15: the app's engine is one engine for every subject**, with only small per-subject parameters. Next:
+  audit where the fish or sea slug path differs from the corals', make each shared code or a stated parameter, propose
+  the rule's wording to Pierre (comment on #1148).
+- Slips tonight: agents' force-pushes (one `--force-with-lease`, #1164), `sed -i`, `&`, heredocs; the integrator
+  committed conflict markers once (fixed next commit) and chained a queue on a waiter that did not wait (train refused).
 
 ## Night queue
 
 Comment cleanup (Pierre, 19:20: "ok, lance le nettoyage cette nuit"): history out of the comments, code token-for-token
-the same (checked with acorn); decisions found only in comments moved to records.
-- core.js + Code.gs: #1121, ready (next sheet version at merge).
-- model.js, app.js, quiz.js, sync.js: #1124, merged.
-- The other front-end files (43): #1126, ready.
-- tools/ and 6 tests: #1127, ready. The other tests: #1128, running. admin.js: running, PR to come.
-- A second pass to shorten the long spec-style blocks (most comment lines are still there, now in the present
-  tense): NOT STARTED, after these merge.
-- Docs PR 3 (history out of ARCHITECTURE): #1123, ready. Docs PRs 4-6 (ARCHITECTURE as a map, LEARNING as a spec,
-  ROADMAP and handovers, with the rules audit's points 1-5 and 8): NOT STARTED, after #1115 and #1123.
-- Coral calibration set (#1080's first step): #1130, ready, waits for Pierre (Q412). Variant classes and mimicry
-  (#1085's decided parts): running.
-- Flaky inat test: #1125, ready (the test stub's ids, not the tool: real data unaffected).
-- Typed answers, what is left: #1116, ready, waits for Pierre (Q411).
+the same (acorn, `ast.dump`, parsed YAML); decisions found only in comments moved to records.
+- Done: the front end, tests/ and tools/ with the workflows. Left: the files open PRs hold (they follow their merges);
+  #1121 core.js + Code.gs (blocked: CodeQL), then a second pass on both.
+- Docs restructuring: done for ARCHITECTURE and LEARNING; ROADMAP's hygiene done (#1165). Architecture step 4 (core.js
+  split, a `slow` test tag): after #1121 and Q414.
 
 ## Next
 
-1. Versions one at a time: #1121 (Code.gs comments) after #1123; #1119 (tell-apart lines) after it.
-2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): frames model; game formats; architecture steps 3-4;
-   fish read their own stats; C12 photos. After Pierre: roles UI (#1098 + #1118), #1071, species step 2 (#1041).
+1. Versions one at a time: the `photoFallback`/`photoRetry` host-check fix (v188), then #1121 brought up to date (v189).
+2. Backlog (`docs/reviews/2026-11-18-backlog-inventory.md`): the Matrix fish game (decided; it needs core.js, so after
+   #1121); the open rows of `docs/reviews/2026-11-19-backlog-recheck.md`.
 
 ## Questions for Pierre
 
 Answered tonight: Apart removed (#1113); the comment cleanup; the rules audit (#1117's study): 1-5 and 8 ok, 6 and 7
 dropped (the docs describe a coherent model in our words; no new manual step for Pierre), 9 parked.
 
-- **Q407** Hide (Players › List) keeps a player off every leaderboard. Keep it so (recommended: simplest, right for test
-  accounts), or hide from the general board only, their groups' boards kept? (#1113)
+- **Q407** Hide (Players › List) keeps a player off every leaderboard. Keep it so (recommended), or the general board
+  only, their groups' boards kept? (#1113)
 - **Q408** The groups-carry-rights study's 8 questions, each with a recommended answer: #1118 section 6.
-- **Q409** The comment rule's wording, for the rules and a test on added lines (proposed): "A code comment says what
-  the code does and why, in the present tense, in a few lines; a decision links its record in docs/decisions/; no
-  version tags, dates, quotes or question numbers."
-- **Q410** The five new sea slug achievement names (Gill and frill, Muck magnet, Slug savant, Nudibranch nerd, Every
-  last slug): rename freely (#1112).
-- **Q411** #1116 (typed answers, what is left; green, Codex-clean but one thread left for Pierre): a typed miss counts
-  as one offer and one mix-up in the pooled pairs. On the real log 12 coral and 5 fish pairs move; Acropora's
-  confusion group becomes Anacropora's (was Astreopora and Cyphastrea), which shifts the opening order there; in the
-  level-1 simulation the expert's right % on answers 200-300 falls 95.2 → 92.2 (bounds −5.1 to −0.9), verdict
-  "unclear: one step up". Merge as is, run the level-2 simulation first (recommended), or drop the pooled part?
-- **Q412** #1130 coral calibration set (50 photos): a member drawn twice as often until 20 answers, on held genera
-  only. Simulated beginner −0.013 at question 300 ("unclear"), caught up by 600; members rated ~2 weeks sooner. Merge
-  (recommended), or no boost for beginners? Its points 2-3 (repeats, members alone): recommended no, not built.
+- **Q409** The comment rule's wording (proposed): "A code comment says what the code does and why, in the present
+  tense, in a few lines; a decision links its record in docs/decisions/; no version tags, dates, quotes or Q-numbers."
+- **Q410** The five new sea slug achievement names (#1112): rename freely.
+- **Q411** #1116 typed answers: simulated expert −3.0 points on answers 200-300 ("unclear"). Level-2 first
+  (recommended), merge, or drop that part?
+- **Q414** Architecture step 4: a `slow` tag takes the slow statistical tests out of the pre-push tier (CI and the
+  train keep them); it changes rule W14's wording. Recommended: yes.
+- **Q415** Rule L11 and LEARNING's method differ on five points (#1163's description: level 2's worlds and length, the
+  cap and level 3's go vs `learncheck.yml`, level 3's tests vs `learncmp.js`, L12's "four profiles"). Which is right?
+- **Q416** The mimicry pairs (#1162), not built: a reverse trap (later, recommended); the pair's sourced marks after a
+  mix-up between the two (yes, next, recommended); Find the X on the pair (after species units); duels kept at ×2.
+- **Q417** The "Pikachu" nickname: to *Thecacera pikachu* (the species named for it), moving the star from
+  *T. pacifica*? (the sea slug literature scan §6, #1164)
 
-Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points (backup "three months" wording; audit
-rows after deletion; the Notes tab); #1098 (a)-(f) (with #1118); genera opening vs the two trees (#1041 §6).
+Answered 05:13: Q412 merge #1130 as is; Q413 merge #1148, no simulation; Q418 (b): sourced pairs only, others later
+from the players' data.
 
-Last question number: Q412
+Still open: #1099 floor + "never seen"; #1093 A/B; #1045 A/B; #1095 three points; #1098 (a)-(f); #1041 §6.
+
+Last question number: Q418
 
 ## Pierre's hands
 
 - **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game (the lobby now shows a QR code: scan it once).
-- **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages, #1085); the 8
-  unsure fish candidates; a look at the 16 non-Philippine *A. pyroferus* juvenile photos.
+- **In the admin**: Light and Cover proposals, then Publish; Points (incl. the Coral Finder 2022 pages); the 8 unsure
+  fish candidates; the 16 non-Philippine *A. pyroferus* juvenile photos and `fbAcpyr_j0` (yellow form, tagged `ph`).
 - Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
 
 - None (the Night queue holds the night's work).
+
 ## Last stop
 
-2026-11-18 ~21:40 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (Pierre's messages, real names: delete tomorrow)
-and the player-data extracts (`placement/data/`): delete, never commit. Queue waiters: never `pgrep -f` a pattern your
-own command line contains.
+2026-11-19 ~03:35 Manila: handover. Scratchpad: `pierre-msgs.jsonl` (real names: delete tomorrow) and `placement/data/`
+(player data): delete, never commit. Chaining trains: wait for the next queue file's `== #N` line, then while
+`pgrep -f "mergewhen[.]sh N"` (a real process); a waiter's own command line is not one.

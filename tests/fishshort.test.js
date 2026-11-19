@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"): tools/fish_short.py
 // writes a record's iNaturalist observation as its id and its original as its extension when the photo is the record's
-// own; core.js fishGameRead (the app, the admin, the sheet's photo pools, the tools) and tools/fish_short.py full_doc
+// own; core.js treeGameRead (the app, the admin, the sheet's photo pools, the tools) and tools/fish_short.py full_doc
 // give the records back whole, the same records as the file held before, key order included.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -19,7 +19,7 @@ const py = code =>
   }).toString();
 
 test('the app reads the records as the tools do: every record whole, the same as the Python reading', () => {
-  const js = C.fishGameRead(G),
+  const js = C.treeGameRead(G),
     pyFull = JSON.parse(py('print(json.dumps(S.full_doc(json.load(open("fish-game.json")))))'));
   assert.strictEqual(JSON.stringify(js), JSON.stringify(pyFull));
   const L = Object.values(js.photos).flat();
@@ -36,12 +36,12 @@ test('the app reads the records as the tools do: every record whole, the same as
 test('short then whole gives the record back; a whole record (the file before) is read as it is', () => {
   // The file is written in the short form: writing its whole records again gives the same text.
   assert.strictEqual(py('import fish_game as G\nsys.stdout.write(G.dumps(S.full_doc(json.load(open("fish-game.json")))))'), text);
-  const whole = C.fishGameRead(G);
-  assert.strictEqual(JSON.stringify(C.fishGameRead(whole)), JSON.stringify(whole), 'reading a whole file again changes nothing');
+  const whole = C.treeGameRead(G);
+  assert.strictEqual(JSON.stringify(C.treeGameRead(whole)), JSON.stringify(whole), 'reading a whole file again changes nothing');
   Object.values(whole.photos)
     .flat()
     .slice(0, 500)
-    .forEach(p => assert.strictEqual(C.fishGameRow(p), p, p.f));
+    .forEach(p => assert.strictEqual(C.treeGameRow(p), p, p.f));
   // FishBase and a photo filed under another id keep their addresses whole; an iNaturalist one is short.
   const recs = [
     {
@@ -72,12 +72,12 @@ test('short then whole gives the record back; a whole record (the file before) i
       ['5', 'png']
     ]
   );
-  short.forEach((p, i) => assert.strictEqual(JSON.stringify(C.fishGameRow(p)), JSON.stringify(recs[i])));
+  short.forEach((p, i) => assert.strictEqual(JSON.stringify(C.treeGameRow(p)), JSON.stringify(recs[i])));
 });
 
 test("the sheet's photo pools are the same from the short file, even before its script reads it whole", () => {
   // core.js unitPool groups a unit's photos by observation (String(p.o || p.f)): an observation's id groups them as its
-  // address did, so a sheet script from before this change (no fishGameRead) gives the same pools from the new file.
+  // address did, so a sheet script from before this change (no treeGameRead) gives the same pools from the new file.
   const group = L => {
     const O = {};
     L.forEach(p => (O[String(p.o || p.f)] = O[String(p.o || p.f)] || []).push(p.f));
@@ -85,7 +85,7 @@ test("the sheet's photo pools are the same from the short file, even before its 
       .map(x => x.join(','))
       .sort();
   };
-  const whole = C.fishGameRead(G);
+  const whole = C.treeGameRead(G);
   Object.keys(G.photos).forEach(t => assert.deepStrictEqual(group(G.photos[t]), group(whole.photos[t]), t));
   const S = C.subjectOf('fish'),
     files = ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(f =>

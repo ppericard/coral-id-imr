@@ -2,7 +2,7 @@
 "v":1,
 "doc":"The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (rule C1). worms: each genus's WoRMS id and family, for the WoRMS view of Photos › Tree.",
 "coral":{
-"date":"2026-11-05",
+"date":"2026-11-18",
 "sp":{
 "Acanthastrea bowerbanki":{"now":"Homophyllia bowerbanki"},
 "Acanthastrea faviaformis":{"now":"Dipsastraea faviaformis"},
@@ -21,7 +21,7 @@
 "Acropora orbicularis":{"now":"Acropora clathrata"},
 "Acropora palifera":{"now":"Isopora palifera"},
 "Acropora parilis":{"now":"Acropora horrida"},
-"Acropora pectinatus":{"now":"Acropora floresensis","inat":false},
+"Acropora pectinatus":{"now":"Acropora floresensis"},
 "Acropora pinguis":{"now":"Acropora robusta"},
 "Acropora plana":{"now":"Acropora tenuis"},
 "Acropora rosaria":{"now":"Acropora loripes"},
@@ -30,7 +30,6 @@
 "Acropora tutuilensis":{"now":"Acropora abrotanoides"},
 "Acropora valenciennesi":{"now":"Acropora valenciennesii","iname":"Acropora valenciennesi"},
 "Acropora vermiculata":{"now":"Acropora sarmentosa"},
-"Acropora wallaceae":{"now":"Acropora samoensis"},
 "Australomussa rowleyensis":{"now":"Lobophyllia rowleyensis"},
 "Australopsammia aurea":{"now":"Tubastraea aurea"},
 "Barabattoia amicorum":{"now":"Dipsastraea amicorum"},
@@ -264,7 +263,7 @@
 }
 },
 "fish":{
-"date":"2026-11-15",
+"date":"2026-11-18",
 "sp":{
 "Acanthurus nigricaudus":{"now":"Acanthurus nigricauda"},
 "Achirus hartzfeldii":{"now":"Heteromycteris hartzfeldii"},

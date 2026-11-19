@@ -80,19 +80,20 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) | The constitution (Rule 0, the merge contract, the index of rules); the entry point for Claude Code |
 | [docs/rules/](docs/rules/README.md) | Pierre's standing rules, one file per theme |
 | [docs/decisions/](docs/decisions/README.md) | Decision records: what was decided, when, in Pierre's words; the index |
+| [docs/ANSWERS.md](docs/ANSWERS.md) | Pierre's answers, append-only: search it before asking him anything |
 | [docs/STATUS.md](docs/STATUS.md) | Where things stand now (the integrator's only) |
-| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; where things are and what lives outside GitHub |
+| [docs/INTEGRATOR.md](docs/INTEGRATOR.md), [docs/HANDOVER.md](docs/HANDOVER.md) | Running the work day to day; setting up, the sheet script's redeploy and what lives outside GitHub |
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | The project's own words: unit, circle, slate, look-alike pair, replay, train… |
 | [docs/DATA.md](docs/DATA.md) | Each data file: what it holds, who writes it, who reads it |
 | [tools/README.md](tools/README.md) | Each script in `tools/`: what it does |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Files, data, admin, sync, photos, deploy |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/spec/](docs/spec/sync.md) | The map of the system (files, data, admin, sync, photos, deploy), read in a few minutes; the specification of each part it points to, one file per part (the front end, the sync, the data, the admin, the subjects, the photos, the tools, the deploy…) |
 | [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
 | [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
-| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history |
-| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos |
+| [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history (with [the learning notebook](docs/archive/learning-notebook.md), the studies behind LEARNING.md) |
+| [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos (`judging/PROMPT.md`: what to paste) |
 | [privacy.html](privacy.html) | The privacy notice players see |
 
 ## Content and rights

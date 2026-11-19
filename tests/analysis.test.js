@@ -443,14 +443,14 @@ test("tools/analyses.js: the head of an older script (every subject's rows) is j
 });
 
 // Each subject's analyses, refitted every 1000 answers of that
-// subject. The made-up fish answers of the tests and the admin demo: synth on the fish units' photos (core.js fishGen),
+// subject. The made-up fish answers of the tests and the admin demo: synth on the fish units' photos (core.js treeGen),
 // tagged with their subject as the sheet serves them.
 const fishLog = (n, o = {}) => {
   const fs = require('fs'),
     path = require('path'),
     C = require('../core.js'),
     rd = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
-    G = C.fishGen(rd('fish.json'), rd('fish-photos.json').photos).gen,
+    G = C.treeGen(rd('fish.json'), rd('fish-photos.json').photos).gen,
     ids = Object.keys(G)
       .filter(id => G[id].views.wide.length >= 3)
       .slice(0, 24),
@@ -1204,7 +1204,7 @@ test('sessDesc: misses in a row stay within a session; returns use one observati
   assert.deepStrictEqual([r1.at, r1.back], [1, 1], 'only C’s first session is a day old: C came back');
 });
 
-/* ---------- Multiple testing (Pierre, 2026-11-05, Q69): primary effects under Holm, the others under Benjamini-Hochberg ---------- */
+/* ---------- Multiple testing: primary effects under Holm, the others under Benjamini-Hochberg ---------- */
 test('holm and bh give the textbook adjusted p-values (R p.adjust)', () => {
   const P = [0.01, 0.04, 0.03, 0.005];
   assert.deepStrictEqual(

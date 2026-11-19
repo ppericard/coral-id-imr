@@ -552,7 +552,7 @@ test('v18: a device that never signed in rates the photos once its answers are c
     at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString(),
     L = Array.from({length: 12}, (_, i) => ans('w' + i, {ph: 'pic-' + i, t: at(i)}));
   s.post({anon: 'device0001', anonAnswers: L.slice(0, 9)});
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
+  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0, 'Acropora'], 'fewer than TRUST.N answers: no photo moved');
   s.post({anon: 'device0001', anonAnswers: L.slice(9)});
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
   const p = s.get({stats: '1'}).photos['pic-11'];
@@ -564,7 +564,7 @@ test('v18: a device that never signed in rates the photos once its answers are c
   for (const k of Object.keys(s.cache)) delete s.cache[k];
   // A photo nobody rated sits at its genus offset (moved by the real player's answers on the genus above).
   const st = s.get({stats: '1'});
-  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0], 'answers at chance move nothing');
+  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0, 'Acropora'], 'answers at chance move nothing');
 });
 
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {
@@ -2403,10 +2403,10 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
 });
 
 // The other subjects' replays (every player's progress recalculated from their answers): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
-// their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
+// their own rows and units (core.js treeReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
 const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
-  FGEN = C.fishReplayGen(JSON.parse(FJSON));
+  FGEN = C.treeReplayGen(JSON.parse(FJSON));
 // curation.json too: the content editor's structure the fish replay applies (Code.gs subjCur_, sheet overlay step 3).
 const withFish = (n = {c: 0, f: 0, cur: 0}) => ({
   n,
@@ -2435,7 +2435,7 @@ const fa = (id, i, x = {}) =>
     sc: {d: 0, r: 1},
     ...x
   });
-// The variant table the fish replay reads (Code.gs subjVar_, core.js fishVarTable), from the repository's files
+// The variant table the fish replay reads (Code.gs subjVar_, core.js treeVarTable), from the repository's files
 // as the sheet reads them from main (tests/gas.js serves the photo files), made once.
 let FVARS = null;
 const fvars = () =>
@@ -3099,7 +3099,7 @@ test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchu
       slug('n8', 'Goniobranchus sp.5'),
       slug('n9', 'Goniobranchus sp. 5x'),
       slug('n10', 'Goniobranchus sp. 5 =1+1'),
-      // a fish species unit (core.js fishSpUnits: s: and the species id) and its photo's species
+      // a fish species unit (core.js treeSpUnits: s: and the species id) and its photo's species
       fishAns('n11', {
         g: 's:s091',
         a: 's:s084',

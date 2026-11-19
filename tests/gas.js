@@ -103,7 +103,7 @@ function makeSheet(name) {
 }
 
 // The fish photo files of GitHub main as the repository holds them, read once (Code.gs subjVar_: the variant table the
-// fish replay reads, Q391 b): served to every test whose own fetch does not, so a test that serves fish.json gets its
+// fish replay reads): served to every test whose own fetch does not, so a test that serves fish.json gets its
 // fish replay as on the live sheet. A test that serves fish.json alone, before this, needs nothing more.
 const POOLF = {};
 const poolFile = name => (POOLF[name] = POOLF[name] || require('fs').readFileSync(require('path').join(__dirname, '..', name), 'utf8'));
@@ -264,22 +264,22 @@ function loadCodeGs(opts = {}) {
   // The Timings tab (Code.gs TIM) stays off unless a test asks for it (opts.timings), so no other test meets a tab that
   // sampling made at random; a test that turns it on sets TIM.EVERY, TIM.SLOW… itself.
   if (!opts.timings) vm.runInContext('TIM.ON = false', ctx);
-  // The pooled stats' snapshot (Code.gs STATS, sheet v134) likewise: off unless a test asks for it (opts.stats), so ?stats=1
-  // makes stats_ and the trigger folds nothing (it would fetch the game pools) in every other test.
+  // The pooled stats' snapshot (Code.gs STATS) likewise: off unless a test asks for it (opts.stats), so ?stats=1 makes
+  // stats_ and the trigger folds nothing (it would fetch the game pools) in every other test.
   if (!opts.stats) vm.runInContext('STATS.ON = false', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, triggers, menus, toasts, get, post};
 }
-// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet v116) unwrapped,
+// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody) unwrapped,
 // its gzip read (z) or as it came (lt); anything else as it is. Tests that look at what the app sent read it this way.
 function bodyOf(t) {
   const o = typeof t === 'string' ? JSON.parse(t) : t;
   if (o && typeof o.z === 'string') return JSON.parse(require('zlib').gunzipSync(Buffer.from(o.z, 'base64')).toString('utf8'));
   return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
 }
-// Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName; Pierre, 2026-11-09): f
-// runs with the script's check switched off (a test's players named constructor or __proto__), then it is on again.
+// Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName): f runs
+// with the script's check switched off (a test's players named constructor or __proto__), then it is on again.
 function madeBefore(s, f) {
   vm.runInContext('CORE_.__rn = CORE_.reservedName; CORE_.reservedName = () => false', s.ctx);
   try {

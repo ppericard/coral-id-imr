@@ -2,7 +2,8 @@
 
 Read first, every agent (Claude, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
 [`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md);
-where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
+where things are: the documentation map of [`README.md`](README.md); what lives outside GitHub:
+[`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
@@ -96,6 +97,10 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
   screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
   a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger** (Pierre, 2026-11-19): each answer of Pierre's is applied to
+  the document it changes (a ROADMAP row, a rule, a study, a decision record) in the PR that records it, and added to the
+  append-only ledger [docs/ANSWERS.md](docs/ANSWERS.md); STATUS only cites it. Before any question,
+  the integrator searches the ledger, the rules and docs/decisions/; an answer found there is applied, never asked again.
 - **Data access**: any agent, subagents included, may **read** the sync sheet ("IMR Coral ID – RA progress", its id in
   HANDOVER "Code.gs") through the Google Sheets / Drive connector, read-only, real names included: no anonymisation
   between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit
@@ -219,13 +224,13 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 
 | Touching… | Read (ARCHITECTURE = docs/ARCHITECTURE.md) |
 |---|---|
-| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" |
-| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" |
-| The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md) |
-| Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
-| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
-| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
+| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" and [spec/tools.md](docs/spec/tools.md) |
+| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" and [spec/photos.md](docs/spec/photos.md); [spec/fish-photos.md](docs/spec/fish-photos.md) |
+| The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md); [spec/model.md](docs/spec/model.md) |
+| Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" and [spec/front-end.md](docs/spec/front-end.md) |
+| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" and [spec/analyses.md](docs/spec/analyses.md) |
+| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects" and [spec/subjects.md](docs/spec/subjects.md), "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
+| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
 | Why something was decided (a decision, Pierre's words) | [docs/decisions/](docs/decisions/README.md): the index; a PR that carries out a decision adds a record (rule W19) |
 

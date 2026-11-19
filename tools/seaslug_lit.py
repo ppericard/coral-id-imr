@@ -190,7 +190,7 @@ def inat_species(net, roots, where):
             row["n"] += x["count"]
             if t.get("rank") == "species":
                 row["id"] = t["id"]
-            elif row["id"] is None:  # only subspecies rows so far: their parent is the species (Codex review #1031)
+            elif row["id"] is None:  # only subspecies rows so far: their parent is the species
                 anc = t.get("ancestor_ids") or []
                 row["id"] = t.get("parent_id") or (anc[-2] if len(anc) > 1 and anc[-1] == t["id"] else None)
         if page * 500 >= (d.get("total_results") or 0) or not res:

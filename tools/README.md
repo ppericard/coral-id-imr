@@ -2,8 +2,8 @@
 
 Scripts that build, check and analyse the data, the site and the work around them. Run them from the repository root
 (`python3 tools/<name>.py`, `node tools/<name>.js`). The header of each file says its usage, what it reads and what it
-writes. [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) "Tools" holds
-the long descriptions, [docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
+writes. [docs/spec/tools.md](../docs/spec/tools.md) holds the long descriptions (inputs, outputs, options, tests),
+[docs/DATA.md](../docs/DATA.md) says which tool writes which data file.
 
 Conventions that hold across them:
 
@@ -115,6 +115,7 @@ Conventions that hold across them:
 | `fish_names.py` | The kind words of common names, written into `fish.json` |
 | `fish_facts.py` | Size and depth facts for species sheets, with their sources |
 | `fish_genus_roots.json`, `fish_genus_marks.json` | Name roots and ID marks of fish genera, read by `build_fish.py` |
+| `fish_lookalikes.json` | Species look-alike pairs and regional species, quoted from their sources; `build_fish.py` `lookalikes` writes `fish.json` `lookalikes` and `region` |
 | `fetch_fish.py`, `fish_refill.json` | Fish candidate photos into `fish-cand.json`; `--refill` for short species |
 | `fetch_fishbase.py`, `fishbase_src.json` | Fish candidates from FishBase |
 | `fish_refs.py`, `fish_refs.json` | Reference photos of the fish units |

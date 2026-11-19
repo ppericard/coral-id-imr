@@ -106,6 +106,7 @@ import urllib.request
 from pathlib import Path
 
 import fish_commonness
+import fish_inforce
 import fish_names
 from instance import fish_source  # the source as the build reads it: fish_source.json with the instance's layer
 
@@ -118,7 +119,9 @@ GROOTS = ROOT / "tools" / "fish_genus_roots.json"  # the genus name roots, from 
 GMARKS = ROOT / "tools" / "fish_genus_marks.json"  # the genera's own presentation and ID marks, sourced (genus_marks)
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
+LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
 OUT = ROOT / "fish.json"
+CUR = ROOT / "curation.json"  # read only, for show_rootless: the content editor's circle edits
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
 
@@ -791,7 +794,81 @@ def add_families(o, key, declared=()):
     # The name index's kind words (tools/fish_names.py): the head words of the species'
     # names shown and the families whose species carry them, fish.json vn.
     fish_names.apply(o, {"keys": [key] if key else []})
+    lookalikes(o)
     return o
+
+
+def lookalikes(o, path=None):
+    """The species look-alike pairs and the species whose look varies by region (tools/fish_lookalikes.json, hand-kept,
+    every statement with its source and quote), checked and written into fish.json: o["lookalikes"], each {id, a, b, kind,
+    st, says [{t, u}], marks [{side, t, src [{t, u}]}]}, read by app.js mimLay (the draw's mimicry class, model.js
+    mimOf, and its card, quiz.js mimShow); and each regional species' region {why, src [{t, u}]}, which keeps its photos
+    taken outside the region off the cards. A mark is our words, short, with no digit (a count is never a photo cue) and
+    never the word mimic (a resemblance is a source's claim, said in its own quote). Both species are in the game."""
+    p = Path(path) if path else LOOKS
+    src = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    if set(src) - {"about", "src", "pairs", "regional"}:
+        sys.exit(f"{p.name}: keys about, src, pairs and regional only")
+    S, used = src.get("src", {}), set()
+    sp = {s["id"]: s for s in o["species"]}
+
+    def refs(where, L, quoted=True):
+        if not L:
+            sys.exit(f"{p.name} {where}: no source")
+        out = []
+        for x in L:
+            k = x["src"] if isinstance(x, dict) else x
+            if k not in S:
+                sys.exit(f"{p.name} {where}: unknown source {k}")
+            if quoted and isinstance(x, dict) and not str(x.get("q", "")).strip():
+                sys.exit(f"{p.name} {where}: a source with no quote")
+            used.add(k)
+            out.append({"t": S[k]["t"], **({"u": S[k]["u"]} if S[k].get("u") else {})})
+        return out
+
+    pairs, ids = [], set()
+    for r in src.get("pairs", []):
+        i = r.get("id")
+        if not i or i in ids:
+            sys.exit(f"{p.name}: pair id {i!r} missing or twice")
+        ids.add(i)
+        for k in ("a", "b"):
+            if r.get(k) not in sp or "circle" not in sp[r[k]]:
+                sys.exit(f"{p.name} {i}: {k} {r.get(k)} is not a species in the game")
+        if r["a"] == r["b"] or r.get("kind") not in ("resembles", "confused"):
+            sys.exit(f"{p.name} {i}: two different species and a kind, resembles or confused")
+        st = r.get("st") or {}
+        if set(st) != {"a", "b"} or set(st.values()) - {"juvenile", "all"}:
+            sys.exit(f"{p.name} {i}: st gives juvenile or all for a and b")
+        if r["kind"] == "resembles" and not r.get("says"):
+            sys.exit(f"{p.name} {i}: a resemblance needs the sources that state it (says)")
+        says = refs(f"{i} says", r.get("says", []))
+        marks = []
+        for m in r.get("marks", []):
+            t = str(m.get("t", "")).strip()
+            if m.get("side") not in ("a", "b") or not t or len(t) > 80:
+                sys.exit(f"{p.name} {i}: a mark has a side, a or b, and words of at most 80 characters")
+            if re.search(r"\d", t) or re.search(r"mimic", t, re.I):
+                sys.exit(f"{p.name} {i}: mark '{t}': no digit, never the word mimic")
+            if not str(m.get("q", "")).strip():
+                sys.exit(f"{p.name} {i}: mark '{t}': the quote it rests on")
+            marks.append({"side": m["side"], "t": t, "src": refs(f"{i} mark", m.get("src"), False)})
+        if not marks:
+            sys.exit(f"{p.name} {i}: at least one sourced mark")
+        pairs.append({"id": i, "a": r["a"], "b": r["b"], "kind": r["kind"], "st": {"a": st["a"], "b": st["b"]},
+                      "says": says, "marks": marks})
+    for s in o["species"]:
+        s.pop("region", None)
+    for sid, x in (src.get("regional") or {}).items():
+        if sid not in sp or not str(x.get("why", "")).strip():
+            sys.exit(f"{p.name} regional {sid}: a species of fish.json and why")
+        sp[sid]["region"] = {"why": x["why"].strip(), "src": refs(f"regional {sid}", x.get("src"))}
+    if set(S) - used:
+        sys.exit(f"{p.name}: sources never used: {', '.join(sorted(set(S) - used))}")
+    if pairs:
+        o["lookalikes"] = pairs
+    else:
+        o.pop("lookalikes", None)
 
 
 def genus_csrc(gid, gn, r, u, mine, sp, fam):
@@ -1013,6 +1090,7 @@ def regroup(src_path, check, lay_path=None):
     print(f"regrouped {OUT.relative_to(ROOT)} with key {key['id'] if key else '(none)'}")
     for w in waiting:
         print("  waiting on Pierre: " + w)
+    show_rootless(o)
 
 
 def commonness(check):
@@ -1067,7 +1145,7 @@ def dumps(o):
 
 
 def main():
-    global NET, GMARKS
+    global NET, GMARKS, CUR
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1076,12 +1154,19 @@ def main():
     ap.add_argument("--regroup", action="store_true")
     ap.add_argument("--commonness", action="store_true", help="only re-apply the commonness index and order to fish.json")
     ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
+    ap.add_argument("--rootless", action="store_true", help="only print the genera a circle edit brings into circle 1 with no name root")
+    ap.add_argument("--curation", help=argparse.SUPPRESS)  # tests: another curation.json
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
     ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
     ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     a = ap.parse_args()
     if a.marks:
         GMARKS = Path(a.marks)
+    if a.curation:
+        CUR = Path(a.curation)
+    if a.rootless:
+        show_rootless(json.loads(OUT.read_text(encoding="utf-8")))
+        return
     if a.regroup:
         regroup(Path(a.src) if a.src else SRC, a.check, Path(a.layer) if a.layer else None)
         return
@@ -1116,9 +1201,22 @@ def main():
     show_missing(fish_commonness.apply(out))
     add_families(out, key_in_force(src), src.get("look", []))
     show(out, report)
+    show_rootless(out)
     if not a.dry:
         write(out)
         print(f"wrote {OUT.relative_to(ROOT)}")
+
+
+def show_rootless(o):
+    """The genera the content editor's circle edits (curation.json, read, never written) bring into circle 1 with no
+    name root: the build requires one only of the base's circle-1 genera (add_families), so these show none on their
+    sheet. Each says its skip reason when tools/fish_genus_roots.json has one."""
+    cur = json.loads(CUR.read_text(encoding="utf-8")) if CUR.exists() else {}
+    skip = json.loads(GROOTS.read_text(encoding="utf-8")).get("skip", {}) if GROOTS.exists() else {}
+    rl = fish_inforce.rootless(o, cur, skip)
+    print(f"genera a circle edit brings into circle 1 with no name root: {len(rl)}")
+    for name, fam, why in rl:
+        print(f"  {name} ({fam}): " + (f"skipped, {why}" if why else "no root and no reason in skip"))
 
 
 def build(src, report):
@@ -1398,7 +1496,7 @@ def render(o):
         lines.append('"key":' + dumps({x: k[x] for x in k if x != "groups"})[:-1] + ',"groups":[')
         lines.append(",\n".join(dumps(g) for g in k["groups"]))
         lines.append("]},")
-    for k in ("teach", "families", "genera", "species"):
+    for k in ("teach", "families", "genera", "species", "lookalikes"):
         if k not in o:
             continue
         lines.append(f'"{k}":[')

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Pages opened in a visit (core.js PAGES, sheet v30 'pages'): the tally the app keeps and the summary it sends.
+// Pages opened in a visit (core.js PAGES, the sheet's 'pages'): the tally the app keeps and the summary it sends.
 // node --test tests/
 const test = require('node:test'),
   assert = require('node:assert');
@@ -25,8 +25,7 @@ test('page names: the address without its things, genus sheets, look-alikes, hom
   assert.strictEqual(N('x'.repeat(60)), 'other');
 });
 
-// A fish page is told apart from a coral one (fish UX study, 2026-11-04: the fish quiz was logged as 'quiz'): drawn with
-// Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
+// A fish page is told apart from a coral one: drawn with Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
 test('page names carry the subject on screen: fish.<page>, the corals plain', () => {
   const N = C.pageName,
     F = C.subjectOf('fish').pv;
@@ -138,7 +137,7 @@ test('pagesClean (the sheet side): known shapes only, numbers clamped, no free t
 });
 
 // The summary the app sends (sync.js pagesSend): the screen, rounded, inside it once the sheet keeps it (VIEWPORT_SHEET,
-// rule D4); before, the summary as it always was. No other field is added.
+// rule D4); before, the summary without it. No other field is added.
 test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summary without it before', () => {
   const fs = require('fs'),
     path = require('path'),
@@ -174,8 +173,8 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
   assert.deepStrictEqual(plain(run(N)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N + 3)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N - 1)), [['pages', base]], 'an older script: the summary as before');
-  // No Pages-tab gate any more (the floor of #1076): a summary is always sent, without the screen below VIEWPORT_SHEET,
-  // also before any reply (no version known yet).
+  // No gate on the Pages tab: a summary is always sent, without the screen below VIEWPORT_SHEET, also before any reply
+  // (no version known yet).
   assert.deepStrictEqual(plain(run(1)), [['pages', base]], 'an old script: the summary, no screen');
   assert.deepStrictEqual(plain(run(undefined)), [['pages', base]], 'no version yet: the summary, no screen');
   // What the sheet keeps of it is what was sent (pagesClean takes the app's rounded values as they are).
@@ -184,7 +183,7 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
   assert.ok(!/secret UA/.test(JSON.stringify(sent)), 'no user agent in the summary');
 });
 
-// The screen of a summary (core.js VIEWPORT, viewportOf; Pierre, 2026-11-18): coarse, so it adds no fingerprint.
+// The screen of a summary (core.js VIEWPORT, viewportOf): coarse, so it adds no fingerprint.
 test('viewportOf: the CSS viewport to 10 px, the pixel ratio to one decimal, the orientation, the band of the exact short side', () => {
   const V = C.viewportOf;
   assert.deepStrictEqual(V(360, 800, 3), {w: 360, h: 800, d: 3, o: 'p', b: 0});
@@ -298,10 +297,10 @@ test('a queued summary is sent only under the player it was queued for (Codex re
   assert.strictEqual(C.pagesOwner(null, 'dev0000001'), 'a:dev0000001');
 });
 
-// The feedback sheet's tally (Pierre, 2026-11-18, the feedback sheet study §2 and question (f)): four numbers a visit in the
-// summary the app already sends: answers whose feedback was shown, those where More was opened, the seconds it stayed on
-// screen (each answer's capped) and the taps on a link inside it. Counts only; no new event, no gate (an older sheet script
-// drops the field, as it drops any field it does not know).
+// The feedback sheet's tally: four numbers a visit in the summary the app already sends: answers whose feedback was
+// shown, those where More was opened, the seconds it stayed on screen (each answer's capped) and the taps on a link
+// inside it. Counts only; no new event, no gate (an older sheet script drops the field, as it drops any field it does
+// not know).
 test('the feedback sheet tally: four numbers a visit, counted once, sent with the summary, started again', () => {
   const S = C.pagesNew();
   assert.deepStrictEqual(C.PAGES.FB, ['shown', 'more', 'sec', 'link']);
@@ -447,7 +446,7 @@ test('quiz.js counts the sheet shown, More once an answer, its seconds capped, a
     ['sec', 3],
     ['sec', 3]
   ]);
-  // The app hidden stops the clock (Codex review #1110): 2 s read, 5 minutes in the background, 1 s more: 3 s, not 120
+  // The app hidden stops the clock: 2 s read, 5 minutes in the background, 1 s more: 3 s, not 120
   counts.length = 0;
   fbShown();
   now += 2000;
