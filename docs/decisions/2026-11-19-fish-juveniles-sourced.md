@@ -1,6 +1,6 @@
 # The fish juveniles sourced per species: a class label for the analyses and a line on the species sheet
 
-Date: 2026-11-19. PR: the fish juveniles sourcing PR. Rules or docs touched: C2, C5, C6, S1; docs/spec/fish-sheets.md
+Date: 2026-11-19. PR: #1235. Rules or docs touched: C2, C5, C6, S1; docs/spec/fish-sheets.md
 "Juveniles per species"; ROADMAP "Remove the fish easy-photos bootstrap" row.
 
 ## Context
