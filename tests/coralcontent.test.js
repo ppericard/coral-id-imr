@@ -422,13 +422,14 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
             mn: {v: 'Made-up mnemonic', was: G.mn, src: {t: 'A made-up course'}, t: 1},
             'lsrc/Anacropora': {v: 'Made-up line', was: G.lsrc.Anacropora, src: {t: 'A made-up line source'}, t: 1}
           },
-          [xg]: {qt: {v: ['Made-up tip'], was: X[xg].qt, src: {t: 'A made-up tip source'}, t: 1}}
+          [xg]: {qt: {v: ['Made-up tip'], was: X[xg].qt, src: {t: 'A made-up tip source'}, t: 1}},
+          // a slate genus the lecture skips: its tips come from the Coral Finder (tl), until an editor replaces them
+          Halomitra: {qt: {v: ['Made-up Halomitra tip'], was: D.gen.Halomitra.qt, src: {t: 'A made-up Halomitra source'}, t: 1}}
         }
       })
     );
   assert.ok(xg, 'a bonus genus with tips and pages');
-  // as app.js build does: an edited tip's source read by tipsList
-  [A.gen, A.x.gen].forEach(M => Object.values(M).forEach(g => g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
+  assert.ok(D.gen.Merulina.tl && D.gen.Cyphastrea.tl && D.gen.Halomitra.tl, 'the lecture-skipping genera carry a heading');
   const ctx = {
     DATA: A,
     TREEU: null,
@@ -455,15 +456,18 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       block(APP, 'const GX = n =>', '\n', {file: 'app.js'}),
       block(APP, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'app.js'}),
       block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
+      block(APP, 'const tipsEdited = g =>', '\n', {file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
       block(LEARN, 'const esrcOf = (r, k) =>', 'const treeNote', {file: 'learn.js'}),
       block(src('model.js'), 'const lsrcOf = (a, b) =>', '\n', {file: 'model.js'}),
       block(LEARN, 'const lsrcEsrc = (a, b) =>', '\n', {file: 'learn.js'}),
       block(QUIZ, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}),
-      'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, lsrcEsrc});'
+      'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, tipsEdited, lsrcEsrc});'
     ].join('\n'),
     ctx
   );
+  // an edited tip's source read by tipsList, as app.js build does
+  [A.gen, A.x.gen].forEach(M => Object.values(M).forEach(ctx.tipsEdited));
   const tref = h => (h.match(/<p class="tref">(.*?)<\/p>/) || [])[1];
   // the quiz's answer: the edited criteria by their source (a link), the summary and mnemonic with theirs
   const fb = ctx.fbBody('Acropora', 'Acropora', true, false, false, [], '', null, null);
@@ -490,6 +494,13 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.match(ctx.tipsList(xr), /<p class="note esrc">Source: A made-up tip source<\/p>/);
   const xo = Object.keys(X).find(n => n !== xg && (X[n].pages || []).length);
   assert.strictEqual(ctx.tipsLabel(A.x.gen[xo]), `ID tips (Coral Finder p. ${X[xo].pages.join(', ')})`);
+  // a slate genus the lecture skips: the Coral Finder heading while its tips are ours (never IMR's), none once an editor
+  // replaces them with a source of his own, on the sheet's heading and the feedback's label alike
+  assert.strictEqual(ctx.tipsLabel(D.gen.Merulina), `ID tips (Coral Finder p. ${D.gen.Merulina.pages.join(', ')})`);
+  assert.strictEqual(ctx.tipsLabel(A.gen.Merulina), ctx.tipsLabel(D.gen.Merulina));
+  assert.strictEqual(ctx.tipsLabel(A.gen.Halomitra), 'ID tips');
+  assert.match(ctx.tipsList(A.gen.Halomitra), /<p class="note esrc">Source: A made-up Halomitra source<\/p>/);
+  assert.match(LEARN, /<h3>\$\{g\.tl \|\| 'ID tips \(IMR\)'\}/, 'the sheet heading follows tl');
   // a summary shown as the tips (no tips of its own) with its source
   assert.strictEqual(ctx.tipsList({sum: 'S', esrc: {sum: {t: 'Src'}}}), '<p class="keyid">S <small class="esrc">(Src)</small></p>');
   // the Look-alikes deck's line: the edited line's source, from whichever side holds it
