@@ -112,7 +112,9 @@ When a report is **handled**, the player who sent it is thanked at their next vi
   deaf for 600 ms, Enter not pressing it, `cardCalm`), shown at a calm moment (`progress.js` `achHelped`,
   `helpedCalm`): never over a question, a card, the tour, a toast or the report dialog (it waits for them, `helpedMo`);
   with a game on screen, at the break at Next when no other card took it (`helpedArm`, called at the end of `quiz.js`
-  `answer`; closing it goes on to the next question).
+  `answer`; closing it goes on to the next question). A card the safety net had to close because it was never drawn
+  (`cardShow`, 2.5 s after the first frame drawn; the event `empty card closed`) is not counted as read: it is due again
+  at the next check.
 - **Never again and again**: at the first report handled, then every report handled since the last thanks in one card,
   at most once per 7 days (`core.js` `helpedDue`, `HELPED_GAP`; `helpedMark` on closing; the record's `_thxAt` is the
   time of the last thanks, the latest of two devices in `mergeAch`). Left unseen by leaving the page, it comes back.

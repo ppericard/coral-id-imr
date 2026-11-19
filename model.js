@@ -1496,11 +1496,18 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // fish, judging/FISH.md) adds its own prior: (PDIFF.MID - ease) x the subject's calibration ease (SUBJECTS calib,
 // core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
 // photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
+// A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
+// rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
+// keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
+// has since left (moved or renamed): it then takes its current genus's offset.
 const PDIFF = {W: 5, MID: 3};
+const gdOff = n => (PGD[n] || [0])[0] || 0;
 function photoDiff(n, p) {
-  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f];
-  return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
+  if (!o) return prior;
+  const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
+  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W);
 }
 // Progress of a genus (s.pg, a moving average of its answers; core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress
 // (moving average) and mastery"): each answer weighs what it proves, w from 0 to 1, by core.js pgRightW, pgMissW and
