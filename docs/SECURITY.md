@@ -108,7 +108,8 @@ Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
   that genus's, for an older app or a photo moved since; a photo in no pool is unsure), is **logged as every answer and
   never refused**: an old app, a renamed unit or a photo moved since must not lose a real answer. A fish answer at the
   genus or species level (`g:Chromis`, `s:Chromis ternatensis`) is checked against its family's photos (the fish pool's
-  units), an old fish entry id (`t01`) as the family it became. It rates no photo and no photo memory, and gives no photo
+  units), a species by its scientific name (`sci:s091`) against its genus's, so its family's for the fish (`unitUp_`, up
+  to three levels), an old fish entry id (`t01`) as the family it became. It rates no photo and no photo memory, and gives no photo
   its genus offset (`stats_`; `readStats` `skip` counts them; nor does a left-out answer). On write, the first send of
   each 6-hour window with such answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of
   the unit shown: <id> (n of m answers)"), never a name. **Nothing is fetched under the script lock**: on write, and in
