@@ -71,6 +71,24 @@ test("--fix rewrites a merge's conflicted index whole, markers included", () => 
   assert.strictEqual(readme(root), HEAD + WANT + '\n' + TAIL);
 });
 
+test('only the newest rows stay in README.md; the rest go to OLDER.md, and --check sees either file out of date', () => {
+  const root = tree('');
+  const older = path.join(root, 'docs', 'decisions', 'OLDER.md');
+  assert.strictEqual(run(root, '--fix', '--keep', '1').status, 0);
+  assert.strictEqual(readme(root), HEAD + WANT.split('\n')[0] + '\n' + TAIL);
+  const text = fs.readFileSync(older, 'utf8');
+  assert.ok(text.endsWith('|---|---|---|\n' + WANT.split('\n').slice(1).join('\n') + '\n'), text);
+  assert.strictEqual(run(root, '--check', '--keep', '1').status, 0);
+  fs.writeFileSync(older, text.replace('| #30 |', '| #99 |'));
+  const bad = run(root, '--check', '--keep', '1');
+  assert.strictEqual(bad.status, 1);
+  assert.match(bad.stdout, /index: {3}\| 2026-11-19 \| \[Beta: a \\\| in the title\].*#99/);
+  run(root, '--fix', '--keep', '1');
+  assert.strictEqual(run(root, '--check', '--keep', '1').status, 0);
+  fs.rmSync(older);
+  assert.strictEqual(run(root, '--check', '--keep', '1').status, 1);
+});
+
 test('a record without its "Date: … PR: #N." line is named, and nothing is written', () => {
   const root = tree('', {'2026-11-19-gamma.md': '# Gamma\n\nNo date line.\n'});
   const r = run(root, '--fix');
