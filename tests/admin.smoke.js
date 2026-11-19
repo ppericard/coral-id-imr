@@ -53,8 +53,9 @@ const server = http.createServer((req, res) => {
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
-// SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job
-// runs them all); SMOKE_ONLY=players runs one part.
+// SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
+// runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
+// (timed below; on CI at 1280, in seconds: main 140, photos 120, players 80, actions 35, seal 12).
 const PARTS = ['main', 'actions', 'players', 'photos', 'seal'];
 // Each part reports how long it took, so a CI log shows the groups' balance (smokes.yml) without a guess; nothing is checked.
 const timed = async (name, f) => {
@@ -364,7 +365,7 @@ async function sealPart(b, base, fails) {
   await sc.close();
 }
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], players: ['players'], photos: ['photos'], seal: ['seal']}),
+  const run = slot.parts(PARTS, {main: ['main'], photos: ['photos'], rest: ['actions', 'players', 'seal']}),
     ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -569,7 +570,7 @@ async function sealPart(b, base, fails) {
       if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
       await ctx.close();
     };
-    // A run without the main part (SMOKE_PART=more or actions: tests/slot.js parts) runs its parts alone, in the whole
+    // A run without the main part (SMOKE_PART=rest or photos: tests/slot.js parts) runs its parts alone, in the whole
     // run's order, and skips the rest of the pass.
     if (!run.has('main')) {
       if (once && run.has('actions')) await timed('actions', actionsPart);
@@ -3947,7 +3948,7 @@ async function sealPart(b, base, fails) {
         }
       }
     }
-    // The players' part (SMOKE_ONLY=players; CI runs it with the photos' part in the admin 1280 "more" job): Players ›
+    // The players' part (SMOKE_ONLY=players; CI runs it with the actions and seal parts in the admin 1280 "rest" job): Players ›
     // List, a long name, merge and delete, the journeys, To do's errors and reports. A function, run here in a whole run,
     // or alone right after the page opens (above).
     async function playersPart() {
