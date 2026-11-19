@@ -2048,20 +2048,36 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if (!fcv.shown || fcv.bad.length)
       ui.push(`${width}px families page: the cards' photos are not the curated covers ${JSON.stringify(fcv)}`);
     await wide('the families page');
-    // A family's photo enlarges in the shared viewer, as the coral photos do.
-    await q.click('#view .tipph .zoom');
-    const fz = await q.evaluate(() => {
-      const L = document.getElementById('lightbox');
-      return {open: !!L && !L.hidden && !!L.querySelector('.lb-in img'), cap: ((L && L.querySelector('.lb-cap')) || {}).textContent || ''};
+    // Each family is one card that opens its sheet (app.js listCard; Pierre, 2026-11-20): one link, its name, no "Open
+    // the sheet" line, no zoom button; a glossary term in it opens its definition, not the sheet.
+    const lc = await q.evaluate(() => {
+      const c = [...document.querySelectorAll('#view .lcard')];
+      return {
+        n: c.length,
+        one: c.every(x => x.querySelectorAll('a.tipsheet').length === 1 && !x.querySelector('a a, .zoom, [data-z]')),
+        open: /Open the sheet/.test(document.getElementById('view').textContent),
+        href: c[0] && c[0].querySelector('a.tipsheet').getAttribute('href')
+      };
     });
-    if (!fz.open || !/Damselfish|fish/i.test(fz.cap))
-      ui.push(`${width}px families page: a photo tapped did not enlarge ${JSON.stringify(fz)}`);
-    await q.click('#lightbox [data-x]');
-    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family on the families page opens its
-    // sheet, under the book's English name with its scientific name below; an old entry id links to its family; the only
-    // genus of a family opens the family sheet; the species filter is on by default and one tap shows them all.
-    await q.click('#view .tipg a.tipsheet');
+    if (!lc.n || !lc.one || lc.open) ui.push(`${width}px families page: the cards are not one link each ${JSON.stringify(lc)}`);
+    if (await q.$('#view .lcard [data-gt]')) {
+      const h0 = await q.evaluate(() => location.hash);
+      await q.click('#view .lcard [data-gt]');
+      const gl = await q.evaluate(() => ({hash: location.hash, pop: !document.querySelector('.gpop').hidden}));
+      if (gl.hash !== h0 || !gl.pop) ui.push(`${width}px families page: a glossary term on a card ${JSON.stringify(gl)}`);
+      await q.keyboard.press('Escape');
+    }
+    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family's photo on the families page
+    // opens its sheet (no longer the photo viewer: the sheet's photos enlarge, with their credits), under the book's
+    // English name with its scientific name below; an old entry id links to its family; the only genus of a family opens
+    // the family sheet; the species filter is on by default and one tap shows them all.
+    await q.$eval('#view .lcard .tipph img', e => e.scrollIntoView({block: 'center'}));
+    const ph = await (await q.$('#view .lcard .tipph img')).boundingBox();
+    await q.mouse.click(ph.x + ph.width / 2, ph.y + ph.height / 2);
     await q.waitForFunction(() => document.querySelector('#view .fsheet'), null, {timeout: 15000});
+    if ((await q.evaluate(() => location.hash)) !== lc.href) ui.push(`${width}px families page: the photo did not open its card's sheet`);
+    if (await q.evaluate(() => !document.getElementById('lightbox').hidden))
+      ui.push(`${width}px families page: the photo opened the viewer`);
     const sh = await q.evaluate(() => ({
       hash: location.hash,
       title: (document.querySelector('#view .fn-t') || {}).textContent,

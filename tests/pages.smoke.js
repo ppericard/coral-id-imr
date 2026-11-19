@@ -2867,6 +2867,37 @@ async function startSmoke(b, base) {
     }
     await p.evaluate(() => (location.hash = 'learn/genera'));
     await drawn(p);
+    // The ID tips view: each genus one card that opens its sheet (app.js listCard, shared with the fish and sea slugs;
+    // Pierre, 2026-11-20): one link, its name, stretched over the card; its look-alikes' Compare links above it.
+    await p.evaluate(() => document.querySelector('[data-gv="tips"]').click());
+    await p.waitForSelector('#azgrid .lcard', {timeout: 8000});
+    const lc = await p.evaluate(() => {
+      const c = [...document.querySelectorAll('#azgrid .lcard')],
+        a = c[0].querySelector('a.tipsheet'),
+        r = c[0].getBoundingClientRect(),
+        cmp = c.map(x => x.querySelector('a[href^="#cmp-"]')).find(Boolean);
+      a.scrollIntoView({block: 'center'});
+      // a point near the card's right edge, far from the name, is the sheet's link
+      const r2 = c[0].getBoundingClientRect(),
+        hit = document.elementFromPoint(r2.right - 12, r2.bottom - 6);
+      let over = true;
+      if (cmp) {
+        cmp.scrollIntoView({block: 'center'});
+        const cr = cmp.getBoundingClientRect(),
+          h = document.elementFromPoint(cr.left + 3, cr.top + cr.height / 2);
+        over = !!h && !!h.closest('a') && h.closest('a') === cmp;
+      }
+      return {
+        n: c.length,
+        wide: r.width > 200,
+        one: c.every(x => x.querySelectorAll('a.tipsheet').length === 1 && !x.querySelector('a a, .zoom')),
+        open: /Open the sheet|ID marks/.test(document.getElementById('azgrid').textContent),
+        edge: !!hit && hit === a,
+        cmp: !!cmp && over
+      };
+    });
+    if (!lc.n || !lc.wide || !lc.one || lc.open || !lc.edge || !lc.cmp)
+      fails.push(`Genera (tips): the cards are not one link each, their Compare links on top ${JSON.stringify(lc)}`);
     await p.evaluate(() => {
       document.querySelector('[data-gv="photos"]').click();
       localStorage.setItem('reefid-basics', JSON.stringify({seen: {colony: 1, polyp: 1, corallite: 1, septa: 1}, last: 'septa'}));

@@ -7704,7 +7704,22 @@ a.frow:hover {
   font-size: var(--fs-l);
   color: var(--muted);
 }
-/* The families page: a family's name opens its sheet (its photo enlarges). */
+/* A unit's card on a Learn list (app.js listCard: the corals' ID tips view, the fish and sea slug lists; Pierre,
+   2026-11-20): a tappable surface, as the photo cards (.card) and the sheet rows (.frow, its chevron .fgo), that opens
+   the unit's sheet. Its one link, the name, is stretched over the card; the Compare links and the glossary terms in it
+   sit above. Pressed: the accent border; hover (mouse) lifts it as a .card. */
+.lcard {
+  position: relative;
+  margin-top: 10px;
+  padding: 10px 28px 10px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.lcard .tipph img {
+  border-radius: var(--r-sm);
+}
 .tipsheet {
   display: flex;
   flex-direction: column;
@@ -7712,9 +7727,49 @@ a.frow:hover {
   color: var(--ink);
   text-decoration: none;
 }
-.tipsheet .cmpgo {
-  margin-top: 2px;
-  font-size: var(--fs-xs);
+.lcard .tipsheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r);
+}
+.lcard .tipsheet:focus-visible {
+  outline: none;
+}
+.lcard .tipsheet:focus-visible::after {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.lcard a:not(.tipsheet),
+.lcard [data-gt] {
+  position: relative;
+  z-index: 1;
+}
+.lcard .fgo {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  color: var(--accent);
+  pointer-events: none;
+}
+.lcard:active {
+  border-color: var(--accent);
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .lcard {
+    transition:
+      border-color 0.14s ease,
+      box-shadow 0.14s ease;
+  }
+}
+@media (hover: hover) {
+  .lcard:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-hover);
+  }
 }
 /* A unit's English name given as information (app.js vernFirst: the sea slugs' common names and nicknames, Pierre
    2026-11-17): under its scientific name on a Learn tile, beside it in a family's heading and in the answer's verdict;
