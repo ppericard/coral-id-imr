@@ -284,9 +284,10 @@ The draft button carries the status: "● Publish" with a draft (its title lists
   log (`admin-demo.js` `DEMO_CALLS`).
 - **What the first page waits for** (Pierre, 2026-11-19: the admin "takes longer and longer to open" on his phone, worst
   after a long absence). Cold, on a phone profile (CPU x4, 1.6 Mbps, 150 ms), opening on Activity is bandwidth first:
-  the scripts (0.56 MB gzipped), `curation.json` through the GitHub API, the answer log (1 MB gzipped, 6 MB of JSON for 39,000
-  answers) and `data.json` and the small files, about 3.1 MB before the page draws; the rest is the main thread parsing
-  and laying them. Two things were taken off that line:
+  the scripts (0.56 MB gzipped), `curation.json` through the GitHub API, the answer log (1 MB gzipped, 6 MB of JSON for a
+  made-up log of 39,000 answers) and `data.json` and the small files, about 3.9 MB before the page draws; the rest is the
+  main thread parsing and laying them (figures and method: [record](../decisions/2026-11-19-admin-opening.md); re-measure
+  on the phone). Two things were taken off that line:
   - `curation.json` (2.7 MB, over the contents API's 1 MB) is read as the blob's **raw bytes** (`ghText`, media type
     `application/vnd.github.raw+json`: 0.54 MB gzipped, measured on GitHub on 2026-11-19) instead of base64 inside
     JSON (0.89 MB gzipped, and 3.6 MB to decode); the base64 reply stays the fallback. Its text is kept in the browser's
