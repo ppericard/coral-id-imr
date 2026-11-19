@@ -444,7 +444,7 @@ async function freshPlayers(b, base, errs) {
   // (9) A brand-new fish player: the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
-  // juvenile of a capped genus (fish.json juv: a juvenile is very easy only in a class-A entry or a show-early genus);
+  // juvenile but an early-class one (its draw ramp: core.js VAR_AT, below);
   // past Open Water the others come in (a sex / colour phase is no family-level difficulty). Five seeds, each a player
   // of its own (its context, its storage, its seeded Math.random, its renderer process), so they play side by side: on
   // CI, where the runner is this smoke's alone, all five at once; on a shared machine two at a time, the two cores of
