@@ -48,8 +48,9 @@ Each rule rests on his words on the photos named (verbatim dictation):
 - **The integrator's calls**, each easy to correct: `a` widened rather than a new flag (a new field in the code is the
   kind of change Q429 holds for Pierre); the blur cap at 2 and for the fish only (his review was of fish; sea slugs keep
   theirs, `tools/fish_judge.py` `RUBRICS` `blur2`); solid evidence against the annotation departs from it only with
-  `unsure`, so he sees it; the admin's label for `a`, "out of water or a screen"; the rubric's quotes moved here (its
-  size budget), with the history of its first passes.
+  `unsure`, so he sees it; the levels for retouched colours (loss `1` near true, `2` plainly wrong; he gave none); the
+  admin's label for `a`, "out of water or a screen"; the rubric's quotes moved here and its passes' history shortened
+  (its size budget).
 - **Not taken** (a hedge, or open): the fish in front of the moray (photo 5: "Moi je serais un peu moyen sur ça"); the
   colour cast of photo 20 ("je suis pas sûr"); backscatter on a sharp fish (photo 8: "Je suis même pas sûr"); the ease
   of a recognisable family (photos 7, 18), tied to Q431.

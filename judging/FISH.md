@@ -68,9 +68,9 @@ the fish itself is poorly lit).
 **The gold set's corrections** (Pierre, 2026-11-19, 30 judged photos reviewed one by one; his words per photo are in
 [the decision](../docs/decisions/2026-11-19-fish-rubric-gold-set.md)):
 
-- **Light** is the light falling on the fish, not the photo's contrast: a well-lit fish on a flat photo is `g`; a fish
-  lit on part of it, or with burnt highlights after the shadows were raised, is `d`. Where low contrast goes is open
-  (Q429): it is neither `d` nor `b` meanwhile.
+- **Light** is the light falling on the fish, not the photo's contrast; a fish lit on part of it, or with burnt
+  highlights after the shadows were raised, is `d`. Low contrast is not blur nor murky water; where it goes is open
+  (Q429).
 - **Retouched colours** that look false (a fish turned orange-red) are lost colours, `1` near true, `2` plainly wrong;
   a clean correction reads as what it shows. A retouch is a shortfall in the tags, never a doubt that keeps the photo
   out, and is named only when the photo shows it.
@@ -482,15 +482,13 @@ under "Other species, out of play", where Keep in play sets `o` in one tap.
 No juvenile class exists for them (`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families
 are rarely shown as a very easy photo, the rubric applied as written (no family exception): morays, snake eels, garden
 eels and jawfishes live mostly in a hole (partial), frogfishes, scorpionfishes, stonefishes and seamoths are
-camouflaged, rays and seamoths mostly seen from above, sharks in blue water. (The first passes, 2026-11-04: PR #463.)
+camouflaged, rays and seamoths mostly seen from above, sharks in blue water.
 
 ## The light re-judge (rubric 6, 2026-11-08)
 
-After Pierre's Q308 (above, "Light: the fish, not the background"), every photo coded `n` (727 distinct photos: game,
-reference and candidate photos) and every `d` photo with a dark background (495, picked by a dark border and then looked
-at one by one) were looked at again on sheets of 12 at 400 x 300 px: 1,062 codes changed (`n` to `g` 716, `d` to `g` 313,
-`n` to `d` 30, with the ease the light changed), 4 stopgap game photos keep `n` (two goatfish and two fusilier photos in a reddish night livery), and 37 judged candidates keep it too. The log,
-with each photo's old and new code, is `judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
+After Pierre's Q308 (above, "Light: the fish, not the background"), every `n` photo and every `d` photo on a dark
+background were looked at again (1,062 codes changed). The log, with each photo's old and new code, is
+`judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
 tags and ease `curation.json` still holds from the earlier judgement (`tools/fish_game.py` reads them first): a
 proposal for him, never written by a script (rule A1).
 

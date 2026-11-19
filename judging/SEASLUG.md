@@ -119,7 +119,7 @@ The fish's scale, the same five levels:
 **Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): a juvenile (`j`), an
 unclear subject (`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong
 colour loss (`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps,
-with two differences: a dorsal view caps nothing, and `v` is the sea slugs' own. `w` and `f` cap nothing.
+but a dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `w` and `f` cap nothing.
 
 ## Juveniles
 
