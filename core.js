@@ -419,11 +419,7 @@
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
   // opens them is docs/reviews/2026-11-19-modes-every-subject.md.
-  const CLOSED_TREE = {
-    cmp: 'Not opened yet: the Look-alikes deck and Compare read the coral views and sources (ROADMAP "Every game mode for every subject")',
-    'quiz-custom':
-      'Not opened yet: the selection is saved under the coral key and grouped by the IMR lecture (ROADMAP "Every game mode for every subject")'
-  };
+  const CLOSED_TREE = {};
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
   // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
   // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
@@ -682,7 +678,7 @@
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-duel', 'pairs'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -892,7 +888,7 @@
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'quiz', 'quiz-duel', 'pairs'],
+      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
@@ -2425,6 +2421,12 @@
     const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur,
       c = P && P.content;
     return isObj(c) ? c : {};
+  };
+  // The admin's look-alike picks of subject S ({"a|b": {v, a, b, hide}}, curation.json mont: at the top for the corals,
+  // under the subject's own key for the others: SUBJECTS admin.cur), {} with none: the Look-alikes deck reads them.
+  const montOf = (cur, S) => {
+    const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur;
+    return (isObj(P) && isObj(P.mont) && P.mont) || {};
   };
   // A rank's records by id ({id: {rec, i, at}}: i its place in the list, or its key in a map; at the path of the list or
   // map), from its declaration D. D.at is a path (a.b: a field inside one) or a list of them, read in order: an id met
@@ -7712,6 +7714,7 @@
     renamedId,
     sheetIdOf,
     contentOf,
+    montOf,
     contentNodes,
     contentSlot,
     contentVal,

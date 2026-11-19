@@ -1353,3 +1353,38 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Applied in #1274:** Q405, Q415: the check tools aligned with rule L11: a 40-minute budget that plans, refuses over it
   and stops with the runs done marked cut, level 3 refused without his go on a GitHub runner, level 2's figures kept as
   the minimum (`tools/checkbudget.js`; decision record `2026-11-19-check-cap`).
+- **Applied in #1283:** Q405, Q415: the Learning check workflow keeps the 40-minute cap as one deadline
+  for the whole check and the level-3 go before either arm, and `learncmp` reads an empty cut arm for every primary
+  (`.github/workflows/learncheck.yml`; decision record `2026-11-19-check-cap`).
+
+## 2026-11-20
+
+- **05:31-05:33, Rule 0 and the night's work.** «J'ai pas dit que je me levais à 4 h du matin. J'ai dit que ça
+  pouvait arriver que je me lève à partir de 4 h du matin. Ça veut dire qu'il faut pas que tu t'arrêtes à 4 h du
+  matin.»; «la règle, ça n'a jamais été que tu t'arrêtes de travailler avant le début de la journée.»; «c'est mon
+  temps qu'on essaye de protéger, pas le temps des agents, et c'est déjà écrit comme ça.» Rule 0 unchanged; the work
+  goes on at every hour, and a check-in at most an hour apart re-starts the queue after a session restart. Applied:
+  INTEGRATOR "Working with Pierre" (Rule 0).
+- **05:39, Q440 (#1273, the species by their scientific names: about 1.3 fewer scientific genera at Advanced after
+  3,000 answers).** «C'est pas un coup à partir du moment où c'est un mode de jeu qu'on ajoute […] Bien sûr qu'il faut
+  accepter ce coup-là. Ne pas l'accepter, c'est ne pas faire le jeu, en fait.» Accepted; adding a game mode is not a
+  cost. Applied: #1273's merge (its PR body).
+- **05:39, rule A1's wording.** «Pour la nouvelle formulation de A1, je valide.» A1 protects the choices he made by
+  hand, one by one; an accepted proposal is replaced by a better one. Applied: docs/rules/admin.md A1 and the rules
+  index (#1282).
+- **05:39, the model and effort bullet.** «Pour la ligne sur les modèles et l'effort, OK pour cette stratégie.»
+  Applied: AGENTS.md "The right model and effort for each task" and INTEGRATOR's table (#1257's), #1282.
+- **05:39, P2 (the 34 untraced lecture photos, "B for now" of 2026-11-18).** «Pour P2, non, j'en ai aucune idée, donc
+  si vous n'avez pas réussi, si vous n'avez pas correctement noté les choses, ben, je ne sais pas.» Kept as they are;
+  asking the IMR trainer stays his. Applied: ROADMAP "Trace IMR lecture photos to their original source", #1282.
+- **05:39-05:40, no command for him to run.** «c'est jamais à moi de lancer une commande à la main dans un terminal.
+  Ça devrait jamais être à moi. C'est à toi de le faire.»; «Comment ça se fait en fait que tu en es arrivé à devoir me
+  demander manuellement de lancer une commande ?» The integrator does such steps itself; only a step it may not take
+  goes to him, as a yes/no question. Applied: INTEGRATOR "Working with Pierre" (Never give him a command to run).
+- **05:46, P2, what "B for now" meant (the 34 untraced lecture photos).** «quand je disais pas pour l'instant, c'est
+  que probablement, pour l'instant, on les laisse en jeu, mais qu'à un moment donné, si on n'arrive vraiment pas à
+  sourcer, ben, il faudra peut-être arriver à les supprimer. […] l'autre agent m'avait demandé de demander aux
+  formateurs de IMR de les sourcer. Donc ça, non, ça, je vais pas les emmerder pour ça. Donc, pour l'instant, ça reste
+  source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
+  trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
+  their original source", #1282.

@@ -34,7 +34,7 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   (runs, corallites, hard photos); `boardSheet`, the sync script from which a subject's board is served (the sea slugs');
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
   `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
-  `quiz`, `quiz-duel` and `pairs`; the sea slugs' `genera`, `sheet`, `quiz`, `quiz-duel`, `pairs`. `closed`: each `MODES` Learn or
+  `cmp`, `quiz`, `quiz-custom`, `quiz-duel` and `pairs`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`, `pairs`. `closed`: each `MODES` Learn or
   Practice page a subject lacks, with its reason (`tests/subjects.test.js`; ROADMAP "Every game mode for every
   subject"). `basics` names the basics module's feat (`_basics`, `_fbasics`);
 - `sheets` (the fish and the sea slugs): the address word of each rank of its sheets and the prefix of their ids,
@@ -90,7 +90,9 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 `UNITS[id]` holds what the engine and the pages read for each subject. The tree subjects' entries start from
 `TREE_UNITS`, the members that read the tree in force the same way for each (`load`, `slate`, `core`, `circles`,
 `gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `bar`); each entry adds only
-its words, its files and its own settings and differences.
+its words, its files and its own settings and differences. The Look-alikes deck and Compare read `deck` (the pairs of
+the deck), `inGame` (a unit Compare may show) and `cmp` (`src`, `clues`, `tag`, `line`, `more`: what each says of a unit
+beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes).
 
 - **Loading.** `load()`, its data before its pages open (the corals' is in from start-up; a tree subject's is `treeLoad`:
   its tree, its first photos and its game photos), and `home()`, what start-up waits for when it differs: the fish's is
@@ -157,9 +159,10 @@ Identify shows the current subject's tool only, `UNITS[id].identify`: the corals
 is one entry of `MODES` `identify`. `subjPage` sends a bare Identify address to the subject's own tool (a subject
 switched on Identify shows its own), and `route` hands a link into another subject's tool with its clues
 (`#identify/key?form=…`) to that subject, as it does a genus sheet. Home's Identify door follows the subject (for the
-fish a fish photo, "Identify a fish", the Fish ID Key). `tests/fish.smoke.js` checks both ways. The Tools stay the
-corals' whatever the subject: Tools › Type the genus runs on the corals (`proto/type.js` `CORALS`; `quiz.js` `typeForm`
-and `typeBind` take the subject).
+fish a fish photo, "Identify a fish", the Fish ID Key). `tests/fish.smoke.js` checks both ways. The Tools that ask about
+a unit, or draw the look-alikes, follow the subject on screen (Same or different?, Odd one out, Matrix, Type the genus, Blur
+reveal, the Look-alike web: [the Lab](basics.md#the-lab-protolabjs)); the ones that read the corallite traits stay the
+corals' whatever the subject (Spot the feature, the Zoom ladder, Elimination, Anatomy, and the reference tools).
 
 ## Switching
 

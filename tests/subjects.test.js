@@ -94,11 +94,26 @@ test('pages and closed: every Learn and Practice mode is open to each subject or
     assert.strictEqual(r.key, 'pairs', id);
     assert.strictEqual(r.S, S, id);
   });
-  // A pair's address round-trips with tree unit ids (a fish family, a sea slug genus).
+  // The Look-alikes deck and Compare for every subject (Q437): open on each, none closed for the corals' data alone.
+  C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('cmp') && !('cmp' in (s.closed || {})), `${s.id}: cmp`));
+  // The admin's look-alike picks (curation.json mont) sit at the top for the corals and under the subject's own key for
+  // the others; none gives {}.
+  const e = {v: 'adult', hide: true},
+    cur = {mont: {'a|b': {v: 'macro'}}, fish: {mont: {'f:A|f:B': e}}};
+  assert.deepStrictEqual(C.montOf(cur, C.subjectOf('coral')), {'a|b': {v: 'macro'}});
+  assert.deepStrictEqual(C.montOf(cur, C.subjectOf('fish')), {'f:A|f:B': e});
+  assert.deepStrictEqual(C.montOf(cur, C.subjectOf('seaslug')), {});
+  assert.deepStrictEqual(C.montOf(null, C.subjectOf('fish')), {});
+  // A pair's address round-trips with tree unit ids (a fish family, a sea slug genus), the deck's and Compare's included.
   [
     ['fish', 'quiz-duel|t01|t13'],
     ['seaslug', 'quiz-duel|g:Chromodoris|g:Hypselodoris'],
-    ['coral', 'quiz-duel|Acropora|Montipora']
+    ['coral', 'quiz-duel|Acropora|Montipora'],
+    ['fish', 'cmp-t02|t03'],
+    ['fish', 'cmp|t02|t03'],
+    ['seaslug', 'cmp-g:Hypselodoris|g:Thorunna'],
+    ['seaslug', 'cmp|g:Hypselodoris|g:Thorunna'],
+    ['coral', 'cmp-Acropora|Montipora']
   ].forEach(([id, h]) => {
     const S = C.subjectOf(id),
       r = C.routeIn(C.routeOut(h, S));

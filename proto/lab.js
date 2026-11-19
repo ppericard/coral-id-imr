@@ -107,9 +107,13 @@ LAB.files.forEach(f => {
 /* ---------- helpers shared by the prototypes ---------- */
 // Slate order (data.json key order).
 const labNames = () => Object.keys(DATA.gen);
-// The genera a Lab game asks about (rule L4: one progression path for every game or mode, no exceptions): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
-// subject on screen (the Tools are the corals'). Wrong choices may name any genus, as the quiz's do (model.js
-// distractors); the reference tools (map, matrix, gallery, key, board, sizes, explorer) keep every genus.
+// The genera a Lab game of the corals' own asks about (rule L4: one progression path for every game or mode, no exceptions):
+// those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the subject on screen. These
+// helpers (labPlay, labNames, labNone, labChoices) are for the tools that read the corallite traits (Spot the feature, the
+// Zoom ladder, Elimination, Anatomy), which stay the corals' for that reason; the tools that run on the subject on screen
+// (samediff, oddone, matrixgame, type, reveal, web) read unlocked() and GX instead, with the helpers further down. Wrong
+// choices may name any genus, as the quiz's do (model.js distractors); the reference tools (map, matrix, gallery, key,
+// board, sizes, explorer) keep every genus.
 const labPlay = () => {
   if (typeof unlocked !== 'function') return labNames();
   const f = () => unlocked(labNames());
@@ -148,8 +152,8 @@ const tag = n => (DATA.gen[n].n ? 'No. ' + DATA.gen[n].n : '★ not surveyed');
 // The corallite features that decide, as a short line (never the growth form).
 const whyLine = n =>
   'Corallites: ' +
-  trAll(DATA.gen[n])
-    .map(id => trLabel(DATA.gen[n], id))
+  trAll(GX(n))
+    .map(id => trLabel(GX(n), id))
     .map(esc)
     .join(' · ');
 const lookAlikes = n => DATA.gen[n].look.filter(b => DATA.gen[b]);
@@ -180,7 +184,9 @@ const labObs = p => p.o || p.f;
 // only without (false) the fish's square cut (xc), so the photos of one question are framed alike, whichever of them is
 // the odd one; fit(q): a test the photo must pass (Memory's pair: a species or a phase beside the first photo's). A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
 // others can be drawn (the last `max`).
-function labShots(max = 8) {
+// k and f: the question's format as photoSet takes it (its plausible choices and its format: 2 and 'compare' for a side by
+// side; Infinity and 'typed' for a typed answer, 4 and 'k4' for four choices), so a photo is aimed as the quiz aims it.
+function labShots(max = 8, k = 2, f = 'compare') {
   const recent = [];
   // The view a photo of unit n is in (the draw's views), '' when the game has none of it.
   const view = (n, q) => ['wide', 'medium', 'macro'].find(v => gamePics(n, v).some(x => x.f === q.f)) || '';
@@ -193,7 +199,7 @@ function labShots(max = 8) {
           (want.tile === undefined || !!(q.xc && !q.r) === want.tile) &&
           (!want.fit || want.fit(q)));
     for (const keep of [q => fits(q) && !recent.includes(labObs(q)), fits]) {
-      const s = photoSet(n, null, 0, 2, 'compare', keep).shown,
+      const s = photoSet(n, null, 0, k, f, keep).shown,
         p = s[s.length - 1];
       if (p) return {...p, sdv: view(n, p)};
     }
@@ -202,6 +208,38 @@ function labShots(max = 8) {
   const seen = ps => ps.forEach(p => (recent.push(labObs(p)), recent.length > max && recent.shift()));
   return {photo, seen};
 }
+// One unit and one photo of it for a game that asks about a unit by itself (Type, Blur reveal): the units tried in a random
+// order, the first with a photo wins (a few units unlocked, some without a photo, never loops: each is tried once, at most
+// 24). photo: labShots' photo; view: a view key of the subject (SUBJ.views) or 'any'; a unit with none in that view gives
+// its photo in another (the draw's own choice). Null when no unit has a photo. {t, p}.
+function labDraw(units, photo, view = 'any', rnd = Math.random) {
+  const L = [...new Set(units)];
+  for (let i = L.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [L[i], L[j]] = [L[j], L[i]];
+  }
+  for (const t of L.slice(0, 24)) {
+    const p = (view !== 'any' && photo(t, {view})) || photo(t, null);
+    if (p) return {t, p};
+  }
+  return null;
+}
+// The view buttons of a game on the subject on screen (its own views: SUBJECTS views); none for a subject with one view.
+const labViewChips = view =>
+  SUBJ.views.length < 2
+    ? ''
+    : `<div class="chips">${[['any', 'Any view'], ...SUBJ.views]
+        .map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${esc(t)}</button>`)
+        .join('')}</div>`;
+// What a game on the subject on screen says when it has nothing to ask: no unit unlocked yet (the quiz opens them), or
+// unlocked ones without a photo to show.
+const labEmpty = (el, met) => {
+  el.innerHTML = `<p class="note">${
+    met
+      ? `No photo of the ${esc(SUBJ.many)} you have met to ask about yet. Try the quiz.`
+      : `This game asks about the ${esc(SUBJ.many)} you have met. Meet a few in the quiz first.`
+  }</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
+};
 // The ID tips of the units of a question, each in its box (behind More).
 const labTips = units =>
   units

@@ -641,7 +641,132 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
-// (16) Memory (proto/pairs.js, Practice › Memory) on the fish: ten families with two observations unlocked, the photos stubbed;
+// (16) Type the family, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the fish: twelve
+// families unlocked, the photos stubbed; tests/labgames.check.js plays them at 390 and 1280 px (the unit word, the photo of an
+// unlocked family, no id shown as a name, the typed answers and the retype, four choices of one rank, the web's nodes and
+// lines from the declared pairs, one screen, no progress, log or answer count changes).
+async function labGames(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-lg')) {
+        sessionStorage.setItem('fish-lg', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`lab games: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const n = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => gamePics(n, 'wide').length)
+      .slice(0, 12);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (n < 6) return [`lab games: ${n} fish families with a photo`];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./labgames.check.js')(q, w, fails, 'fish', 6);
+  }
+  await c.close();
+  return fails.map(m => `lab games: ${m}`);
+}
+// (17) The custom quiz (quiz.js viewCustom, Q437): twelve families unlocked, the pages read and played by
+// tests/customquiz.check.js at 390 and 1280 px (the tab, every family in one ID group, the search, the picks saved under
+// reefid-sync-fish-custom, the quiz on them).
+async function customQuiz(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+    );
+    await c.addInitScript(qa.PAGE);
+    await c.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-cq')) {
+          sessionStorage.setItem('fish-cq', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+        }
+      } catch (e) {}
+    });
+    const q = await c.newPage();
+    q.on('pageerror', e => errs.push(`custom quiz: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+    const n = await q.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => gamePics(n, 'wide').length)
+        .slice(0, 12);
+      introAdd(L, true);
+      return L.length;
+    });
+    if (n < 6) fails.push(`custom quiz: ${n} fish families with a photo`);
+    else await require('./customquiz.check.js')(q, base, fails, 'fish', w);
+    await c.close();
+  }
+  return fails;
+}
+// (18) The Look-alikes deck and Compare on the fish (learn.js viewLookalikes, viewCompare; Q437): the IMR presentation's declared
+// family pairs, each with its source, one photo a side, one screen; tests/lookalikes.check.js, at 390 and 1280 px.
+async function lookAlikes(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-la')) {
+        sessionStorage.setItem('fish-la', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`look-alikes: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./lookalikes.check.js')(q, w, fails, 'fish');
+  }
+  await c.close();
+  return fails.map(m => `look-alikes: ${m}`);
+}
+// (19) Memory (proto/pairs.js, Practice › Memory) on the fish: ten families with two observations unlocked, the photos stubbed;
 // tests/memory.check.js plays the games at 390 and 1280 px (each family twice on the board as two photos of two observations,
 // nothing named before the pair, a wrong pair turned back, the end, one screen, no progress, log or answer count changes).
 async function memoryGame(b, base, errs) {
@@ -3495,14 +3620,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
       sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'] || {}).ok : null
     }));
     if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
-    // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; never a fish
-    // teaching id, "It was t01").
+    // (8) Tools › Type the family with Fish chosen: a fish family the player has met, in the fish's own words (Q437; the
+    // form says Family; never a fish teaching id, "It was t01").
     await q.evaluate(() => (location.hash = '#tools/type'));
     await q.waitForSelector('#view .tyform', {timeout: 15000}); // answer.js: the Tools game, not a quiz question
     // The update notes due to this returning player come once the sync is over, over any page, and a page change closes
     // them unseen for 300 ms (progress.js recalcNotice): out of the way first, or one covers the click (a race CI won).
     const st = await settle(q);
-    if (st) rv.push(`Type the genus with Fish chosen: ${st}`);
+    if (st) rv.push(`Type the family with Fish chosen: ${st}`);
     await q.click('#view .tyform [data-idk]'); // answer.js: the Tools game, not a quiz question
     const ty = await q.evaluate(() => ({
       subj: SUBJ.id,
@@ -3510,8 +3635,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
       // answer.js: the Tools game, not a quiz question
       label: document.querySelector('#view .tyform label').textContent
     }));
-    if (ty.subj !== 'fish' || !/It was [A-Z][a-z]+/.test(ty.res) || /\bt\d\d\b/.test(ty.res) || ty.label !== 'Genus')
-      rv.push(`Type the genus with Fish chosen: ${JSON.stringify(ty)}`);
+    if (ty.subj !== 'fish' || !/It was [A-Z][a-z]+/.test(ty.res) || /\bt\d\d\b/.test(ty.res) || ty.label !== 'Family')
+      rv.push(`Type the family with Fish chosen: ${JSON.stringify(ty)}`);
     await c5.close();
   }
   // (6) fish.json cannot come at start-up: the app opens on the corals, nothing empty is kept, and
@@ -3574,7 +3699,13 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const oo = run.has('main') ? await oddOne(b, base, errs) : [];
   // (15) Matrix: matrixGame, above.
   const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
-  // (16) Memory: memoryGame, above.
+  // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
+  const lg = run.has('main') ? await labGames(b, base, errs) : [];
+  // (17) The custom quiz: customQuiz, above.
+  const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
+  // (18) The Look-alikes deck and Compare: lookAlikes, above.
+  const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
+  // (19) Memory: memoryGame, above.
   const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
@@ -3917,6 +4048,9 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...sd,
     ...oo,
     ...mx,
+    ...lg,
+    ...cqz,
+    ...la,
     ...mem,
     ...cold,
     ...grp,

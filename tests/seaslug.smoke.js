@@ -650,13 +650,126 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
-  // 6. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
-  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  // 6. Type the genus, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the sea slugs, as
+  // tests/fish.smoke.js labGames plays them on the fish: ten genera unlocked, the photos stubbed; tests/labgames.check.js plays
+  // them at 390 and 1280 px.
   {
     const {ctx, p, errs} = await page(b, base, () => {
       try {
         if (sessionStorage.getItem('s6')) return;
         sessionStorage.setItem('s6', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).length))
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `6: ${n} sea slug genera with a photo`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./labgames.check.js')(p, w, fails, 'sea slugs', 5);
+    }
+    check(!errs.length, '6: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 7. The custom quiz (quiz.js viewCustom, Q437) on the sea slugs, as tests/fish.smoke.js customQuiz plays it on the fish:
+  // ten genera unlocked, their families as the groups; tests/customquiz.check.js reads and plays it at 390 and 1280 px.
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s7')) return;
+        sessionStorage.setItem('s7', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: w, height: h});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => gamePics(n, 'wide').length)
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `7: ${n} sea slug genera with a photo`);
+    if (n >= 6) await require('./customquiz.check.js')(p, base, fails, 'sea slug', w);
+    check(!errs.length, '7: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 8. The Look-alikes deck and Compare (learn.js viewLookalikes, viewCompare, Q437) on the sea slugs' declared pairs, as the
+  // fish's run them: tests/lookalikes.check.js, at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s8')) return;
+        sessionStorage.setItem('s8', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./lookalikes.check.js')(p, w, fails, 'sea slugs');
+    }
+    check(!errs.length, '8: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 9. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
+  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s9')) return;
+        sessionStorage.setItem('s9', '1');
         localStorage.setItem('reefid-tour', '"done"');
         localStorage.setItem('reefid-sync-subject', '"seaslug"');
         localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
@@ -683,7 +796,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       introAdd(L, true);
       return L.length;
     });
-    check(n >= 6, `6: ${n} sea slug genera with two observations`);
+    check(n >= 6, `9: ${n} sea slug genera with two observations`);
     for (const [w, h] of [
       [390, 844],
       [1280, 800]
@@ -692,7 +805,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       await p.waitForTimeout(300);
       await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
     }
-    check(!errs.length, '6: page errors: ' + errs.join('; '));
+    check(!errs.length, '9: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 

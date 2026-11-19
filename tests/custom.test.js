@@ -38,6 +38,7 @@ function model({P = {}, ab = {}} = {}) {
     pairConf: core.pairConf,
     GX: n => GEN[n],
     rankOf: n => (GEN[n] || {}).rank || '', // app.js rankOf
+    rankUnits: rk => Object.keys(GEN).filter(n => GEN[n].rank === rk), // app.js rankUnits: every unit of a rank
     imrFormsOf: n => GEN[n].forms,
     ability: n => ab[n] ?? 0,
     formatAt: a => [Math.min(3, Math.max(0, a / 0.18))], // model.js FORMAT schedule, stubbed (trapsFor's default)
@@ -50,6 +51,7 @@ function model({P = {}, ab = {}} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     pick('function wpick', '// Which genus to ask next') +
+      pick('const declaredOf = ', "// The pair's pooled score for grouping") +
       pick('const trapsFor = ', '// Once the whole file is in') +
       '\nthis.M = {CUSTOM, customOf, customDraw, customChoices, distractors, confusable, mixEdges, lookEdges, mixClusters};',
     ctx
@@ -114,6 +116,43 @@ test('customChoices: a selection of 4 or more gives 3 choices from it alone, at 
         `traps ${traps}: ${c.join()}`
       );
     }
+});
+
+test('customChoices: a ranked unit (a fish species or genus) never gets a choice outside a selection of 4 or more (Codex review)', () => {
+  // Five units of one rank; four are picked, the fifth is a met look-alike of the target outside the selection.
+  // (Names of letters only: a label is compared by its letters, model.js labelKey.)
+  const R = ['Ra', 'Rb', 'Rc', 'Rd', 'Re'];
+  R.forEach(n => (GEN[n] = {look: R.filter(o => o !== n), fam: 'fr', ig: 20, forms: ['R'], rank: 'species'}));
+  try {
+    const M = model(),
+      sel = R.slice(0, 4);
+    for (const traps of [0, 1, 2, 3])
+      for (let i = 0; i < 50; i++) {
+        const c = M.customChoices('Ra', sel, [...PLAY, ...R], traps, known);
+        assert.strictEqual(c.length, 3, c.join());
+        assert.ok(
+          c.every(n => sel.includes(n) && n !== 'Ra'),
+          `traps ${traps}: ${c.join()}`
+        );
+      }
+    // A pool of the rank in play that is itself short (three units): the photo quiz's rank-wide fallback fills the three.
+    for (let i = 0; i < 20; i++) {
+      const c = M.customChoices('Ra', ['Ra', 'Rb'], [...PLAY, ...R.slice(0, 3)], 1, known);
+      assert.strictEqual(new Set(c).size, 3, c.join());
+      assert.ok(!c.includes('Ra'));
+    }
+    // Under 4 picked the other units of the rank in play top it up, never one outside the game (Codex review: Re is not in
+    // play here, though it is a unit of the rank).
+    const inPlay = [...PLAY, ...R.slice(0, 4)];
+    for (let i = 0; i < 50; i++) {
+      const two = M.customChoices('Ra', ['Ra', 'Rb'], inPlay, 1, known);
+      assert.strictEqual(two[0], 'Rb');
+      assert.strictEqual(new Set(two).size, 3);
+      assert.ok(!two.includes('Re'), two.join());
+    }
+  } finally {
+    R.forEach(n => delete GEN[n]);
+  }
 });
 
 test('customChoices: the trap rules work inside the selection (a look-alike group drills itself)', () => {
@@ -268,6 +307,23 @@ test('lookEdges: the declared look-alikes (both ways) for a player with no mix-u
   // A-B, A-C: A, B, C; D's only look-alike, B, is a third of that cluster: D stays out (no chain through B).
   assert.deepStrictEqual(C.map(c => c.g.slice().sort().join('')).sort(), ['ABC', 'EF']);
   assert.ok(C.every(c => c.g.every(n => PLAY.includes(n))));
+});
+
+test('lookEdges: a record that separates `decl` from `look` (siblings by construction) gives declared pairs only (rule C2)', () => {
+  const S = ['Sa', 'Sb', 'Sc'];
+  GEN.Sa = {look: ['Sb', 'Sc'], decl: ['Sb'], fam: 'fs', ig: 30, forms: ['S']};
+  GEN.Sb = {look: ['Sa', 'Sc'], decl: ['Sa'], fam: 'fs', ig: 30, forms: ['S']};
+  GEN.Sc = {look: ['Sa', 'Sb'], decl: [], fam: 'fs', ig: 30, forms: ['S']};
+  try {
+    assert.deepStrictEqual(
+      model()
+        .lookEdges(S)
+        .map(e => e[0] + e[1]),
+      ['SaSb']
+    );
+  } finally {
+    S.forEach(n => delete GEN[n]);
+  }
 });
 
 // The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftStep, leftDue, leftCount, leftWords,
