@@ -35,7 +35,6 @@ const CORE = {
   fishGameRead: 'treeGameRead',
   fishPhotos: 'treePhotos',
   fishObs: 'treeObs',
-  fishHeld: 'treeHeld',
   fishNames: 'treeNames',
   fishTypeNames: 'treeTypeNames',
   fishNameIndex: 'treeNameIndex',
