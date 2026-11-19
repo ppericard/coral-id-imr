@@ -320,7 +320,9 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   is sure (tags and phase as the auto-sort copies them, `copy_of`; a crop the pass no longer gives leaves), unless he
   answered its re-judge proposal Keep mine (`kept`); and, while he never corrected it (no `@t`), on a sure judgement made
   on or after its day, a photo it set aside is in play again (as the route back), and a photo it put in, its tags still
-  its copy (`t`), leaves play when the pass now sets it aside. A value with no log is his, or cannot be told from his,
+  its copy (`t`), leaves play when the pass now sets it aside. Tags read anew bring the judge's crop when the photo has
+  none (the crop goes with the code); his phase choice (No phase included) stops the source's juvenile flag; a photo he
+  moved with Not this is his, skipped whole; an Undo of `b` on such a photo leaves it where he put it. A value with no log is his, or cannot be told from his,
   and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next").
 
 ## The Fish Candidates page

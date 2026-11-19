@@ -35,7 +35,9 @@ What was built:
   itself never written, rule A1): the fields the log lists read the pass's newer values when its judgement is sure (an
   unsure one waits for him), unless he answered its re-judge proposal Keep mine; while he never corrected it, a photo it
   set aside plays again when a sure judgement made since puts it in, and a photo it put in, its tags still its copy (his
-  Keep in play gives them up), leaves play when a sure judgement made since sets it aside. (a) and (c) stand.
+  Keep in play gives them up), leaves play when a sure judgement made since sets it aside. Tags read anew bring the
+  judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a photo he moved with Not
+  this is skipped whole. (a) and (c) stand.
 - **The admin's route back** (`autosort.js` `sortBack`): the same photos come back into his draft, logged `b`, one Undo
   each (it sets them aside again). His own Reject of a photo the auto-sort had set aside marks it `-r`, so it is never
   taken for the auto-sort's.

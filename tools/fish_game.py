@@ -386,8 +386,10 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
       "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again when the pass
       now puts it in (cand_sure), unless he gave it tags or a crop; a photo it put in (a, b) with its tags still its copy
       (t: his Keep in play gives them up) is set aside when the pass now sets it aside (cand_out).
-    Everything else is his, or cannot be told from his (a value with no log: Q441's counts), and stands. Returns cur
-    itself when nothing reads differently."""
+    Tags read anew bring the judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a
+    photo he moved with Not this is his, skipped whole. Everything else is his, or cannot be told from his (a value with
+    no log: docs/decisions/2026-11-19-auto-proposals-newer-judgement.md), and stands. Returns cur itself when nothing
+    reads differently."""
     F = (cur or {}).get(key) or {}
     if not F.get('auto'):
         return cur
