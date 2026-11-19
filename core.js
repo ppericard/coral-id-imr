@@ -284,7 +284,7 @@
   //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
   //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
   //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
-  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
+  //           a subject with a pool and no stats draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -417,6 +417,11 @@
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
   const SEASLUGPAIRS_SHEET = 174;
+  // The sync script version from which the app reads the fish's own pooled statistics (rule D4; SUBJECTS fish stats): the
+  // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
+  // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
+  // version or later, so one it has not seen answer, or an older one, changes nothing.
+  const FISHST_SHEET = 189;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -583,6 +588,11 @@
         vars: (F, Fs, S) => treeVarTable(F, Fs, S)
       },
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
+      // The app reads its pooled statistics from the script that serves them (FISHST_SHEET; rule D4): photo ratings, unit
+      // offsets and pair counts at the rank asked, so its draw, traps and look-alikes follow its players' answers. Its
+      // photo memory and format offsets stay the prior and none (model.js pmem, pfmt), and its replay reads no pooled
+      // number: a row carries the scoring record it was scored with.
+      stats: FISHST_SHEET,
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -3361,13 +3371,19 @@
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers].
+  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)].
   function eloOf(rows) {
     const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f =>
-        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+        (out[f] = [
+          Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100,
+          Math.round(P[f][2] * 10) / 10,
+          Math.round(P[f][1] * 10) / 10,
+          P[f][3],
+          PG[f]
+        ])
     );
     return out;
   }
@@ -7252,6 +7268,7 @@
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
     SEASLUGPAIRS_SHEET,
+    FISHST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,

@@ -198,6 +198,23 @@ const GATES = {
     if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
     return !!asked;
   },
+  // The fish's own pooled statistics (core.js SUBJECTS fish stats; Code.gs ?stats=1&s=fish): asked for only from the script
+  // version that this change ships in, as the sea slugs' (tests/fishstats.test.js keeps and joins the reply).
+  FISHST_SHEET: (v, N) => {
+    const FI = C.subjectOf('fish');
+    assert.strictEqual(FI.stats, N);
+    let asked = '';
+    fn('sync.js', 'function loadOwnStats(', '\n// A switch to a subject', 'loadOwnStats', {
+      SYNC_URL: 'https://sheet.invalid/exec',
+      SUBJ: FI,
+      sheetV: () => (v === undefined ? 0 : v),
+      appVer: () => 1,
+      ownStatsAt: {},
+      fetch: u => ((asked = u), new Promise(() => {}))
+    })();
+    if (asked) assert.match(asked, /[?&]stats=1&s=fish&/);
+    return !!asked;
+  },
   // A Find the X's photo tapped (quiz.js answer pa): sent from the version that stores it (Code.gs Photo answered),
   // through core.js logOut at both of sync.js's sends; before, the copy sent leaves it out and keeps the rest, the queue
   // untouched (an older script gets exactly what it got before).
