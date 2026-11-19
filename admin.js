@@ -5426,6 +5426,8 @@ const repUnit = (x, bare, S0) => {
   return `${fam ? `<a class="adm-gen" href="${esc(famHref(unitRankOf(S) === S.rank ? fam : x, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // repunit: end
+// A unit's name as repUnit says it, without its page link (inside a link of its own: a pair's Compare page).
+const repName = x => repUnit(x, true).replace(/<\/?a\b[^>]*>/g, '');
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there, without the drag handle, its genus first; bound by bindTiles,
 // bindF and bindQ as on the genus page. o: {lead (after the genus), cap (caption last), extra (more actions)}. null for a
@@ -11378,7 +11380,7 @@ function statsPlayers() {
       ${ml
         .map(([k, n]) => {
           const [a, b] = k.split('|');
-          return `<tr><td>${cmpOn ? `<i>${esc(a)}</i>` : repUnit(a, true)}</td><td>${cmpOn ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a>` : repUnit(b, true)}</td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
+          return `<tr><td>${cmpOn ? repName(a) : repUnit(a, true)}</td><td>${cmpOn ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`, ASUBJ)}" target="_blank" rel="noopener">${repName(b)}</a>` : repUnit(b, true)}</td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
         })
         .join('')}</tbody></table>`
         : '<p class="note">None.</p>'
@@ -11936,7 +11938,7 @@ function statsConf() {
     gnm = g => (many ? (FISHA && FISHA.gen[g] ? esc(FISHA.gen[g].name) : '') : `<i>${esc(g)}</i>`);
   const cmp = (a, b) =>
     cmpOn
-      ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`
+      ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`, S)}" target="_blank" rel="noopener" title="Compare on the site">${repName(a)} · ${repName(b)}</a>`
       : `${nm(a)} · ${nm(b)}`;
   const PR = Object.entries(C.pair)
     .filter(([, c]) => c[0] >= SF.min)

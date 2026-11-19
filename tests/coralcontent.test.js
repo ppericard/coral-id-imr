@@ -511,10 +511,9 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.match(block(LEARN, 'const cfList =', '\n', {file: 'learn.js'}), /<span class="pg">\$\{critRef\(g\)\}<\/span>/);
   assert.match(LEARN, /\$\{srcTag\(m\.src\)\}\$\{esc\(m\.es\)\}/);
   assert.match(src('proto/idkey.js'), /Criteria <small>· \$\{critRef\(g, false\)\}<\/small>/);
-  // the side-by-side comparison too (learn.js viewCompare)
-  assert.match(
-    block(LEARN, 'function viewCompare(a, b) {', '\n}\n', {file: 'learn.js'}),
-    /<p class="note">\$\{critRef\(g\)\}<\/p><\/details>/
-  );
+  // the side-by-side comparison too: the corals' criteria box is their UNITS cmp.more (app.js), which learn.js viewCompare
+  // reads for every subject
+  assert.match(block(APP, 'more: g =>', '\n    },', {file: 'app.js'}), /<p class="note">\$\{critRef\(g\)\}<\/p><\/details>/);
+  assert.match(block(LEARN, 'function viewCompare(a, b) {', '\n}\n', {file: 'learn.js'}), /\$\{U\.cmp\.more\(g\)\}/);
   ['quiz.js', 'proto/idkey.js'].forEach(f => assert.ok(!src(f).includes('Coral Finder p. ${g.pages'), `${f}: a hard-coded criteria page`));
 });

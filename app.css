@@ -4585,7 +4585,7 @@ a.psrc:focus-visible {
   object-fit: cover;
   background: var(--surface-2);
 }
-.cqtile i {
+.cqtile .cqnm {
   padding: 3px 4px 4px;
   font-size: var(--fs-xs);
   line-height: 1.15;
@@ -4602,7 +4602,7 @@ a.psrc:focus-visible {
   outline-offset: -3px;
   background: color-mix(in srgb, var(--accent) 14%, var(--surface));
 }
-.cqtile[aria-pressed='true'] i {
+.cqtile[aria-pressed='true'] .cqnm {
   font-weight: 600;
 }
 .cqtile[aria-pressed='true']::after {

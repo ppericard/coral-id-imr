@@ -123,7 +123,7 @@ const COUNTS = {
     'admin-taxa.js': 2,
     'admin.js': 47,
     'home.js': 2,
-    'learn.js': 17,
+    'learn.js': 14,
     'progress.js': 1,
     'proto/basics.js': 3,
     'proto/idkey.js': 2
