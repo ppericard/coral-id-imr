@@ -1,22 +1,16 @@
 # Workflow and shipping rules
 
 How agents work with Pierre (W1-W11) and how a change ships and merges (W12-W27). Who merges, and when: only AGENTS.md "Working
-mode" (the merge contract). The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
+mode" (the merge contract). The index of every rule is in [README.md](README.md#the-index).
 
 ## Working with Pierre
 
 ### W1
 
 **Everything produced is in English** (UI, docs, data, code, commit messages, PRs, artifact titles); **only the chat with
-Pierre is in French**: he writes in French, often dictated (expect speech-to-text slips), so reply in French.
-*Why:* IMR is an English-speaking workplace. *Source:* Pierre, by 2026-11-01.
-
-### W2
-
-**Work autonomously**: branch, build, test, open PRs and fix review findings without asking. Merging follows the merge
-contract (AGENTS.md "Working mode"); ask first before destructive or irreversible actions (history rewrite, deleting
-data, bulk changes to his curation).
-*Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05.
+Pierre is in French**: he writes in French, often dictated (expect speech-to-text slips), so reply in French. In French,
+Pierre is "tu", never "vous"; call him Pierre.
+*Why:* IMR is an English-speaking workplace. *Source:* Pierre, by 2026-11-01; "tu", 2026-11-05.
 
 ### W3
 
@@ -34,12 +28,6 @@ The deploy-order rule D4 still holds (the app never relies on a sheet feature be
 elsewhere; he uses the app on his phone a lot, prefers visuals to text and judges new things in use: ship, then iterate on his feedback.
 *Source:* Pierre, by 2026-11-01.
 
-### W5
-
-**Record every idea discussed but not built in `docs/ROADMAP.md`**, with its source and status, inside its section next
-to related rows. Development ideas only (rule W10).
-*Source:* Pierre, by 2026-11-01.
-
 ### W6
 
 **No work sleeps on a branch.** A branch with work worth keeping gets a PR the same day (a draft PR only while an agent is still building it; a PR that waits only for
@@ -47,16 +35,24 @@ Pierre's decision is opened ready, with the `needs-pierre` label, never as a dra
 ready, so a draft would wait for Pierre's click, Pierre 2026-11-06), and an
 active line of work (a "track": the fish mode, the analyses…) is named in `docs/ROADMAP.md` with its branch or PR and its
 next step, so a reader of `main` alone sees it. Before ending a session or a night, list the branches with commits not
-in `main` and no PR (`python3 tools/brief.py` lists them), and open or close each one.
+in `main` and no PR (`python3 tools/brief.py` lists them), and open or close each one. The `needs-pierre` label is the
+integrator's own reminder (Pierre does not browse GitHub), not the source of truth: before merging, read the PR's open
+questions themselves, and remove the label in the same step that records his answer (`tools/train.py` refuses a PR
+that still has it).
 *Why:* the fish mode, built on branches that never got a PR, went silent for a day although beta players had been
 promised it. *Source:* Pierre, 2026-11-04.
 
 ### W7
 
-**Fix by default**: after a review, fix every finding you can without asking. Ask Pierre only real choices (one short
-question each, with a recommendation) or actions that need his hands (Apps Script redeploy, admin curation, IMR
-content). Never re-ask something already answered: check ROADMAP and PR descriptions.
-*Source:* Pierre, 2026-11-01.
+**Work autonomously; fix by default; never re-ask what was answered**: branch, build, test, open PRs and fix every
+review finding without asking. Ask Pierre only what is costly to undo (AGENTS.md "Working mode") or needs his hands
+(his curation, IMR content); anything destructive or irreversible: AGENTS.md "Always ask first". Before any question,
+search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisions/`: an answer found there is
+applied, never asked again.
+- **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
+  "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
+  are, never renumbered; he does not remember everything as an agent does and may ask for more context.
+*Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19.
 
 ### W8
 
@@ -267,7 +263,9 @@ in the present tense, in a few lines; a decision links its record in docs/decisi
 Q-numbers.** A change is not done until the docs say what the
 code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
 change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
-its status; deferred = add a row inside its section; new "don't do X" = Declined), `README.md` (anything a newcomer
+its status; deferred = add a row inside its section; new "don't do X" = Declined; **every idea discussed but not built
+goes into `docs/ROADMAP.md`**, with its source and status, inside its section next to related rows, development ideas
+only, rule W10), `README.md` (anything a newcomer
 sees), the admin help. Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
 [docs/decisions/README.md](../decisions/README.md). **No "done" list or changelog in any doc**: the squash title
 ` (#N)`, the PR description and git are the record of what shipped, the docs say what the code does now; a shared list
@@ -278,23 +276,7 @@ ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every wo
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
 #1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
-history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409).
-
-### W20
-
-**When a unit runs short of candidate photos, the tools fetch more automatically; when none are left, they note it and
-stop.** After each Publish the "Candidate photos" workflow refills the lists: coral genera up to their caps
-(`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
-Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
-candidates is no more candidates": a fish species whose search found nothing more is noted with the day
-(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
-game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
-never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
-candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.
-The choice of photos stays his (rule W10).
-*Why:* a unit short of photos should not wait for someone to notice, and a search with nothing left should not keep
-asking iNaturalist (rule C7).
-*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral, automatic, 2026-11-06 (Q171).
+history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409); ideas not built into ROADMAP, by 2026-11-01.
 
 ### W21
 
@@ -309,16 +291,17 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 ### W22
 
 **Several agents at once: a worktree each, one smoke at a time.** The integrator launches decided work at once (AGENTS.md
-"Working mode"), within rule W27's cap of four agents at a time, balanced by weight; the shared machine is protected by `tests/slot.js`. Each agent works in a
+"Working mode"), as many agents as useful; the shared machine is protected by `tests/slot.js`. Every branch starts from
+`origin/main`, never from another PR's branch: no stacked PRs (a PR that would contain another is the same PR). Each agent works in a
 **worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
 only the part your change touches (rule W14), one unit-test run at a time (`node tests/run.js`, rule W24), CI for the full
 runs. One open PR per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
-Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
-Projects mode) still keeps one open PR and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight); one PR per agent, 2026-11-19.
+Who merges: AGENTS.md "Working mode" (the integrator, never a subagent).
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; no stacked PRs, 2026-11-09; one PR per agent, 2026-11-19; the
+agent cap lifted, 2026-11-18 (rules audit decision 1).
 
 ### W23
 
@@ -365,7 +348,8 @@ automatic lock of the unit tests"; the load budget of twice the cores and the di
 small task, stop agents when done, one wake-up per wait, local checks before each push. The model and
 effort of each agent follow the table in docs/INTEGRATOR.md (AGENTS.md "Working mode"): ordinary code runs on the
 intermediate model; the lightest model only for mechanical work, after the sample test against a strong model ("Model
-choice by measurement"); never for a judgment (photo judging included).
+choice by measurement": the threshold set beforehand counts agreement and serious errors; example tasks: framing,
+sorting photos, conversions); never for a judgment (photo judging included).
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.
@@ -391,16 +375,11 @@ the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to
 
 ### W27
 
-**Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
-checked before it launches or relaunches an agent:
-- **At most four agents that write code or run tests at a time (conflicts and machine load). Read-only studies, which
-  run no tests, may run on top** (Pierre, 2026-11-18: "ok", the exact wording; before, 2026-11-14: "la limite est plus
-  complexe que ça. Ya des agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"):
-  heavy agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than
-  two or three of them run at once. Each agent is on one PR or one study with one subject. A finished agent is stopped,
-  not kept waiting.
-- **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
-  another is the same PR.
+**Bounded cost, no conflicts: small PRs, no two open PRs on the same sensitive file, two Codex rounds, then cut.** The
+integrator holds to these, each checked before it launches or relaunches an agent:
+- **Each agent is on one PR or one study with one subject**; a finished agent is stopped, not kept waiting. Heavy
+  agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
+  rule W22.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
   until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
 - **Two Codex rounds at most per PR.** If Codex still finds something after the second round's fixes, the integrator
@@ -414,10 +393,11 @@ checked before it launches or relaunches an agent:
 - **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
   and an unclear cell's second look on that cell alone. A check longer than 40 minutes is a tooling bug to fix (rule L11's cap).
 - **One train at a time** (`tools/train.py` through a queue, never two in parallel).
-- **A short or ambiguous request from Pierre is asked back before any work starts** (one question in the chat).
+- **A short or ambiguous request from Pierre**: build the reading that is easy to correct and say which; ask back
+  (one question in the chat) only when both readings are costly to undo.
 - **Agents' scratch files carry the PR or topic in their name** (`pr-<N>-<topic>.md`): the scratchpad is shared.
 
 *Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
 conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
 answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
-on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait"); the agents that count, 2026-11-18.
+on a handful of PRs. *Source:* Pierre, 2026-11-09; the agent cap lifted and the ask-back, 2026-11-18 (rules audit decisions 1 and 2).

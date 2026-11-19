@@ -97,7 +97,7 @@ Conventions that hold across them:
 |---|---|
 | `fetch_local.py` | Coral candidate photos from iNaturalist, near Dauin first; `--plan` shows offline what it would fetch |
 | `fetch_approved.py` | Downloads the candidates Pierre added, in four sizes, for R2; run by the Candidate photos workflow |
-| `cand_gaps.py` | Game genera short of candidates (rule W20) |
+| `cand_gaps.py` | Game genera short of candidates (spec/photos.md "No more candidates") |
 | `photo_measure.py` | Measured photo values into `measured.json` |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |

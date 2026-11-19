@@ -99,7 +99,8 @@ written with `tools/datajson.py`.
   `$XDG_CACHE_HOME/coral-id-imr/effort` (never in the repository). Long sheet PRs include the waits for the
   `VERSION` and for Pierre's answers: read the median and the range, not the mean.
 - **`asked.py TERM…`** (`--any`): before any question, prints the entries of `docs/ANSWERS.md`, AGENTS.md, the rules
-  and the decision records holding the terms (accents ignored), file:line; its last line goes under the question.
+  and the decision records holding the terms (accents ignored), file:line, and the ledger on each open PR's branch
+  (`gh`, `git fetch`; "PR #N"; skipped with a note offline, `--no-prs`); its last line goes under the question.
 - **`answers_check.py`** (`--check` in the docs test): each ledger entry from 2026-11-19 says "Applied: <doc or #PR>"
   or "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words (`KNOWN`: older); a
   ROADMAP or reviews index status waiting on an answered Q fails; studies and STATUS are only reported.
@@ -244,8 +245,9 @@ written with `tools/datajson.py`.
   workflow passes it) also downloads any photo of Millepora and the bonus genera still remote (`r: 1`, as
   `build_extra.py` imports them), so every game photo is hosted like the others; the other extra Dauin genera (Coral ID
   Key only) stay on iNaturalist.
-- **`cand_gaps.py`**: the game genera short of candidates waiting (rule W20); Key-only genera are left out. It asks
-  iNaturalist as `fetch_local.py` does (its `get`, paced with retries; the genus taxon from `taxonomy.json`).
+- **`cand_gaps.py`**: the game genera short of candidates waiting ([photos.md](photos.md) "No more candidates");
+  Key-only genera are left out. It asks iNaturalist as `fetch_local.py` does (its `get`, paced with retries; the genus
+  taxon from `taxonomy.json`).
 - **`r2_move.py`**: lists what leaves `img/` (a photo with an online original) and what stays, by kind, owner and genus,
   with sizes; `--verify` checks each file on R2 byte for byte (R2's ETag is the file's MD5); `--apply` removes from `img/`
   the files R2 holds identically.
