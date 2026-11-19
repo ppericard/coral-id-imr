@@ -2,7 +2,8 @@
 
 Pierre's standing rules on what the app teaches and where it comes from. Each rule: the imperative line, its details,
 *Why*, *Source* (Pierre and the date; "by 2026-11-01" for the rules written before the handover). The index of every
-rule is in [AGENTS.md](../../AGENTS.md#the-rules). Fish-only content rules are in [subjects.md](subjects.md).
+rule is in [README.md](README.md#the-index). Fish-only content rules are in [subjects.md](subjects.md). Specs:
+[ARCHITECTURE.md](../ARCHITECTURE.md) "Tools", [spec/tools.md](../spec/tools.md).
 
 ### C1
 

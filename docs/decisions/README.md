@@ -67,10 +67,12 @@ Newest first.
 | 2026-11-19 | [Decisions found in the comments of tests/ (fifth pass)](2026-11-19-decisions-from-comments-tests-5.md) | #1153 |
 | 2026-11-19 | [Decisions found in the comments of tests/ (sixth pass)](2026-11-19-decisions-from-comments-tests-6.md) | #1157 |
 | 2026-11-19 | [Decisions found in the comments of tools/ and the workflows (third pass)](2026-11-19-decisions-from-comments-tools.md) | #1160 |
+| 2026-11-19 | [The duel achievement counts a right Again like a right duel](2026-11-19-duel-ach-again.md) | #1227 |
 | 2026-11-19 | [The fish genus page's "Don't confuse with" lists sourced pairs only](2026-11-19-fish-genus-dont-confuse.md) | #1171 |
 | 2026-11-19 | [The fish read their own pooled statistics in the app, merged with no further simulation](2026-11-19-fish-own-stats.md) | #1148 |
 | 2026-11-19 | [Fish reference photos: one judgement, the level read from the photo](2026-11-19-fish-reference-from-photo.md) | #1045 |
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
+| 2026-11-19 | [Fish judging rubric: the gold set's corrections](2026-11-19-fish-rubric-gold-set.md) | #1218 |
 | 2026-11-19 | [A fish photo with a look-alike near its edge plays once a crop takes it out](2026-11-19-fish-saving-crop.md) | #1223 |
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject](2026-11-19-genera-into-tree.md) | #1214 |
@@ -85,6 +87,7 @@ Newest first.
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [The privacy page: a short notice, the points the law asks for, no internal detail](2026-11-19-privacy-short.md) | #1095 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
+| 2026-11-19 | [The rules core: AGENTS.md cut to what every task holds, the index to docs/rules/, S1 and L6 merged](2026-11-19-rules-core.md) | #1217 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
 | 2026-11-19 | [Rules tooling: a search before any question, the answers ledger checked, the decisions index generated](2026-11-19-rules-tooling.md) | #1199 |
 | 2026-11-19 | [The rules core trial's harness, and a guard on agent launches: model and effort set, every launch logged](2026-11-19-rules-trial-harness.md) | #1209 |

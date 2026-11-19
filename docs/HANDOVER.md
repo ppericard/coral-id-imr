@@ -2,7 +2,7 @@
 
 What has no other home: the working copy, the hosting settings, the sheet script's setup and redeploy, the external
 resources and the one-time setups only Pierre can do. Read [`AGENTS.md`](../AGENTS.md) first (Rule 0, the merge
-contract, the index of rules), then [`STATUS.md`](STATUS.md) for where things stand. Where things are: the
+contract, the rules every task holds), then [`STATUS.md`](STATUS.md) for where things stand. Where things are: the
 documentation map of [`README.md`](../README.md), the files in [`ARCHITECTURE.md`](ARCHITECTURE.md) and
 [`DATA.md`](DATA.md), the scripts in [`tools/README.md`](../tools/README.md).
 

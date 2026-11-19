@@ -7,7 +7,7 @@ reserved ([LICENSE](LICENSE)).
 ## Read first
 
 1. [AGENTS.md](AGENTS.md): the constitution. Rule 0 (Pierre's working hours), the merge contract (who merges, and
-   when), the index of every rule, the ship checklist.
+   when), the rules every task holds; the index of every rule is [docs/rules/README.md](docs/rules/README.md).
 2. The file of [docs/rules/](docs/rules/README.md) that your change touches. AGENTS.md's "Read on demand" table says
    which. A rule has a stable ID (`C3`, `D4`, `W19`…), a *Why* and a *Source*; follow it over your own taste.
 3. [docs/STATUS.md](docs/STATUS.md): where things stand, and what is already being built.
@@ -17,7 +17,7 @@ reserved ([LICENSE](LICENSE)).
 ## Make a change
 
 1. **Start from a fresh `origin/main`**, in a worktree of your own, on a branch that holds one change. Never start from
-   another PR's branch (rules W22, W27).
+   another PR's branch (rule W22).
 2. **Write a test with the logic you change** (rule W12). Unit tests are `tests/*.test.js`, run with
    `node tests/run.js`; the Playwright smokes are `tests/*.smoke.js`. The commands are in README "Test".
 3. **Before each push, run the fast tier** (rule W14): Prettier on the JS and CSS you changed (rule W13),
@@ -35,7 +35,7 @@ reserved ([LICENSE](LICENSE)).
 6. **Keep real names out**: no real player or staff name anywhere in the repository (rule D2). Everything produced is in
    English (rule W1).
 7. **Update the docs in the same PR** (rule W19): the doc that describes what you changed, the README if a newcomer
-   would notice, ROADMAP for an idea discussed and not built (rule W5). When the PR carries out a decision, add a
+   would notice, ROADMAP for an idea discussed and not built. When the PR carries out a decision, add a
    [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
 8. **Open a PR** from `origin/main` with the [template](.github/pull_request_template.md): what and why, where each
    choice was decided, the choices that still need Pierre, what changes for players, the tests, the sheet script, the
