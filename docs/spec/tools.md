@@ -97,7 +97,8 @@ written with `tools/datajson.py`.
   `$XDG_CACHE_HOME/coral-id-imr/effort` (never in the repository). Long sheet PRs include the waits for the
   `VERSION` and for Pierre's answers: read the median and the range, not the mean.
 - **`asked.py TERM…`** (`--any`): before any question, prints the entries of `docs/ANSWERS.md`, AGENTS.md, the rules
-  and the decision records holding the terms (accents ignored), file:line; its last line goes under the question.
+  and the decision records holding the terms (accents ignored), file:line, and the ledger on each open PR's branch
+  (`gh`, `git fetch`; "PR #N"; skipped with a note offline, `--no-prs`); its last line goes under the question.
 - **`answers_check.py`** (`--check` in the docs test): each ledger entry from 2026-11-19 says "Applied: <doc or #PR>"
   or "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words (`KNOWN`: older); a
   ROADMAP or reviews index status waiting on an answered Q fails; studies and STATUS are only reported.
