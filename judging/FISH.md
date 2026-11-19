@@ -130,7 +130,8 @@ photos for the species questions and the explanation cards.
 Q435: the judged ease is the starting point, the players' answers decide;
 [the decision](../docs/decisions/2026-11-19-fish-juvenile-no-cap.md)). The juvenile classes (`fish.json` `juv`,
 [FISH_PATH.md](../docs/FISH_PATH.md) "Juveniles and colour phases") set only when a juvenile comes in the draw. The
-juvenile tag stays on every photo.
+juvenile tag stays on every photo. The in-play juveniles typed 1-2 under the old "2 hard: a juvenile" line were
+re-rated blind (the decision's "The re-rate"; `judging/fish-juvenile-rerate.json`).
 
 ## Reference photos
 
