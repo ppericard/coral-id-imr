@@ -36,6 +36,7 @@ const ROUTES = [
   'leaderboard',
   'leaderboard/achievements',
   'tools',
+  'tools/samediff',
   'learn/basics/walls',
   'learn/basics/words',
   'about',
@@ -4761,6 +4762,79 @@ async function newPlayer(b, base) {
   return fails;
 }
 
+// Same or different? (proto/samediff.js, the Lab): four rounds on a page with every unit unlocked, one by the keyboard.
+// Two photos; one screen before the answer and after it (rule U2: the photos, both buttons, then the verdict and Next, all
+// between the header and the phone tab bar, the page never scrolling); nothing named before the answer; the verdict true
+// to the names the photos carry once answered; and the player's progress, answer log and answer count untouched (untimed,
+// no effect on progress). Pushes its failures into `fails`.
+async function sameDiffCheck(p, w, fails) {
+  const at = `${w}px Same or different?`,
+    rec = () =>
+      p.evaluate(() =>
+        JSON.stringify([P, SYNC ? SYNC.log || null : null, store.get(LOG0, []), store.get(ANONQ, []), introMap(), answersSoFar()])
+      ),
+    // What sticks out of one screen: the photos, the buttons, the sheet and Next must sit between the top and the tab bar.
+    fit = () =>
+      p.evaluate(() => {
+        const tab = document.querySelector('.sections'),
+          tabTop = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight,
+          out = [...document.querySelectorAll('#view .sdq .qph, #view .sdq [data-sd], #view #after, #view #next')]
+            .map(e => [e.id || e.className || e.tagName, e.getBoundingClientRect()])
+            .filter(([, r]) => r.top < -1 || r.bottom > tabTop + 1)
+            .map(([n, r]) => `${n} ${Math.round(r.top)}..${Math.round(r.bottom)} of ${Math.round(tabTop)}`);
+        return {
+          out,
+          scroll: document.documentElement.scrollHeight - innerHeight,
+          photos: [...document.querySelectorAll('#view .sdq .qph')].map(e => [Math.round(e.offsetWidth), Math.round(e.offsetHeight)])
+        };
+      });
+  await p.evaluate(() => (location.hash = 'tools/samediff'));
+  await p.waitForSelector('#view .sdq [data-sd]', {timeout: 20000}).catch(() => {});
+  if (!(await p.$('#view .sdq [data-sd="same"]'))) return fails.push(`${at}: no question drawn with every unit unlocked`);
+  const before = await rec();
+  for (let k = 0; k < 4; k++) {
+    const pre = await p.evaluate(() => ({
+      photos: document.querySelectorAll('#view .sdq .qph').length,
+      buttons: [...document.querySelectorAll('#view .sdq [data-sd]')].map(b => b.textContent.replace(/\d/, '').trim()),
+      prompt: document.querySelector('#view .sdq .prompt')?.textContent,
+      named: !!document.querySelector('#view .sdq figcaption, #view .sdq .psrc, #view .sdq .fb')
+    }));
+    if (pre.photos !== 2 || pre.buttons.join() !== 'Same,Different' || !/^Same .+ or different\?$/.test(pre.prompt || '') || pre.named)
+      fails.push(`${at}, round ${k + 1} before the answer: ${JSON.stringify(pre)}`);
+    const f0 = await fit();
+    if (f0.out.length || f0.scroll > 1 || f0.photos.some(([x, y]) => x < 100 || y < 100))
+      fails.push(`${at}, round ${k + 1} before the answer is not one screen: ${JSON.stringify(f0)}`);
+    const chose = k % 2 ? 'diff' : 'same';
+    if (k === 2) await p.keyboard.press('1');
+    else await p.click(`#view .sdq [data-sd="${chose}"]`);
+    await p.waitForSelector('#view .sdq.done #next', {timeout: 5000}).catch(() => {});
+    const post = await p.evaluate(() => {
+      const caps = [...document.querySelectorAll('#view .sdq .qph figcaption')].map(e => e.textContent),
+        h3 = document.querySelector('#view #after h3');
+      return {
+        caps,
+        sameShown: caps.length === 2 && caps[0] === caps[1],
+        verdict: !!h3 && h3.classList.contains('ok'),
+        said: h3 ? h3.textContent : '',
+        picked: document.querySelector('#view .sdq [data-sd].ok, #view .sdq [data-sd].ko')?.dataset.sd
+      };
+    });
+    const said = k === 2 ? 'same' : chose;
+    if (post.caps.length !== 2 || !post.said.includes(post.caps[0]) || (!post.sameShown && !post.said.includes(post.caps[1])))
+      fails.push(`${at}, round ${k + 1} answered: the verdict does not say the two names ${JSON.stringify(post)}`);
+    if (post.verdict !== ((said === 'same') === post.sameShown))
+      fails.push(`${at}, round ${k + 1}: the verdict is wrong for ${said} ${JSON.stringify(post)}`);
+    const f1 = await fit();
+    if (f1.out.length || f1.scroll > 1) fails.push(`${at}, round ${k + 1} answered is not one screen: ${JSON.stringify(f1)}`);
+    await p.click('#view #fbmbtn');
+    const f2 = await fit();
+    if (f2.scroll > 1) fails.push(`${at}, round ${k + 1} with More open scrolls the page: ${JSON.stringify(f2)}`);
+    await p.click('#view #next');
+    await p.waitForSelector('#view .sdq:not(.done) [data-sd]', {timeout: 8000}).catch(() => fails.push(`${at}: Next drew no new question`));
+  }
+  if ((await rec()) !== before) fails.push(`${at}: playing it changed the player's record, log or answer count`);
+}
+
 // One progression path for every game (rule L4): a beginner who met 4 genera on the path (Pocillopora,
 // Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
 // genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
@@ -4869,6 +4943,7 @@ async function onePath(b, base) {
     ['lab-reveal', null, '#rvimg', null],
     ['lab-spot', null, '.spotph img', null],
     ['lab-type', null, '.tystage img', null],
+    ['lab-samediff', null, '.sdq .qph img', null],
     ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
     ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
     ['lab-anatomy|drill', null, '#a2q img', '#a2next'],
@@ -5691,6 +5766,9 @@ const PARTS = [
       // No credits block on any page but Home: no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
+    errs.length = 0;
+    await sameDiffCheck(p, w, fails);
+    if (errs.length) fails.push(`${w}px Same or different?: ${errs.slice(0, 3).join(' | ')}`);
     // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
     // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open
     // gives the corals' page: tests/fish.smoke.js).

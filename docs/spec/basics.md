@@ -17,7 +17,8 @@ section each remaining prototype is meant for is in ROADMAP, the module registry
 
 The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
-`pairs` (Memory) and `idkey` (the Coral ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups
+`pairs` (Memory), `samediff` (Same or different?, on the subject on screen, [quiz.md](quiz.md#same-or-different-lab-prototype))
+and `idkey` (the Coral ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups
 (`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account, ach, toast), each opened through `app.js`
 `cardShow` with sample copy and nothing recorded (the sign-in card, the achievement toast and the note are the real
 ones). A prototype marked `admin: true` (the cards gallery) is listed in the hub in the admin's browser only

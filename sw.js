@@ -72,6 +72,7 @@ const SHELL = [
     'spot',
     'type',
     'pairs',
+    'samediff',
     'gallery',
     'cards'
   ].map(f => `proto/${f}.js?v=84`)

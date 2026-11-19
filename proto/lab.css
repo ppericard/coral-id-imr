@@ -4253,3 +4253,8 @@ body:has(.ikstart:not([hidden])) main {
 .lckinds .next {
   flex: none;
 }
+
+/* Same or different? (proto/samediff.js): the quiz's own stage, answers and feedback sheet (app.css .q, .qstage.qvs, .ans, .fb), so it fits one screen as they do. The enlarge mark stays on phones (the montage hides it: there the photos are only looked at). */
+.q.sdq .qstage.qvs .qph .zic {
+  display: grid;
+}
