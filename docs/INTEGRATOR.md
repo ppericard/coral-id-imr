@@ -205,9 +205,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   train moves it. `git pull` before a train so you run the current `train.py`. Only the train pushes `release`; a Code.gs
   merged any other way does not reach the sheet until the next train.
 - **The shared index files**: the decisions index is generated (above). `docs/ANSWERS.md` is append-only: on a conflict
-  keep `main`'s lines first, then the PR's, and run `python3 tools/answers_check.py`. `.gitattributes` has `merge=union`
-  for it (#1215): a local `git merge` (the train's build) honours it, GitHub's merge ignores it, so a PR can show a
-  conflict on GitHub while a train merges clean, and a conflict there is resolved by hand
+  keep `main`'s lines first, then the PR's, then `python3 tools/answers_check.py`. `merge=union` (#1215) applies to
+  local merges (the train's build), not GitHub's: a PR can show a conflict there that the train does not
   ([record](decisions/2026-11-19-rules-tooling.md)).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
   assign are new heads, so `@codex review` and wait. The train adds no head.
