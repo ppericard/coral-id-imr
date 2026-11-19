@@ -444,7 +444,7 @@ async function freshPlayers(b, base, errs) {
   // (9) A brand-new fish player: the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
-  // juvenile of a capped genus (fish.json juv: a juvenile is very easy only in a class-A entry or a show-early genus);
+  // juvenile but an early-class one (its draw ramp: core.js VAR_AT, below);
   // past Open Water the others come in (a sex / colour phase is no family-level difficulty). Five seeds, each a player
   // of its own (its context, its storage, its seeded Math.random, its renderer process), so they play side by side: on
   // CI, where the runner is this smoke's alone, all five at once; on a shared machine two at a time, the two cores of
@@ -2059,6 +2059,16 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const ar = await nameRoot();
     if (!rootOk(ar, /^Name roots: Amphi·prion: “around” \(amphi-\) \+ “saw” \(prion\)\./))
       ui.push(`${width}px Amphiprion name roots: ${JSON.stringify(ar)}`);
+    // The roots reach circle 3 (Gymnothorax, a Morays genus page).
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Gymnothorax'));
+    await q
+      .waitForFunction(() => /Gymnothorax/.test((document.querySelector('#view .fsheet .fn-t') || {}).textContent || ''), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const mr = await nameRoot();
+    if (!rootOk(mr, /^Name roots: Gymno·thorax: “bare or naked” \(gymnós\) \+ “breast or chest” \(thṓrax\)\./))
+      ui.push(`${width}px Gymnothorax name roots: ${JSON.stringify(mr)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})
