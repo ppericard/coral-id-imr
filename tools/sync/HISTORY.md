@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v201 (2026-11-20)
+
+The sheet script's copy of `core.js` follows the app: the fish and the sea slugs open the Custom quiz tab (`SUBJECTS` `pages` `quiz-custom`; Pierre, 2026-11-19, Q437: «évidemment oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières»), and the page is no longer in `CLOSED_TREE`. Nothing the script computes changes: each subject's selection is one more `reefid-sync-<subject>-custom` key in the player's saved data, which the script stores as it stores every `reefid-sync-` key
+
 ## v200 (2026-11-19)
 
 Its copy of `core.js`: the fish and the sea slugs get the Duel tab (`SUBJECTS` `pages` `quiz-duel`), and every subject names the Learn and Practice pages it lacks with the reason (`SUBJECTS` `closed`, `CLOSED_TREE`). Nothing the script computes changes: a Duel-tab answer of any subject was already logged, scored and replayed as a two-choice contrast question (`kOf`, `contrastQ`), the fish's mode ids renamed with the row (`renameLogEntry`). Pierre, 2026-11-19 (Q437): every game mode opens to every subject, in shared code
