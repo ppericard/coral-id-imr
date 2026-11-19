@@ -4,6 +4,10 @@ Status: a design study with mockups. It changes no app code. The mockups are the
 prototype markup injected (section 9); they are not committed. Pierre's choices are the questions at the end (section
 10); the rest is the integrator's call once he has answered.
 
+**Where the questions stand (2026-11-19).** (f), the rename of the stored role ids, is dissolved by Q408 (groups carry
+an instance's rights, Admin stays outside the groups; section 10). (a), the entry's name "Workspace", is kept as the
+integrator's call, easy to correct. (b), (c) + (d) and (e) stay open, asked as Q422-Q424 on 2026-11-19.
+
 ## 1. Why this study
 
 Pierre, 2026-11-18, about 11:47 Manila:
@@ -336,6 +340,21 @@ edited slot and its source ("IMR lecture, slide 14") are illustrative, not an ed
 
 Product choices only; the rest is the integrator's call. Unnumbered here: the integrator numbers those that pass the two
 tests (AGENTS.md "Working mode").
+
+**State on 2026-11-19.**
+- **(a) Kept: "Workspace"** is the integrator's call (easy to correct): a name players meet only if they hold a role.
+- **(b) Open**, asked as **Q422** on 2026-11-19.
+- **(c) and (d) Open**, asked together as **Q423** on 2026-11-19 (one question: which rights the name + 4-digit code
+  covers).
+- **(e) Open**, asked as **Q424** on 2026-11-19.
+- **(f) Dissolved by Q408** (Pierre, 2026-11-19; docs/ANSWERS.md 2026-11-19, `docs/reviews/2026-11-18-groups-carry-rights-study.md`
+  section 6, `docs/decisions/2026-11-19-groups-carry-rights.md`). Question 1 (OK, 06:50): groups carry settings and
+  rights, a player's rights are the union of their groups', and the Roles tab and its role names go. Question 6
+  (changed, 06:58): groups carry only an instance's rights (Managers, Curators, Trainers); Admin stays outside the
+  groups, as the token plus a short list of admin accounts kept apart, not editable from the Groups page and shown in
+  the Audit. So the stored ids `editor` and `owner` are not renamed `curator` and `manager`: the migration creates
+  groups of those names instead (the migration's detail is the groups-carry-rights study's: as its question 6 proposes,
+  the Roles tab is kept read-only as the record). Section 8's "Stored ids" bullet above is superseded by that.
 
 - **(a) The entry's name.** A briefcase icon in the header for role holders, where the Sign in pill sits for a
   signed-out player. "My tools" would clash with **Tools** (the Lab). *Recommendation: "Workspace".* Others: "Teach &
