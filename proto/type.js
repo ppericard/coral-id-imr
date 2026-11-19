@@ -61,6 +61,7 @@ LAB.add({
         score.ok += ok ? 1 : 0;
         score.streak = ok ? score.streak + 1 : 0;
         body.querySelector('.tyscore').textContent = scoreLine(); // the answer just counted
+        body.querySelector('.tylayout').classList.add('tydone'); // phones: a shorter photo, so the verdict and Next stay on the screen (rule U2)
         // The photo's source pill, only now: before the answer it would give the unit away (as Blur reveal). Hidden on
         // phones, as in every game (app.css .psrc, rule P5): the enlarged view carries the source there.
         const im = body.querySelector('.tystage img');

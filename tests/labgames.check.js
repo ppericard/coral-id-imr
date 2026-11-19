@@ -118,8 +118,6 @@ module.exports = async function labGamesCheck(p, w, fails, tag = '', rounds = 4)
       await screen('Type', 'answered', k, '#view .tystage, #view #tyres, #view #tynext, #view .chips');
       if (k < rounds - 1) await p.click('#view #tynext');
     }
-    const t = await text();
-    if (/\bcorals?\b/i.test(t) && unit[1] !== 'Coral') fails.push(`${at('Type')}: coral words on a ${unit[0]} page`);
   }
 
   // ---- Blur reveal

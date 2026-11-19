@@ -3377,7 +3377,7 @@ body:has(.ikstart:not([hidden])) main {
 @media (max-width: 599px) {
   .rvdone .rvstage {
     aspect-ratio: auto;
-    height: 17vh;
+    height: 11vh;
   }
 }
 
@@ -3386,6 +3386,10 @@ body:has(.ikstart:not([hidden])) main {
 @media (max-width: 599px) {
   .tystage {
     max-height: 32vh;
+  }
+  /* answered: a strip, so the verdict, its line, the credit, Next and the views stay on one screen (rule U2) */
+  .tydone .tystage {
+    max-height: 18vh;
   }
 }
 
