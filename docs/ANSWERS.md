@@ -68,3 +68,6 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   fasses une passe globale sur la base de toutes mes décisions d'hier aujourd'hui ou avant, et met à jour la doc
   proprement en conséquence!"
 - **07:05.** OK to this ledger and its rule (AGENTS.md "Every answer reaches its doc, and the answers ledger").
+- **08:18.** On README's credit line for the Coral Finder 2022 ("no photo of the book is used. It stays a cited
+  source…"): "Je suis pas sur que c'est une bonne chose de mettre ça en avant. Maintenant c'est juste une source comme les
+  autres". Applied: the line is gone from README's credits; the book is cited where it is used, like any source.
