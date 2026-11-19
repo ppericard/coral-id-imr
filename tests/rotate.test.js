@@ -274,6 +274,26 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
   assert.ok(T.fishSrc(p, 1).endsWith(` style="${vb}"`), T.fishSrc(p, 1));
 });
 
+// An IMR lecture photo traced to its Corals of the World original: the lecture's framing (cr, ro) is its baseline, not in
+// the draft, so the admin shows its framed R2 file as the players see it (Codex review, #1292).
+test('the admin shows a framed lecture photo as its file, and draws its framing from the original once R2 fails', () => {
+  const T = adminVm(),
+    o = 'https://www.coralsoftheworld.org/media/images/0345_C01_02.jpg',
+    p = {f: 'imr-p12_i8', imr: true, src: o, cr: [0.1, 0.2, 0.9, 0.8], ro: 90, ar: 0.67};
+  T.set({DRAFT: {}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${T.img(p, 1)}"`, 'the framed file as it is');
+  // His own crop or turn is laid on the original, as for any photo.
+  T.set({DRAFT: {crop: {[p.f]: [0, 0, 0.5, 1]}, rot: {[p.f]: 90}}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(0% 50% 0% 0%)" data-rot="90"`);
+  // R2 failed: the original with the lecture's framing drawn.
+  T.set({DRAFT: {}, AWAY: true});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(20% 10% 20% 10%)" data-rot="90"`);
+  // A lecture photo with no framing (the whole picture) is shown as its file.
+  T.set({DRAFT: {}, AWAY: false});
+  const q = {f: 'imr-p1_i1', imr: true, src: o, ar: 1.5};
+  assert.strictEqual(T.crSrc(q, 1), `src="${T.img(q, 1)}"`);
+});
+
 test('R2 failed: the published rotation is drawn on the original with its crop (admin.js photoRoOf, its error handler)', () => {
   const {photoIndex, photoCropOf, PHOTO_BASE} = CORE,
     iN = (n, s) => `https://inaturalist-open-data.s3.amazonaws.com/photos/${n}/${s}.jpg`,
