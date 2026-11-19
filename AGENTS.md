@@ -249,7 +249,8 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 6. `Code.gs` or `core.js` changed: rules D3-D5 (a `tools/sync/changes/` file, never `VERSION`). Tests never reach the
    real sheet (rule D1).
 7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
-8. PR from the template, Decisions filled; rebase on `origin/main` before each push (rule W18).
+8. PR from the template, Decisions filled; to bring it up to date, merge `origin/main` into it, never rebase or
+   force-push (rule W18).
 9. `@codex review` after each push; fix or answer every finding; never re-run a failed job (rule W23).
 
 ## Review guidelines
