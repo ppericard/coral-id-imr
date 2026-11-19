@@ -1,8 +1,9 @@
-# One engine, step 2: the features `replay` switched become named `SUBJECTS` fields, at today's values
+# One engine, step 2: replay's features named, the one-tap question and the notices the engine's
 
 Date: 2026-11-19. PR: #1226. Rules or docs touched: S1; docs/spec/subjects.md "The registry", "Sync and replay per
-subject"; docs/spec/fish-game.md, docs/spec/seaslugs.md, docs/LEARNING.md (the circle-3 threshold); ROADMAP "One engine
-for every subject, what is left".
+subject"; docs/spec/cards.md (the notes, the apology); docs/spec/sync.md and docs/LEARNING.md (the one-tap question);
+docs/spec/fish-game.md, docs/spec/seaslugs.md, docs/LEARNING.md (the circle-3 threshold); ROADMAP "One engine for every
+subject, what is left".
 
 ## Context
 
@@ -17,20 +18,28 @@ for the fish and the sea slugs, and the recalculation notice tied to the first s
 
 ## Decision
 
-Each feature is its own `core.js` `SUBJECTS` field, on the subjects replay was on (the corals): `hold` (the sheet's
-opening hold), `offsets` (the sheet's photo memory and format offsets, `model.js` `pmem`, `pfmt`), `anonBase` (the
-sign-in baseline `ANONB`), `pulse` (the one-tap question), `sorry` (the apology card), `recalcNote` (the recalculation
-notes). `replay` keeps the sheet's first replay path and the subject of an unlabelled row. The circle-3 threshold is
-`SUBJECTS` `gate` `c3` (`TREE_GATE`, the fish's and the sea slugs' one value), read by `app.js` `treeC3`. The field
-names, and keeping `replay` for what the sheet's own code still reads through `replaySubject`, are the integrator's
-call (names inside the code).
+- What the sheet computes for one subject stays a declared `core.js` `SUBJECTS` field, on the corals as `replay` was:
+  `hold` (the sheet's opening hold), `offsets` (the sheet's photo memory and format offsets, `model.js` `pmem`, `pfmt`),
+  `anonBase` (the sign-in baseline `ANONB`). `replay` keeps the sheet's first replay path and the subject of an
+  unlabelled row. The circle-3 threshold is `SUBJECTS` `gate` `c3` (`TREE_GATE`), read by `app.js` `treeC3`.
+- The one-tap question is an engine feature, asked in every subject. Pierre, Q436, 15:54: «Je ne comprends même pas
+  pourquoi ça n'est pas juste une fonctionnalité du moteur et qui marche donc déjà pour toutes les matières... Donc oui
+  bien sur, et il faut mutualiser le code tant que possible». Its events were already tagged by the page they were
+  given on (the Page column, the subject's address); the admin's table reads each subject's apart.
+- The apology card and the update notes stay as templates of the engine. Pierre, 15:55: «ça veut pas dire qu'il ne faut
+  pas garder les templates. On ne sait jamais quand on en aura besoin». A card or note has no subject and shows in every
+  subject, unless its own data names one (`subj`, `core.js` `subjIn`): the two progress notes of `RECALC.L` speak of the
+  corals' genera; the typed-questions note (a mode of every subject) and the apology (its window ended 2026-11-17) carry
+  none. One card shows the run of notes one subject can show (`core.js` `noteRun`).
+- The field names, `subjIn`, `noteRun`, keeping `replay` for what the sheet's own code still reads, and which notes
+  carry a subject: the integrator's call.
 
 ## Consequences
 
-- No behaviour changes: every field holds the value `replay` gave it (`tests/subject-neutral.test.js` checks each
-  against `replay`, and the gate's values), so nobody's progress moves and no rules version is needed (rule D5). The
-  sync script's own code is unchanged; its copy of `core.js` carries the new fields (rule D3).
-- `hold` and `offsets` stay on `replay`'s subject while the sheet computes them for it alone; giving them to every
-  subject is the audit's steps 5 and 8. Turning the app-only ones on for another subject (the audit's step 6, and the
-  pulse, apology or notes if a subject needs them) is now a change of a field's value, not of the code.
-- The S1 test lists each new field with its ROADMAP row and drops the recalculation notice's listed exception.
+- The corals see the same notes as before (`tests/noterun.test.js`); a fish or sea slug player now gets the one-tap
+  question, and the typed-questions note in their own subject if not seen yet. No progress moves: no rules version
+  (rule D5). The sync script's own code is unchanged; its copy of `core.js` carries the fields (rule D3).
+- `hold` and `offsets` stay on `replay`'s subject while the sheet computes them for it alone (the audit's steps 5 and
+  8); `anonBase` for every subject is step 6.
+- A later card or note for one subject is a data entry with its `subj`, no code. The S1 test reads a `subj:` value as a
+  declaration, lists the remaining flags with their ROADMAP row and no longer lists the recalculation notice's exception.

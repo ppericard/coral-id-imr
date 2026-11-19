@@ -247,9 +247,6 @@
   //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
   //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
   //           signIn); any other subject adds all the progress this device holds
-  //   pulse   the one-tap question on how hard the game feels is asked in it (quiz.js pulseDue)
-  //   sorry   the apology for its too-fast opening (progress.js sorryNotice, core.js SORRY) is about it
-  //   recalcNote  the recalculation notes (progress.js RECALC) are about it: shown in this subject
   //   hold and offsets follow the sheet, which computes them for replay's subject alone (tests/subject-neutral.test.js)
   //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
   //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
@@ -449,9 +446,6 @@
       hold: true,
       offsets: true,
       anonBase: true,
-      pulse: true,
-      sorry: true,
-      recalcNote: true,
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       ach: true,
       // Its achievements (core.js ACH; a function: the list is defined below) and whether its answers keep the feats of the
@@ -941,6 +935,19 @@
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
   // keep a group for it (app.js subjOpen, admin.js groupOn, Code.gs groupIds_). Any other value opens it to all.
   const subjGroup = S => !!S && S.open === 'group';
+  // Whether a card or note x concerns subject id (rule S1: the data says which subject a card is about, never the
+  // engine): one with no subj is the engine's and shows in every subject; subj, a subject id or a list of them, only there.
+  const subjIn = (x, id) => !x || x.subj == null || [].concat(x.subj).includes(id);
+  // The notes one card shows (progress.js recalcNotice): from due, the notes not seen yet (oldest first), the longest run
+  // one subject can show, and that subject: the one on screen (sid) when the first note may show there, else the first
+  // note's first subject. The notes after the run wait for the next card, so marking the run's last one seen (the notes
+  // are seen in order) never passes over another subject's note. {sid, L}, L empty when nothing is due.
+  const noteRun = (due, sid) => {
+    const L = Array.isArray(due) ? due : [],
+      s = !L.length || subjIn(L[0], sid) ? sid : [].concat(L[0].subj)[0],
+      n = L.findIndex(x => !subjIn(x, s));
+    return {sid: s, L: n < 0 ? L : L.slice(0, n)};
+  };
   // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
   // unlabelled row. The sheet's hold and photo memory follow it too (SUBJECTS hold, offsets).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
@@ -7431,6 +7438,8 @@
     subjCounts,
     subjKey,
     subjDev,
+    subjIn,
+    noteRun,
     treeGen,
     treeGenSets,
     treeObs,

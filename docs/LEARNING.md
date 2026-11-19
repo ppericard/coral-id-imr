@@ -540,8 +540,8 @@ Now and then, at a natural break between an answer and the next question, a one-
 `PULSE`; its bank `core.js` `PULSEQ`: too easy or too hard, the flow channels, harder photos, fun, frustration,
 boredom; asked in rounds, never the same wording twice in a row). First after `PULSE.FIRST` (35) answers, then every
 `PULSE.EVERY` (40), twice that after a "Not now"; never early in a session (at least `PULSE.SESS_N`, 15 answers,
-and `PULSE.SESS_MS`, 5 minutes, into it). Only for the subject the sheet replays (the corals) and in the photo quiz or the
-Duel tab. The out-of-game prompts (the sign-in card, this question, the cards about which units are in play) are at least
+and `PULSE.SESS_MS`, 5 minutes, into it). In every subject (an engine feature, Pierre, 2026-11-19), in the photo quiz or the Duel tab;
+the admin reads each subject's answers apart, by the page each was given on. The out-of-game prompts (the sign-in card, this question, the cards about which units are in play) are at least
 `PROMPT.GAP` (10) answers apart and never shown over a card (`quiz.js` `PROMPT`, `promptOk`). The answer goes to the sheet as an event with what the game knew then (mode, answers this visit, recent right
 %, level, units met); the showing and "Not now" are logged too, for the response rate. Nothing in the game changes with
 it.

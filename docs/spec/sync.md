@@ -650,7 +650,8 @@ Events tab, whose admin read (`readEvents`) is the last 3,000 rows. Like every r
 - **The one-tap questions and the tips** log as `pulse` events: `r` as text in the Message column and `src` (the item,
   or `tip:<id>`) in the Where column; Detail keeps `r` only for `easy`, `ok`, `hard`, the codes the difficulty items
   use; a row with an empty Where counts as the first item (`PULSE0`). The admin reads them in To do › Errors
-  ([cards.md](cards.md#one-tap-questions)).
+  ([cards.md](cards.md#one-tap-questions)), each subject's apart: the subject of the Page column's address
+  (`admin.js` `subjOfHash`).
 - **First page from Home** (`fromhome`): which page players open first from Home, so the loading tiers ("Load order in
   tiers") can follow real use. `app.js` `fromHome`, called by `route()` before it draws a page, sends one event a visit,
   the first time a Home it drew is left for another page: the page name (`core.js` `pageName`) in the Message column,

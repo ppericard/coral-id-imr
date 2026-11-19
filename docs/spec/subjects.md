@@ -50,9 +50,8 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
   [Sync and replay per subject](#sync-and-replay-per-subject));
 - features of their own, the corals' (rule S1): `hold` (the sheet's opening hold counts its answers), `offsets` (the
-  sheet's photo memory and format offsets: `model.js` `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`),
-  `pulse` (the one-tap question), `sorry` (the apology card), `recalcNote` (the recalculation notes); `hold` and
-  `offsets` stay on `replay`'s subject while the sheet computes them for it alone (`tests/subject-neutral.test.js`);
+  sheet's photo memory and format offsets: `model.js` `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`);
+  `hold` and `offsets` stay on `replay`'s subject while the sheet computes them for it alone (`tests/subject-neutral.test.js`);
 - `gate` (the fish and the sea slugs: `TREE_GATE`): circle 3 at circle 1's Entries component `c3.entries` (0.55), or
   with no global score its plain mean `c3.mean` (0.5) (`app.js` `treeC3`);
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
@@ -205,10 +204,10 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
   are replayed from their own answers with their own rules versions and keys (`SUBJECTS` `replayed`, `FISH_RVS`,
   `SEASLUG_RVS`; `reefid-sync-fish-rv`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). The
-  sheet's opening hold is the corals' (`SUBJECTS` `hold`; `sync.js` `holdAdopt`, as that subject), and so are the
-  one-tap question and the apology card (`pulseDue`, `sorryNotice`: `pulse`, `sorry`). At sign-in every subject takes
-  the account's copy as its merge baseline, played on the device or not. A wink is decided before a question is taken or chosen
-  (`quizPhoto`), so planned questions and the Again / duel spacing wait.
+  sheet's opening hold is the corals' (`SUBJECTS` `hold`; `sync.js` `holdAdopt`, as that subject). The
+  one-tap question, the apology card and the update notes are the engine's, in every subject (a note about one subject
+  names it, `RECALC.L` `subj`). At sign-in every subject takes the account's copy as its merge baseline, played on
+  the device or not. A wink is decided before a question is taken or chosen (`quizPhoto`), so planned questions and the Again / duel spacing wait.
 - **Sheets across subjects**: a genus sheet or comparison (`#learn/genus/…`, `#cmp-…`) opened with a subject that has
   none (from the Coral ID Key with Fish chosen) switches to the subject that has it (`route`, `setSubject`); the other
   way, a subject chosen by the player on such a page opens its section's page for that subject (`setSubject`,

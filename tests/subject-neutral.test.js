@@ -64,9 +64,6 @@ const FLAGS = [
     'signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js signIn)',
     ONE_ENGINE
   ],
-  ['pulse', 'the one-tap question on how hard the game feels (quiz.js pulseDue)', ONE_ENGINE],
-  ['sorry', 'the apology for its too-fast opening (progress.js sorryNotice)', ONE_ENGINE],
-  ['recalcNote', 'the recalculation notes (progress.js RECALC), shown in this subject (recalcNotice)', ONE_ENGINE],
   ['achFeats', "the feats (runs, Sharp eye, corallites) kept by this subject's answers only (progress.js)", ONE_ENGINE],
   // The admin's own: one subject's part of SUBJECTS admin. The admin pages that fork on them are counted in
   // tests/subject-neutral-admin.test.js (docs/reviews/2026-11-19-admin-one-engine.md).
@@ -91,13 +88,16 @@ const FLAGS = [
 // The checks, pure, so the planted cases below prove that each one bites.
 const lit = new RegExp(`(['"\`])(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\1`),
   idCmp = /\bSUBJ(?:\.id)?\s*[!=]==?\s*['"`]|['"`][^'"`]*['"`]\s*[!=]==?\s*SUBJ\.id\b|\bSUBJ\.id\s*[!=]==?\s*[A-Z_]+\.SUBJ\b/,
-  place = /[!=]==?\s*(?:CORE_\.)?SUBJECTS(?:\[|\.find\()|\bSUBJECTS(?:\[[^\]]+\]|\.find\([^)]*\))\s*[!=]==?/;
+  place = /[!=]==?\s*(?:CORE_\.)?SUBJECTS(?:\[|\.find\()|\bSUBJECTS(?:\[[^\]]+\]|\.find\([^)]*\))\s*[!=]==?/,
+  // A card's or a note's own data saying which subject it speaks of (subj: 'id' or a list; core.js subjIn) is a
+  // declaration, not a test: its value is left out of the literal check.
+  decl = /\bsubj:\s*(?:\[[^\]]*\]|'[^']*')/g;
 function scan(f, src, allowed = ALLOWED) {
   const bad = [];
   src.split('\n').forEach((line, i) => {
     const at = `${f}:${i + 1}: ${line.trim()}`;
     if (allowed.some(([af, l]) => af === f && line.includes(l)) || /^\s*(\/\/|\/?\*)/.test(line)) return; // comment lines may name a subject
-    if (lit.test(line)) bad.push('subject literal ' + at);
+    if (lit.test(line.replace(decl, 'subj: _'))) bad.push('subject literal ' + at);
     if (idCmp.test(line)) bad.push('subject id compared ' + at);
     if (place.test(line)) bad.push('subject tested by its place ' + at);
   });
@@ -158,7 +158,13 @@ test('rule S1: the fields split out of replay keep its values (one-engine step 2
     rp = on('replay');
   assert.deepStrictEqual(rp, [replaySubject()]);
   for (const k of ['hold', 'offsets']) assert.deepStrictEqual(on(k), rp, `${k}: the sheet computes it for replay's subject only`);
-  for (const k of ['anonBase', 'pulse', 'sorry', 'recalcNote']) assert.deepStrictEqual(on(k), rp, `${k}: at replay's values`);
+  assert.deepStrictEqual(on('anonBase'), rp, "anonBase: at replay's values");
+  // the one-tap question, the apology and the notes are the engine's: no subject field switches them (Pierre, Q436)
+  for (const k of ['pulse', 'sorry', 'recalcNote'])
+    assert.ok(
+      S.every(x => !(k in x)),
+      `${k}: no SUBJECTS field`
+    );
   // the replay subject's pooled statistics are the plain ?stats=1 reply: no stats gate (model.js statsJoin, sync.js
   // loadOwnStats no longer ask replay)
   for (const x of S) if (x.replay) assert.ok(!x.stats, `${x.id}: replay's subject with a stats gate`);
@@ -170,6 +176,10 @@ test('rule S1: the fields split out of replay keep its values (one-engine step 2
 
 test('rule S1: the checks catch what they are for (planted cases)', () => {
   const [a, b] = ids;
+  // a card's own subject is a declaration; the same literal elsewhere on its line still counts
+  assert.deepStrictEqual(scan('x.js', `  subj: '${a}',`), []);
+  assert.deepStrictEqual(scan('x.js', `{id: 'n1', subj: ['${a}', '${b}'], kind: 'update'},`), []);
+  assert.strictEqual(scan('x.js', `{subj: '${a}', go: SUBJ.id === '${b}'}`).length, 2);
   // a subject's name in the sync script's code, its id compared, a test by its place, the first board subject
   assert.strictEqual(scan(GS, `const t = sid === '${b}' ? 1 : 2;`).length, 1);
   assert.strictEqual(scan('x.js', `if (SUBJ.id === '${a}') go();`).length, 2, 'a literal and a comparison');

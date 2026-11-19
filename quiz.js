@@ -1697,8 +1697,6 @@ const pulseSess = (v, now = Date.now()) =>
   v.n >= PULSE.SESS_N &&
   now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
-  // Asked in the subjects it is on for (core.js SUBJECTS pulse: the corals; the others ask nothing).
-  if (!SUBJ.pulse) return false;
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
     st = pulseSt(),
