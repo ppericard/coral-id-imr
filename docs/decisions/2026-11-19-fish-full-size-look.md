@@ -55,9 +55,10 @@ some entries were not real doubts.
 
 - **Tags**: 277 of the 351 photos changed at least one tag.
   - Clarity: `s`→`m` 148; `s`→`b` 28 and `m`→`b` 2, which cap the ease at 2.
-  - Size: `m`→`l` 115.
+  - Size: `m`→`l` 115. None of these photos has a crop on R2, so this is a difference between judges, not
+    resolution.
   - Colour loss: 1→0 57, 0→1 22.
-  - View: `o`→`p` 47, `p`→`o` 20.
+  - View: `o`→`p` 47, `p`→`o` 20. The `p` wording changed at 16:28 that day (#1218); the kept tags are older.
   - Light: `g`→`d` 13.
   - Count: `1`→`o` 12.
   - Flags added: `w` 57 (7 of them beyond the listed doubts), `a` 8, the sea slugs' `f` 2, `c` 1.
@@ -79,12 +80,17 @@ some entries were not real doubts.
 - **Full size against the sheets**: 159 photos the same, 144 one lower, 33 two lower, 15 one higher.
   - 184 photos are at 4-5 now, against 333 on the sheets.
 - **Full size against 960 px**: 186 the same, 129 one higher, 9 two higher, 27 one lower.
-  - Two looks at higher resolution differ by +0.34 on average. That is the noise floor between judges: the re-rate's
-    repeat agreement on the sheets was 76% exact.
+  - The 960 px look could only lower an ease, so the +0.34 gap is one-sided: it is not a noise floor.
+  - The re-rate's blind repeat on the sheets agreed exactly on 76%.
 - **What it can conclude**:
-  - The sample is biased. These are juveniles the sheets put at 4-5, and the 960 px look already doubted them.
-  - On them, the sheets missed softness most of all (150 of 351), and blur strong enough to cap the ease (30).
-  - They also missed 57 watermarks and 8 photos that should never have been in play.
-  - The sheets read colour loss and the oblique view as worse than the full size does, which partly offsets this.
+  - The sample is biased: juveniles the sheets put at 4-5, which the 960 px look then doubted.
+  - The sheets missed, at least, out of the 656 photos they put at 4-5:
+    - softness on 150 (23%);
+    - blur strong enough to cap the ease on 30 (5%);
+    - 57 watermarks (9%);
+    - 8 photos that should not be in play (1%).
+  - Part of the tag changes is not resolution:
+    - the `o`→`p` and part of the `b` calls follow the rubric of 16:28 (#1218);
+    - `m`→`l` is a difference between judges.
   - This does not measure the photos in play at large. A full-size pass of all of them would need a random sample
     first.
