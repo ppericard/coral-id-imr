@@ -32,8 +32,9 @@ Pierre, 2026-11-19 14:42 Manila (Q430): B. «J'ai toujours dit de mettre en jeu 
 
 ## Consequences
 
-- No photo changes today: `tools/fish_game.py --plan` lists nothing to download. The 843 candidates coded `k` wait for
-  a later judging pass, never a bulk re-judge from this PR.
+- No photo changes today: `tools/fish_game.py --plan` lists nothing to download. Of the 846 candidates coded `k`, 87
+  are undecided and a later judging pass may save them; 694 were set aside by the auto-sort (`seen`) and 65 are his
+  adds held out (rule P3), so a crop reaches those only through his curation (rule A1). No bulk re-judge here.
 - When Pierre picks Full photo on such a photo, the other fish comes back while the code still reads one fish: its count
   is then his to set (Tags), as any tag.
 - The gold-set scorer compares codes: a judge's code read on a crop differs from one read on the whole photo.
