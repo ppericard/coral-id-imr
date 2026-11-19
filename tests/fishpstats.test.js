@@ -2,7 +2,8 @@ require('./slot.js').testGuard();
 // Photo stats › Overview on the fish side (fish admin at parity): one page for every subject (admin.js renderPstats,
 // pstatsHtml), each subject's numbers in one shape (pstatsCoral, pstatsFish); the fish answers per photo from the answer
 // log alone, as By difficulty and Health count them, a photo under its candidate id and its game id counted once
-// (answersBy over photoAnswers, by core.js treePid); the page among the fish admin's pages, its Difficulty not.
+// (answersBy over photoAnswers, by core.js treePid); the page among the fish admin's pages (its photo
+// difficulty is Photo stats › Difficulty, tests/ownstats.test.js).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

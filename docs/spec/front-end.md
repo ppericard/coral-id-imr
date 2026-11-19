@@ -84,8 +84,8 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   [model.md](model.md), [quiz.md](quiz.md).
 - **Practice › Custom quiz** (`#practice/custom`, `#practice/custom/play`; tab "Custom quiz" at every width):
   [quiz.md › Custom quiz](quiz.md#custom-quiz).
-- **Practice › Look-alike duels** (`#practice/duels`; "Duels" on phones): its answers neither extend nor break the run
-  of right answers and never earn Sharp eye (`progress.js` `achRunIn`).
+- **Practice › Look-alike duels** (`#practice/duels`; "Duels" on phones; every subject): its answers neither extend nor
+  break the run of right answers and never earn Sharp eye (`progress.js` `achRunIn`).
 - **Practice › Memory** (`#practice/memory`, colony ↔ corallites, from `proto/pairs.js`): its genera (`memoryGenera`)
   are those the player has met (`introduced`) first, genera not met only filling the grid (`tests/pairs.test.js`). It
   does not use the bonus genera.

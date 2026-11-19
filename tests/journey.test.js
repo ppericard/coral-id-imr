@@ -91,7 +91,8 @@ test("jSteps: the subject's own rank and the first circle are no step; the coral
   assert.strictEqual(jSteps([jr('g:Chromis')], () => null, TREEU).length, 1, 'a unit with no record still counts its rank');
 });
 
-test('jGames: the fish formats (Find the X too), the questions on each rank, no Custom quiz or Duel tab row', () => {
+// The fish have the Duel tab (SUBJECTS pages, Q437), so its row shows at 0 as the corals' does; not the custom quiz yet.
+test('jGames: the fish formats (Find the X too), the Duel tab at 0, the questions on each rank, no Custom quiz row', () => {
   const R = [
       jr('f:A'),
       jr('f:A', 0),
@@ -109,6 +110,7 @@ test('jGames: the fish formats (Find the X too), the questions on each rank, no 
     ['Typed (recall)', 1, 1],
     ['Find the X', 1, 0],
     ['Mastery exam', 1, 1],
+    ['Look-alike duels (tab)', 0, 0],
     ['Family questions', 5, 3],
     ['Genus questions', 2, 1]
   ]);
