@@ -80,3 +80,25 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
 - **08:18.** On README's credit line for the Coral Finder 2022 ("no photo of the book is used. It stays a cited
   source…"): "Je suis pas sur que c'est une bonne chose de mettre ça en avant. Maintenant c'est juste une source comme les
   autres". Applied: the line is gone from README's credits; the book is cited where it is used, like any source.
+- **08:53, Q420 (#1099, the per-player exam reserve on the corals).** A, keep it as built: "ok. Il n'y a aucune raison
+  que ça influence les résultats...". Applied: #1099.
+- **08:53, Q421 (#1045, the fish reference photos' level-1 margin).** A, merge with no further simulation: "ok".
+  Applied: #1045.
+- **08:53, the pCloud backups (#1095's privacy page).** "On a commencé hier": the weekly backups started 2026-11-18;
+  the page states that and no deletion delay. Applied: #1095.
+- **08:53 and 08:54, Q422 (#1098 b, Curators sorting photos).** "Pourquoi plus tard?"; then "ok" to building it with
+  the Curators' relay, with a log and Undo; and "C'est toi qui est responsable de l'ordre du développement. Fait juste
+  au mieux." Applied: ROADMAP "Roles, instances and cohorts".
+- **08:53, Q423 (#1098 c, d, the pilot's name + 4-digit code).** B, both a Trainer's view of their cohorts and a
+  Manager's rights with name + code: "Pour l'instant on n'a pas besoin de grosse sécurité. Ya rien de critique. Mais
+  oui, la meilleure connection doit être prévue dans la roadmap". Applied: ROADMAP "Roles, instances and cohorts".
+- **08:53, Q424 (#1098 e, the GitHub token).** A: in the app's Admin section, as the very last step, once the pages are
+  protected (admin.html goes): "ok".
+- **08:53, Q425 (#1197, how far to edit the rules).** B: apply what is decided, then a short core always loaded, topic
+  files and guards, step by step after a trial: "ok". First step: CLAUDE.md imports AGENTS.md (#1198).
+- **08:53, the answers ledger as checked data** (#1197 b3: a test that each answer reached its doc): "ok".
+- **08:53, two contradicting rules** (#1197): merge `origin/main`, never rebase or force-push (rules W18, AGENTS.md
+  checklist); one open PR per agent (rule W22): "ok". Applied: #1198.
+- **08:57, the order of work.** "Mon seul input c'est quand j'ai besoin de mettre des choses en priorité": the
+  integrator sets the order of development and never asks Pierre "now or later"; Pierre steps in only to raise a
+  priority (AGENTS.md "Questions to Pierre": never the order).
