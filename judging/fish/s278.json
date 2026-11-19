@@ -109,8 +109,15 @@
    "keep": "best"
   },
   "fish-s278-cand-245064101": {
-   "code": "p1g1ssk2",
-   "keep": "best"
+   "code": "p1g1slo3",
+   "keep": "best",
+   "crop": [
+    0.42,
+    0.3,
+    0.82,
+    0.71
+   ],
+   "note": "crop: the two squirrelfishes leave the frame; a dark fish in shade at top left stays (o) (Q430)"
   },
   "fish-s278-cand-378050736": {
    "code": "p1g1sl14",

@@ -181,8 +181,15 @@
    "keep": "alt"
   },
   "fish-s508-cand-636865391": {
-   "code": "p1g1smk3",
-   "keep": "best"
+   "code": "p1d1ml13",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.33,
+    0.75,
+    0.75
+   ],
+   "note": "crop: the wrasse above leaves the frame (Q430)"
   }
  }
 }

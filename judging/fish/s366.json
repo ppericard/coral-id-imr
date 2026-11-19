@@ -189,8 +189,15 @@
    "keep": "best"
   },
   "fish-s366-cand-160527528": {
-   "code": "d1g1smk2",
-   "keep": "best"
+   "code": "d1g1sl13",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    0.6,
+    0.88
+   ],
+   "note": "crop: the wrasse at right leaves the frame (Q430)"
   },
   "fish-s366-cand-160527530": {
    "code": "d1g1smm2",

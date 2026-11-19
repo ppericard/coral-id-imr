@@ -141,8 +141,15 @@
    "keep": "best"
   },
   "fish-s183-cand-329527701": {
-   "code": "p1g1smk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.52,
+    0.72,
+    0.85
+   ],
+   "note": "crop: the dark surgeonfish above leaves the frame (Q430)"
   },
   "fish-s183-cand-731854218": {
    "code": "p1g2ms12",

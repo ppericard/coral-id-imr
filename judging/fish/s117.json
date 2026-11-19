@@ -161,8 +161,15 @@
    "keep": "best"
   },
   "fish-s117-cand-550204512": {
-   "code": "p1g0smkj2",
-   "keep": "best"
+   "code": "p0d1ml1j2",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.15,
+    0.58,
+    0.65
+   ],
+   "note": "crop: the yellow fish at right leaves the frame; coral hides its tail (Q430)"
   },
   "fish-s117-cand-1423763": {
    "code": "p1g0sl14",
