@@ -688,6 +688,17 @@ const gh = (path, opts = {}) =>
     if (!r.ok) throw new Error(j.message || `GitHub error ${r.status}`);
     return j;
   });
+// The text of a GitHub path in its raw media type (a blob comes as its own bytes, not as base64 inside JSON: 0.54 MB gzipped
+// for curation.json instead of 0.89 MB, and nothing to decode).
+const ghText = (path, opts = {}) =>
+  fetch(API + path, {
+    cache: 'no-store',
+    ...opts,
+    headers: {Accept: 'application/vnd.github.raw+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}
+  }).then(async r => {
+    if (!r.ok) throw new Error(`GitHub error ${r.status}`);
+    return r.text();
+  });
 const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
 // ghfile: begin
@@ -700,8 +711,49 @@ async function ghFile(path) {
     throw e;
   });
   if (!f) return null;
-  const b64 = f.content ? f.content : (await gh(`/git/blobs/${f.sha}`)).content;
-  return {text: fromB64(b64), sha: f.sha};
+  return {text: f.content ? fromB64(f.content) : await blobText(f.sha), sha: f.sha};
+}
+// Is this text the blob of that sha? A git blob's sha is the SHA-1 of "blob <bytes>\0" and the bytes. This text is the base
+// Publish merges on: a reply that is not the file (an error page, a JSON envelope) must never stand for it.
+const blobIs = async (text, sha) => {
+  const te = new TextEncoder(),
+    body = te.encode(text),
+    head = te.encode(`blob ${body.length}\0`),
+    all = new Uint8Array(head.length + body.length);
+  all.set(head);
+  all.set(body, head.length);
+  return crypto.subtle.digest('SHA-1', all).then(
+    d => [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join('') === sha,
+    () => false
+  );
+};
+// A blob never changes under its sha: its text is kept in the browser's Cache Storage under that sha (the latest only),
+// so the next visit and the next Publish skip the download (curation.json: 0.54 MB gzipped). Public data (curation.json is
+// on the site). Read raw and checked against the sha, kept and read back checked; the base64 reply when the raw one is
+// refused or not the blob. Any failure of the cache: the download, as before. Not in the demo.
+async function blobText(sha) {
+  const key = '/__blob/' + sha;
+  let c = null;
+  try {
+    c = typeof caches === 'object' && caches && !(typeof DEMO !== 'undefined' && DEMO) ? await caches.open('reefid-admin-blobs') : null;
+    const h = c && (await c.match(key));
+    if (h) {
+      const t = await h.text();
+      if (await blobIs(t, sha)) return t;
+      await c.delete(key);
+    }
+  } catch (e) {
+    c = null;
+  }
+  let text = await ghText(`/git/blobs/${sha}`).catch(() => null);
+  if (text === null || !(await blobIs(text, sha))) text = fromB64((await gh(`/git/blobs/${sha}`)).content);
+  try {
+    if (c) {
+      await Promise.all((await c.keys()).map(k => c.delete(k)));
+      await c.put(key, new Response(text, {headers: {'Content-Type': 'text/plain'}}));
+    }
+  } catch (e) {}
+  return text;
 }
 // ghfile: end
 async function checkToken() {
@@ -2146,7 +2198,7 @@ function fishTile(p, o) {
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
+    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (renderFishUnits): st {num} for a featured photo; cover: the page node's cover in force; path: the
@@ -3083,7 +3135,7 @@ function renderFishCov() {
     ]
       .map(([k, t]) => `<button type="button" data-fishco="${k}" aria-pressed="${FISHCOV.order === k}">${t}</button>`)
       .join('')}</span><b>${R.length} ${lvs.find(x => x[0] === lv)[1].toLowerCase()}</b></div>
-    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference photos">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
+    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference level photos (ease 4-5 with the reference look)">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
     <tbody>${R.map(
       r =>
         `<tr data-id="${esc(r.id)}"><th scope="row">${name(r)}</th><td class="cov-c cov-${lvl(r)}">${r.of ? `${r.ok}/${r.of}` : `${r.obs}/${r.tgt}`}</td><td>${r.n}</td><td>${lv === 'fam' && r.easy < FISHEASY ? `<b class="warnc">${r.easy}/${FISHEASY}</b>` : r.easy}</td><td>${r.ref}</td><td class="adm-fph">${phases(r)}</td><td>${r.wait || ''}</td><td class="adm-fneed">${r.need.map(esc).join(' · ')}</td></tr>`
@@ -3607,6 +3659,13 @@ function render() {
   // Away from Tree, its node is forgotten: coming back (Back, a link) is a new address that shows its genus or species
   // again.
   if (!treeOf(cur)) TT_SEL = null;
+  // The suggestions are still on their way (the admin opened on a Players page): any other page waits for them, then draws.
+  if (SUG_LATE && !sugOwn(cur)) {
+    status(); // the header (tabs, count) follows the address while the page waits
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    sugLoad();
+    return;
+  }
   document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A view with work of its own, on screen for a subject of its rank (liveOf): drawn even with no work left. Opened from its
   // address, it can come before its script is in (as a journey, below).
@@ -4231,7 +4290,7 @@ const HELP = {
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or select a photo (click it or Tab to it) and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has every tool of its page: a coral photo those of its genus page, a fish photo those of its family page (Feature, ★ Cover, Remove, Not this, Crop, Tags with its ease and tag rows, ×) and Open in Tree; on a fish photo in play, Count <i>Other species, confusable</i> or <i>Unclear</i> also takes it out of play (rule P3), one Undo step. A reason names the organism in its subject's words (Several fish species). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has every tool of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this, Feature, ★ Cover, Crop, Tags), those that take it out of play clearing the flag (Undo brings it back), and Done.</p><p>The last four parts are the corals' only (no fish counterpart: the fish candidates carry the pass's judgment in Candidates). Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
-  fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates (a photo already in play, your add or one that entered by itself, is not one), <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
+  fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference-level photos (ease 4-5 with the reference look, read from the photo whoever took it),<b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates (a photo already in play, your add or one that entered by itself, is not one), <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   lightprop: `<p>The light re-judge's proposals (rubric 6, Q308: a fish lit by a flash or a lamp on a dark background is good light, not a night shot): the photos you added whose tags and ease still hold the earlier judgement (<code>judging/fish-light-q308.json</code>). Each shows what would change, in words: struck through yours, in bold the re-judged value (light <b>g</b> good, <b>d</b> dim: the fish itself poorly lit, <b>n</b> night livery: a night colour pattern; the full codes in the tooltip). <b>One judgement per photo</b>, last: a photo judged twice (as a reference photo and as a candidate) whose two judgements disagreed was judged again once (<code>judging/fish-one-judgement.json</code>); where you added it with the earlier tags and ease, the new ones are proposed the same way. <b>Accept</b> writes the re-judged tags and ease into your draft (when they make one of your ★ covers a juvenile, it first asks whether to keep it as the cover anyway: yes keeps it, confirmed; no takes the tags and the cover is ignored until you confirm it on its Tree page); <b>Keep mine</b> keeps yours and the proposal goes; <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that photo's tags or ease elsewhere. The view leaves the switch once none is left.</p>`,
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
@@ -7704,6 +7763,44 @@ function download() {
 }
 
 /* ---------- Start ---------- */
+// The judging agent's suggestions (suggest.json: 3.5 MB, the largest file a Players page would wait for, 0.4 MB gzipped,
+// and the work of laying them over the candidates) are read by the photo pages, the Inbox count and the auto-sort, never
+// by a Players page (sugOwn: where the admin opens, Activity). An admin that opens there does not wait for them: start()
+// leaves the laying and the auto-sort in SUG_LATE, run once the sheet's reads are in (sugLater), or at once when a page
+// that reads them is asked for (render's gate: Loading… until then).
+const sugOwn = h => /^players\//.test(h),
+  landing = () => (([S, p]) => admRoute(p, S))(subjOfHash(hashNow())),
+  sugGet = () =>
+    fetch('suggest.json', {cache: 'no-cache'})
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+let SUG_LATE = null,
+  SUG_P = null;
+function sugLoad() {
+  if (!SUG_LATE) return Promise.resolve();
+  return (SUG_P =
+    SUG_P ||
+    sugGet().then(j => {
+      const run = SUG_LATE;
+      SUG_LATE = null;
+      SUG = j;
+      try {
+        run();
+      } finally {
+        memoReset();
+        sugOwn(cur) ? status() : render();
+      }
+    }));
+}
+// Once the sheet's reads are in (the page the admin opened on is drawn with them) and the page is idle.
+function sugLater() {
+  let n = 0;
+  const t = setInterval(() => {
+    if (Object.keys(SHEET_READS).length && ++n < 40) return;
+    clearInterval(t);
+    'requestIdleCallback' in window ? requestIdleCallback(sugLoad, {timeout: 3000}) : setTimeout(sugLoad, 500);
+  }, 250);
+}
 async function start() {
   const hd = document.querySelector('header');
   if (hd && window.ResizeObserver)
@@ -7733,6 +7830,9 @@ async function start() {
             console.warn(`${u} not loaded:`, e.message);
             return {};
           })).then(j => (j && j[k]) || {});
+  // The demo opens as before (the suggestions first) unless asked with ?demo&late: the smoke's steps start from a page
+  // whose auto-sort has run, and only tests/admin.smoke.js loadPart opens it late.
+  const late = sugOwn(landing()) && (!DEMO || /[?&]late\b/.test(location.search));
   let CJ;
   try {
     let PJ;
@@ -7742,9 +7842,9 @@ async function start() {
       side('forms.json', 'gf'),
       side('forms.json', 'gunsure'),
       side('picks.json', 'feat'),
-      fetch('suggest.json', {cache: 'no-cache'})
-        .then(r => (r.ok ? r.json() : {}))
-        .catch(() => ({})),
+      // The judging agent's suggestions (3.5 MB, 0.4 MB gzipped): a Players page does not read them, so it opens without them
+      // and they follow (sugLater); every other page waits for them as before.
+      late ? {} : sugGet(),
       loadSaved(),
       side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
       // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
@@ -7786,21 +7886,6 @@ async function start() {
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   // The judging agent's candidate pass (suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
   // older guess, its quality and growth form become the dashed first guesses, the rest orders the swiper (jw, candQueue).
-  const SC = (SUG && SUG.cand) || {};
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const j = SC[p.f];
-      if (!j) return;
-      p.j = j;
-      if (j.v) p.vg = j.v;
-      // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
-      if (j.q) AUTOQ[p.f] = j.q;
-      if (j.fm) {
-        AUTOF[p.f] = j.fm;
-        (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
-      }
-    });
   // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to the admin, with the reason.
   const SH = Object.values(DATA.cand)
     .flat()
@@ -7808,12 +7893,29 @@ async function start() {
     .map(p => METRICS[p.f][0])
     .sort((a, b) => a - b);
   MREF = SH.length ? {all: SH, lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null;
-  Object.values(DATA.cand)
-    .flat()
-    .forEach(p => {
-      const mf = p.j && metFlag(autoSure(p.j), p.j, METRICS[p.f], MREF);
-      if (mf) p.mf = mf;
-    });
+  const sugCands = () => {
+    const SC = (SUG && SUG.cand) || {};
+    Object.entries(DATA.cand).forEach(([n, L]) =>
+      L.forEach(p => {
+        const j = SC[p.f];
+        if (!j) return;
+        p.j = j;
+        if (j.v) p.vg = j.v;
+        // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
+        if (j.q) AUTOQ[p.f] = j.q;
+        if (j.fm) {
+          AUTOF[p.f] = j.fm;
+          (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
+        }
+        const mf = metFlag(autoSure(j), j, METRICS[p.f], MREF);
+        if (mf) p.mf = mf;
+        // Laid late, the registry below has copied the photo already: the copy the candidate's own genus made gets them too.
+        const c = PHOTOS[p.f];
+        if (c && c.genus === n) Object.assign(c, {j: p.j, ...(p.vg ? {vg: p.vg} : {}), ...(p.mf ? {mf: p.mf} : {})});
+      })
+    );
+  };
+  if (!late) sugCands();
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
   if (DATA.x) Object.assign(DATA.gen, DATA.x.gen);
@@ -7908,15 +8010,24 @@ async function start() {
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
   // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
   // Only for an admin who can publish (read-only shows the published curation as it is).
-  const ar = TOKEN && autoRun();
-  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-  // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
-  // which would share the line and the main thread with the first page. One Undo step.
-  const fishLater = () =>
-    fishAutoRun().then(R => {
-      if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
-    });
-  'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  const sugRun = () => {
+    const ar = TOKEN && autoRun();
+    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+    // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
+    // which would share the line and the main thread with the first page. One Undo step.
+    const fishLater = () =>
+      fishAutoRun().then(R => {
+        if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+      });
+    'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+  };
+  // Opened on a Players page: the suggestions, their laying and the auto-sorts follow (sugLater), or sooner (render's gate).
+  if (late)
+    SUG_LATE = () => {
+      sugCands();
+      sugRun();
+    };
+  else sugRun();
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
@@ -8029,6 +8140,7 @@ async function start() {
     });
   new MutationObserver(fid).observe($v, {childList: true, subtree: true});
   render();
+  if (late) sugLater();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
