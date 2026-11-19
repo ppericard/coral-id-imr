@@ -194,36 +194,7 @@ Machine-written; Pierre confirms them in the admin.
   `~/.cache/coral-id-imr/metrics/`, outside the repository). Admin only: tie-breakers and sanity flags of the
   auto-sort, evidence next to a disagreement, never a decision alone (on the 134 photos Pierre rated, the size
   separates Poor from the rest, AUC 0.90, while the sharpness at 960 px hardly does, 0.4-0.6). One photo per line;
-  run again after a candidate pass (`--cand`) or a large photo change. Kept as it is: `measured.json` (below) is the
-  game photos' measured block for the analyses and the judges; this file serves the coral auto-sort.
-- **`measured.json`**: the **measured block** of each game photo, every subject (Pierre, 2026-11-19, Q434;
-  [the decision](../decisions/2026-11-19-photo-measured-block.md)), from `tools/photo_measure.py`: values computed once
-  from the pixels (rule L13), for the multivariate analyses of the real answers and for calibrating and checking the
-  judges. Admin and tools only: players never download it, it is not in the `sw.js` shell. Layout:
-  `{"v": 1, "mv": method version, "w": 960, "size": "-m", "about": …, "ms": {f: block}}`, one photo per line, sorted
-  by `f` (the photo's file name: the key of the game files, of `analysis.js` `photoMetaFish` and of the answer log).
-  - **What is measured**: the photo's `-m` file (on R2, or in `img/`; at most 960 px on its long side, Pierre's crop
-    already cut), resampled to exactly 960 px on its long side (upsampled when the original was smaller), so every value
-    is on the same grid. All on the gamma-encoded sRGB values in [0, 1].
-  - **A block**: `c` the RMS contrast (the standard deviation of the luminance, Rec. 709 weights); `sp` the spread, the
-    2nd to the 98th percentile of the luminance; `l` the mean luminance (brightness); `sa` the mean HSV saturation; `ss`
-    the share of saturated pixels (saturation ≥ 0.25 and value ≥ 0.2); `wa` the **warm share**, the share of those
-    saturated pixels whose hue is warm, red to yellow (330°-70°), the colour-loss estimate (high: the warm colours are
-    still there), left out when under 1% of the pixels are saturated; `sh` the variance of the luminance's Laplacian
-    × 10⁴ (sharpness); `pk` the sharpest part, independent of contrast (the 85th percentile, over an 8 × 8 grid, of
-    each tile's Laplacian variance over its luminance variance, as `metrics.json` `peak`). 3 decimals, `sh` 1.
-  - **Per photo**: the whole frame's block, plus `px` the `-m` file's long side (under 960: a small original, its `sh`
-    read on an upsampled file); `b` the same block (no `px`) on **the fish alone** when its box is known
-    (`fish-game.json` `bb`, the judging pass's box, rubric 7, mapped into the crop; none for a turned photo or a box the
-    crop cuts by more than 30%); `h` a 6-character tag of the crop, rewrite count, rotation and box (`cr`, `iv`, `ro`,
-    `bb`) when any is set.
-  - **Read with care**: `sh` grows with the square of contrast (a sharp low-contrast photo reads soft), so an analysis
-    takes `pk`, or `sh / c²`, or `sh` with `c` beside it. The boxes exist only for photos whose tags pass the tile rule
-    (good light, colour loss 0-1, sharp, large or medium: `judging/FISH.md` "The fish's box"), so the fish-alone values
-    say nothing about dim, colourless or blurred photos.
-  - **Incremental**: a run measures the game photos not in the file, or whose `h` changed; a new `mv` (any change to a
-    measure) measures every photo again. A photo that leaves the game keeps its entry (past answers showed it).
-  - **Coverage**: a sample for now (the decision record; ROADMAP "Measured photo block: the full run").
+  run again after a candidate pass (`--cand`) or a large photo change.
 - **`suggest.json`**: the outside judging agent's results, one part per pass:
   - the coral candidate pass, `"cand"` (`tools/judging_cand.py`): per candidate photo its view, quality, growth form,
     `best`/`alt`/`dup` within its observation and view, or another genus, and `c`, a suggested crop `[l, t, r, b]`

@@ -2,8 +2,8 @@
 # sharpness, computed once by this script (rule L13), on the whole frame and on the fish alone where its box is known.
 # They serve the multivariate analyses of the real answers and calibrating and checking the judges; the judge keeps what
 # needs a human look (camouflage, whether the subject is obvious, juvenile, ease). Contrast is information about the
-# photo's difficulty, never a defect the games correct (Pierre, 2026-11-19 15:01). Spec: docs/spec/data.md
-# "measured.json"; decision: docs/decisions/2026-11-19-photo-measured-block.md.
+# photo's difficulty, never a defect the games correct (Pierre, 2026-11-19 15:01). Spec: docs/spec/measured.md;
+# decision: docs/decisions/2026-11-19-photo-measured-block.md.
 #
 #   python3 tools/photo_measure.py                     every game photo of every subject not measured yet (or whose
 #                                                      pixels or box changed), downloaded from R2 at 960 px (-m), paced
@@ -80,7 +80,7 @@ def peak(y, lap, n=8):
 
 
 def block(a):
-    """The measured values of an RGB array a (H x W x 3, floats in [0, 1]); see docs/spec/data.md "measured.json"."""
+    """The measured values of an RGB array a (H x W x 3, floats in [0, 1]); see docs/spec/measured.md."""
     import numpy as np
     y = lum(a)
     p2, p98 = np.percentile(y, [2, 98])
@@ -181,7 +181,7 @@ def load(path=OUT):
 def dump(ms, path=OUT):
     """One photo per line, sorted: two runs on different photos merge cleanly."""
     head = {'v': 1, 'mv': MV, 'w': W, 'size': SUF,
-            'about': 'Measured photo values (tools/photo_measure.py; docs/spec/data.md "measured.json"): c RMS contrast, '
+            'about': 'Measured photo values (tools/photo_measure.py; docs/spec/measured.md): c RMS contrast, '
                      'sp 2-98% spread, l mean luminance, sa mean saturation, ss saturated share, wa warm share of the '
                      'saturated pixels, sh Laplacian variance x1e4, pk sharpest part; px the file\'s long side; b the '
                      'same on the fish\'s box; h the crop/box tag. Admin and tools only.'}
@@ -261,6 +261,8 @@ def run(a):
         import slot; slot.guard('tools/photo_measure.py')
     print(f'{len(photos)} game photos, {len(fs)} to measure')
     if not fs:
+        if ms:
+            dump(ms, a.out)  # the same bytes, or the head brought up to date
         return 0
     import photos as P
     base = '' if a.dir else P.photo_base()

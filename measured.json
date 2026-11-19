@@ -1,4 +1,4 @@
-{"v":1,"mv":1,"w":960,"size":"-m","about":"Measured photo values (tools/photo_measure.py; docs/spec/data.md \"measured.json\"): c RMS contrast, sp 2-98% spread, l mean luminance, sa mean saturation, ss saturated share, wa warm share of the saturated pixels, sh Laplacian variance x1e4, pk sharpest part; px the file's long side; b the same on the fish's box; h the crop/box tag. Admin and tools only.","ms":{
+{"v":1,"mv":1,"w":960,"size":"-m","about":"Measured photo values (tools/photo_measure.py; docs/spec/measured.md): c RMS contrast, sp 2-98% spread, l mean luminance, sa mean saturation, ss saturated share, wa warm share of the saturated pixels, sh Laplacian variance x1e4, pk sharpest part; px the file's long side; b the same on the fish's box; h the crop/box tag. Admin and tools only.","ms":{
 "acropora-cand-261936747":{"c":0.231,"sp":0.819,"l":0.334,"sa":0.357,"ss":0.3,"wa":0.905,"sh":116.7,"pk":0.374,"px":960},
 "acropora-macro-745206285":{"c":0.247,"sp":0.844,"l":0.477,"sa":0.538,"ss":0.658,"wa":0.998,"sh":4.4,"pk":0.037,"px":960},
 "astreopora-cand-725536633":{"c":0.135,"sp":0.548,"l":0.367,"sa":0.645,"ss":0.925,"wa":0.762,"sh":30.6,"pk":0.453,"px":960},

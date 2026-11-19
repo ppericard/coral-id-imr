@@ -1,8 +1,8 @@
 # The measured block: photo values computed once from the pixels, in measured.json
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: L13, S1, A5; docs/spec/data.md "measured.json", docs/spec/tools.md,
-docs/spec/analyses.md, docs/DATA.md, tools/README.md, ROADMAP "Measured photo block: the full run", "Contrast correction
-on the Learn sheets' photos".
+Date: 2026-11-19. PR: #0. Rules or docs touched: L13, S1, A5; docs/spec/measured.md (new), docs/ARCHITECTURE.md
+"Photos", docs/spec/tools.md, docs/spec/analyses.md, docs/DATA.md, tools/README.md, ROADMAP "Measured photo block: the
+full run", "Contrast correction on the Learn sheets' photos".
 
 ## Context
 
@@ -16,7 +16,9 @@ fish photos of the first pass (`judging/FISH.md` "Agreement with other sources")
 
 - Pierre, 2026-11-19 15:01 Manila, on the series: contrast is information about difficulty, not a defect to correct in
   the games: «on ne peut plus s'entrainer sur des photos réalistes avec peu de contraste». A correction goes no further
-  than the Learn sheets (the ROADMAP row).
+  than the Learn sheets (the ROADMAP row). The filter of the before/after series was one linear map shared by R, G and
+  B, from the 1st and 99th percentiles, at 60% of the full stretch. Its gain was at most 1.5, with none under 1.1, and
+  the midtone moved at most 0.1. It was written as CSS `brightness()` `contrast()`.
 - Pierre, 2026-11-19 15:02: «c'est aussi une variable qui se calcule plutôt que s'estime par un agent. Tout comme les
   questions des couleurs j'imagine?»
 - Pierre, 2026-11-19 15:05 (Q434), «oui» to the integrator's proposal. Each photo gets a "measured" block, computed once
@@ -25,7 +27,7 @@ fish photos of the first pass (`judging/FISH.md` "Agreement with other sources")
   may replace judge fields where the measure suffices. The judge keeps what needs a human look: camouflage, whether the
   subject is obvious, juvenile, ease.
 - Integrator's calls made while building (the format is followed by other code, so it is described here and in
-  data.md):
+  [measured.md](../spec/measured.md)):
   - **A file of its own**, `measured.json` at the root, keyed by the photo's file name `f`, rather than a key in the
     game records. Players download `fish-game.json`: the block would have added about 1.5 MB to it for nothing they read.
     The photo workflow rewrites that file, and one key serves every subject.
@@ -44,9 +46,10 @@ fish photos of the first pass (`judging/FISH.md` "Agreement with other sources")
 
 ## Consequences
 
-- `tools/photo_measure.py` writes `measured.json` (spec: [data.md](../spec/data.md) "measured.json"). It is
+- `tools/photo_measure.py` writes `measured.json` (spec: [measured.md](../spec/measured.md)). It is
   incremental, resumable and paced, and keeps downloads in memory only. It covers the three subjects through one table,
   `GAME` (rule S1). `--judges` sets the measures against the judges' tags. Tests: `tests/photomeasure.test.js`.
+  `docs/spec/data.md` was at its size budget, so the spec is a file of its own, `docs/spec/measured.md`.
 - **Coverage now**: 917 photos, a fixed hash sample of 500 of every subject (33 corals, 405 fish, 62 sea slugs) and the
   425 fish photos with a box. The other ~28,000 photos would take about 2 hours here, over rule L11's 40 minutes: the
   full run and the workflow's upkeep are the ROADMAP row.
