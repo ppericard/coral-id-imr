@@ -81,7 +81,8 @@ and effort, `python3 tools/agent_guard.py --report` lists the launches.
 
 **The rules core trial** (#1200 §3): `tools/instr_log.py` logs which instruction file reached which agent and why;
 `--report --since HH:MM` after a run, `--expect origin/main` (or the branch under test) for the texts to quote. A
-child session keeps its log in its own `.git`: it prints the report itself.
+child session keeps its log in its own `.git`: it prints the report itself. A subagent's startup CLAUDE.md is never
+logged, only its later loads: its quotes show it.
 
 Anthropic's guidance (checked 2026-11-18): Opus 5.5 is the recommended starting point and the integrator's model; effort
 is often a better lever than the model; an Opus orchestrator with Sonnet subagents measured about a third cheaper at
