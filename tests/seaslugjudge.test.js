@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
 // Sea slug photo judging (judging/SEASLUG.md, its egg rule included): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
-// left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, the juvenile cap (the
-// fish's juveniles cap nothing: Q435), f and w
+// left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, juveniles (Q435), f and w
 // capping nothing), the judging files' check (keep optional, the egg rule, no phase or box), the import into suggest.json
 // "seaslug" beside the fish's. Offline: made-up fixtures in a temporary folder; nothing is downloaded. Needs python3.
 const test = require('node:test'),
@@ -20,7 +19,7 @@ const J = code =>
     })
   );
 
-test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, a ventral one 3; juveniles 2; f and w cap nothing', () => {
+test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, a ventral one 3; juveniles, f and w cap nothing', () => {
   const out = J(`from fish_judge import cap, with_flag, RUBRICS
 S = lambda c: list(cap(c, False, subject='seaslug'))
 F = lambda c: list(cap(c, False))
@@ -40,7 +39,7 @@ print(json.dumps({
     [3, 'v1g0sl1'], // ventral (the foot)
     [3, 'h1g0sl1'],
     [3, 'd0g0sl1'], // partial
-    [2, 'd1g0sl1j'], // a juvenile: at most 2 for sea slugs (RUBRICS juv2; the fish's went with Q435)
+    [5, 'd1g0sl1j'], // a juvenile caps nothing, as the fish's (Q435; one rule for every subject, S1)
     [5, 'd1g0sl1f'], // rhinophores or gills hidden: the ease scale's, not a cap
     [5, 'd1g0sl1w'], // watermark
     [3, 'd1g0sl1c'],
@@ -130,7 +129,7 @@ print(json.dumps([E1, [JF.entry('900', x) for x in j['photos'].values()], E2, E3
   assert.deepStrictEqual(E1, []);
   assert.deepStrictEqual(entries, [
     {jt: 'd1g0sl1', e: 5, k: 'best'}, // no keep: best, the observation's one photo
-    {jt: 'p1g0sm1j', e: 2, k: 'best', c: [0.1, 0.1, 0.9, 0.9], u: ['code'], n: 'juvenile?'},
+    {jt: 'p1g0sm1j', e: 4, k: 'best', c: [0.1, 0.1, 0.9, 0.9], u: ['code'], n: 'juvenile?'}, // a juvenile caps nothing (Q435)
     {egg: 1, n: 'a ribbon, no animal'} // never in play
   ]);
   const bad = E2.join('\n');

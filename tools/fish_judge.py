@@ -47,13 +47,13 @@ NEW_COUNT = "1sokx"
 # view (d) is a good view, never capped, and a ventral one (v, the foot) is theirs, capped like head-on and rear; light g
 # or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
 # hidden), which caps nothing; strong blur (clarity b) caps nothing there (blur2: the clarity letters capped at 2, the
-# fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only);
-# a juvenile is at most 2 (juv2): the fish's juveniles cap nothing since Q435 (Pierre, 2026-11-19: the judged ease is the
-# starting point and the players' answers decide; judging/FISH.md "Caps"), which spoke of the fish only.
+# fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only).
+# A juvenile (j) caps nothing in either rubric (Q435, Pierre, 2026-11-19: the judged ease is the starting point and the
+# players' answers decide; judging/FISH.md "Juveniles").
 RUBRICS = {
-    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd", "blur2": "b", "juv2": False},
+    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd", "blur2": "b"},
     "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
-                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv", "blur2": "", "juv2": True},
+                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv", "blur2": ""},
 }
 
 
@@ -75,11 +75,11 @@ WANT = 5  # at least 5 very easy photos per circle-1 entry
 
 def cap(code, phase, rep=None, subject="fish"):
     """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
-    A fish juvenile (flag j) caps nothing (Q435). rep: the photo's `rep` (a reference source shows it for the species:
+    A juvenile (flag j) caps nothing (Q435). rep: the photo's `rep` (a reference source shows it for the species:
     FishBase's main picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement
     per photo, whatever its route in).
     subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": a dorsal view caps nothing, strong blur
-    neither (blur2), and a juvenile is at most 2 (juv2)."""
+    neither (blur2)."""
     R = RUBRICS[subject]
     m = R["code"].match(code)
     if not m:
@@ -88,7 +88,7 @@ def cap(code, phase, rep=None, subject="fish"):
     fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
     e = int(e)
     # Strong blur (b: the outline or pattern smeared) is a hard photo, kept in play (judging/FISH.md "Strong blur").
-    if ("j" in fl and R["juv2"]) or n == "x" or loss == "3" or clarity in R["blur2"]:
+    if n == "x" or loss == "3" or clarity in R["blur2"]:
         e = min(e, 2)
     # The phase flag p caps nothing (a sex or colour phase is a species-level difficulty; an Anthias or a parrotfish is
     # easy to call one at the family level), kept for the species questions and explanation cards.

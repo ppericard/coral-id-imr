@@ -104,7 +104,7 @@ FIELDS = CFG["fields"]
 def use(subject):
     """Points the pass at a subject of SUBJECTS: its candidates, species, judging files, rubric and fields. Sea slugs:
     seaslug-cand.json keyed by iNaturalist taxon id, the species of tools/seaslugs.json, no teaching entry (no phase, no
-    juvenile class: every juvenile at most 2, RUBRICS juv2), their own curation.json key (none yet), never the fish's."""
+    juvenile class), their own curation.json key (none yet), never the fish's."""
     global SUBJECT, CFG, JDIR, CODE, NEW_COUNT, SP, CAND, CUR, TEACH, ENTRY, FIELDS
     if subject not in SUBJECTS:
         sys.exit(f"Unknown subject {subject!r}: one of {', '.join(SUBJECTS)}")
@@ -357,8 +357,8 @@ def check(sid):
 def entry(sid, x, rep=None):
     """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag for a dimorph entry, and the reference flag r, which leaves the ease as
-    judged, for a candidate whose fish-cand.json record carries `rep`; a fish juvenile caps nothing). A sea slug's: its
-    rubric's caps (no entry: no phase, every juvenile capped), keep best when the judgement names none, and an egg-mass
+    judged, for a candidate whose fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
+    rubric's caps (no entry: no phase), keep best when the judgement names none, and an egg-mass
     photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
         return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
