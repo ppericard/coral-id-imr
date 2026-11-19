@@ -93,8 +93,15 @@
    "keep": "best"
   },
   "fish-s260-cand-650455094": {
-   "code": "p1g1ssk2",
-   "keep": "best"
+   "code": "p1g2ml12",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.25,
+    0.85,
+    0.68
+   ],
+   "note": "crop: the damselfish below leaves the frame (Q430)"
   },
   "fish-s260-cand-691757125": {
    "code": "o1g1sl13",

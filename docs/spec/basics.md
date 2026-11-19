@@ -16,13 +16,14 @@ section each remaining prototype is meant for is in ROADMAP, the module registry
 
 The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
-`pairs` (Memory), `samediff` (Same or different?), `oddone` (Odd one out), `matrixgame` (Matrix) and `idkey` (the Coral
-ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups (`#tools/cards/<kind>`: apology, update,
-feature, genus, tip, bonus, account, ach, toast), each opened through `app.js` `cardShow` with sample copy and nothing
-recorded (the sign-in card, the achievement toast and the note are the real ones). A prototype marked `admin: true` (the
-cards gallery) is listed in the hub in the admin's browser only (`IS_ADMIN`); its link works for anyone. The Tools section
-is hidden on phones but for the header's hammer icon. Its files are tier 5 of the load order (`proto/lab.js` with the
-prototypes; a failed one is tried again, `labLoad`).
+`pairs` (Memory), `samediff` (Same or different?), `oddone` (Odd one out), `matrixgame` (Matrix), `idkey` (the Coral
+ID Key) and `fishkey` ([the Fish ID Key](fish.md#the-fish-id-key-lab)). `cards` is not a tool but the live gallery of the
+app's cards and pop-ups (`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account, ach, toast), each
+opened through `app.js` `cardShow` with sample copy and nothing recorded (the sign-in card, the achievement toast and the
+note are the real ones). A prototype marked `admin: true` (the cards gallery) is listed in the hub in the admin's browser
+only (`IS_ADMIN`); its link works for anyone. One with `on()` false (`fishkey` while its subject is closed to the player)
+is neither listed nor opened. The Tools section is hidden on phones but for the header's hammer icon. Its files are tier
+5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried again, `labLoad`).
 
 `samediff`, `oddone` and `matrixgame` (decisions: [Same or different?](../decisions/2026-11-19-same-or-different-lab.md),
 [Odd one out](../decisions/2026-11-19-odd-one-out-lab.md), [Matrix](../decisions/2026-11-19-matrix-lab.md)) follow the
@@ -34,6 +35,27 @@ framed alike; `mxPlan` four units, from a declared pair outward, and a fifth nam
 
 Matrix: a right pair names its tile and ticks its name, a wrong one is kept nowhere and the retry is free; its names are
 `data-n`, not `data-c` (`qAnswers` opens every `[data-c]`).
+
+`type`, `reveal` and `web` follow the subject on screen too ([decision](../decisions/2026-11-20-lab-tools-every-subject.md)),
+each in the subject's own words (`SUBJ.one`, `SUBJ.what`, `SUBJ.many`: Type the genus is "Type the family" for the fish),
+through getters on the tool (`title`, `blurb`, `lede`), and none of them calls the quiz's recorders
+(`tests/labgames.test.js`). The two games draw `unlocked()` units, one unit and one photo through `lab.js` `labDraw` and
+`labShots` (a typed question's aim for Type, a four-choice question's for Blur reveal), with `labViewChips` for a subject
+with several views (`SUBJECTS` `views`; none for a one-view subject) and `labEmpty` for the nothing-to-ask note. Type calls
+the quiz's own `typeForm`, `typeBind` (the rank asked, the unit's word, the photo's species), `typeUnit`, `typeRead` and
+`typeStep`, so a fish family's shared or part names, the retype and the old names read as in the quiz; Blur reveal's three
+wrong choices are `distractors` (the unit's rank, no two of one label, look-alikes first) and its verdict the quiz's
+`fbLine`. The web is a reference page, not a game: its nodes are the units of the subject's slate that are in a pair of
+`UNITS[SUBJ.id].pairs()` (the corals' 39 genera and Millepora, 15 fish families, 12 sea slug genera at the time of
+writing; never the bonus genera), its colourings are the subject's own (`UNITS` `webBy`: by family and by IMR group for the
+corals, by the key's group for the fish, by family for the sea slugs), and a tapped node links its look-alikes to the
+side-by-side Compare page where the subject has it (`SUBJECTS` `pages` `cmp`), else to their sheets. Rule U2 is asked of
+the two games (`tests/labgames.check.js`, run by the pages, fish and sea slug smokes at 390 and 1280 px), not of the web.
+On phones Blur reveal answered shrinks its photo to a strip (`.rvdone`) so the verdict and Next stay on the screen.
+
+The tools that read the corallite traits stay the corals': `spot` (Spot the feature), `zoom` (the Zoom ladder, which also
+needs several views), `elim`, `anatomy` and the reference tools on `DATA.traits` (`idkey`, `matrix`, `gallery`, `size`,
+`map`). They use `labPlay` and `labNames`, which force the corals and say why in `lab.js`.
 
 A static mock-up for one of Pierre's decisions may also sit in `proto/` as a standalone `.html` page: not a Lab tool (not
 in `LAB.files`, not cached by the service worker, nothing links to it), borrowing the app's `app.css` (a relative link

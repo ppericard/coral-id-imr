@@ -43,6 +43,7 @@ const fs = require('fs'),
 const ROOT = path.join(__dirname, '..');
 const C = require('../core.js');
 const LP = require('./learnprof.js');
+const CB = require('./checkbudget.js'); // the 40-minute budget (rule L11)
 const cut = require('../tests/block.js');
 
 // The distributions (docs/LEARNING.md "The two worlds").
@@ -910,27 +911,61 @@ async function main(o) {
     else
       for (const profile of o.profiles)
         jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null, spknow: o.spknow !== false, live: o.live || 0, liveOff: !!o.liveOff});
-  const runs = [];
-  await Promise.all(
-    Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
-      const w = new Worker(__filename, {workerData: 1});
-      return new Promise((ok, ko) => {
-        const next = () => {
-          const j = jobs.shift();
-          if (!j) return w.terminate().then(ok);
-          w.postMessage(j);
-        };
-        w.on('message', r => {
-          if (r.pop) (runs.push(...r.runs), POP.push(r.pop));
-          else runs.push(r);
-          process.stderr.write(`\r${runs.length} runs, ${Math.round((Date.now() - t0) / 1000)} s`);
-          next();
-        });
-        w.on('error', ko);
-        next();
-      });
-    })
-  );
+  const runs = [],
+    planned = jobs.length,
+    budget = o.budget || new CB.Budget(), // learnsim's clock, started when the slot was held
+    take = r => (r.pop ? (runs.push(...r.runs), POP.push(r.pop)) : runs.push(r)),
+    play = j => (j.pop ? {pop: 1, ...runPop(null, j)} : runOne(null, j));
+  // The plan (rule L11): a job's time from --per-job, else from one short run in this thread (1,000 answers at most,
+  // its time scaled to N); when that run is the full length it is the first result.
+  let perJob = o.perJob || null,
+    source = '--per-job',
+    reused = 0;
+  if (perJob === null) {
+    const n0 = Math.min(o.N, 1000),
+      tc = Date.now(),
+      r0 = play({...jobs[0], N: n0, cps: checkpoints(n0)}),
+      sec = (Date.now() - tc) / 1000;
+    perJob = CB.scaled(sec, n0, o.N);
+    source = `calibration: ${n0} answers in ${sec.toFixed(1)} s`;
+    if (n0 === o.N) (take(r0), jobs.shift(), reused++);
+    // The calibration is synchronous and cannot be interrupted: when it overran the budget, nothing more runs and the
+    // result is marked cut (learnsim refuses a calibrated budget under CB.CALIBRATION_FLOOR_MIN to make it rare).
+    if (budget.expired()) (budget.cut = true), (jobs.length = 0);
+  }
+  const pl = CB.plan({budget, jobs: jobs.length, workers: o.workers, perJobSec: perJob, P: o.profiles.length, S: o.seeds, N: o.N, perSeed: pop ? 1 : o.profiles.length, lengthFlag: 'questions', source});
+  console.error(pl.text);
+  if (!pl.ok) process.exit(2);
+  const ws = Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => new Worker(__filename, {workerData: 1})),
+    ask = (j, i) =>
+      new Promise((ok, ko) => {
+        const w = ws[i],
+          onm = r => (w.off('error', one), ok(r)),
+          one = e => (w.off('message', onm), ko(e));
+        w.once('message', onm);
+        w.once('error', one);
+        w.postMessage(j);
+      }),
+    ended = await CB.runPool({
+      jobs,
+      workers: ws.length,
+      budget,
+      exec: ask,
+      onCut: () => Promise.all(ws.map(w => w.terminate())), // the jobs in flight go with the threads
+      onResult: r => {
+        take(r);
+        process.stderr.write(`\r${runs.length} runs, ${Math.round((Date.now() - t0) / 1000)} s`);
+      }
+    });
+  await Promise.all(ws.map(w => w.terminate()));
+  const cutAt = CB.cutInfo(budget, planned, reused + ended.results.length);
+  if (cutAt) {
+    console.log('\n' + CB.cutBanner(cutAt));
+    if (!runs.length) {
+      CB.writeEmptyCut(fs, o.out, {world: 'rated', subject: o.subject, seeds: o.seeds, seed0: o.seed0, questions: o.N}, cutAt);
+      process.exit(3);
+    }
+  }
   runs.sort((a, b) => o.profiles.indexOf(a.profile) - o.profiles.indexOf(b.profile) || a.seed - b.seed);
   const secs = (Date.now() - t0) / 1000,
     m = v => {
@@ -988,6 +1023,8 @@ async function main(o) {
           live: o.live ? {n: o.live, off: !!o.liveOff} : null,
           ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
+          budgetMin: budget.minutes,
+          ...(cutAt ? {cut: cutAt} : {}), // a run stopped by the budget: learncmp says so
           runs
         },
         null,
@@ -996,6 +1033,7 @@ async function main(o) {
     );
     console.log(`\nWritten: ${o.out}`);
   }
+  if (cutAt) console.log('\n' + CB.cutBanner(cutAt));
 }
 
 module.exports.main = main;

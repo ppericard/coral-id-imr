@@ -125,8 +125,15 @@
    "keep": "dup"
   },
   "fish-s113-cand-251136498": {
-   "code": "o1g1sskj1",
-   "keep": "best"
+   "code": "p1g1bm1j2",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.3,
+    0.72,
+    0.7
+   ],
+   "note": "crop: the large dark fish below leaves the frame (Q430)"
   },
   "fish-s113-cand-160129454": {
    "code": "p1g0mloj3",

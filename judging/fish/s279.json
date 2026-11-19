@@ -129,8 +129,21 @@
    "keep": "best"
   },
   "fish-s279-cand-556851881": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g0sl14",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.0,
+    0.95,
+    0.71
+   ],
+   "bb": [
+    0.35,
+    0.0,
+    0.9,
+    0.7
+   ],
+   "note": "crop: the yellowtail fish below leaves the frame (Q430)"
   },
   "fish-s279-cand-585479752": {
    "code": "o0g1sl13",

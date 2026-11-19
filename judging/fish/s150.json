@@ -153,8 +153,15 @@
    "keep": "best"
   },
   "fish-s150-cand-756670997": {
-   "code": "o1g1smk3",
-   "keep": "best"
+   "code": "p1g1mlo3",
+   "keep": "best",
+   "crop": [
+    0.53,
+    0.36,
+    0.85,
+    0.82
+   ],
+   "note": "crop: the snappers leave the frame; tiny chromis stay (o) (Q430)"
   },
   "fish-s150-cand-756671015": {
    "code": "o1g1smm3",

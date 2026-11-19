@@ -2462,6 +2462,17 @@ const UNITS = {
             .map(a => [a, b])
         )
     ],
+    // The colourings of Tools › Look-alike web (proto/web.js), each {chip, of: a unit's group key (0 for none), name(key),
+    // color(key) optional}: by family, and by IMR lecture group (the app's own colour for a group, groupHue).
+    webBy: () => [
+      {chip: 'Colour by family', of: n => GX(n).fam, name: altName},
+      {
+        chip: 'Colour by IMR group',
+        of: n => GX(n).ig || 0,
+        name: k => (k ? k + '. ' + DATA.imrg[k - 1].t : '★ not in the lecture'),
+        color: k => `hsl(${groupHue(k)} 55% 52%)`
+      }
+    ],
     winks: () => [],
     // The tile photos of unit n (Find the X, quiz.js planPhoto): none, so the corals never play it (coral photos do not
     // read as small thumbnails).
@@ -2488,6 +2499,9 @@ const UNITS = {
     ...TREE_UNITS,
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // emkey: its species are those of the Fish ID Key for EventMeasure, in the Lab (proto/fishkey.js) until Pierre's OK
+    // (rule U13): the IMR reference PDF's, from its own files (get).
+    emkey: true,
     // Its basics module's words (as the corals': proto/fishbasics.js, learn.js BASICS_TRAIL_F). lo and all are for the
     // "lower" card, off for the fish with their other level-change cards (startFb, below).
     basics: {
@@ -2639,6 +2653,14 @@ const UNITS = {
       Object.values(TREEU ? TREEU.gen : {})
         .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
         .flatMap(g => g.look.filter(o => TREEU.gen[o] && (g.id < o || !TREEU.gen[o].look.includes(g.id))).map(o => [g.id, o])),
+    // Tools › Look-alike web's colouring (as the corals'): by the key's identification group (SUBJECTS sheets, TREEU groups).
+    webBy: () => [
+      {
+        chip: 'Colour by group',
+        of: n => GX(n).group || 0,
+        name: k => (k ? ((TREEU.groups || []).find(g => g.n === k) || {title: 'Group ' + k}).title : 'Not in a group yet')
+      }
+    ],
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (docs/ARCHITECTURE.md "Subjects").
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
     // The tile photos of unit n (Find the X, quiz.js planPhoto): its game photos that have
@@ -2815,6 +2837,8 @@ const UNITS = {
         .flatMap(g =>
           (g.decl || []).filter(o => TREEU.gen[o] && (g.id < o || !(TREEU.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
         ),
+    // Tools › Look-alike web's colouring: by family (a genus's parent).
+    webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
     tiles: () => [],
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?

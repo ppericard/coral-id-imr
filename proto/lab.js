@@ -23,6 +23,9 @@ const LAB_ICONS = {
   gallery:
     '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
   idkey: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5"/>',
+  // A fish under a magnifier (the Fish ID Key).
+  fishkey:
+    '<circle cx="10" cy="10" r="7"/><path d="m20.5 20.5-5.5-5.5M6 10c1.2-1.6 2.6-2.4 4-2.4s2.6.8 3.4 2.4c-.8 1.6-2 2.4-3.4 2.4S7.2 11.6 6 10zM6 10l-1.5-1.2M6 10l-1.5 1.2"/>',
   type: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   pairs: '<rect x="3" y="6" width="10" height="14" rx="2"/><path d="M9 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6"/>',
   // Two photos side by side with an equals sign between them.
@@ -46,6 +49,7 @@ const LAB = {
   list: [],
   files: [
     'idkey',
+    'fishkey',
     'basics',
     'fishbasics',
     'map',
@@ -103,9 +107,13 @@ LAB.files.forEach(f => {
 /* ---------- helpers shared by the prototypes ---------- */
 // Slate order (data.json key order).
 const labNames = () => Object.keys(DATA.gen);
-// The genera a Lab game asks about (rule L4: one progression path for every game or mode, no exceptions): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
-// subject on screen (the Tools are the corals'). Wrong choices may name any genus, as the quiz's do (model.js
-// distractors); the reference tools (map, matrix, gallery, key, board, sizes, explorer) keep every genus.
+// The genera a Lab game of the corals' own asks about (rule L4: one progression path for every game or mode, no exceptions):
+// those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the subject on screen. These
+// helpers (labPlay, labNames, labNone, labChoices) are for the tools that read the corallite traits (Spot the feature, the
+// Zoom ladder, Elimination, Anatomy), which stay the corals' for that reason; the tools that run on the subject on screen
+// (samediff, oddone, matrixgame, type, reveal, web) read unlocked() and GX instead, with the helpers further down. Wrong
+// choices may name any genus, as the quiz's do (model.js distractors); the reference tools (map, matrix, gallery, key,
+// board, sizes, explorer) keep every genus.
 const labPlay = () => {
   if (typeof unlocked !== 'function') return labNames();
   const f = () => unlocked(labNames());
@@ -144,8 +152,8 @@ const tag = n => (DATA.gen[n].n ? 'No. ' + DATA.gen[n].n : '★ not surveyed');
 // The corallite features that decide, as a short line (never the growth form).
 const whyLine = n =>
   'Corallites: ' +
-  trAll(DATA.gen[n])
-    .map(id => trLabel(DATA.gen[n], id))
+  trAll(GX(n))
+    .map(id => trLabel(GX(n), id))
     .map(esc)
     .join(' · ');
 const lookAlikes = n => DATA.gen[n].look.filter(b => DATA.gen[b]);
@@ -176,7 +184,9 @@ const labObs = p => p.o || p.f;
 // only without (false) the fish's square cut (xc), so the photos of one question are framed alike, whichever of them is
 // the odd one. A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
 // others can be drawn (the last `max`).
-function labShots(max = 8) {
+// k and f: the question's format as photoSet takes it (its plausible choices and its format: 2 and 'compare' for a side by
+// side; Infinity and 'typed' for a typed answer, 4 and 'k4' for four choices), so a photo is aimed as the quiz aims it.
+function labShots(max = 8, k = 2, f = 'compare') {
   const recent = [];
   // The view a photo of unit n is in (the draw's views), '' when the game has none of it.
   const view = (n, q) => ['wide', 'medium', 'macro'].find(v => gamePics(n, v).some(x => x.f === q.f)) || '';
@@ -188,7 +198,7 @@ function labShots(max = 8) {
           !not.includes(labObs(q)) &&
           (want.tile === undefined || !!(q.xc && !q.r) === want.tile));
     for (const keep of [q => fits(q) && !recent.includes(labObs(q)), fits]) {
-      const s = photoSet(n, null, 0, 2, 'compare', keep).shown,
+      const s = photoSet(n, null, 0, k, f, keep).shown,
         p = s[s.length - 1];
       if (p) return {...p, sdv: view(n, p)};
     }
@@ -197,6 +207,38 @@ function labShots(max = 8) {
   const seen = ps => ps.forEach(p => (recent.push(labObs(p)), recent.length > max && recent.shift()));
   return {photo, seen};
 }
+// One unit and one photo of it for a game that asks about a unit by itself (Type, Blur reveal): the units tried in a random
+// order, the first with a photo wins (a few units unlocked, some without a photo, never loops: each is tried once, at most
+// 24). photo: labShots' photo; view: a view key of the subject (SUBJ.views) or 'any'; a unit with none in that view gives
+// its photo in another (the draw's own choice). Null when no unit has a photo. {t, p}.
+function labDraw(units, photo, view = 'any', rnd = Math.random) {
+  const L = [...new Set(units)];
+  for (let i = L.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [L[i], L[j]] = [L[j], L[i]];
+  }
+  for (const t of L.slice(0, 24)) {
+    const p = (view !== 'any' && photo(t, {view})) || photo(t, null);
+    if (p) return {t, p};
+  }
+  return null;
+}
+// The view buttons of a game on the subject on screen (its own views: SUBJECTS views); none for a subject with one view.
+const labViewChips = view =>
+  SUBJ.views.length < 2
+    ? ''
+    : `<div class="chips">${[['any', 'Any view'], ...SUBJ.views]
+        .map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${esc(t)}</button>`)
+        .join('')}</div>`;
+// What a game on the subject on screen says when it has nothing to ask: no unit unlocked yet (the quiz opens them), or
+// unlocked ones without a photo to show.
+const labEmpty = (el, met) => {
+  el.innerHTML = `<p class="note">${
+    met
+      ? `No photo of the ${esc(SUBJ.many)} you have met to ask about yet. Try the quiz.`
+      : `This game asks about the ${esc(SUBJ.many)} you have met. Meet a few in the quiz first.`
+  }</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
+};
 // The ID tips of the units of a question, each in its box (behind More).
 const labTips = units =>
   units
@@ -247,8 +289,9 @@ function viewLab(h) {
   }
   const [id, ...args] = h.slice(4).split('|');
   const p = LAB.list.find(x => x.id === id);
-  // A Tools address of no tool here (a graduated one included: it lives in its section): the Tools page.
-  if (id && (!p || GRADUATED[id])) {
+  // A Tools address of no tool here (a graduated one included: it lives in its section), or of a tool not offered to this
+  // player (`on`: the Fish ID Key, while its subject is not open to them): the Tools page.
+  if (id && (!p || GRADUATED[id] || (p.on && !p.on()))) {
     location.replace(hr('lab'));
     return;
   }
@@ -261,7 +304,9 @@ function viewLab(h) {
   const votes = labVotes();
   // A prototype marked `admin` (a design mock-up for the owner, e.g. cards) is listed in the admin's browser only; its
   // link works for anyone.
-  const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
+  const order = LAB.files
+    .map(f => LAB.list.find(x => x.id === f))
+    .filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN) && (!p.on || p.on()));
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id] && p.hub !== false);
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
