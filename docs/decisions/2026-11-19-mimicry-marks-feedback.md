@@ -1,4 +1,4 @@
-# The mimicry pair's marks after a mix-up between its two species: the feedback's one line, the rest behind More
+# Mimicry pairs: their marks after a mix-up, as the feedback's line
 
 Date: 2026-11-19. PR: #0. Rules or docs touched: C2, C3, S1; LEARNING.md "The mimicry class"; docs/spec/quiz.md "The
 feedback sheet"; ROADMAP "Look-alike pairs between species".
