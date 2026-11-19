@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v203 (2026-11-20)
+
+Memory opens to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `pairs` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: Memory records nothing for any subject (no answer, no progress, no log row), so no answer is scored, replayed or logged differently and no rules version is appended; the copy of `core.js` in this script carries only the new `pages`
+
 ## v202 (2026-11-20)
 
 The Look-alikes deck and Compare open to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `cmp` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: the pages only read content, so no answer is scored, replayed or logged differently; the copy of `core.js` in this script carries the new `pages` and the helper `montOf` (a subject's look-alike picks in curation.json), which only the app reads
