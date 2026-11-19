@@ -40,7 +40,8 @@ Pierre, 2026-11-19 14:42 Manila (Q430): B. «J'ai toujours dit de mettre en jeu 
   The 14 `dup` and the one out of the water stay out whatever the code: left as judged. The other 53 kept `k`: the
   look-alike overlaps or touches the subject, or the crop would be under 480 px wide in the original (the game's
   small size).
-- **The 694 set aside are not re-judged**: no route takes them back. `autosort.js` `fishRun` never touches a photo already
+- **The 694 set aside are not re-judged**: no route takes them back (a route since Q438, the same day:
+  [2026-11-19-auto-proposals-newer-judgement.md](2026-11-19-auto-proposals-newer-judgement.md)). `autosort.js` `fishRun` never touches a photo already
   decided or logged (`seen`, log `r`), and `tools/fish_game.py` `in_play` keeps a `seen` photo out (`decided`,
   `gone_ids`). A crop reaches them, and his 65 adds, only through his curation (rule A1). His adds were counted, not
   changed: on 500 px sheets, a crop would clearly save about 14, and about 16 more with a tight crop (an estimate).
