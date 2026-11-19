@@ -162,6 +162,24 @@ commit, so no Publish is lost), then:
 3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `cand.json` (and `img/`,
    only for a missing smaller size of a photo git keeps) (`tests/coralcand.test.js`).
 
+### No more candidates is no more candidates
+
+Pierre's decision on where candidate photos come from ([its move here](../decisions/2026-11-19-rules-core.md)):
+
+**When a unit runs short of candidate photos, the tools fetch more automatically; when none are left, they note it and
+stop.** After each Publish the "Candidate photos" workflow refills the lists: coral genera up to their caps
+(`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
+Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
+candidates is no more candidates": a fish species whose search found nothing more is noted with the day
+(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
+game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
+never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
+candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.
+The choice of photos stays his (rule W10).
+*Why:* a unit short of photos should not wait for someone to notice, and a search with nothing left should not keep
+asking iNaturalist (rule C7).
+*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral, automatic, 2026-11-06 (Q171).
+
 ## Excluded photos
 
 `tools/excluded.py` makes every import skip excluded photos (by file name and iNaturalist photo id); `drop_excluded`

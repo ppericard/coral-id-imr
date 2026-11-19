@@ -211,18 +211,28 @@ test('AGENTS.md stays within its size budget', t => {
   if (kb > 20) t.diagnostic('AGENTS.md is ' + kb.toFixed(1) + ' KB, above its 20 KB target: move details to docs/rules/');
 });
 
-test('every rule ID is defined once, in the file of its theme, with its source, and listed in AGENTS.md', () => {
+// AGENTS.md is the core every agent loads (#1200, Q425 B): kept short in lines too, since each line is read in every task.
+test('AGENTS.md, the core, stays within its line budget', () => {
+  const n = AGENTS.split('\n').length - 1;
+  assert.ok(n <= 160, 'AGENTS.md has ' + n + ' lines: 160 at most (the core; details go to docs/rules/)');
+});
+
+// A retired rule ID is never reused nor cited alone; a range that spans it (W12-W27) skips it.
+const RETIRED = new Set(['W2', 'W5', 'W20']);
+
+test('every rule ID is defined once, in the file of its theme, with its source, and listed in the index', () => {
   assert.deepStrictEqual(DUPES, [], 'duplicate rule IDs');
   assert.ok(RULES.size >= 70, 'only ' + RULES.size + ' rules found in docs/rules/');
   for (const [id, f] of RULES) assert.strictEqual(f, 'docs/rules/' + RULE_FILES[id[0]] + '.md', id + ' is not in the file of its letter');
+  for (const id of RETIRED) assert.ok(!RULES.has(id), id + ' is retired: never reuse its ID');
   for (const f of new Set(RULES.values())) {
     for (const block of read(f).split(/^### /m).slice(1))
       assert.match(block, /\*Source:\*/, f + ': rule ' + block.split('\n')[0] + ' has no *Source:* line');
   }
-  const listed = [...AGENTS.matchAll(/^- \*\*([A-Z]\d+)\*\* /gm)].map(m => m[1]);
-  const missing = [...RULES.keys()].filter(id => !listed.includes(id) && !/^W(1[2-9]|2\d)$/.test(id)); // W12+: the ship checklist
-  assert.deepStrictEqual(missing, [], 'rules not listed in AGENTS.md "The rules"');
-  for (const id of listed) assert.ok(RULES.has(id), 'AGENTS.md lists ' + id + ', defined in no docs/rules/ file');
+  const listed = [...read('docs/rules/README.md').matchAll(/^- \*\*([A-Z]\d+)\*\* /gm)].map(m => m[1]);
+  const missing = [...RULES.keys()].filter(id => !listed.includes(id));
+  assert.deepStrictEqual(missing, [], 'rules not listed in docs/rules/README.md "The index"');
+  for (const id of listed) assert.ok(RULES.has(id), 'docs/rules/README.md lists ' + id + ', defined in no docs/rules/ file');
 });
 
 test('every rule ID cited anywhere resolves to exactly one rule', () => {
@@ -235,7 +245,9 @@ test('every rule ID cited anywhere resolves to exactly one rule', () => {
       const ids = m[1].match(new RegExp(ID, 'g'));
       const range = /-/.test(m[1]) && ids.length === 2 ? ids : null;
       const all = range
-        ? Array.from({length: +range[1].slice(1) - +range[0].slice(1) + 1}, (_, k) => range[0][0] + (+range[0].slice(1) + k))
+        ? Array.from({length: +range[1].slice(1) - +range[0].slice(1) + 1}, (_, k) => range[0][0] + (+range[0].slice(1) + k)).filter(
+            id => !RETIRED.has(id)
+          )
         : ids;
       for (const id of all) if (!RULES.has(id)) bad.push(f + ': ' + m[0]);
     }
@@ -606,11 +618,11 @@ const DOC_BUDGET = {
   'docs/spec/loading.md': [16, 130],
   'docs/spec/site.md': [7, 130],
   'docs/spec/storage.md': [11, 240],
-  'docs/spec/photos.md': [17, 130],
+  'docs/spec/photos.md': [18, 130], // + "No more candidates", moved whole from the rules (its ID retired)
   'docs/spec/player-reports.md': [8, 130],
   'docs/spec/deploy.md': [6, 130],
-  'docs/decisions/README.md': [10, 200], // the index grows by a row per record
-  'docs/rules/README.md': [1, 150],
+  'docs/decisions/README.md': [11, 200], // the index grows by a row per record
+  'docs/rules/README.md': [9, 180], // the index of every rule, moved from AGENTS.md (#1200)
   'docs/rules/admin.md': [5, 230],
   'docs/rules/content.md': [9, 220],
   'docs/rules/learning.md': [22, 400],

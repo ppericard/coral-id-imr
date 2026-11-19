@@ -120,8 +120,8 @@ and copied as is into `fish.json` by `tools/build_fish.py`.
 
 ### Automatic refill
 
-When a fish unit runs short of candidates the tools fetch more on their own, until there are none left to find (rule
-W20; `fetch_fish.py --refill`, tests `tests/fishphotos.test.js`). The "Candidate photos" workflow's `fish` job, after
+When a fish unit runs short of candidates the tools fetch more on their own, until there are none left to find
+([photos spec](photos.md#no-more-candidates-is-no-more-candidates); `fetch_fish.py --refill`, tests `tests/fishphotos.test.js`). The "Candidate photos" workflow's `fish` job, after
 each Publish (and on manual dispatch), after the coral `photos` job, commits `fish-cand.json` and
 `tools/fish_refill.json`.
 

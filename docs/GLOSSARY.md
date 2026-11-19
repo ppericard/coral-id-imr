@@ -1,7 +1,7 @@
 # Glossary
 
 The words this project uses with a meaning of its own, each with where it lives. Where one word has several meanings,
-each is listed. Rule IDs (C3, D4…) are in [AGENTS.md](../AGENTS.md#the-rules).
+each is listed. Rule IDs (C3, D4…) are in [the rules index](rules/README.md#the-index).
 
 ## The game
 

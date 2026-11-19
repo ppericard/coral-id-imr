@@ -1,8 +1,8 @@
 # UI and layout rules
 
 Pierre's standing rules on the interface. Design tokens and components: [DESIGN.md](../DESIGN.md) (follow it for any UI
-change). The admin's own rules are in [admin.md](admin.md). The index of every rule is in
-[AGENTS.md](../../AGENTS.md#the-rules).
+change). The admin's own rules are in [admin.md](admin.md). Specs: [ARCHITECTURE.md](../ARCHITECTURE.md) "Front
+end", [spec/front-end.md](../spec/front-end.md). The index of every rule is in [README.md](README.md#the-index).
 
 ### U1
 
@@ -55,11 +55,13 @@ must not degrade the look.
 
 ### U7
 
-**Settings removed on purpose stay removed**: the "Photos from Dauin / Philippines / All" filter (#230; the IMR/own-first
-rule P1 already does that job), the Reef theme, the quiz level selector, the fish "SVS video extras" and "Beyond IMR"
-⚙ rows (every fish circle is on the path; circle 3 opens on the player's yes, asked by a card and in My progress, never a
-⚙ row, and counts in the % either way).
-*Source:* Pierre, by 2026-11-01; the fish opt-ins, 2026-11-06 (Q175); circle 3 an option, 2026-11-07 (Q204).
+**Settings removed on purpose stay removed**: the "Photos from Dauin / Philippines / All" filter (#230), the Reef
+theme, the quiz level selector, the fish "SVS video extras" and "Beyond IMR" ⚙ rows (every fish circle is on the path;
+circle 3 opens on the player's yes, asked by a card and in My progress, never a ⚙ row, and counts in the % either way).
+**The levels each subject teaches are set on its What I learn card (My progress), never as more ⚙ rows; ⚙ keeps the
+general settings.**
+*Source:* Pierre, by 2026-11-01; the fish opt-ins, 2026-11-06 (Q175); circle 3 an option, 2026-11-07 (Q204); the levels
+on each subject's card, 2026-11-18 (#1071), 2026-11-19.
 
 ### U8
 

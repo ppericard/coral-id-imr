@@ -1139,3 +1139,18 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **10:12, Q428 (#1206, writing a rule down).** ok: only a change of substance goes to Pierre; editing is the
+  integrator's call, listed in the PR; never generalise nor harden. Applied: #NNNN.
+- **10:12, W20 out of the rules (#1206).** «ok»: its text moves word for word to the photos spec, with its source; the
+  ID retires. Applied: `docs/spec/photos.md` "No more candidates is no more candidates" (#NNNN).
+- **10:12, U7's new line (#1206).** «ok»: the levels each subject teaches are set on its What I learn card, never as
+  more ⚙ rows (his words of 2026-11-18: «On ne peut pas continuer à empiler des settings dans le menu déroulant»).
+  Applied: rules/ui.md U7 (#NNNN).
+- **10:12, the rules core (#1200 adjusted by #1206).** «ok»: about 153 lines; the order of work is the integrator's,
+  integrators run in auto mode, no GitHub chores for Pierre, security alerts count like Codex findings; no product rule
+  deleted or hardened; a trial before the core replaces AGENTS.md. Applied: AGENTS.md (#NNNN).
+- **10:13, rule S1 and L6 merged.** «ok» to: «Partagé et modulaire par défaut : un seul moteur, pas de cas particulier
+  pour une unité ou une matière. Une exception est permise quand elle est déclarée et nommée à un seul endroit, avec sa
+  raison. Un test liste toutes les exceptions, et une exception non déclarée le fait échouer. L'intégrateur décide une
+  exception comme un choix facile à corriger, et l'écrit dans la PR avec sa raison. Une exception qui touche la
+  progression des joueurs ou le format des données passe par Pierre.» Applied: #NNNN.
