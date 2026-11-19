@@ -178,13 +178,26 @@ def report(rows, since=None, session=None):
     return out
 
 
+def bullets(text):
+    """Each top-level bullet of a Markdown text, its wrapped lines joined."""
+    out = []
+    for ln in text.split('\n'):
+        if ln.startswith('- '):
+            out.append(ln.strip())
+        elif out and ln.startswith('  ') and ln.strip():
+            out[-1] += ' ' + ln.strip()
+        elif not ln.strip() or ln.startswith('#'):
+            out.append('')  # a blank line or a heading ends the bullet
+    return [b for b in out if b]
+
+
 def expect(root, ref):
     """The texts the trial's agents must quote exactly (proposal §3, T1-T3), read from ref."""
     agents = git(root, 'show', ref + ':AGENTS.md')
     if agents is None:
         return ['%s:AGENTS.md not found' % ref]
     m = RULE0.search(agents)
-    w27 = next((ln for ln in agents.split('\n') if 'rule W27' in ln and ln.lstrip().startswith('-')), None)
+    w27 = next((b for b in bullets(agents) if b.startswith('- **W27**') or re.search(r'\brules? W27\b', b)), None)
     return ['Rule 0: ' + (' '.join(x.lstrip('> ').strip() for x in m.group(1).split('\n')) if m else '(not found)'),
             'Core line: ' + (core_line(agents) or '(none: AGENTS.md before the core)'),
             'W27 line: ' + (w27.strip() if w27 else '(not found)')]

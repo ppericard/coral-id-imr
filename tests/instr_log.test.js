@@ -174,13 +174,34 @@ test('--report: per session and agent, what loaded and why; an empty log says th
 });
 
 test('--expect: the texts the trial agents quote, read from a ref', () => {
+  // The core's form: a bullet that names the rule, wrapped over two lines.
   const agents =
     '# AGENTS.md\n\nCore v1: what every agent holds in every task. More.\n\n## Rule 0\n\n> **After 17:30 (Manila time), the integrator\n> asks nothing.**\n\n' +
-    '- **Bounded cost: at most four agents** (rule W27).\n';
+    '- **No two open PRs on the same sensitive file; two Codex rounds,\n  then cut the scope** (rule W27).\n- **Other** (rule W6).\n';
   const out = run(repo(agents), '--expect');
   assert.match(out, /^Rule 0: After 17:30 \(Manila time\), the integrator asks nothing\.$/m);
   assert.match(out, /^Core line: Core v1: what every agent holds in every task$/m);
-  assert.match(out, /^W27 line: - \*\*Bounded cost: at most four agents\*\* \(rule W27\)\.$/m);
+  assert.match(
+    out,
+    /^W27 line: - \*\*No two open PRs on the same sensitive file; two Codex rounds, then cut the scope\*\* \(rule W27\)\.$/m
+  );
+  // Codex review #1209: the index's form, as AGENTS.md declares it before the core.
+  const index = run(
+    repo('# AGENTS.md\n\n## The rules\n\n- **W26** Every PR merges through a train.\n- **W27** Bounded cost: few agents.\n'),
+    '--expect'
+  );
+  assert.match(index, /^W27 line: - \*\*W27\*\* Bounded cost: few agents\.$/m);
+  assert.match(index, /^Core line: \(none: AGENTS\.md before the core\)$/m);
+});
+
+test("--expect on the repository's own AGENTS.md finds Rule 0 and rule W27", () => {
+  const out = execFileSync('python3', [TOOL, '--expect', 'HEAD'], {
+    cwd: ROOT,
+    env: {...process.env, CLAUDE_PROJECT_DIR: ROOT},
+    encoding: 'utf-8'
+  });
+  assert.match(out, /^Rule 0: After 17:30 /m);
+  assert.match(out, /^W27 line: - \*\*.*W27/m);
 });
 
 test(".claude/settings.json runs main's copy of the log on InstructionsLoaded, SessionStart and SubagentStart", () => {
