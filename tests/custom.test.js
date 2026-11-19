@@ -51,6 +51,7 @@ function model({P = {}, ab = {}} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     pick('function wpick', '// Which genus to ask next') +
+      pick('const declaredOf = ', "// The pair's pooled score for grouping") +
       pick('const trapsFor = ', '// Once the whole file is in') +
       '\nthis.M = {CUSTOM, customOf, customDraw, customChoices, distractors, confusable, mixEdges, lookEdges, mixClusters};',
     ctx
@@ -134,10 +135,15 @@ test('customChoices: a ranked unit (a fish species or genus) never gets a choice
           `traps ${traps}: ${c.join()}`
         );
       }
-    // Under 4 picked the other units of the rank top it up, as the photo quiz's choices do.
-    const two = M.customChoices('Ra', ['Ra', 'Rb'], [...PLAY, ...R], 1, known);
-    assert.strictEqual(two[0], 'Rb');
-    assert.strictEqual(new Set(two).size, 3);
+    // Under 4 picked the other units of the rank in play top it up, never one outside the game (Codex review: Re is not in
+    // play here, though it is a unit of the rank).
+    const inPlay = [...PLAY, ...R.slice(0, 4)];
+    for (let i = 0; i < 50; i++) {
+      const two = M.customChoices('Ra', ['Ra', 'Rb'], inPlay, 1, known);
+      assert.strictEqual(two[0], 'Rb');
+      assert.strictEqual(new Set(two).size, 3);
+      assert.ok(!two.includes('Re'), two.join());
+    }
   } finally {
     R.forEach(n => delete GEN[n]);
   }
@@ -295,6 +301,23 @@ test('lookEdges: the declared look-alikes (both ways) for a player with no mix-u
   // A-B, A-C: A, B, C; D's only look-alike, B, is a third of that cluster: D stays out (no chain through B).
   assert.deepStrictEqual(C.map(c => c.g.slice().sort().join('')).sort(), ['ABC', 'EF']);
   assert.ok(C.every(c => c.g.every(n => PLAY.includes(n))));
+});
+
+test('lookEdges: a record that separates `decl` from `look` (siblings by construction) gives declared pairs only (rule C2)', () => {
+  const S = ['Sa', 'Sb', 'Sc'];
+  GEN.Sa = {look: ['Sb', 'Sc'], decl: ['Sb'], fam: 'fs', ig: 30, forms: ['S']};
+  GEN.Sb = {look: ['Sa', 'Sc'], decl: ['Sa'], fam: 'fs', ig: 30, forms: ['S']};
+  GEN.Sc = {look: ['Sa', 'Sb'], decl: [], fam: 'fs', ig: 30, forms: ['S']};
+  try {
+    assert.deepStrictEqual(
+      model()
+        .lookEdges(S)
+        .map(e => e[0] + e[1]),
+      ['SaSb']
+    );
+  } finally {
+    S.forEach(n => delete GEN[n]);
+  }
 });
 
 // The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftStep, leftDue, leftCount, leftWords,

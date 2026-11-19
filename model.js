@@ -1990,7 +1990,8 @@ function customChoices(t, sel, play, traps, known) {
       t,
       play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
       Math.max(0, traps - got),
-      known
+      known,
+      false // the units in play only: never a locked unit or one outside the game
     )
   ]).slice(0, 3);
 }
@@ -2015,7 +2016,9 @@ const mixEdges = play => {
 };
 const lookEdges = play => {
   const E = [];
-  play.forEach((a, i) => play.slice(i + 1).forEach(b => isLook(a, b) && E.push([a, b, pooledConf(a, b)])));
+  // The declared pairs only (`declared`: a record's `decl`, else its `look`), never the siblings a fish genus's `look`
+  // holds by construction: the view names their source (rule C2).
+  play.forEach((a, i) => play.slice(i + 1).forEach(b => declared(a, b) && E.push([a, b, pooledConf(a, b)])));
   return E;
 };
 function mixClusters(edges, cap = CUSTOM.CLUSTER) {
