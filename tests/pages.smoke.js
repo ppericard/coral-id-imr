@@ -5853,6 +5853,118 @@ async function installCheck(b, base) {
   }
   return fails;
 }
+// ROADMAP "IMR lecture photos never upscaled" (Pierre, 2026-11-18, "C12 A+D"): an IMR lecture photo is never drawn larger
+// than its own pixels, on the genus sheet, in the enlarged view and on the quiz stage (a one-photo stage and the side by
+// side one), at both widths. The smallest lecture photo (Tubastraea imr-p27_i9, 397 x 530) is the test case; its pixels
+// are read from its own file, which no srcset rescales.
+async function noUpscaleCheck(b, base) {
+  const fails = [],
+    F = 'imr-p27_i9',
+    stub = require('./photostub.js')(ROOT);
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({viewport: {width: w, height: w < 600 ? 800 : 900}, serviceWorkers: 'block'});
+    await stub.r2(c);
+    await c.route(
+      u => !u.href.startsWith(base) && !u.href.startsWith(require('../core.js').PHOTO_BASE),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+    });
+    const p = await c.newPage();
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    for (const g of ['Tubastraea', 'Stylophora', 'Pocillopora', 'Anacropora']) {
+      await p.evaluate(g => (location.hash = 'learn/genus/' + g), g);
+      await drawn(p);
+      const sh = await p.evaluate(async () => {
+        const nat = f =>
+          new Promise(ok => {
+            const i = new Image();
+            i.onload = () => ok([i.naturalWidth, i.naturalHeight]);
+            i.onerror = () => ok(null);
+            i.src = `img/${f}.webp`;
+          });
+        const over = (i, n) => {
+          const r = i.getBoundingClientRect(),
+            fit = getComputedStyle(i).objectFit,
+            s = fit === 'cover' ? Math.max(r.width / n[0], r.height / n[1]) : Math.min(1, r.width / n[0], r.height / n[1]);
+          return {w: Math.round(r.width), h: Math.round(r.height), fit, s: +s.toFixed(2)};
+        };
+        const loaded = i => i.complete || new Promise(ok => ((i.onload = i.onerror = ok), setTimeout(ok, 3000)));
+        const fileOf = i => (/\/(imrl?-[^/]*?)(?:-[tsm])?\.webp/.exec(i.currentSrc || i.src) || [])[1];
+        const mine = [...document.querySelectorAll('img')].filter(fileOf);
+        await Promise.all(mine.map(loaded));
+        const out = {n: mine.length, over: [], lb: 0};
+        for (const i of mine) {
+          const n = await nat(fileOf(i));
+          if (n) out.over.push({f: fileOf(i), n, ...over(i, n)});
+        }
+        const z = mine[0] && mine[0].closest('.zoom');
+        if (z) {
+          z.click();
+          await new Promise(ok => setTimeout(ok, 400));
+          const li = document.querySelector('#lightbox .lb-in img');
+          if (li) {
+            await loaded(li);
+            const n = await nat(fileOf(li));
+            if (n) (out.lb++, out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)}));
+            document.querySelector('#lightbox [data-x]')?.click();
+          }
+        }
+        return out;
+      });
+      if (!sh.n) fails.push(`no upscale ${w}: the ${g} sheet shows no IMR lecture photo`);
+      if (!sh.lb) fails.push(`no upscale ${w}: the enlarged view of a ${g} lecture photo did not open`);
+      for (const o of sh.over)
+        if (o.s > 1.005)
+          fails.push(`no upscale ${w}: ${o.f} (${o.n.join('x')}) on the ${g} sheet is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
+    }
+    const seen = await p.evaluate(async f => {
+      const nat = await new Promise(ok => {
+        const i = new Image();
+        i.onload = () => ok([i.naturalWidth, i.naturalHeight]);
+        i.onerror = () => ok(null);
+        i.src = `img/${f}.webp`;
+      });
+      const over = (i, n) => {
+        const r = i.getBoundingClientRect(),
+          fit = getComputedStyle(i).objectFit,
+          s = fit === 'cover' ? Math.max(r.width / n[0], r.height / n[1]) : Math.min(1, r.width / n[0], r.height / n[1]);
+        return {w: Math.round(r.width), h: Math.round(r.height), fit, s: +s.toFixed(2)};
+      };
+      const out = {nat, stage: []};
+      const loaded = i => i.complete || new Promise(ok => ((i.onload = i.onerror = ok), setTimeout(ok, 3000)));
+      // The quiz stage, drawn as quiz.js draws a photo (one photo; two side by side), then fitted by fitStage.
+      for (const vs of [false, true]) {
+        const q = document.createElement('div');
+        q.className = 'q';
+        const fig = k =>
+          `<figure class="qph${vs ? ' ' + k : ''}" data-r="0.75" data-imr style="--qbg:url('img/${f}-s.webp')"><button type="button" class="zoom"><img src="img/${f}.webp" alt=""></button></figure>`;
+        q.innerHTML = `<div class="qstage${vs ? ' qvs' : ''}">${vs ? fig('a') + fig('b') : fig('')}</div><div class="qside"></div>`;
+        $v.innerHTML = '';
+        $v.appendChild(q);
+        const ims = [...q.querySelectorAll('img')];
+        await Promise.all(ims.map(loaded));
+        fitStage();
+        await new Promise(ok => setTimeout(ok, 100));
+        ims.forEach(i => out.stage.push({vs, ...over(i, nat)}));
+      }
+      return out;
+    }, F);
+    if (!seen.nat) fails.push(`no upscale ${w}: ${F} did not load`);
+    else {
+      for (const o of seen.stage)
+        if (o.s > 1.005)
+          fails.push(`no upscale ${w}: ${F} (${seen.nat.join('x')}) on the quiz stage is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
+    }
+    await c.close();
+  }
+  return fails;
+}
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|overlays|
 // rest|more one of the four groups CI runs on separate runners (each in a job of smokes.yml: tests/smokeparts.test.js),
 // SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
@@ -5863,7 +5975,8 @@ async function installCheck(b, base) {
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
 // (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck);
-// fishkey: the Fish ID Key in the Lab (fishKeyCheck).
+// fishkey: the Fish ID Key in the Lab (fishKeyCheck); noupscale: an IMR lecture photo never drawn past its own pixels
+// (noUpscaleCheck).
 const PARTS = [
     'main',
     'overlays',
@@ -5881,7 +5994,8 @@ const PARTS = [
     'replay',
     'notices',
     'install',
-    'fishkey'
+    'fishkey',
+    'noupscale'
   ],
   WIDTHS = [390, 1280];
 
@@ -5890,7 +6004,7 @@ const PARTS = [
       main: ['main', 'tips', 'onepath', 'names', 'newplayer'],
       overlays: ['overlays'],
       more: ['relief', 'start', 'signin', 'replay', 'notices'],
-      rest: ['basics', 'credits', 'visit', 'subjtour', 'install', 'fishkey']
+      rest: ['basics', 'credits', 'visit', 'subjtour', 'install', 'fishkey', 'noupscale']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -6832,6 +6946,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);
   if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
   if (run.has('fishkey')) for (const f of await fishKeyCheck(b, base)) fails.push(f);
+  if (run.has('noupscale')) for (const f of await noUpscaleCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);

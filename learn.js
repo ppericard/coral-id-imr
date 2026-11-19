@@ -577,7 +577,7 @@ function viewLookalikes(a, b) {
       gB = DATA.gen[m.B],
       x = mix(m);
     const half = (n, p, k) =>
-      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
+      `<figure class="lkph"${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
     const tip = (n, g) => `<div class="lktip"><a href="${esc(hr('g-' + n))}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map(
       (d, k) =>

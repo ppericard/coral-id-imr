@@ -311,7 +311,7 @@ function question(cur, target, choices, prompt, set, kq) {
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
-    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${SUBJ.what} to identify${p.view && lab[p.view] ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}">${ZOOMI}</button>${p.view && lab[p.view] ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${SUBJ.what} to identify${p.view && lab[p.view] ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}">${ZOOMI}</button>${p.view && lab[p.view] ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // Find the X (planPhoto, FIND): the four photos are the choices, square tiles in the stage (app.js tileSrc), each the
   // button of its unit (data-c), in the order of the choices; no name buttons. Their names come with the answer (go).
   const fx = set.find || null,
@@ -530,7 +530,7 @@ function fitStage() {
       const set = () => {
         const r = i.naturalWidth / i.naturalHeight,
           up = Math.max(colW / i.naturalWidth, h / i.naturalHeight);
-        f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3 && up <= LOWRES);
+        f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3 && up <= upMax(f));
       };
       if (i.naturalWidth) set();
       else i.addEventListener('load', set, {once: true});
@@ -561,12 +561,15 @@ $v.addEventListener(
 // box is shown whole at its own size on the blurred background instead (sharp beats big for the few small IMR lecture
 // photos). Genus sheet tiles keep filling their box.
 const LOWRES = 1.15;
+// An IMR lecture photo (data-imr) is never drawn larger than its own pixels (ROADMAP "IMR lecture photos never
+// upscaled", Pierre 2026-11-18 "C12 A+D"): no tolerance for it; every other photo keeps LOWRES.
+const upMax = fig => (fig && fig.hasAttribute('data-imr') ? 1 : LOWRES);
 const fitLow = fig => {
   const i = fig.querySelector('img');
   if (!i) return;
   const chk = () => {
     const r = fig.getBoundingClientRect();
-    fig.classList.toggle('lo', !!i.naturalWidth && Math.max(r.width / i.naturalWidth, r.height / i.naturalHeight) > LOWRES);
+    fig.classList.toggle('lo', !!i.naturalWidth && Math.max(r.width / i.naturalWidth, r.height / i.naturalHeight) > upMax(fig));
   };
   if (i.complete && i.naturalWidth) chk();
   else i.addEventListener('load', chk, {once: true});
@@ -929,7 +932,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       // The ✓ / ✗ name chips say which photo is which, with no note under them (the short feedback sheet:
       // docs/decisions/2026-11-18-feedback-sheet.md).
       const fig = (p, n, cls) =>
-        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption>${photoSrc(p)}</figure>`;
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok') + fig(cp, c, 'qko');
       st0.querySelectorAll('[data-vs]').forEach(
@@ -1301,7 +1304,7 @@ function winkShow({n}) {
   if (typeof syncSoon === 'function') syncSoon(); // the other devices of the account learn it was shown
   SHOWNQ = null;
   $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
-    <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
+    <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">Which ${SUBJ.one}? <span class="wtag">Surprise</span></p>${trail()}</div>
       <div class="ans">${ch.map(([id, label], i) => `<button type="button" class="plain" data-w="${esc(id)}"><kbd>${i + 1}</kbd>${esc(label)}</button>`).join('')}</div>

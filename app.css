@@ -3143,6 +3143,12 @@ body {
   object-fit: cover;
   background-size: cover;
 }
+/* An IMR lecture photo is never drawn past its own pixels (quiz.js upMax): side by side on a phone it stays whole, at
+   most its own size, on the blurred background. */
+.q .qstage.qvs .qph[data-imr] img {
+  object-fit: scale-down;
+  background-size: contain;
+}
 .wide {
   display: none;
 }
