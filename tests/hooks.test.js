@@ -146,11 +146,15 @@ test('no origin/main ref, origin unreachable: the guards refuse with the fix, th
   git(s.clone, 'remote', 'set-url', 'origin', path.join(s.top, 'gone.git'));
   // Each failed fetch waits a second before its last look: the runs go at once.
   const allowed = JSON.stringify({tool_name: 'Agent', tool_input: {description: 'x', prompt: 'y', model: 'opus', effort: 'high'}});
-  const [sh, bash, fix, more, agent, ...rest] = await Promise.all([
+  // Codex, #1220: the fix elsewhere in the event (a description) lets nothing through, nor a malformed event.
+  const inDesc = JSON.stringify({tool_name: 'Bash', tool_input: {command: "python3 -c 'print(1)'", description: FIX}});
+  const [sh, bash, fix, more, desc, bad, agent, ...rest] = await Promise.all([
     runAsync(s, C.bash, bashEv('ls'), 'sh'),
     runAsync(s, C.bash, bashEv('ls'), 'bash'),
     runAsync(s, C.bash, bashEv(FIX)),
     runAsync(s, C.bash, bashEv(FIX + '; rm -rf x')),
+    runAsync(s, C.bash, inDesc),
+    runAsync(s, C.bash, '"' + FIX + '"'),
     runAsync(s, C.agent, allowed),
     ...[C.loaded, C.startLog, C.subagent, C.start, C.prompt].map(c => runAsync(s, c, loadEv('s1', 'x')))
   ]);
@@ -165,6 +169,8 @@ test('no origin/main ref, origin unreachable: the guards refuse with the fix, th
   assert.strictEqual(fix.status, 0, 'the fix itself goes through');
   assert.strictEqual(fix.stdout, '');
   assert.strictEqual(more.status, 2, 'only the fix, exactly');
+  assert.strictEqual(desc.status, 2, 'only in the command field');
+  assert.strictEqual(bad.status, 2, 'a malformed event refuses');
   assert.strictEqual(agent.status, 2, 'the agent guard refuses even a launch it would allow');
   assert.ok(agent.stderr.includes(FIX));
 
