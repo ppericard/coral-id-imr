@@ -1269,6 +1269,40 @@
         {"t": "Solitary Islands Underwater Research Group, Ctenochaetus binotatus", "u": "https://www.surg.org.au/species/ctenochaetus-binotatus-randall-1955/"},
         {"t": "FishBase, Ctenochaetus binotatus, morphology", "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6012&GenusName=Ctenochaetus&SpeciesName=binotatus"}
       ]
+    },
+    {
+      "id": "seaslug-infucata-obscura",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-19",
+      "title": "Hypselodoris infucata in the Philippines: or H. obscura?",
+      "q": "Our list holds Hypselodoris infucata (29 observers in the Philippines, circle 3), as iNaturalist and WoRMS name it. SEASLUG.WORLD says western Pacific animals once called H. infucata belong to H. obscura, leaving H. infucata largely to the Red Sea and the Mediterranean; the Sea Slug Forum (1998) treats it as Indo-West Pacific. Keep the name for our photos, or follow the split?",
+      "ctx": [
+        "Found by the sea slug species marks' sourcing (2026-11-19). Nothing settled (rule C5).",
+        "SEASLUG.WORLD: \"Western Pacific specimens previously identified as Hypselodoris infucata have, since Wilson & Lee 2005 and subsequent molecular analyses, been recognised as belonging to Hypselodoris obscura ; the confirmed range of H. infucata is therefore largely confined to the Mediterranean and Red Sea region.\"",
+        "H. infucata has no species mark until this is settled (tools/seaslug_species_marks.json none); H. obscura is not in our list."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Hypselodoris infucata", "u": "https://en.seaslug.world/species/hypselodoris_infucata"},
+        {"t": "Sea Slug Forum, Rudman 1998, Hypselodoris infucata fact sheet", "u": "https://www.seaslugforum.net/find/hypsinfu"}
+      ]
+    },
+    {
+      "id": "seaslug-polkadotsa-range",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-19",
+      "title": "Phyllidia polkadotsa: known only from Hawaii, yet observed in the Philippines",
+      "q": "Both pages read on Phyllidia polkadotsa (after Brunckhorst 1993) give it as known only from the Hawaiian Islands, while 17 observers have Research Grade observations of it in the Philippines (Batangas mostly), which brings it into our list (rule C8). Are the Philippine animals P. polkadotsa, or a look-alike yet to be named?",
+      "ctx": [
+        "Found by the sea slug species marks' sourcing (2026-11-19). Nothing settled (rule C5).",
+        "SEASLUG.WORLD: \"Known only from the Hawaiian Islands\"; Sea Slug Forum: \"Known only from Hawaii.\" Its marks (golden yellow with large round black spots, no white) are shown as drafts meanwhile."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Phyllidia polkadotsa", "u": "https://en.seaslug.world/species/phyllidia_polkadotsa"},
+        {"t": "Sea Slug Forum, Rudman 1999, Phyllidia polkadotsa fact sheet", "u": "https://www.seaslugforum.net/find/phylpolk"},
+        {"t": "tools/seaslugs.json (iNaturalist, pulled 2026-11-15)"}
+      ]
     }
   ]
 }

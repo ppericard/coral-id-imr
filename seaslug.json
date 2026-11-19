@@ -4486,7 +4486,7 @@
    },
    "marks": [
     "Pure white with a bright orange-gold mantle edge",
-    "Large, with a wide wavy mantle edge and plain white gills"
+    "Large, with a wide, wavy mantle edge"
    ],
    "msrc": [
     {
@@ -5364,7 +5364,7 @@
    },
    "marks": [
     "Pinkish purple; cerata with a deep purple ring and cream-yellow tips",
-    "Bright orange, papillate rhinophores"
+    "Bright orange rhinophores covered in tiny bumps"
    ],
    "msrc": [
     {
@@ -5435,7 +5435,7 @@
     "wiki": "Hypselodoris bullockii"
    },
    "marks": [
-    "Plain body with the mantle edged by a very fine white line",
+    "White to ivory, the mantle edged by a very fine white line",
     "Yellow rhinophores and gills, often purplish at the base"
    ],
    "msrc": [
@@ -6262,7 +6262,7 @@
     "wiki": "Thecacera pacifica"
    },
    "marks": [
-    "Yellow to deep orange-yellow, without black spots on the back",
+    "Yellow to deep orange-yellow, a see-through orange surface",
     "Finger-like appendages beside the gills, black fading to sky blue"
    ],
    "msrc": [
@@ -6353,7 +6353,7 @@
     "wiki": "Jorunna parva"
    },
    "marks": [
-    "Small, covered in close-set bristly papillae, greyish yellow",
+    "Small, covered in close-set bristly bumps, greyish yellow",
     "Black rhinophore clubs and black-veined gills"
    ],
    "msrc": [
@@ -7441,7 +7441,7 @@
     "wiki": "Glossodoris rufomarginata"
    },
    "marks": [
-    "Brown speckled back with a reddish-brown mantle rim and a white band inside",
+    "Orange-brown speckled back and rim, with a broad white band inside the rim",
     "Brownish-grey gills and rhinophores with white midribs"
    ],
    "msrc": [
@@ -7765,7 +7765,7 @@
     "nearN": 4
    },
    "marks": [
-    "Yellowish white, orange to brownish yellow round the mantle edge",
+    "Orange to brownish yellow round the mantle edge",
     "Gills and rhinophores the same orange to brownish yellow"
    ],
    "msrc": [
@@ -8322,7 +8322,7 @@
     "wiki": "Samla bicolor"
    },
    "marks": [
-    "White body; each ceras with a sharp orange to golden ring below the tip"
+    "White body; a sharp orange to golden ring below the tip of its cerata"
    ],
    "msrc": [
     {
@@ -8380,7 +8380,7 @@
     "wiki": "Hypselodoris krakatoa"
    },
    "marks": [
-    "A tall, volcano-like gill pocket; dark brown patches over light brown",
+    "A tall, volcano-like gill pocket; brown patches in a figure-of-eight",
     "Black lines with white spots, and rusty-brown white-tipped rhinophores"
    ],
    "msrc": [
@@ -9129,7 +9129,7 @@
    },
    "marks": [
     "Sky-blue diamond patches down the middle of the back",
-    "A broad crimson ring near each ceras tip, edged white"
+    "A broad crimson ring, edged white, near the tip of its cerata"
    ],
    "msrc": [
     {
@@ -9590,7 +9590,7 @@
    },
    "marks": [
     "Spiny, cactus-like cerata, never curled at the tip",
-    "On nephtheid soft corals"
+    "On soft corals such as Lemnalia, which it eats"
    ],
    "msrc": [
     {
@@ -9741,7 +9741,7 @@
    },
    "marks": [
     "Translucent white with a dense lacy net of opaque white lines",
-    "A broad purple ring on each ceras"
+    "A broad purple ring on its cerata"
    ],
    "msrc": [
     {
@@ -10794,28 +10794,7 @@
     "inat": 52862,
     "worms": 139151,
     "wiki": "Hypselodoris infucata"
-   },
-   "marks": [
-    "Deep dark blue with scattered yellow and black spots",
-    "Red rhinophores; white gills with red stems"
-   ],
-   "msrc": [
-    {
-     "t": "SEASLUG.WORLD, Hypselodoris infucata",
-     "u": "https://en.seaslug.world/species/hypselodoris_infucata"
-    }
-   ],
-   "mby": {
-    "marks": [
-     [
-      0
-     ],
-     [
-      0
-     ]
-    ]
-   },
-   "mdraft": 1
+   }
   },
   {
    "id": "s487302",
@@ -11446,7 +11425,7 @@
    },
    "marks": [
     "Cream to greyish, the cerata netted with dark brown lines",
-    "A whitish-fuchsia band just inside the wavy, yellow-spotted ceras edge"
+    "A whitish-fuchsia band inside the wavy, yellow-spotted cerata edges"
    ],
    "msrc": [
     {
@@ -11914,7 +11893,7 @@
     "worms": 599289
    },
    "marks": [
-    "A deep purple spot just below the tip of each ceras",
+    "A deep purple spot just below the tip of its cerata",
     "Ringed rhinophores, plated along their whole length"
    ],
    "msrc": [
@@ -13284,9 +13263,13 @@
    },
    "marks": [
     "Orange-yellow to orange-brown with a white line down the back",
-    "Thin dark brown lines from the tip to the base of each ceras"
+    "Thin dark brown lines along its cerata, from tip to base"
    ],
    "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Phyllodesmium kabiranum",
+     "u": "https://en.seaslug.world/species/phyllodesmium_kabiranum"
+    },
     {
      "t": "Sea Slug Forum, Rudman 2002, Phyllodesmium kabiranum fact sheet",
      "u": "https://www.seaslugforum.net/find/phylkabi"
@@ -13295,10 +13278,11 @@
    "mby": {
     "marks": [
      [
-      0
+      0,
+      1
      ],
      [
-      0
+      1
      ]
     ]
    },
@@ -14362,7 +14346,7 @@
    },
    "marks": [
     "Almost transparent and greenish yellow, the organs showing through",
-    "A papillate blade on the back of each rhinophore stalk"
+    "A flat blade with a bumpy edge behind each rhinophore stalk"
    ],
    "msrc": [
     {

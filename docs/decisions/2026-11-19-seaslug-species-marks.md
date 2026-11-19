@@ -27,16 +27,18 @@ Choices made while building, not decided with Pierre, each easy to change (integ
   species, with "Draft, not yet reviewed" (rule S1); the quiz does not read them.
 - **Left in `none`, with why**: a species alone in its genus in the game (nothing to tell it from); *Hypselodoris
   decorata* and *H. maculosa*, which SEASLUG.WORLD says "cannot be reliably told apart by appearance alone"; a species
-  no page read describes (*Phestilla sibogae*); *Goniobranchus* sp. 5, with no published description.
+  no page read describes (*Phestilla sibogae*); *Goniobranchus* sp. 5, with no published description; *Hypselodoris
+  infucata*, whose page gives western Pacific animals to *H. obscura* (a point for Pierre, rule C5).
 
 ## Consequences
 
-- `tools/seaslug_species_marks.json` (format in its `about`): 166 species with marks, 40 in `none` (36 alone in their
-  genus, 4 for a reason of their own). `tools/seaslug_cues.py` `species_apply` checks it (a source and its words on
+- `tools/seaslug_species_marks.json` (format in its `about`): 165 species with marks, 41 in `none` (36 alone in their
+  genus, 5 for a reason of their own). `tools/seaslug_cues.py` `species_apply` checks it (a source and its words on
   every line, no number, 80 characters, a species named only within its genus, every species in marks or none, every
   source used) and `tools/seaslug_game.py` builds it into `seaslug.json` species (`marks`, `msrc`, `mby`, `mdraft`);
   `tests/seaslug-species-marks.test.js`.
-- Some species pages describe names under revision (*Hypselodoris infucata*, *Plakobranchus ocellatus*, *Hexabranchus
-  sanguineus*): their marks describe the look the pages give, which is what the photos in play show; the names stay
-  WoRMS's (rule C5 if Pierre wants a point).
+- Some species pages describe complexes under revision (*Plakobranchus ocellatus*, *Hexabranchus sanguineus*): their
+  marks describe the look the pages give; the names stay WoRMS's. Two points in `points.json` (rule C5):
+  `seaslug-infucata-obscura` (names) and `seaslug-polkadotsa-range` (both pages give *Phyllidia polkadotsa* as Hawaiian
+  only, while it is observed in the Philippines; its marks stay).
 - Left: Pierre's validation; the species as game units.
