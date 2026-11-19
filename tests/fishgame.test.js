@@ -720,6 +720,29 @@ test('tools/fish_judge.json boxes: [left, top, right, bottom] inside the photo',
     )
   );
   assert.deepStrictEqual(bad, []);
+  // A code with a crop is read on the photo as cropped (judging/FISH.md "A proposed crop"): the crop keeps the whole fish.
+  const crops = read('tools/fish_judge.json').crops || {},
+    cut = JSON.parse(
+      py(`import fish_game as G
+crops, boxes = json.loads(${JSON.stringify(JSON.stringify([crops, boxes]))})
+print(json.dumps([f for f, c in crops.items() if f in boxes and not G.box_in(boxes[f], c)]))`)
+    );
+  assert.deepStrictEqual(cut, []);
+});
+
+// Q430 (Pierre, 2026-11-19: "J'ai toujours dit de mettre en jeu les suggestions, surtout si elles peuvent être corrigées à
+// postériori"): a photo with a fish one could confuse near its edge plays once a crop takes that fish out. The judge codes
+// the photo as cropped (one fish) and gives the crop: sure, it enters with the crop; a code still k stays out, crop or not
+// (rule P3). box_in: the fish's box whole inside the crop, give or take a hair of the grid.
+test('a crop that takes out the fish one could confuse: in play cropped; a code still k stays out (fish_game.py cand_sure)', () => {
+  const j = n => ({jt: `p1g0sm${n}`, e: 4, k: 'best', c: [0, 0, 0.6, 1]});
+  const got = JSON.parse(
+    py(`import fish_game as G
+print(json.dumps([G.cand_sure(j) for j in ${JSON.stringify(['1', 's', 'o', 'k', 'x'].map(j))}] +
+                 [G.box_in([0.1, 0.2, 0.6, 0.8], [0, 0, 0.6, 1]), G.box_in([0.1, 0.2, 0.605, 0.8], [0, 0, 0.6, 1]),
+                  G.box_in([0.1, 0.2, 0.65, 0.8], [0, 0, 0.6, 1])]))`)
+  );
+  assert.deepStrictEqual(got, [true, true, true, false, false, true, true, false]);
 });
 
 // A doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by itself, proposed by
