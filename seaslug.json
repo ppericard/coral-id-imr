@@ -1713,13 +1713,17 @@
     ]
    },
    "apart": {
-    "g:Tyrannodoris": "Tyrannodoris: enlarged oral tentacles; no sense slit before the rhinophores"
+    "g:Tyrannodoris": "Tyrannodoris: large, downward-pointing oral tentacles; no sense slit before the rhinophores"
    },
    "apsrc": {
     "g:Tyrannodoris": [
      {
       "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81), the diagnosis of the genus Tyrannodoris, p. 18",
       "u": "https://natuurtijdschriften.nl/pub/1000556"
+     },
+     {
+      "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet, the oral tentacles of Roboastra, now Tyrannodoris luteolineata",
+      "u": "https://www.seaslugforum.net/find/robolute"
      }
     ]
    }

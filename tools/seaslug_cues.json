@@ -117,6 +117,10 @@
    "t": "Willan and Cattaneo-Vietti 1995, New data on Chelidonura amoena (The Beagle 12)",
    "u": "https://archive.org/details/biostor-242510"
   },
+  "ssf-robolute": {
+   "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet",
+   "u": "https://www.seaslugforum.net/find/robolute"
+  },
   "wc2017": {
    "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81)",
    "u": "https://natuurtijdschriften.nl/pub/1000556"
@@ -442,8 +446,11 @@
     [["wc2017", "the definition of the genus Tambja, p. 17"]]
    ],
    "Tyrannodoris": [
-    "enlarged oral tentacles; no sense slit before the rhinophores",
-    [["wc2017", "the diagnosis of the genus Tyrannodoris, p. 18"]]
+    "large, downward-pointing oral tentacles; no sense slit before the rhinophores",
+    [
+     ["wc2017", "the diagnosis of the genus Tyrannodoris, p. 18"],
+     ["ssf-robolute", "the oral tentacles of Roboastra, now Tyrannodoris luteolineata"]
+    ]
    ]
   }
  },

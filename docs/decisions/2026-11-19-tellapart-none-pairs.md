@@ -18,7 +18,8 @@ pass looked for a source for each of the nine.
     *Chelidonura* from *C. amoena*, a game species (Willan and Cattaneo-Vietti 1995, p. 11: both lobes long, the left
     far longer).
   - *Tambja* / *Tyrannodoris*: the oral tentacles and the sense slit before the rhinophores, both from the genera's
-    definitions in Willan and Chang 2017 (*Tambja* p. 17, *Tyrannodoris* p. 18).
+    definitions in Willan and Chang 2017 (*Tambja* p. 17, *Tyrannodoris* p. 18); the downward-pointing tentacles from the
+    Sea Slug Forum's *Roboastra luteolineata* sheet (Rudman 1999), now *Tyrannodoris luteolineata*, a game species.
 - **Written, corals (2)**, from the same sources as #1119 but judged again: the sides now describe the same feature on
   both genera (corallite size, and the walls for *Echinopora*), as the Coral Finder criteria in `data.json` `crit` and
   IMR slide 28 give them. *Astrea* / *Cyphastrea* and *Cyphastrea* / *Echinopora* were refused on 2026-11-18 because the
