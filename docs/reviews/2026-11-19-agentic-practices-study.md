@@ -268,11 +268,12 @@ only. Options in one area can be combined.
   ask Pierre, where truth lives. Topic files become path-scoped rules in `.claude/rules/` (`sheet` on `Code.gs` and
   `sync.js`, `learning` on `model.js`, `quiz.js`, `core.js`…), so they load when an agent touches those files;
   AGENTS.md stays the index for Codex and humans; the integrator's how-to becomes an `integrate` skill. A
-  SubagentStart hook restates the core in every subagent. **Cost:** docs L plus tooling S-M (the docs test learns the new homes): docs L
-  median 27 min (#1140), tooling S median 26 min (#916). **Risk:** a rule that sits in a path-scoped file is not seen by
-  an agent that never opens a matching file (a rule that must hold everywhere belongs in the core); Codex does not read
-  `.claude/rules/`, so its review guidelines stay in AGENTS.md; one more mechanism to keep working. **Buys:** the rules
-  that matter in every session are actually in every session, at the start of the context (practices 1, 3, 5, 8).
+  SubagentStart hook restates the core in every subagent. **Cost:** docs L plus tooling S-M (the docs test learns the
+  new homes): docs L median 27 min (#1140), tooling S median 26 min (#916). **Risk:** a rule that sits in a
+  path-scoped file is not seen by an agent that never opens a matching file (a rule that must hold everywhere belongs
+  in the core); Codex does not read `.claude/rules/`, so its review guidelines stay in AGENTS.md; one more mechanism to
+  keep working. **Buys:** the rules that matter in every session are actually in every session, at the start of the
+  context (practices 1, 3, 5, 8).
 - **a3. Guards first, prose shrinks [substance where a guard blocks something the prose only asked; approved in
   principle by audit decision 3].** Each "never" with a mechanical test gets a hook or a CI check, and its text becomes
   one line naming the guard. Candidates beyond #1117's Bash guard: `train.py` checks the Codex receipt on the head,
