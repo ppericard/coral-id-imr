@@ -778,6 +778,8 @@ function liveBuild(t) {
     set = photoSet(t, null, 0, 4, 'k4'),
     ph = ((set && set.shown) || []).slice(0, 2).map(p => ({f: p.f, u: img(p, 'm'), v: p.view || ''}));
   if (!ph.length) return null;
+  // Shown to the class: its photos join the session's window (model.js SEENQ), so the next questions show others.
+  seenAdd(['live', t, ch, '', set]);
   return {ph, ch: ch.map(n => [n, unameT(n)]), k: ch.indexOf(t)};
 }
 function liveHost() {

@@ -273,6 +273,16 @@ test('the levels, the score, the plateau and the photo exposure read from a run'
   assert.strictEqual(L.hardAnswers({preOW: [[1, 0]]}, 1), null);
   close(L.perPhoto(run, 4), 5 / 4);
   close(L.perPhoto(run, 2), 1);
+  // No photo twice in a few questions (model.js SEENQ): a question whose colony, or one of whose photos, came in the
+  // NEAR - 1 questions before it.
+  assert.strictEqual(L.NEAR, 10);
+  const ex = ['A', 'c1', 'p1'],
+    near = {expo: [ex, ['B', 'c2', 'p2'], ex, ['A', 'c3', 'p4', 'p1'], ...Array(9).fill(['B', 'c9', 'p9']), ['A', 'c1', 'p1']]};
+  close(L.nearRep(near, 2), 0);
+  close(L.nearRep(near, 4), 2 / 4); // the same colony two questions apart; a photo of it in another colony
+  close(L.nearRep(near, 13), (2 + 8) / 13); // the copies of c9, one apart
+  close(L.nearRep(near, 14), (2 + 8) / 14); // c1 again 11 questions later: out of the window
+  assert.strictEqual(L.nearRep({expo: []}, 5), null);
   // The share on the scientific genera: answers 1..cp on kind genus, a fish run only (its slate is families).
   close(L.genShare(run, 4), 2 / 4);
   close(L.MEASURES.genShare.get(run, 2), 0);
