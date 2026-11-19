@@ -713,9 +713,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Q342, Q346.** (paraphrase) Content editor and platform admin rights; A1 reworded to the instance's content right;
   Q348 the relay; Q349 the pilot sign-in (ROADMAP, Roles, instances and cohorts). Applied: #945, #981, #859, #903,
   #1098.
-- **Q343, Q348, Q349.** (paraphrase) What the study treats as decided rather than asks again: Q343, Q348, Q349 and Q352,
-  previews later (Pierre, 2026-11-05) and ReefRecall's shared backend later (Pierre, 2026-11-14). Section 6 of the study
-  says what would reopen each one. Applied: #886, #859, #945, #981, #1098.
+- **Q343, Q348, Q349.** (paraphrase) Q343: one shared sheet now, one per organisation in the medium term (reopened by a
+  second organisation). Q348: content editors (Curators) publish through a relay in the sheet script (reopened by
+  editors outside IMR or a content repository). Q349: sign-in stays name + 4-digit code during the pilot (a stronger
+  sign-in is the roles row's later step; confirmed by Q423, 2026-11-19). As `docs/reviews/2026-11-14-professionalise-study.md`
+  §6 records them. Applied: #886, #859, #945, #981, #1098.
 - **Q344.** The roles plan makes this sharper: trainers will see each answer of their cohort (Q344). (paraphrase).
   Applied: #859, #981, #1098.
 - **Q345.** Cohorts for now = named groups the admin makes on Players, in the existing Groups tab, marked by a name
