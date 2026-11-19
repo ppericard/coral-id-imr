@@ -182,7 +182,8 @@ async function shot(p, name) {
       )
     );
   const allP = {};
-  // Every slate genus met (answered), so every unit of the game is unlocked for the signed-in student (rule L4).
+  // Every slate genus met (answered) for the signed-in student (a unit not met would count too and stay closed: rule L4,
+  // tests/liveclass.test.js and tests/intro.test.js).
   const slate = await tp.evaluate(() => pool());
   slate.forEach(n => (allP[n] = {ok: 3, ko: 1, h: '1101', streak: 1}));
   const S = [await stud({name: 'Sam', pin: '1234'}, allP), await stud(null), await stud(null)];
