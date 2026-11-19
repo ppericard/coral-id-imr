@@ -28,6 +28,7 @@ No check was dropped, skipped or weakened.
 
 ## Consequences
 
-Measured on #1243's own runs (the PR's Smokes runs, one sample each, noisy: the same part took 122 s then 176 s):
-see the PR. `tools/train.py` needs no change: it waits for the Checks and Smokes workflows by name. A part that grows
+On #1243's green Smokes run (one sample; a part's time moves 20-40% from run to run: `photos` took 122 s, then 176 s on
+the run before): `admin 1280 main` 170 s (the longest job), `rest` 149 s, `photos` 141 s, `fish fresh` 147 s, the rest
+under 135 s; the whole workflow 182 s, against 265 s for the longest job alone before. `tools/train.py` needs no change: it waits for the Checks and Smokes workflows by name. A part that grows
 unbalances the groups again: the printed per-part times are what to read before moving one.
