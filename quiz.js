@@ -95,7 +95,7 @@ const typeKind = (text, rk) => {
 // question needs, nothing more: never a scientific name, and the same whether it names the photo's fish or another.
 const typeKindMsg = (text, kind, one) =>
   `“${text}” is ${kind === 'common' ? 'a common name' : 'a ' + kind}: this question needs a ${one}'s scientific name.`;
-// S: the subject the form names and reads (the quiz's own; Tools › Type the genus is the corals', whatever is on screen).
+// S: the subject the form names and reads, with its unit word (the quiz's own and Tools › Type the genus's, on the subject on screen).
 const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <label for="tyin">${S.one[0].toUpperCase() + S.one.slice(1)}</label>
     <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">

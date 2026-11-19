@@ -156,9 +156,10 @@ Identify shows the current subject's tool only, `UNITS[id].identify`: the corals
 is one entry of `MODES` `identify`. `subjPage` sends a bare Identify address to the subject's own tool (a subject
 switched on Identify shows its own), and `route` hands a link into another subject's tool with its clues
 (`#identify/key?form=…`) to that subject, as it does a genus sheet. Home's Identify door follows the subject (for the
-fish a fish photo, "Identify a fish", the Fish ID Key). `tests/fish.smoke.js` checks both ways. The Tools stay the
-corals' whatever the subject: Tools › Type the genus runs on the corals (`proto/type.js` `CORALS`; `quiz.js` `typeForm`
-and `typeBind` take the subject).
+fish a fish photo, "Identify a fish", the Fish ID Key). `tests/fish.smoke.js` checks both ways. The Tools that ask about
+a unit, or draw the look-alikes, follow the subject on screen (Same or different?, Odd one out, Matrix, Type the genus, Blur
+reveal, the Look-alike web: [the Lab](basics.md#the-lab-protolabjs)); the ones that read the corallite traits stay the
+corals' whatever the subject (Spot the feature, the Zoom ladder, Elimination, Anatomy, and the reference tools).
 
 ## Switching
 
