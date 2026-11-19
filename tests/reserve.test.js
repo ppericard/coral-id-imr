@@ -430,6 +430,14 @@ test('the sheet’s own script never reads a reserve: the tag logged with the an
   assert.ok(!/reserveOf|reserveSplit/.test(own));
 });
 
+// The app's anonymous id (sync.js anonId) comes from crypto, out of reach of the draw smoke's seeded Math.random: unpinned,
+// each run is another player with another reserve, so the photos and the exam's questions the smoke expects move.
+test('the draw smoke pins the player id (JSON, as the app’s store reads it): the same reserve every run', () => {
+  const src = read('tests/draw.smoke.js');
+  assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\('[a-z0-9]{10}'\)\)/);
+  assert.match(read('sync.js'), /crypto\.getRandomValues/, 'the id is still random in the app: this pin is what makes a smoke fixed');
+});
+
 // learnsim's truth from hashes (--truth gen) seeds the reserved photos' difficulties too.
 test('learnsim and the rated world: the reserved photos get their own simulated difficulty; one player id per run', () => {
   const src = read('tools/learnsim.js'),
