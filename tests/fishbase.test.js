@@ -329,7 +329,7 @@ print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbas
   assert.deepStrictEqual(out[1], [3, 'p1g0sm1']);
   assert.deepStrictEqual(out[2], [3, 'p1g0sm1r'], 'the same judgement, the same ease, whatever the route in');
   assert.deepStrictEqual(out[3], [5, 'p1g0sm1r']);
-  assert.deepStrictEqual(out[4], [2, 'p1g0sm1jr'], 'a juvenile stays capped at 2');
+  assert.deepStrictEqual(out[4], [4, 'p1g0sm1jr'], 'a juvenile keeps its judged ease (Q435)');
   assert.deepStrictEqual(out[5], [3, 'h1g0sm1r'], 'a head-on view stays capped at 3');
   assert.deepStrictEqual(out[6], [3, 'p1g0sm1pr'], 'with the phase flag');
   assert.strictEqual(out[7], 1);

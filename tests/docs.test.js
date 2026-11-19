@@ -643,6 +643,7 @@ const DOC_BUDGET = {
   'docs/spec/analyses-method.md': [34, 130], // moved from LEARNING.md, 2026-11-19
   'docs/spec/loading.md': [16, 130],
   'docs/spec/site.md': [7, 130],
+  'docs/spec/measured.md': [6, 130], // new, 2026-11-19 (Q434)
   'docs/spec/storage.md': [11, 240],
   'docs/spec/photos.md': [18, 130], // + "No more candidates", moved whole from the rules (its ID retired)
   'docs/spec/player-reports.md': [8, 130],

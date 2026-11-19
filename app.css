@@ -7797,6 +7797,21 @@ a.ftile:hover {
 .msrc {
   margin-top: 6px;
 }
+/* An agent's draft not yet validated (learn.js marksBox, fish.json mdraft): said beside its heading. */
+.mdraft {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  border: 1px dashed currentColor;
+  border-radius: var(--pill);
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: middle;
+}
 /* Species sheet: its size and depth with their sources (learn.js spFacts). */
 .ffacts {
   margin: 8px 0 4px;
