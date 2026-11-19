@@ -148,12 +148,16 @@ test('tools/seaslug_names.json derives as written and holds every family, genus 
       );
     })
   );
-  // "Pikachu": T. pikachu and T. pacifica, T. picta mentioned with its note (Pierre, 2026-11-19, Q417)
+  // "Pikachu": T. pikachu and T. pacifica; T. picta cited as their cousin, no nickname of its own (Pierre, 2026-11-19, Q417
+  // and 14:50: "Ou alors il faut le citer comme un cousin de l'espèce appelée Pikachu?")
   const pk = n => d.taxa.find(t => t.name === n).names.find(x => x.n === 'Pikachu') || {};
   assert.ok(pk('Thecacera pikachu').nick && pk('Thecacera pacifica').nick, 'Pikachu is a nickname of both');
   assert.ok(
-    pk('Thecacera picta').nick && /not necessarily appropriate/.test(pk('Thecacera picta').note),
-    'T. picta: mentioned, with a note'
+    !pk('Thecacera picta').nick &&
+      /cousin of the species called Pikachu, T\. pacifica and T\. pikachu; divers here often call it so too/.test(
+        pk('Thecacera picta').note
+      ),
+    'T. picta: cited as a cousin, not as a nickname'
   );
   assert.ok(!pk('Thecacera pikachu').note && !pk('Thecacera pacifica').note, 'the note is on T. picta only');
   // A name on two taxa is a point for the admin (rule C5): each in points.json.

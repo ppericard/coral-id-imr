@@ -10,8 +10,9 @@ Pierre never sees a prompt for them. It applies to the integrator and to every s
 Input: the hook's JSON on stdin (tool_name, tool_input.command). Output: nothing (allowed), or the PreToolUse "deny"
 decision with its reason. Text inside quotes is not read as a command (a commit message, a grep for "sed -i"), and
 running main's reviewed copy of a project tool through `git show origin/main:tools/X.py | python3 -I -` stays allowed.
-The hooks run main's copy of this file (`git show origin/main:tools/guard_bash.py | python3 -I -`), so it must also
-work fed on stdin. Any error lets the command through: the guard never blocks work by failing.
+The hook gives main's copy of this file with `python3 -I -c` (no file: it must work so), fetching main where the
+checkout has no origin/main ref and refusing every command if it cannot (tests/hooks.test.js). Inside the script, any
+error lets the command through: the guard never blocks work by failing.
 
   python3 tools/guard_bash.py --check 'python3 -c "print(1)"'   # prints the reason, exit 1; allowed: nothing, exit 0
 """
