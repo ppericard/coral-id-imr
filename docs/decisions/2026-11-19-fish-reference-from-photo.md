@@ -1,4 +1,4 @@
-# Fish reference photos: one judgement whatever the route in, the reference level read from the photo, merged with no further simulation
+# Fish reference photos: one judgement whatever the route in, the reference level read from the photo
 
 Date: 2026-11-19. PR: #1045. Rules or docs touched: P1, L11; judging/FISH.md "Reference photos", "Reference level";
 LEARNING.md "Fish: easy, reference-like photos first, whoever took them"; spec/fish-photos.md "Reference photos";

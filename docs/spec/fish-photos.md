@@ -182,7 +182,8 @@ FishBase photo enters as a candidate, judged on `judging/FISH.md`, and reaches a
 ## Reference photos
 
 A photo a reference source uses to represent the species (the reference route) enters the base first; once in, it is
-judged and placed like any other photo, on what it shows (rule P1; [the decision](../decisions/2026-11-19-fish-reference-from-photo.md)).
+judged and placed like any other photo, on what it shows (rule P1;
+[the decision](../decisions/2026-11-19-fish-reference-from-photo.md)).
 
 - **The flag** (`rep`): `rep: "fishbase"` on FishBase's main picture of the species, `rep: "inaturalist"` on a candidate
   that is its taxon's iNaturalist cover (default photo; `fetch_fish.py --rep`, 30 taxa a request), on candidates and
@@ -204,9 +205,9 @@ judged and placed like any other photo, on what it shows (rule P1; [the decision
   photo shows a "FishBase ↗" source pill after the answer (`app.js` `photoSrc`). They stay in play even on an entry that
   plays on Pierre's curated photos alone (`core.js` `treePhotos`).
 - **Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`: any photo judged 4-5 with the reference
-  look, whatever its route in; the route only orders the downloads, `tools/fish_game.py` `tier`) comes first in `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref`
-  (3 for the fish, `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and
-  `tests/subjects.test.js`.
+  look, whatever its route in; the route only orders the downloads, `tools/fish_game.py` `tier`) comes first in
+  `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref` (3 for the fish,
+  `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and `tests/subjects.test.js`.
 
 ## `fish-cand.json`
 

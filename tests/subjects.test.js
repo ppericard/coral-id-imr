@@ -532,11 +532,7 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
     ['b', 'c', 'a']
   );
   assert.strictEqual(C.refScore('p1g0sl1'), 7);
-  assert.strictEqual(
-    C.refScore('p1g0sl1r'),
-    7,
-    'the flag r weighs nothing: the reference look is read from the photo'
-  );
+  assert.strictEqual(C.refScore('p1g0sl1r'), 7, 'the flag r weighs nothing: the reference look is read from the photo');
   assert.strictEqual(C.refScore('o1g2mm1j'), 2);
   assert.strictEqual(C.refScore(''), 0);
   assert.strictEqual(C.refScore(undefined), 0);
