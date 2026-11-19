@@ -11,8 +11,7 @@ hyphens (`2026-11-18-release-branch.md`). There is no running number: the date a
 list sorted by name is the order of the decisions. One decision per file; decisions taken together in one PR (a batch of
 rule wordings) may share a file, each under its own heading. A later decision that changes an earlier one gets its own
 record and links to the first; the first is never rewritten, except to add a line "Changed by:" naming the newer record.
-The PR that carries the decision out adds the record and runs `python3 tools/decisions_index.py --fix` for its index
-row (never by hand; on a conflict, merge `main` and run it again).
+A record is added by the PR that carries the decision out, and its row is added to the index below in the same PR.
 
 ## What a record holds
 
@@ -28,7 +27,7 @@ PR is the one that carries the decision out (the `PR` field is how the index fin
   specified now (the rule, the ARCHITECTURE or LEARNING section, the PR number).
 
 `tests/docs.test.js` checks that every record has its date (the same as its file name's), its PR, its three sections,
-links that resolve, and an index row as the tool writes it.
+links that resolve, and a row in the index.
 
 ## Template
 
@@ -55,7 +54,7 @@ decision its own heading with its context, decision and consequences in a short 
 
 ## Index
 
-Newest day first; within a day, by file name.
+Newest first.
 
 | Date | Record | PR |
 |---|---|---|
@@ -78,6 +77,7 @@ Newest day first; within a day, by file name.
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
+| 2026-11-19 | [Rule P1 for the corals: no photo placed, ordered or weighted for who took it](2026-11-19-p1-corals-no-source-boost.md) | #1195 |
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |

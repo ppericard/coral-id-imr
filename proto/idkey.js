@@ -378,7 +378,7 @@ LAB.add({
       const varied = (g, k, n) => {
         const one = pv !== 'mix' && (g.views[pv] || []).length,
           c = one ? null : (n && formCover(n)) || cover(g);
-        // Capped set per view (core.js applySlots): the featured photos, then up to 5 from other observers.
+        // Capped set per view (core.js applySlots): the featured photos, then up to 5 more, whoever took them (rule P1).
         const mix = v => (((g.sl || {})[v] || {}).idkey || []).filter(p => !c || p.f !== c.f).map(p => ({...p, view: v}));
         const L = (one ? [[pv]] : VIEWS).map(([v]) => mix(v));
         const out = c ? [c] : [],
@@ -399,10 +399,13 @@ LAB.add({
       // when it already shows that form; a genus with no photo of the form keeps its cover.
       const formCover = n => {
         if (pv !== 'mix' || !(S.form.size || S.imrf.size)) return null;
-        const rank = p => (p.imr ? 0 : p.own ? 1 : 2); // photo priority: IMR lecture, then the owner's own, then the rest
+        // In the games' order (core.js applySlots: the featured photos, then by quality, colony view first), whoever took
+        // the photo (rule P1: no source priority); a photo in no game list (sheet only) after them, in its list's order.
+        const ord = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).game || []).map(p => p.f),
+          at = p => (ord.includes(p.f) ? ord.indexOf(p.f) : ord.length);
         const P = [...[...S.form].flatMap(id => formPhotos(n, id)), ...[...S.imrf].flatMap(id => imrFormPhotos(n, id))]
           .map((p, i) => [p, i])
-          .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1])
+          .sort((a, b) => at(a[0]) - at(b[0]) || a[1] - b[1])
           .map(a => a[0]);
         if (!P.length) return null;
         const c = cover(G[n]);

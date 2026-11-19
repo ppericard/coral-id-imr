@@ -93,7 +93,6 @@ function engine(
     imrFormsOf: () => ['a'],
     gamePics: (n, v) => (v === 'wide' ? L : []),
     gamePhotoOk: () => true,
-    isCore: () => false,
     level: () => [lv],
     rankOf: () => rank,
     shaky: () => false,

@@ -537,12 +537,13 @@ const blindCredit = p => {
   return p.imr ? ' · IMR lecture' + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
 };
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
-// Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
-// Default: an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
+// Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick (tools/covers.txt),
+// else the first featured Closer photo (core.js applySlots: by quality, a lecture photo included), else the first closer
+// view; never chosen for who took it (rule P1).
 const cover = g =>
   g.coverP ||
-  (((g.sl || {}).medium || {}).feat || []).find(p => p.imr) ||
   allPhotos(g).find(p => p.f === g.cover) ||
+  (((g.sl || {}).medium || {}).feat || [])[0] ||
   (g.views.medium || [])[0] ||
   allPhotos(g)[0];
 // A juvenile photo (its phase ph, or the j flag of its tags: judging/FISH.md) is never a cover (docs/ARCHITECTURE.md
@@ -1470,10 +1471,6 @@ const subjWords = t =>
     .replace(/\bgenus\b/g, SUBJ.one)
     .replace(/\bGenera\b/g, SUBJ.many[0].toUpperCase() + SUBJ.many.slice(1))
     .replace(/\bgenera\b/g, SUBJ.many);
-// A photo of the core sources (an IMR lecture photo or Pierre's own): never seen yet, it gets the draw's bonus (model.js
-// photoSet), for a subject whose photo sources rank (SUBJECTS tiers, rule P1: the corals). Not for fish: Pierre's photos
-// are never boosted there; their ease places them (core.js easyRank).
-const isCore = p => !!(SUBJ.tiers && (p.imr || p.own));
 // A photo the games may teach from: an extra genus's (DATA.x: Millepora, the bonus genera) only if Pierre's own or
 // Research Grade on iNaturalist (no gid), as the extra genera were chosen (tools/build_extra.py). One rule for every
 // game (the quiz, the exam, the mix-up card, the Lab's typed game).
