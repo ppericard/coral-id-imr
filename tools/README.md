@@ -44,6 +44,8 @@ Conventions that hold across them:
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre. The session hooks run it (`--short`, `--time`) |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `sed -i`…) |
+| `agent_guard.py` | The agent-launch guard (a PreToolUse hook): refuses an Agent launch without `model` and `effort`; logs each launch |
+| `instr_log.py` | The instructions log (three session hooks): which instruction files reached which agent, and why |
 | `night.py` | The night report: what the agents did from 17:30 to 04:00 Manila (PRs merged with their agent time, trains, PRs left open, the night queue) |
 | `effort.py` | Measures the agent time of merged PRs, so an estimate cites comparable ones; `--check FILE.md` checks a study |
 | `slot.py` | The machine-slot guard for heavy Python tools (`tests/slot.js` is the lock) |

@@ -7,10 +7,8 @@ writes and checks, its options and its tests. Read the README first (its groups,
 tool was made is in [docs/decisions/](../decisions/README.md) and the PRs. Which tool writes which data file:
 [DATA.md](../DATA.md).
 
-Python 3 scripts, run from the repository root. The first build's scripts (`make_site.py`, `build_photos.py`,
-`apply_levels.py`, `build_lecture_more.py`, with their inputs) read a scratchpad that no longer exists: they are in
-`tools/archive/`, kept for reference, and cannot run again. `data.json` is edited directly and written with
-`tools/datajson.py`.
+Python 3 scripts, run from the repository root; `tools/archive/` holds scripts that cannot run again. `data.json` is
+written with `tools/datajson.py`.
 
 ## Checks and the build
 
@@ -79,9 +77,18 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
   command substitution is (the shell runs it inside double quotes), and so is the body of a `cat <<EOF` heredoc with a
   bare delimiter, which the shell expands; `git show origin/main:tools/X.py | python3 -I -` stays allowed; any error lets
   the command through. `--check 'CMD'` for a try by hand; `tests/guard_bash.test.js`.
-- **`night.py`**: the night report (Pierre, 2026-11-18; the night is Rule 0's, 17:30 to his first message after 04:00,
-  Manila): PRs merged in it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and
-  still open with what holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
+- **`agent_guard.py`**: a PreToolUse hook on the Agent tool, run as above: refuses a launch with no `model` or no
+  `effort` (a fork excepted), naming the keys it saw (AGENTS.md "The right model and effort"); logs each launch
+  (model, effort, type, description; never the prompt) to `claude-agent-launches.jsonl` in the git common dir, which
+  `brief.py` counts per day. `--check JSON`, `--report [DAY]`; any error lets it through; `tests/agent_guard.test.js`.
+- **`instr_log.py`**: the rules core trial's log (#1200 §3): the InstructionsLoaded, SessionStart and SubagentStart
+  hooks log to `claude-instructions.jsonl` in the git common dir which file loaded for which agent and why (with the
+  copy's hash and core line); SubagentStart gives each subagent the Manila time and main's core line. `--report
+  [--since HH:MM]`, `--expect [REF]`; `tests/instr_log.test.js`. `brief.py` warns when this checkout's CLAUDE.md,
+  AGENTS.md or `.claude/` differ from origin/main.
+- **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
+  it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
+  holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
   merged" when the night was empty. `brief.py --time --night-due` (the UserPromptSubmit hook) says once a Manila day, at
   the first prompt between 04:00 and 17:30, that it is due (marker `tools/.cache/night-report-day`: once per checkout).
   `--json FILE` reports a saved snapshot; `tests/night.test.js`.

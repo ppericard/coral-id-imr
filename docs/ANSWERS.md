@@ -1139,3 +1139,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **10:09, a guard on agent launches.** (paraphrase, the integrator's) Rules written in prose drift when nothing checks
+  them: a hook refuses an Agent launch without `model` and `effort`, every launch is logged, and the brief prints the
+  day's distribution. Applied: `tools/agent_guard.py` (#NNNN).
