@@ -232,6 +232,28 @@ test('a run: the same seed gives the same run, and learncmp reads every measure 
   assert.deepStrictEqual(a.knows.sort(), X.c1.slice().sort());
 });
 
+test('the profiles’ species on the real units: the cheatsheet’s 24, the first of the families known; off as before', () => {
+  const U = RW.unitsOf('fish'),
+    run = (profile, o = {}) => RW.runOne(X, {profile, seed: 1, N: 1, cps: [1], ...o}).spKnows.sort(),
+    cs = U.sp.filter(n => (X.sps[U.rec(n).sp] || {}).cs > 0).sort(),
+    byFam = {};
+  U.sp.forEach(n => (byFam[U.rec(n).parent] = byFam[U.rec(n).parent] || []).push(n));
+  assert.strictEqual(cs.length, 24);
+  assert.deepStrictEqual(run('lectureRA'), cs);
+  // The strong RA: the cheatsheet's and the first 3 of each circle-1 family, in its order; the families with more keep
+  // species it does not know (a species starting from its family's ability is still tested), and circles 2-3 none.
+  const strong = new Set(run('strongRA'));
+  assert.deepStrictEqual([...strong].sort(), [...new Set([...cs, ...X.c1.flatMap(f => (byFam[f] || []).slice(0, 3))])].sort());
+  X.c1
+    .filter(f => (byFam[f] || []).length > 3 && !byFam[f].some(n => cs.includes(n)))
+    .forEach(f => assert.strictEqual(byFam[f].filter(n => strong.has(n)).length, 3, f));
+  assert.ok([...strong].every(n => X.c1.includes(U.rec(n).parent)));
+  assert.deepStrictEqual(run('beginner'), []);
+  assert.strictEqual(run('expert').length, U.sp.length);
+  // --spknow off: none, as before.
+  assert.deepStrictEqual(run('strongRA', {spknow: false}), []);
+});
+
 test('the corals: the slate and the bonus genera as the app builds them, a run with its kinds', () => {
   const U = RW.unitsOf('coral');
   assert.strictEqual(U.slate.length, 40);
