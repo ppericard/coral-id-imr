@@ -171,7 +171,7 @@ test('the build takes marks on a genus with IMR cues, and refuses a presentation
   bad(m => (m.genera.Naso.marks[0][0] = '2 keeled plates on the tail base'), /a count is never a photo cue/);
   bad(m => (m.genera.Naso.marks[0][0] = 'A very long line '.repeat(6).trim()), /a line of at most 80 characters/);
   bad(m => (m.genera.Naso.marks[0][1] = []), /has no source/);
-  bad(m => (m.genera.Naso.marks[2][0] = 'A horn on the forehead (N. tergus)'), /'N\. tergus' is not one of its game species/);
+  bad(m => (m.genera.Naso.marks[1][0] = 'A horn on the forehead (N. tergus)'), /'N\. tergus' is not one of its game species/);
   bad(m => m.genera.Naso.marks.push(...m.genera.Naso.marks), /at most 3 marks/);
 });
 
