@@ -919,7 +919,7 @@ function sessionFacts(L, B, o = {}) {
     opened: !S
       ? S
       : Object.entries(S.intro || {})
-          .filter(([g, e]) => Array.isArray(e) && inS(e[2]) && !asked.has(g) && !met.some(x => x[1] === g))
+          .filter(([g, e]) => Array.isArray(e) && e[3] !== 'l' && inS(e[2]) && !asked.has(g) && !met.some(x => x[1] === g)) // 'l': no card (model.js introLive)
           .map(([g]) => g),
     missed: Object.entries(M)
       .filter(([, m]) => m[0] >= SESS.MISS)
