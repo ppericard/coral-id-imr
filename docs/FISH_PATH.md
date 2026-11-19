@@ -769,8 +769,15 @@ Every question here is answered (3: Q394 A; 5: Q395).
 
 The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
-- **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
-  they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
+- **learnsim fish profiles** (rules L11, L12, 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
+  fish's own structure, never on the corals': the beginner, the casual diver (the families met most near Dauin and the commonest
+  species of each, common names only), the lecture RA ("I'm at IMR": the circle-1 families, their IMR genera, the IMR
+  cheatsheet's 24 most sighted species), the strong RA (the circle-1 families and genera, the cheatsheet's species and the 3
+  commonest of each circle-1 family), the expert. A known species sits below its family (a name is a step harder) and each
+  RA's families keep species it does not know. Their values are assumptions until about 10 players have 200 fish answers
+  (the real log had 5, and no species answer, on 2026-11-19); a level-2 check of the species level runs `--world rated`
+  long enough for families to reach Advanced (3,000 answers), and `--spknow off` on both arms against a version without them.
+  They also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
   - IMR profile with everything open: right rate stays near the target (no lasting drop below the corals' range), Latin and typed Latin
     reached sooner than on the calm path.
   - RA level-1 path not slowed: entries reach Advanced at the same pace as on level 1 alone, within the seeds' spread.

@@ -1298,9 +1298,9 @@ levels are learnsim's `lectureRA` and `strongRA` (the first-launch answer "IMR c
 | Profile | Who | Corals | Fish |
 | --- | --- | --- | --- |
 | Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
-| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
-| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water |
-| Strong RA | an RA with practice behind the lecture | the IMR lecture groups, in the course's order, until 60% of the slate is covered, at 85%; the others 10% | the IMR families and their genera well known; both names |
+| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little, and the commonest species of each; common names only |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; the cheatsheet's 24 species a little less; both names; the IMR genera from Open Water |
+| Strong RA | an RA with practice behind the lecture | the IMR lecture groups, in the course's order, until 60% of the slate is covered, at 85%; the others 10% | the IMR families and their genera well known; the cheatsheet's species and the 3 commonest of each IMR family a little less; both names |
 | Expert | knows nearly everything | every genus at 93% | every family, genus and species at 93%; both names |
 
 Built in `tools/learnprof.js` (one list, loaded by learnsim in Node and in the page; the rated world reads the same list),
@@ -1311,9 +1311,16 @@ of the slate is covered, at 0.85; the others 0.1. Fish: the lecture RA knows the
 genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others 0.1; the expert
 every family, genus and species at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most common
 families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at 0.02,
-and declines the scientific names (Not now on the set's offer). In both worlds the species units start at a profile's
-low value. First-launch answer with `--choice auto`: the beginner and the casual diver "new", the lecture RA "imr", the
-others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
+and declines the scientific names (Not now on the set's offer). The species units (by common name), in both worlds
+(`sp`, `knownSpecies`): the lecture RA knows the 24 most sighted of the IMR course PDF's cheatsheet (`fish.json` `cs`)
+at 0.4; the strong RA those and the first 3 of each circle-1 family in its order (the commonness order they open in)
+at 0.7; the casual diver the first of each family it knows at 0.3; the expert all at 0.93; the others start at the
+profile's low value, so a species starting from its family's ability is still met. `--spknow off`: every species at
+the low value, as before (a paired run against a version without them passes it to both arms). These fish values are
+assumptions, not fits: on 2026-11-19 the real log had no species answer, 5 players with 200 fish answers or more, and
+right rates set by the draw's target (ROADMAP "Simulated profiles fitted to real players"). First-launch answer
+(`learnprof.js` `choice`, with `--choice auto` and in the rated world): the beginner and the casual diver "new", the
+lecture RA "imr", the others "know". Learning rate 0.12; the expert 0.05. Two more profiles, run by name only (`--profiles`): `strongBack`
 (knows 4 genera in 5 well, the rest hardly) and `spotty` (knows the genera of some IMR lecture groups as an expert does,
 the others hardly).
 
