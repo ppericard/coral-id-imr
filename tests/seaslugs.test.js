@@ -159,6 +159,39 @@ print(json.dumps(b.mentions(t, forms, nicks)))
   assert.deepStrictEqual(s, ['dan.org', 'dan.org', 'australiangeographic.com.au'], 'mentions count per site, not per URL');
 });
 
+// A nickname shared by several species (Pierre, 2026-11-19, Q417: "Pikachu" for T. pacifica and T. pikachu) counts for each;
+// --nicknames applies the source's `also` to the recorded pages offline, and does it once (idempotent).
+test('a shared nickname: mentions credit every species; renick applies it to the pages, offline and idempotently', () => {
+  const o = py(`
+m = b.mentions('A Pikachu! Also Thecacera pacifica.', {'Thecacera pacifica': 'Thecacera pacifica'}, {'pikachu': ['Thecacera pacifica', 'Thecacera pikachu']})
+d = {'species': [{'name': 'Thecacera pacifica'}, {'name': 'Thecacera pikachu'}, {'name': 'Other bb'}],
+     'nicknames': [{'phrases': ['pikachu'], 'species': 'Thecacera pacifica', 'wikiTitle': 'Pikachu nudibranch', 'counted': True},
+                   {'phrases': ['x'], 'species': 'Other bb', 'wikiTitle': 'X', 'counted': True}],
+     'pages': [{'species': ['Thecacera pacifica'], 'how': {'Thecacera pacifica': ['name', 'nickname']}},
+               {'species': ['Other bb'], 'how': {}}]}
+src = {'nicknames': [{'phrases': ['pikachu'], 'title': 'Pikachu nudibranch', 'species': 'Thecacera pacifica', 'also': ['Thecacera pikachu'], 'why': 'w'},
+                     {'phrases': ['x'], 'title': 'X', 'species': 'Other bb'}]}
+b.renick(src, d)
+once = json.dumps(d, sort_keys=True)
+b.renick(src, d)
+print(json.dumps([m, d['pages'], d['species'][1], d['nicknames'][0].get('also'), once == json.dumps(d, sort_keys=True)]))`);
+  assert.deepStrictEqual(o[0], {'Thecacera pacifica': ['name', 'nickname'], 'Thecacera pikachu': ['nickname']});
+  assert.deepStrictEqual(o[1][0], {
+    species: ['Thecacera pacifica', 'Thecacera pikachu'],
+    how: {'Thecacera pacifica': ['name', 'nickname'], 'Thecacera pikachu': ['nickname']}
+  });
+  assert.deepStrictEqual(o[1][1], {species: ['Other bb'], how: {}}, 'a page without the nickname is left alone');
+  assert.deepStrictEqual(o[2], {name: 'Thecacera pikachu', nick: ['pikachu']});
+  assert.deepStrictEqual(o[3], ['Thecacera pikachu']);
+  assert.strictEqual(o[4], true);
+  // In the committed list: Pikachu counts for both species and changes no star or circle (a page's site counts for each).
+  const d = require('../tools/seaslugs.json'),
+    sp = n => d.species.find(s => s.name === n);
+  assert.ok(sp('Thecacera pikachu').nick.includes('pikachu') && sp('Thecacera pikachu').stars.sites >= 1, 'T. pikachu counted');
+  assert.ok(sp('Thecacera pacifica').star && sp('Thecacera pacifica').circle === 1, 'T. pacifica keeps its star');
+  assert.strictEqual(sp('Thecacera picta').nick, undefined, 'T. picta is mentioned in the names, never counted');
+});
+
 test('stars: (W + M) / 2 on log scales, genus articles and out-of-scope pages not counted, Pierre edits; circles', () => {
   const o = py(`
 sp = lambda n, v, k, obs: {'name': n, 'wiki': {'views': v, 'kind': k} if v is not None else None, 'observers': obs, 'cells': 1, 'obs': obs}
