@@ -371,3 +371,46 @@ test('a locked scientific species takes a live answer as evidence without openin
   M.introAdd([first]);
   assert.ok(M.introduced(first) && P[first].ok === 1);
 });
+
+test('the achievements: fspsci1, fboth25, fdauin20 on the scientific bars at Advanced, fpct70 on the score', () => {
+  const A2 = id => C.FISH_ACH.find(a => a.id === id),
+    snap = o => ({sets: {}, setsAdv: {}, both: 0, top: null, pct: 0, ...o});
+  assert.ok(['fspsci1', 'fboth25', 'fdauin20', 'fpct70'].every(A2), 'built');
+  assert.ok(!A2('fpct100'), 'fpct100 waits for the ultimate exam (Q395)');
+  assert.ok(!A2('fspsci1').test(snap({})) && A2('fspsci1').test(snap({setsAdv: {ssp: 1}})));
+  assert.ok(!A2('fboth25').test(snap({both: 24})) && A2('fboth25').test(snap({both: 25})));
+  assert.ok(!A2('fdauin20').test(snap({top: {total: 0, adv: 0}})), 'none while the level is off');
+  assert.ok(!A2('fdauin20').test(snap({top: {total: 20, adv: 19}})) && A2('fdauin20').test(snap({top: {total: 20, adv: 20}})));
+  assert.ok(!A2('fpct70').test(snap({pct: 69})) && A2('fpct70').test(snap({pct: 70})));
+  // progress.js achBoth: a species counts once both its units are at Advanced; one kind asked: 0
+  const step = {'s:a': 3, 'sci:a': 3, 's:b': 3, 'sci:b': 2, 'sci:c': 4},
+    rec = {
+      's:a': {kind: 'cn', sp: 'a'},
+      'sci:a': {kind: 'sci', sp: 'a'},
+      's:b': {kind: 'cn', sp: 'b'},
+      'sci:b': {kind: 'sci', sp: 'b'},
+      'sci:c': {kind: 'sci', sp: 'c'}
+    },
+    c = {GX: n => rec[n], lvStep: n => step[n] || 0};
+  vm.createContext(c);
+  vm.runInContext(
+    block(src('progress.js'), 'const achBoth = ', '\n};\n', {through: 1, file: 'progress.js'}) + '\nthis.achBoth = achBoth;',
+    c
+  );
+  const sets = [{all: () => ['s:a', 's:b']}, {all: () => ['sci:a', 'sci:b', 'sci:c']}];
+  assert.strictEqual(c.achBoth(sets, ['cn', 'sci']), 1);
+  assert.strictEqual(c.achBoth(sets, ['sci']), 0);
+  // UNITS fish top: Dauin's top 20 of circle 1 by their scientific names, the most seen near Dauin first
+  A.ctx.TREEU.sps = Object.fromEntries(F.species.map(s => [s.id, s]));
+  const top = [...vm.runInContext('sciTop', A.ctx)(X.ssl, 20)],
+    sp = top.map(n => F.species.find(s => s.id === X.gen[n].sp));
+  assert.strictEqual(top.length, 20);
+  assert.ok(sp.every(s => s.circle === 1));
+  const d = s => (s.present || {}).dauinU || 0;
+  assert.ok(sp.every((s, i) => !i || d(sp[i - 1]) >= d(s)));
+  const rest = X.ssl
+    .filter(n => !top.includes(n))
+    .map(n => F.species.find(s => s.id === X.gen[n].sp))
+    .filter(s => s.circle === 1);
+  assert.ok(rest.every(s => d(s) <= d(sp[19])));
+});

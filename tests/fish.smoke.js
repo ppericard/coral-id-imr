@@ -613,7 +613,7 @@ async function freshPlayers(b, base, errs) {
   let next = 0;
   await Promise.all(
     Array.from({length: width}, async () => {
-      for (let i; (i = next++) < seeds.length;) await freshSeed(b, base, errs, seeds[i], out[i]);
+      for (let i; (i = next++) < seeds.length; ) await freshSeed(b, base, errs, seeds[i], out[i]);
     })
   );
   return out.flat();
@@ -1635,7 +1635,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       // typed: every listed name is its unit's (a shared one too); a family question reads it as the family
       ok(
         GX(t).also.every(x => {
-          const m = typeMatch(x, 'species');
+          const m = typeMatch(x, kindRank(t)); // its class: a species by its common name (app.js kindRank)
           return m && (m.g === t || (m.shared || []).includes(t));
         }),
         'species: every listed name typed is right'
