@@ -34,7 +34,7 @@ Pierre, 2026-11-19 14:42 Manila (Q430): B. «J'ai toujours dit de mettre en jeu 
 
 - No photo changed with #1223. Of the 846 candidates coded `k`, 87 were undecided, 694 set aside by the auto-sort
   (`seen`) and 65 are his adds held out (rule P3).
-- **The re-judge of 2026-11-19** (the `k` pass): the 87 undecided were seen at 1,024 px on a 10 x 10 grid, and every
+- **The re-judge of 2026-11-19** (the `k` pass, #1240): the 87 undecided were seen at 1,024 px on a 10 x 10 grid, and every
   crop drawn was looked at as players would see it, its edges at 3x on the original. 19 got a crop: 17 sure, which
   enter play cropped (`tools/fish_game.py --plan`: 17 to download), and 2 `unsure: ["crop"]` (a sliver at the edge).
   The 14 `dup` and the one out of the water stay out whatever the code: left as judged. The other 53 kept `k`: the
