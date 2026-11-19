@@ -249,10 +249,9 @@ The photos of a question on unit n come from `model.js` `photoSet`:
   ability + shift − `aimOff(k, df)` − `PICKD.SINGLE` (one view alone) − the start's lean. The spread is
   √(`PICKD.SIGMA`² + u / (1 + answers / `CAL.N`)), wider for a photo few players have answered (`model.js` `calSd`).
 - **Photos never seen** get a bonus, bigger when the player is doing well on the unit (× (1 + 1.5 × the share right in
-  its last 5 answers)) and a reference-level photo × the subject's `calib.ref`; never for who took the photo (rule P1,
-  IMR lecture photos and Pierre's own included). **Photos already shown** weigh e^offset of their photo-memory bucket
-  (`core.js` `MEM`, `memBucket`), so the least remembered come first; a colony counts as seen whatever view of it was
-  shown (`model.js` `colonyMem`).
+  its last 5 answers)) and a reference-level photo × the subject's `calib.ref`; never for who took the photo (rule
+  P1). **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`, `memBucket`), so the
+  least remembered come first; a colony counts as seen whatever view of it was shown (`model.js` `colonyMem`).
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).

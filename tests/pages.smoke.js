@@ -3880,9 +3880,19 @@ async function credits(b, base) {
     if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
-    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only.
+    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
+    // first whose sheet shows a traced lecture photo besides its cover: the sheet's order is by quality, whoever took
+    // the photo (rule P1), so no given genus is sure to show one.
     {
-      await p.evaluate(() => (location.hash = 'learn/genus/Stylophora'));
+      const gn = await p.evaluate(() =>
+        Object.keys(DATA.gen).find(n => {
+          const g = DATA.gen[n],
+            cv = cover(g);
+          return Object.values(g.sl || {}).some(s => [...s.feat, ...s.more].some(x => x.imr && x.a && x.pg && (!cv || x.f !== cv.f)));
+        })
+      );
+      if (!gn) fails.push('no genus sheet shows a lecture photo traced to Corals of the World');
+      await p.evaluate(n => (location.hash = 'learn/genus/' + n), gn || 'Acropora');
       await drawn(p);
       const lc = await p.evaluate(() => {
         const F = [...document.querySelectorAll('#view figure figcaption')].filter(x => /IMR lecture/.test(x.textContent));
@@ -3892,7 +3902,7 @@ async function credits(b, base) {
         });
       });
       if (!lc.some(x => / \/ Corals of the World$/.test(x.link) && /slide \d+ · /.test(x.t)))
-        fails.push(`Stylophora sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
+        fails.push(`${gn} sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
     }
     await p.evaluate(() => (location.hash = 'learn/genus/Acropora'));
     await drawn(p);
