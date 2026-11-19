@@ -31,9 +31,10 @@ hard" no longer names a juvenile; `suggest.json` re-applied (`tools/judging_fish
 - **The typed eases were themselves shaped by the old line** "2 hard: a juvenile": among the 2,557 in-play juveniles of
   no early class, 2,295 were typed 1 or 2 (90%), against 148 of the 500 early-class ones (30%). They keep the ease typed
   then; a re-rating pass is not decided (ROADMAP).
-- 15 in-play juveniles whose ease is the auto-sort's copy in `curation.json` keep the capped value (rule A1).
-- **The draw is unchanged**: when a juvenile comes rests on the classes of 2026-11-04 and Q391 (`core.js` `varKindOf`,
+- 15 in-play juveniles whose ease is the auto-sort's copy in `curation.json` differ from the new cap and keep their
+  stored value (rule A1).
+- **When a juvenile comes is unchanged**: it rests on the classes of 2026-11-04 and Q391 (`core.js` `varKindOf`,
   `VAR_AT`: early from the first question, class B and late at Advanced, the others from Open Water) and the mimicry
-  class of 2026-11-18 (#1133), never on the cap.
+  class of 2026-11-18 (#1133), never on the cap. Which photos are drawn once released moves with their priors.
 - No rules version: the sheet's replay scores each answer with the difficulty logged then, never a photo's ease.
 - The sea slugs keep their juvenile cap: Q435 spoke of the fish.
