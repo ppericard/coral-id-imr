@@ -1240,6 +1240,17 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
+- **20:34, Q438 (the fish the auto-sort set aside).** «OK pour ta recommandation»: a route back into his draft when a
+  newer judgement saves a photo it set aside (a crop), undoable. Applied: spec/fish-photos.md "The fish auto-sort"
+  (docs/decisions/2026-11-19-auto-proposals-newer-judgement.md).
+- **20:57, a proposal he let through is not his curation.** «ce que tu appelles ma curation, si ça se trouve, c'est
+  juste moi qui ai cliqué sur un bouton pour valider une proposition … si tu penses que ma curation entre guillemets
+  n'est pas bonne, … il faut que tu fasses une proposition qui intègre directement le jeu. Quitte à ce que je corrige a
+  posteriori.» Applied: the build reads the auto-sort's proposals anew (same record).
+- **20:59, his hand decisions only.** «ma curation, si ça se trouve, c'est juste des propositions d'agents IA et j'ai
+  cliqué OK pour tous … Sauf si c'est quelque chose où j'ai fait à la main un par un, c'est pas vraiment ma curation …
+  je pense que j'ai fait très peu de curation manuelle et j'ai pas fait 100 photos en curation manuelle.» Applied: the
+  counts of his hand decisions and the proposals he let through (same record); rule A1's wording goes to him.
 - **20:45-20:48, the backlog recount.** «Et t'es sûr que sur les 151, notamment où il y en avait en attente de ma
   réponse, ou en attente de données ou d'un tiers, ou des simples idées, j'ai pas donné moi des réponses justement pour
   les débloquer»; «c'était pas que des réponses à des questions, hein, c'était aussi des commentaires, c'était aussi des
