@@ -254,7 +254,7 @@ The admin loads it (`side('presence.json', 'sp')`), and `presence.js` `outOfRule
 automatically: Pierre keeps the rule strict and sorts them himself from that part of To do:
 
 - **Remove** per photo: the × of every photo, `ACT.exclude` (excluded for good, from every genus, game and candidate
-  list, and the imports skip it; no confirmation, Undo works, Genera › Excluded restores it).
+  list, and the imports skip it; no confirmation, Undo works, the genus's Excluded list in the Tree restores it).
 - **Keep** per photo: an exception (curation `seen` `rule:f`, `admin.js` `ruleKept`). The photo stays on the site and
   moves down to a **Kept** subsection at the bottom of the part, folded with its count (`ruleKeptList`; `presence.js`
   `ruleQueue`'s `kept` leaves it out of the photos to handle), out of the part's count and of Remove all. There Remove

@@ -148,11 +148,26 @@ every player's path and progress (`ST_PUBLISH`, in the one Publish dialog), and 
 "N fish look-alike pair edits" apart from the sheet edits (`contentSummary`). What the structure does to the game:
 [content.md › Structure](content.md#structure-circles-and-look-alike-pairs).
 
+## The node pages' photo curation, shared by every subject
+
+One implementation for every tree (`admin-nodephotos.js`; Pierre, 2026-11-19: "un code commun entre les matières",
+subject differences as parameters or specialised pieces), which replaced the corals' Photos › Genera tab. Shared: a
+node's **Removed from the site** (**Put back**) and **Excluded** (**Restore**) lists, one tile, one click and one Undo
+step each (`npLists`, `npBind`): a leaf's own, a group's or a family's those of its leaves; the first root of a view
+also lists the excluded photos no leaf has any more; the Tag… filters **Removed photos** and **Excluded photos**
+(`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by unit rank:
+
+- **`live`**, the photos in play: the corals' `coralLive` (a section per view, 3 featured each, 2 or 3 zooms,
+  Candidates, Not this genus); the fish's `renderFishUnits` (a section per species, ease and phase tags, ★ Cover at
+  every rank). Different data (`genera[<genus>]`, `fish.genera[<node id>]`) and tiles; one body is the next step.
+- **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`; none for the fish yet: their Remove
+  (`fish.seen`) returns the photo to Candidates and `fish.exclude` has no tested restore (next step).
+
 ## The corals' Tree
 
 `#photos/tree/key/<node id>`, `#photos/tree/worms/<node id>` (`admin-coraltree.js`: its pure part `ctKeyOf`,
-`ctWormsOf`, `ctFilters` tested in `tests/coraltree.test.js`, its page `renderCoralTree`; the tab sits after Genera,
-which stays the corals' first). The leaves are the genera, every genus the admin has a page for (`data.json` `gen` and
+`ctWormsOf`, `ctFilters` tested in `tests/coraltree.test.js`, its page `renderCoralTree`; the tab is the corals' first
+Photos tab since the former Genera tab was folded into it, 2026-11-19). The leaves are the genera, every genus the admin has a page for (`data.json` `gen` and
 `x.gen`), each its own name as id and one node in both views (a photo's species is only a name, never curated: no
 species rank).
 
@@ -167,12 +182,14 @@ species rank).
 - **A group's or a family's page**: its genera's cards, each as its row on the genus list (cover, No. or ★, photos on
   the site, what it needs, ✓, the draft's dot); no cover above the genera (no stored shape there, and the fish's default
   rule needs observers per genus near the centre that the coral data does not hold).
-- **A genus's page**: its cover and why (his ★ or the automatic one), what it needs, its featured photos per view, and
-  **Genus page**, the link to Photos › Genera › Live (its address unchanged, `genusHref`), where its tools stay: nothing
-  is chosen on a coral Tree page except its Sheet and Structure (below).
+- **A genus's page**: its cover and why (his ★ or the automatic one), what it needs, and every tool its own page
+  had in the former Photos › Genera › Live (`admin-nodephotos.js` `coralLive`: its photos per view with Feature, ★
+  Cover, Remove, Not this, ×, Crop, quality and growth form, the zooms, ✓ Validated, the view filter, Candidates, Not
+  this genus; [admin-photos.md › A genus's page](admin-photos.md#a-genuss-page-in-the-tree)), above them its Structure and
+  Sheet (below), under them the shared Removed and Excluded lists. Its address is `genusHref`.
 - **Filters**: All \| IMR (the slate, `core.js` `slateOf`) and Tag… (`ctFilters`: ★ Starred, Look-alikes any or one pair
   of `admin.js` `classicPairs` and of the draft's pair entries, `pairRows`, each saying added or withdrawn, as the
-  fish's, Needs work, Candidates waiting, Draft; never a growth form), read through the leaves as the fish's; the tag in
+  fish's, Needs work, Candidates waiting, Draft, Removed photos, Excluded photos; never a growth form), read through the leaves as the fish's; the tag in
   `reefid-admin-tree-tag` (this browser). The bar's crumbs and tag select are the fish's (`admin.js` `ttCrumbs`,
   `ttTagSel`).
 - **The corals' Sheet and Structure** (the same `admin-content.js` code over `data.json` as the admin holds it): on
