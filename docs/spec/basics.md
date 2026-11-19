@@ -36,6 +36,27 @@ framed alike; `mxPlan` four units, from a declared pair outward, and a fifth nam
 Matrix: a right pair names its tile and ticks its name, a wrong one is kept nowhere and the retry is free; its names are
 `data-n`, not `data-c` (`qAnswers` opens every `[data-c]`).
 
+`type`, `reveal` and `web` follow the subject on screen too ([decision](../decisions/2026-11-20-lab-tools-every-subject.md)),
+each in the subject's own words (`SUBJ.one`, `SUBJ.what`, `SUBJ.many`: Type the genus is "Type the family" for the fish),
+through getters on the tool (`title`, `blurb`, `lede`), and none of them calls the quiz's recorders
+(`tests/labgames.test.js`). The two games draw `unlocked()` units, one unit and one photo through `lab.js` `labDraw` and
+`labShots` (a typed question's aim for Type, a four-choice question's for Blur reveal), with `labViewChips` for a subject
+with several views (`SUBJECTS` `views`; none for a one-view subject) and `labEmpty` for the nothing-to-ask note. Type calls
+the quiz's own `typeForm`, `typeBind` (the rank asked, the unit's word, the photo's species), `typeUnit`, `typeRead` and
+`typeStep`, so a fish family's shared or part names, the retype and the old names read as in the quiz; Blur reveal's three
+wrong choices are `distractors` (the unit's rank, no two of one label, look-alikes first) and its verdict the quiz's
+`fbLine`. The web is a reference page, not a game: its nodes are the units of the subject's slate that are in a pair of
+`UNITS[SUBJ.id].pairs()` (the corals' 39 genera and Millepora, 15 fish families, 12 sea slug genera at the time of
+writing; never the bonus genera), its colourings are the subject's own (`UNITS` `webBy`: by family and by IMR group for the
+corals, by the key's group for the fish, by family for the sea slugs), and a tapped node links its look-alikes to the
+side-by-side Compare page where the subject has it (`SUBJECTS` `pages` `cmp`), else to their sheets. Rule U2 is asked of
+the two games (`tests/labgames.check.js`, run by the pages, fish and sea slug smokes at 390 and 1280 px), not of the web.
+On phones Blur reveal answered shrinks its photo to a strip (`.rvdone`) so the verdict and Next stay on the screen.
+
+The tools that read the corallite traits stay the corals': `spot` (Spot the feature), `zoom` (the Zoom ladder, which also
+needs several views), `elim`, `anatomy` and the reference tools on `DATA.traits` (`idkey`, `matrix`, `gallery`, `size`,
+`map`). They use `labPlay` and `labNames`, which force the corals and say why in `lab.js`.
+
 A static mock-up for one of Pierre's decisions may also sit in `proto/` as a standalone `.html` page: not a Lab tool (not
 in `LAB.files`, not cached by the service worker, nothing links to it), borrowing the app's `app.css` (a relative link
 from `proto/`) for the tokens and fonts.

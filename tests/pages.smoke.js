@@ -6070,6 +6070,39 @@ const PARTS = [
       if (es.length) fails.push(`${w}px Matrix: ${es.slice(0, 3).join(' | ')}`);
       await cm.close();
     }
+    // Type the genus, Blur reveal and the Look-alike web (Tools), the same way: tests/labgames.check.js plays them (the fish's
+    // and the sea slugs' run in their own smokes).
+    {
+      const cl = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'}),
+        es = [],
+        PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+      await cl.route(
+        u => !u.href.startsWith(base),
+        r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+      );
+      await cl.addInitScript(() => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      });
+      const pl = await cl.newPage();
+      pl.on('pageerror', e => es.push(e.message));
+      await pl.goto(base);
+      await pl.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      // twelve genera unlocked (the games ask about the genera met only)
+      await pl.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        introAdd(
+          pool()
+            .filter(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).length))
+            .slice(0, 12),
+          true
+        );
+      });
+      await require('./labgames.check.js')(pl, w, fails, '', 6);
+      if (es.length) fails.push(`${w}px Type, Blur reveal and web: ${es.slice(0, 3).join(' | ')}`);
+      await cl.close();
+    }
     // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
     // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open
     // gives the corals' page: tests/fish.smoke.js).

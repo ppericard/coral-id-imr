@@ -647,6 +647,10 @@ svg.dim .mgroup.on {
   stroke-width: 4px;
   pointer-events: none;
 }
+/* a unit named by a common name (a fish family) stands upright, as uname writes it */
+.wnode text.pl {
+  font-style: normal;
+}
 svg.dim .wnode,
 svg.dim .wedges line {
   opacity: 0.12;
@@ -3365,6 +3369,15 @@ body:has(.ikstart:not([hidden])) main {
 @media (min-width: 600px) {
   .ikstart .ikprompt {
     margin: 0;
+  }
+}
+
+/* blur reveal answered, on phones: the photo shrinks to a strip (the answer is in, the photo is sharp) so the verdict, its
+   line, the credit and Next stay on one screen (rule U2). */
+@media (max-width: 599px) {
+  .rvdone .rvstage {
+    aspect-ratio: auto;
+    height: 17vh;
   }
 }
 
