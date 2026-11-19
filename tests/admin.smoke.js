@@ -9286,7 +9286,7 @@ async function sealPart(b, base, fails) {
         fa.fish.out[FF[2][1]] !== 'x' ||
         fa.coral ||
         fa.alone !== true ||
-        !/fish photo in play/.test(fa.sum) ||
+        !/fish photos? in play/.test(fa.sum) ||
         !/fish auto-sort decision/.test(fa.sum) ||
         // brought back: in, cropped, set aside no more, logged b with the fields it wrote
         fa.fish.add[FF[3][1]] !== FF[3][0] ||
