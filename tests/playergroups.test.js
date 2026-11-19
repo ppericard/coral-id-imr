@@ -39,8 +39,14 @@ const make = (s, n, o = {}) => s.post({groupMake: {n, ...o}, token: TOK});
 const id = (s, n, o) => make(s, n, o).group.id;
 const join = (s, who, g, on = true) => s.post({userGroup: who, group: g, on, token: TOK});
 const edit = (s, g, o) => s.post({groupEdit: g, ...o, token: TOK});
-const grant = (s, account, role = 'trainer') => s.post({roleGrant: {account, role, scope: IMR}, token: TOK});
 const run = (s, code) => vm.runInContext(code, s.ctx);
+// A grant of the Roles tab as the scripts before the groups carried rights wrote it (the rights migration's data): the
+// account's code hash as its RAs row holds it.
+const grant = (s, account, role = 'trainer') =>
+  run(
+    s,
+    `(ra => sheet_(ROLES.TAB, ROLES.HEAD).appendRow([${JSON.stringify(account)}, '${role}', '${IMR}', new Date(), String(ra.getRange(find_(ra, ${JSON.stringify(account)}), 7).getValue())]))(sheet_('RAs', HEAD))`
+  );
 // A subject that opens to a group, set so at runtime (none does today: fish and the sea slugs open to all).
 const BETA = 'fish';
 const betaOn = s => run(s, `CORE_.SUBJECTS.find(S => S.id === '${BETA}').open = 'group'`);
@@ -74,7 +80,7 @@ test('a group: made with a name and settings; its name unique, 40 characters at 
   const r = make(s, '  RA   November 2026 ', {board: true});
   assert.ok(r.ok);
   assert.match(r.group.id, /^g:[0-9a-f]{8}$/);
-  assert.deepStrictEqual({...r.group, id: 0, at: 0}, {id: 0, n: 'RA November 2026', board: 1, beta: '', at: 0});
+  assert.deepStrictEqual({...r.group, id: 0, at: 0}, {id: 0, n: 'RA November 2026', board: 1, beta: '', at: 0, rights: []});
   ['', '   ', 'x'.repeat(41), 'a\u0007b'].forEach(n => assert.strictEqual(make(s, n).error, 'name', JSON.stringify(n)));
   assert.strictEqual(make(s, 'ra NOVEMBER 2026').error, 'exists', 'another group has that name, case aside');
   assert.strictEqual(make(s, 'Beta', {beta: 'coral'}).error, 'beta', 'beta: only a subject that opens to a group');
@@ -221,15 +227,19 @@ test('the opt-out, an admin hide and an archive hold on every group board', () =
   assert.ok(!names(B.rows).includes('Fay'));
 });
 
-test('roles stay apart: a group grants no role, a trainer grant puts nobody on a board', () => {
+test('settings and rights apart: a settings group gives no right, a rights group without a board puts nobody on one', () => {
   const s = five();
   const staff = id(s, 'Staff', {board: 1, apart: 1}),
     roles = () => (s.sheets.Roles ? s.sheets.Roles.rows.length : 0),
-    n = roles();
+    n = roles(),
+    live = who => run(s, `can_({name: '${who}', h: hash_('${who}', '1234'), id: 'x'}, 'live', '${IMR}')`);
   join(s, 'Ben', staff);
+  assert.strictEqual(live('Ben'), false, 'the staff board gives no right');
   join(s, 'Ben', staff, false);
   assert.strictEqual(roles(), n, 'no Roles row written');
-  assert.strictEqual(grant(s, 'Cy').result, 'ok');
+  const tr = id(s, 'Trainers', {rights: ['live@' + IMR]});
+  assert.strictEqual(join(s, 'Cy', tr).n, 1);
+  assert.strictEqual(live('Cy'), true);
   assert.deepStrictEqual(names(board(s).rows), ['Ana', 'Ben', 'Cy', 'Dee', 'Eve'], 'the trainer stays on the general board');
   assert.deepStrictEqual(scopes(board(s)), [['Staff', []]]);
 });
@@ -279,6 +289,8 @@ function before() {
   grant(s, 'Dee');
   grant(s, 'Fay');
   s.sheets.Roles.rows.slice(1).forEach(r => r[0] === 'Fay' && (r[4] = 'another-hash'));
+  // The rights migration, which comes after this one, has its own tests (tests/rights.test.js): marked done here.
+  s.props.ONCE_rights = '1';
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   return s;
 }
@@ -338,8 +350,10 @@ test('the migration: beta groups, cohorts and the staff become groups, nothing l
     'only the staff added'
   );
   assert.strictEqual(run(s, 'ONCE_.groups()'), 'already made by a change to the groups', 'once');
-  // The trainers keep their role, and its right.
+  // The trainers keep their role, and its right through the Trainers group the rights migration makes after it.
   assert.strictEqual(s.sheets.Roles.rows.filter(r => r[1] === 'trainer').length, 3);
+  delete s.props.ONCE_rights;
+  run(s, 'ONCE_.rights()');
   const h = run(s, "(ra => String(ra.getRange(find_(ra, 'Ben'), 7).getValue()))(sheet_('RAs', HEAD))");
   assert.strictEqual(run(s, `can_({name: 'Ben', h: ${JSON.stringify(h)}, id: 'x'}, 'live', '${IMR}')`), true);
 });
@@ -398,7 +412,7 @@ test('the board cache: one entry per subject holds every scope; a membership or 
   assert.deepStrictEqual([hit.rows, hit.groups], JSON.parse(JSON.stringify([B.rows, B.groups])));
   save(s, 'Ben', 39);
   assert.deepStrictEqual(names(board(s).rows), names(B.rows), 'served from the cache');
-  [() => join(s, 'Cy', g), () => edit(s, g, {board: 0}), () => make(s, 'New'), () => grant(s, 'Dee')].forEach((f, i) => {
+  [() => join(s, 'Cy', g), () => edit(s, g, {board: 0}), () => make(s, 'New'), () => s.post({roleGrant: {account: 'Dee', role: 'admin', scope: 'platform'}, token: TOK})].forEach((f, i) => {
     board(s);
     assert.ok(s.cache[key], i + ': cached');
     f();

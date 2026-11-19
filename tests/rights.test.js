@@ -1,347 +1,437 @@
 require('./slot.js').testGuard();
-// The rights tie-break (at equal quality, CC0 / CC BY and the admin's own photos before CC BY-NC, so the stock a later
-// commercial app could use grows; the CC BY-NC photos stay fully usable): core.js licOf, rightsClass,
-// rightsRank and their Python copy tools/rights.py, and every order that takes them as its last key before the fixed
-// order (docs/rules/photos.md P1, docs/ARCHITECTURE.md "Photo rights"). A tie-break only: never above quality, ease,
-// reference look or variety, never a photo left out.
+// Groups that carry an instance's rights (docs/decisions/2026-11-19-groups-carry-rights.md; Code.gs can_, groupDo_,
+// usersDo_ userGroup, joinPut_, rightsDrop_, mergePlan_, the rights migration): a group carries rights at the instance,
+// a player's rights are the union of their groups', under the membership's code hash; only the grant right changes a
+// group's rights or the members of a group that carries rights, one player a call, each change audited; a merge moves
+// the groups without rights and drops the others; the one-shot migration turns the Roles tab's instance roles into
+// groups, nothing lost. Against the in-memory sheet only (rule D1); made-up names.
 const test = require('node:test'),
   assert = require('node:assert'),
-  fs = require('fs'),
-  path = require('path'),
-  {execFileSync} = require('child_process');
-const C = require('../core.js');
-const A = require('../autosort.js');
-const ROOT = path.join(__dirname, '..');
-const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-const py = (code, input) =>
-  JSON.parse(
-    execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {
-      cwd: ROOT,
-      encoding: 'utf8',
-      input,
-      maxBuffer: 1 << 28
-    })
-  );
+  vm = require('vm');
+const {loadCodeGs} = require('./gas.js');
 
-test('rightsClass: IMR lecture, Coral Finder book, his own (whatever its licence), open (CC0, CC BY), the rest NC', () => {
-  const ex = [
-    [{imr: true, f: 'imr-p1_i1'}, 'imr', 1],
-    // traced to its original source (pg, the page that credits it): its site's terms, non-commercial
-    [{imr: true, f: 'imr-p1_i2', a: 'X / Corals of the World', pg: 'https://www.coralsoftheworld.org/x/'}, 'nc', 1],
-    [{cf: 1, f: 'acropora-cf-2-00'}, 'book', 1],
-    [{own: true, lic: 'cc-by-nc'}, 'own', 0],
-    [{own: true, lic: 'cc-by'}, 'own', 0],
-    [{lic: 'cc0'}, 'open', 0],
-    [{lic: 'CC-BY'}, 'open', 0],
-    [{a: '(c) X, some rights reserved (CC BY)'}, 'open', 0],
-    [{a: '(c) X, no rights reserved'}, 'open', 0],
-    [{lic: 'cc-by-nc'}, 'nc', 1],
-    [{a: '(c) X, some rights reserved (CC BY-NC)'}, 'nc', 1],
-    [{a: '(c) X, some rights reserved (CC BY-SA)'}, 'nc', 1],
-    [{}, 'nc', 1],
-    [null, 'nc', 1]
-  ];
-  ex.forEach(([p, cls, rank]) => {
-    assert.strictEqual(C.rightsClass(p), cls, JSON.stringify(p));
-    assert.strictEqual(C.rightsRank(p), rank, JSON.stringify(p));
-  });
-  // Python reads them alike, case by case.
-  const P = py(
-    `from rights import rights_class, rights_rank\nprint(json.dumps([[rights_class(p), rights_rank(p)] for p in json.load(sys.stdin)]))`,
-    JSON.stringify(ex.map(x => x[0]))
+const TOK = 'ghp_write000000000000000000',
+  IMR = 'instance:imr',
+  R = r => r + '@' + IMR;
+const save = (s, name, pin = '1234') => assert.ok(s.post({name, pin, data: {}, summary: {}, answers: []}).ok);
+const run = (s, js) => vm.runInContext(js, s.ctx);
+const copy = o => JSON.parse(JSON.stringify(o));
+const rows = (s, tab) =>
+  copy(s.sheets[tab] ? s.sheets[tab].rows.slice(1).filter(r => r && r[0]) : []).map(r =>
+    r.map(c => (typeof c === 'string' && c[0] === "'" ? c.slice(1) : c))
   );
-  assert.deepStrictEqual(
-    P,
-    ex.map(([, c, r]) => [c, r])
+const audit = s => rows(s, 'Audit').map(r => [r[1], r[2], r[3], r[4], r[5]]); // id, action, scope, result, target
+const aid = (s, n) => run(s, `aid_(${JSON.stringify(n)})`);
+const can = (s, n, right, pin = '1234', scope = IMR) =>
+  run(s, `can_({name: ${JSON.stringify(n)}, h: hash_(${JSON.stringify(n)}, '${pin}'), id: 'x'}, '${right}', '${scope}')`);
+const make = (s, n, o = {}, token = TOK) => s.post({groupMake: {n, ...o}, token});
+const join = (s, who, g, on = true, token = TOK) => s.post({userGroup: who, group: g, on, token});
+const edit = (s, g, o, token = TOK) => s.post({groupEdit: g, ...o, token});
+const list = s => s.post({users: 1, token: TOK});
+const user = (s, n) => list(s).users.find(u => u.name === n);
+// caller_ stubbed so the token 'acct:<name>' is that account (its code 1234), as an account caller will be; the admin
+// token stays the token.
+const asAccounts = s =>
+  run(
+    s,
+    `caller_ = (c => t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: aid_(m[1])} : c(t); })(caller_)`
   );
-});
-
-test('licOf, rightsClass: the app (core.js), the admin (presence.js) and Python read every photo record alike', () => {
-  const all = [];
-  const add = L => (L || []).forEach(p => p && all.push(p));
-  const D = read('data.json');
-  [...Object.values(D.gen), ...Object.values((D.x || {}).gen || {})].forEach(g => {
-    Object.values(g.views || {}).forEach(add);
-    Object.values(g.more || {}).forEach(add);
-    add(g.book);
-  });
-  Object.values(D.course || {}).forEach(add);
-  Object.values(read('cand.json').cand || {}).forEach(add);
-  Object.values(read('fish-cand.json').cand || {}).forEach(add);
-  Object.values(C.treeGameRead(read('fish-game.json')).photos || {}).forEach(add);
-  Object.values(read('fish-photos.json').photos || {}).forEach(add);
-  assert.ok(all.length > 1000, 'photo records read');
-  const rec = all.map(p => ({
-    ...(p.lic ? {lic: p.lic} : {}),
-    a: p.a || '',
-    ...(p.own ? {own: true} : {}),
-    ...(p.imr ? {imr: true} : {}),
-    ...(p.cf ? {cf: 1} : {})
-  }));
-  const {licence} = require('../presence.js');
-  const js = rec.map(p => [C.licOf(p), C.rightsClass(p)]);
-  assert.deepStrictEqual(
-    rec.map(licence),
-    js.map(x => x[0]),
-    'presence.js licence is core.js licOf'
-  );
-  const P = py(
-    `from rights import licence, rights_class\nprint(json.dumps([[licence(p), rights_class(p)] for p in json.load(sys.stdin)]))`,
-    JSON.stringify(rec)
-  );
-  assert.deepStrictEqual(P, js);
-  // A recorded licence always agrees with its credit line, where the credit names one.
-  all.forEach(p => {
-    if (p.lic && p.a && C.licOf({a: p.a})) assert.strictEqual(C.licOf({a: p.a}), String(p.lic).toLowerCase(), p.f);
-  });
-});
-
-test('easyRank: the rights break a tie only, after reference level, ease and refScore, before the hash', () => {
-  // Same ease and tags: the open and own photos before the NC ones, whatever the hash says; own and open alike.
-  const L = ['n1', 'n2', 'n3', 'o1', 'm1'].map(f => ({
-    f,
-    e: 4,
-    jt: 'p1g1sm1',
-    lic: f[0] === 'o' ? 'cc-by' : 'cc-by-nc',
-    ...(f[0] === 'm' ? {own: true} : {})
-  }));
-  const R = C.easyRank(L).map(p => p.f);
-  assert.deepStrictEqual(R.slice(0, 2).sort(), ['m1', 'o1']);
-  assert.deepStrictEqual(R.slice(2).sort(), ['n1', 'n2', 'n3']);
-  // Own and open keep the hash order between them: neither source is boosted over the other (P1, fish).
-  const hashOnly = C.easyRank(L.filter(p => p.f[0] !== 'n').map(p => ({...p, lic: 'cc-by-nc', own: false}))).map(p => p.f);
-  assert.deepStrictEqual(R.slice(0, 2), hashOnly);
-  // Never above quality: an easier NC photo, a more reference-like NC photo, a reference-level NC photo stay first.
-  assert.deepStrictEqual(
-    C.easyRank([
-      {f: 'open', e: 4, lic: 'cc0'},
-      {f: 'nc', e: 5, lic: 'cc-by-nc'}
-    ]).map(p => p.f),
-    ['nc', 'open']
-  );
-  assert.deepStrictEqual(
-    C.easyRank([
-      {f: 'open', e: 4, jt: 'o1g1sm1', lic: 'cc0'},
-      {f: 'nc', e: 4, jt: 'p1g0sl1', lic: 'cc-by-nc'}
-    ]).map(p => p.f),
-    ['nc', 'open']
-  );
-  assert.deepStrictEqual(
-    C.easyRank([
-      {f: 'open', e: 5, jt: 'o1g1sm1', lic: 'cc0'},
-      {f: 'nc', e: 4, jt: 'p1g0sl1', rep: 'inaturalist', lic: 'cc-by-nc'}
-    ]).map(p => p.f),
-    ['nc', 'open']
-  );
-  // The players' ratings (a difficulty function) rank before the rights too.
-  assert.deepStrictEqual(
-    C.easyRank(
-      [
-        {f: 'open', e: 4, lic: 'cc0'},
-        {f: 'nc', e: 4, lic: 'cc-by-nc'}
-      ],
-      p => (p.f === 'nc' ? -1 : 0)
-    ).map(p => p.f),
-    ['nc', 'open']
-  );
-});
-
-test('treeGen: a family cover between equal photos is an open one; an easier NC photo still wins', () => {
-  const T = {
-    families: [{id: 'f:X', name: 'X', species: ['s1'], circle: 1}],
-    species: [{id: 's1', name: 'Xus one'}]
+// The Audit tab's next n row writes fail, as a Sheets service error does.
+const failAudit = (s, n = 1) => {
+  run(s, 'sheet_(AUDIT.TAB, AUDIT.HEAD)');
+  const sh = s.sheets.Audit,
+    append = sh.appendRow;
+  sh.appendRow = v => {
+    if (n-- > 0) throw new Error('Service Spreadsheets timed out while accessing document');
+    return append(v);
   };
-  const ph = (f, e, lic) => ({f, src: 'x', sp: 's1', e, jt: 'p1g1sm1', lic});
-  // Every hash order: whichever names the photos carry, the open one leads among equals.
-  ['a', 'b', 'c', 'd', 'e'].forEach(x => {
-    const G = C.treeGen(T, {t: [ph(x + 'nc1', 4, 'cc-by-nc'), ph(x + 'nc2', 4, 'cc-by-nc'), ph(x + 'open', 4, 'cc-by')]});
-    assert.strictEqual(G.gen['f:X'].cover, x + 'open');
+};
+// No name in any Audit cell.
+const noName = (s, ...names) => {
+  const words = rows(s, 'Audit').flatMap(r => r.slice(1).flatMap(c => String(c).toLowerCase().split(/[\s>()]+/)));
+  names.forEach(n => assert.ok(!words.includes(n.toLowerCase()), 'no name in the Audit tab: ' + n));
+};
+
+test('a group carries rights: checked, kept in the Rights column in a fixed order; an older tab gains its header cells', () => {
+  const s = loadCodeGs();
+  save(s, 'Ana');
+  // The tabs as the script before wrote them (no Rights, no Code hash), the migrations done.
+  run(s, "sheet_('Group settings', ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added']); sheet_('Groups', ['Group', 'Name', 'Added'])");
+  s.props.ONCE_groups = s.props.ONCE_rights = '1';
+  const r = make(s, 'Helpers', {rights: [R('grant'), R('players'), R('grant')]});
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.deepStrictEqual(copy(r.group.rights), [R('players'), R('grant')], 'each once, in the fixed order');
+  assert.deepStrictEqual(s.sheets['Group settings'].rows[0].at(-1), 'Rights');
+  assert.strictEqual(s.sheets['Group settings'].rows[1][6], 'players@instance:imr, grant@instance:imr');
+  assert.deepStrictEqual(join(s, 'Ana', r.group.id).n, 1);
+  assert.deepStrictEqual(copy(s.sheets.Groups.rows[0]), ['Group', 'Name', 'Added', 'Code hash']);
+  [
+    ['platform@platform'],
+    ['grant@platform'],
+    ['live@instance:other'],
+    ['constructor@' + IMR],
+    ['__proto__@' + IMR],
+    ['live@' + IMR + ', players@' + IMR],
+    R('live'),
+    [1],
+    {0: R('live')}
+  ].forEach(x => {
+    assert.strictEqual(make(s, 'X', {rights: x}).error, 'input', JSON.stringify(x));
+    assert.strictEqual(edit(s, r.group.id, {rights: x}).error, 'input', JSON.stringify(x));
   });
-  const G = C.treeGen(T, {t: [ph('nc', 5, 'cc-by-nc'), ph('open', 4, 'cc0')]});
-  assert.strictEqual(G.gen['f:X'].cover, 'nc');
-  // The list the draw reads keeps no licence (model.js photoSet's ties follow it): the hash order.
-  const L = ['a', 'b', 'c', 'd', 'e', 'f'].map((x, i) => ph(x, 4, i % 2 ? 'cc-by' : 'cc-by-nc'));
-  const W = C.treeGen(T, {t: L}).gen['f:X'];
   assert.deepStrictEqual(
-    W.views.wide.map(p => p.f),
-    C.easyRank(L, undefined, false).map(p => p.f)
+    copy(list(s).groupDefs.map(d => [d.n, d.rights])),
+    [['Helpers', [R('players'), R('grant')]]]
   );
-  assert.strictEqual(W.cover, C.easyCover(L).f);
-  assert.strictEqual(C.rightsClass(W.views.wide.find(p => p.f === W.cover)), 'open');
+  // A settings group: no right, its Rights cell empty.
+  assert.deepStrictEqual(copy(make(s, 'Staff', {board: 1}).group.rights), []);
+  assert.strictEqual(s.sheets['Group settings'].rows[2][6], '');
 });
 
-test('applySlots: equal quality, an open photo or his own is featured before an NC one; quality still first, no source order', () => {
-  const p = (f, lic, x = {}) => ({f, lic, o: 'https://www.inaturalist.org/observations/' + f, ...x});
-  const d = {
-    gen: {
-      G: {
-        views: {
-          wide: [
-            p('nc1', 'cc-by-nc'),
-            p('nc2', 'cc-by-nc'),
-            p('ncgood', 'cc-by-nc'),
-            p('open', 'cc-by'),
-            p('own', 'cc-by-nc', {own: true})
-          ],
-          medium: [],
-          macro: []
-        }
-      }
-    },
-    course: {}
+// Ana and Ben play; Mia holds the players right only, Gus the grant right only (each through a group); Staff is a
+// settings group with Ana in it, Trainers a group that carries live.
+function gates() {
+  const s = loadCodeGs();
+  ['Ana', 'Ben', 'Mia', 'Gus'].forEach(n => save(s, n));
+  const g = {
+    staff: make(s, 'Staff', {board: 1}).group.id,
+    tr: make(s, 'Trainers', {rights: [R('live')]}).group.id,
+    help: make(s, 'Helpers', {rights: [R('players')]}).group.id,
+    grant: make(s, 'Granters', {rights: [R('grant')]}).group.id
   };
-  C.applySlots(d, {quality: {ncgood: 3}}, {autoq: {}});
-  const feat = d.gen.G.sl.wide.feat.map(x => x.f);
-  // The better NC photo first (quality, whoever took it: rule P1), then the open one and Pierre's own (CC BY-NC, but his:
-  // own and open rank alike) before the NC ones of the same quality; between equals, core.js easyRank's fixed hash.
-  assert.strictEqual(feat[0], 'ncgood');
-  assert.deepStrictEqual(feat.slice(1).sort(), ['open', 'own']);
-  assert.deepStrictEqual(d.gen.G.sl.wide.more.map(x => x.f).sort(), ['nc1', 'nc2']);
-  // Every photo stays in the games, in the order without the rights (the draw's ties follow it): the better photo
-  // first, then the four of equal quality in easyRank's fixed order, whatever their licence or source.
-  const game = d.gen.G.sl.wide.game.map(x => x.f);
-  assert.strictEqual(game[0], 'ncgood');
-  assert.deepStrictEqual(game.slice().sort(), ['nc1', 'nc2', 'ncgood', 'open', 'own']);
-  const L = d.gen.G.sl.wide.game.slice(1);
+  join(s, 'Ana', g.staff);
+  join(s, 'Mia', g.help);
+  join(s, 'Gus', g.grant);
+  asAccounts(s);
+  return [s, g];
+}
+
+test('who changes a group: players for its settings and the members of a settings group, grant for its rights and the members of a rights group', () => {
+  const [s, g] = gates();
+  const mia = 'acct:Mia',
+    gus = 'acct:Gus';
+  // The players right alone.
+  assert.strictEqual(join(s, 'Ben', g.staff, true, mia).n, 1);
+  assert.strictEqual(join(s, 'Ben', g.tr, true, mia).error, 'token', 'never into a group that carries rights');
+  assert.strictEqual(join(s, 'Mia', g.grant, true, mia).error, 'token', 'nor itself into the grant');
+  assert.strictEqual(edit(s, g.tr, {n: 'Hosts'}, mia).group.n, 'Hosts', 'a rights group renamed: players');
+  assert.strictEqual(edit(s, g.tr, {rights: [R('live'), R('content')]}, mia).error, 'token');
+  assert.strictEqual(edit(s, g.staff, {rights: [R('content')]}, mia).error, 'token');
+  assert.strictEqual(make(s, 'Curators', {rights: [R('content')]}, mia).error, 'token');
+  // The grant right alone.
+  assert.strictEqual(join(s, 'Ben', g.tr, true, gus).n, 1);
+  assert.ok(can(s, 'Ben', 'live'));
+  assert.strictEqual(join(s, 'Ben', g.tr, false, gus).n, 1);
+  assert.ok(!can(s, 'Ben', 'live'));
+  assert.strictEqual(edit(s, g.tr, {rights: [R('live'), R('cohorts')]}, gus).ok, true, 'a right given: grant');
+  assert.strictEqual(edit(s, g.tr, {n: 'Trainers'}, gus).error, 'token', 'a rename: players');
+  assert.strictEqual(join(s, 'Ben', g.staff, true, gus).error, 'token');
+  assert.strictEqual(make(s, 'Curators', {rights: [R('content')]}, gus).error, 'token', 'a new group: players too');
+  // Checked again under the lock: a group that came to carry rights between the gate and the change.
+  assert.strictEqual(run(s, `usersDo_({userGroup: 'Ben', group: '${g.tr}', on: true}, caller_('acct:Mia')).error`), 'token');
+  // The token: one name a call, never a list; a first right never on a group that has members; a delete only empty.
+  assert.strictEqual(join(s, ['Ben'], g.tr).error, 'input');
+  assert.strictEqual(join(s, ['Ana', 'Ben'], g.tr, false).error, 'input');
+  assert.strictEqual(edit(s, g.staff, {rights: [R('live')]}).error, 'members');
+  assert.strictEqual(s.post({groupDrop: g.grant, token: TOK}).error, 'members');
+  assert.strictEqual(join(s, 'Nobody', g.tr).error, 'user');
+  assert.ok(s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK}).ok);
+  assert.strictEqual(join(s, 'Ben-old', g.tr).error, 'archived');
+  // A right taken away and given again while it still has members: the members' memberships keep their code hash.
+  assert.ok(edit(s, g.grant, {rights: []}).ok);
+  assert.ok(!can(s, 'Gus', 'grant'));
+  assert.strictEqual(edit(s, g.grant, {rights: [R('grant')]}).error, 'members');
+  noName(s, 'Ana', 'Ben', 'Mia', 'Gus');
+});
+
+test("a membership holds for the account's code hash: a code changed turns its rights off until it is added again", () => {
+  const s = loadCodeGs();
+  ['Tia', 'Ana'].forEach(n => save(s, n));
+  const tr = make(s, 'Trainers', {rights: [R('live')]}).group.id;
+  assert.strictEqual(join(s, 'Tia', tr).n, 1);
+  assert.ok(can(s, 'Tia', 'live'));
+  // Tia's code changed (as the admin's code reset would): the membership stays, its rights off.
+  run(s, "(ra => ra.getRange(find_(ra, 'Tia'), 7).setValue(hash_('Tia', '9999')))(sheet_('RAs', HEAD))");
+  assert.ok(!can(s, 'Tia', 'live', '9999'));
+  assert.deepStrictEqual(copy(user(s, 'Tia').roff), [tr]);
+  assert.deepStrictEqual(copy(user(s, 'Tia').gids), [tr], 'still a member');
+  assert.ok(!JSON.stringify(list(s)).includes(run(s, "hash_('Tia', '9999')")), 'no code hash in any reply');
+  // Added again: bound to the code now.
+  assert.strictEqual(join(s, 'Tia', tr).n, 1);
+  assert.ok(can(s, 'Tia', 'live', '9999'));
+  assert.deepStrictEqual(copy(user(s, 'Tia').roff), []);
+  assert.strictEqual(join(s, 'Tia', tr).n, 0, 'held');
+  assert.strictEqual(rows(s, 'Groups').filter(r => r[1] === 'Tia').length, 1, 'one membership');
+  // A settings group's membership holds no code hash.
+  const st = make(s, 'Staff', {board: 1}).group.id;
+  join(s, 'Ana', st);
+  assert.deepStrictEqual(rows(s, 'Groups').find(r => r[0] === st).at(3), '');
+});
+
+test('a code hash that starts with + or - is read back as written, on every path (setValues and appendRow)', () => {
+  const s = loadCodeGs();
+  let n = '';
+  for (let i = 0; i < 2000 && !n; i++) if (/^[+-]/.test(run(s, `hash_('p${i}', '1234')`))) n = 'p' + i;
+  assert.ok(n, 'a name whose hash starts with + or -');
+  save(s, n);
+  const tr = make(s, 'Trainers', {rights: [R('live')]}).group.id;
+  assert.strictEqual(join(s, n, tr).n, 1);
+  assert.ok(can(s, n, 'live'));
+  assert.strictEqual(s.post({roleGrant: {account: n, role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
+  assert.ok(can(s, n, 'grant', '1234', 'platform'), 'the admin list (appendRow keeps the text mark)');
+  assert.deepStrictEqual(copy(user(s, n).roff), []);
+});
+
+test("the Audit rows of a rights change: join and leave, a group's right given or taken and one row per member, never a name", () => {
+  const s = loadCodeGs();
+  ['Tia', 'Ana', 'Ben'].forEach(n => save(s, n));
+  const tr = make(s, 'Trainers', {rights: [R('live')]}).group.id;
+  join(s, 'Tia', tr);
+  join(s, 'Ana', tr);
+  join(s, 'Ben', tr, false);
+  const n0 = audit(s).length;
+  assert.ok(edit(s, tr, {rights: [R('cohorts'), R('live'), R('content')]}).ok);
+  assert.ok(edit(s, tr, {rights: [R('cohorts'), R('content')]}).ok);
+  const [T, A] = [aid(s, 'Tia'), aid(s, 'Ana')];
+  const by = audit(s)[0][0];
   assert.deepStrictEqual(
-    C.easyRank(L, () => 0, false).map(x => x.f),
-    game.slice(1)
-  );
-});
-
-test('fishRun and fishQueue: between equal candidates, an open licence or his own first; the ease still first', () => {
-  const ph = (f, lic, own) => ({f, o: 'obs-' + f, lic, ...(own ? {own: true} : {})});
-  const cands = {
-    s1: [ph('a-nc', 'cc-by-nc'), ph('b-nc', 'cc-by-nc'), ph('c-open', 'cc-by'), ph('d-own', 'cc-by-nc', true), ph('e-nc5', 'cc-by-nc')]
-  };
-  const j = e => ({k: 'best', jt: 'p1g1sm1', e});
-  const sug = {'a-nc': j(4), 'b-nc': j(4), 'c-open': j(4), 'd-own': j(4), 'e-nc5': j(5)};
-  // Room for two observations: the easiest first (an NC photo of ease 5), then an open photo among the equals of ease 4.
-  const T = A.FISHT.obs;
-  A.FISHT.obs = 2;
-  try {
-    const {F} = A.fishRun(cands, sug, {s1: {id: 's1'}}, {}, '2026-11-08', true);
-    // None of these names is a Check (autoCheck): the easiest, then the first open or own photo of ease 4 (c before d).
-    ['a-nc', 'b-nc', 'c-open', 'd-own', 'e-nc5'].forEach(f => assert.strictEqual(A.autoCheck(f), false, f));
-    assert.deepStrictEqual(Object.keys(F.add).sort(), ['c-open', 'e-nc5']);
-  } finally {
-    A.FISHT.obs = T;
-  }
-  const Q = A.fishQueue(cands, sug, {s1: {id: 's1'}}, {}).map(x => x.p.f);
-  assert.strictEqual(Q[0], 'e-nc5');
-  assert.deepStrictEqual(Q.slice(1, 3).sort(), ['c-open', 'd-own']);
-  assert.deepStrictEqual(Q.slice(3), ['a-nc', 'b-nc']);
-});
-
-test('fishOrder and fishCoverOf (the admin): the rights break a tie; his cover pick wins', () => {
-  const L = [
-    {f: 'a', lic: 'cc-by-nc'},
-    {f: 'b', lic: 'cc0'}
-  ];
-  const j = () => ({e: 4, jt: 'p1g1sm1'});
-  assert.deepStrictEqual(
-    A.fishOrder(L, {}, 'f:X', 's1', j).rest.map(p => p.f),
-    ['b', 'a']
-  );
-  assert.strictEqual(A.fishCoverOf(L, {}, 'f:X', j).f, 'b');
-  assert.strictEqual(A.fishCoverOf(L, {genera: {'f:X': {cover: 'a'}}}, 'f:X', j).f, 'a');
-});
-
-test('fetch_local tie_key: Research Grade first, then more votes, then an open or own observation; no votes count, the old order', () => {
-  const R = py(`from fetch_local import tie_key
-o = lambda v, login='x', g='research': {'user': {'login': login}, 'quality_grade': g, **({} if v is None else {'cached_votes_total': v})}
-nc, op = [{'license_code': 'cc-by-nc'}], [{'license_code': 'cc-by-nc'}, {'license_code': 'cc0'}]
-print(json.dumps([
-  tie_key(o(0), op, 5) < tie_key(o(0), nc, 1),
-  tie_key(o(0, 'ppericard'), nc, 5) < tie_key(o(0), nc, 1),
-  tie_key(o(2), nc, 1) < tie_key(o(0), op, 5),
-  tie_key(o(None), nc, 1) < tie_key(o(None), op, 5),
-  # Research Grade before a genus-level or expert ID, whatever the votes or the licence (Codex review #742).
-  tie_key(o(0), nc, 1) < tie_key(o(3, g='needs_id'), op, 0),
-]))`);
-  assert.deepStrictEqual(R, [true, true, true, true, true]);
-});
-
-test('fetch_fish lic_class: his own, CC0 / CC BY, NC (select reads it as the last tie-break, Q284)', () => {
-  const R = py(`from fetch_fish import lic_class
-print(json.dumps([lic_class(l, o) for l, o in [('cc-by-nc', True), ('cc-by', True), (None, True), ('cc0', False), ('cc-by', False), ('cc-by-nc', False), (None, False)]]))`);
-  assert.deepStrictEqual(R, [0, 0, 0, 1, 1, 2, 2]);
-});
-
-// The rights facet (docs/ROADMAP.md "Rights tagged for a later split"): presence.js rightsTally,
-// rightsBy and speciesOf, which admin.js renderRights (Inbox › Coverage › Rights) and Coverage › Games' summary line read.
-// Read-only counts: commercial-ready = own + open.
-test('rightsTally: the photos by rights class, each photo once, commercial-ready = own + open', () => {
-  const P = require('../presence.js');
-  const L = [
-    {f: 'a', own: true, lic: 'cc-by-nc'},
-    {f: 'b', lic: 'cc0'},
-    {f: 'c', a: '(c) X, some rights reserved (CC BY)'},
-    {f: 'd', lic: 'cc-by-nc'},
-    {f: 'e', a: '(c) X, some rights reserved (CC BY-NC-SA)'},
-    {f: 'g', imr: true},
-    {f: 'h', cf: 1},
-    {f: 'b', lic: 'cc0'}, // the same photo twice counts once
-    null
-  ];
-  assert.deepStrictEqual(P.rightsTally(L), {n: 7, ready: 3, own: 1, open: 2, nc: 2, imr: 1, book: 1});
-  assert.deepStrictEqual(P.rightsTally([]), {n: 0, ready: 0, own: 0, open: 0, nc: 0, imr: 0, book: 0});
-  assert.deepStrictEqual(P.rightsTally(undefined).n, 0);
-  assert.deepStrictEqual(P.RIGHTS, ['own', 'open', 'nc', 'imr', 'book']);
-  // Every class rightsClass gives has its count.
-  L.filter(Boolean).forEach(p => assert.ok(P.RIGHTS.includes(C.rightsClass(p))));
-});
-
-test('rightsBy, speciesOf: per species in the order they first appear, genus-only and unnamed photos left out', () => {
-  const P = require('../presence.js');
-  assert.strictEqual(P.speciesOf({t: 'Acropora florida'}), 'Acropora florida');
-  assert.strictEqual(P.speciesOf({t: 'Porites lobata lobata'}), 'Porites lobata');
-  assert.strictEqual(P.speciesOf({t: 'Acropora'}), null);
-  assert.strictEqual(P.speciesOf({t: 'Acropora Group A'}), null);
-  assert.strictEqual(P.speciesOf({imr: true}), null);
-  assert.strictEqual(P.speciesOf(null), null);
-  const L = [
-    {f: '1', t: 'Acropora florida', lic: 'cc-by-nc'},
-    {f: '2', t: 'Acropora', lic: 'cc-by'},
-    {f: '3', t: 'Acropora cerealis', own: true},
-    {f: '4', t: 'Acropora florida', lic: 'cc-by'},
-    {f: '5', imr: true}
-  ];
-  assert.deepStrictEqual(
-    P.rightsBy(L, P.speciesOf).map(([k, T]) => [k, T.n, T.ready, T.nc]),
+    audit(s).filter(x => /^(join|leave|right[+-]|grant|revoke) /.test(x[1])),
     [
-      ['Acropora florida', 2, 1, 1],
-      ['Acropora cerealis', 1, 1, 0]
+      [by, `right+ ${R('live')}`, IMR, 'ok', tr],
+      [by, `join ${tr}`, IMR, 'ok', T],
+      [by, `join ${tr}`, IMR, 'ok', A],
+      [by, `leave ${tr}`, IMR, 'none', aid(s, 'Ben')],
+      [by, `right+ ${R('content')}`, IMR, 'ok', tr],
+      [by, `grant content (via ${tr})`, IMR, 'ok', T],
+      [by, `grant content (via ${tr})`, IMR, 'ok', A],
+      [by, `right+ ${R('cohorts')}`, IMR, 'ok', tr],
+      [by, `grant cohorts (via ${tr})`, IMR, 'ok', T],
+      [by, `grant cohorts (via ${tr})`, IMR, 'ok', A],
+      [by, `right- ${R('live')}`, IMR, 'ok', tr],
+      [by, `revoke live (via ${tr})`, IMR, 'ok', T],
+      [by, `revoke live (via ${tr})`, IMR, 'ok', A]
     ]
   );
+  assert.deepStrictEqual(
+    audit(s)
+      .slice(n0)
+      .filter(x => x[1] === 'groupEdit')
+      .map(x => x[3]),
+    ['ok', 'ok'],
+    'and the edit itself'
+  );
+  // A membership written without its row (the Audit tab failing) answers an error; its retry writes the row.
+  failAudit(s);
+  assert.strictEqual(join(s, 'Ben', tr).error, 'server');
+  assert.ok(rows(s, 'Groups').some(r => r[1] === 'Ben'));
+  assert.strictEqual(join(s, 'Ben', tr).n, 1, 'its retry: ok');
+  assert.strictEqual(join(s, 'Ben', tr).n, 0, 'then held');
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => x[1] === `join ${tr}` && x[4] === aid(s, 'Ben'))
+      .map(x => x[3]),
+    ['ok', 'held']
+  );
+  noName(s, 'Tia', 'Ana', 'Ben');
 });
 
-test("the facet on today's photos: every coral genus and fish species tallied, the classes adding up to the photos", () => {
-  const P = require('../presence.js');
-  const D = read('data.json');
-  // A genus page's photos (admin.js own): its views, the extra photos and the IMR lecture photos (data.json course).
-  const coral = [
-    ...Object.values(D.gen).flatMap(g => [...Object.values(g.views || {}).flat(), ...Object.values(g.more || {}).flat()]),
-    ...Object.values(D.course || {}).flat()
-  ];
-  const T = P.rightsTally(coral);
-  assert.ok(T.n > 200, 'coral photos ' + T.n);
-  assert.strictEqual(
-    P.RIGHTS.reduce((s, c) => s + T[c], 0),
-    T.n
+test('a merge moves the groups without rights and drops the others, audited; mergePlan says so before, writing nothing', () => {
+  const s = loadCodeGs();
+  ['Ana', 'Ben', 'Cy'].forEach(n => save(s, n));
+  const st = make(s, 'Staff', {board: 1}).group.id,
+    beta = make(s, 'Nov', {board: 1}).group.id,
+    tr = make(s, 'Trainers', {rights: [R('live')]}).group.id,
+    mg = make(s, 'Managers', {rights: [R('players'), R('grant')]}).group.id;
+  join(s, 'Ana', st);
+  join(s, 'Ana', beta);
+  join(s, 'Ben', beta);
+  join(s, 'Ana', tr);
+  join(s, 'Ben', mg);
+  assert.strictEqual(s.post({roleGrant: {account: 'Ana', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
+  const before = JSON.stringify(s.sheets);
+  assert.deepStrictEqual(copy(s.post({mergePlan: {from: 'Ana', into: 'Ben'}, token: TOK})), {
+    ok: true,
+    join: [st],
+    drop: [tr],
+    admin: 1,
+    v: run(s, 'VERSION')
+  });
+  assert.strictEqual(JSON.stringify(s.sheets), before, 'a read: nothing written, not even an Audit row');
+  assert.strictEqual(s.post({mergePlan: {from: 'Ana', into: 'ana'}, token: TOK}).error, 'user');
+  assert.strictEqual(s.post({mergePlan: {from: 'Ana', into: 'Nobody'}, token: TOK}).error, 'user');
+  const m = s.post({userMerge: {from: 'Ana', into: 'Ben', data: {}}, token: TOK});
+  assert.deepStrictEqual(copy([m.ok, m.join, m.drop, m.admin]), [true, [st], [tr], 1]);
+  assert.deepStrictEqual(copy(user(s, 'Ben').gids).sort(), [st, beta, mg].sort(), "Ben keeps his own and takes Ana's settings groups");
+  assert.ok(!can(s, 'Ben', 'live') && !can(s, 'Ben', 'grant', '1234', 'platform'), 'never her rights');
+  assert.ok(can(s, 'Ben', 'players'), 'his own stay');
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => /account removed/.test(x[1]))
+      .map(x => [x[1], x[4]]),
+    [
+      [`leave ${tr} (account removed)`, aid(s, 'Ana')],
+      ['revoke admin (account removed)', aid(s, 'Ana')]
+    ]
   );
-  assert.strictEqual(T.ready, T.own + T.open);
-  assert.strictEqual(T.book, 0, 'no Coral Finder book photo since #748 (tests/nobook.test.js)');
-  assert.ok(T.own > 0 && T.open > 0 && T.nc > 0 && T.imr > 0, JSON.stringify(T));
-  const fish = Object.values(C.treeGameRead(read('fish-game.json')).photos).flat();
-  const F = P.rightsTally(fish);
-  assert.ok(F.n > 500, 'fish photos ' + F.n);
-  assert.strictEqual(F.imr + F.book, 0, 'no IMR slide photo for fish (rule P1)');
-  assert.strictEqual(F.own + F.open + F.nc, F.n);
-  // Per species, the tallies add up to the whole.
-  const S = P.rightsBy(fish, p => p.sp);
-  assert.strictEqual(
-    S.reduce((s, [, t]) => s + t.n, 0),
-    F.n
+  assert.ok(s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
+  assert.strictEqual(s.post({mergePlan: {from: 'Cy-old', into: 'Ben'}, token: TOK}).error, 'archived');
+  noName(s, 'Ana', 'Ben', 'Cy');
+});
+
+// The data of a script whose instance roles were in the Roles tab: Pat the admin, owner and editor; Eda an editor;
+// Ben and Dee trainers; Fay's trainer grant given to another code (her name taken again); Zed's grant left by an
+// account that is not there any more; a group named "Trainers" made by hand since the groups came.
+const legacy = (s, n, role, h) =>
+  run(
+    s,
+    `(ra => sheet_(ROLES.TAB, ROLES.HEAD).appendRow([${JSON.stringify(n)}, '${role}', '${role === 'admin' ? 'platform' : IMR}', new Date('2026-11-10T00:00:00Z'), ${
+      h ? JSON.stringify(h) : `String(ra.getRange(find_(ra, ${JSON.stringify(n)}), 7).getValue())`
+    }]))(sheet_('RAs', HEAD))`
   );
+function before() {
+  const s = loadCodeGs();
+  ['Pat', 'Eda', 'Ben', 'Dee', 'Ana'].forEach(n => save(s, n));
+  save(s, 'Fay', '9999');
+  legacy(s, 'Pat', 'admin');
+  legacy(s, 'Pat', 'owner');
+  legacy(s, 'Pat', 'editor');
+  legacy(s, 'Eda', 'editor');
+  legacy(s, 'Ben', 'trainer');
+  legacy(s, 'Dee', 'trainer');
+  legacy(s, 'Fay', 'trainer', 'another-hash');
+  legacy(s, 'Zed', 'trainer', 'zed-hash');
+  s.props.ONCE_groups = '1';
+  run(s, "gdefPut_(sheet_(GDEF.TAB, GDEF.HEAD), 2, {id: 'g:12345678', n: 'trainers', board: 1, beta: '', at: Date.now(), rights: []})");
+  return s;
+}
+const view = s => {
+  const L = list(s);
+  return {
+    defs: copy(L.groupDefs.map(d => [d.id, d.n, d.rights])),
+    gids: Object.fromEntries(L.users.map(u => [u.name, copy(u.gids)])),
+    roff: Object.fromEntries(L.users.filter(u => u.roff.length).map(u => [u.name, copy(u.roff)])),
+    rights: ['Pat', 'Eda', 'Ben', 'Fay', 'Ana'].map(n =>
+      ['players', 'content', 'live'].filter(r => can(s, n, r, n === 'Fay' ? '9999' : '1234'))
+    ),
+    admin: can(s, 'Pat', 'grant', '1234', 'platform')
+  };
+};
+
+test('the migration: each instance role a group with its rights, each grant a membership under its code hash, nothing lost; the readers say the same before it', () => {
+  const s = before();
+  const want = {
+    defs: [
+      ['g:12345678', 'trainers', []],
+      ['r:owner', 'Managers', [R('players'), R('settings'), R('grant')]],
+      ['r:editor', 'Curators', [R('content')]],
+      ['r:trainer', 'Trainers (rights)', [R('live'), R('cohorts')]]
+    ],
+    gids: {Pat: ['r:owner', 'r:editor'], Eda: ['r:editor'], Ben: ['r:trainer'], Dee: ['r:trainer'], Ana: [], Fay: ['r:trainer']},
+    roff: {Fay: ['r:trainer']},
+    rights: [['players', 'content'], ['content'], ['live'], [], []],
+    admin: true
+  };
+  const roles0 = rows(s, 'Roles'),
+    gs0 = JSON.stringify(s.sheets['Group settings'].rows);
+  assert.deepStrictEqual(view(s), want, 'before the migration: read from the Roles tab');
+  assert.strictEqual(JSON.stringify(s.sheets['Group settings'].rows), gs0, 'nothing written by a read');
+  assert.ok(!s.sheets.Groups && !s.sheets.Audit);
+  const m = run(s, 'ONCE_.rights()');
+  assert.strictEqual(
+    m,
+    '3 groups made from the roles (Managers, Curators, Trainers (rights)), 6 memberships added, 1 with an old code hash (no right), 1 grant of accounts no longer live left in the Roles tab'
+  );
+  assert.deepStrictEqual(view(s), want, 'after: the same');
+  assert.deepStrictEqual(rows(s, 'Roles'), roles0, 'the Roles tab kept as it was: the admin list and the record');
+  assert.deepStrictEqual(
+    rows(s, 'Groups').map(r => [r[0], r[1], new Date(r[2]).toISOString()]),
+    [
+      ['r:owner', 'Pat', '2026-11-10T00:00:00.000Z'],
+      ['r:editor', 'Pat', '2026-11-10T00:00:00.000Z'],
+      ['r:editor', 'Eda', '2026-11-10T00:00:00.000Z'],
+      ['r:trainer', 'Ben', '2026-11-10T00:00:00.000Z'],
+      ['r:trainer', 'Dee', '2026-11-10T00:00:00.000Z'],
+      ['r:trainer', 'Fay', '2026-11-10T00:00:00.000Z']
+    ]
+  );
+  assert.strictEqual(rows(s, 'Groups').find(r => r[1] === 'Fay')[3], 'another-hash', 'its old hash kept: rights off, nothing lost');
+  assert.deepStrictEqual(
+    audit(s).map(x => [x[0], x[1], x[3]]),
+    [
+      ['script', 'join r:owner (migration)', 'ok'],
+      ['script', 'join r:editor (migration)', 'ok'],
+      ['script', 'join r:editor (migration)', 'ok'],
+      ['script', 'join r:trainer (migration)', 'ok'],
+      ['script', 'join r:trainer (migration)', 'ok'],
+      ['script', 'join r:trainer (migration)', 'ok']
+    ]
+  );
+  assert.strictEqual(run(s, 'ONCE_.rights()'), 'already made by a change to the groups', 'once');
+  noName(s, 'Pat', 'Eda', 'Ben', 'Dee', 'Fay', 'Zed');
+  // A live game starts with the Trainers group's right as it did with the role.
+  assert.strictEqual(s.post({lv: 'start', lname: 'Ben', lpin: '1234', s: 'coral', t: 'x', n: 3, lim: 20}).ok, true);
+});
+
+test('the migration: made by the first change before it, once; once_ then finds it done', () => {
+  const s = before();
+  const st = make(s, 'Staff', {board: 1}).group.id;
+  assert.ok(s.props.ONCE_rights, 'made by the change');
+  assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 5);
+  join(s, 'Ana', st);
+  run(s, 'once_(() => {})');
+  assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 5, 'not made twice');
+  assert.strictEqual(rows(s, 'Groups').filter(r => /^r:/.test(r[0])).length, 6);
+  assert.strictEqual(audit(s).filter(x => /\(migration\)$/.test(x[1])).length, 6);
+});
+
+test('the migration tried again after its Audit tab failed part way: nothing made twice, every membership audited once', () => {
+  const s = before();
+  failAudit(s);
+  assert.throws(() => run(s, 'ONCE_.rights()'), /its Audit row was not written/);
+  assert.ok(!s.props.ONCE_rights, 'not marked done');
+  assert.strictEqual(rows(s, 'Groups').length, 6, 'the memberships written');
+  assert.match(run(s, 'ONCE_.rights()'), /^0 groups made from the roles \(\), 0 memberships added/);
+  assert.strictEqual(rows(s, 'Groups').length, 6);
+  assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 4);
+  assert.strictEqual(audit(s).filter(x => /\(migration\)$/.test(x[1])).length, 6);
+});
+
+test('an account deleted before the migration ran: its roles are made its groups first, then dropped, each audited', () => {
+  const s = before();
+  assert.ok(s.post({userDelete: 'Eda', answers: true, token: TOK}).ok);
+  assert.ok(!rows(s, 'Roles').some(r => r[0] === 'Eda'));
+  assert.ok(!rows(s, 'Groups').some(r => r[1] === 'Eda'));
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => x[4] === aid(s, 'Eda'))
+      .map(x => x[1]),
+    ['join r:editor (migration)', 'leave r:editor (account removed)', 'userDelete']
+  );
+  // Pat, deleted after: his place on the admin list goes too.
+  assert.ok(s.post({userDelete: 'Pat', token: TOK}).ok);
+  assert.ok(!rows(s, 'Roles').some(r => r[0] === 'Pat'));
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => x[4] === aid(s, 'Pat') && /account removed/.test(x[1]))
+      .map(x => x[1])
+      .sort(),
+    ['leave r:editor (account removed)', 'leave r:owner (account removed)', 'revoke admin (account removed)']
+  );
+  noName(s, 'Eda', 'Pat');
+});
+
+test("the seed's groups follow the migration's names, and a group of that name made by hand keeps it", () => {
+  const s = loadCodeGs();
+  save(s, 'Pat');
+  make(s, 'Managers', {board: 1});
+  assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok);
+  assert.deepStrictEqual(
+    copy(list(s).groupDefs.map(d => [d.id.replace(/^g:.*/, 'g:'), d.n])),
+    [
+      ['g:', 'Managers'],
+      ['r:owner', 'Managers (rights)'],
+      ['r:editor', 'Curators']
+    ]
+  );
+  assert.ok(can(s, 'Pat', 'players') && can(s, 'Pat', 'content') && can(s, 'Pat', 'platform', '1234', 'platform'));
 });
