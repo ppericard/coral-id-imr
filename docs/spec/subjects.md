@@ -33,8 +33,10 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   shared record under ids of its own) and its own leaderboard; `achFeats` (the corals) keeps the shared record's feats
   (runs, corallites, hard photos); `boardSheet`, the sync script from which a subject's board is served (the sea slugs');
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
-  `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets) and
-  `quiz`; the sea slugs' `genera`, `sheet`, `quiz`. `basics` names the basics module's feat (`_basics`, `_fbasics`);
+  `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
+  `quiz` and `quiz-duel`; the sea slugs' `genera`, `sheet`, `quiz`, `quiz-duel`. `closed`: each `MODES` Learn or
+  Practice page a subject lacks, with its reason (`tests/subjects.test.js`; ROADMAP "Every game mode for every
+  subject"). `basics` names the basics module's feat (`_basics`, `_fbasics`);
 - `sheets` (the fish and the sea slugs): the address word of each rank of its sheets and the prefix of their ids,
   `{family: 'f:', genus: 'g:', species: 's:'}`, so `#fish/learn/family/Damselfishes`, `#fish/learn/genus/Chromis` and
   `#fish/learn/species/Chromis%20ternatensis` (as `#fish/learn/family/<id>`, `#fish/learn/genus/<name>`,

@@ -121,8 +121,21 @@
    "keep": "best"
   },
   "fish-s022-cand-724451666": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "p1g1sm14",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.3,
+    0.68,
+    0.78
+   ],
+   "bb": [
+    0.3,
+    0.45,
+    0.55,
+    0.7
+   ],
+   "note": "crop: the yellow fishes below leave the frame (Q430)"
   },
   "fish-s022-cand-532674696": {
    "code": "p1g1smo3",

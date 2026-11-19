@@ -177,8 +177,15 @@
    "keep": "best"
   },
   "fish-s233-cand-742654109": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.36,
+    0.68,
+    0.72
+   ],
+   "note": "crop: the dark damselfish above right leaves the frame (Q430)"
   },
   "fish-s233-cand-600001598": {
    "code": "o1g1sl14",

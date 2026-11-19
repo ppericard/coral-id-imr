@@ -107,6 +107,7 @@ the domain move ([ROADMAP.md](../ROADMAP.md)). The salt of the code hashes and a
 before the rename; on activation every other cache with either prefix goes, `REPLACES`); the admin's files
 `reefid-admin-files` (`ADM`, `ADM_FILE`); the photo cache `imr-photos-v1`, not renamed: a new name would throw away (or
 copy while the app waits) up to 2,500 offline photos per phone; it gets one with the domain move, whose new origin
-starts with empty caches anyway. The worker asks the open pages their version under both message names (`VER_ASK`), so
+starts with empty caches anyway. The admin page itself keeps one more, `reefid-admin-blobs` (`admin.js` `blobText`: the
+text of `curation.json` under its blob's sha, the latest only; public data, never the worker's). The worker asks the open pages their version under both message names (`VER_ASK`), so
 a page from before the rename is not reloaded in the middle of a question.
 <!-- rename-app: keep-end -->

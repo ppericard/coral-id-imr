@@ -109,8 +109,15 @@
    "keep": "best"
   },
   "fish-s159-cand-430594188": {
-   "code": "p1g0smkj2",
-   "keep": "best"
+   "code": "p1g0ml1j3",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.3,
+    0.73,
+    0.75
+   ],
+   "note": "crop: the other fusilier at right leaves the frame (Q430)"
   },
   "fish-s159-cand-594884097": {
    "code": "o1g2mss2",
