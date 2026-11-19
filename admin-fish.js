@@ -44,7 +44,7 @@ const FTAGS = [
     x: 'subject not obvious'
   }
 ];
-const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', w: 'watermark', p: 'phase entry', r: 'reference photo'};
+const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water or a screen', w: 'watermark', p: 'phase entry', r: 'reference photo'};
 // Every value said, in the words of the tree subject in force (admin.js tagWords: the sea slugs' views and flags).
 const fishTagText = (jt, S = FISHS) => tagText(jt, tagWords(S, FTAGS, FFLAGS, true));
 // The rows the admin sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
@@ -419,7 +419,7 @@ function renderFishCand() {
           : ''
       }${
         nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water or a screen, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
           : ''
       }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the ${esc(FISHS.what.toLowerCase())} candidate pass (judging/)">${nJ} not judged yet</span>` : ''}`,
       fishAutoBlock(false, true)

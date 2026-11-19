@@ -26,8 +26,9 @@ F = lambda c: list(cap(c, False))
 ok = lambda s, c: bool(RUBRICS[s]['code'].match(c))
 print(json.dumps({
   'slug': [S('d1g0sl15'), S('p1g0sl15'), S('o1g0sl15'), S('v1g0sl15'), S('h1g0sl15'), S('d0g0sl15'), S('d1g0sl1j5'),
-           S('d1g0sl1f5'), S('d1g0sl1w5'), S('d1g0sl1c5'), S('d1g2sl15'), S('d1g3sl15'), S('d1g0slx5'), S('d1d0sl15')],
-  'fish': [F('d1g0sl15'), F('p1g0sl1j5')],
+           S('d1g0sl1f5'), S('d1g0sl1w5'), S('d1g0sl1c5'), S('d1g2sl15'), S('d1g3sl15'), S('d1g0slx5'), S('d1d0sl15'),
+           S('d1g0bl15')],
+  'fish': [F('d1g0sl15'), F('p1g0sl1j5'), F('p1g0bl15')],
   'codes': [ok('seaslug', 'd1g0sl1jcawf4'), ok('seaslug', 'd1n0sl15'), ok('seaslug', 'd1g0slm5'), ok('seaslug', 'd1g0sl1p5'),
             ok('fish', 'v1g0sl15'), ok('fish', 'p1g0sl1f5'), ok('fish', 'p1n0slm5')],
   'flag': [with_flag('d1g0sl1w4', 'j', 'seaslug'), with_flag('d1g0sl1j4', 'f', 'seaslug'), with_flag('p1g0sl1w4', 'j')]}))`);
@@ -45,15 +46,17 @@ print(json.dumps({
     [3, 'd1g2sl1'],
     [2, 'd1g3sl1'],
     [2, 'd1g0slx'],
-    [5, 'd1d0sl1'] // dim light: a mild shortfall the judge reads, no cap
+    [5, 'd1d0sl1'], // dim light: a mild shortfall the judge reads, no cap
+    [5, 'd1g0bl1'] // strong blur: the fish's cap only (judging/FISH.md "Strong blur"; Pierre reviewed fish)
   ]);
   assert.deepStrictEqual(
     out.fish,
     [
       [3, 'd1g0sl1'],
-      [2, 'p1g0sl1j']
+      [2, 'p1g0sl1j'],
+      [2, 'p1g0bl1']
     ],
-    'the fish caps unchanged: a top view at most 3'
+    'the fish caps: a top view at most 3, strong blur at most 2'
   );
   // No night livery, no legacy count m, no tool flag typed for sea slugs; the fish never take v or f.
   assert.deepStrictEqual(out.codes, [true, false, false, false, false, false, true]);
