@@ -604,7 +604,7 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
    (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
-both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo
+both show the square fish tiles (`judging/FISH.md` "The fish's box"); Matrix is in the Lab for every subject, unscored (ROADMAP "Matrix"). Later, not agreed yet: photo-to-trait (needs per-photo
 trait tags), the 0-2 correct variant. The
 coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), stays in the Lab for now (Pierre, 2026-11-04).
 
