@@ -56,7 +56,8 @@ read (`pool`, `files`).
 - **`curation.json` is merged key by key** by Publish. A pull request never edits it.
 - **Names are short.** The fields most often met:
   - a genus record in `data.json` (`gen`): `n` the slate number (0 for a starred look-alike), `fam` family, `ig` IMR
-    lecture group, `imr` lecture notes, `qt` ID tips, `sum` short description, `plain` plain sentence, `mn`
+    lecture group, `imr` lecture notes, `qt` ID tips (and `tl` their heading, only on a genus the lecture skips: its tips
+    come from the Coral Finder, not IMR), `sum` short description, `plain` plain sentence, `mn`
     mnemonic, `crit` Coral Finder criteria, `tr` and `trs` trait ids (`trs`: only some species), `look` look-alikes,
     `lsrc` source of each pair, `ap` and `apsrc` the pairs' tell-apart lines and their sources, `sl` slide numbers,
     `info` other sources, `views` and `more` photo lists, `cover`, `cm` how common near Dauin, `root` the name's roots;
