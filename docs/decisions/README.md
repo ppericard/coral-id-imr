@@ -88,10 +88,12 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
+| 2026-11-19 | [Odd one out: a Lab prototype, three of a unit and one intruder, untimed, no effect on progress](2026-11-19-odd-one-out-lab.md) | #1253 |
 | 2026-11-19 | [One answer recorder for every game: the photo quiz and the live game record through quiz.js recordAnswer](2026-11-19-one-answer-recorder.md) | #1213 |
 | 2026-11-19 | [One engine, step 2: replay's features named, the one-tap question and the notices the engine's](2026-11-19-one-engine-named-fields.md) | #1226 |
 | 2026-11-19 | [Rule P1 for the corals: no photo placed, ordered or weighted for who took it](2026-11-19-p1-corals-no-source-boost.md) | #1195 |
 | 2026-11-19 | [Per-player exam reserve, every subject; the corals keep theirs; the photos it takes read their qualities only](2026-11-19-per-player-reserve.md) | #1099 |
+| 2026-11-19 | [The measured block: photo values computed once from the pixels, in measured.json](2026-11-19-photo-measured-block.md) | #1229 |
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [The privacy page: a short notice, the points the law asks for, no internal detail](2026-11-19-privacy-short.md) | #1095 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
@@ -103,6 +105,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
+| 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |
 | 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
 | 2026-11-19 | [The tell-apart pairs left without a line: four more written, five kept with their reason](2026-11-19-tellapart-none-pairs.md) | #1245 |
 | 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |

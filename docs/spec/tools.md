@@ -259,6 +259,7 @@ written with `tools/datajson.py`.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
   `metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
+- **`photo_measure.py`**: [measured.md](measured.md).
 - **`find_dups.py`**: near-duplicates → `dups.json` (run it again after adding photos).
 - **`tag_origin.py`**: the `loc` tag (`dauin` / `ph` / `world`) on iNaturalist photos.
 - **`judging_manifest.py`, `judging_import.py`, `judging_cand.py`**: the outside photo-judging agent's package

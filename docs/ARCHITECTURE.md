@@ -248,6 +248,8 @@ P1-P6 ([rules/photos.md](rules/photos.md)) govern them.
 - **New candidates are not stored**, the Candidate photos workflow, the **Key-only genus** cap:
   [photos.md](spec/photos.md#the-candidate-photos-workflow).
 - **Excluded photos** (`tools/excluded.py`, `excluded.json`, **Restore**): [photos.md](spec/photos.md#excluded-photos).
+- **Measured values** of each game photo (contrast, brightness, saturation, warm share, sharpness; `measured.json`,
+  `tools/photo_measure.py`): [spec/measured.md](spec/measured.md).
 
 ## Admin back-office (`admin.html`)
 

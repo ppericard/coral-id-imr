@@ -867,8 +867,8 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
 
 ## Tests
 
-- `node tests/run.js` runs every `tests/*.test.js` under `node --test`, in the machine slot of `tests/slot.js` (rule
-  W24). The first line of every test file, `require('./slot.js').testGuard();`, takes the slot for the `node --test`
+- `node tests/run.js` runs every `tests/*.test.js` not tagged `// @slow` under `node --test`, in the machine slot of
+  `tests/slot.js` (rule W24); `--all` adds the slow statistical ones, which CI runs. The first line of every test file, `require('./slot.js').testGuard();`, takes the slot for the `node --test`
   runner in a several-file run, so even a bare `node --test tests/*.test.js` waits (one file stays unlocked;
   `tests/slotguard.test.js` fails on a file without it). CI runs `node --test tests/*.test.js`.
 - `tests/gas.js` runs `tools/sync/Code.gs` against an in-memory sheet; the unit tests check `core.js` (`merge3`,
