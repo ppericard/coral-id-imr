@@ -8,7 +8,8 @@
 // (photoDiff) is to the player's target for this unit and format (the difficulty controller, below). Photos never seen
 // get a bonus (bigger when the player is doing well; for the corals IMR and Pierre's photos first, SUBJECTS tiers; never
 // for fish), photos already shown weigh less the better they are remembered (PMEM), the colony of the last 2 questions
-// is held back, and at least VARIETY colonies stay in rotation. All photos of a question come from one observation.
+// is held back, a colony shown or planned in the session's last RECENT questions waits while the unit has another
+// (SEENQ), and at least VARIETY colonies stay in rotation. All photos of a question come from one observation.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
 // Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E (or its RARE.FEW easiest when it has fewer)
@@ -120,6 +121,41 @@ const colonyMem = (obs, ps) =>
         .reduce((a, h) => (!a || memBucket(h) > memBucket(a) || (memBucket(h) === memBucket(a) && h[0] > a[0]) ? h : a), undefined)
     ])
   );
+// The session's window of photos (docs/LEARNING.md "No photo twice in a few questions"): the photo memory (s.ps) and the
+// colonies held back (s.ro) are written at an answer, but the quiz plans up to AHEAD questions ahead (quiz.js planNext), so
+// a question planned behind another on the unit would draw the same colony. The draw also reads the photos of the last
+// RECENT questions shown (seenAdd: quiz.js question, live.js liveBuild) and of those planned (the NEXTQ queue), by file
+// and by observation. In memory only, nothing synced; RECENT is the game's own "recent" (10), wider than AHEAD.
+let SEENQ = [];
+// The photos of question q (its arguments: [cur, unit, choices, prompt, set]): those shown, hinted or revealed, or a Find
+// the X's four tiles.
+const qPhotos = q => {
+  const set = (q && q[4]) || {};
+  return set.find ? set.find.map(x => x.p) : [...(set.shown || []), ...(set.hint ? [set.hint] : []), ...(set.reveal || [])];
+};
+// A question shown, once however often its page is drawn again.
+const seenAdd = q => {
+  const set = q && q[4];
+  if (set && !(SEENQ.length && SEENQ[SEENQ.length - 1].s === set)) SEENQ = [...SEENQ, {s: set, L: qPhotos(q)}].slice(-RECENT);
+};
+// How many questions ago each photo file and observation of the window came (0: the latest, the last planned if any).
+function seenAges() {
+  const plan = [];
+  if (typeof NEXTQ !== 'undefined') for (let x = NEXTQ; x; x = x.next) plan.push(qPhotos(x.args));
+  const W = [...SEENQ.map(e => e.L), ...plan].slice(-RECENT),
+    a = {};
+  W.forEach((L, i) => L.filter(Boolean).forEach(p => [p.f, p.o].forEach(k => k && (a[k] = W.length - 1 - i))));
+  return a;
+}
+// Of L (observations or photos; photosOf(x): its photos), those outside the window, else those shown longest ago in it.
+function leastRecent(L, photosOf, ages = seenAges()) {
+  const age = x => Math.min(...photosOf(x).flatMap(p => [p.f, p.o].map(k => (k && k in ages ? ages[k] : Infinity))));
+  const ag = L.map(age),
+    out = L.filter((x, i) => ag[i] === Infinity);
+  if (out.length || !L.length) return out;
+  const m = Math.max(...ag);
+  return L.filter((x, i) => ag[i] === m);
+}
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -248,6 +284,15 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     const keep = rare && !keys.some(k => sc[k] > 0 && !mem[k] && hs[k] < 1);
     keys.forEach(k => mem[k] && !(keep && hs[k] < 1) && (sc[k] = 0));
   }
+  // A colony in the session's window (SEENQ) waits while another can be drawn, before the variety, the floor and the cap,
+  // which then work on the others. It never leaves only colonies the draw holds back (before Open Water the hard ones,
+  // RARE; the variants not released yet, V): with every colony at full weight in the window, the one of them shown
+  // longest ago stays, as the exploration keeps the seen easy ones above.
+  const live = keys.filter(k => sc[k] > 0),
+    fresh = new Set(leastRecent(live, k => phs[k])),
+    whole = k => !(rare && hs[k] >= 1) && phMul(k) >= 1;
+  if (live.some(whole) && ![...fresh].some(whole)) leastRecent(live.filter(whole), k => phs[k]).forEach(k => fresh.add(k));
+  live.forEach(k => fresh.has(k) || (sc[k] = 0));
   const top = Math.max(0, ...Object.values(sc));
   keys
     .filter(k => sc[k] > 0)
@@ -466,7 +511,9 @@ function examSet(n) {
     todo = vs.filter(v => !done.includes(lab(v)));
   if (!vs.length) return null;
   const v = pick(todo.length ? todo : vs),
-    L = pics(v),
+    // Never a photo, or a sibling of one, in the session's window (SEENQ) while another is left: a question planned
+    // before this one is not in the photo memory yet.
+    L = leastRecent(pics(v), p => [p]),
     // The pool: held-out photos never shown to this player on any unit (an observation counts as seen whatever photo of
     // it was shown, rule P4); else photos never shown; else the least seen of those never answered right; else the
     // least seen. The hardest of the pool is asked.
