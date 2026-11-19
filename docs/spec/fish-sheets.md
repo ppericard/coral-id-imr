@@ -39,13 +39,12 @@ the one "No photo yet" drawing (`NOFISH`, `.nofish`).
 ## The genus page
 
 `treeGenus`, `#fish/learn/genus/<name>`: the genus, its common name when it has one, its family and IMR entry name; my
-progress once met; the IMR sub-entry's cues verbatim, then its own ID marks when it has some (as the family sheet
-shows a family's under IMR's), else its ID marks and presentation; the species WoRMS now puts in another
-genus; every species with the filter; "Don't confuse with": sourced pairs only: the sibling genera IMR gives cues for
-(`treeGenusSibs`), then the look-alikes a source names and those players mix it up with, each with its source
-(`treeGenusLooks`). A sibling genus that has only our own ID marks is not listed (Pierre, 2026-11-19 05:13 Manila, Q418
-(b)); the pairs the players' data shows come later. The page bar's previous / next
-go through its family's genus pages. A genus with one species opens its species' sheet, and the only genus of a family
+progress once met; the IMR sub-entry's cues, then its own marks if any, else its marks and presentation; the species
+WoRMS now puts in another genus; every species with the filter; "Don't confuse with": sourced pairs only: the sibling
+genera IMR gives cues for (`treeGenusSibs`), then the look-alikes a source names and those players mix it up with, each
+with its source (`treeGenusLooks`). A sibling genus that has only our own ID marks is not listed (Pierre, 2026-11-19
+05:13 Manila, Q418 (b)); the pairs the players' data shows come later. The page bar's previous / next go
+through its family's genus pages. A genus with one species opens its species' sheet, and the only genus of a family
 its family's (`treeSheets` `go`); its marks and look-alikes are then shown there.
 
 ## The species sheet
@@ -60,6 +59,7 @@ single-species genus row:
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
+- "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
@@ -104,22 +104,24 @@ and on the species sheet's genus chip; the game's typed answers do not read it.
 
 Every scientific genus in play has a short presentation and its ID cues, sourced. `tools/fish_genus_marks.json` (`src`
 {key: {t, u}}, `families` done, `genera` {name: {plain [words, refs], marks [[words, refs]] 1 to 3}}, a ref
-`[src key, where in it]`, `none` {name: why no marks}), in our own words, for every genus in play IMR gives no cues
-for, in every circle (the surprise cards' families aside), written from the FAO species identification guide for the
-Western Central Pacific (vols 3 to 6, 1999 and 2001: each family's key to the genera, or its key to the species where it
-has none, and the species accounts) and FishBase species pages (where the guide splits genera by counts only, a visible
-feature FishBase gives for the genus's only game species, or for each of them); only features seen on a photo, never a
-count.
-
-**A genus IMR gives cues for** may take 1 to 3 marks on the same terms, faithful to its cues (rule C1; a source that
-differs goes to `points.json`, rule C5), never a presentation nor a reason in `none`.
+`[src key, where in it]`, `none` {name: why no marks}), in our own words, from the FAO species identification guide for
+the Western Central Pacific (vols 3 to 6: each family's key to the genera, or to the species where it has none, and the
+species accounts) and FishBase species pages (where the guide splits genera by counts only, a visible feature FishBase
+gives for the genus's only game species, or for each); only features seen on a photo, never a count. It covers every
+genus in play without IMR cues, in every circle (the surprise cards' families aside); a genus with IMR cues may
+also take 1 to 3 marks ([decision](../decisions/2026-11-19-genus-marks-beside-imr-cues.md)).
 
 `add_families` (`genus_marks`) builds them into `fish.json` genera (`plain`, `marks`, `msrc` each source once, `mby`
-{plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a genus with IMR cues given a
-presentation, no marks or a reason, a mark with a number, a line too long, a species named that is not one of its own,
-or a genus in play without IMR cues and without a presentation, or with neither marks nor a reason (`--marks`, a hidden
-flag, points the build at another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks of a genus
-without IMR cues its unit's tips (`qt`) under "ID marks (FAO species guide, FishBase)" (`tl`) and the presentation its
-card's plain sentence (`plain`, `plainLine`); a genus with IMR cues keeps them as its tips, as a family does. `learn.js`
-`genMarks` shows presentation and marks, each line with its sources' numbers, on the one sheet the genus opens (as
-`treeRoot`), under the IMR cues' box when it has one.
+{plain: [msrc indexes], marks: [[…] per mark]}) and stops on a line without a source, a mark with a number, a line too
+long, a species named that is not one of its own, a genus with IMR cues given a presentation or a reason, or a genus in
+play without IMR cues that lacks a presentation or has neither marks nor a reason (`--marks`: tests). `app.js`
+`treeGenera` makes a genus's marks its unit's tips (`qt`) under "ID marks (FAO species guide, FishBase)" (`tl`) only
+without IMR cues, the presentation its card's plain sentence (`plain`, `plainLine`); `learn.js` `genMarks` shows both
+on the one sheet the genus opens (as `treeRoot`), under the IMR cues' box when there is one.
+
+## Juveniles per species
+
+`tools/fish_juveniles.json`, each species' juvenile from external sources with their quotes, is built into `fish.json`
+species `jv` {c: off, finer, bold or like, line, src, look} by `tools/build_fish.py` `juveniles`, which checks it; the
+sheet shows `line` (`learn.js` `juvNote`). The class is a label for the analyses: nothing in the draw, the ease or the
+judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2026-11-19-fish-juveniles-sourced.md).

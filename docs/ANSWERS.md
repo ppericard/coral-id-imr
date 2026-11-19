@@ -1234,3 +1234,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **15:40, fish genus marks beside IMR cues.** On the rule keeping our sourced marks away from a genus with IMR cues:
   «Mouais bof». Decides (integrator's call): the genera IMR describes take our sourced marks under its cues, as the
   families. Applied: spec/fish-sheets.md "Genus presentation and ID marks", decisions/2026-11-19-genus-marks-beside-imr-cues.md (#1231).
+- **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
+  juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
+  with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
+  sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
+  peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
+  (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.

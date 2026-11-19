@@ -257,8 +257,15 @@
    "keep": "best"
   },
   "fish-s230-cand-437807599": {
-   "code": "p1d1smkj2",
-   "keep": "best"
+   "code": "p1d1sl1j2",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.19,
+    0.96,
+    0.8
+   ],
+   "note": "crop: the two pale fish cut by the top edge leave the frame (Q430)"
   },
   "fish-s230-cand-258270081": {
    "code": "p1g1sl14",
