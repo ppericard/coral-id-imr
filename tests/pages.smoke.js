@@ -4567,21 +4567,20 @@ async function basicsTeach(b, base) {
     await go('forms');
     const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
     if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    // The examples' genera in the order proto/basics.js FORMS7 lists them, by form name: shown in that order, never
+    // reordered by who took the photo (rule P1).
+    const F7 = {},
+      f7src = fs.readFileSync(path.join(ROOT, 'proto', 'basics.js'), 'utf8'),
+      f7 = f7src.slice(f7src.indexOf('const FORMS7 = ['), f7src.indexOf('];', f7src.indexOf('const FORMS7 = [')));
+    for (const m of f7.matchAll(/\[\s*'\w',\s*'([^']+)',\s*\[([\s\S]*?)\]\s*\]/g))
+      F7[m[1]] = [...m[2].matchAll(/\['([^']+)',\s*'[^']+'/g)].map(x => x[1]);
+    if (Object.keys(F7).length !== 7) fails.push(`${W} forms: ${Object.keys(F7).length} forms read from FORMS7, not 7`);
     for (let j = 0; j < 7; j++) {
       await p.click(`.bx-forms [data-f="${j}"]`);
       const ex = await p.evaluate(() =>
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
-          g: (f.querySelector('figcaption i') || {}).textContent || '',
-          // rule P1: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
-          r: (n => {
-            const fi = (f
-                .querySelector('img')
-                .getAttribute('src')
-                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
-              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
-            return q.imr ? 0 : q.own ? 1 : 2;
-          })((f.querySelector('figcaption i') || {}).textContent)
+          g: (f.querySelector('figcaption i') || {}).textContent || ''
         }))
       );
       const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
@@ -4590,9 +4589,10 @@ async function basicsTeach(b, base) {
       if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
         fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
-      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+      const want = (F7[name.trim()] || []).filter(g => ex.some(e => e.g === g));
+      if (ex.map(e => e.g).join() !== want.join())
         fails.push(
-          `${W} forms ${name}: examples not in rule P1's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+          `${W} forms ${name}: examples not in their listed order (rule P1): ${ex.map(e => e.g).join(', ')} for ${want.join(', ')}`
         );
     }
     await p.click('.bx-fex .bx-fx');
