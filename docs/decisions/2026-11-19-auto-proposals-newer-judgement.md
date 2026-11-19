@@ -1,6 +1,6 @@
 # What the auto-sort proposed reads the newer judgement; a photo it set aside has a route back
 
-Date: 2026-11-19. PR: #PR. Rules or docs touched: A1 (unchanged here: its new wording goes to Pierre); spec/fish-photos.md
+Date: 2026-11-19. PR: #1259. Rules or docs touched: A1 (unchanged here: its new wording goes to Pierre); spec/fish-photos.md
 "The fish auto-sort" (the route back; proposals and his own decisions) and its log codes; spec/admin.md `autosort`;
 ROADMAP "Fish photo judging, next"; changes in part docs/decisions/2026-11-19-fish-saving-crop.md (the 694 had no route).
 

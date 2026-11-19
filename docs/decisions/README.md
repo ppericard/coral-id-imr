@@ -61,6 +61,7 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 |---|---|---|
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
 | 2026-11-19 | [Every answer of Pierre's reaches its doc, and an append-only ledger of his answers](2026-11-19-answers-ledger.md) | #1188 |
+| 2026-11-19 | [What the auto-sort proposed reads the newer judgement; a photo it set aside has a route back](2026-11-19-auto-proposals-newer-judgement.md) | #1259 |
 | 2026-11-19 | [Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file](2026-11-19-autosort-followup.md) | #1183 |
 | 2026-11-19 | [CI speed, second step: the admin 1280 smoke in three groups balanced by the measured time of each part](2026-11-19-ci-admin-split.md) | #1243 |
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
@@ -98,7 +99,6 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [The privacy page: a short notice, the points the law asks for, no internal detail](2026-11-19-privacy-short.md) | #1095 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
-| 2026-11-19 | [The rules core: AGENTS.md cut to what every task holds, the index to docs/rules/, S1 and L6 merged](2026-11-19-rules-core.md) | #1217 |
 
 Older decisions are still in the notebook's "Decision log"
 ([docs/archive/learning-notebook.md](../archive/learning-notebook.md); LEARNING.md "Decision log" points there), the
