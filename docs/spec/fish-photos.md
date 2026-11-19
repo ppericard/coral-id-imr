@@ -236,8 +236,10 @@ is committed; the photos in play are downloaded (R2, the four sizes) when they e
   one judgement per photo; admin Photo review › Light proposals) and
   `kept{node id: 'cover:<his photo id>><the rule's photo id>'}` (a cover proposal he answered Keep mine, the pair of photo ids, `core.js` `treePid`; admin Photo review ›
   Cover proposals), both left out of `curation-play.json`;
-- `auto{day: {f: code}}`: the fish auto-sort's log (`a` proposed in, `r` set aside, `?` a Check, `-` undone, `@t` the
-  time of Pierre's answer);
+- `auto{day: {f: code}}`: the fish auto-sort's log (`a` proposed in, `r` set aside, `b` brought back: a photo it had set
+  aside, back in play on a newer sure judgement, below; `?` a Check, `-` undone, `@t` the time of Pierre's answer or
+  correction); what it logs is a proposal he let through, not his decision (Pierre, 2026-11-19 20:59: below, "Proposals
+  and his own decisions");
 - `genera`: his covers and featured photos ([fish.md › Covers](fish.md#covers)); `content`: the content editor's edits
   ([content.md](content.md)).
 
@@ -303,6 +305,25 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   judgment, which a new judging pass may replace. The log marks the decision undone (`-`): never applied again, counted
   in no agreement. Emptied maps stay as `{}` in the draft, so the Publish merge removes these entries only, never what
   another device published in the same map.
+- **The route back** (Pierre, 2026-11-19, Q438; `sortBack`): a photo the run set aside comes back into the draft when a
+  judgement made since is a sure add, typically a crop that saves it (Q430, `judging/FISH.md` "A crop that saves a
+  photo"). Only the run's own plain reject (`r`: not a Check, not undone, no `@t`), still set aside only, with no tags or
+  crop of his, judged on or after the reject's day (`suggest.json` `by` {species: {fish: {at}}}, which the import and
+  `tools/judging_fish.py codes` stamp; admin `passAt`). It is added like an add (code `b` and the fields it wrote)
+  while its species has room, else it waits as a candidate (code `b` alone). Undo sets it aside again (`-b`). His own
+  Reject of a photo the run had set aside (left waiting by a Not this taken back) marks its code `-r`, so it is never
+  taken for the run's (`fishReject`).
+- **Proposals and his own decisions** (Pierre, 2026-11-19 20:57 and 20:59): what the log marks as the auto-sort's is a
+  proposal he let through, and a newer judgement replaces it in the game, his own decisions keeping priority. The build
+  reads the curation that way (`tools/fish_game.py` `read_cur`, from `inputs`; the players' copy too, `tools/curplay.py`),
+  `curation.json` itself never written (rule A1): the fields a log code lists read the pass's values when its judgement
+  is a sure add (tags and phase as the auto-sort copies them, `copy_of`; a crop the pass no longer gives leaves), unless
+  he answered its re-judge proposal Keep mine (`kept`); and, while he never corrected it (no `@t`), on a sure judgement
+  made on or after its day, a photo it set aside is in play again (as the route back). A newer sure rejection of a photo
+  it put in stays a proposal: in play, its copy as it was. Tags read anew bring the judge's crop when the photo has
+  none (the crop goes with the code); his phase choice (No phase included) stops the source's juvenile flag; a photo he
+  moved with Not this is his, skipped whole; an Undo of `b` on such a photo leaves it where he put it. A value with no log is his, or cannot be told from his,
+  and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next").
 
 ## The Fish Candidates page
 
