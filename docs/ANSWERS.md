@@ -1189,13 +1189,14 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   ressemblent pas du tout à l'adulte. Tu peux faire une étude avec des sources externes pour voir ce qui connu comme
   "difficile" à identifier vs "facile"?". Applied: the juvenile difficulty study.
 - **14:42, Q429 (a contrast field).** A question back, not a decision: "Si ça peut être utile il faut envisager de
-  changer le format des données. Est-ce que ça pourrait être utile? Qu'est-ce que t'en penses?". Open.
+  changer le format des données. Est-ce que ça pourrait être utile? Qu'est-ce que t'en penses?". Open: no doc change
+  yet (the integrator's view went back to him: no judge field, a contrast measured by a tool, a ROADMAP row).
 - **14:42, the rules (#1217).** Q433 (a re-ask of Q428, withdrawn) «ok»; W20: "Je sais même plus à quoi elle sert cette
   règle" (it leaves the rules); U7's line: "Ok. Mais à nouveau on fait une règle dure pour un truc qui est juste du bon
   sens de design..." (the line goes to DESIGN.md as guidance, not into U7); the agent cap removed: «oui». Applied:
   #1217.
 - **14:42, one PR at a time.** "Pourquoi une PR à la fois? Il y avait combien d'agents qui tournaient?": no reason (an
-  over-reading of 10:49); work runs in parallel.
+  over-reading of 10:49); work runs in parallel. No doc change (the rules hold no such limit).
 - **14:44, the next gold set.** "C'est pas un double aveugle. C'est pas moi qui doit pas voir les réponses. Sinon tu
   me demandes un travail de robot et je dois garder en tête la grille en entier". Applied: the judges stay blind to his
   verdicts, he sees a judge's view (a model drawn at random per photo), on new photos.
