@@ -6227,7 +6227,7 @@ async function loadPart(b, base, fails) {
           felt.forEach(x => (x.style.display = ''));
           const plain = [],
             tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode()); )
+          for (let n; (n = tw.nextNode());)
             if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
               plain.push(n.textContent.trim().slice(0, 80));
           return {
