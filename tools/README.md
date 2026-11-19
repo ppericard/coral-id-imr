@@ -11,7 +11,7 @@ Conventions that hold across them:
   admin's Publish does.
 - A tool that asks iNaturalist or WoRMS goes through `inat.py` (rule C7: paced, a User-Agent, paced retries).
 - A heavy tool takes a machine slot (rule W24): `node tests/slot.js -- <command>` for one that does not do it itself.
-- `--check` means "change nothing, exit 1 if the repository disagrees". Those marked **CI** run on every pull request.
+- `--check` means "change nothing, exit 1 if the repository disagrees". Those marked **CI** run on every PR.
 - A tool that ran once to change content and can run again without harm is idempotent; its header says what it changed.
   Those named `apply_*` are of that kind.
 - Many tools cache network replies in `tools/.cache/` (not in git), so a second run can be offline.
@@ -32,7 +32,7 @@ Conventions that hold across them:
 | `photos.py` | The four photo sizes and where a photo lives; fills missing sizes; `--check` is **CI** |
 | `build_site.py` | The deploy's build of its staged copy: `curplay.py`, `stamp_versions.py`, `minify.js`, the checks |
 | `curplay.py` | Writes `curation-play.json`, the players' copy of the curation |
-| `stamp_versions.py` | Stamps version numbers and the build number at deploy (a pull request never edits them, rule W15) |
+| `stamp_versions.py` | Stamps version numbers and the build number at deploy (a PR never edits them, rule W15) |
 | `minify.js` | Minifies the scripts of a staged copy, with source maps |
 | `unminify.js` | Maps an error report's file, line and column back to the source |
 | `og/` | `make_og.js` renders `og.html` into `og.jpg`, the link preview image |
@@ -43,9 +43,9 @@ Conventions that hold across them:
 |---|---|
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre. The session hooks run it (`--short`, `--time`) |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
-| `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `sed -i`…) |
-| `agent_guard.py` | The agent-launch guard (a PreToolUse hook): refuses an Agent launch without `model` and `effort`; logs each launch |
-| `instr_log.py` | The instructions log (three session hooks): which instruction files reached which agent, and why |
+| `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
+| `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
+| `instr_log.py` | Session hooks log which instruction files reached which agent, and why |
 | `night.py` | The night report: what the agents did from 17:30 to 04:00 Manila (PRs merged with their agent time, trains, PRs left open, the night queue) |
 | `effort.py` | Measures the agent time of merged PRs, so an estimate cites comparable ones; `--check FILE.md` checks a study |
 | `asked.py` | Searches the answers ledger, the rules and the decision records before any question to Pierre |
