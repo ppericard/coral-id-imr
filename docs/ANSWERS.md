@@ -1261,6 +1261,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Donc il faut essayer de réfléchir à ça, à comprendre, mais en tout cas on ne peut pas juste dire de manière
   arbitraire, ben, ces fichiers-là, ils ne dépasseront jamais cette taille-là, et puis même si il y a réellement des
   choses à y mettre dedans, qui sont importantes à mettre dedans.» A doc's size limit is a warning mark, raised when
-  the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1254 (the marks in `tests/docs.test.js` and
+  the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
   `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
   docs/decisions/2026-11-19-doc-size-marks.md).

@@ -1,6 +1,6 @@
 # Doc size marks: a warning to check the doc, never a wall; ROADMAP keeps its open items, the decisions index is whole
 
-Date: 2026-11-19. PR: #1254. Rules or docs touched: `tests/docs.test.js` (the marks), `tools/brief.py`, `docs/ROADMAP.md`
+Date: 2026-11-19. PR: #1255. Rules or docs touched: `tests/docs.test.js` (the marks), `tools/brief.py`, `docs/ROADMAP.md`
 (its header and rows), `docs/decisions/README.md` (the whole index), `tools/decisions_index.py`, `docs/ANSWERS.md`.
 
 ## Context
