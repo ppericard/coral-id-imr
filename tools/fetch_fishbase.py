@@ -247,7 +247,7 @@ def run(args):
         R = ff.species_room(s, t, L, gone, sugf, game.get(sid, ()), fb["photos"], moved, args.cap)
         rows = [r for r in ordered(fb["photos"], s.get("present")) if record(s, fb["code"], r)["f"] not in known]
         take, left = [], R["room"]
-        for ph, n in R["rooms"].items():  # each phase's room first (Q36), with the photos FishBase labels so
+        for ph, n in R["rooms"].items():  # each phase's room first, with the photos FishBase labels so
             got = [r for r in rows if ff.PHASE_WORD.get(STAGE.get(r.get("st") or "")) == ph and r not in take][:int(min(n, left))]
             take += got
             left -= len(got)

@@ -1,9 +1,8 @@
 require('./slot.js').testGuard();
-// The per-player reserve (Pierre, 2026-11-18 ~12:05 Manila: "En fait la réserve elle doit être définie par joueur. Il
-// n'y a pas d'intérêt d'avoir une réserve globale"; it replaced #1057's fish-holdout.json): core.js reserveOf,
-// reserveSplit, heldOf, resHash, reserveId; model.js examSet and genusDiff on the held lists; the |h log token on the
-// exam's answers; the sheet's replay deciding alike (rules D8, D9). Every subject, one rule (rule S1).
-// docs/LEARNING.md "The reserve in the game".
+// The per-player reserve (docs/decisions/2026-11-18-per-player-reserve.md): core.js reserveOf, reserveSplit, heldOf,
+// resHash, reserveId; model.js examSet and genusDiff on the held lists; the |h log token on the exam's answers; the
+// sheet's replay deciding alike (rules D8, D9). Every subject, one rule (rule S1); which photos may be reserved by their
+// qualities, never by their route or source (rule P1). docs/LEARNING.md "The reserve in the game".
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -17,12 +16,12 @@ const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
   json = f => JSON.parse(read(f));
 
-test('fishObs: a photo’s observation, an iNaturalist one by its id alone', () => {
-  assert.strictEqual(C.fishObs({f: 'x', o: 'https://www.inaturalist.org/observations/123'}), '123');
-  assert.strictEqual(C.fishObs({f: 'x', o: '123'}), '123', 'the short form');
+test('treeObs: a photo’s observation, an iNaturalist one by its id alone', () => {
+  assert.strictEqual(C.treeObs({f: 'x', o: 'https://www.inaturalist.org/observations/123'}), '123');
+  assert.strictEqual(C.treeObs({f: 'x', o: '123'}), '123', 'the short form');
   const fb = 'https://www.fishbase.se/photos/PicturesSummary.php?ID=1&what=species&pic=A_u0.jpg';
-  assert.strictEqual(C.fishObs({f: 'x', o: fb}), fb, 'a FishBase page whole');
-  assert.strictEqual(C.fishObs({f: 'fish-s001-cand-9'}), 'fish-s001-cand-9', 'no observation: the file');
+  assert.strictEqual(C.treeObs({f: 'x', o: fb}), fb, 'a FishBase page whole');
+  assert.strictEqual(C.treeObs({f: 'fish-s001-cand-9'}), 'fish-s001-cand-9', 'no observation: the file');
 });
 
 test('resHash and reserveId: fixed values, the same on every device and in the sheet', () => {
@@ -116,12 +115,13 @@ test('reserveOf: up to 15 per unit with an exam, the floors kept (30 per unit, 8
   assert.strictEqual(C.reserveOf(three, 'p').size, 6);
 });
 
-test('reserveOf: never Pierre’s own, an IMR or reference photo, nor a card’s photo; a whole observation', () => {
-  // s1's first 60 observations: own, imr, a reference source's easy photo, a reference-level photo, then two plain ones
-  // in turn.
+test('reserveOf: never Pierre’s own, a reference-level photo, nor a card’s photo; a whole observation', () => {
+  // s1's first 60 observations in turn: Pierre's own, an IMR lecture photo, a reference source's photo judged average
+  // (not of reference level), a reference-level photo, then two plain ones.
   const tags = {};
-  for (let i = 0; i < 60; i++) tags[i] = [{own: true}, {imr: true}, {rep: 1, e: 4, jt: 'p1g0sl1x'}, {e: 5, jt: 'p1g0sl1x'}, {}, {}][i % 6];
+  for (let i = 0; i < 60; i++) tags[i] = [{own: true}, {imr: true}, {rep: 1, e: 3, jt: 'p1g0sl1x'}, {e: 5, jt: 'p1g0sl1x'}, {}, {}][i % 6];
   const X = world({s1: 100, s2: 12}, {s1: tags});
+  assert.ok(!C.refLevel(X.gen['g:A'].views.wide[2]) && C.refLevel(X.gen['g:A'].views.wide[3]), 'the fixture: 2 is not of reference level, 3 is');
   X.gen['f:A'].cover = 's1-4';
   X.gen['g:A'].featP = {s1: [X.gen['g:A'].views.wide[10]]};
   X.covers = {s1: X.gen['g:A'].views.wide[16]};
@@ -130,10 +130,21 @@ test('reserveOf: never Pierre’s own, an IMR or reference photo, nor a card’s
   const R = C.reserveOf(X, 'p');
   for (const k of R) {
     const i = +k.split(' ')[1].slice(3);
-    assert.ok(i >= 60 || [4, 5].includes(i % 6), k);
+    assert.ok(i >= 60 || ![0, 3].includes(i % 6), k);
     assert.ok(!['s1 s1o4', 's1 s1o10', 's1 s1o16', 's1 s1o70'].includes(k), k);
   }
   assert.strictEqual(count(R, 's1'), 15);
+  // Rule P1: a photo is never left out of the reserve for its route or source. Over 20 players, IMR lecture photos and
+  // a reference source's photos that are not of reference level are reserved like any other.
+  const kinds = new Set();
+  for (let j = 0; j < 20; j++)
+    for (const k of C.reserveOf(X, 'player ' + j)) {
+      const i = +k.split(' ')[1].slice(3);
+      if (i < 60) kinds.add(i % 6);
+    }
+  assert.ok(kinds.has(1), 'an IMR lecture photo can be reserved');
+  assert.ok(kinds.has(2), 'a reference source’s photo of no reference level can be reserved');
+  assert.ok(!kinds.has(0) && !kinds.has(3), 'never Pierre’s own nor a reference-level photo');
 });
 
 test('reserveSplit: the reserve out of every view, into held (marked ho, one copy), nothing else moved', () => {
@@ -181,11 +192,11 @@ test('reserveSplit: a coral genus’s views and game lists (applySlots sl), ever
     assert.strictEqual(C.heldOf(g, v).length, 15, v);
     assert.strictEqual(g.views[v].length, 35, v);
     assert.strictEqual(g.sl[v].game.length, 35, v);
-    assert.ok(!g.sl[v].idkey.some(p => R.has('Acropora ' + C.fishObs(p))), v + ' idkey');
+    assert.ok(!g.sl[v].idkey.some(p => R.has('Acropora ' + C.treeObs(p))), v + ' idkey');
   });
   assert.strictEqual(views.wide.length, 50, 'the lists given are not changed (the rated world shares them)');
   assert.strictEqual(sl.wide.game.length, 50);
-  // Codex review #1099: a photo Pierre keeps on the sheet only (curation use 'ref': in the view, not in the game list)
+  // A photo Pierre keeps on the sheet only (curation use 'ref': in the view, not in the game list)
   // never reaches the exam through the reserve, and never counts as a game photo.
   const v2 = {wide: []};
   for (let i = 0; i < 50; i++) v2.wide.push(col(i, 'wide'));
@@ -196,8 +207,8 @@ test('reserveSplit: a coral genus’s views and game lists (applySlots sl), ever
   C.reserveSplit(X2, R2);
   assert.strictEqual(C.heldOf(g2, 'wide').length, 15);
   assert.ok(!C.heldOf(g2).some(p => /-ref$/.test(p.f)), 'no sheet-only photo held for the exam');
-  assert.ok(!g2.views.wide.some(p => R2.has('Acropora ' + C.fishObs(p))), 'the reserved colonies leave the sheet too');
-  // Codex review #1099: a cover kept on the sheet only still shows its colony: none of that colony's photos is held.
+  assert.ok(!g2.views.wide.some(p => R2.has('Acropora ' + C.treeObs(p))), 'the reserved colonies leave the sheet too');
+  // A cover kept on the sheet only still shows its colony: none of that colony's photos is held.
   for (const k of R2) {
     const i = +k.split(' ')[1],
       v3 = {wide: v2.wide.slice()},
@@ -208,21 +219,21 @@ test('reserveSplit: a coral genus’s views and game lists (applySlots sl), ever
   }
 });
 
-// The real units: the fish (fishGen, app.js fishGenera), the sea slugs (the same tree engine) and the corals (data.json
+// The real units: the fish (treeGen, app.js treeGenera), the sea slugs (the same tree engine) and the corals (data.json
 // under applyCuration and applySlots), as the app builds them.
 let GENERA = null;
-const fishGenera = () => {
+const treeGenera = () => {
   if (GENERA) return GENERA;
   const ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number});
-  return (GENERA = vm.runInContext('(' + cut(read('app.js'), 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx));
+  return (GENERA = vm.runInContext('(' + cut(read('app.js'), 'function treeGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx));
 };
 const treeUnits = (id, files) => {
   const S = C.subjectOf(id),
     F = json(files.f),
     ph = files.ph ? json(files.ph) : {photos: {}},
-    gm = C.fishGameRead(json(files.gm)),
+    gm = C.treeGameRead(json(files.gm)),
     cur = C.treeCur(S, json('curation.json'));
-  return fishGenera()(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, cur), ph.sheet, C.unitRankOf(S)), F);
+  return treeGenera()(C.treeGen(F, C.treePhotos(ph.photos, gm.photos, cur), ph.sheet, C.unitRankOf(S)), F);
 };
 const coralUnits = () => {
   const d = json('data.json'),
@@ -233,7 +244,7 @@ const coralUnits = () => {
 };
 // [id, unit] of the units with an exam, a coral genus by its key (it has no id field)
 const examUnits = X => Object.entries(X.gen).filter(([, g]) => g && !g.wink && !g.noex);
-const keyOf = id => p => String(p.sp || id) + ' ' + C.fishObs(p);
+const keyOf = id => p => String(p.sp || id) + ' ' + C.treeObs(p);
 const obsIn = (id, g) =>
   new Set([...Object.values(g.views || {}).flat(), ...Object.values(g.sl || {}).flatMap(s => (s && s.game) || [])].map(keyOf(id)));
 
@@ -316,7 +327,7 @@ test('examSet: the player’s reserved photos never shown first (the hardest), t
   assert.ok(/^p/.test(engine('fish', L, {score: 0.9}).examSet('u').shown[0].f));
 });
 
-// Codex review #1057: exposure by observation (rule P4): a sibling photo of a reserved fish already shown waits.
+// Exposure by observation (rules L3, P4): a sibling photo of a reserved fish already shown waits.
 test('examSet: a reserved observation already met (any photo of it) waits behind those never shown', () => {
   const {L} = unit(),
     H = [
@@ -340,7 +351,7 @@ test('quiz.js: a reserved photo (the exam’s) logged |h before |kN, |t and |x; 
   const quiz = read('quiz.js'),
     model = read('model.js');
   assert.match(quiz, /set = ex \|\| photoSet\(/);
-  assert.ok(!/heldSet|HELD\b/.test(quiz + model), 'no silent probe (Pierre, 2026-11-18)');
+  assert.ok(!/heldSet|HELD\b/.test(quiz + model), 'no silent probe: the reserve is for the exam only');
   const mq = cut(quiz, '  const mq =\n', ';\n', {through: 1, file: 'quiz.js'}) + 'mq;',
     mode = o =>
       vm.runInContext(
@@ -416,18 +427,18 @@ test('the sheet’s own script never reads a reserve: the tag logged with the an
   assert.ok(!/reserveOf|reserveSplit/.test(own));
 });
 
-// Codex review #1057: learnsim's truth from hashes (--truth gen) seeds the reserved photos' difficulties too.
+// learnsim's truth from hashes (--truth gen) seeds the reserved photos' difficulties too.
 test('learnsim and the rated world: the reserved photos get their own simulated difficulty; one player id per run', () => {
   const src = read('tools/learnsim.js'),
     seed = src.slice(src.indexOf('const GEN_D = {};'), src.indexOf('PSTAT = ps;'));
   assert.match(seed, /\.\.\.heldAll\(g\)\]\.forEach\(p => \{/);
   assert.match(seed, /GEN_D\[p\.f\] = d;/);
-  // JSON, as the app's store reads it (Codex review #1099: a bare id was dropped and a random one made)
+  // JSON, as the app's store reads it (a bare id would be dropped and a random one made)
   assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\(aid\)\)/);
   assert.match(read('tools/ratedworld.js'), /C\.reserveSplit\(\{gen: G\}, R\)/);
 });
 
-// Codex review #1099: the rated world leaves Pierre's curated ★ covers and featured photos in practice, as the app does.
+// The rated world leaves Pierre's curated ★ covers and featured photos in practice, as the app does.
 test('the rated world: a simulated player reserves no photo of Pierre’s picks; the same id, the same reserve', () => {
   const RW = require('../tools/ratedworld.js'),
     U = RW.unitsOf('fish'),
@@ -446,8 +457,8 @@ test('the app splits every subject’s units for the player (no file, no subject
   const app = read('app.js'),
     sw = read('sw.js');
   assert.ok(!fs.existsSync(path.join(ROOT, 'fish-holdout.json')) && !fs.existsSync(path.join(ROOT, 'tools/holdout.py')));
-  assert.ok(!/holdout\.json\?|\bho: \(\) =>|fishHeld/.test(app + sw + read('core.js') + read('model.js')), 'no held-out file read');
-  assert.match(app, /FISH = reserveOn\(fishCurate\(fishGenera\(fishGen\(f, fishPhotos\(ph\.photos, gm\.photos, C\)/);
+  assert.ok(!/holdout\.json\?|\bho: \(\) =>|treeHeld/.test(app + sw + read('core.js') + read('model.js')), 'no held-out file read');
+  assert.match(app, /TREEU = reserveOn\(treeCurate\(treeGenera\(treeGen\(f, treePhotos\(ph\.photos, gm\.photos, C\)/);
   assert.match(app, /applySlots\(d, CUR, \{picks: PICKS, autoq: AUTOQ\}\);\n  reserveOn\(d\);/);
   assert.match(app, /const reserveOn = X => reserveSplit\(X, reserveOf\(X, \(RESID = resId\(\)\)\)\);/);
   assert.match(read('sync.js'), /if \(typeof resSeen === 'function'\) resSeen\(\);/);

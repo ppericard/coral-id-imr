@@ -4,11 +4,14 @@
   python3 tools/brief.py           full brief (the integrator runs it at each stop)
   python3 tools/brief.py --short   5 lines at most (the SessionStart hook in .claude/settings.json)
   python3 tools/brief.py --time    one line: Manila time and the Rule 0 window (the UserPromptSubmit hook; offline)
+  --time --night-due               and, once a Manila day between 04:00 and 17:30, the line saying the night report is due
   --at HH:MM                       pretend it is that Manila time (tests)
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
-the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass. The hooks run main's reviewed copy
+the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
+infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
+of a limit; in the short brief only when one warns or the check failed), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass. The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
@@ -46,23 +49,62 @@ def left():
 
 
 # --- Rule 0 window -------------------------------------------------------------------------------------------------------
-# AGENTS.md Rule 0 (Pierre, 2026-11-15): after 17:30 Manila the integrator asks Pierre nothing; everything else goes on.
+# AGENTS.md Rule 0: after 17:30 Manila the integrator asks Pierre nothing until his first message after 04:00; everything
+# else goes on. The time alone cannot tell whether he has written yet: from 04:00 the line says so, and the integrator
+# checks that his message came after 04:00.
 
 
 def window(hm):
     m = hm[0] * 60 + hm[1]
-    if 5 * 60 <= m < 17 * 60 + 30:
-        return 'day', 'normal working day (Rule 0): Pierre may be asked until 17:30'
-    return 'quiet', 'after 17:30 (Rule 0): ask Pierre nothing; questions wait in docs/STATUS.md; all else goes on'
+    if 4 * 60 <= m < 17 * 60 + 30:
+        return 'day', 'working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30'
+    return 'quiet', ('after 17:30 (Rule 0): ask Pierre nothing until his first message after 04:00; questions wait in '
+                     'docs/STATUS.md; all else goes on')
 
 
-def time_line(at):
+def manila_now(at):
     now = datetime.now(MANILA)
     if at:
         h, m = (int(x) for x in at.split(':'))
         now = now.replace(hour=h, minute=m)
+    return now
+
+
+def time_line(at):
+    now = manila_now(at)
     name, what = window((now.hour, now.minute))
     return 'Manila %s · %s: %s' % (now.strftime('%a %d %b %H:%M'), name, what)
+
+
+# --- The night report, once a day (Pierre, 2026-11-18; the night ends with his first message after 04:00, Rule 0) ------
+# At the first prompt of a Manila day in Rule 0's day window (04:00 to 17:30), the UserPromptSubmit hook (--time
+# --night-due) adds one line: the integrator gives Pierre tools/night.py's report before anything else. In the evening
+# it says nothing (a fresh container then is no morning). Offline: a marker file in the checkout holds the day it was
+# said, so it is once a day per checkout: a second session's checkout says it again in the same day.
+
+NIGHT_MARK = os.path.join('tools', '.cache', 'night-report-day')
+NIGHT_DAY = (4 * 60, 17 * 60 + 30)  # Manila minutes of the day, end excluded: Rule 0's day window
+
+
+def night_due(at):
+    """The reminder line the first time it is called in the day window of a Manila day, else None. Never raises."""
+    now = manila_now(at)
+    if not NIGHT_DAY[0] <= now.hour * 60 + now.minute < NIGHT_DAY[1]:
+        return None
+    day, path = now.date().isoformat(), os.environ.get('BRIEF_NIGHT_MARK') or os.path.join(ROOT, NIGHT_MARK)
+    try:
+        if open(path, encoding='utf8').read().strip() == day:
+            return None
+    except OSError:
+        pass
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf8') as f:
+            f.write(day)
+    except OSError:
+        return None  # cannot remember it was said: better silent than said at every prompt
+    return ('Night report due (first message of the day): integrator, run python3 tools/night.py and give Pierre its '
+            'result first, in French, in a few lines.')
 
 
 # --- GitHub (gh api, REST) -----------------------------------------------------------------------------------------------
@@ -289,6 +331,61 @@ def stack_line(c, why):
     return s + ' (python3 tools/stack_check.py --latest)'
 
 
+# --- Infrastructure (tools/health.py: the hourly Health run, .github/workflows/health.yml) --------------------------------
+# What to watch before the platform outgrows its free tiers: Pages' 1 GB, R2's 10 GB (by hand: tools/infra.json), and, when
+# the Health run was given the admin token, the sheet's cells (Google's 10 million) and its slowest operation. The run puts
+# them in one `infra` annotation of its job; the brief reads it with three REST calls and never computes them itself. A
+# warning past INFRA_WARN of a limit (the same 70 % as tools/health.py and admin.js; tests/infra.test.js checks the three).
+
+INFRA_WARN = 0.70
+
+
+def infra_read():
+    """(the `infra` snapshot, when the run started) of the latest completed Health run."""
+    runs = gh('repos/%s/actions/workflows/health.yml/runs?per_page=1&status=completed' % REPO).get('workflow_runs') or []
+    if not runs:
+        raise Soft('no Health run yet')
+    jobs = gh('repos/%s/actions/runs/%d/jobs?per_page=1' % (REPO, runs[0]['id'])).get('jobs') or []
+    if not jobs:
+        raise Soft('the Health run has no job')
+    for a in gh('repos/%s/check-runs/%d/annotations' % (REPO, jobs[0]['id'])) or []:
+        if a.get('title') == 'infra':
+            return json.loads(a.get('message') or 'null'), runs[0]['created_at']
+    raise Soft('the Health run left no infra annotation')
+
+
+def infra_fmt(unit, n):
+    if unit == 'bytes':
+        return '%.2f GB' % (n / 1e9) if n >= 1e8 else '%.0f MB' % (n / 1e6)
+    if unit == 'cells':
+        return '%.2f M' % (n / 1e6) if n >= 1e5 else '%d' % n
+    return '%.1f s' % (n / 1000)  # ms
+
+
+def infra_line(snap, ago=None):
+    """(the one compact line, whether it asks for a look: a number past INFRA_WARN of its limit, or a failed check)."""
+    parts, alert = [], False
+    for i in (snap or {}).get('items') or []:
+        used, limit = i.get('used'), i.get('limit')
+        if not isinstance(used, (int, float)) or not limit:
+            if i.get('k') == 'r2':
+                parts.append('%s to measure by hand (tools/infra.json)' % i.get('label', '?'))
+            else:
+                parts.append('%s not read' % i.get('label', '?'))
+            continue
+        share = used / limit
+        warn = share > INFRA_WARN
+        alert = alert or warn
+        note = ' (%s)' % i['note'] if i.get('note') and i.get('k') in ('r2', 'slow') else ''
+        parts.append('%s %s/%s %.0f%%%s%s' % (i.get('label', '?'), infra_fmt(i['unit'], used), infra_fmt(i['unit'], limit), share * 100, ' WARN' if warn else '', note))
+    if not (snap or {}).get('ok', True):
+        alert = True
+        parts.insert(0, 'Health check FAILED (the last run, and its issue, on GitHub)')
+    if not any(i.get('k') == 'cells' for i in (snap or {}).get('items') or []):
+        parts.append('sheet cells and timings: admin To do > Alerts')
+    return 'Infra%s: %s' % (' (Health run %s ago)' % ago if ago else '', ' · '.join(parts)), alert
+
+
 # --- docs/STATUS.md ------------------------------------------------------------------------------------------------------
 
 
@@ -342,6 +439,7 @@ def brief(short, at):
     f_prs = pool.submit(prs, pool) if have_gh else None
     f_live = pool.submit(live_version, url) if url else None
     f_stack = pool.submit(stack_get)
+    f_infra = pool.submit(infra_read) if have_gh else None
     v_main, v_where = main_version()
     q_open, q_last, checked = questions()
 
@@ -393,12 +491,16 @@ def brief(short, at):
     # Stack: its own line in the full brief; in the short one (5 lines) after the sheet script, only when something is due
     got, err = result(f_stack)
     st = stack_line(*(got if got else (None, err)))
+    # Infrastructure: its own line in the full brief; in the short one only when a number is past 70 % of its limit or the
+    # Health check failed (appended to the sheet line, as the stack is), never when all is well or unread.
+    inf, inf_err = result(f_infra) if f_infra else (None, 'gh not found')
+    il, ialert = (infra_line(inf[0], age(inf[1])) if inf and inf[0] else ('Infra: not read (%s)' % inf_err, False))
     if not short:
-        lines += [sheet] + ([st] if st else [])
+        lines += [sheet] + ([st] if st else []) + [il]
     elif st and got and got[0] and (got[0].get('outdated') or got[1]):
-        lines.append(sheet + ' · ' + st)
+        lines.append(sheet + ' · ' + st + (' · ' + il if ialert else ''))
     else:
-        lines.append(sheet)
+        lines.append(sheet + (' · ' + il if ialert else ''))
 
     # Questions
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
@@ -420,12 +522,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--short', action='store_true', help='5 lines at most')
     ap.add_argument('--time', action='store_true', help='one line: Manila time and the Rule 0 window (offline)')
+    ap.add_argument('--night-due', action='store_true', help='with --time: once a Manila day between 04:00 and 17:30, the night report line')
     ap.add_argument('--at', metavar='HH:MM', help='pretend it is this Manila time (tests)')
     a = ap.parse_args()
     if a.at and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', a.at):
         ap.error('--at takes HH:MM')
     if a.time:
         print(time_line(a.at))
+        due = night_due(a.at) if a.night_due else None
+        if due:
+            print(due)
         return
     print('\n'.join(brief(a.short, a.at)))
     sys.stdout.flush()

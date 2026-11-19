@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The one iNaturalist client of the tools (tools/inat.py; rule C7: about one request a second, batched, a User-Agent,
-// paced retries) and the batched requests that replaced many small ones (#784, Pierre's ROADMAP row of 2026-11-04): each
+// paced retries) and the batched requests that stand for many small ones: each
 // batched answer is the same as the one-taxon requests it replaces, in fewer requests. Everything offline: a stubbed opener, or the made-up iNaturalist of tests/inatstub.py
 // (tests/inat_check.py runs each case).
 const test = require('node:test'),
@@ -72,6 +72,13 @@ test('build_fish.py presence_prefetch: the presence of every species as each spe
   assert.deepStrictEqual(R.batched.offline, R.alone.res);
   assert.deepStrictEqual(R.alone.offline, R.alone.res);
   assert.ok(R.batched.n < R.alone.n / 3, `${R.batched.n} requests batched, ${R.alone.n} alone`);
+});
+
+test('inatstub: each login has its own user id, numbered the same way on every run (no string hash)', () => {
+  const R = run('stubusers');
+  assert.ok(R.one_each);
+  assert.strictEqual(R.ids, R.logins);
+  assert.deepStrictEqual(R.first, [1, 2, 3]);
 });
 
 test('fish_commonness.py fetch: the observers of every entry counted together as each alone gives them', () => {

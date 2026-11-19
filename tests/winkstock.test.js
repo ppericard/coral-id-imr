@@ -1,10 +1,10 @@
 require('./slot.js').testGuard();
-// Surprise-only species at 5 photos in the game data (Pierre, 2026-11-15, Q372; 2026-11-08: "4-5 very good reference
-// photos"): the whale shark and the thresher sharks, met only on the surprise cards, keep their 5 best photos in
-// fish-game.json (tools/fish_game.py wink_trim), Pierre's covers, featured photos and own adds and the surprise card's
-// photos always among them; the candidate tools stop at 5 for them (tools/fetch_fish.py WINK_CAP: species_room for the
-// refill and FishBase, --topup skips them). The admin's side is tests/winkadmin.test.js (#914). Offline: fixtures, and
-// the repository's own files for the real data.
+// Surprise-only species at 5 photos in the game data (ROADMAP "Photos per species"): the whale shark and the thresher
+// sharks, met only on the surprise cards, keep their 5 best photos in fish-game.json (tools/fish_game.py wink_trim),
+// the admin's covers, featured photos and own adds and the surprise card's photos always among them; the candidate
+// tools stop at 5 for them (tools/fetch_fish.py WINK_CAP: species_room for the refill and FishBase, --topup skips
+// them). The admin's side is tests/winkadmin.test.js. Offline: fixtures, and the repository's own files for the real
+// data.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -192,26 +192,26 @@ print(json.dumps([[ff.species_room(s, x, L(n), g, cap=c)[k] for k in ('cap', 'ro
 test('the repository: each surprise-only species keeps at most 5 photos in play, its card photos and his cover among them', () => {
   const fish = read('fish.json'),
     cur = read('curation.json'),
-    game = C.fishGameRead(read('fish-game.json')).photos,
+    game = C.treeGameRead(read('fish-game.json')).photos,
     first = read('fish-photos.json').photos,
     G = (cur.fish || {}).genera || {};
   const winks = fish.teach.filter(t => t.wink);
   assert.ok(winks.length >= 2, 'the whale shark and the thresher sharks');
   for (const t of winks) {
     const L = game[t.id] || [],
-      have = new Set(L.map(p => C.fishPid(p.f)));
-    const card = (t.wink.photos || []).map(C.fishPid),
+      have = new Set(L.map(p => C.treePid(p.f)));
+    const card = (t.wink.photos || []).map(C.treePid),
       fam = fish.families.find(f => f.wink && (f.species || []).some(s => t.species.includes(s))),
       cover = fam && G[fam.id] && G[fam.id].cover;
-    const kept = new Set([...card, ...(cover ? [C.fishPid(cover)] : [])]);
+    const kept = new Set([...card, ...(cover ? [C.treePid(cover)] : [])]);
     assert.ok(L.length >= 1, `${t.id}: photos in play`);
     assert.ok(L.length <= Math.max(FISHT.wink, kept.size), `${t.id}: ${L.length} photos in play`);
     // The surprise card (quiz.js winkPhoto) draws from its chosen photos still in play, else the cover: every one is.
     card.forEach(id => assert.ok(have.has(id), `${t.id}: the card's photo ${id} is in play`));
-    if (cover) assert.ok(have.has(C.fishPid(cover)), `${t.id}: Pierre's cover is in play`);
+    if (cover) assert.ok(have.has(C.treePid(cover)), `${t.id}: Pierre's cover is in play`);
     assert.ok(new Set(L.map(p => p.o)).size >= Math.min(FISHT.wink, L.length), `${t.id}: one photo per observation`);
     // fish-photos.json's first photos are fish-game.json's.
-    (first[t.id] || []).forEach(p => assert.ok(have.has(C.fishPid(p.f)), `${t.id}: first photo ${p.f} in play`));
+    (first[t.id] || []).forEach(p => assert.ok(have.has(C.treePid(p.f)), `${t.id}: first photo ${p.f} in play`));
   }
 });
 
@@ -222,7 +222,7 @@ prev = G.load(G.ROOT, G.OUT_FILE, {'photos': {}})
 todo, keep, _ = G.plan(fish, cur, cand, sug, prev, refs, codes, crops, 0, rkeep, G.boxes_in(G.ROOT))
 W = G.wink_species(fish)
 print(json.dumps({'keep': sorted(f for f, r in keep.items() if r['sp'] in W), 'todo': sorted(r['f'] for r, _, _ in todo if r['sp'] in W)}))`);
-  const game = C.fishGameRead(read('fish-game.json')).photos,
+  const game = C.treeGameRead(read('fish-game.json')).photos,
     W = new Set(
       read('fish.json')
         .teach.filter(t => t.wink)

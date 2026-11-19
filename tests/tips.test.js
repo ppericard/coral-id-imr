@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// tips.js: the "Did you know?" tips' state, targeting and caps (the owner, 2026-11-04; docs/ARCHITECTURE.md "Did you
-// know? tips"). The card and the break at Next are checked in Chromium by tests/pages.smoke.js.
+// tips.js: the "Did you know?" tips' state, targeting and caps (docs/ARCHITECTURE.md "Did you know? tips"). The card
+// and the break at Next are checked in Chromium by tests/pages.smoke.js.
 const test = require('node:test'),
   assert = require('node:assert');
 const {TIPR, TIPS, tipsInit, tipNote, tipUse, tipDue, tipShown} = require('../tips.js');
@@ -108,9 +108,9 @@ test('registry: every tip is complete', () => {
   }
 });
 
-// The card speaks the subject on screen (fish UX study, 2026-11-04: the zoom tip told fish players to look at the
-// corallites). Every subject gets a text; a fish player's never names a coral part. The wording is the subject's
-// (core.js SUBJECTS zoom): tips.js never names a subject (rule S1, Codex review #466).
+// The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a
+// text; a fish player's never names a coral part. The wording is the subject's (core.js SUBJECTS zoom): tips.js never
+// names a subject (rule S1).
 test('registry: the card text follows the subject on screen', () => {
   const {SUBJECTS, subjectOf} = require('../core.js');
   for (const t of TIPS)

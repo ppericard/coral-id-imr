@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Pages opened in a visit (core.js PAGES, sheet v30 'pages'): the tally the app keeps and the summary it sends.
+// Pages opened in a visit (core.js PAGES, the sheet's 'pages'): the tally the app keeps and the summary it sends.
 // node --test tests/
 const test = require('node:test'),
   assert = require('node:assert');
@@ -25,8 +25,7 @@ test('page names: the address without its things, genus sheets, look-alikes, hom
   assert.strictEqual(N('x'.repeat(60)), 'other');
 });
 
-// A fish page is told apart from a coral one (fish UX study, 2026-11-04: the fish quiz was logged as 'quiz'): drawn with
-// Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
+// A fish page is told apart from a coral one: drawn with Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
 test('page names carry the subject on screen: fish.<page>, the corals plain', () => {
   const N = C.pageName,
     F = C.subjectOf('fish').pv;
@@ -138,7 +137,7 @@ test('pagesClean (the sheet side): known shapes only, numbers clamped, no free t
 });
 
 // The summary the app sends (sync.js pagesSend): the screen, rounded, inside it once the sheet keeps it (VIEWPORT_SHEET,
-// rule D4); before, the summary as it always was. No other field is added.
+// rule D4); before, the summary without it. No other field is added.
 test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summary without it before', () => {
   const fs = require('fs'),
     path = require('path'),
@@ -174,8 +173,8 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
   assert.deepStrictEqual(plain(run(N)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N + 3)), [['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
   assert.deepStrictEqual(plain(run(N - 1)), [['pages', base]], 'an older script: the summary as before');
-  // No Pages-tab gate any more (the floor of #1076): a summary is always sent, without the screen below VIEWPORT_SHEET,
-  // also before any reply (no version known yet).
+  // No gate on the Pages tab: a summary is always sent, without the screen below VIEWPORT_SHEET, also before any reply
+  // (no version known yet).
   assert.deepStrictEqual(plain(run(1)), [['pages', base]], 'an old script: the summary, no screen');
   assert.deepStrictEqual(plain(run(undefined)), [['pages', base]], 'no version yet: the summary, no screen');
   // What the sheet keeps of it is what was sent (pagesClean takes the app's rounded values as they are).
@@ -184,7 +183,7 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
   assert.ok(!/secret UA/.test(JSON.stringify(sent)), 'no user agent in the summary');
 });
 
-// The screen of a summary (core.js VIEWPORT, viewportOf; Pierre, 2026-11-18): coarse, so it adds no fingerprint.
+// The screen of a summary (core.js VIEWPORT, viewportOf): coarse, so it adds no fingerprint.
 test('viewportOf: the CSS viewport to 10 px, the pixel ratio to one decimal, the orientation, the band of the exact short side', () => {
   const V = C.viewportOf;
   assert.deepStrictEqual(V(360, 800, 3), {w: 360, h: 800, d: 3, o: 'p', b: 0});
@@ -296,4 +295,172 @@ test('a queued summary is sent only under the player it was queued for (Codex re
   );
   assert.strictEqual(C.pagesOwner({name: 'Ana', pin: '1234'}, 'x'), 'n:ana');
   assert.strictEqual(C.pagesOwner(null, 'dev0000001'), 'a:dev0000001');
+});
+
+// The feedback sheet's tally: four numbers a visit in the summary the app already sends: answers whose feedback was
+// shown, those where More was opened, the seconds it stayed on screen (each answer's capped) and the taps on a link
+// inside it. Counts only; no new event, no gate (an older sheet script drops the field, as it drops any field it does
+// not know).
+test('the feedback sheet tally: four numbers a visit, counted once, sent with the summary, started again', () => {
+  const S = C.pagesNew();
+  assert.deepStrictEqual(C.PAGES.FB, ['shown', 'more', 'sec', 'link']);
+  C.pagesOpen(S, 'quiz', 0);
+  // a summary taken, the page in view going on counting (the app sends one when it is hidden or left, then goes on)
+  const take = t => {
+    const x = C.pagesTake(S, t);
+    C.pagesResume(S, t);
+    return x;
+  };
+  assert.strictEqual(take(1000).fb, undefined, 'no feedback seen: the summary has no fb');
+  ['shown', 'shown', 'shown', 'more', 'link'].forEach(k => C.pagesFb(S, k));
+  C.pagesFb(S, 'sec', 2.4);
+  C.pagesFb(S, 'sec', 5);
+  const sum = take(2000);
+  assert.deepStrictEqual(plain(sum.fb), [3, 1, 7, 1]);
+  // the next summary starts again from nothing
+  assert.strictEqual(take(3000).fb, undefined);
+  C.pagesFb(S, 'shown');
+  assert.deepStrictEqual(plain(take(4000).fb), [1, 0, 0, 0]);
+  // each answer's seconds are capped; a zero, a negative, a non-number and an unknown kind count nothing
+  C.pagesFb(S, 'sec', 9999);
+  C.pagesFb(S, 'sec', 0);
+  C.pagesFb(S, 'sec', -4);
+  C.pagesFb(S, 'sec', 'x');
+  C.pagesFb(S, 'nothing');
+  assert.deepStrictEqual(plain(take(5000).fb), [0, 0, C.PAGES.FBSEC, 0]);
+  // with no page open there is no summary to carry the numbers: they wait for the next one, none lost
+  const T = C.pagesNew();
+  C.pagesFb(T, 'shown');
+  assert.strictEqual(C.pagesTake(T, 1000), null);
+  C.pagesOpen(T, 'quiz', 2000);
+  assert.deepStrictEqual(plain(C.pagesTake(T, 3000).fb), [1, 0, 0, 0]);
+});
+
+test('pagesClean keeps the feedback tally only as four clamped numbers, nothing else', () => {
+  const clean = fb => C.pagesClean({r: {quiz: [1, 1]}, fb}).fb;
+  assert.deepStrictEqual(plain(clean([12, 3, 90, 2])), [12, 3, 90, 2]);
+  assert.deepStrictEqual(plain(clean([12.6, 3.2, 90.5, '2'])), [13, 3, 91, 2]);
+  assert.deepStrictEqual(plain(clean([1e9, -5, 1e9, 'x'])), [C.PAGES.FBMAX, 0, C.PAGES.MAXS, 0]);
+  // not four numbers, all zero, free text, an object: nothing
+  [[1, 2, 3], [1, 2, 3, 4, 5], [0, 0, 0, 0], 'x', {shown: 1}, null, undefined, 7].forEach(x =>
+    assert.strictEqual(clean(x), undefined, JSON.stringify(x))
+  );
+  // the summary the app takes is what the sheet keeps
+  const S = C.pagesNew();
+  C.pagesOpen(S, 'quiz', 0);
+  C.pagesFb(S, 'shown');
+  C.pagesFb(S, 'more');
+  const sum = C.pagesTake(S, 1000);
+  assert.deepStrictEqual(plain(C.pagesClean(sum).fb), plain(sum.fb));
+  assert.ok(JSON.stringify(sum).length < 3000, 'small');
+});
+
+// The quiz counts it: the sheet drawn, More opened once an answer, the seconds when it leaves, a link tapped (quiz.js fbShown,
+// fbMoreBind, fbEnd; sync.js fbTally; the page smoke tests/pages.smoke.js runs it in the app).
+test('quiz.js counts the sheet shown, More once an answer, its seconds capped, and leaves nothing else', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8');
+  const counts = [],
+    el = {hidden: true, attrs: {}, text: 'More'},
+    btn = {
+      setAttribute: (k, v) => (el.attrs[k] = v),
+      set textContent(v) {
+        el.text = v;
+      },
+      get textContent() {
+        return el.text;
+      }
+    },
+    panel = {
+      get hidden() {
+        return el.hidden;
+      },
+      set hidden(v) {
+        el.hidden = v;
+      },
+      querySelector: () => (el.again ? {} : null)
+    },
+    listeners = [],
+    visible = [];
+  let now = 1e6,
+    told = 0;
+  const ctx = {
+    PAGES: C.PAGES,
+    Date: {now: () => now},
+    fbTally: (k, n) => counts.push([k, n]),
+    isStacked: () => false,
+    fitStage: () => {},
+    againTold: () => told++,
+    document: {
+      visibilityState: 'visible',
+      addEventListener: (t, f) => t === 'visibilitychange' && visible.push(f),
+      getElementById: id => ({fbmbtn: btn, fbmore: panel, after: {addEventListener: (t, f) => listeners.push(f)}})[id]
+    }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(quiz, 'let FBS = null;', '// More / Less on the sheet', {file: 'quiz.js'}) +
+      block(quiz, 'function fbMoreBind() {', '\n}\n', {through: 1, file: 'quiz.js'}) +
+      '\nthis.M = {fbShown, fbEnd, fbMoreBind};',
+    ctx
+  );
+  const {fbShown, fbEnd, fbMoreBind} = ctx.M;
+  // an answer: shown, More opened twice (counted once, the duel line told once), 10.4 s, left
+  el.again = true;
+  fbShown();
+  fbMoreBind();
+  btn.onclick();
+  assert.deepStrictEqual([el.hidden, el.attrs['aria-expanded'], el.text], [false, 'true', 'Less']);
+  btn.onclick();
+  assert.deepStrictEqual([el.hidden, el.attrs['aria-expanded'], el.text], [true, 'false', 'More']);
+  btn.onclick();
+  now += 10400;
+  fbEnd();
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['more', undefined],
+    ['sec', 10]
+  ]);
+  assert.strictEqual(told, 1, 'the duel line is told once, when More is first opened');
+  // a link of the app tapped inside the sheet; an outside link or a non-link counts nothing
+  listeners[0]({target: {closest: s => (s === 'a[href^="#"]' ? {} : null)}});
+  listeners[0]({target: {closest: () => null}});
+  assert.strictEqual(counts.filter(c => c[0] === 'link').length, 1);
+  // a sheet that never leaves counts at most FBSEC; a second answer ends the first (its seconds counted once)
+  counts.length = 0;
+  fbShown();
+  now += 500 * 1000;
+  fbShown();
+  now += 3000;
+  fbEnd(false);
+  now += 3000;
+  fbEnd();
+  fbEnd(); // nothing on screen: nothing counted
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['sec', C.PAGES.FBSEC],
+    ['shown', undefined],
+    ['sec', 3],
+    ['sec', 3]
+  ]);
+  // The app hidden stops the clock: 2 s read, 5 minutes in the background, 1 s more: 3 s, not 120
+  counts.length = 0;
+  fbShown();
+  now += 2000;
+  ctx.document.visibilityState = 'hidden';
+  visible[0](); // the app is hidden: the seconds so far are counted, the clock stops
+  now += 300 * 1000;
+  fbEnd(false); // a summary taken meanwhile (pagesSend) adds nothing
+  ctx.document.visibilityState = 'visible';
+  visible[0](); // back: the clock starts again
+  now += 1000;
+  fbEnd();
+  assert.deepStrictEqual(counts, [
+    ['shown', undefined],
+    ['sec', 2],
+    ['sec', 1]
+  ]);
 });

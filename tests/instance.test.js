@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The instance's layer as its own files (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
-// tools/instance.py): tools/instance.json names the instance and its layer files; the build lays them on the sources,
+// The instance's layer as its own files (docs/reviews/2026-11-14-sheet-overlay-design.md; tools/instance.py): tools/instance.json names the instance and its layer files; the build lays them on the sources,
 // and fish.json and data.json are exactly what the two layers give, byte for byte. Needs python3, like the other checks.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -98,7 +97,7 @@ test('fish.json byte for byte: the layer laid again offline (cues, look, phase t
   r = regroup(circ);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /circles changed in the instance's layer.*\n.*t28/);
-  // A node fish.json leaves out (every species out) moved below circle 3: the full build might keep it (Codex review #984).
+  // A node fish.json leaves out (every species out) moved below circle 3: the full build might keep it.
   assert.ok(!F.teach.some(t => t.id === 't75') && FL.nodes.t75.circle === 3, 't75 Eagle rays: out of fish.json, circle 3');
   const out = clone(FL);
   out.nodes.t75.circle = 1;
@@ -126,9 +125,10 @@ test('fish: a base that still carries a field of the layer, or a layer node the 
   assert.match(regroup(sub).out, /layer node t01a circle: not a field of the layer/);
 });
 
-test('coral: the layer holds imrg and each genus’s ig, imr and mn; data.json is the sources plus the layer, byte for byte', () => {
+test('coral: the layer holds imrg, each genus’s ig, imr and mn, and the lecture’s pairs; data.json is the sources plus the layer, byte for byte', () => {
   assert.deepStrictEqual(Object.keys(CL.gen), Object.keys(RAW.gen));
   Object.values(CL.gen).forEach(x => assert.deepStrictEqual(Object.keys(x), ['ig', 'imr', 'mn']));
+  assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs']);
   assert.strictEqual(CL.imrg.length, 11);
   const out = JSON.parse(
     py(`from instance import coral_strip, coral_compose, load_layer
@@ -147,7 +147,7 @@ print(json.dumps([
   ['mn' in gone['gen']['Acropora'], 'imrg' in gone, 'mn' in coral_compose(d, {})['gen']['Pocillopora']],
 ]))`)
   );
-  // A field the layer no longer gives (or no layer at all) leaves data.json too (Codex review #984).
+  // A field the layer stops giving (or no layer at all) leaves data.json too.
   assert.deepStrictEqual(
     out,
     [false, true, false, true, [false, false, false]],
@@ -156,6 +156,70 @@ print(json.dumps([
   const r = run(['tools/datajson.py', '--check']);
   assert.strictEqual(r.status, 0, r.out);
   assert.match(r.out, /data\.json layout OK, as its layers give it/);
+});
+
+// The look-alike pairs of coral data D as the game reads them (model.js isLook: either genus's look lists the other), from
+// gen and x.gen: {"A|B": {A: [lists B, A's lsrc line for B], B: [...]}}.
+const LECTURE = /^(IMR Lecture 6:|Same IMR lecture group:)/;
+const pairsOf = D => {
+  const G = {...D.x.gen, ...D.gen},
+    out = {};
+  Object.entries(G).forEach(([a, r]) =>
+    (r.look || []).forEach(b => {
+      const [x, y] = [a, b].sort();
+      out[`${x}|${y}`] = Object.fromEntries(
+        [x, y].map(g => [g, [((G[g] || {}).look || []).includes(g === x ? y : x), ((G[g] || {}).lsrc || {})[g === x ? y : x]]])
+      );
+    })
+  );
+  return out;
+};
+const looks = D => Object.fromEntries([...Object.entries(D.x.gen), ...Object.entries(D.gen)].map(([g, r]) => [g, [r.look, r.lsrc]]));
+
+test('coral: the IMR lecture’s pairs are the layer’s, the Coral Finder’s the sources’; the pairs in play are the same, with the same sources', () => {
+  const [bare, back, edition] = JSON.parse(
+    py(`from instance import coral_strip, coral_compose, load_layer
+from datajson import load
+d, lay = load(), load_layer('coral')
+bare = coral_strip(d)
+print(json.dumps([bare, coral_compose(bare, lay), coral_compose(bare, {})]))`)
+  );
+  // Before and after: the sources plus the layer give every genus's look and lsrc as data.json has them, order included.
+  assert.strictEqual(JSON.stringify(looks(back)), JSON.stringify(looks(RAW)));
+  const all = pairsOf(RAW),
+    lecture = Object.keys(CL.pairs),
+    book = Object.keys(pairsOf(bare));
+  assert.deepStrictEqual(pairsOf(back), all);
+  // The split: 84 pairs, 13 the lecture's (6 in its words, 7 from its groups), 71 the Coral Finder's.
+  assert.deepStrictEqual(
+    [Object.keys(all).length, lecture.length, lecture.filter(k => /^IMR/.test(CL.pairs[k].src)).length, book.length],
+    [84, 13, 6, 71]
+  );
+  assert.deepStrictEqual(
+    [...lecture, ...book].sort(),
+    Object.keys(all).sort(),
+    'the lecture’s and the Coral Finder’s pairs are all the pairs'
+  );
+  assert.ok(!lecture.some(k => book.includes(k)), 'no pair in both');
+  // Each lecture pair keeps its source on both genera and its directions; the sources hold no lecture line.
+  lecture.forEach(k => {
+    const [a, b] = k.split('|'),
+      x = CL.pairs[k];
+    assert.match(x.src, LECTURE, k);
+    assert.deepStrictEqual(all[k], {[a]: [a in x.look, x.src], [b]: [b in x.look, x.src]}, k);
+    Object.entries(x.look).forEach(([g, i]) => assert.strictEqual(RAW.gen[g].look[i], g === a ? b : a, `${k}: ${g}'s look at ${i}`));
+  });
+  Object.entries(looks(bare)).forEach(([g, [, ls]]) =>
+    Object.entries(ls || {}).forEach(([o, s]) => assert.doesNotMatch(s, LECTURE, `${g} lsrc ${o}: a lecture line left in the sources`))
+  );
+  // An edition without the IMR layer plays the Coral Finder's pairs alone, each with its Coral Finder line.
+  assert.deepStrictEqual(Object.keys(pairsOf(edition)).sort(), [...book].sort());
+  Object.entries(pairsOf(edition)).forEach(([k, s]) =>
+    Object.values(s).forEach(
+      ([, line]) => line && assert.match(line, /^(Coral Finder|Same Coral Finder box|IMR Lecture 6 and Coral Finder)/, k)
+    )
+  );
+  assert.ok(!['Galaxea', 'Lobactis'].some(g => edition.gen[g].look.length), 'their look-alikes are all the lecture’s');
 });
 
 test('coral: writing data.json with a changed field of the layer is refused (the edit belongs in the layer file)', () => {
@@ -169,6 +233,18 @@ try:
 except SystemExit as e:
     print(e)`);
   assert.match(out, /gen Acropora imr differ from tools\/instances\/imr\/coral\.json/);
+  // A lecture pair's line or direction edited in data.json, the same.
+  const pair = py(`from instance import coral_layered
+from datajson import load
+d = load()
+d['gen']['Galaxea']['lsrc']['Echinopora'] = 'an edit made in data.json'
+d['gen']['Pocillopora']['look'].remove('Stylophora')
+try:
+    coral_layered(d)
+    print('written')
+except SystemExit as e:
+    print(e)`);
+  assert.match(pair, /gen Galaxea lsrc Echinopora, gen Pocillopora look Stylophora differ from/);
   // Unchanged data passes and comes back the same.
   assert.strictEqual(
     py(`from instance import coral_layered\nfrom datajson import load\nd = load()\nprint(coral_layered(d) == d)`).trim(),

@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, playerStart's prior, startCheck, startNext,
+// The first-launch question (core.js CHOICE, playerStart's prior, startCheck, startNext,
 // startInfer; model.js startSet, startStep, startDue, startShown, startMerge, startRestart; docs/LEARNING.md "The
 // first-launch question"): the core rules, then model.js's own code run in Node on stubs (as tests/intro.test.js).
 const test = require('node:test');
@@ -27,6 +27,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       slateGenera: () => slate,
       syncSoon: () => {},
       basicsDue: () => !basics && ctx.SUBJ.pages.includes('basics'), // app.js: the subject's basics module not done yet
+      UNITS: {coral: {}, fish: {startFb: false}}, // app.js: the fish make no level-change proposal
       document: {querySelectorAll: () => []},
       ...C,
       ...require('./subj.stub.js')(),
@@ -61,7 +62,7 @@ test('the question: three answers, in order, each with its variables; "new" is t
     CHOICE.opts.map(o => o[0]),
     ['new', 'imr', 'know']
   );
-  // Two variables only: the open-all offer's at went with that card (Pierre, 2026-11-12, Q337).
+  // Two variables only, basics and p (no open-all offer, so no at).
   CHOICE.opts.forEach(o => assert.deepStrictEqual(Object.keys(o[1]).sort(), ['basics', 'p'], o[0]));
   CHOICE.opts.forEach(o => assert.ok(typeof o[1].p === 'number', o[0]));
   assert.deepStrictEqual(startVars(), startVars('new'), 'no answer: the default player');
@@ -116,7 +117,7 @@ test('fallback verdict: at 40 and 60 answers only; "lower" sensitive (80% one-si
   const firstMiss = W(A1, i => i % 3 === 0);
   assert.ok(levelFit(firstMiss)[0] < startBand('imr')[0], 'first-answer level under the floor');
   assert.strictEqual(startCheck(firstMiss, 'imr', 0.73, 12, 0), null, 'the first answers never trigger "lower"');
-  // The opening hold fired in the window is enough, the level in the band or above (a gentle offer: Pierre, 2026-11-04).
+  // The opening hold fired in the window is enough, the level in the band or above (a gentle offer).
   assert.strictEqual(startCheck(ok, 'imr', 0.5, 6, 1), 'lo', 'the hold alone, the level in the band');
   assert.strictEqual(startCheck(ok, 'know', 2, 12, 1), 'lo', 'the hold alone, the level above the floor');
   assert.strictEqual(startCheck(weak(A1), 'new', -1.5, 6, 1), null, '"new" has no floor: never "lower", hold or not');
@@ -169,7 +170,7 @@ test('stored and its variables set: the answer, when, how', () => {
   );
   assert.ok(M.ctx.drops > 0, 'the questions planned with the old level are dropped');
   assert.deepStrictEqual(M.startV(), startVars('know'));
-  // The offer to open all genera went (Pierre, 2026-11-12, Q337): nothing offers it, whatever the answer and the level.
+  // No offer to open all genera: nothing offers it, whatever the answer and the level.
   M.introAdd(slate.slice(0, 10), true, 's');
   M.ctx.P[LEVEL] = {ok: 15, ko: 4, th: 1};
   M.ctx.n = 60;
@@ -236,7 +237,7 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   assert.strictEqual(H.startDue(), null, 'not at 20');
   H.play(N - 20, 0.5, true, i => i % 2 === 0, 2.5);
   assert.strictEqual(H.startDue(), 'hi');
-  // No level-change card for a subject whose units say startFb false (app.js UNITS fish: Pierre, 2026-11-08); others unchanged.
+  // No level-change card for a subject whose units say startFb false (app.js UNITS fish); others unchanged.
   H.ctx.UNITS = {[H.ctx.SUBJ.id]: {startFb: false}};
   assert.strictEqual(H.startDue(), null, 'startFb false: no level-change card');
   H.ctx.UNITS = {[H.ctx.SUBJ.id]: {}};
@@ -318,7 +319,7 @@ test('Coral basics on the "lower" card: the start variables one band down, silen
   assert.strictEqual(D.startDue(), null);
 });
 
-// Codex review #428 (P2): the silent ease taken on one device survives a merge with the other device's same answer and
+// The silent ease taken on one device survives a merge with the other device's same answer and
 // longer window; the questions planned ahead are dropped when the start variables in force change.
 test('synced: the ease is merged by its own time, and a change of the variables in force drops the plans', () => {
   const N = CHOICE.AT[0],
@@ -345,7 +346,7 @@ test('synced: the ease is merged by its own time, and a change of the variables 
   assert.strictEqual(A.ctx.drops, d2);
 });
 
-// Codex review #428 (P2): after a progress reset the window restarts; the account's record saved before the reset (the
+// After a progress reset the window restarts; the account's record saved before the reset (the
 // same answer, a longer window) must not bring the old window back, or the new run never reaches its checkpoints.
 test('synced: a window saved before a progress reset never wins over the new one', () => {
   const N = CHOICE.AT[0],
@@ -368,7 +369,7 @@ test('synced: a window saved before a progress reset never wins over the new one
   assert.strictEqual(B.startOf().wt, A.startOf().wt);
 });
 
-// Codex review #428 (P2): a progress reset made on another device and adopted here (sync.js mergeSubject) keeps the
+// A progress reset made on another device and adopted here (sync.js mergeSubject) keeps the
 // window that device has counted since its reset (merged first by startMerge) and takes the reset's time as its epoch,
 // never a newer one: else the empty window would win back on the device that made the reset.
 test('synced: a remote progress reset keeps the window counted since it, with its epoch', () => {
@@ -401,7 +402,7 @@ test('synced: a remote progress reset keeps the window counted since it, with it
   assert.ok(D.startOf().wt > at && D.startOf().w.length === 0);
 });
 
-// Codex review #428 (P2): only a coral progress reset restarts the coral window (a fish reset, made here or adopted).
+// Only a coral progress reset restarts the coral window (a fish reset, made here or adopted).
 test('a fish progress reset leaves the coral fallback window as it is', () => {
   const M = model();
   M.startSet('know', 'tour');
@@ -416,7 +417,7 @@ test('a fish progress reset leaves the coral fallback window as it is', () => {
   assert.strictEqual(M.startOf().w.length, 0, 'a coral reset restarts it');
 });
 
-// Codex review #428 (P2): an existing player who answers the welcome question on a new device before signing in: the
+// An existing player who answers the welcome question on a new device before signing in: the
 // newer local answer wins, but the account's earlier answers stay in the history, so the replay (core.js startPriorAt)
 // keeps their priors for the answers played under them.
 test('synced: both histories of answers are merged, oldest first, whichever answer wins', () => {
@@ -453,11 +454,11 @@ test('synced: both histories of answers are merged, oldest first, whichever answ
   );
 });
 
-// Codex review #428 (P2): an ease taken under an earlier answer stays in force for the answers played under it when a
+// An ease taken under an earlier answer stays in force for the answers played under it when a
 // newer answer from another device wins (an event in the history, core.js startEvents), and never applies to that newer
 // answer.
 test("synced: an earlier answer's ease keeps its prior when a newer answer wins", () => {
-  // Before the event list: the ease as a field of the record (8359b24), and as an event since.
+  // Both record forms: the ease as a field of the record (an older record), and as an event in the history.
   const old = {c: 'know', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 100, 'tour']], ease: ['imr', 40, 200]},
     now = C.startNorm({
       ...old,
@@ -481,7 +482,7 @@ test("synced: an earlier answer's ease keeps its prior when a newer answer wins"
   }
 });
 
-// The event list merges the same whichever way round (Codex review #428): two devices' histories from a common start,
+// The event list merges the same whichever way round: two devices' histories from a common start,
 // each adding answers and eases at random times; union(A, B) and union(B, A) hold the same events, the same current
 // answer and ease, and give the same prior at every time.
 test('synced: merging A into B and B into A gives the same history and the same priors (property)', () => {
@@ -513,7 +514,7 @@ test('synced: merging A into B and B into A gives the same history and the same 
   }
 });
 
-// Codex review #428 (P2): the history keeps every event (no cap at 10): the replay needs the earliest answers' prior.
+// The history keeps every event (no cap at 10): the replay needs the earliest answers' prior.
 test('the history keeps every event: the earliest answers keep their prior', () => {
   const h = Array.from({length: 11}, (_, i) => ['know', i, 100 * (i + 1), i ? 'card' : 'tour']),
     o = C.startNorm({h, w: [], fb: {}});
@@ -523,7 +524,7 @@ test('the history keeps every event: the earliest answers keep their prior', () 
   assert.ok(C.START_CAP >= 200, 'only a safety bound');
 });
 
-// The union is lossless (Codex review #428): three devices each build their own history (answers, often the same answer
+// The union is lossless: three devices each build their own history (answers, often the same answer
 // given independently on several devices, and eases bound to the device's answer in force); merged in any order, the
 // prior at every time is the one computed straight from the definition over all events, nothing is dropped, and the
 // union is commutative and associative.
@@ -568,7 +569,7 @@ test('synced: the union of histories is lossless, commutative and associative (p
   }
 });
 
-// Codex review #428 (P2): an ease applies only to the choice event it eased, not to an independent choice of the same
+// An ease applies only to the choice event it eased, not to an independent choice of the same
 // answer from another device (know@100 eased at 300, merged with know@200: "know" again from 200 on).
 test('synced: an ease applies only to the choice event it eased', () => {
   const A = C.startNorm({
@@ -627,21 +628,27 @@ test('synced: the latest answer wins, the cards shown on either device count; a 
   assert.ok(r.fb['know-lo'] && r.fb['know-hi'], 'the cards shown stay shown');
 });
 
-// Codex review of #428, P2 4457104006: on a shared device, signing out leaves the next player nothing of the last one's,
+// On a shared device, signing out leaves the next player nothing of the last one's,
 // Coral basics included (its completion would hide the next beginner's offers and block their achievement).
 test('sign-out clears the first-launch answer and Coral basics with the progress', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
-    // sync.js signOutClear (2026-11-05: Sign out and deleting one's own account clear the device the same way)
+    // sync.js signOutClear (Sign out and deleting one's own account clear the device the same way)
     i = src.indexOf('function signOutClear('),
     list = src.slice(i, src.indexOf('].forEach', i));
   assert.ok(i > 0, 'signOutClear found');
   assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
-  assert.match(list, /\bBASICS_KEY\b/);
+  // Every subject's basics module record (subjDev 'basics': Coral basics', Fish basics') goes too: one device, several players.
+  assert.match(list, /\[[^\]]*'basics'[^\]]*\]\.map\(k => subjDev\(S\.id, k\)\)/);
+  assert.deepStrictEqual(
+    C.SUBJECTS.filter(S => S.pages.includes('basics')).map(S => C.subjDev(S.id, 'basics')),
+    ['reefid-basics', 'reefid-fish-basics'],
+    'each subject with a basics module has its own record, the corals keeping theirs'
+  );
 });
 
-// Codex review of #428, P2 4457104032: a glossary popup gives the same link before and after the Tools tier is in
+// A glossary popup gives the same link before and after the Tools tier is in
 // (Coral basics' step, Corallite anatomy's card, the Words list, or none), from one table in app.js.
 test('glossary links to Coral basics: one mapping, the same before the Tools tier loads', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
@@ -659,7 +666,7 @@ test('glossary links to Coral basics: one mapping, the same before the Tools tie
   assert.strictEqual(ctx.H('Solitary'), '', 'not a Coral basics word: no link');
 });
 
-// Codex review of #428, P2 4457104023: another device's answer arriving while the question card waits must not resume
+// Another device's answer arriving while the question card waits must not resume
 // the quiz before the rest of the saved progress is merged (sync.js mergeSaved calls startResume once it is done).
 test("another device's answer: the waiting question card resumes only after the merge, not inside it", () => {
   const M = model();
@@ -680,7 +687,7 @@ test("another device's answer: the waiting question card resumes only after the 
 });
 
 // The full replay (core.js replayProgress, the sheet's replay_ and the app's own replay of its unsent answers) steps the
-// ability with the first-launch answer in force at each answer, as the app does (startPriorAt; RVS v3).
+// ability with the first-launch answer in force at each answer, as the app does (startPriorAt; core.js RVS).
 test('replay: the prior of the first-launch answer in force at each answer, as the app steps it', () => {
   const rec = {
     c: 'new',
@@ -728,10 +735,10 @@ test('rules version: the first-launch prior has its RVS entry, with RV_CARD', ()
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
 });
 
-// The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md): each subject asks its own question, in its own
+// The fish welcome question (docs/FISH_PATH.md): each subject asks its own question, in its own
 // words (SUBJECTS start: the same answers, in the same order), kept in its own record (startKey): the coral answer stays
 // the corals', the fish one sets the fish starting values, its window counts fish answers, and a subject without a basics
-// module (no Fish basics yet) has no "lower" card and no basics offer.
+// module (the sea slugs) has no "lower" card and no basics offer.
 test('per subject: the fish welcome question, its own record, window and cards', () => {
   ['coral', 'fish'].forEach(id => {
     const S = C.subjectOf(id);
@@ -762,12 +769,13 @@ test('per subject: the fish welcome question, its own record, window and cards',
   assert.deepStrictEqual(M.startV(), startVars('imr'), "fish: its own answer's prior");
   assert.strictEqual(M.saved[C.startKey('fish')] && JSON.parse(M.saved[C.startKey('fish')]).c, 'imr');
   assert.strictEqual(JSON.parse(M.saved[C.startKey('coral')]).c, 'know', 'the coral answer untouched');
-  // The window counts the fish answers in the fish record only; a "lower" verdict has no card (no Fish basics).
+  // The window counts the fish answers in the fish record only; a "lower" verdict has no card on the fish (they make no
+  // level-change proposal: UNITS fish startFb false), the offer of Fish basics included.
   M.setHold(2);
   M.play(CHOICE.AT[0], 0, false, true, -1);
   assert.strictEqual(M.startOf().w.length, CHOICE.AT[0], 'fish: its own window');
   assert.strictEqual(M.startOf().v, 'lo');
-  assert.strictEqual(M.startDue(), null, 'no Fish basics: no "lower" card');
+  assert.strictEqual(M.startDue(), null, 'the fish: no "lower" card, Fish basics or not');
   M.ctx.SUBJ = C.subjectOf('coral');
   assert.deepStrictEqual(M.startV(), startVars('know'), 'back on the corals: their answer');
   assert.strictEqual((M.startOf().w || []).length, 0, 'the coral window untouched by fish answers');
@@ -780,5 +788,10 @@ test('per subject: the fish welcome question, its own record, window and cards',
   assert.strictEqual(M.startOf().c, 'know', 'still the coral record on screen');
   assert.strictEqual(JSON.parse(M.saved[C.startKey('fish')]).c, 'know', 'the fish record merged: the latest answer');
   assert.strictEqual(M.ctx.drops, drops, "another subject's record: the plans on screen stay");
-  assert.ok(C.subjectOf('coral').pages.includes('basics') && !C.subjectOf('fish').pages.includes('basics'), 'Coral basics: corals only');
+  assert.ok(
+    C.subjectOf('coral').pages.includes('basics') &&
+      C.subjectOf('fish').pages.includes('basics') &&
+      !C.subjectOf('seaslug').pages.includes('basics'),
+    'a basics module: the corals and the fish, not the sea slugs'
+  );
 });

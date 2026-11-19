@@ -1,8 +1,8 @@
 # The Playwright smoke tests, one job per smoke file, in parallel on separate runners (pages and admin in two halves
-# each), installing Playwright with npm into a temporary folder (Pierre's OK, 2026-11-01); the repo keeps no
-# package.json. Their own workflow since 2026-11-08 (Pierre, Q305 d): a pull request that changes only docs skips them
+# each), installing Playwright with npm into a temporary folder; the repo keeps no
+# package.json. A pull request that changes only docs skips them
 # (paths-ignore below: every changed file must match for the run to be skipped); the Checks workflow, tests/docs.test.js
-# included, still runs on it. A merge train's push (train/*, tools/train.py; Q305 b) always runs every smoke: it is the
+# included, still runs on it. A merge train's push (train/*, tools/train.py) always runs every smoke: it is the
 # tree that goes live. Keep the list narrow: never tools/, tests/, judging/ or a data file (the smokes read them).
 name: Smokes
 on:
@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# A new push to the same PR cancels the run still going on the older commit (test-suite review, 2026-11-04).
+# A new push to the same PR cancels the run still going on the older commit.
 concurrency:
   group: smokes-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -26,7 +26,7 @@ jobs:
     name: smoke (${{ matrix.name }})
     runs-on: ubuntu-26.04
     strategy:
-      # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
+      # Every smoke reports: one failing smoke never hides the others.
       fail-fast: false
       # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
       # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
@@ -110,7 +110,7 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-1.65.1
-      # Chromium only, without --with-deps (CI speed study, 2026-11-08): on ubuntu-26.04 its apt step installed nine font
+      # Chromium only, without --with-deps: on ubuntu-26.04 its apt step installed nine font
       # packages and no library (the image has Chromium's libraries), about 10 s a job. The pages draw their text in
       # their own fonts (fonts/, app.css @font-face). If Chromium one day fails to start for a missing library, put
       # --with-deps back.

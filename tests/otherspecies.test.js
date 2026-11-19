@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// Other species in view, split in two (Pierre, 2026-11-09, Q323; judging/FISH.md "Tags", count): o (no risk of taking
+// Other species in view, split in two (judging/FISH.md "Tags", count): o (no risk of taking
 // another fish for the subject at the game's rank: in play) and k (confusion possible: never in play, rule P3); m, the
 // code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js fishSure,
 // tools/fish_game.py judged_sure) and the pre-fetch mirrors (tools/fetch_fish.py sure_add, sure_out) follow one rule;
-// Pierre's adds follow the count in force (core.js fishCount, fishOther; tools/fish_game.py count_of, other_out); the
+// the admin's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
 // re-judge of the photos with m lands where it was classified.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -52,10 +52,10 @@ print(json.dumps([[G.cand_sure(j), G.judged_sure(j['jt'], j['e']), FF.sure_add(j
       assert.strictEqual(s, null, `${at}: not sorted: Pierre's, never decided`);
     if (c === 'o' && !j.u && j.k !== 'dup' && !j.jt.slice(7).includes('a')) assert.ok(add && sure, `${at}: no risk: in play like one fish`);
   });
-  assert.deepStrictEqual([...C.FISH_COUNT.play].sort(), ['1', 'o', 's']);
+  assert.deepStrictEqual([...C.TREE_COUNT.play].sort(), ['1', 'o', 's']);
   assert.deepStrictEqual(py('import fish_game as G\nprint(json.dumps([G.PLAY_COUNT, G.OTHER_COUNT]))'), [
-    C.FISH_COUNT.play,
-    C.FISH_COUNT.other
+    C.TREE_COUNT.play,
+    C.TREE_COUNT.other
   ]);
 });
 
@@ -66,21 +66,21 @@ test('the count in force: Pierre’s tag first, his legacy m refined by the pass
 L = json.loads(${JSON.stringify(JSON.stringify(pairs))})
 print(json.dumps([[G.count_of(a, b), G.other_out(a, b), G.refined(a, b)] for a, b in L]))`);
   pairs.forEach(([a, b], i) => {
-    assert.strictEqual(C.fishCount(a, b), P[i][0], `count of ${a} / ${b}`);
-    assert.strictEqual(C.fishOther(a, b), P[i][1], `other out of ${a} / ${b}`);
+    assert.strictEqual(C.treeCount(a, b), P[i][0], `count of ${a} / ${b}`);
+    assert.strictEqual(C.treeOther(a, b), P[i][1], `other out of ${a} / ${b}`);
   });
-  assert.strictEqual(C.fishCount('p1g0smm', 'p1g0smo'), 'o', 'his legacy m sorted by the pass: no risk');
-  assert.strictEqual(C.fishCount('p1g0smm', 'p1g0smk'), 'k');
-  assert.strictEqual(C.fishCount('p1g0smm', null), 'm', 'not sorted yet');
-  assert.ok(C.fishOther('p1g0smm', null) && C.fishOther('p1g0smm', 'p1g0smm'), 'legacy m, not sorted: out (conservative)');
-  assert.ok(!C.fishOther('p1g0smo', 'p1g0smk'), 'his own o stands over the pass');
-  assert.ok(C.fishOther('p1g0smk', 'p1g0smo'), 'his own k stands over the pass');
-  assert.ok(!C.fishOther('p1g0smx', null), 'an unclear subject he added is not this rule');
-  assert.ok(!C.fishOther(null, null), 'no tag: as before');
+  assert.strictEqual(C.treeCount('p1g0smm', 'p1g0smo'), 'o', 'his legacy m sorted by the pass: no risk');
+  assert.strictEqual(C.treeCount('p1g0smm', 'p1g0smk'), 'k');
+  assert.strictEqual(C.treeCount('p1g0smm', null), 'm', 'not sorted yet');
+  assert.ok(C.treeOther('p1g0smm', null) && C.treeOther('p1g0smm', 'p1g0smm'), 'legacy m, not sorted: out (conservative)');
+  assert.ok(!C.treeOther('p1g0smo', 'p1g0smk'), 'his own o stands over the pass');
+  assert.ok(C.treeOther('p1g0smk', 'p1g0smo'), 'his own k stands over the pass');
+  assert.ok(!C.treeOther('p1g0smx', null), 'an unclear subject he added is not this rule');
+  assert.ok(!C.treeOther(null, null), 'no tag: as before');
   assert.strictEqual(py('import fish_game as G\nprint(json.dumps(G.refined("p1g0smmj", "p1g0smoj")))'), 'p1g0smoj');
 });
 
-test('Pierre’s adds: legacy m out until sorted, o in play with the refined tag, k out; the app reads the same (core.js fishIn)', () => {
+test('Pierre’s adds: legacy m out until sorted, o in play with the refined tag, k out; the app reads the same (core.js treePhotoIn)', () => {
   const cand = (sp, id) => ({
     f: `fish-${sp}-cand-${id}`,
     a: '(c) Someone, some rights reserved (CC BY)',
@@ -116,7 +116,7 @@ print(json.dumps([G.record(s, p, cur['fish'], sug, o, None, r) for s, p, o, r in
   );
   assert.strictEqual(R[0].jt, 'p1g0smo', 'the game record carries the sorted count');
   // The app, on the records the build wrote and on the ones it left out (an older list), reads the same.
-  const gone = C.fishGone(CUR);
+  const gone = C.treeGone(CUR);
   const rec = (i, jt, auto) => ({f: f(i), sp: 's001', jt, ...(auto ? {auto} : {})});
   const recs = [
     rec(1, 'p1g0smm'),
@@ -128,18 +128,18 @@ print(json.dumps([G.record(s, p, cur['fish'], sug, o, None, r) for s, p, o, r in
     rec(7, 'p1g0smo', 'cand')
   ];
   assert.deepStrictEqual(
-    recs.filter(p => C.fishIn(CUR.fish, p, gone, CUR.fish.tags[p.f])).map(p => p.f),
+    recs.filter(p => C.treePhotoIn(CUR.fish, p, gone, CUR.fish.tags[p.f])).map(p => p.f),
     [f(2), f(4), f(6), f(7)]
   );
   // An older list still holding his legacy m (before the build sorted it): out until the build runs (conservative).
-  assert.ok(!C.fishIn(CUR.fish, rec(2, 'p1g0smm'), gone));
+  assert.ok(!C.treePhotoIn(CUR.fish, rec(2, 'p1g0smm'), gone));
   // The players' copy has no tags (tools/curplay.py): the record's count alone decides, the same result on the built list.
   assert.deepStrictEqual(
-    recs.filter(p => C.fishIn({...CUR.fish, tags: undefined}, p, gone)).map(p => p.f),
+    recs.filter(p => C.treePhotoIn({...CUR.fish, tags: undefined}, p, gone)).map(p => p.f),
     [f(2), f(4), f(6), f(7)]
   );
   // A first photo (fish-photos.json, read until fish-game.json is in) with k never plays; with o it does.
-  const P = C.fishPhotos(
+  const P = C.treePhotos(
     {
       t01: [
         {f: 'fi1', sp: 's001', src: 'x', jt: 'p1g0smk', auto: 'ref'},
@@ -160,15 +160,15 @@ test('the re-judge of 2026-11-09: every photo with other species is sorted, and 
     FC = CUR.fish || {},
     S = read('suggest.json').fish || {},
     J = read('tools/fish_judge.json');
-  // Pierre's adds with the legacy m: every one sorted by the pass (o or k).
-  const legacy = Object.keys(FC.tags || {}).filter(x => FC.tags[x][6] === 'm' && C.fishOn(FC, x, (FC.add || {})[x]));
+  // The admin's adds with the legacy m: every one sorted by the pass (o or k).
+  const legacy = Object.keys(FC.tags || {}).filter(x => FC.tags[x][6] === 'm' && C.treePhotoOn(FC, x, (FC.add || {})[x]));
   legacy.forEach(x => assert.match(String((S[x] || {}).jt || '').charAt(6), /^[ok]$/, `${x}: Pierre's add with m not sorted`));
   // The build plays the o ones and none of the k ones.
   const plan = py(`import fish_game as G
 fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs('.')
 todo, keep, _ = G.plan(fish, cur, cand, sug, G.load('.', 'fish-game.json', {'photos': {}}), refs, codes, crops, rkeep=rkeep)
 print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(keep.values())}))`);
-  // A species met only on the surprise cards keeps its 5 best (Q372: tools/fish_game.py wink_trim), so an o add of one
+  // A species met only on the surprise cards keeps its 5 best (tools/fish_game.py wink_trim), so an o add of one
   // may be out for that reason; a k one never plays.
   const wink = new Set(
     read('fish.json')

@@ -1,4 +1,4 @@
-// Question draw test (code re-review 2026-11-01, ROADMAP "Test the question draw"): runs the real photoSet() and
+// Question draw test: runs the real photoSet() and
 // distractors() of app.js in Chromium, for every genus and several player levels, and checks Pierre's rules:
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; rule P4);
 // - never a several-corals photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
@@ -72,8 +72,8 @@ const server = http.createServer((req, res) => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     } catch (e) {}
-    // Same draws every run (as profiles.smoke.js): unseeded, the mastery-exam check failed once on CI (PR #362: the 5th
-    // exam question of a 97% genus, drawn rarely, did not come within the 400 answers; not reproduced in 48 local runs).
+    // Same draws every run (as profiles.smoke.js): unseeded, a rarely drawn question (the 5th exam question of a 97%
+    // genus) may not come within the 400 answers.
     let s = 4242;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   });
@@ -177,6 +177,13 @@ const server = http.createServer((req, res) => {
       if (ex && (lm.replace('|h|', '|') !== (ty ? 'quiz|t|x' : 'quiz|x') || !hOk)) fails.push(`exam answer logged ${lm}, typed ${ty}`);
     }
     question = qx;
+    // Every answer logged carries its attempt id (core.js answerId) and its content version (app.js contentVer: the
+    // corals' units in force; tests/contentver.test.js).
+    {
+      const lg = logged();
+      if (!/^[a-z][a-z0-9]{15}$/.test(lg.id || '') || !/^c[a-z0-9]{1,15}$/.test(lg.cv || ''))
+        fails.push(`a coral answer logged without its attempt id or content version: ${JSON.stringify({id: lg.id, cv: lg.cv})}`);
+    }
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
     if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
     // The exam needs TYPED.exam typed right answers among its EXAM.n.
@@ -268,11 +275,11 @@ const server = http.createServer((req, res) => {
       f().requestSubmit();
       if (answersSoFar() !== a0 || !/not a genus/.test(f().querySelector('.tymsg').textContent))
         fails.push('a word that is no genus was taken as an answer');
-      // The spelling step (a player's idea, Pierre 2026-11-05; quiz.js typeBind): a close typo of the right genus is no
+      // The spelling step (quiz.js typeBind): a close typo of the right genus is no
       // answer yet: the warm nudge "So close! Right genus: just fix the spelling…", the text kept and selected, I don't know
       // turned to Show me.
       // The nudge makes the answer column taller: the stage is refitted (fitStage) so it all stays on one screen on a phone
-      // (Codex review #616: the stage kept its height and the nudge went under the tab bar until a resize).
+      // (else the nudge would go under the tab bar until a resize).
       const fit0 = fitStage;
       let fits = 0;
       window.fitStage = (...x) => (fits++, fit0(...x));
@@ -289,8 +296,8 @@ const server = http.createServer((req, res) => {
         f().querySelector('input').value === typo.toLowerCase() &&
         !f().querySelector('input').disabled;
       if (!retryOn()) fails.push(`a close typo "${typo}" of ${g}: no retype asked (${f().querySelector('.tymsg').textContent})`);
-      // Retyped exactly: the answer (the first reading, right), the plain "✓ Yes, it's X" (no mistake left to point out,
-      // Pierre 2026-11-06) in one line, the raw text and the step logged.
+      // Retyped exactly: the answer (the first reading, right), the plain "✓ Yes, it's X" (no mistake left to point out)
+      // in one line, the raw text and the step logged.
       f().querySelector('input').value = g;
       f().requestSubmit();
       let l = logged();
@@ -303,7 +310,7 @@ const server = http.createServer((req, res) => {
         !(l.e > 0 && l.e < 1) ||
         l.ty !== typo.toLowerCase() ||
         l.tr !== 1 ||
-        // the text refused before it, logged with it (Pierre, 2026-11-08, Q237); the spelling step's retype is none
+        // the text refused before it, logged with it; the spelling step's retype is none
         JSON.stringify(l.rj) !== JSON.stringify(['xyzcoral'])
       )
         fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
@@ -317,7 +324,7 @@ const server = http.createServer((req, res) => {
         fails.push(`an exact retype: verdict "${h1 && h1.textContent}"`);
       if (document.querySelector('#tyin:not(.ok)')) fails.push('a right typed answer: the field is not marked right');
       // Retyped wrong again: still right (grading unchanged), one line "✓ Yes, but not quite: it's spelled X" in place of
-      // "Yes, it's X" (Pierre, 2026-11-06), X the same link to the genus sheet, its wrong letters marked.
+      // "Yes, it's X", X the same link to the genus sheet, its wrong letters marked.
       g = typedQ();
       const sw2 = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
         typo2 = g.slice(0, sw2) + g[sw2 + 1] + g[sw2] + g.slice(sw2 + 2),
@@ -410,7 +417,7 @@ const server = http.createServer((req, res) => {
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
     // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
-    // Misses on its easiest photos (a random set could be the hardest, where a miss says little: CI run of PR #336).
+    // Misses on its easiest photos (a random set could be the hardest, where a miss says little).
     const wrong = 'Porites' === t ? 'Acropora' : 'Porites',
       pics = Object.values(DATA.gen[t].views)
         .flat()
@@ -426,7 +433,7 @@ const server = http.createServer((req, res) => {
     const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
     if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
-    // The domain-score bar (core.js DOM, rules version 9; the sheet replays it from v87, below the gate floor core.js
+    // The domain-score bar (core.js DOM, rules version 9; the sheet replays it, below the gate floor core.js
     // SHEET_FLOOR): a genus first answered takes it, a right answer credits it, a miss never raises it, and the answer logs
     // the genus offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule.
     {
@@ -459,8 +466,8 @@ const server = http.createServer((req, res) => {
         k0 = one(false),
         tz = log().tz,
         k1 = one(true);
-      // The device's UTC offset at answer time, minutes east of UTC (Pierre, 2026-11-04: "time of day at home"; sheet
-      // v44 stores it): Date.getTimezoneOffset, sign turned.
+      // The device's UTC offset at answer time, minutes east of UTC (the time of day at home; the sheet stores it):
+      // Date.getTimezoneOffset, sign turned.
       if (tz !== -new Date().getTimezoneOffset())
         fails.push(`an answer logged with UTC offset ${tz}, the device's is ${-new Date().getTimezoneOffset()}`);
       if (!(k1.pg < k0.pg && k1.th < k0.th && k1.e > k0.e))
@@ -504,16 +511,15 @@ const server = http.createServer((req, res) => {
         all = Object.fromEntries(files.map(x => [x.f, [3, 2]])),
         even = share(all),
         favour = share({...all, ...Object.fromEntries(files.filter(x => key(x) === c0).map(x => [x.f, [1, 0]]))});
-      // Measured 2026-11-03 on the genera with the fewest photos: x 1.4-1.5 (the old rule, x 0.6 from right twice: 1.0-1.1).
-      // Since the Easy / Medium / Hard sets went (2026-11-03), every photo here has the same prior difficulty (no sheet
-      // in the test): Astrea x 1.24, the variety floor (the 3 best colonies at least half the top) capping one colony's
-      // lead when its photos are alike; 1.15 stays above the old rule's 1.0-1.1.
+      // Measured on the genera with the fewest photos: x 1.4-1.5 (a rule of x 0.6 from right twice: 1.0-1.1). Every
+      // photo here has the same prior difficulty (no sheet in the test): Astrea x 1.24, the variety floor (the 3 best
+      // colonies at least half the top) capping one colony's lead when its photos are alike; 1.15 stays above 1.0-1.1.
       if (cols.length < 2 || !(favour > 1.15 * even) || !(even > 0))
         fails.push(
           `${n} (${files.length} photos, ${cols.length} colonies): the least remembered colony came up ${favour} (all known alike: ${even})`
         );
     }
-    // Photo exposure (Pierre, 2026-11-06, Q188 and Q190; docs/LEARNING.md "Photo exposure"): in a genus with colonies at
+    // Photo exposure (docs/LEARNING.md "Photo exposure"): in a genus with colonies at
     // several zooms, a colony counts as seen whatever view was shown, so a colony seen only in its colony view is drawn
     // as often as one seen in every view; and a calibration question (the exploration share) shows a colony the player
     // has never seen while one remains.
@@ -597,7 +603,7 @@ const server = http.createServer((req, res) => {
       if (progPct() !== pctOf(saved, slateGenera()))
         fails.push(`progress %: app ${progPct()} vs core pctOf of the saved progress ${pctOf(saved, slateGenera())}`);
     }
-    // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
+    // First meetings (INTRO): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
     // INTRO.GAP answers between two cards (the pace waits for each card's question, INTRO.GAP answers on at the soonest); with enough genera met, the choices are all genera met.
     {
@@ -624,7 +630,7 @@ const server = http.createServer((req, res) => {
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
-        // A starred genus opens only after the genera its card compares it to (core.js starRefs; Pierre, 2026-11-03).
+        // A starred genus opens only after the genera its card compares it to (core.js starRefs).
         now.forEach((n, k) =>
           starRefs(DATA, n)
             .filter(r => pool().includes(r) && !at[r] && !asked(r) && !now.slice(0, k).includes(r))
@@ -633,7 +639,7 @@ const server = http.createServer((req, res) => {
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
         if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
           fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
-        // The question shown with its genus's card never repeats the card's photo (new-player walkthrough 2026-11-02).
+        // The question shown with its genus's card never repeats the card's photo.
         if (now.includes(tg) && shownF.includes((cover(GX(tg)) || {}).f)) fails.push(`question ${i}: the photo of ${tg}'s card again`);
         if (!at[tg] && !asked(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
         if (document.querySelector('.unlock [data-bonus]'))
@@ -643,7 +649,7 @@ const server = http.createServer((req, res) => {
         const ch = choices();
         if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
         // A genus met on a card of its own is no choice on the question behind it: its card says it comes up a little
-        // later (beginner review 2026-11-03).
+        // later.
         if (i && now.length === 1 && ch.includes(now[0])) fails.push(`question ${i}: ${now[0]} a choice behind its own card`);
         // The offer to open all genera: only in its window, at a high enough level, once; declined here.
         const offer = document.querySelector('.unlock.intro [data-open]');
@@ -669,7 +675,7 @@ const server = http.createServer((req, res) => {
         if (shownF.includes((cover(GX(tg)) || {}).f) && !same++) fails.push(`first question: the photo of ${tg}'s card again`);
       }
       document.querySelectorAll('.unlock').forEach(x => x.remove());
-      // Starred genera after their references (core.js starRefs, model.js openPick; Pierre, 2026-11-03), on many paths:
+      // Starred genera after their references (core.js starRefs, model.js openPick), on many paths:
       // the first cards from zero, in the order shown, and the opening draw once every other genus is met. A reference
       // missing from the genera in play never holds a starred genus back.
       {
@@ -732,7 +738,7 @@ const server = http.createServer((req, res) => {
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
-      // Mostly right (an RA after the lecture): no card offers to open all genera any more (Pierre, 2026-11-12, Q337),
+      // Mostly right (an RA after the lecture): no card offers to open all genera,
       // however well the player does; Open all from My progress opens every genus left.
       P = {};
       INTROS = {};
@@ -757,7 +763,7 @@ const server = http.createServer((req, res) => {
       if (shownAt) fails.push(`all right: a card offered to open all genera at ${shownAt} answers`);
       introAll('progress');
       if (introLeft().length) fails.push(`${introLeft().length} genera left after Open all`);
-      // Back to one at a time (model.js backDue, introBack; Pierre 2026-11-03): from that Open all, a player who keeps up
+      // Back to one at a time (model.js backDue, introBack): from that Open all, a player who keeps up
       // never gets the card; one who then drops gets it once the drop since Open all reaches 2 x INTRO.HOLD. "One at a
       // time" closes every genus opened at once (answered or not), the others stay open, and they come back through
       // their cards, one at a time, never asked or offered as a choice while closed.
@@ -800,7 +806,7 @@ const server = http.createServer((req, res) => {
           shut = allSet.filter(n => INTROS[n] && INTROS[n][3] === 'b');
         if (o.bk !== 'one' || shut.length !== allSet.length || !before.every(introduced) || allSet.some(introduced))
           fails.push(`One at a time: closed ${shut.length} of ${allSet.length}, record ${JSON.stringify(o)}`);
-        // Closed genera hold no place among the shaky ones that stop the opening (Codex P1 on #408): closed with their
+        // Closed genera hold no place among the shaky ones that stop the opening: closed with their
         // answers kept and badly known, they would keep the opening chance at 0, and being closed they are never asked,
         // so the player could never open them again.
         {
@@ -913,7 +919,7 @@ const server = http.createServer((req, res) => {
         // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
         if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
       }
-      // The Again queue (quiz.js CONTRAST.Q, rematchAdd; 2026-11-04): up to 3 pairs, asked oldest first, each CONTRAST.GAP
+      // The Again queue (quiz.js CONTRAST.Q, rematchAdd): up to 3 pairs, asked oldest first, each CONTRAST.GAP
       // after the last contrast question, a newer mix-up never pushing an older one out; an Again never asks a genus not
       // met yet (the genus shown instead).
       {
@@ -952,7 +958,7 @@ const server = http.createServer((req, res) => {
         dropPlans();
         NEXTQ = null;
       }
-      // Look-alikes from the data (model.js dataLooks, core.js dataLook; 2026-11-04): a pair no source declares that the
+      // Look-alikes from the data (model.js dataLooks, core.js dataLook): a pair no source declares that the
       // players keep mixing up (CONF.N offers or more, pooled score from CONF.TRAP) duels like a declared one.
       {
         const met = pool().filter(introReady),
@@ -971,7 +977,7 @@ const server = http.createServer((req, res) => {
         if (keep) PCONF[k] = keep;
         else delete PCONF[k];
       }
-      // Opening pace (model.js openPace, OPEN.MAX in OPEN.WIN answers; 2026-11-04): a player whose genera met are all solid
+      // Opening pace (model.js openPace, OPEN.MAX in OPEN.WIN answers): a player whose genera met are all solid
       // (nothing shaky, so openChance is 1) gets at most OPEN.MAX cards in any OPEN.WIN answers, never a card while a genus
       // carded in the window waits for its question, and each carded genus is asked within a few answers of its card.
       {
@@ -1023,7 +1029,7 @@ const server = http.createServer((req, res) => {
         dropPlans();
         NEXTQ = null;
       }
-      // An opening only after a right answer (model.js openRight; Pierre, 2026-11-03): the path never opens a genus on
+      // An opening only after a right answer (model.js openRight): the path never opens a genus on
       // the question after a miss, not even one planned before the miss, and keeps opening after right answers.
       {
         const keepP = JSON.stringify(P),
@@ -1102,8 +1108,8 @@ const server = http.createServer((req, res) => {
         INTROS = null;
         reset();
       }
-      // Nothing is planned past a question that changes what comes next while it is on screen (Codex review #361: an
-      // exam planned behind an unanswered exam broke its spacing); a plain question gets its next ones planned.
+      // Nothing is planned past a question that changes what comes next while it is on screen (an
+      // exam planned behind an unanswered exam would break its spacing); a plain question gets its next ones planned.
       {
         const keepV = $v.innerHTML,
           keepQ = SHOWNQ;
@@ -1119,7 +1125,7 @@ const server = http.createServer((req, res) => {
         $v.innerHTML = keepV;
         SHOWNQ = keepQ;
       }
-      // Achievement toasts (Pierre, 2026-11-02): the first of each family and the top tier pop up; a later step of a family
+      // Achievement toasts: the first of each family and the top tier pop up; a later step of a family
       // already held lands quietly (a "new" dot on 🏆), and the achievements page clears it.
       {
         const keep = store.get(ACHK, null),
@@ -1136,7 +1142,7 @@ const server = http.createServer((req, res) => {
             popped =
               achQ.slice(q0).some(a => a.id === 'met20') ||
               [...document.querySelectorAll('.achpop b')].some(b => /Wide eyes/.test(b.textContent));
-          // Unseen ones are kept on this device only, never in the synced record (Codex review #360).
+          // Unseen ones are kept on this device only, never in the synced record.
           if (!B.met20 || !nw.includes('met20') || B._new || popped)
             fails.push(`quiet achievement: ${JSON.stringify({held: !!B.met20, nw, popped})}`);
           if (!document.getElementById('boardgo').classList.contains('hasnew')) fails.push('no "new" dot on 🏆 after a quiet achievement');
@@ -1238,7 +1244,7 @@ const server = http.createServer((req, res) => {
       CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = []; // no "Again" left over from the section before
     }
-    // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
+    // Opening held while the player does clearly worse than expected (introHold, a CUSUM): two
     // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
     {
       const h0 = HOLDS;
@@ -1354,10 +1360,9 @@ const server = http.createServer((req, res) => {
     }
     // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
     // a new player (who has unlocked only the genera picked) and a strong one. Every genus asked is one picked, never with
-    // a card (one progression path, Pierre 2026-11-04: the custom quiz offers only genera unlocked; until then a genus
-    // not met came with its own card), the choices come from the selection when it has 4 genera or more, and a 2-genus
-    // selection is topped up with genera unlocked only: to 4 for the strong player, not at all for the new one (Codex
-    // review #482); the photo quiz's offers never show there.
+    // a card (one progression path, rule L4: the custom quiz offers only genera unlocked), the choices come from the
+    // selection when it has 4 genera or more, and a 2-genus selection is topped up with genera unlocked only: to 4 for
+    // the strong player, not at all for the new one; the photo quiz's offers never show there.
     {
       const sel4 = ['Pocillopora', 'Stylophora', 'Seriatopora', 'Acropora', 'Porites'],
         sel2 = ['Fungia', 'Danafungia'];
@@ -1387,7 +1392,7 @@ const server = http.createServer((req, res) => {
               fails.push(`${tag}: ${ch.length} choices`);
           }
         }
-      // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
+      // A selection of genera nobody confuses can't give the traps a strong player's level asks
       // for; the question is scored with the choices really shown (plausibleK), never as a 4-choice one with traps.
       // (2): no mastery exam question in the custom quiz (rule L9: its choices could hold no look-alike); the exam
       // comes in the photo quiz.
@@ -1420,7 +1425,7 @@ const server = http.createServer((req, res) => {
         }
         if (apart.length < 4 || !scored) fails.push(`custom quiz scoring check did not run (${apart.join(', ')}, ${scored})`);
         if (exams) fails.push(`custom quiz: ${exams} mastery exam questions in 60 (the exam belongs to the photo quiz)`);
-        // A played custom session (Pierre, 2026-11-03: exams only in the normal quiz): genera one exam question from
+        // A played custom session (exams only in the normal quiz): genera one exam question from
         // Learned, every answer right, typed ones too; never an exam question on screen, never s.mx from it.
         P = Object.fromEntries(
           genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.9, ex: {k: EXAM.n - 1, t: TYPED.exam, v: ['wide'], at: -99}}])
@@ -1445,8 +1450,8 @@ const server = http.createServer((req, res) => {
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   // Learned under the former model (core.js memRecalc, model.js mxRecalc): progress saved with a learned genus, then a
-  // reload (the drop happens at load). Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned
-  // without (BKT): the mark goes, silently (Q332), its badge kept.
+  // reload (the drop happens at load). Learned with s.pg: nothing told, nothing taken back. Learned
+  // without (BKT): the mark goes, silently (rule D6), its badge kept.
   {
     const t = await p.evaluate(() => slateGenera()[3]);
     // Two genera answered (a comeback needs two), the last answer `ago` ms back.
@@ -1507,7 +1512,7 @@ const server = http.createServer((req, res) => {
       a = await play(15);
     if (a0 || a.seen || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
       fail('learned with s.pg was touched', {a0, a});
-    // Learned without s.pg (BKT): the mark goes at load, silently (Pierre, 2026-11-09 ~15:40 Manila, Q332: every
+    // Learned without s.pg (BKT): the mark goes at load, silently (rule D6: every
     // recalculation silent, the learned-mark card too): no card, the learned-based achievement kept as for a mark lost in
     // play, nothing due; at a pull, the same.
     await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);

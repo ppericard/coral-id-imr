@@ -52,9 +52,10 @@ const server = http.createServer((req, res) => {
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
 // Hidden, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
-// 1280); main, everything else. SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players and
-// photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
-const PARTS = ['main', 'actions', 'players', 'photos'];
+// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
+// SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players, photos and seal; the 390 px job
+// runs them all); SMOKE_ONLY=players runs one part.
+const PARTS = ['main', 'actions', 'players', 'photos', 'seal'];
 const WIDTHS = [390, 1280];
 // Dark theme as the app sets it: the ⚙ Theme (reefid-sync-theme) puts data-theme on <html> (admin.html's inline script).
 // The app and the admin never follow the system's prefers-color-scheme (rule U3), so Playwright's colorScheme: 'dark'
@@ -82,8 +83,279 @@ const darkCards = (p, sel) =>
     else delete H.dataset.theme;
     return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
   }, sel);
+// Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
+// demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
+// in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
+// a seal that the token's key opens, holding both ratings, and the site's ?draft preview reads nothing. B, unaware, rates
+// a third photo: its write is refused (no plain draft comes back), and it locks, that rating sealed too. The next unlock
+// opens the seal into the draft. Then a seal held while it is encrypted: the page is read-only under "Sealing…", the other
+// tab's rating made meanwhile goes into the seal, and that tab locks. The reloads that follow a sign out run without
+// admin.js (aborted), so the locked pages never unlock with the demo's token and the store can be read as left. Once, at
+// 1280.
+async function sealPart(b, base, fails) {
+  const F = 'seal: ',
+    sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await sc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const errs = [],
+    open = async () => {
+      const p = await sc.newPage();
+      p.on('pageerror', e => p.watch && errs.push(e.stack || e.message));
+      p.watch = true;
+      await p.goto(base + 'admin.html?demo#photos/quality');
+      await p.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.seen && !DW.busy, null, {timeout: 60000});
+      return p;
+    },
+    // The store as left, read with a key and mark derived here from the demo's token (not with admin-draft.js).
+    stored = p =>
+      p.evaluate(async () => {
+        const db = await new Promise((ok, ko) => {
+            const r = indexedDB.open('demo:reefid-admin-draft');
+            r.onsuccess = () => ok(r.result);
+            r.onerror = ko;
+          }),
+          get = k =>
+            new Promise(ok => {
+              const q = db.transaction('draft').objectStore('draft').get(k);
+              q.onsuccess = () => ok(q.result);
+            }),
+          enc = new TextEncoder(),
+          sub = crypto.subtle,
+          m = btoa(String.fromCharCode(...new Uint8Array(await sub.digest('SHA-256', enc.encode('reefid-admin-mark|demo'))))).slice(0, 22),
+          key = await sub.importKey('raw', await sub.digest('SHA-256', enc.encode('reefid-admin-draft|demo')), 'AES-GCM', false, [
+            'decrypt'
+          ]),
+          [state, draft, base, seal] = await Promise.all(['state', 'draft', 'base', 'seal:' + m].map(get));
+        let q = null;
+        if (seal)
+          q =
+            JSON.parse(JSON.parse(new TextDecoder().decode(await sub.decrypt({name: 'AES-GCM', iv: seal.iv}, key, seal.ct))).j).quality ||
+            {};
+        db.close();
+        return {gen: state && state.gen, draft: !!draft, base: !!base, seal: !!seal, q};
+      }),
+    rate = (p, f, v) =>
+      p.evaluate(
+        ([f, v]) => {
+          DRAFT.quality = {...(DRAFT.quality || {}), [f]: v};
+          saveDraft();
+          return !!DW.busy;
+        },
+        [f, v]
+      ),
+    has = (p, f, v) =>
+      p
+        .waitForFunction(([f, v]) => (DRAFT.quality || {})[f] === v && !DW.busy, [f, v], {timeout: 15000})
+        .then(
+          () => true,
+          () => false
+        );
+  const A = await open(),
+    P = await A.evaluate(() =>
+      Object.keys(PHOTOS)
+        .filter(f => !(SAVED.quality || {})[f])
+        .slice(0, 5)
+    );
+  await rate(A, P[0], 1);
+  await A.waitForFunction(() => !DW.busy);
+  const B = await open();
+  if (!(await has(B, P[0], 1))) fails.push(F + 'a second tab did not open on the first tab’s rating');
+  await rate(B, P[1], 3);
+  if (!(await has(A, P[1], 3))) fails.push(F + 'the first tab did not take in the second tab’s rating');
+  // B stops hearing the other tabs; A signs out (Sign out in the ⋯ menu)
+  await B.evaluate(() => (DCH.onmessage = null));
+  await sc.route(/\/admin\.js(\?|$)/, r => r.abort());
+  A.watch = B.watch = false;
+  await Promise.all([A.waitForEvent('load'), A.evaluate(() => ((document.querySelector('.adm-more').open = true), $('signout').click()))]);
+  let st = await stored(A);
+  if (st.draft || st.base || !st.seal || st.gen !== 1 || st.q[P[0]] !== 1 || st.q[P[1]] !== 3)
+    fails.push(F + `Sign out left a plain draft, or a seal without both tabs’ ratings ${JSON.stringify(st)}`);
+  if (await A.evaluate(() => ddbPeek(indexedDB, 'demo:reefid-admin-draft')))
+    fails.push(F + 'the ?draft preview still reads a draft after Sign out');
+  // B, unaware, rates a third photo: refused, it locks, its rating sealed
+  await Promise.all([B.waitForEvent('load', {timeout: 20000}), rate(B, P[2], 2)]).catch(e =>
+    fails.push(F + 'the other tab did not lock: ' + e.message)
+  );
+  st = await stored(A);
+  if (st.draft || st.base || !st.seal || st.q[P[2]] !== 2 || st.q[P[0]] !== 1)
+    fails.push(F + `the other tab wrote a plain draft back, or its rating was not sealed ${JSON.stringify(st)}`);
+  // The next unlock (the demo's token) opens the seal
+  await sc.unroute(/\/admin\.js(\?|$)/);
+  await B.close();
+  await A.close();
+  const C = await open();
+  const back = await C.evaluate(P => P.map(f => (DRAFT.quality || {})[f]), P);
+  st = await stored(C);
+  if (back.slice(0, 3).join() !== '1,3,2' || st.seal || !st.draft || !st.base)
+    fails.push(F + `the unlock did not open the seal into the draft ${JSON.stringify({back, st})}`);
+  // A seal held while it is encrypted: read-only meanwhile; the other tab's rating made then is sealed; that tab locks
+  const D = await open();
+  await C.evaluate(() => {
+    const e = crypto.subtle.encrypt.bind(crypto.subtle);
+    crypto.subtle.encrypt = async (...a) => {
+      if (!window.smokeHeld) {
+        window.smokeHeld = 1; // the first encryption only
+        await new Promise(r => (window.smokeGo = r));
+      }
+      return e(...a);
+    };
+  });
+  await sc.route(/\/admin\.js(\?|$)/, r => r.abort());
+  C.watch = D.watch = false;
+  const cl = C.waitForEvent('load', {timeout: 30000}),
+    dl = D.waitForEvent('load', {timeout: 30000});
+  await C.evaluate(() => ((document.querySelector('.adm-more').open = true), $('signout').click()));
+  await C.waitForFunction(() => typeof window.smokeGo === 'function');
+  const ro = await C.evaluate(() => ({
+    layer: !!document.querySelector('.adm-sealing'),
+    inert: !!document.querySelector('#view').closest('[inert]') && !!$('save').closest('[inert]'),
+    btn: [$('signout').disabled, $('signout').textContent]
+  }));
+  if (!ro.layer || !ro.inert || ro.btn.join() !== 'true,Sealing…')
+    fails.push(F + `the page was not read-only while it sealed ${JSON.stringify(ro)}`);
+  await C.evaluate(() => $('signout').click()); // a second click does nothing
+  await rate(D, P[3], 1);
+  await D.waitForFunction(() => !DW.busy);
+  await C.evaluate(() => window.smokeGo());
+  await Promise.all([cl, dl]).catch(e => fails.push(F + 'a tab did not lock: ' + e.message));
+  st = await stored(C);
+  if (st.draft || st.base || !st.seal || st.gen !== 2 || st.q[P[3]] !== 1 || st.q[P[1]] !== 3)
+    fails.push(F + `a rating made while the seal was encrypted was lost, or a plain draft was left ${JSON.stringify(st)}`);
+  // No IndexedDB (Codex review #1078): nothing is kept, so Sign out with an edit made in this visit warns and stays
+  await sc.unroute(/\/admin\.js(\?|$)/);
+  const N = await sc.newPage();
+  await N.addInitScript(() => {
+    indexedDB.open = () => {
+      throw new Error('no IndexedDB here');
+    };
+  });
+  await N.goto(base + 'admin.html?demo#photos/quality');
+  await N.waitForFunction(() => typeof snap !== 'undefined' && snap !== null && typeof DW !== 'undefined', null, {timeout: 60000});
+  const nb = await N.evaluate(f => {
+    DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1};
+    saveDraft();
+    $('signout').click();
+    return {dw: DW, lost: draftLost};
+  }, P[4]);
+  await N.waitForTimeout(500);
+  const na = await N.evaluate(() => ({
+    token: TOKEN,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || '',
+    layer: !!document.querySelector('.adm-sealing')
+  }));
+  if (nb.dw !== null || !nb.lost || na.token !== 'demo' || !/could not be sealed/.test(na.toast) || na.layer)
+    fails.push(F + `without IndexedDB, Sign out did not warn and stay with the visit's edit ${JSON.stringify({nb, na})}`);
+  // A draft from before the store whose move fails (Codex review #1078): it stays in localStorage, and Sign out warns
+  // and stays rather than reporting a seal while it is left there in plain
+  const M = await sc.newPage();
+  await M.addInitScript(f => {
+    localStorage.setItem('demo:reefid-curation-draft', JSON.stringify({v: 1, genera: {}, quality: {[f]: 1}}));
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.migrate = () => Promise.reject(new Error('storage full'));
+          return T;
+        })
+    });
+  }, P[4]);
+  await M.goto(base + 'admin.html?demo#photos/quality');
+  await M.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && !DW.busy, null, {timeout: 60000});
+  await M.evaluate(() => $('signout').click());
+  await M.waitForTimeout(800);
+  const mv = await M.evaluate(() => ({
+    token: TOKEN,
+    kept: !!localStorage.getItem('demo:reefid-curation-draft'),
+    out: !!DW.out,
+    toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+  }));
+  if (mv.token !== 'demo' || !mv.kept || mv.out || !/could not be sealed/.test(mv.toast))
+    fails.push(F + `a draft whose move failed was left in plain by a Sign out that did not warn ${JSON.stringify(mv)}`);
+  // The store opens but its first read fails (Codex review #1078): no store, and leaving the page warns
+  const R = await sc.newPage();
+  await R.addInitScript(() => {
+    let t;
+    Object.defineProperty(window, 'ddbTab', {
+      configurable: true,
+      get: () => t,
+      set: real =>
+        (t = o => {
+          const T = real(o);
+          T.load = () => Promise.reject(new Error('read failed'));
+          return T;
+        })
+    });
+  });
+  await R.goto(base + 'admin.html?demo#photos/quality');
+  await R.waitForFunction(() => typeof snap !== 'undefined' && snap !== null, null, {timeout: 60000});
+  const rl = await R.evaluate(() => ({dw: DW, busy: draftBusy()}));
+  if (rl.dw !== null || !rl.busy) fails.push(F + `a store whose first read failed was used, or leaving did not warn ${JSON.stringify(rl)}`);
+  // The one-time move of a draft kept in localStorage before the store (draftMove): its edit is in the draft and the
+  // store, and both keys are gone (a context of its own: an empty store)
+  const vc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await vc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const V = await vc.newPage();
+  V.on('pageerror', e => errs.push(e.stack || e.message));
+  await V.addInitScript(f => {
+    if (sessionStorage.getItem('smoke-moved')) return;
+    sessionStorage.setItem('smoke-moved', '1');
+    localStorage.setItem(
+      'demo:reefid-curation-draft',
+      JSON.stringify({v: 1, genera: {}, quality: {[f]: 3}, _tab: {rev: 'old.1', seen: null}})
+    );
+    localStorage.setItem('demo:reefid-curation-base', JSON.stringify({v: 1, genera: {}}));
+  }, P[4]);
+  await V.goto(base + 'admin.html?demo#photos/quality');
+  await V.waitForFunction(() => typeof DW !== 'undefined' && DW && DW.ready && DW.seen && !DW.busy, null, {timeout: 60000});
+  const mo = await V.evaluate(
+    f => ({
+      draft: (DRAFT.quality || {})[f],
+      keys: ['demo:reefid-curation-draft', 'demo:reefid-curation-base'].filter(k => localStorage.getItem(k) !== null),
+      tab: '_tab' in DRAFT
+    }),
+    P[4]
+  );
+  const ms = await stored(V);
+  if (mo.draft !== 3 || mo.keys.length || mo.tab || !ms.draft)
+    fails.push(F + `the draft kept in localStorage did not move into the store ${JSON.stringify({mo, ms})}`);
+  // The site's ?draft preview (app.js curation) reads the admin's store (the real one: the preview is never the demo's)
+  const W = await vc.newPage();
+  await W.goto(base + 'privacy.html');
+  await W.evaluate(
+    () =>
+      new Promise((ok, ko) => {
+        const r = indexedDB.open('reefid-admin-draft', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('draft');
+        r.onerror = ko;
+        r.onsuccess = () => {
+          const t = r.result.transaction('draft', 'readwrite');
+          t.objectStore('draft').put(
+            {j: JSON.stringify({v: 1, genera: {}, quality: {'smoke-preview': 1}}), rev: 'x.1', seen: null},
+            'draft'
+          );
+          t.oncomplete = () => (r.result.close(), ok());
+          t.onerror = ko;
+        };
+      })
+  );
+  await W.goto(base + 'index.html?draft');
+  await W.waitForFunction(() => typeof curation === 'function', null, {timeout: 60000});
+  const pv = await W.evaluate(() => curation().then(c => (c.quality || {})['smoke-preview'] || null));
+  if (pv !== 1) fails.push(F + `the site's ?draft preview did not read the admin's stored draft (${pv})`);
+  await vc.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await sc.close();
+}
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos']}),
+  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos', 'seal']}),
     ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -222,7 +494,8 @@ const darkCards = (p, sel) =>
     p.on('dialog', d => d.accept());
     // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
     // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
-    // (the hash change and the render a reply starts land within a frame).
+    // (the hash change and the render a reply starts land within a frame). The Analyses pages wait up to 60 s: the demo
+    // fits their report in a Web Worker, which a slow CI runner can take longer than 15 s to finish.
     // SHOTS=<dir>: screenshots of a few states for the PR (2x, the page's own size), else nothing.
     const shot = async (name, sel) => {
       if (!process.env.SHOTS) return;
@@ -235,6 +508,7 @@ const darkCards = (p, sel) =>
     };
     const settle = async () => {
       await p.evaluate(() => (window.__calm = 0));
+      const timeout = /^#analyses/.test(await p.evaluate(() => location.hash)) ? 60000 : 15000;
       await p
         .waitForFunction(
           () => {
@@ -243,7 +517,7 @@ const darkCards = (p, sel) =>
             return window.__calm >= 3;
           },
           null,
-          {timeout: 15000, polling: 'raf'}
+          {timeout, polling: 'raf'}
         )
         .catch(async () =>
           fails.push(
@@ -1262,7 +1536,7 @@ const darkCards = (p, sel) =>
         // Its views: Games and Rights (every subject's, admin.js EVERY).
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
-        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
+        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js treePid), the
         // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
         // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
         // admin.js has its own fishState, of a photo's words) and not in play.
@@ -1272,7 +1546,7 @@ const darkCards = (p, sel) =>
             inPlay = new Set(
               Object.values(D.play)
                 .flat()
-                .map(x => fishPid(x.f))
+                .map(x => treePid(x.f))
             ),
             sp = new Set(FISHC.units.flatMap(u => u.species).filter(s => FISHC.species[s] && !FISHC.species[s].out));
           let n = 0,
@@ -1282,7 +1556,7 @@ const darkCards = (p, sel) =>
               const s = window.fishState(F, x.f, orig);
               if (s.st !== null || !sp.has(s.sid)) return;
               all++;
-              if (!inPlay.has(fishPid(x.f))) n++;
+              if (!inPlay.has(treePid(x.f))) n++;
             })
           );
           const col = [...document.querySelectorAll('.adm-fishcovt thead th')].findIndex(t => t.textContent === '+'),
@@ -3846,9 +4120,9 @@ const darkCards = (p, sel) =>
             fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
           await qx.close();
         }
-        // Cohorts and staff (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts,
-        // New cohort… asking its name) and Staff Add / Remove; the Groups column and the line above the table follow. Before
-        // the version, neither shows.
+        // Cohorts (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts, New cohort…
+        // asking its name); the Groups column and the line above the table follow. Before the version, it does not show. The
+        // Staff toggle, which granted the trainer role, is gone at every version (Pierre, 2026-11-18: "Staff" is not a role).
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px cohorts page error: ${e.message}`));
@@ -3888,26 +4162,153 @@ const darkCards = (p, sel) =>
             await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
             await calm();
             b = await bar();
-            if (!b.sel || b.sel[0] !== '' || b.sel[1].join('|') !== 'None|New cohort…' || b.staff !== 'Not staff Add' || b.wide)
+            if (!b.sel || b.sel[0] !== '' || b.sel[1].join('|') !== 'None|New cohort…' || b.staff || b.wide)
               fails.push(`${w}px cohorts: before ${JSON.stringify(b)}`);
             await q.selectOption('.adm-ubar [data-ucohort]', '+');
             await calm();
             b = await bar();
-            if (!b.sel || b.sel[0] !== 'RA Test 2026' || !/RA Test 2026: 1 · Staff: 0/.test(b.line) || !/RA Test 2026/.test(b.cell))
+            if (!b.sel || b.sel[0] !== 'RA Test 2026' || !/^RA Test 2026: 1$/.test(b.line) || !/RA Test 2026/.test(b.cell))
               fails.push(`${w}px cohorts: New cohort… ${JSON.stringify(b)}`);
-            await q.click('.adm-ubar [data-ustaff]');
-            await calm();
-            b = await bar();
-            if (b.staff !== 'Staff Remove' || !/Staff: 1/.test(b.line) || !/Staff/.test(b.cell))
-              fails.push(`${w}px cohorts: Staff Add ${JSON.stringify(b)}`);
-            await q.click('.adm-ubar [data-ustaff]');
-            await calm();
             await q.selectOption('.adm-ubar [data-ucohort]', '');
             await calm();
             b = await bar();
-            if (b.sel[0] !== '' || b.staff !== 'Not staff Add' || b.line) fails.push(`${w}px cohorts: back to none ${JSON.stringify(b)}`);
+            if (b.sel[0] !== '' || b.staff || b.line) fails.push(`${w}px cohorts: back to none ${JSON.stringify(b)}`);
           } catch (e) {
             fails.push(`${w}px cohorts: ${String(e.message).split('\n')[0]}`);
+          }
+          await q.close();
+        }
+        // Player groups (sheet GROUPADM_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
+        // arbitraire de groupes"): a player's bar shows their groups as chips (× takes them out) and "+ Add to a group"; the
+        // Groups column follows; no Cohort select, no Staff toggle, no beta line. Players › Groups: every group, the newest
+        // first, with Board, Rename, Add all / Remove all (asked first), Delete once empty, New group,
+        // a change shown at once ("Saving…", the card busy until the sheet answers). Before the
+        // version, the page says what it needs. No sideways scroll.
+        {
+          const q = await p.context().newPage(),
+            said = [];
+          q.on('pageerror', e => fails.push(`${w}px groups page error: ${e.message}`));
+          q.on('dialog', d => {
+            said.push(d.type() + ': ' + d.message());
+            return d.type() === 'prompt'
+              ? d.accept(said.length > 1 ? 'Crew' : 'RA Test 2026')
+              : d.type() === 'confirm'
+                ? d.accept()
+                : d.dismiss();
+          });
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(300))
+              .catch(() => fails.push(`${w}px groups: never settled`));
+          const bar = async () => {
+            if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
+            return q.evaluate(() => {
+              const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Carla Demo'),
+                add = document.querySelector('.adm-ubar [data-ugadd]');
+              return {
+                chips: [...document.querySelectorAll('.adm-ubar .adm-gchip')].map(c => c.textContent),
+                add: add ? [...add.options].map(o => o.textContent) : null,
+                old: !!document.querySelector('.adm-ubar [data-ucohort], .adm-ubar [data-ustaff], .adm-ubar [data-ugroup], .adm-ugroup'),
+                cell: row ? row.textContent : '',
+                wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+              };
+            });
+          };
+          const page = () =>
+            q.evaluate(() => ({
+              cards: [...document.querySelectorAll('.adm-gcard')].map(c => [
+                c.querySelector('.adm-gname').textContent,
+                c.querySelector('.adm-gcount').textContent,
+                [...c.querySelectorAll('[aria-pressed="true"]')]
+                  .map(b => b.closest('[aria-label]').getAttribute('aria-label') + ' ' + b.textContent)
+                  .join(','),
+                !!c.querySelector('[data-gdrop]')
+              ]),
+              note: (document.querySelector('#view .note') || {}).textContent || '',
+              wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+            }));
+          try {
+            const X = await p.evaluate(() => GROUPADM_SHEET);
+            await q.goto(base + `admin.html?demo&v=${X - 1}#players/groups`);
+            await calm();
+            let g = await page();
+            if (g.cards.length || !new RegExp(`need the sheet script v${X}`).test(g.note))
+              fails.push(`${w}px groups before v${X}: ${JSON.stringify(g)}`);
+            await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+            await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+            await calm();
+            const n = await q.evaluate(() => USERS.users.length);
+            let b = await bar();
+            if (b.chips.length || !b.add || b.add.join('|') !== '+ Add to a group|Staff|RA November 2026' || b.old || b.wide)
+              fails.push(`${w}px groups: the bar before ${JSON.stringify(b)}`);
+            await q.selectOption('.adm-ubar [data-ugadd]', {label: 'RA November 2026'});
+            await calm();
+            b = await bar();
+            if (
+              b.chips.join('|') !== 'RA November 2026×' ||
+              b.add.join('|') !== '+ Add to a group|Staff' ||
+              !/RA November 2026/.test(b.cell)
+            )
+              fails.push(`${w}px groups: + Add to a group ${JSON.stringify(b)}`);
+            await q.click('.adm-ubar [data-ugout]');
+            await calm();
+            b = await bar();
+            if (b.chips.length || /RA November 2026/.test(b.cell)) fails.push(`${w}px groups: × ${JSON.stringify(b)}`);
+            await q.goto(base + `admin.html?demo&v=${X}#players/groups`);
+            await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+            await calm();
+            g = await page();
+            if (
+              JSON.stringify(g.cards) !==
+                JSON.stringify([
+                  ['RA November 2026', `2 of ${n}`, 'Board On', false],
+                  ['Staff', `1 of ${n}`, 'Board On', false]
+                ]) ||
+              g.wide
+            )
+              fails.push(`${w}px groups: the page ${JSON.stringify(g)}`);
+            await q.click('[data-gnew]');
+            await calm();
+            g = await page();
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `0 of ${n}`, 'Board On', true]))
+              fails.push(`${w}px groups: New group ${JSON.stringify(g.cards)}`);
+            if (await q.$('[data-k="apart"]')) fails.push(`${w}px groups: an Apart setting is still shown`);
+            const first = '.adm-gcard:first-child';
+            // Board Off: pressed and the card busy at once, before the sheet answers
+            const busy = await q.evaluate(f => {
+              document.querySelector(`${f} [data-k="board"][data-val="0"]`).click();
+              const c = document.querySelector(f);
+              return [c.getAttribute('aria-busy'), c.querySelector('[data-k="board"][data-val="0"]').getAttribute('aria-pressed')];
+            }, first);
+            if (JSON.stringify(busy) !== JSON.stringify(['true', 'true']))
+              fails.push(`${w}px groups: Board Off not shown at once ${JSON.stringify(busy)}`);
+            await calm();
+            await q.click(`${first} [data-gall]`);
+            await calm();
+            g = await page();
+            if (JSON.stringify(g.cards[0]) !== JSON.stringify(['RA Test 2026', `${n} of ${n}`, 'Board Off', false]))
+              fails.push(`${w}px groups: Board Off, Add all ${JSON.stringify(g.cards[0])}`);
+            await q.click(`${first} [data-gnone]`);
+            await calm();
+            await q.click(`${first} [data-gren]`);
+            await calm();
+            g = await page();
+            if (g.cards[0][0] !== 'Crew' || g.cards[0][1] !== `0 of ${n}`)
+              fails.push(`${w}px groups: Remove all, Rename ${JSON.stringify(g.cards[0])}`);
+            await q.click(`${first} [data-gdrop]`);
+            await calm();
+            g = await page();
+            if (g.cards.length !== 2 || g.wide) fails.push(`${w}px groups: Delete ${JSON.stringify(g)}`);
+            if (
+              !said.includes(`confirm: Add all ${n} players to RA Test 2026?`) ||
+              !said.includes(`confirm: Remove all ${n} players from RA Test 2026?`)
+            )
+              fails.push(`${w}px groups: the bulk actions did not ask ${JSON.stringify(said)}`);
+          } catch (e) {
+            fails.push(`${w}px groups: ${String(e.message).split('\n')[0]}`);
           }
           await q.close();
         }
@@ -4658,6 +5059,44 @@ const darkCards = (p, sel) =>
           if (JSON.stringify(a1.rows) !== JSON.stringify(want)) fails.push(`${w}px fish Alerts from v${AV}: ${JSON.stringify(a1)}`);
           await q.close();
         }
+        // The infrastructure card above the Alerts list (Code.gs readInfra_ from admin.js INFRA_SHEET; docs/PAGES.md
+        // "Infrastructure health"): before its version, a line naming it (rule D4); from it the demo's made-up numbers, the
+        // cells (74% of 10 million) flagged and the Answers tab (39%) not, then Pages (42%) and R2 (51%) from GitHub, no
+        // horizontal scroll (this block runs once, at 1280; the 390 px look is checked by eye: rule W17).
+        {
+          const IV = await p.evaluate(() => INFRA_SHEET);
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px Infrastructure page error: ${e.message}`));
+          await q.goto(base + `admin.html?demo&v=${IV - 1}#inbox/todo/alerts`);
+          await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
+          const i0 = await q.evaluate(() => ({
+            text: document.getElementById('view').innerText,
+            rows: [...document.querySelectorAll('.adm-infra tbody tr')].map(tr => tr.cells[0].textContent)
+          }));
+          if (/Infrastructure: |not running yet/.test(i0.text) || i0.rows.join() !== 'Pages site,R2 storage')
+            fails.push(`${w}px Infrastructure before v${IV}: ${JSON.stringify(i0)}`);
+          await q.goto(base + `admin.html?demo&v=${IV}#inbox/todo/alerts`);
+          await q.waitForSelector('.adm-infra tbody tr', {timeout: 20000}).catch(() => {});
+          const i1 = await q.evaluate(() => ({
+            rows: [...document.querySelectorAll('.adm-infra tbody tr')].map(
+              tr => [...tr.cells].map(c => c.textContent).join(' | ') + (tr.className ? ' [' + tr.className + ']' : '')
+            ),
+            wide: document.documentElement.scrollWidth > innerWidth + 1
+          }));
+          if (
+            i1.rows.length !== 7 ||
+            !/^Pages site \| 0\.42 GB of 1\.00 GB \| 42%$/.test(i1.rows[5]) ||
+            !/^R2 storage \| 5\.10 GB of 10\.00 GB · by hand \d{4}-\d{2}-\d{2} \| 51%$/.test(i1.rows[6]) ||
+            !/^p90 save \| 0\.9 s · 9800 calls, 7 days \| 18%$/.test(i1.rows[3]) ||
+            !/^Sheet cells \| 7\.40 M of 10\.00 M · 31 tabs \| 74% ! \[adm-warn\]$/.test(i1.rows[0]) ||
+            !/^Answers tab \| 41000 rows × 18 columns · 3\.90 M cells \| 39%$/.test(i1.rows[1]) ||
+            !/^p90 read Answers \| 2\.1 s · 1200 calls, 7 days \| 42%$/.test(i1.rows[2]) ||
+            !/^pCloud backup \| saved 3 days ago \|\s*$/.test(i1.rows[4]) ||
+            i1.wide
+          )
+            fails.push(`${w}px Infrastructure from v${IV}: ${JSON.stringify(i1)}`);
+          await q.close();
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');
@@ -5049,7 +5488,7 @@ const darkCards = (p, sel) =>
         await settle();
         await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
         await settle();
-        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
+        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: treePhotoOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
         if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
         await p.click('#undo');
         await settle();
@@ -5910,6 +6349,89 @@ const darkCards = (p, sel) =>
       const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
       if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
     }
+    // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
+    // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
+    // photo in play; the tree subjects' species with an `out`, and those in the game with no photo in play or under their
+    // target, from autosort.js fishCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
+    // reason chip narrowing the list and All bringing it back, a page on the Tree for a species in the game and none for
+    // one out, no sideways scroll, dark in the dark theme. The sea slugs' list may be empty: the page then says None.
+    for (const [h, subj] of [
+      ['photos/stats/taxa', 'corals'],
+      ['fish/photos/stats/taxa', 'fish'],
+      ['seaslug/photos/stats/taxa', 'seaslug']
+    ]) {
+      await go(h);
+      await p.waitForFunction(() => document.querySelector('#view .adm-taxa'), null, {timeout: 90000}).catch(() => {});
+      const tx = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          S = ASUBJ,
+          rows = [...V.querySelectorAll('tbody tr')],
+          ids = rows.map(r => r.dataset.taxon),
+          chips = [...V.querySelectorAll('[data-taxa]')].map(b => [b.dataset.taxa, Number(b.querySelector('b').textContent)]);
+        let want, outIds;
+        if (S.sheets) {
+          const D = fuData(),
+            C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
+          outIds = FISHC.raw.species.filter(s => s.out).map(s => s.id);
+          want = outIds.length + C.sp.filter(r => !r.n || r.obs < r.tgt).length;
+        } else {
+          const game = new Set(gameOf(DATA));
+          outIds = Object.keys(DATA.gen).filter(n => !game.has(n));
+          want = outIds.length + [...game].filter(n => covViews(n).every(([v]) => !covOf(n, v).n)).length;
+        }
+        return {
+          h: location.hash,
+          rows: rows.length,
+          want,
+          all: chips.length ? chips[0] : null,
+          outOk: outIds.every(id => ids.includes(id)),
+          why: rows.filter(r => !r.children[2].textContent.trim() || /undefined|null/.test(r.textContent)).length,
+          link: S.sheets
+            ? [...V.querySelectorAll('tbody tr')]
+                .map(r => [r.dataset.taxon, !!r.querySelector('a')])
+                .filter(([id]) => !outIds.includes(id))
+                .every(([, a]) => a)
+            : null,
+          outLink: rows.filter(r => outIds.includes(r.dataset.taxon) && S.sheets && r.querySelector('a')).length,
+          chips: chips.length,
+          note: (V.querySelector('p.note') || {}).textContent || '',
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        tx.rows !== tx.want ||
+        !tx.all ||
+        tx.all[0] !== '' ||
+        tx.all[1] !== tx.rows ||
+        !tx.outOk ||
+        tx.why ||
+        tx.link === false ||
+        tx.outLink ||
+        (subj !== 'seaslug' && !tx.rows) ||
+        (!tx.rows && tx.note !== 'None.') ||
+        tx.wide > 0
+      )
+        fails.push(`${w}px #${h}: Taxa ${JSON.stringify(tx)}`);
+      if (tx.chips > 2) {
+        // one reason: its chip's count in the list, All brings the whole list back
+        const nar = await p.evaluate(() => {
+          const b = document.querySelectorAll('#view [data-taxa]')[1],
+            n = Number(b.querySelector('b').textContent),
+            k = b.dataset.taxa;
+          b.click();
+          const V = document.getElementById('view'),
+            one = [...V.querySelectorAll('tbody tr')].length,
+            on = V.querySelector('[data-taxa][aria-pressed="true"]').dataset.taxa;
+          V.querySelector('[data-taxa=""]').click();
+          return {n, one, on, k, back: document.querySelectorAll('#view tbody tr').length};
+        });
+        if (nar.one !== nar.n || nar.on !== nar.k || nar.back !== tx.rows) fails.push(`${w}px #${h}: Taxa chip ${JSON.stringify(nar)}`);
+      }
+      if (tx.rows) {
+        const dkT = await darkCards(p, '#view .adm-tbl th');
+        if (dkT) fails.push(`${w}px #${h}: Taxa, dark theme: still light ${dkT}`);
+      }
+    }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
     // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
@@ -6262,6 +6784,81 @@ const darkCards = (p, sel) =>
           });
           if (solo.sw || !solo.rows || solo.it !== solo.rows || !solo.fams.includes('Damselfishes'))
             fe.push(`Heatmap, genus questions only ${JSON.stringify(solo)}`);
+          // species questions (the species level's units, s:s091: core.js treeSpUnits): the Species rank on the map, each
+          // unit named by its scientific name, in its genus's block, never by its id (F15)
+          const spWant = await fq.evaluate(() => {
+            const R = rowsOf(),
+              ids = [...new Set(R.map(r => r[0]))].slice(0, 2),
+              ph = Object.keys(FISHA.ph),
+              by = {};
+            Object.entries(FISHA.spu).forEach(([id, u]) => u.genus && (by[u.genus] = by[u.genus] || []).push(id));
+            const G = Object.keys(by)
+              .filter(g => by[g].length >= 2)
+              .slice(0, 2);
+            if (!R.length || ids.length < 2 || G.length < 2) return null;
+            let t = Date.now() - 200 * 60e3;
+            const add = [];
+            ids.forEach(id =>
+              G.forEach(g => {
+                // four choices (as the game asks), five of six right: the player's answers count (core.js trustOf)
+                const [a, c] = by[g],
+                  [d, e] = by[G.find(x => x !== g)];
+                for (let i = 0; i < 6; i++)
+                  add.push(
+                    Object.assign([...R[0]], {
+                      0: id,
+                      1: (t += 1000),
+                      2: a,
+                      3: i ? a : c,
+                      4: i ? 1 : 0,
+                      5: 'quiz',
+                      6: ph[0],
+                      10: `${a} ${c} ${d} ${e}`
+                    })
+                  );
+              })
+            );
+            ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+            render();
+            const gn = g => (FISHA.gen[g] || {}).name || g.replace(/^[a-z]:/, '');
+            return {names: G.flatMap(g => by[g].slice(0, 2).map(id => FISHA.spu[id].name)), fams: G.map(gn)};
+          });
+          if (!spWant) fe.push('no species units to ask in the demo');
+          else {
+            await fq.click('#view [data-sf="hr"][data-v="species"]');
+            await fq.waitForFunction(() => document.querySelector('#view [data-sf="hr"][data-v="species"][aria-pressed="true"]'), null, {
+              timeout: 30000
+            });
+            const hs = await fq.evaluate(() => {
+              const T = document.querySelector('#view .adm-hmt');
+              return T
+                ? {
+                    names: [...T.querySelectorAll('tbody .hm-row')].map(th => th.textContent),
+                    fams: [...T.querySelectorAll('.hm-fam')].map(th => th.title),
+                    ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+                  }
+                : null;
+            });
+            if (!hs || spWant.names.some(n => !hs.names.includes(n)) || spWant.fams.some(g => !hs.fams.includes(g)) || hs.ids.length)
+              fe.push(`Heatmap, species ${JSON.stringify({want: spWant, got: hs})}`);
+            // Pairs names them too (repUnit)
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/pairs'));
+            await fq
+              .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {
+                timeout: 60000
+              })
+              .catch(() => fe.push('Pairs not drawn (species)'));
+            const ps = await fq.evaluate(() => ({
+              txt: document.getElementById('view').textContent,
+              ids: (document.getElementById('view').textContent.match(/\bs:s?\d+\w*|\bs\d{3}\b/g) || []).slice(0, 3)
+            }));
+            if (ps.ids.length || spWant.names.slice(0, 2).some(n => !ps.txt.includes(n)))
+              fe.push(`Pairs, species ${JSON.stringify({want: spWant.names.slice(0, 2), ids: ps.ids})}`);
+            await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/heatmap'));
+            await fq.waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {
+              timeout: 60000
+            });
+          }
           await fq.click('#view [data-sf="hr"][data-v="family"]');
         }
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
@@ -6485,6 +7082,10 @@ const darkCards = (p, sel) =>
           !has(jo.cards, /^Circle 3 from answer 50 /) ||
           !has(jo.cards, /^Genus questions from answer 51 · Amphiprion/) ||
           !has(jo.cards, /^Open all families not used/) ||
+          // the opt-in choices of the saved copy (jOptin): Scientific names on, circle 3's offer declined once
+          !has(jo.cards, /^Scientific names on · /) ||
+          !has(jo.cards, /^Families beyond the IMR course off · /) ||
+          !has(jo.cards, /^Families beyond the IMR course offer declined once, the last after answer \d+$/) ||
           has(jo.cards, /genera/) ||
           ['Circle 2', 'Circle 3', 'Genus'].some(m => !jo.marks.includes(m)) ||
           !/Family questions/.test(jo.games) ||
@@ -6674,7 +7275,7 @@ const darkCards = (p, sel) =>
           await fq.click('#help');
         }
         // Photo stats › Overview on the fish side, on the same answers: the answers per photo in play counted here from the
-        // fish answer log (every answer that showed it, its candidate id and its game id one photo: fishPid), the bands
+        // fish answer log (every answer that showed it, its candidate id and its game id one photo: treePid), the bands
         // and the 3+ count as counted here; the candidate photo missed 9 times by 3 players counted Missed on its family's
         // row, opening Health; its own help (the answers alone, no Elo).
         if (!fe.length && pre.f) {
@@ -6691,12 +7292,12 @@ const darkCards = (p, sel) =>
                 String(r[6] || '')
                   .split(' ')
                   .filter(Boolean)
-              ).forEach(x => (N[fishPid(x)] = (N[fishPid(x)] || 0) + 1))
+              ).forEach(x => (N[treePid(x)] = (N[treePid(x)] || 0) + 1))
             );
             const D = fuDataM().D,
               sp = FISHC.species,
               play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => D.play[s] || [])),
-              A = play.map(p => N[fishPid(p.f)] || 0),
+              A = play.map(p => N[treePid(p.f)] || 0),
               fam = fishFamOf(FISHA.ph[f].sp),
               name = (FISHC.units.find(u => u.id === fam) || {}).name,
               row = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(r => r.children[0].innerText.trim() === name),
@@ -6712,7 +7313,7 @@ const darkCards = (p, sel) =>
               ].map(([lo, hi]) => A.filter(x => x >= lo && x <= hi).length),
               three: Number((/(\d+) \(/.exec((document.querySelector('[data-pov="answers"] .note') || {}).textContent || '') || [])[1]),
               wantThree: A.filter(x => x >= 3).length,
-              inPlay: play.some(p => fishPid(p.f) === fishPid(f)),
+              inPlay: play.some(p => treePid(p.f) === treePid(f)),
               name,
               missed: a ? Number(a.textContent) : 0,
               href: a ? a.getAttribute('href') : '',
@@ -7444,7 +8045,7 @@ const darkCards = (p, sel) =>
           for (const u of FISHC.units) {
             const e = fuFamM(u),
               r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && fishPid(q.f) !== fishPid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
@@ -7536,7 +8137,7 @@ const darkCards = (p, sel) =>
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && (f.cues || []).length && (f.look || []).some(x => x[1]) && (f.life || []).length),
             lone = F.genera.find(g => g.family === fam.id && T.go(g.id) !== g.id) || F.genera.find(g => T.go(g.id) !== g.id),
             sp = fam.species.find(s => T.sp[s]);
@@ -7722,7 +8323,7 @@ const darkCards = (p, sel) =>
         await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
         const ids = await sq.evaluate(() => {
           const F = FISHC.raw,
-            T = fishTree(F),
+            T = treeSheets(F),
             fam = F.families.find(f => !f.wink && f.circle === 1 && (f.look || []).some(x => T.fam[x[0]] && !T.fam[x[0]].wink)),
             lk = fam.look.find(x => T.fam[x[0]] && !T.fam[x[0]].wink)[0],
             near = new Set([
@@ -8992,6 +9593,7 @@ const darkCards = (p, sel) =>
     if (once && run.has('photos')) await photosPart();
     await finish();
   }
+  if (ws.includes(1280) && run.has('seal')) await sealPart(b, base, fails);
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.

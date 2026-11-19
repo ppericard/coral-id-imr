@@ -1,7 +1,7 @@
 # First-pass photo quality for the curation back-office: 3 good, 2 fair, 1 poor (realistic-mode material).
 # Measures on each 1600 px WebP: sharpness (variance of the Laplacian), contrast, colour cast (blue/green
 # dominance) and pixel size (small sources were upscaled). Ranks combine into one score; the thresholds
-# are rough on purpose: Pierre corrects ratings in admin.html (curation.json "quality").
+# are rough on purpose: the admin corrects ratings in admin.html (curation.json "quality").
 # Usage: python3 tools/photo_quality.py  (from the repo root; writes quality.json). The photos that live on R2 only
 # (Photos out of the repo) are downloaded once into tools/.cache/r2/ (tools/photos.py path).
 import json, os
@@ -30,7 +30,7 @@ def measure(path):
     cast = max(gr, b) - r  # underwater photos lose red first
     return dict(sharp=sharp, contrast=float(g.std()), cast=float(cast), dark=float(abs(g.mean() - .45)), px=max(w, h))
 
-files = photos.every()  # the 1600 px files only, not their smaller sizes (Codex review #336); in img/ or on R2 only
+files = photos.every()  # the 1600 px files only, not their smaller sizes; in img/ or on R2 only
 M = {f: measure(photos.path(f)) for f in files}
 
 def rank(key, reverse=False):

@@ -82,7 +82,7 @@ needs a written reason next to the pin.
   every workflow; `python3 tools/stack_check.py --check` runs in CI. Run `--latest` at least weekly (the brief shows its
   count daily).
 - Dependabot (`.github/dependabot.yml`) proposes the GitHub Actions and `tools/requirements.txt` bumps, one grouped PR a
-  week at most per ecosystem. The integrator merges them once every check is green, rebased and squash-merged, with no
+  week at most per ecosystem. The integrator merges them once every check is green, up to date and squash-merged, with no
   Codex loop for a pure version bump, after reading the release notes of any new major (renamed inputs, permissions,
   the Pages artifact) and adapting the workflows in the same PR; for pip it bumps `stack.json` too. The PR runs only
   `checks.yml` and `smokes.yml`: after the merge, watch the next run of each workflow that runs on `main` only (Deploy Pages at once;
@@ -163,8 +163,9 @@ and reports every failing one. Locally, run what your change can break, once:
 - **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.10.1 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
   bump a number, rules W15 and D3);
-  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
-  one smoke part your change touches** (below). Docs-only changes: no smoke.
+  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24) **without
+  the slow statistical tests tagged `slow`** (CI and the merge train run them); then **the one smoke part your change
+  touches** (below). Docs-only changes: no smoke.
 - **Full tier**: CI on the PR (no smoke for a docs-only PR, rule W12) and on the merge train (rule W26). Run every smoke
   locally only when CI is down. After a big interface change, the
   brand-new-player replay of rule W17 stays a separate manual step.
@@ -188,7 +189,8 @@ and reports every failing one. Locally, run what your change can break, once:
   entrance animation to wait for) unless the context asks otherwise (a check about motion, the brand-new player). Never
   run two smokes at once from one session; `SMOKE_SLOTS=n` changes the cap, CI ignores it.
 
-*Source:* test-suite review, 2026-11-04, approved by Pierre; the docs-only and train runs, Pierre, 2026-11-08 (Q305).
+*Source:* test-suite review, 2026-11-04, approved by Pierre; the docs-only and train runs, Pierre, 2026-11-08 (Q305); the
+`slow` tests out of the fast tier, 2026-11-19 (Q414).
 
 ### W15
 
@@ -244,24 +246,25 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
   a PR merges through a green merge train, which tests it on the current `main` (rule W26). With one coral genus per line in `data.json`, edits to different genera
   merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
-- Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
-  Pierre's explicit go-ahead. On a PR branch, after the rebase on `origin/main`, `git push --force-with-lease` to your
-  own PR branch (or, for the integrator, to the PR branch it is about to merge) is allowed; never a plain `--force`.
-- A history rewrite to shrink `.git` is planned, not declined (Pierre, 2026-11-02): first the photos to Cloudflare R2,
-  then remove from `img/` every photo with an online source (git keeps only those with no other backup; the fallback
-  becomes the original source), then rewrite history so the old photos leave `.git`; ask Pierre for the go before the
-  force-push and keep a backup clone (ROADMAP "Photos out of the repo").
+- **Never rebase a pushed branch and never force-push**, `main`, `release` or a PR branch, `--force-with-lease`
+  included: bring a PR up to date by merging `origin/main` into it (a merge commit). Never rewrite history without
+  Pierre's explicit go-ahead (GitHub blocks force pushes on `main` too, HANDOVER.md "Protect main").
+- The one history rewrite that shrank `.git` was done on 2026-11-08 (Pierre, 2026-11-02, 2026-11-08; HANDOVER.md "Photos
+  out of the repo, step 3"): the photos left for Cloudflare R2, git keeps only those with no other backup. Any other
+  rewrite needs Pierre's explicit go first, and a backup clone.
 - A merge to `main` is live on GitHub Pages within a minute or two; open tabs pick up the new shell on the next visit
   (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 
 *Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05; subject-neutral wording, 2026-11-06; merge train,
-2026-11-08 (Q305).
+2026-11-08 (Q305); merge, never rebase or force-push, 2026-11-19.
 
 ### W19
 
 **A PR updates the docs that describe what it changes (the map or the spec it touches) and, when it carries out a
 decision, adds a short decision record in `docs/decisions/`, named YYYY-MM-DD-topic.md (context, the decision with Pierre's words,
-consequences). History stays in git and the PRs, never in the docs.** A change is not done until the docs say what the
+consequences). History stays in git and the PRs, never in the docs.** **A code comment says what the code does and why,
+in the present tense, in a few lines; a decision links its record in docs/decisions/; no version tags, dates, quotes or
+Q-numbers.** A change is not done until the docs say what the
 code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
 change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
 its status; deferred = add a row inside its section; new "don't do X" = Declined), `README.md` (anything a newcomer
@@ -275,7 +278,7 @@ ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every wo
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
 #1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
-history in the docs, 2026-11-18.
+history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409).
 
 ### W20
 
@@ -311,11 +314,11 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
 only the part your change touches (rule W14), one unit-test run at a time (`node tests/run.js`, rule W24), CI for the full
-runs. At most two open PRs per
+runs. One open PR per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
-Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight).
+Projects mode) still keeps one open PR and runs only the smoke part its change touches.
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight); one PR per agent, 2026-11-19.
 
 ### W23
 
@@ -374,7 +377,8 @@ its own head, the integrator runs `python3 tools/train.py N` (`--dry-run` first;
 train: `N1 N2 …`, in merge order). A PR is never brought up to date with `main` just to merge: a new branch
 `train/<time>` holds `main` plus the heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
 order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
-equal the train's, and the train stops if a Publish, an Action or another merge lands in between. A red train merges
+equal the train's, and the train stops if a Publish, an Action or another merge lands in between; then it moves the
+`release` branch (the sheet script's source) to the commit `main` ended on, and nothing else does (rule D3). A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
 `Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
 conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for

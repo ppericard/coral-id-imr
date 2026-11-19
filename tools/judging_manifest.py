@@ -1,5 +1,5 @@
-# Builds judging/manifest.json: every photo an outside judging agent (e.g. Codex) must look at, with where it stands
-# today (genus, view, source, candidate or live) and what Pierre already decided (never to be re-judged), plus the
+# Builds judging/manifest.json: every photo an outside judging agent must look at, with where it stands
+# (genus, view, source, candidate or live) and what the admin already decided (never to be re-judged), plus the
 # reference text per genus (IMR lecture cues first, then Coral Finder criteria) and the allowed categories.
 # Earlier guesses (forms.json, quality.json) are left out on purpose, so the judge looks at each photo afresh.
 # Usage: python3 tools/judging_manifest.py   (from the repo root; re-run after curation.json or data.json change)

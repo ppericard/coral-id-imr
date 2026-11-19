@@ -1,7 +1,7 @@
 'use strict';
 require('./slot.js').testGuard();
-// Docs that every PR touches must not conflict between open PRs (Pierre, 2026-11-04: "we lose a huge amount of time
-// resolving conflicts"): no running "done" list that every PR appends to (rule W19).
+// Docs that every PR touches must not conflict between open PRs (resolving conflicts costs a lot of time): no running
+// "done" list that every PR appends to (rule W19).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -9,9 +9,14 @@ const test = require('node:test'),
   crypto = require('crypto');
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+// The specification files ARCHITECTURE.md's map sections point to (docs restructuring of 2026-11-18, PR 4).
+const SPECS = fs
+  .readdirSync(path.join(ROOT, 'docs', 'spec'))
+  .filter(f => /\.md$/.test(f))
+  .map(f => 'docs/spec/' + f);
 
 test('no running "done" list in the living docs', () => {
-  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md'])
+  for (const f of ['docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', ...SPECS])
     assert.ok(!/^#+ .*\b(Done|Shipped|Changelog)\b/im.test(read(f)), f + ': a done / shipped / changelog section');
 });
 
@@ -27,16 +32,16 @@ test('the archived done list stays frozen', () => {
   );
 });
 
-// Codex review #502: since #499 the deploy stamps the version numbers; no doc may tell a PR to bump them by hand or to
-// run the retired check_versions.py flags (--fix, --base, --no-base).
+// The deploy stamps the version numbers: no doc may tell a PR to bump them by hand or to run the retired
+// check_versions.py flags (--fix, --base, --no-base).
 test('the docs never tell a PR to bump version numbers by hand', () => {
-  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
+  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md', ...SPECS])
     assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
 });
 
-// Governance refonte PR B (Pierre, 2026-11-05): docs/STATUS.md is the one place for where things stand, written by the
-// integrator only and overwritten, never appended, so it must stay short; it replaced the evening log, whose name must not
-// come back anywhere (the archive and the copied reviews are history and keep their words).
+// docs/STATUS.md is the one place for where things stand, written by the integrator only and overwritten, never
+// appended, so it must stay short; the retired evening log's name must not come back anywhere (the archive and the
+// copied reviews are history and keep their words).
 const STATUS = read('docs/STATUS.md');
 
 test('docs/STATUS.md exists, has its sections and stays within its budget', () => {
@@ -81,7 +86,7 @@ test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
   const out = run();
   assert.match(out, /^Manila \w{3} \d\d \w{3} \d\d:\d\d · (night|day|closing|quiet): .+\n$/, out);
   const at = t => / · (\w+):/.exec(run('--at', t))[1];
-  assert.deepStrictEqual(['04:59', '05:00', '16:29', '16:30', '17:29', '17:30', '23:59'].map(at), [
+  assert.deepStrictEqual(['03:59', '04:00', '16:29', '16:30', '17:29', '17:30', '23:59'].map(at), [
     'quiet',
     'day',
     'day',
@@ -92,7 +97,7 @@ test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
   ]);
 });
 
-// Codex review #561: a cancelled or stale check never succeeded, so the brief must not call the PR green.
+// A cancelled or stale check never succeeded, so the brief must not call the PR green.
 test('tools/brief.py calls a PR green only when every check succeeded', () => {
   const {execFileSync} = require('child_process');
   const sum = runs =>
@@ -117,11 +122,11 @@ test('tools/brief.py calls a PR green only when every check succeeded', () => {
   assert.match(sum([done('success'), done('stale')]), /^NOT GREEN 1\/2/);
 });
 
-// Codex security review #561: a hook runs at every session start and prompt, so it must not run code from whatever
-// branch is checked out: it runs main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no
-// module planted in the checkout is imported), with the checkout's path from CLAUDE_PROJECT_DIR.
-// Codex review #561: the brief's version probe is a read-only GET like the app's; without an app version (av) the sync
-// script takes it for an app before 2026-11-03 and writes an "old" row in Events. It must leave Events untouched.
+// A hook runs at every session start and prompt, so it must not run code from whatever branch is checked out: it runs
+// main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no module planted in the checkout is
+// imported), with the checkout's path from CLAUDE_PROJECT_DIR.
+// The brief's version probe is a read-only GET like the app's; without an app version (av) the sync script would take
+// it for an old app and write an "old" row in Events. It must leave Events untouched.
 test("the brief's live-version probe writes nothing to the sheet", () => {
   const {execFileSync} = require('child_process');
   const q = execFileSync('python3', ['-B', '-c', 'import sys; sys.path.insert(0, "tools"); import brief; print(brief.STATS_QUERY)'], {
@@ -167,10 +172,10 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
 });
 
-// Governance refonte PR C (Pierre, 2026-11-05): AGENTS.md is the short constitution every agent reads (Codex reads only
-// its first 32 KiB by default), and every standing rule has one stable ID by theme, defined once in docs/rules/<topic>.md
-// as a "### <ID>" heading. The two numbered lists it replaced (the standing rules and the steps of "how to make a
-// change") are gone: no compatibility with the old numbers (alpha, rule W3).
+// AGENTS.md is the short constitution every agent reads (Codex reads only its first 32 KiB by default), and every
+// standing rule has one stable ID by theme, defined once in docs/rules/<topic>.md as a "### <ID>" heading. The old
+// numbered lists (the standing rules and the steps of "how to make a change") are never cited: no compatibility with
+// the old numbers (alpha, rule W3).
 const AGENTS = read('AGENTS.md');
 const RULE_FILES = {C: 'content', P: 'photos', L: 'learning', U: 'ui', A: 'admin', S: 'subjects', D: 'sheet', W: 'ship'};
 const RULES = new Map(); // id -> file
@@ -265,7 +270,7 @@ test('no reference to the retired rule numbers or to the judging brief under its
   );
 });
 
-// Repo hygiene audit (2026-11-08): the living docs' relative links and anchors resolve, every ARCHITECTURE.md "X" cited
+// The living docs' relative links and anchors resolve, every ARCHITECTURE.md "X" cited
 // anywhere names a section or a lead-in that exists, and docs/PAGES.md lists every workflow. Offline: files only. The
 // copied reviews and the frozen archive are history and keep their links.
 const LIVING_DOCS = TEXT_FILES.filter(
@@ -279,7 +284,7 @@ const anchorsOf = (() => {
   const memo = new Map();
   return f => {
     if (memo.has(f)) return memo.get(f);
-    const src = fenceless(read(f)), // a heading's code keeps its text in GitHub's anchors (Codex review #741)
+    const src = fenceless(read(f)), // a heading's code keeps its text in GitHub's anchors
       seen = new Map(),
       out = new Set();
     for (const m of src.matchAll(/^#{1,6}[ \t]+(.*)$/gm)) {
@@ -302,11 +307,11 @@ const anchorsOf = (() => {
 })();
 
 test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
-  const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
-  // ### Service worker (`sw.js`) and ### Fish photos (the sources and the area rule) (Codex review #741).
+  const a = anchorsOf(path.join('docs', 'spec', 'service-worker.md'));
+  // # Service worker (`sw.js`), and docs/spec/fish-photos.md's ## Where fish photos come from (the sources and the area rule).
   assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
   assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
-  assert.ok(a.has('fish-photos-the-sources-and-the-area-rule'));
+  assert.ok(anchorsOf(path.join('docs', 'spec', 'fish-photos.md')).has('where-fish-photos-come-from-the-sources-and-the-area-rule'));
 });
 
 test('the living docs: every relative link and anchor resolves', () => {
@@ -351,6 +356,17 @@ test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in o
   assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
 });
 
+// ARCHITECTURE.md is a map: each docs/spec/ file is reached from it, so no specification is orphaned.
+test('every docs/spec/ file is linked from docs/ARCHITECTURE.md', () => {
+  const arch = read('docs/ARCHITECTURE.md');
+  assert.ok(SPECS.length > 0, 'docs/spec/ holds no specification');
+  assert.deepStrictEqual(
+    SPECS.filter(f => !arch.includes('](' + f.replace(/^docs\//, ''))),
+    [],
+    'docs/spec/ files no ARCHITECTURE.md section links to'
+  );
+});
+
 test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {
   const dir = path.join(ROOT, '.github', 'workflows'),
     files = fs.readdirSync(dir).filter(f => /\.ya?ml$/.test(f)),
@@ -369,8 +385,8 @@ test('docs/PAGES.md lists every workflow, and only workflows that exist', () => 
   );
 });
 
-// Governance refonte, the identifier-existence check (Pierre, 2026-11-05): the code identifiers the governing docs cite in
-// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
+// The identifier-existence check: the code identifiers the governing docs cite in
+// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE and its docs/spec/ files, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
 // follows or takes over from. ROADMAP and STATUS name work to come and are overwritten daily, README / PAGES / FORMATS / DESIGN
 // have no habit of naming code, and the archive and the copied reviews are history. Offline: files only. Two forms count:
 //   - a backticked path (`tools/x.py`, `tests/y.test.js`, `admin.js`, `tools/` ...) exists: from the root, from the doc's own
@@ -386,6 +402,7 @@ const ID_DOCS = [
     .filter(f => /\.md$/.test(f))
     .map(f => 'docs/rules/' + f),
   'docs/ARCHITECTURE.md',
+  ...SPECS,
   'docs/HANDOVER.md',
   'docs/INTEGRATOR.md',
   'docs/LEARNING.md'
@@ -395,33 +412,8 @@ const ID_ALLOW = [
   {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
   {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
   {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
-  {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
-  {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
   {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
-  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
-  {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
-  {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
-  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'},
-  {key: 'core.js phaseStage', why: "#953's first build, replaced by the variants' ramp (Q391 a); LEARNING keeps its measured record"},
-  // the one fish held-out set (#1023, #1057), replaced by the per-player reserve (core.js reserveOf, 2026-11-18)
-  ...['fish-holdout.json', 'tools/holdout.py'].map(key => ({
-    key,
-    why: 'the held-out set, replaced by the per-player reserve (2026-11-18); LEARNING keeps its rule and its checks'
-  })),
-  // the gates at or below the gate floor, deleted with it: only ARCHITECTURE's version history still names them
-  ...[
-    'analysis.js AN_SUBJ_SHEET',
-    'core.js REPLAYS_SHEET',
-    'admin.js LIVE_SHEET',
-    'sync.js DEV_SHEET',
-    'core.js logOk',
-    'core.js FMT_SHEET',
-    'core.js RT_SHEET',
-    'model.js PGD_SHEET'
-  ].map(key => ({
-    key,
-    why: 'removed with the gate floor (core.js SHEET_FLOOR, 2026-11-18); the version history tells its history'
-  }))
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
 ];
 const ID_TREE = (() => {
   const skip = new Set(['.git', 'node_modules', 'worktrees']),
@@ -492,8 +484,35 @@ test('the code identifiers the docs cite in backticks still exist', () => {
   );
 });
 
-// Studies written from 2026-11-19 cite the measured PRs behind every effort figure (Pierre, 2026-11-18: the estimates
-// "sont toujours dans les choux"): tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
+// LEARNING.md describes the learning rules in force; the studies behind them live in docs/archive/learning-notebook.md.
+// Every LEARNING.md "X" cited in the repo names a heading, or the start of a bullet, a paragraph or a bold lead-in, of
+// LEARNING.md (as ARCHITECTURE.md's citations above); a citation of a study names the notebook instead. The archive and
+// this file's own examples are left out.
+test('every LEARNING.md "X" cited in the repo names a section or a lead-in of docs/LEARNING.md', () => {
+  const doc = read('docs/LEARNING.md'),
+    flat = s => s.replace(/[*"`“”]/g, '').trim(),
+    starts = doc.split('\n').map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, ''))),
+    bold = [...doc.matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+  const found = x => {
+    const t = flat(x);
+    return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
+  };
+  const cite = /LEARNING(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const bad = [];
+  for (const f of TEXT_FILES) {
+    if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue;
+    for (const m of read(f).matchAll(cite))
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': LEARNING "' + q[1] + '"');
+  }
+  assert.deepStrictEqual(
+    bad,
+    [],
+    'citations of LEARNING.md sections that do not exist (add the section, fix the name, or cite docs/archive/learning-notebook.md)'
+  );
+});
+
+// Studies written from 2026-11-19 cite the measured PRs behind every effort figure (estimates alone prove wrong):
+// tools/effort.py --check fails on a figure ("3 h", "2-4 agent hours", "days") with no
 // #NNN on its line or bullet. Older studies are history and keep their words.
 test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/effort.py --check)', () => {
   const {spawnSync} = require('child_process');
@@ -505,5 +524,180 @@ test('studies dated 2026-11-19 or later cite PRs for every effort figure (tools/
       timeout: 20000
     });
     assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  }
+});
+
+// Decision records (rule W19; docs/decisions/README.md): each is named YYYY-MM-DD-topic.md, says its date (the name's) and
+// the PR that carried it out, holds a decision, links to files that exist and has a row in the index.
+test('every decision record has its date, its PR, a decision, working links and a row in the index', () => {
+  const dir = path.join(ROOT, 'docs', 'decisions');
+  const index = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+  const records = fs.readdirSync(dir).filter(f => f !== 'README.md');
+  assert.ok(records.length > 0, 'docs/decisions/ holds no record');
+  for (const f of records) {
+    assert.match(f, /^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$/, f + ': named YYYY-MM-DD-topic.md (lowercase, hyphens)');
+    const text = fs.readFileSync(path.join(dir, f), 'utf8');
+    assert.match(text, /^# \S/, f + ': no title on the first line');
+    const head = /^Date: (\d{4}-\d\d-\d\d)\b.*?\bPR: #(\d+)/ms.exec(text);
+    assert.ok(head, f + ': no "Date: YYYY-MM-DD. PR: #N." line');
+    assert.strictEqual(head[1], f.slice(0, 10), f + ': its Date is not the date in its name');
+    assert.match(text, /^(## Decisions?\b|.*\bDecisions?\b:)/m, f + ': no Decision section');
+    for (const m of text.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
+      if (/^[a-z]+:/i.test(m[1])) continue;
+      assert.ok(fs.existsSync(path.resolve(dir, m[1])), f + ': the link ' + m[1] + ' does not resolve');
+    }
+    const row = index.split('\n').find(l => l.startsWith('|') && l.includes('](' + f + ')'));
+    assert.ok(row, f + ': no row in docs/decisions/README.md "Index"');
+    assert.ok(row.startsWith('| ' + f.slice(0, 10) + ' |'), f + ': its index row does not start with its date');
+    assert.ok(row.includes('| #' + head[2] + ' |'), f + ': its index row does not name PR #' + head[2]);
+  }
+  for (const m of index.matchAll(/^\|[^|]*\|[^|]*\]\(([^)]+)\)/gm))
+    assert.ok(fs.existsSync(path.join(dir, m[1])), 'docs/decisions/README.md: the index names ' + m[1] + ', which does not exist');
+});
+
+// Size and line-length budgets: every living doc is bounded in bytes and in its longest line, so a doc cannot grow back
+// without a PR saying so. Each budget is the doc's size a little above its size on main when the budget was set (about 5 %
+// in bytes, rounded up to the KB; about 5 % in the longest line, rounded up to ten), so today's docs pass and growth is
+// caught. A budget is lowered when a doc is cut, never raised without a reason in the PR. [KB, longest line in characters];
+// a null KB leaves the size to the doc's own test above (AGENTS.md).
+const DOC_BUDGET = {
+  'AGENTS.md': [null, 980],
+  'CLAUDE.md': [2, 240],
+  'CONTRIBUTING.md': [5, 130],
+  'README.md': [10, 350],
+  'docs/ARCHITECTURE.md': [37, 240],
+  'docs/LEARNING.md': [175, 320],
+  'docs/ROADMAP.md': [117, 1360],
+  'docs/HANDOVER.md': [23, 3140],
+  'docs/INTEGRATOR.md': [22, 210],
+  'docs/ANSWERS.md': [200, 200], // append-only ledger: it grows by an entry per answer, never cut
+  'docs/BACKUP.md': [13, 150],
+  'docs/DATA.md': [10, 410],
+  'docs/DESIGN.md': [45, 4030],
+  'docs/FISH_PATH.md': [87, 2760],
+  'docs/FORMATS.md': [20, 680],
+  'docs/GLOSSARY.md': [8, 130],
+  'docs/PAGES.md': [25, 1280],
+  'docs/SECURITY.md': [32, 1370],
+  'docs/STATUS.md': [8, 130],
+  'docs/spec/admin.md': [32, 380],
+  'docs/spec/admin-photos.md': [35, 140],
+  'docs/spec/admin-players.md': [48, 190],
+  'docs/spec/admin-tree.md': [22, 210],
+  'docs/spec/achievements.md': [18, 130],
+  'docs/spec/basics.md': [14, 130],
+  'docs/spec/front-end.md': [21, 130],
+  'docs/spec/model.md': [23, 130],
+  'docs/spec/quiz.md': [20, 130],
+  'docs/spec/service-worker.md': [7, 130],
+  'docs/spec/cards.md': [33, 180],
+  'docs/spec/sync.md': [82, 220],
+  'docs/spec/content.md': [16, 130],
+  'docs/spec/data.md': [34, 140],
+  'docs/spec/fish-photos.md': [54, 180],
+  'docs/spec/fish.md': [38, 150],
+  'docs/spec/subjects.md': [26, 130],
+  'docs/spec/fish-game.md': [12, 130],
+  'docs/spec/fish-sheets.md': [10, 130],
+  'docs/spec/seaslugs.md': [12, 130],
+  'docs/spec/tools.md': [47, 130],
+  'docs/spec/analyses.md': [26, 130],
+  'docs/spec/loading.md': [16, 130],
+  'docs/spec/site.md': [7, 130],
+  'docs/spec/storage.md': [11, 240],
+  'docs/spec/photos.md': [17, 130],
+  'docs/spec/player-reports.md': [8, 130],
+  'docs/spec/deploy.md': [6, 130],
+  'docs/decisions/README.md': [10, 200], // the index grows by a row per record
+  'docs/rules/README.md': [1, 150],
+  'docs/rules/admin.md': [5, 230],
+  'docs/rules/content.md': [9, 220],
+  'docs/rules/learning.md': [22, 400],
+  'docs/rules/photos.md': [11, 280],
+  'docs/rules/sheet.md': [15, 160],
+  'docs/rules/ship.md': [36, 480],
+  'docs/rules/subjects.md': [5, 130],
+  'docs/rules/ui.md': [8, 150],
+  'docs/reference/genus-overview-2026-10-31.md': [16, 650],
+  'docs/reference/lit-componential-difficulty.md': [36, 700],
+  'docs/reference/lit-photo-memory.md': [30, 470],
+  'docs/reference/lit-response-time.md': [37, 870],
+  'judging/BRIEF.md': [24, 190],
+  'judging/FISH.md': [47, 520],
+  'judging/PROMPT.md': [3, 160],
+  'judging/SEASLUG.md': [17, 500],
+  'tools/README.md': [13, 280],
+  'tools/sync/changes/README.md': [2, 130]
+};
+// A record has no entry of its own (every decision PR would add one): the same budget for each. A sheet script change
+// waiting for its version (tools/sync/changes/<branch>.md, one paragraph, removed at merge) likewise.
+const RECORD_BUDGET = [8, 200];
+const CHANGE_BUDGET = [8, 4000];
+// Not budgeted on purpose: the sheet script's version history only grows (tools/sheet_version.py appends to it).
+const DOC_UNBUDGETED = new Set([path.join('tools', 'sync', 'HISTORY.md')]);
+const budgetOf = f => {
+  const key = f.split(path.sep).join('/');
+  if (DOC_BUDGET[key]) return DOC_BUDGET[key];
+  if (/^tools\/sync\/changes\/[^/]+\.md$/.test(key)) return CHANGE_BUDGET;
+  return /^docs\/decisions\/[^/]+\.md$/.test(key) ? RECORD_BUDGET : null;
+};
+
+test('every living doc has a size and line-length budget, and no budget names a doc that is gone', () => {
+  const living = LIVING_DOCS.filter(f => !DOC_UNBUDGETED.has(f));
+  assert.deepStrictEqual(
+    living.filter(f => !budgetOf(f)),
+    [],
+    "living docs with no budget in DOC_BUDGET (add one a little above the doc's size)"
+  );
+  assert.deepStrictEqual(
+    Object.keys(DOC_BUDGET).filter(f => !living.map(x => x.split(path.sep).join('/')).includes(f)),
+    [],
+    'DOC_BUDGET entries for docs that are not living docs any more: delete them'
+  );
+});
+
+test('every living doc stays within its size and line-length budget', () => {
+  const over = [];
+  for (const f of LIVING_DOCS) {
+    const b = budgetOf(f);
+    if (!b) continue; // the test above names it
+    const src = read(f),
+      kb = Buffer.byteLength(src) / 1024,
+      longest = Math.max(...src.split('\n').map(l => [...l].length));
+    if (b[0] !== null && kb > b[0]) over.push(f + ': ' + kb.toFixed(1) + ' KB, budget ' + b[0] + ' KB');
+    if (longest > b[1]) over.push(f + ': a line of ' + longest + ' characters, budget ' + b[1]);
+  }
+  assert.deepStrictEqual(over, [], 'docs over their budget: shorten or move history to a decision record, never raise the budget by habit');
+});
+
+// README.md and privacy.html name the subjects the app teaches and say which are in beta; both must follow core.js
+// SUBJECTS (its names and its beta flag), so a subject opened, closed or taken out of beta shows up here.
+const SUBJECT_DOCS = ['README.md', 'privacy.html'];
+// A doc known to be behind SUBJECTS, with why: its check must fail until it is fixed, and an entry that now passes fails
+// so it is deleted.
+const SUBJECT_DOCS_BEHIND = {
+  'privacy.html': "its notice for the three subjects is a separate change that waits for Pierre's reading"
+};
+const subjectProblems = f => {
+  const text = read(f).replace(/\s+/g, ' ').toLowerCase();
+  const bad = [];
+  for (const s of require('../core.js').SUBJECTS) {
+    const name = s.name.toLowerCase();
+    if (!text.includes(name)) {
+      bad.push('does not name ' + s.name);
+      continue;
+    }
+    const marked = new RegExp(name + '\\W{0,3}(?:\\(?beta\\b|in beta\\b)|\\bin beta\\W{0,6}' + name).test(text);
+    if (!!s.beta !== marked)
+      bad.push(s.name + (s.beta ? ' is in beta in core.js SUBJECTS, not here' : ' is out of beta in core.js SUBJECTS, in beta here'));
+  }
+  return bad;
+};
+
+test("README.md's and privacy.html's subject lists match core.js SUBJECTS", () => {
+  for (const f of SUBJECT_DOCS) {
+    const bad = subjectProblems(f);
+    if (SUBJECT_DOCS_BEHIND[f]) assert.ok(bad.length > 0, f + ' now matches SUBJECTS: delete its SUBJECT_DOCS_BEHIND entry');
+    else assert.deepStrictEqual(bad, [], f + ': the subjects differ from core.js SUBJECTS (names and beta flags)');
   }
 });

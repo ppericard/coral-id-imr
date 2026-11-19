@@ -1,4 +1,4 @@
-// Per-genus ability on real answers (2026-11-03): replays the answer log, player by player in time order, with the
+// Per-genus ability on real answers: replays the answer log, player by player in time order, with the
 // app's own Elo (core.js ELO, abilityOf, eloStep, as model.js runs them; core.js playerStart, levelSeed) under several
 // rules for the genus wrongly given (rule L2), and scores how well each rule predicts the next answer.
 // Offline, reads a file, sends nothing (docs/LEARNING.md "The genus wrongly given in the Elo").
@@ -14,14 +14,14 @@
 // (read-only export; row order = time order). Nothing is written anywhere but --json.
 //
 // Rules for the genus wrongly given c (the genus shown always gets the app's step):
-//   a  the app until 2026-11-03: a miss step at difficulty 0, its answer count not raised (K stays at its first value)
+//   a  the app's former rule: a miss step at difficulty 0, its answer count not raised (K stays at its first value)
 //   b  a miss step at the question's difficulty, counted in c's own uncertainty (K shrinks as for its own answers)
 //   c  b at half weight
 //   d  a, but the genus ability planned as the global level plus an offset (Pelánek et al. 2017's global + concept
 //      skill): every answer moves the level, the offset of the genus shown moves by its own K
 //   e  no step on c (Pelánek et al. 2017, Papoušek et al. 2014: the learner's knowledge of an item is not updated when it
-//      is a distractor); rule L2 stays in the progress (the app since 2026-11-03)
-// +X (2026-11-04, docs/LEARNING.md "Known mix-ups"): the confusion term, the question taken that much harder (core.js
+//      is a distractor); rule L2 stays in the progress (the app's rule)
+// +X (docs/LEARNING.md "Known mix-ups"): the confusion term, the question taken that much harder (core.js
 // confGap, the most over its choices: the player's own score of the pair, replayed from their answers as the app keeps
 // it, s.off and s.conf, against the pooled score) for the prediction and the step; +Y the prediction only; +Z the sum
 // over the choices instead of the most; +M only on a question with 3 or more plausible choices (the app's rule: on a
@@ -32,30 +32,30 @@
 // 0.8); L, the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers; the volatility
 // still lets it catch up with a lasting change). The level bands of a rule with L are those of its own level.
 //
-// Response time (2026-11-03, docs/LEARNING.md "Response time"), options with a number: +Tk a right answer's genus step
+// Response time (docs/LEARNING.md "Response time"), options with a number: +Tk a right answer's genus step
 // times w = clamp(1 - k z, 0.5, 1.5), z its log(seconds) against the player's own median so far; +Sk misses too; +Hh the
 // speed-accuracy score of Math Garden instead of right / wrong; +Uc every right answer's step times c (a control); +G
 // the level's step too; +N no time effect when a photo was enlarged. The prediction never uses the answer's own time.
-// +O (2026-11-06, Q137 part 1): the genus shown takes the level after this answer's step (its levelMove: only the
-// level's moves from the other answers; the app from rules version 7).
-// +A (2026-11-04): the app's own rule (core.js RTIME, rtWeight, rtAdd: +T1.5+G, the times kept as the app keeps them);
+// +O: the genus shown takes the level after this answer's step (its levelMove: only the level's moves from the other
+// answers; the app's rule, core.js scoreAnswer).
+// +A: the app's own rule (core.js RTIME, rtWeight, rtAdd: +T1.5+G, the times kept as the app keeps them);
 // with --model and a core.js before it, no change, so `e+X+M+A` replays the app as it is on either version.
-// --rtfit: the two measures of PR #431 on the first rule's expectation (a check of tools/learnsim.js's time model on
+// --rtfit: the two response-time measures on the first rule's expectation (a check of tools/learnsim.js's time model on
 // simulated logs, docs/LEARNING.md "Response time"): the logistic term of z (log seconds minus the player's median over
 // all their timed answers, typed ones left out) on the answer itself, and of the z of a genus's last own answer, when it
 // was right, on its next one; each on top of the expectation (offset logit p, with an intercept).
 // A '*' in place of a number (e.g. e+X+M+T*+G) replays every value of --grid (one list per '*', ';' between lists) and
 // chooses it per player by leave one player out: each player is scored with the value best on the other players.
 // After the tables, every rule's paired log-loss difference against the first one, with the players as the unit of
-// inference (the answers cluster in about ten players, docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580): the mean of
+// inference (the answers cluster in about ten players, docs/reviews/2026-11-05-stats-methods-study.md §5.2): the mean of
 // the players' own mean differences (each player one vote), a 95% t interval on players - 1 degrees of freedom and the
 // two-sided p of a sign-flip test over the players (exact up to 16 players, else 9999 draws, seeded: the same p on every
 // run). The 'all' row is the primary measure, the group rows exploratory (no correction for their number). Then, as a
-// descriptive line only, the former figure per answer, ± a standard error that treats the answers as independent (too
+// descriptive line only, the figure per answer, ± a standard error that treats the answers as independent (too
 // narrow when the players differ).
 // Each question's difficulty d is recovered from what the app logged when it was asked (expected e, ability th, k
 // choices): e = 1/k + (1 - 1/k) sig(th - d), so the photo, its memory offset and the single-view handicap are those the
-// player really met; answers logged without e/th (before sheet v5) are skipped. The prediction for an answer is the
+// player really met; answers logged without e/th (the oldest) are skipped. The prediction for an answer is the
 // replayed ability of its genus before it (a genus never answered: playerStart from the replayed progress) against d,
 // with the guess rate of its k choices (typed: none). Scores: log-loss and Brier (lower is better), and calibration,
 // mean predicted against mean right, by the number of choices (2; 3-4; typed) and by the player's replayed global level
@@ -73,7 +73,7 @@ const ROOT = path.join(__dirname, '..');
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
   GAME = new Set(C.gameOf(DATA)); // the game genera: slate, Millepora (BENTHIC), bonus genera (the app's GX)
 
-// The app's ELO, ability and abilityStep (core.js ELO, abilityOf, eloStep since 2026-11-03: model.js calls them on its P,
+// The app's ELO, ability and abilityStep (core.js ELO, abilityOf, eloStep: model.js calls them on its P,
 // and the sheet's full replay steps the ability with them too); P is this context's, set per player.
 // --model <file>: another core.js (e.g. main's, from git show) to compare the same rules on two versions of the app.
 function model(file = path.join(ROOT, 'core.js')) {
@@ -111,16 +111,16 @@ const kOf = (mode, choices) => {
 };
 
 // Rows, normalised and sorted by time, stable (ties keep the log's order): readAnswers' times are ms, the sheet tab's
-// are text ("2026-11-03 18:09", to the minute) or dates; a device that was offline uploads its older answers after
+// are text ("YYYY-MM-DD HH:MM", to the minute) or dates; a device that was offline uploads its older answers after
 // newer ones from another device, so the tab's order is not the time order. A time that cannot be read keeps the
 // position of the row before it.
 const timeOf = x => (typeof x === 'number' ? x : x instanceof Date ? x.getTime() : Date.parse(String(x || '').trim().replace(' ', 'T')));
-// The app logs its own confusion term inside e from the release of the known mix-ups (PR #425, live 2026-11-03 15:35
-// UTC; the log's clock, as the sheet tab writes it, Asia/Taipei): before it, e has none. An app not yet updated logs a
-// few answers without it after that time (no per-answer app version in the log). --cf-from moves it.
+// The app logs its own confusion term inside e from CF_FROM, the release of the known mix-ups (15:35 UTC, in the log's
+// clock as the sheet tab writes it, Asia/Taipei); before it, e has none. An app not yet updated logs a few answers
+// without it after that time (no per-answer app version in the log). --cf-from moves it.
 let CF_FROM = timeOf('2026-11-03 23:35');
 function normalise(raw) {
-  // The replayed subject's rows only (core.js subjRows; sheet v60 logs every subject's, at index 17 in both layouts).
+  // The replayed subject's rows only (core.js subjRows; the subject at index 17 in both layouts).
   raw = C.subjRows(raw.filter(r => r && r[0] && r[0] !== 'Name'));
   let last = -Infinity;
   raw = raw
@@ -138,12 +138,11 @@ function normalise(raw) {
   );
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
-// Seconds to answer and a photo enlarged first (sheet v23 on; both row layouts keep them at 12 and 13): NaN / null before.
+// Seconds to answer and a photo enlarged first (at 12 and 13 in both row layouts): NaN / null in the oldest rows.
 const rt = r => ({sec: num(r[12]), zm: r[13] === undefined || r[13] === '' || r[13] === null ? null : Number(r[13]) ? 1 : 0});
 
-// The reference for the level bands: the app's global level as #413 stepped it (model.js abilityStep of 2026-11-03,
-// ELO {kmax 0.8, kmin 0.25, n 15, vr 0.1, vg 2}, with the kmin floor), kept here so that the bands never depend on the
-// model or the rule being replayed.
+// The reference for the level bands: a fixed copy of an earlier global-level step (ELO {kmax 0.8, kmin 0.25, n 15,
+// vr 0.1, vg 2}, with the kmin floor), so that the bands never depend on the model or the rule being replayed.
 const REF = {kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
 function refStep(s, good, d, k) {
   const g = isFinite(k) ? 1 / k : 0,
@@ -153,10 +152,10 @@ function refStep(s, good, d, k) {
   const K = Math.min(REF.kmax, Math.max(REF.kmin, REF.kmax / (1 + m / REF.n)) * (1 + REF.vg * Math.abs(s.vr)));
   s.th = Math.round(Math.min(REF.hi, Math.max(REF.lo, s.th + K * ((good ? 1 : 0) - e))) * 100) / 100;
 }
-// Response time as a weak signal (2026-11-03, docs/LEARNING.md "Response time"): z = log(seconds) minus the median
+// Response time as a weak signal (docs/LEARNING.md "Response time"): z = log(seconds) minus the median
 // log(seconds) of the player's own earlier timed answers (RT.MIN of them at least; typed questions left out, they take
 // longer by design), known only once the answer is given, so it changes the step after the answer, never its prediction.
-// An answer without time (before sheet v23), a typed one, or one of the player's first RT.MIN timed answers: factor 1.
+// An answer without time (the oldest rows), a typed one, or one of the player's first RT.MIN timed answers: factor 1.
 const RT = {MIN: 10, LO: 0.5, HI: 1.5, ZD: 1};
 const median = a => {
   const s = [...a].sort((x, y) => x - y),
@@ -164,8 +163,8 @@ const median = a => {
   return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
 };
 // The step abilityStep just made, redone with its own K on another surprise: K from the answer count and the volatility
-// it just stored (model.js abilityStep as of 2026-11-03: the level has no kmin floor, rounded to 4 decimals, a genus
-// to 2; with an older --model the time rules' level step would not match it).
+// it just stored (model.js abilityStep: the level has no kmin floor, rounded to 4 decimals, a genus to 2; with an
+// older --model the time rules' level step would not match it).
 function restep(n, s, th, surprise) {
   const E = M.M.ELO,
     m = (s.ok || 0) + (s.ko || 0),
@@ -211,7 +210,7 @@ function replay(list, variant, pooledOf = null) {
     confTerm = r => (cX ? termOf(r, flags.includes('Z'), flags.includes('M')) : 0),
     // The term the app itself put in the logged expectation (model.js confTerm: the most over the choices, 3 or more
     // plausible ones) for the answers logged from CF_FROM on: taken out of the recovered difficulty, so a rule's own
-    // term is not counted twice (Codex review #425). Replayed from the same record as the app keeps it.
+    // term is not counted twice. Replayed from the same record as the app keeps it.
     appTerm = r => (isFinite(r.at) && r.at >= CF_FROM ? termOf(r, false, true) : 0);
   M.P = P;
   const st = g => (P[g] = P[g] || {ok: 0, ko: 0}),
@@ -274,8 +273,8 @@ function replay(list, variant, pooledOf = null) {
     // For the groups: this answer's speed, and the speed of the genus's last own answer when it was right.
     Object.assign(scored[scored.length - 1], {z: zr, pz: lastZ[r.t] ?? null});
     lastZ[r.t] = good ? zr : null;
-    // +A: the app's own answer-time rule (core.js rtWeight and rtAdd, as quiz.js answer and replayProgress run them,
-    // since rules version 4; a core.js without them, e.g. main's before it through --model: no change).
+    // +A: the app's own answer-time rule (core.js rtWeight and rtAdd, as quiz.js answer and replayProgress run them; a
+    // core.js without them through --model: no change).
     const appRT = flags.includes('A') && typeof M.K.rtWeight === 'function',
       wA = appRT ? M.K.rtWeight(P[C.LEVEL], r.sec, k, good) : 1;
     if (v === 'd') offStep(r.t, s, good, d, k);
@@ -287,15 +286,15 @@ function replay(list, variant, pooledOf = null) {
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     // The level bands come from a reference level stepped by one fixed rule (refStep), whatever the model (--model)
-    // or the rule replayed, so every run puts the same answers in each band (Codex review #415). Its seed too: the
-    // first answer's genus stepped by refStep from where it started (th, before any rule touched it), not the rule's
-    // own step (a time rule or +U moves it before the level is seeded; Codex review #431).
+    // or the rule replayed, so every run puts the same answers in each band. Its seed too: the first answer's genus
+    // stepped by refStep from where it started (th, before any rule touched it), not the rule's own step (a time rule
+    // or +U moves it before the level is seeded).
     if (!L0.seeded) {
       const g0 = {ok: good ? 1 : 0, ko: good ? 0 : 1, th};
       refStep(g0, good, d0, k);
       Object.assign(L0, C.levelSeed({[r.t]: g0}), {seeded: 1});
     } else L0[good ? 'ok' : 'ko']++;
-    refStep(L0, good, d0, k); // d0: the same difficulty whatever the rule, so every rule's bands hold the same answers (Codex review #425)
+    refStep(L0, good, d0, k); // d0: the same difficulty whatever the rule, so every rule's bands hold the same answers
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
     // uncertainty function; the volatility still lets it catch up with a lasting change).
     // +V: the level's step without the volatility boost (ELO.vg), so a run of misses does not speed its fall.
@@ -306,7 +305,7 @@ function replay(list, variant, pooledOf = null) {
     M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k, wA);
     if (appRT) M.K.rtAdd(P[C.LEVEL], r.sec, k);
     if (flags.includes('G')) timeStep(C.LEVEL, P[C.LEVEL], thL);
-    // +O (2026-11-06, Q137 part 1, rules version 7: core.js scoreAnswer): the genus shown takes the level as it stands
+    // +O (core.js scoreAnswer): the genus shown takes the level as it stands
     // after this answer's step on it, so its levelMove carries only the level's moves from the other answers.
     if (flags.includes('O') && v !== 'd') s.lt = P[C.LEVEL].th;
     M.M.ELO.kmin = KMIN;
@@ -369,7 +368,7 @@ function groupScores(all) {
   );
   return Object.fromEntries(Object.entries(groups).map(([G, l]) => [G, score(l)]));
 }
-// Players are the unit of inference (docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580, docs/LEARNING.md "Real-answer
+// Players are the unit of inference (docs/reviews/2026-11-05-stats-methods-study.md §5.2, docs/LEARNING.md "Real-answer
 // replay"): the answers cluster in about ten players, so an interval that treats them as independent is too narrow.
 // The sign-flip test over players: exact (every sign pattern) up to SIGN.exact players, else SIGN.draws seeded draws.
 const SIGN = {exact: 16, draws: 9999, seed: 1};
@@ -453,13 +452,13 @@ function tQuantile(p, df) {
 // standard error over the players, a 95% t interval on players - 1 degrees of freedom and the sign-flip test's p over the
 // players. The percentile cluster bootstrap was not chosen: with about ten players it under-covers (Cameron, Gelbach &
 // Miller 2008), and a wild cluster bootstrap of a mean with Rademacher weights is this sign-flip test. answer: the
-// former per-answer figure (mean over answers, which is the answer-weighted mean of the d_p, ± a standard error that
+// per-answer figure (mean over answers, which is the answer-weighted mean of the d_p, ± a standard error that
 // treats the answers as independent), descriptive only.
 function paired(a, b, keep = () => true, opt = {}) {
   const ll = o => -Math.log(o.y ? o.p : 1 - o.p),
     mean = l => l.reduce((t, x) => t + x, 0) / l.length,
     sdm = l => {
-      const m = mean(l); // once, not per element (Codex review #583: quadratic on a large export)
+      const m = mean(l); // once, not per element (quadratic on a large export)
       return Math.sqrt(l.reduce((t, x) => t + (x - m) ** 2, 0) / (l.length - 1) / l.length);
     },
     by = new Map(),
@@ -540,7 +539,7 @@ const pooledFor = (...out) => (a, b) => {
   return C.confScore(n, prior(a, b));
 };
 // Every player with min answers or more: the training population of a '*' family (leave one player out); --player
-// (only) limits what is scored and shown, never who k is chosen on (Codex review #431).
+// (only) limits what is scored and shown, never who k is chosen on.
 const pool = Object.keys(byPlayer).filter(p => byPlayer[p].length >= min),
   players = pool.filter(p => !only || p === only);
 const res = {},
@@ -580,8 +579,8 @@ variants.forEach(v => {
 // A family with '*' (e.g. e+X+M+T*): each value of its grid replayed, the value chosen for each player by leave one
 // player out (the lowest log-loss on the other players' answers), so the score is never fitted on the answers scored.
 // Each training player is replayed again for each fold, its pooled mix-up scores without the answers of the player left
-// out (the app's own term, appTerm, and +X read them), so the outcomes scored never reach the choice (Codex review
-// #431). A player with no answer scored (only answers logged before sheet v5) weighs nothing (foldLoss 0).
+// out (the app's own term, appTerm, and +X read them), so the outcomes scored never reach the choice. A player with no
+// answer scored (only answers logged without e/th) weighs nothing (foldLoss 0).
 const foldLoss = (q, v, p) => {
   C.START.W = M.K.START.W = v.split('+').includes('W') ? 1 : W0;
   const {scored} = replay(byPlayer[q], v, pooledFor(q, p));
@@ -631,7 +630,7 @@ return {players, res, ref, byPlayer};
 }
 const groupsOf = (res, variants) => [...new Set(variants.flatMap(v => Object.keys(res[v].groups)))].sort();
 // --rtfit: the logistic term b of x on y on top of the prediction p (offset logit p, with an intercept a, which takes
-// up a prediction running low or high overall, as PR #431 fitted it), with its standard error.
+// up a prediction running low or high overall), with its standard error.
 function logitTerm(obs) {
   let a = 0,
     b = 0,
@@ -657,7 +656,7 @@ function logitTerm(obs) {
   }
   return {a, b, se: Math.sqrt(Haa / (Haa * Hbb - Hab * Hab)), n: obs.length};
 }
-// z against each player's median over all their timed answers (not typed), as PR #431 measured; per scored answer.
+// z against each player's median over all their timed answers (not typed); per scored answer.
 function rtFit(scored) {
   const by = {};
   scored.forEach(o => isFinite(o.r.sec) && o.r.sec > 0 && isFinite(o.k) && (by[o.r.p] = by[o.r.p] || []).push(Math.log(o.r.sec)));

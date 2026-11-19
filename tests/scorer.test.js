@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// One scorer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6; docs/LEARNING.md "One
-// scorer"): quiz.js answer and the full replay of the answer log (core.js replayProgress: the sheet's, the admin's, this
+// One scorer (docs/LEARNING.md "One scorer"): quiz.js answer and the full replay of the answer log (core.js replayProgress: the sheet's, the admin's, this
 // device's own) score an answer through core.js scoreAnswer, and every answer logs what the game scored it with (its
 // scoring record sc: photo difficulty, memory, mix-ups, look-alike test, recalls, the hint revealed after it). So the
 // replay of a recorded session gives exactly the state the game had, field by field, whatever pooled stats the replay
@@ -45,7 +44,7 @@ function session(seed, n) {
   let pdiff = {}, // the device's photo ratings, refreshed now and then
     pmem = [0, -0.4, -1, -1.6],
     pconf = {},
-    pfmt = {}, // the device's per-format offsets (?stats=1 fmt, Q138), refreshed with the rest
+    pfmt = {}, // the device's per-format offsets (?stats=1 fmt), refreshed with the rest
     pgd = {};
   const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
   for (let i = 0; i < n; i++) {
@@ -88,6 +87,7 @@ function session(seed, n) {
       k,
       chs: choices,
       seenPh: phAll.filter(p => p !== unseen),
+      mu: null, // no photo of the mimicry class (quiz.js answer: model.js mimUnit)
       unseen,
       ph: phAll,
       solo: phAll.length === 1 ? 0.5 : 0,
@@ -218,9 +218,8 @@ test('a row logged before the scorer still replays by its logged e (the inversio
   assert.ok(Object.keys(R.P).every(g => R.P[g].ok + R.P[g].ko >= 0));
 });
 
-// One surprise, counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md §2a;
-// rules version 7): the genus shown moves by its own Elo step only; the level's step on the same answer reaches the other
-// genera (their levelMove), never the genus that was answered.
+// One surprise, counted once: the genus shown moves by its own Elo step only; the level's step on the same answer reaches
+// the other genera (their levelMove), never the genus that was answered.
 test("scoreAnswer: an answer moves its genus once; the level's step on it reaches only the other genera", () => {
   const P = {B: {ok: 5, ko: 0, th: 0.5, h: '', lt: 0}, [C.LEVEL]: {ok: 5, ko: 0, th: 0}},
     q = {t: 'A', c: 'A', ok: true, k: 4, chs: [], ph: ['a1'], d0: 0, timed: false},

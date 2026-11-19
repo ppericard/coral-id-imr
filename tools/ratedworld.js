@@ -3,8 +3,8 @@
 // offset, drawn from the distributions below (RATED, the one place they are stated), and the app's own engine runs on
 // it in Node: core.js (scoreAnswer, the bar's domStep, the Elo, treeScore) and model.js loaded whole in a vm (the aim,
 // the start's lean, photoSet with its Gaussian photo choice and RARE, typed questions, drawW, shaky, OPEN.K, openPace,
-// openRight, openPick, the exam), the fish units built as the app builds them (core.js fishGen and fishPhotos, app.js
-// fishGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
+// openRight, openPick, the exam), the fish units built as the app builds them (core.js treeGen and treePhotos, app.js
+// treeGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
 // the path allows one (openPace, openRight, openChance), the target drawn among the units met (nextTarget),
 // a unit opened on a card asked as soon as it is ready; no Again, duel or comeback (they are not in the rated world).
 // Both subjects: the fish units built as the app builds them (above), the corals' too (coralUnits); --learner count or item.
@@ -12,12 +12,12 @@
 //   node tools/learnsim.js --world rated [--subject fish] [--seeds 10] [--questions 3000] [--profiles ...]
 //                          [--learner count|item] [--dist normal|tail|t3] [--app truth|own|sheet] [--beyond yes|no] [--out rated.json]
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]
-// --app sheet (2026-11-09, Q315 level 2): the sheet's photo Elo simulated on a population's own answers (runPop, below).
+// --app sheet: the sheet's photo Elo simulated on a population's own answers (runPop, below).
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
 // - each family's difficulty mu ~ N(0, FAM^2), + LOOK when it has declared look-alikes; each scientific genus's mu ~ its
-//   family's + N(0, SUB^2), + SIB when it has sibling genera; each species unit's (the species level, app.js fishGenera
-//   X.spl, by common name) the same way from its family, drawn after the photos so the worlds of before stay the same;
+//   family's + N(0, SUB^2), + SIB when it has sibling genera; each species unit's (the species level, app.js treeGenera
+//   X.spl, by common name) the same way from its family, drawn after the photos so the rest of a seed's world is kept;
 // - each photo's own part eps (one per photo file): normal N(0, EPS^2); tail, the same with TAIL.SHARE of the photos
 //   TAIL.ADD harder; t3, a t with 3 degrees of freedom scaled to the same sd. A question on unit n with photo f has the
 //   true difficulty mu(n) + eps(f). Its judged ease (what the app reads as p.e) e = round(EASE.MID - (eps + N(0,
@@ -25,7 +25,7 @@
 // - the player's ability offset pi ~ N(0, PI^2).
 // The app is told the truth (--app truth: photoDiff gives each photo's true difficulty and genusDiff each unit's mu, as
 // if every photo and unit were rated) or keeps its own estimate (--app own: the judged-ease prior alone, no photo
-// statistics, as the fish today).
+// statistics, as the fish).
 //
 // The learner (tools/learnprof.js profiles): know(n), its chance to name an average photo (difficulty 0) of unit n, from
 // its profile; on a question it recognises the unit with p = sig(logit(know) + pi - d - SINGLE), d the true difficulty
@@ -56,8 +56,8 @@ const RATED = {
   EASE: {MID: 3, STEP: 0.5, NOISE: 0.35},
   PI: 0.5,
   SINGLE: 0.5,
-  // The corals' genus spread: the SD of the sheet's genus offsets gd, 0.286 as #637 measured them with the photos rated
-  // against the genus ability (0.370 with today's rating against the level: the sensitivity variant, --coralsd 0.37).
+  // The corals' genus spread: the SD of the sheet's genus offsets gd, 0.286 measured with the photos rated against the
+  // genus ability (0.370 with the rating against the level: the sensitivity variant, --coralsd 0.37).
   CORAL_GD: 0.286
 };
 // The global level's trace (lv): one value every LV_EVERY answers.
@@ -80,30 +80,30 @@ const idHash = id => {
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
-// The fish units as the app builds them (app.js fishBuild without the curation's covers, which change no game photo),
+// The fish units as the app builds them (app.js treeBuild without the curation's covers, which change no game photo),
 // every photo in its unit's views: each simulated player's reserve is split out in engine (core.js reserveOf). Pierre's
-// ★ covers and featured photos (curation.json fish genera, by fishPid, as app.js fishCurate reads them) stay practice in
-// the app (the cards'): X.picks, given to reserveOf as covers so it leaves them out too (Codex review #1099).
+// ★ covers and featured photos (curation.json fish genera, by treePid, as app.js treeCurate reads them) stay practice in
+// the app (the cards'): X.picks, given to reserveOf as covers so it leaves them out too.
 let XCACHE = null;
 function fishUnits() {
   if (XCACHE) return XCACHE;
   const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
     F = J('fish.json'),
     ph = J('fish-photos.json'),
-    gm = C.fishGameRead(J('fish-game.json')),
+    gm = C.treeGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
-    fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  const X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), F),
+    treeGenera = vm.runInContext('(' + cut(src, 'function treeGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
+  const X = treeGenera(C.treeGen(F, C.treePhotos(ph.photos, gm.photos, CUR), ph.sheet), F),
     pick = new Set(
       Object.values((CUR.fish && CUR.fish.genera) || {})
         .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
         .filter(Boolean)
-        .map(C.fishPid)
+        .map(C.treePid)
     );
   X.picks = Object.fromEntries(
-    [...new Set(Object.values(X.gen).flatMap(g => (g.views.wide || []).filter(p => pick.has(C.fishPid(p.f))).map(p => p.f)))].map((f, i) => [
+    [...new Set(Object.values(X.gen).flatMap(g => (g.views.wide || []).filter(p => pick.has(C.treePid(p.f))).map(p => p.f)))].map((f, i) => [
       'pick' + i,
       {f}
     ])
@@ -159,7 +159,7 @@ function unitsOf(subject) {
       slate: [...X.c1, ...X.c2, ...X.c3],
       extra: X.sci,
       setK: 'sci',
-      // the species units (app.js fishGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
+      // the species units (app.js treeGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
       // a family's from its Advanced, one at a time in its order (app.js spPlay); the score's tree with them
       sp: X.spl || [],
       rec: n => X.gen[n],
@@ -201,8 +201,7 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     ease = {};
   // A unit below the families (a fish genus or species): its family's mu plus its own offset, drawn on a stream of its
   // own (seed, its id), so units added or taken away never move another draw: two versions of the app with other units
-  // play the same photos and the same other units (2026-11-18: the genera of circles 2 and 3, 107 more, had moved every
-  // photo's eps and every species' mu, so the arms played different worlds).
+  // play the same photos and the same other units (a shared stream would move every photo's eps and every species' mu).
   const below = n =>
     (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(gen((seed * 2654435761) ^ idHash(n))) + ((U.rec(n).look || []).length ? RATED.SIB : 0));
   if (U.subject === 'fish') U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
@@ -301,11 +300,11 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
     slateGenera: () => slate,
     UNITS: {[subject]: tree ? {core: () => U.core, slate: () => slate, tree: () => tree, gate, opens: []} : {slate: () => slate, opens: []}},
     bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto, ...spUnits()])],
-    // app.js setLater (Q208 A): a fish scientific genus waits while a family in play is still to open (model.js openPick),
-    // unless it is an auto unit (an IMR player's IMR genus) or the set was turned on by hand early (Q.sciH, Q240).
+    // app.js setLater: a fish scientific genus waits while a family in play is still to open (model.js openPick), unless
+    // it is an auto unit (an IMR player's IMR genus) or the set was turned on by hand early (Q.sciH).
     setLater: n => subject === 'fish' && U.extra.includes(n) && !ctx.Q[U.setK + 'H'] && !setUnits().auto.includes(n),
-    // app.js shareFree (the rank share, Q382): the fish scientific genera an IMR player gets by themselves (Q219), every one
-    // once the set was turned on by hand early (Q240).
+    // app.js shareFree (the rank share): the fish scientific genera an IMR player gets by themselves, every one once the
+    // set was turned on by hand early.
     shareFree: () => (subject === 'fish' ? [...(ctx.Q[U.setK + 'H'] ? setUnits().units : []), ...setUnits().auto] : []),
     pool: () => [...slate, ...ctx.bonusList()].filter(has), // app.js pool: units with a photo to show
     openShut: n => U.c3.includes(n) && beyond !== 'yes' && !U.c3.some(u => u in ctx.introMap()),
@@ -327,8 +326,8 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
-  // judged-ease prior of its photos, the player's reserved ones included as model.js genusDiff counts them since #1057:
-  // core.js heldOf) gives the unit's mu.
+  // judged-ease prior of its photos, the player's reserved ones included as model.js genusDiff counts them: core.js
+  // heldOf) gives the unit's mu.
   if (app === 'truth') {
     ctx.photoDiff = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0);
     const ez = C.calibOf(SUBJ).ease || 0,
@@ -348,7 +347,7 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
 // quiz.js planPhoto's photo-quiz question on unit t (cards: the cards shown with it, start: the first ones): the exam's
 // when the unit is ready for one; the traps the level asks for (trapsFor, with the opening hold's ease), the choices
 // (distractors, never a unit opened on its own card now), typed with the unit's typed share; k the plausible choices
-// while the traps are fewer than 2, else every choice (Codex review #787); the photo aimed lower by the hold's ease and
+// while the traps are fewer than 2, else every choice; the photo aimed lower by the hold's ease and
 // the player's own mix-ups (confTerm), in its format (k2, k3, k4, typed), never the card's own cover.
 function question(M, ctx, G, t, {list, cards = [], start = false}) {
   const ex = M.examReady(t) && M.examSet(t),
@@ -363,17 +362,17 @@ function question(M, ctx, G, t, {list, cards = [], start = false}) {
     set = ex || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
   return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set};
 }
-// quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back (Codex review #787).
+// quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back.
 const noteRecent = (s, ph) => {
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
 };
 
 // The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
-// an extra genus's only Pierre's own or Research Grade; Codex review #789).
+// an extra genus's only Pierre's own or Research Grade).
 // Its reserved photos too (core.js heldOf; model.js examSet): the population is the unit's whole set, withheld or not.
 const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...C.heldOf(G[n])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
-// a slate genus alike; Codex review #789), not of its reporting kind.
+// a slate genus alike), not of its reporting kind.
 const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
 // One run: profile (learnprof name) x seed, N answers, checkpoints cps; learner 'count' (by the number of answers) or
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
@@ -433,7 +432,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
-  // the questions of the exam, and those that showed a held-out photo (model.js examSet: an exam question on one)
+  // the questions of the exam, and those that showed a reserved photo (model.js examSet: an exam question on one)
   const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
@@ -536,7 +535,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const res = C.scoreAnswer(P(), q);
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)
     // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed, and each variant group right
-    // (model.js examPassed, Q391 b), passes it.
+    // (model.js examPassed), passes it.
     const s = P()[t];
     noteRecent(s, ph);
     if (!ok) delete s.ex;
@@ -568,7 +567,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const sp = shown();
     if (sp > plat.best) ((plat.best = sp), (plat.since = 0));
     else plat.max = Math.max(plat.max, ++plat.since);
-    // The global level (P['~level'].th) every LV_EVERY answers (2026-11-12, Q338: a rule keyed on the level).
+    // The global level (P['~level'].th) every LV_EVERY answers (for a rule keyed on the level).
     if ((i + 1) % LV_EVERY === 0) lv.push(Math.round((((P()['~level'] || {}).th || 0) * 1e3)) / 1e3);
     if (cps.includes(i + 1)) {
       const metU = slate.filter(M.introduced),
@@ -632,7 +631,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   return {step, result, ctx, M, G, trueD};
 }
 
-// The sheet's photo Elo in the rated world (--app sheet; Q315 level 2, rule L11): a population of players, one per
+// The sheet's photo Elo in the rated world (--app sheet; rule L11): a population of players, one per
 // profile, plays the same world in turn (one answer each, round after round), their answers logged as the Answers tab
 // holds them (readAnswers rows, with seconds), and every EVERY rounds the sheet's photo Elo (core.js eloOf,
 // genusOffsetsOf, photoMemOf, as Code.gs stats_) is replayed on the log and served to every player's app (PSTAT, PGD, PMEM:
@@ -677,8 +676,8 @@ function timeWorld(U, W, seed, times, {gap = 0} = {}) {
   return {times, beta, d, unitOf, rho, gap};
 }
 // The seconds of logged answer number i (from 0, in the log's order) of player j, its photos ph, right ok, typed, and the
-// learner's true logit on it (gap: ability - difficulty), times TW.gap (0 unless --gap: Q324, the real log's -0.22 log per
-// logit; the seconds of a run without it are unchanged, the noise drawn the same).
+// learner's true logit on it (gap: ability - difficulty), times TW.gap (0 unless --gap; the real log's -0.22 log per
+// logit; the noise is drawn the same either way).
 function secOf(TW, seed, j, i, {ph, ok, typed, gap = 0}) {
   const r = gen((seed * 2654435761) ^ (i * 2246822519) ^ (TIMES.indexOf(TW.times) * 40503 + 0x7f4a7c15)),
     tau = RT.PLAYER * normal(gen((seed * 3266489917) ^ (0x165667b1 + 7919 * (j + 1)))),
@@ -686,7 +685,7 @@ function secOf(TW, seed, j, i, {ph, ok, typed, gap = 0}) {
   return Math.round(Math.min(600, Math.max(0.1, Math.exp(lt))) * 10) / 10;
 }
 // The photo ratings as ?stats=1 serves them (core.js eloOf, genusOffsetsOf, photoMemOf, as Code.gs stats_). A change to
-// the sheet's rating (Q315's option (1), PR #808: a right answer's steps weighed by its seconds, core.js photoTimeW,
+// the sheet's rating (a right answer's steps weighed by its seconds, core.js photoTimeW,
 // with its k as an arm, --pk, and the k recovered on the log) changes this one function and its replay.
 function sheetStats(log) {
   return {photos: C.eloOf(log), gd: C.genusOffsetsOf(log), mem: C.photoMemOf(log).mem};
@@ -725,7 +724,7 @@ function rateErr(st, TW, W) {
 function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0, calib = null}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
-  // The corals only (Codex review #844): the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
+  // The corals only: the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
   // is shared by a family's and a scientific genus's questions with two true difficulties, which one truth per file
   // (timeWorld) cannot hold: a fish run would judge its ratings against the wrong one.
   if (U.subject !== 'coral') throw new Error('--app sheet: the corals only (a fish photo is shared by a family and a genus)');

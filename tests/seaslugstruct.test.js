@@ -1,6 +1,5 @@
 require('./slot.js').testGuard();
-// The sea slugs' structure and look-alike lines in the content editor (Pierre, 2026-11-18, on #1061's two open items:
-// "Option 2 : on le construit maintenant"):
+// The sea slugs' structure and look-alike lines in the content editor:
 // - a genus's look-alike line (core.js SUBJECTS seaslug content genus lsrc/<other genus>), a list of sources {t, u}, the
 //   slot type srcs, laid over seaslug.json as every text slot (contentApply, the overlay's {v, src, was, t}), kept against
 //   a rebuilt base (stale: his stays in force; absorbed), edited in the admin's Sheet box (admin-content.js sheetVal,
@@ -8,7 +7,7 @@ require('./slot.js').testGuard();
 // - their look-alike pairs between genera (SUBJECTS seaslug structure: srcsStructure), the stamp (structStamp), and the
 //   sheet's replay of a sea-slug player under the pairs in force (Code.gs subjRpl_, replays_), as the fish's and the
 //   corals' (tests/structure.test.js, tests/coralcontent.test.js). The edits here are made up: the real curation.json holds
-//   none (A1: only Pierre's Publish writes it).
+//   none (A1: only the admin's Publish writes it).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -67,7 +66,7 @@ test('a look-alike line edited: laid over the built file, its pair kept; hidden,
   // a data pair's line too (its iNaturalist counts)
   const d = C.contentApply(S, F, cur({nodes: {'g:Chromodoris': {'lsrc/g:Nembrotha': {v: [{t: 'Mine'}], was: null, t: 1}}}}));
   assert.deepStrictEqual(gen(d, 'g:Chromodoris').lsrc['g:Nembrotha'], [{t: 'Mine'}]);
-  // hidden: the pair keeps an empty list (its readers map it: app.js fishGenera, learn.js fishGenusLooks)
+  // hidden: the pair keeps an empty list (its readers map it: app.js treeGenera, learn.js treeGenusLooks)
   const h = gen(
     C.contentApply(S, F, cur({nodes: {'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: null, was: base, t: 1}}}})),
     'g:Hypselodoris'
@@ -200,7 +199,7 @@ test('pairs: a withdrawn pair leaves both genera; an added one joins both, its l
   );
 });
 
-test("the replay's units follow the pairs (core.js fishReplayGen at the genus), a family's genera stay each other's", () => {
+test("the replay's units follow the pairs (core.js treeReplayGen at the genus), a family's genera stay each other's", () => {
   const R0 = S.replayed.gen(F),
     c = cur({pairs: {[GP]: {v: null, was: 1, t: 1}, [HG]: {v: null, was: 1, t: 1}, [CN]: {v: 1, was: null, t: 1}}}),
     R1 = S.replayed.gen(C.contentApply(S, F, c));
@@ -236,7 +235,7 @@ test('the stamp: one per structure in force, empty again at the undo, the same f
   assert.strictEqual(C.structApply(S, F, cur({pairs: {'g:Goniobranchus|g:Nope': {v: 1}}})), F);
 });
 
-test('the app: before the script that replays under the pairs, the text slots alone (rule D4); app.js fishGenera reads a hidden line', () => {
+test('the app: before the script that replays under the pairs, the text slots alone (rule D4); app.js treeGenera reads a hidden line', () => {
   const c = cur({
       nodes: {'g:Hypselodoris': {'lsrc/g:Goniobranchus': {v: null, was: gen(F, 'g:Hypselodoris').lsrc['g:Goniobranchus'], t: 1}}},
       pairs: {[GP]: {v: null, was: 1, t: 1}}
@@ -246,39 +245,39 @@ test('the app: before the script that replays under the pairs, the text slots al
   assert.ok(gen(off, 'g:Goniobranchus').look.includes('g:Phyllidiella'), 'the pairs wait for the script');
   assert.deepStrictEqual(gen(off, 'g:Hypselodoris').lsrc['g:Goniobranchus'], [], 'the text slot at once');
   assert.ok(!gen(on, 'g:Goniobranchus').look.includes('g:Phyllidiella'));
-  // app.js fishGenera on the units made from it, as the app makes them (fishBuild)
+  // app.js treeGenera on the units made from it, as the app makes them (treeBuild)
   const ctx = {
     easyCover: C.easyCover,
-    fishScoreTree: C.fishScoreTree,
-    fishSpUnits: C.fishSpUnits,
-    fishGenSets: C.fishGenSets,
+    treeScoreTree: C.treeScoreTree,
+    treeSpUnits: C.treeSpUnits,
+    treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;',
     ctx
   );
-  const GM = C.fishGameRead(JSON.parse(src('seaslug-game.json'))),
-    X = C.fishGen(on, C.fishPhotos({}, GM.photos, C.treeCur(S, CUR)), undefined, C.unitRankOf(S));
-  ctx.fishGenera(X, on);
+  const GM = C.treeGameRead(JSON.parse(src('seaslug-game.json'))),
+    X = C.treeGen(on, C.treePhotos({}, GM.photos, C.treeCur(S, CUR)), undefined, C.unitRankOf(S));
+  ctx.treeGenera(X, on);
   assert.strictEqual(X.gen['g:Hypselodoris'].lsrc['g:Goniobranchus'], '');
   assert.ok(!X.gen['g:Goniobranchus'].decl.includes('g:Phyllidiella'), 'no longer a declared look-alike (duels, groups)');
 });
 
 test('the admin: every genus of a subject played at the genus has the boxes, one the app opens as its family included', () => {
-  const T = C.fishTree(F);
+  const T = C.treeSheets(F);
   assert.notStrictEqual(T.go('g:Hexabranchus'), 'g:Hexabranchus');
   assert.ok(AC.sheetOwn(F, 'g:Hexabranchus', S));
   assert.ok(AC.sheetOwn(F, 'g:Hypselodoris', S));
   // the fish keep theirs: a genus the app sends to its family has none
   const FI = require('../fish.json'),
-    TF = C.fishTree(FI),
+    TF = C.treeSheets(FI),
     g = FI.genera.find(x => TF.go(x.id) !== x.id);
   assert.ok(g && !AC.sheetOwn(FI, g.id, C.subjectOf('fish')));
 });
 
-// ---- The sheet (Code.gs): a sea-slug player replayed under the pairs in force, keyed by the stamp (Q363 h A) ----
+// ---- The sheet (Code.gs): a sea-slug player replayed under the pairs in force, keyed by the stamp ----
 
 const SRV = C.rvOf('seaslug');
 // GitHub main as the sheet reads it: seaslug.json, and a curation.json the test changes.
