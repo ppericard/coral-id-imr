@@ -1,6 +1,6 @@
 # The slow test tag: eight statistical tests out of the pre-push fast tier
 
-Date: 2026-11-19. PR: #0000. Rules or docs touched: W14, W24; tests/run.js, README "Test", CONTRIBUTING, docs/spec/deploy.md "Tests", docs/spec/sync.md "Tests".
+Date: 2026-11-19. PR: #1239. Rules or docs touched: W14, W24; tests/run.js, README "Test", CONTRIBUTING, docs/spec/deploy.md "Tests", docs/spec/sync.md "Tests".
 
 ## Context
 
