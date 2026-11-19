@@ -64,6 +64,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Every answer of Pierre's reaches its doc, and an append-only ledger of his answers](2026-11-19-answers-ledger.md) | #1188 |
 | 2026-11-19 | [What the auto-sort proposed reads the newer judgement; a photo it set aside has a route back](2026-11-19-auto-proposals-newer-judgement.md) | #1259 |
 | 2026-11-19 | [Auto-sort follow-up (c): the admin-only keys stay out of the players' copy, no second file](2026-11-19-autosort-followup.md) | #1183 |
+| 2026-11-19 | [The check tools stop at 40 minutes, and level 3 waits for Pierre's go on a GitHub runner](2026-11-19-check-cap.md) | #1274 |
 | 2026-11-19 | [CI speed, second step: the admin 1280 smoke in three groups balanced by the measured time of each part](2026-11-19-ci-admin-split.md) | #1243 |
 | 2026-11-19 | [CI speed: the unit tests in two shards, the fish fresh players side by side](2026-11-19-ci-speed.md) | #1177 |
 | 2026-11-19 | [The Coral Finder book is a source like any other, with no credit line of its own](2026-11-19-coral-finder-credit.md) | #1194 |
