@@ -495,7 +495,8 @@ names check, which is parked). A rule a guard enforces then says "Enforced: <gua
 
 - **G1, `tools/train.py` `ready()`** (E). Rule: the merge contract (1)-(3); W23 "never re-run a failed CI job".
   Refuses a PR with no Codex receipt on its head, an unresolved thread, "Choices I made" other than None, or a check
-  run with `run_attempt` above 1.
+  run with `run_attempt` above 1. Dependabot's PRs keep their exemption (`train.py` `exempt()`; rule W9 merges a pure
+  version bump once green, with no Codex loop and no template): only the re-run check applies to them.
 - **G2, a `checks.yml` step** (E). Rule: A1 "Never write `curation.json` in a PR". Fails a pull request whose diff
   touches `curation.json`; the admin's Publish reaches `main` without a PR and is untouched.
 - **G3, a `checks.yml` step** (E: a habit, and the fix of something plainly broken). INTEGRATOR: check for conflict
