@@ -1231,6 +1231,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
   tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
   bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
+- **15:40, fish genus marks beside IMR cues.** On the rule keeping our sourced marks away from a genus with IMR cues:
+  «Mouais bof». Decides (integrator's call): the genera IMR describes take our sourced marks under its cues, as the
+  families. Applied: spec/fish-sheets.md "Genus presentation and ID marks", decisions/2026-11-19-genus-marks-beside-imr-cues.md (#1231).
 - **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
   juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
   with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
