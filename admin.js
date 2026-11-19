@@ -2153,7 +2153,7 @@ function fishTile(p, o) {
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
+    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (renderFishUnits): st {num} for a featured photo; cover: the page node's cover in force; path: the
@@ -6523,7 +6523,9 @@ async function fishLoad(withGame, S = FISHS) {
           entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
           game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
-          byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
+          byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}]))),
+          // {photo: the key of its candidate list in the file}: its pass's entry in suggest.json "by" (fishJudged)
+          key: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([k, L]) => (L || []).map(p => [p.f, k])))
         };
         if (S === FISHS) FISHC = T.C;
       }));
@@ -6554,27 +6556,34 @@ async function fishAutoRun() {
   if (!TOKEN || !DRAFT || !ASORT || !Object.keys((SUG && SUG[AK]) || {}).length) return null;
   const C = await fishLoad(false, ASORT);
   const keepOn = autoState(fishCompare(DRAFT[AK])).keep.on,
-    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn);
+    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => fishJudged(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
   saveDraft();
   render();
   return R;
 }
-// One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
+// The date a candidate of the auto-sort's subject was judged (YYYY-MM-DD), or null: its pass's in suggest.json "by" (the
+// judging tools stamp it), read by the route back of the photos the auto-sort set aside (autosort.js fishBack).
+const fishJudged = (C, f) => ((((SUG && SUG.by) || {})[(C.key || {})[f]] || {})[AK] || {}).at || null;
+// One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again (or, one
+// it had brought back, set aside again). One Undo step.
 async function fishAutoUndo(f) {
   const p = ASORT && (await fishLoad(false, ASORT)).byF[f];
   // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to the admin.
   if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
-  const F = fishUndo(DRAFT[AK], f, p.sid);
+  const back = (fishIdx(DRAFT[AK])[f] || {code: ''}).code[0] === 'b',
+    F = fishUndo(DRAFT[AK], f, p.sid);
   if (F === DRAFT[AK]) return;
   DRAFT[AK] = F;
   saveDraft();
   render();
-  toast('Fish auto decision undone: the photo waits for you as a candidate.');
+  toast(
+    back ? 'Fish auto decision undone: the photo is set aside again.' : 'Fish auto decision undone: the photo waits for you as a candidate.'
+  );
 }
 const fishToast = R =>
-  `Fish auto-sort: ${R.add} proposed in, ${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
+  `Fish auto-sort: ${R.add} proposed in, ${R.back ? `${R.back} back in, ` : ''}${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
 const autoToast = R =>
   `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
 // One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value the admin changed since stays),

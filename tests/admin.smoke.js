@@ -436,9 +436,10 @@ async function sealPart(b, base, fails) {
     // The fish auto-sort (admin plan PR 4, autosort.js fishRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
+    // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
     const FCAND = rd('fish-cand.json').cand,
       FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
-      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 3),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 4),
       FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
@@ -468,7 +469,15 @@ async function sealPart(b, base, fails) {
     );
     await ctx.route(
       u => u.href.startsWith(base) && u.pathname === '/curation.json',
-      r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}, fish: {out: {[FF[2][1]]: 'x'}}})})
+      r =>
+        r.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...CUR,
+            auto: {[day]: LOG},
+            fish: {out: {[FF[2][1]]: 'x'}, seen: {[FF[3][1]]: 1}, auto: {'2026-10-30': {[FF[3][1]]: 'r'}}}
+          })
+        })
     );
     // A report handled in a PR (reports-handled.json, the integrator's): out of the to-do list, "handled in #577".
     await ctx.route(base + 'reports-handled.json', r =>
@@ -490,8 +499,10 @@ async function sealPart(b, base, fails) {
             [FF[0][1]]: {jt: 'p1g0sm1', e: 5, k: 'best', ph: 'female'},
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
+            [FF[3][1]]: {jt: 'p1g0sl1', e: 4, k: 'best', c: [0.2, 0.1, 0.8, 0.9]},
             [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
-          }
+          },
+          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}}
         })
       })
     );
@@ -9276,10 +9287,15 @@ async function sealPart(b, base, fails) {
         fa.coral ||
         fa.alone !== true ||
         !/fish photo in play/.test(fa.sum) ||
-        !/fish auto-sort decision/.test(fa.sum)
+        !/fish auto-sort decision/.test(fa.sum) ||
+        // brought back: in, cropped, set aside no more, logged b with the fields it wrote
+        fa.fish.add[FF[3][1]] !== FF[3][0] ||
+        FF[3][1] in fa.fish.seen ||
+        JSON.stringify((fa.fish.crop || {})[FF[3][1]]) !== '[0.2,0.1,0.8,0.9]' ||
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
       )
         fails.push(
-          `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
+          `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto})}`
         );
       // One fish auto decision undone in the Auto details (Codex review #479, rule A1): gone from the draft, logged
       // undone, never applied again at the next run.

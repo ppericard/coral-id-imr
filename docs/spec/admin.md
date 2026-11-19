@@ -126,7 +126,9 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   those of the file as built, so a report on a photo of a family taken out of every circle still shows it); a Publish, a
   rebase or another tab's Publish builds it again (`unitRefresh`);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
-  part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort));
+  part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
+  set aside reading the pass's date of each candidate (`fishJudged`: `suggest.json` `by`, through the key of its
+  candidate list, `fishLoad` `key`); its Auto details label each decision in, back in (log `b`) or set aside;
 - `origins` and `csrc`, its photo origins (the filter bar's chips) and its candidate sources; `obs`, its word for
   observations; `target` and `tags` for the sea slugs ([admin-tree.md › The sea slugs](admin-tree.md#the-sea-slugs)).
 

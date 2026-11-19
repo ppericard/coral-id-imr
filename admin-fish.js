@@ -315,12 +315,13 @@ function fishEdit(fn) {
 // The fish auto-sort's line (above the card, folded behind the Auto chip as the corals': admin.js autoChip; chip: the
 // chip alone) and its details (below it): its decisions in and set aside, the Checks waiting, its keep agreement with
 // the admin (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
-// every decision still standing, each with Undo (fishAutoUndo; rule A1).
+// every decision still standing (in, back in: a photo it had set aside, brought back by a newer judgement; set aside),
+// each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det, chip) {
   const F = DRAFT[TK] || {},
     I = Object.entries(fishIdx(F)),
     FA = I.filter(([, x]) => !x.d.check && !x.d.undone),
-    nIn = FA.filter(([, x]) => x.d.kind === 'a').length,
+    nIn = FA.filter(([, x]) => x.d.kind !== 'r').length,
     nChk = I.filter(([f, x]) => x.d.check && !fishMine(F, f)).length,
     CMP = fishCompare(F),
     K = autoState(CMP).keep;
@@ -352,7 +353,7 @@ function fishAutoBlock(det, chip) {
           .map(([f, x]) =>
             tile(
               f,
-              `${x.d.kind === 'a' ? 'in' : 'set aside'} · ${x.day}`,
+              `${{a: 'in', b: 'back in', r: 'set aside'}[x.d.kind]} · ${x.day}`,
               '<button type="button" class="adm-link" data-faundo>Undo</button>'
             )
           )

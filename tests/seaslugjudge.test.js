@@ -178,20 +178,29 @@ print(json.dumps(code))`
   fs.writeFileSync(
     path.join(dir, 'judging/seaslug/900.json'),
     JSON.stringify({
-      photos: {'seaslug-900-cand-1': {egg: true}, 'seaslug-900-cand-2': {code: 'v1g0sl15'}, 'seaslug-900-cand-3': {code: 'o1g0sl14'}}
+      photos: {
+        'seaslug-900-cand-1': {egg: true},
+        'seaslug-900-cand-2': {code: 'v1g0sl15'},
+        'seaslug-900-cand-3': {code: 'o1g0sl14', crop: [0.1, 0.2, 0.9, 0.8]}
+      }
     })
   );
-  RUN(
+  // The pass's date set back, so the re-judge's own date (the route back reads it: autosort.js fishBack) shows.
+  S.by['900'].seaslug.at = '2026-01-01';
+  fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify(S));
+  const today = RUN(
     dir,
-    `import contextlib, io
+    `import contextlib, io, datetime
 with contextlib.redirect_stdout(io.StringIO()):
-    JF.cmd_rep(("jt", "e", "k", "ph", "u", "n", "egg"))
-print(1)`
+    JF.cmd_rep(("jt", "e", "k", "ph", "c", "bb", "u", "n", "egg"), stamp=True)
+print(json.dumps(datetime.date.today().isoformat()))`
   );
   const S2 = JSON.parse(fs.readFileSync(path.join(dir, 'suggest.json'), 'utf8'));
   assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-1'], {egg: 1});
-  assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-3'], {jt: 'o1g0sl1', e: 4, k: 'best'});
+  assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-3'], {jt: 'o1g0sl1', e: 4, k: 'best', c: [0.1, 0.2, 0.9, 0.8]});
   assert.deepStrictEqual(S2.fish, before.fish);
+  assert.deepStrictEqual(S2.by['900'].seaslug, {...S.by['900'].seaslug, at: today}, 'the re-judged species is dated');
+  assert.deepStrictEqual(S2.by.s001, before.by.s001, 'a species it did not change keeps its date');
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
