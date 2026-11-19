@@ -1166,3 +1166,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **10:36, a gold set of fish photos for Pierre.** "Oui, tu peux me préparer un petit set de photos représentatives
   que tu me demandes d'évaluer pour voir si je suis d'accord avec les pré-selection. Essaye de maximiser l'info que tu
   peux en tirer". Applied: a review page in preparation; his answers score the judges (#1211).
+- **10:49, the order of merges.** "Il faut arrêter de lancer de nouvelles PR tant que t'as pas résolu celles qui sont
+  bloqués depuis des plombes...". Applied: no new PR until the open ones merge; this one only records answers.
+- **11:14, the old Genera addresses.** "Pourquoi? C'est quoi le use case que t'imagines?" (on keeping redirects): none,
+  rule W3 holds. Applied: #1214 keeps no redirect.
+- **11:28-11:43, the gold set of 30 fish photos, reviewed.** His verdicts per photo, dictated (kept in the
+  integrator's scratchpad with the scores). On the observer's life stage, 11:43: "Il peut émettre un avis, mais son
+  avis pèse beaucoup moins qu'un observateur humain, sauf s'il a des preuves solides". Applied: the judging rubric's
+  wording, in the next judging PR; Q429-Q431 (contrast field, crops, the juvenile ease) wait for him.
