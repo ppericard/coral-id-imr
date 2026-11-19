@@ -209,7 +209,9 @@ test("can_: the token passes every right; an account the admin list's and the un
   assert.ok(!can(s, {name: 'Eda'}, 'content', IMR));
   assert.ok(!can(s, null, 'content', IMR));
   // Names Object.prototype has are no right nor scope.
-  ['constructor', '__proto__', 'toString'].forEach(r => assert.ok(!can(s, acct(s, 'Owen'), r, IMR) && !can(s, acct(s, 'Owen'), 'players', r), r));
+  ['constructor', '__proto__', 'toString'].forEach(r =>
+    assert.ok(!can(s, acct(s, 'Owen'), r, IMR) && !can(s, acct(s, 'Owen'), 'players', r), r)
+  );
 });
 
 // The right each endpoint asks for, seen through an account caller: caller_ stubbed in the script's context so the
@@ -276,7 +278,9 @@ test('roleGrant and roleRevoke: the admin list only; checked input, live account
   save(s, 'Ana');
   assert.strictEqual(grant(s, 'Ana', 'boss', IMR).error, 'input', 'an unknown role');
   assert.strictEqual(grant(s, 'Ana', 'admin', IMR).error, 'input', 'the platform admin at an instance');
-  ['owner', 'editor', 'trainer'].forEach(r => assert.strictEqual(grant(s, 'Ana', r, IMR).error, 'input', r + ": an instance's rights are its groups'"));
+  ['owner', 'editor', 'trainer'].forEach(r =>
+    assert.strictEqual(grant(s, 'Ana', r, IMR).error, 'input', r + ": an instance's rights are its groups'")
+  );
   assert.strictEqual(grant(s, 'Ana', 'editor', 'platform').error, 'input', 'an editor of the platform');
   // Names Object.prototype has are no role (Code.gs roleDef_), wherever they are asked.
   ['constructor', 'toString', '__proto__', 'hasOwnProperty'].forEach(r => {

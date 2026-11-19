@@ -48,7 +48,13 @@ const failAudit = (s, n = 1) => {
 };
 // No name in any Audit cell.
 const noName = (s, ...names) => {
-  const words = rows(s, 'Audit').flatMap(r => r.slice(1).flatMap(c => String(c).toLowerCase().split(/[\s>()]+/)));
+  const words = rows(s, 'Audit').flatMap(r =>
+    r.slice(1).flatMap(c =>
+      String(c)
+        .toLowerCase()
+        .split(/[\s>()]+/)
+    )
+  );
   names.forEach(n => assert.ok(!words.includes(n.toLowerCase()), 'no name in the Audit tab: ' + n));
 };
 
@@ -79,10 +85,7 @@ test('a group carries rights: checked, kept in the Rights column in a fixed orde
     assert.strictEqual(make(s, 'X', {rights: x}).error, 'input', JSON.stringify(x));
     assert.strictEqual(edit(s, r.group.id, {rights: x}).error, 'input', JSON.stringify(x));
   });
-  assert.deepStrictEqual(
-    copy(list(s).groupDefs.map(d => [d.n, d.rights])),
-    [['Helpers', [R('players'), R('grant')]]]
-  );
+  assert.deepStrictEqual(copy(list(s).groupDefs.map(d => [d.n, d.rights])), [['Helpers', [R('players'), R('grant')]]]);
   // A settings group: no right, its Rights cell empty.
   assert.deepStrictEqual(copy(make(s, 'Staff', {board: 1}).group.rights), []);
   assert.strictEqual(s.sheets['Group settings'].rows[2][6], '');
@@ -165,7 +168,12 @@ test("a membership holds for the account's code hash: a code changed turns its r
   // A settings group's membership holds no code hash.
   const st = make(s, 'Staff', {board: 1}).group.id;
   join(s, 'Ana', st);
-  assert.deepStrictEqual(rows(s, 'Groups').find(r => r[0] === st).at(3), '');
+  assert.deepStrictEqual(
+    rows(s, 'Groups')
+      .find(r => r[0] === st)
+      .at(3),
+    ''
+  );
 });
 
 test('a code hash that starts with + or - is read back as written, on every path (setValues and appendRow)', () => {
@@ -425,13 +433,10 @@ test("the seed's groups follow the migration's names, and a group of that name m
   save(s, 'Pat');
   make(s, 'Managers', {board: 1});
   assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok);
-  assert.deepStrictEqual(
-    copy(list(s).groupDefs.map(d => [d.id.replace(/^g:.*/, 'g:'), d.n])),
-    [
-      ['g:', 'Managers'],
-      ['r:owner', 'Managers (rights)'],
-      ['r:editor', 'Curators']
-    ]
-  );
+  assert.deepStrictEqual(copy(list(s).groupDefs.map(d => [d.id.replace(/^g:.*/, 'g:'), d.n])), [
+    ['g:', 'Managers'],
+    ['r:owner', 'Managers (rights)'],
+    ['r:editor', 'Curators']
+  ]);
   assert.ok(can(s, 'Pat', 'players') && can(s, 'Pat', 'content') && can(s, 'Pat', 'platform', '1234', 'platform'));
 });

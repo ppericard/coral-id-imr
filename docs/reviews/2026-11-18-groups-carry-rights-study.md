@@ -352,8 +352,8 @@ script's install or by the first change to a group before then:
 4. **`rolesSeed_`** gives Pierre his three memberships ("Platform admins", "Managers", "Curators") in place of his
    three grants, for the case where the seed has not run yet. Its property `ROLES_SEED` stays, so a removal is never
    undone by it.
-5. **The Roles tab is then read by nothing.** It is not deleted: deleting data asks Pierre first. Its rows stay as
-   the record of the grants before. Until the step has run, `can_` reads the groups as the step will make them from
+5. **The Roles tab's instance rows are then read by nothing** (its `admin` rows stay the admin list: answer 6). It is
+   not deleted: deleting data asks Pierre first. Its rows stay as the record of the grants before. Until the step has run, `can_` reads the groups as the step will make them from
    the Roles tab (a `groupsBefore_`-style reader), so the minutes between install and migration answer the same.
 6. **Audit**: one `join <group id> (migration)` row per membership made, by the script's own id.
 
@@ -428,7 +428,7 @@ Agent time from `python3 tools/effort.py --estimate` (first commit to green chec
 
 | # | PR | What | Type, size | Agent time (closest merged PRs) |
 | --- | --- | --- | --- | --- |
-| 1 | Groups carry rights, the script | `GDEF` Rights column and `GROUPS` Code hash column; `can_` as the union over memberships with the hash; `scopeOk_` per right and scope kind; the three gates in `users_` (`grant` for rights groups, no list, `used` on a targeted group's delete); the merge split; the Audit rows; the `ONCE_` migration from the Roles tab and its before-reader; `rolesSeed_` as memberships; `tests/roles.test.js`, `tests/playergroups.test.js`, `tests/liveclass.test.js` extended; SECURITY and ARCHITECTURE updated, a decision record | sheet L | median 8.9 h, range 3.7-13.3 h (#882, #946, #1050, #1060, #1083) |
+| 1 | Groups carry rights, the script | `GDEF` Rights column and `GROUPS` Code hash column; `can_` as the union over memberships with the hash; `scopeOk_` per right and scope kind; the three gates in `users_` (`grant` for rights groups, no list, `used` on a targeted group's delete); the merge split; the Audit rows; the `ONCE_` migration from the Roles tab and its before-reader; `rolesSeed_` as memberships; `tests/roles.test.js`, `tests/playergroups.test.js`, `tests/liveclass.test.js` extended; SECURITY and ARCHITECTURE updated, a decision record. **Built with answers 5 and 6** (spec/sync.md "Rights and the Audit tab", "Player groups"): group rights only at the instance (`RIGHTS`); the admin list is the Roles tab's `admin` rows, so the Roles tab is still read for them; no `follow` / `invite`, no `group:` scope and no `used` (answer 5 puts no right on a target group); `mergePlan` for the merge warning; `tests/rights.test.js`. Left for roles step 2: where a cohort's list of trainers is stored (a new format, a question first) | sheet L | median 8.9 h, range 3.7-13.3 h (#882, #946, #1050, #1060, #1083) |
 | 2 | Rights on the Groups page | the Rights row and its chips, the key mark, no bulk on rights groups, the confirm (question 8), the reverse view on a target, the player's bar's rights line, gated on PR 1's version (rule D4); `tests/admin.smoke.js` | admin L | median 38 min, range 30-39 min (#836, #844, #889, #895, #906) |
 | 3 | Rights in the load reply | `load_` and the save reply send `rights` to the account itself; the app keeps it under the account's name as `groups`; no UI. Replaces #1098's row 1 | sheet M | median 29 min, range 29-58 min (#812, #835, #838, #958, #971) |
 | 4 | The rule and the ROADMAP | the additive-settings rule's wording (after Pierre's OK), ROADMAP "Roles, instances and cohorts" (the roles' page row closed by PR 2), #1098's (f) closed | docs S | median 4 min, range 3-4 min (#805, #843, #853, #862, #949) |

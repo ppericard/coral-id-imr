@@ -412,7 +412,12 @@ test('the board cache: one entry per subject holds every scope; a membership or 
   assert.deepStrictEqual([hit.rows, hit.groups], JSON.parse(JSON.stringify([B.rows, B.groups])));
   save(s, 'Ben', 39);
   assert.deepStrictEqual(names(board(s).rows), names(B.rows), 'served from the cache');
-  [() => join(s, 'Cy', g), () => edit(s, g, {board: 0}), () => make(s, 'New'), () => s.post({roleGrant: {account: 'Dee', role: 'admin', scope: 'platform'}, token: TOK})].forEach((f, i) => {
+  [
+    () => join(s, 'Cy', g),
+    () => edit(s, g, {board: 0}),
+    () => make(s, 'New'),
+    () => s.post({roleGrant: {account: 'Dee', role: 'admin', scope: 'platform'}, token: TOK})
+  ].forEach((f, i) => {
     board(s);
     assert.ok(s.cache[key], i + ': cached');
     f();
