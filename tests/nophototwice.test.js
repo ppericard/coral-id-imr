@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// No photo twice in a few questions (a player's report, 2026-11-17, corals, Practice > Quiz: "Same picture twice in a
-// row"; docs/LEARNING.md "No photo twice in a few questions"). Her 8th and 10th answers showed the same Porites photo,
-// a Lobophyllia question between them, both answered right: the photo quiz plans up to AHEAD questions ahead (quiz.js
-// planNext), and the 10th was drawn while the 8th was only planned, before either was shown, so neither the photo memory
-// (s.ps) nor the colonies held back (s.ro), both written at the answer, held its photo back. quiz.js's own planNext,
+// No photo twice in a few questions (docs/LEARNING.md "No photo twice in a few questions"). A player's 8th and 10th
+// answers showed the same Porites photo, a Lobophyllia question between them, both answered right: the photo quiz plans
+// up to AHEAD questions ahead (quiz.js planNext), and the 10th was drawn while the 8th was only planned, before either
+// was shown, so neither the photo memory (s.ps) nor the colonies held back (s.ro), both written at the answer, held its
+// photo back. quiz.js's own planNext,
 // planPhoto, planDuel and model.js's own photoSet and examSet run here in Node, the game around them stubbed.
 const test = require('node:test'),
   assert = require('node:assert'),

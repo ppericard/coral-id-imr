@@ -106,9 +106,8 @@ so the question is right with the chance aimed for in its format (`PICKD.P` = 0.
 plausible choices, 0.41 with 2, 1.39 typed), less the format's offset from the sheet (`aimOff(k, df)`, which the
 ability steps' expectation takes too, `scoreAnswer` `df`: `model.js` `PFMT`, read through `pfmt()`, which gives a subject
 the sheet does not rate no offset, every format 0; LEARNING.md "Per-format offsets"). Never-seen photos get a bonus (for
-the corals IMR's and Pierre's first), photos answered right twice weigh less, the last colonies are held back, a colony
-shown or planned in the session's last `RECENT` questions waits while the unit has another (`SEENQ`; LEARNING.md "What a
-question shows") and at least `PICKD.VARIETY` (3) colonies stay in rotation (`VARIETY`).
+the corals IMR's and Pierre's first), photos answered right twice weigh less, the last colonies are held back and at
+least `PICKD.VARIETY` (3) colonies stay in rotation (`VARIETY`).
 
 **Answer choices** follow the same ability: `trapsFor(t)` = how many of the 3 wrong choices are look-alikes of the target
 (`look` both ways): 0 on a unit's first question (ability 0), then one more per 0.18 (`FORMAT`, `formatAt`), rounded at

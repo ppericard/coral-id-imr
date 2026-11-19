@@ -7365,3 +7365,15 @@ a player's first 10,000 answers are on such units (rated world, 10 seeds, the IM
 cuts the answers on photos under ease 4 by about 30% over those 10,000 (IMR RA 5,582 → 3,904), not only in the first 300
 questions: the rating of the hard photos (Q252) slows for as long as the tree keeps opening units. In the rated world
 the learner learns by the number of answers, so its unchanged knowledge says nothing about whether easier photos teach less.
+
+## The calibration set: the declared run and the dropped variants (2026-11-19)
+
+Moved from LEARNING.md "The calibration set" (#1130), which says what the code does now.
+
+- **The run as declared measured nothing**: `--truth gen` tells the app that every photo has 20 answers (learnsim's
+  `PSTAT` of that world), so no member is under its goal and the factor is 1 everywhere; both files were identical. The
+  same check without `--truth gen` (the learner reads the app's own photo difficulty, learnsim's default; the sheet's
+  real counts) is the one in LEARNING.md.
+- **Two earlier variants, dropped**: ×2 on every unit (share 4.17% → 5.94%, but the beginner met 2.4 fewer genera at
+  300 and reached its first Open Water 44 answers later) and held units only (share 5.21%, the beginner's true
+  knowledge at 300 down 0.023 on seeds 6-20). Both breached a guardrail; the built version is in LEARNING.md.
