@@ -58,6 +58,15 @@ const subjHas = (S, k) => {
   const t = sectionOf(k),
     m = k.startsWith('g-') ? 'sheet' : modeOf(k);
   if (m === 'sheet') return S.pages.includes(m) && sheetIdOf(S, k.slice(2)) != null;
+  // A comparison is S's only when both its units are S's (a coral pair with Fish chosen is the corals': like a sheet).
+  if (k.startsWith('cmp-'))
+    return (
+      S.pages.includes(m) &&
+      k
+        .slice(4)
+        .split('|')
+        .every(n => sheetIdOf(S, n) != null)
+    );
   return t === 'identify' ? UNITS[S.id].identify === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
 };
 const hr = (k, S = SUBJ) => {
@@ -1462,7 +1471,8 @@ document.addEventListener('keydown', e => {
   document.getElementById('subjb').focus();
 });
 // A Learn or Practice page the subject lacks (SUBJECTS pages) opens its section's first page for it; Identify opens the
-// subject's own tool (UNITS identify); the Tools are the corals' whatever the subject.
+// subject's own tool (UNITS identify); the Tools are the corals' whatever the subject. A comparison of another subject's
+// units is a page the subject lacks, as a sheet of another subject's unit is.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
@@ -1470,7 +1480,7 @@ const subjPage = h => {
   if (m === 'sheet' && subjHas(SUBJ, h)) return h;
   if (
     (tab !== 'learn' && tab !== 'practice') ||
-    (m !== 'sheet' && SUBJ.pages.includes(m)) ||
+    (m !== 'sheet' && SUBJ.pages.includes(m) && !(h.startsWith('cmp-') && !subjHas(SUBJ, h))) ||
     !(m === 'sheet' || MODES[tab].some(x => x[0] === m))
   )
     return h;
@@ -2189,8 +2199,37 @@ const TREE_UNITS = {
   sheet: id => viewFishSheet(id),
   bar: id => treeBar(id)
 };
+// What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared
+// pairs are the ones a source names (UNITS pairs: each carries its source line, lsrc), a unit's tips are its own marks or
+// cues under their own label (tipsLabel; a unit with none shows no tips: its summary there is its species, not a clue), and
+// its line is the one its record gives (fam); no criteria box.
+const treeDeck = () => UNITS[SUBJ.id].pairs(),
+  treeInGame = n => !!(TREEU && TREEU.gen[n]),
+  treeCmp = {clues: g => !!g.qt, tag: () => '', line: g => esc(g.fam || ''), more: () => ''};
+// The units of L (a list) by their parent of rank rk (a genus's family: UNITS listBy), as [[parent or '', its units in L's
+// order]] in the subject's tree order, the units with no such parent last. The Genera page (learn.js byRank) and the
+// custom quiz (quiz.js cqByFamily) group the same way.
+const unitsByParent = (L, rk) => {
+  const up = n => {
+      const p = GX(n).parent;
+      return p && GX(p) && (rankOf(p) || unitRankOf(SUBJ)) === rk ? p : '';
+    },
+    at = Object.keys(TREEU.gen),
+    by = new Map();
+  L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
+  return [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity));
+};
 const UNITS = {
   coral: {
+    // The custom quiz's groups (quiz.js viewCustom; the other two views are the same for every subject): by, the first
+    // view's name; about, what it shows; src, where the look-alikes of the My mix-ups view's first look come from; groups,
+    // the groups of the units in play, [{k, t: title (HTML), sub, mark (HTML), L}] (quiz.js cqByIMR, cqByKey, cqByFamily).
+    cq: {
+      by: 'IMR groups',
+      about: 'the IMR lecture’s groups (the genera to tell apart)',
+      src: 'the IMR lecture and the Coral Finder book',
+      groups: play => cqByIMR(play)
+    },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
@@ -2252,6 +2291,23 @@ const UNITS = {
             .map(a => [a, b])
         )
     ],
+    // The Look-alikes deck (learn.js classics): the pairs a source compares in so many words, the IMR lecture or the book's
+    // text (model.js isClassic); the others stay on the genus sheets and in duels. inGame: a unit Compare may show.
+    // cmp: what the deck and Compare say of a unit: clues (whether its tips are clues: a genus's summary is), tag (after
+    // its name), line (under it), more (behind a fold, only where the unit has it: the Coral ID Key criteria), and src, the
+    // sources the deck names in its ? text.
+    deck: () => pairs().filter(([a, b]) => isClassic(a, b)),
+    inGame: n => gameGenus(n),
+    cmp: {
+      src: 'the IMR lecture or the Coral Finder book',
+      clues: () => true,
+      tag: (n, g) => (isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'),
+      line: g => `${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}`,
+      more: g =>
+        (g.crit || []).length
+          ? `<details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details>`
+          : ''
+    },
     // The colourings of Tools › Look-alike web (proto/web.js), each {chip, of: a unit's group key (0 for none), name(key),
     // color(key) optional}: by family, and by IMR lecture group (the app's own colour for a group, groupHue).
     webBy: () => [
@@ -2436,11 +2492,22 @@ const UNITS = {
       ];
     },
     namesKey: () => sciNow().length,
+    // The custom quiz's groups (as the corals' cq): the identification groups of the regional key.
+    cq: {
+      by: 'ID groups',
+      about: 'the identification groups of the regional fish ID key (the families to tell apart)',
+      src: 'the IMR fish presentation',
+      groups: play => cqByKey(play)
+    },
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
       Object.values(TREEU ? TREEU.gen : {})
         .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
         .flatMap(g => g.look.filter(o => TREEU.gen[o] && (g.id < o || !TREEU.gen[o].look.includes(g.id))).map(o => [g.id, o])),
+    // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
+    deck: treeDeck,
+    inGame: treeInGame,
+    cmp: {...treeCmp, src: 'the IMR fish presentation'},
     // Tools › Look-alike web's colouring (as the corals'): by the key's identification group (SUBJECTS sheets, TREEU groups).
     webBy: () => [
       {
@@ -2466,7 +2533,7 @@ const UNITS = {
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
         ? duelLede('the look-alikes the IMR fish presentation names')
-        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>`
+        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
     }
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
@@ -2598,6 +2665,13 @@ const UNITS = {
     // so (treeTypeOther), never right, as a fish genus's common name never is (treeGenera names).
     vern: id => treeVern(id),
     names: () => treeTypeNames(TREEU ? TREEU.gen : {}, SUBJ.typeDrop, []),
+    // The custom quiz's groups (as the corals' cq): the genera by their families.
+    cq: {
+      by: 'Families',
+      about: 'the genera by their families (the genera of one family are the ones to tell apart)',
+      src: 'a specialist source',
+      groups: play => cqByFamily(play)
+    },
     // The look-alike pairs a specialist source names (seaslug.json genus look: the Sea Slug Forum, Nudi Pixel, the papers;
     // decl), each pair once: the duels. A genus's other sibling genera stay its traps (app.js
     // treeGenera look); the pairs only iNaturalist shows are data look-alikes (model.js dataSeed, dataLooks).
@@ -2607,6 +2681,10 @@ const UNITS = {
         .flatMap(g =>
           (g.decl || []).filter(o => TREEU.gen[o] && (g.id < o || !(TREEU.gen[o].decl || []).includes(g.id))).map(o => [g.id, o])
         ),
+    // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
+    deck: treeDeck,
+    inGame: treeInGame,
+    cmp: {...treeCmp, src: 'a specialist source (the Sea Slug Forum, Nudi Pixel, the papers)'},
     // Tools › Look-alike web's colouring: by family (a genus's parent).
     webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
@@ -2639,7 +2717,7 @@ const UNITS = {
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
         ? duelLede('the look-alikes a specialist source names')
-        : `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>`
+        : `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>${customPlayLede(cur)}`
     }
   <p class="lede">A genus fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the genus’s scientific name. <b>Photos</b>: from iNaturalist, the easiest first, whoever took them.</p>`,
     // No opt-in set: its genera are its units from the start (core.js SUBJECTS unitRank).
@@ -3035,8 +3113,8 @@ function ctxBar(h) {
       <span class="pn"><a href="${esc(hr('g-' + prev))}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="${esc(hr('g-' + next))}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && GX(a) && GX(b) && gameGenus(a) && gameGenus(b))
-    return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="${esc(hr('cmp'))}">Look-alikes</a>`;
+  if (a && GX(a) && GX(b) && UNITS[SUBJ.id].inGame(a) && UNITS[SUBJ.id].inGame(b))
+    return `${back}<h2 class="ctx-t ctx-pair"><span>${uname(a)} or ${uname(b)}?</span></h2><a class="ctx-l" href="${esc(hr('cmp'))}">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h) {
