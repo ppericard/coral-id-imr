@@ -49,12 +49,14 @@ Values have 3 decimals; `sh` has 1. Besides the whole frame's block, a photo has
 ## The tool (`tools/photo_measure.py`)
 
 - **Which photos**: every downloaded game photo of the subjects in `GAME` (`data.json`, `fish-game.json`,
-  `seaslug-game.json`), the one place a subject is named (rule S1). A record still remote (`r`) waits.
+  `seaslug-game.json`), the one place a subject is named, with how its file is read (the fish's short form given back
+  whole) and where its records are (rule S1). A record still remote (`r`) waits.
 - **Incremental**: it measures the photos not in the file, or whose `h` changed. A new `mv` (any change to a measure)
   measures every photo again. A photo that leaves the game keeps its entry, since past answers showed it.
 - **Paced and resumable**: it reads each file into memory (nothing on disk), with 4 threads, at most 8 requests a
-  second and three tries. It writes every 500 photos. `--minutes` (default 35) stops it cleanly, and a rerun goes on.
-  It takes the machine slot (rule W24).
+  second and three tries. It writes every 500 photos. `--minutes` (default 35) is checked before every photo and
+  every request, which never waits past it; a rerun goes on. Any run with work takes the machine slot (rule W24),
+  `--dir` included.
 - **Options**:
   - `--subject`;
   - `--sample N`: the first N photos of a fixed hash order over every subject;

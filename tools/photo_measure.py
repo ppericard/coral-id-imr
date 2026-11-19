@@ -30,9 +30,13 @@ OUT = os.path.join(ROOT, 'measured.json')
 MV = 1  # the method's version: a change to any measure below bumps it, and every photo is measured again
 W = 960  # every photo is measured at this long side (its -m file, resampled when smaller): values are comparable
 SUF = '-m'
-# The game photo files of each subject: the one place a subject is named here (rule S1). A record with r (remote, not
-# downloaded yet) has no file on R2 and waits.
-GAME = (('coral', 'data.json'), ('fish', 'fish-game.json'), ('seaslug', 'seaslug-game.json'))
+# The game photo files of each subject: the one place a subject and its file's reading are named here (rule S1).
+# (subject, file, read: the document whole, key: where its photo records are, None for the whole document). A record
+# with r (remote, not downloaded yet) has no file on R2 and waits.
+_same = lambda d: d  # noqa: E731
+GAME = (('coral', 'data.json', _same, None),
+        ('fish', 'fish-game.json', fish_short.full_doc, 'photos'),  # its short form given back whole
+        ('seaslug', 'seaslug-game.json', _same, 'photos'))
 WORKERS, RATE, FLUSH = 4, 8.0, 500
 SAT_S, SAT_V = 0.25, 0.2  # a "saturated" pixel: HSV saturation and value at least these
 WARM = (330.0, 70.0)  # warm hues, red to yellow, in degrees (wrapping through 0)
@@ -149,14 +153,13 @@ def tag(rec):
 def game_photos(root=ROOT, subjects=None):
     """{f: (subject, record)} of every downloaded game photo of the subjects' game files (GAME)."""
     out = {}
-    for subj, fn in GAME:
+    for subj, fn, read, key in GAME:
         if subjects and subj not in subjects:
             continue
         p = os.path.join(root, fn)
         if not os.path.exists(p):
             continue
-        d = json.load(open(p, encoding='utf-8'))
-        d = fish_short.full_doc(d) if fn == 'fish-game.json' else d
+        d = read(json.load(open(p, encoding='utf-8')))
 
         def walk(o):
             if isinstance(o, list):
@@ -166,7 +169,7 @@ def game_photos(root=ROOT, subjects=None):
                     out.setdefault(o['f'], (subj, o))
                 for v in o.values():
                     if isinstance(v, (dict, list)): walk(v)
-        walk(d.get('photos', d) if fn != 'data.json' else d)
+        walk(d[key] if key else d)
     return out
 
 
@@ -268,7 +271,7 @@ def plan(a):
 
 def run(a):
     photos, ms, fs = plan(a)
-    if fs and not a.dir:  # one heavy run at a time on the machine (rule W24): the tool runs again in the slot
+    if fs:  # one heavy run at a time on the machine (rule W24), local images too: the tool runs again in the slot
         import slot; slot.guard('tools/photo_measure.py')
     print(f'{len(photos)} game photos, {len(fs)} to measure')
     if not fs:
@@ -388,7 +391,7 @@ def judges(a):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--subject', action='append', choices=[s for s, _ in GAME])
+    p.add_argument('--subject', action='append', choices=[g[0] for g in GAME])
     p.add_argument('--sample', type=int, default=0)
     p.add_argument('--only', default='')
     p.add_argument('--minutes', type=float, default=35)
