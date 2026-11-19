@@ -1284,3 +1284,42 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
   `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
   docs/decisions/2026-11-19-doc-size-marks.md).
+- **20:42-20:43, the night's work.** «t'es pas forcément obligé de tout lancer en parallèle [...] si dans la nuit t'as
+  plus assez de travail, il faut que tu ailles taper dans la roadmap et dans les trucs que tu peux avancer tout seul.
+  sans forcément lancer 30 agents en parallèle à chaque fois.» and «ça sert à rien d'imaginer des études juste pour
+  remplir le temps. [...] Moi, j'ai mon quota à surveiller quand même. Donc, tu fais les tâches qu'on a déterminées
+  ensemble.» A few agents at a time on decided work; then the next decided ROADMAP rows; no filler study. Applied:
+  INTEGRATOR "Working with Pierre" (A night's work).
+- **15:54, Q436 (the one-tap difficulty question for fish and sea slugs).** «Je ne comprends même pas pourquoi ça
+  n'est pas juste une fonctionnalité du moteur et qui marche donc déjà pour toutes les matières... Donc oui bien sur,
+  et il faut mutualiser le code tant que possible». The one-tap question runs for every subject, from the shared
+  engine, its answers kept per subject. Applied: #1226 (`quiz.js` `PULSE` for every subject, paced per subject; the
+  admin's tables read the subject on screen; LEARNING.md "What the players say about the difficulty").
+- **15:55, the coral-only cards.** «ça veut pas dire qu'il ne faut pas garder les templates. On ne sait jamais quand on
+  en aura besoin». The apology card and the recalculation notes are not extended to fish and sea slugs, but the cards
+  stay in the code as templates with no subject by default, tagged only when their text concerns one subject. Applied:
+  #1226 (`progress.js` `RECALC.L`, `sorryNotice` kept as an engine card).
+- **20:50, why his words were not recorded.** «je comprends pas qu'est-ce qui fait que notre système de travail n'a
+  pas permis le fait que tout le travail qu'on a fait ensemble avec l'autre agent ait été correctement enregistré
+  [...] à chaque fois que je dis quelque chose, ben en fait, c'est pas enregistré correctement.» Every answer reaches
+  ROADMAP or a PR, checked by a tool. Applied: #1264 (the recount written into ROADMAP's rows; `tools/answers_check.py`
+  fails an entry that names a ROADMAP item without applying it).
+- **20:55, the admin is slow to open on his phone.** «c'est pas ultra prioritaire, mais [...] la page admin sur mon
+  téléphone met de plus en plus de temps à s'ouvrir. [...] je crois que par défaut ça cherche à s'ouvrir sur activité,
+  mais globalement les pages dans admin, notamment la première fois que je me connecte depuis un moment [...] c'est
+  vraiment très long à charger.» A fix of something plainly broken, low priority. Applied: the admin load PR.
+- **20:57, agent proposals and his curation.** «ce que tu appelles macuration, si ça se trouve, c'est juste moi qui ai
+  cliqué sur un bouton pour valider une proposition [...] si tu penses que macuration entre guillemets n'est pas bonne,
+  [...] il faut que tu fasses une proposition qui intègre directement le jeu. Quitte à ce que je corrige a
+  posteriori.» Applied: with the 20:59 entry, rule A1's new wording, for his OK.
+- **20:57, photos in full size.** «fais attention aux photos, que les photos vues en petite résolution, on peut passer
+  à côté de problèmes, ou de qualité d'ailleurs, et donc effectivement, quand on a le doute, il ne faut pas hésiter à
+  les voir en plus haute résolution.» Applied: INTEGRATOR "The quota in practice"; the re-judge of the juveniles' tag
+  doubts in full size.
+- **20:59, rule A1 protects his own hand decisions.** «la fameuse règle A1, tu veux absolument pas toucher à ma
+  curation. Mais [...] ma curation, c'est pas, si ça se trouve, c'est juste des propositions d'agents IA et j'ai cliqué
+  OK pour tous et du coup tout est passé. Sauf si c'est quelque chose où j'ai fait à la main un par un, c'est pas
+  vraiment ma curation. [...] À vérifier, mais je pense que j'ai fait très peu de curation manuelle et j'ai pas fait
+  100 photos en curation manuelle.» A1 protects the choices he made by hand, one by one; accepted agent proposals can
+  be replaced by a better proposal that goes into the game, which he corrects afterwards. Applied: the counts of hand
+  and accepted curation (the Q438 PR); rule A1's new wording, for his OK.

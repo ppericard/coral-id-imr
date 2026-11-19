@@ -2658,7 +2658,35 @@
    "species": [
     "s64717"
    ],
-   "ref": 404963
+   "ref": 404963,
+   "marks": [
+    "Tall rhinophore sheaths, each with a sail-like flap behind, as B. anguilla",
+    "Paired processes along the back, with gills on their inner side",
+    "Most swim by bending side to side; B. anguilla swims like an eel"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Bornella anguilla species page, Description",
+     "u": "https://en.seaslug.world/species/bornella_anguilla"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Bornella anguilla fact sheet, swimming in the genus and in B. anguilla",
+     "u": "https://www.seaslugforum.net/find/bornangu"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Gymnodoris",
@@ -2668,7 +2696,23 @@
    "species": [
     "s1143046"
    ],
-   "ref": 206395
+   "ref": 206395,
+   "marks": [
+    "A hunter that eats other sea slugs"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, comment on Gymnodoris citrina from Samoa, the gymnodorids' food",
+     "u": "https://www.seaslugforum.net/find/1867"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Cyerce",
@@ -2691,6 +2735,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Large, flat, leaf-like cerata, easily shed when disturbed",
+    "Rhinophores split in two and rolled, as C. elegans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Cyerce elegans fact sheet, the cerata of these sacoglossans",
+     "u": "https://www.seaslugforum.net/find/cyereleg"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Cyerce elegans fact sheet, the head and rhinophores",
+     "u": "https://www.seaslugforum.net/find/cyereleg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -2711,7 +2779,27 @@
    "species": [
     "s471272"
    ],
-   "ref": 137916
+   "ref": 137916,
+   "marks": [
+    "Cerata covered in warts, as D. ussi",
+    "Smooth rhinophores rising from cup-like sheaths"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Doto ussi species page, Description",
+     "u": "https://en.seaslug.world/species/doto_ussi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tenellia",
@@ -2723,7 +2811,23 @@
     "s1595806",
     "s1595807"
    ],
-   "ref": 138545
+   "ref": 138545,
+   "marks": [
+    "On rubble in soft sand or silt, as T. puti and T. bughaw"
+   ],
+   "msrc": [
+    {
+     "t": "Kim, Donohoo and Gosliner 2024, The soft-sediment Fionidae of the tropical Indo-Pacific (PeerJ 12), Natural history of Tenellia puti and T. bughaw",
+     "u": "https://doi.org/10.7717/peerj.18517"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tomoberthella",
@@ -2733,7 +2837,45 @@
    "species": [
     "s1532043"
    ],
-   "ref": 1720606
+   "ref": 1720606,
+   "marks": [
+    "Sheds parts of its mantle when disturbed, as T. martensi",
+    "Lines on the mantle mark where it breaks off",
+    "A flat oval body; its rolled rhinophores join at the base"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Berthella martensi fact sheet, now Tomoberthella martensi",
+     "u": "https://www.seaslugforum.net/find/bertmart"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Tomoberthella martensi species page, Description",
+     "u": "https://en.seaslug.world/species/tomoberthella_martensi"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Berthella martensi fact sheet, the breakage ring, now Tomoberthella martensi",
+     "u": "https://www.seaslugforum.net/find/bertmart"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Tomoberthella martensi species page, Remarks",
+     "u": "https://en.seaslug.world/species/tomoberthella_martensi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Colpodaspis",
@@ -2743,7 +2885,31 @@
    "species": [
     "s487302"
    ],
-   "ref": 137893
+   "ref": 137893,
+   "marks": [
+    "A tiny snail-like slug, its shell hidden in the mantle, as C. thompsoni",
+    "A long siphon on the right side of the mantle"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Colpodaspis thompsoni fact sheet, the shell and mantle",
+     "u": "https://www.seaslugforum.net/find/colpthom"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Colpodaspis thompsoni fact sheet, the exhalant siphon",
+     "u": "https://www.seaslugforum.net/find/colpthom"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Cabangus",
@@ -2753,7 +2919,32 @@
    "species": [
     "s1153968"
    ],
-   "ref": 1457498
+   "ref": 1457498,
+   "marks": [
+    "Tree-like branched appendages in pairs along the back",
+    "Branched appendages on the front edge of the head too"
+   ],
+   "msrc": [
+    {
+     "t": "Korshunova et al. 2020, A synoptic review of the family Dendronotidae (Contributions to Zoology 90), diagnosis of the genus Cabangus",
+     "u": "https://doi.org/10.1163/18759866-BJA10014"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Cabangus regius species page, Remarks, the genus name",
+     "u": "https://en.seaslug.world/species/cabangus_regius"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Asteronotus",
@@ -2773,6 +2964,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "A ridge down the middle of the back, flanked by large knobs, as A. cespitosus",
+    "Can grow very large"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Asteronotus cespitosus species page, Description",
+     "u": "https://en.seaslug.world/species/asteronotus_cespitosus"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Asteronotus cespitosus fact sheet, its size",
+     "u": "https://www.seaslugforum.net/find/astecesp"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -2786,7 +3001,37 @@
     "s476171",
     "s332512"
    ],
-   "ref": 138043
+   "ref": 138043,
+   "marks": [
+    "Finger-like processes beside the rhinophores and beside the gills",
+    "Front corners of the foot drawn out into tentacles"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Trapania palmula fact sheet, the appendages",
+     "u": "https://www.seaslugforum.net/find/trappalm"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Trapania scurra fact sheet, the appendages",
+     "u": "https://www.seaslugforum.net/find/trapscur"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Trapania vitta species page, Description",
+     "u": "https://en.seaslug.world/species/trapania_vitta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1,
+      2
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Janolus",
@@ -2797,7 +3042,41 @@
     "s497250",
     "s891079"
    ],
-   "ref": 138379
+   "ref": 138379,
+   "marks": [
+    "A frilled crest between the rhinophores, as J. savinkini",
+    "Many swollen, pointed cerata over the back, as J. flavoanulatus"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Janolus savinkini species page, Description, the caruncle",
+     "u": "https://en.seaslug.world/species/janolus_savinkini"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Janolus flavoanulatus species page, Description, the caruncle",
+     "u": "https://en.seaslug.world/species/janolus_flavoanulatus"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Janolus flavoanulatus species page, Description",
+     "u": "https://en.seaslug.world/species/janolus_flavoanulatus"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Janolus savinkini species page, Description",
+     "u": "https://en.seaslug.world/species/janolus_savinkini"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      3
+     ]
+    ]
+   }
   },
   {
    "id": "g:Notodoris",
@@ -2808,7 +3087,40 @@
     "s504909",
     "s504910"
    ],
-   "ref": 531074
+   "ref": 531074,
+   "marks": [
+    "Gills midway along the back, partly hidden behind large lobes",
+    "Tough skin, stiffened by tiny spicules",
+    "Small, smooth, simple rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet, the gills",
+     "u": "https://www.seaslugforum.net/find/notomino"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Notodoris serenae fact sheet, the extrabranchial appendages",
+     "u": "https://www.seaslugforum.net/find/notosere"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet, as in other species of Notodoris",
+     "u": "https://www.seaslugforum.net/find/notomino"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Verconia",
@@ -2829,7 +3141,23 @@
    "species": [
     "s349048"
    ],
-   "ref": 137632
+   "ref": 137632,
+   "marks": [
+    "Leaf-like cerata, as B. moebii"
+   ],
+   "msrc": [
+    {
+     "t": "Carmona et al. 2013, A molecular phylogeny of Aeolidiidae (PLoS ONE 8), Discussion, Baeolidia moebii (with B. major, its synonym)",
+     "u": "https://doi.org/10.1371/journal.pone.0063000"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Philinopsis",
@@ -2839,7 +3167,23 @@
    "species": [
     "s199467"
    ],
-   "ref": 137640
+   "ref": 137640,
+   "marks": [
+    "A smooth body, the head shield about half its length, as P. speciosa"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Philinopsis speciosa species page, Description",
+     "u": "https://en.seaslug.world/species/philinopsis_speciosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Sclerodoris",
@@ -2849,7 +3193,28 @@
    "species": [
     "s199590"
    ],
-   "ref": 137660
+   "ref": 137660,
+   "marks": [
+    "A pit in the middle of the back, like a sponge's pore, as S. tuberculata"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2002, Sclerodoris tuberculata fact sheet, the dorsal pit",
+     "u": "https://www.seaslugforum.net/find/scletube"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Sclerodoris tuberculata species page, Description",
+     "u": "https://en.seaslug.world/species/sclerodoris_tuberculata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Murphydoris",
@@ -2859,7 +3224,23 @@
    "species": [
     "s1365704"
    ],
-   "ref": 723629
+   "ref": 723629,
+   "marks": [
+    "A tiny, slender slug; M. adusta feeds on colonial sea squirts"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Murphydoris adusta species page, Description and Remarks",
+     "u": "https://en.seaslug.world/species/murphydoris_adusta"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Stylocheilus",
@@ -2869,7 +3250,39 @@
    "species": [
     "s48654"
    ],
-   "ref": 203969
+   "ref": 203969,
+   "marks": [
+    "A small, slim sea hare, as S. striatus",
+    "Branched papillae along the back, varied in size and shape",
+    "Can gather in large numbers"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, its shape",
+     "u": "https://www.seaslugforum.net/find/stylstri"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Stylocheilus striatus species page, Description",
+     "u": "https://en.seaslug.world/species/stylocheilus_striatus"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, its aggregations",
+     "u": "https://www.seaslugforum.net/find/stylstri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Cratena",
@@ -2879,7 +3292,31 @@
    "species": [
     "s467982"
    ],
-   "ref": 146861
+   "ref": 146861,
+   "marks": [
+    "Smooth rhinophores and oral tentacles, as C. simba",
+    "Front cerata in an arch on each side, the others in sloping rows"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Cratena simba fact sheet, the rhinophores and tentacles",
+     "u": "https://www.seaslugforum.net/find/cratsimb"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Cratena simba fact sheet, the arrangement of the cerata",
+     "u": "https://www.seaslugforum.net/find/cratsimb"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Euselenops",
@@ -2889,7 +3326,39 @@
    "species": [
     "s50556"
    ],
-   "ref": 534372
+   "ref": 534372,
+   "marks": [
+    "A wide half-moon oral veil fringed with papillae, as E. luniceps",
+    "The mantle drawn out behind into a slender siphon",
+    "Buries in sand by day and crawls out at night"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Euselenops luniceps species page, Description and Etymology",
+     "u": "https://en.seaslug.world/species/euselenops_luniceps"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Euselenops luniceps species page, Description",
+     "u": "https://en.seaslug.world/species/euselenops_luniceps"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Euselenops luniceps species page, Remarks",
+     "u": "https://en.seaslug.world/species/euselenops_luniceps"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Dendrodoris",
@@ -2921,6 +3390,31 @@
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "A large, soft body covered in clusters of knobs, as D. tuberculosa",
+    "Rhinophore clubs that flare out like mushrooms, as D. tuberculosa"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Dendrodoris tuberculosa fact sheet, the tubercles",
+     "u": "https://www.seaslugforum.net/find/dendtube"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Dendrodoris tuberculosa species page, Description",
+     "u": "https://en.seaslug.world/species/dendrodoris_tuberculosa"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -2942,6 +3436,37 @@
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Many lengthwise ridges along the back, as D. funiculus",
+    "A broad oral veil in front of the head, its rim orange or yellow",
+    "Rhinophores set wide apart, their clubs with lengthwise plates"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Dermatobranchus funiculus species page, Description",
+     "u": "https://en.seaslug.world/species/dermatobranchus_funiculus"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Dermatobranchus caeruleomaculatus species page, Description",
+     "u": "https://en.seaslug.world/species/dermatobranchus_caeruleomaculatus"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      1
+     ]
+    ]
    }
   },
   {
@@ -2952,7 +3477,23 @@
    "species": [
     "s823951"
    ],
-   "ref": 1055127
+   "ref": 1055127,
+   "marks": [
+    "Back shield in two lobes, the left long, the right short, as M. tsurugensis"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Mariaglaja tsurugensis species page, Description, Mariaglaja tsurugensis",
+     "u": "https://en.seaslug.world/species/mariaglaja_tsurugensis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Marioniopsis",
@@ -2971,6 +3512,26 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "Tree-like gills along each side of the back, as M. arborescens",
+    "A front veil fringed with finger-like papillae"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Marioniopsis arborescens species page, Description",
+     "u": "https://en.seaslug.world/species/marioniopsis_arborescens"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
     ]
    }
   },
@@ -2994,6 +3555,30 @@
      }
     ]
    },
+   "marks": [
+    "Large oral tentacles that point down, as T. luteolineata",
+    "A smooth body, highest at the gills, tapering to a long pointed tail"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet, a typical feature of Roboastra, now Tyrannodoris luteolineata",
+     "u": "https://www.seaslugforum.net/find/robolute"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Tyrannodoris luteolineata species page, Description",
+     "u": "https://en.seaslug.world/species/tyrannodoris_luteolineata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   },
    "apart": {
     "g:Tambja": "Tambja: flattened, lobe-like oral tentacles; a sense slit before the rhinophores"
    },
@@ -3014,7 +3599,27 @@
    "species": [
     "s506090"
    ],
-   "ref": 559046
+   "ref": 559046,
+   "marks": [
+    "Covered in low pustules, as O. guamensis",
+    "A long tail drawn out from the left of the back shield"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Odontoglaja guamensis species page, Description",
+     "u": "https://en.seaslug.world/species/odontoglaja_guamensis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Notobryon",
@@ -3024,7 +3629,44 @@
    "species": [
     "s50398"
    ],
-   "ref": 225544
+   "ref": 225544,
+   "marks": [
+    "A crest on the tail, waved like a paddle to swim",
+    "Large lobes on the back, with feathery gills on their inner face",
+    "Looks like the algae it lives among"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Notobryon wardi fact sheet, the posterior crest of the genus",
+     "u": "https://www.seaslugforum.net/find/notoward"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Notobryon wardi fact sheet, the mantle lobes",
+     "u": "https://www.seaslugforum.net/find/notoward"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Notobryon wardi species page, Description",
+     "u": "https://en.seaslug.world/species/notobryon_wardi"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Notobryon wardi species page, Description and Remarks",
+     "u": "https://en.seaslug.world/species/notobryon_wardi"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3
+     ]
+    ]
+   }
   },
   {
    "id": "g:Atagema",
@@ -3034,7 +3676,36 @@
    "species": [
     "s50445"
    ],
-   "ref": 137659
+   "ref": 137659,
+   "marks": [
+    "A raised, warty crest down the middle of the back, as A. intecta",
+    "Rough skin, its tubercles tipped with spicules"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet, the dorsal crest",
+     "u": "https://www.seaslugforum.net/find/tripinte"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Atagema intecta species page, Description",
+     "u": "https://en.seaslug.world/species/atagema_intecta"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet, the spiculate tubercles of A. intecta",
+     "u": "https://www.seaslugforum.net/find/tripinte"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Bulbaeolidia",
@@ -3044,7 +3715,27 @@
    "species": [
     "s325414"
    ],
-   "ref": 730445
+   "ref": 730445,
+   "marks": [
+    "Rhinophores with bulb-like swellings",
+    "Club-shaped cerata in single rows, curving in towards the middle"
+   ],
+   "msrc": [
+    {
+     "t": "Carmona et al. 2013, A molecular phylogeny of Aeolidiidae (PLoS ONE 8), Bulbaeolidia gen. nov., its features",
+     "u": "https://doi.org/10.1371/journal.pone.0063000"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Platydoris",
@@ -3064,6 +3755,35 @@
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "A flat body with a broad, stiff mantle",
+    "A raised, lobed rim around the gills, as P. sanguinea"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Platydoris sanguinea fact sheet, like all species of Platydoris",
+     "u": "https://www.seaslugforum.net/find/platsang"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2007, Platydoris sanguinea fact sheet, the gill pocket",
+     "u": "https://www.seaslugforum.net/find/platsang"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Platydoris sanguinea species page, Description",
+     "u": "https://en.seaslug.world/species/platydoris_sanguinea"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
    }
   },
   {
@@ -3074,7 +3794,31 @@
    "species": [
     "s1471723"
    ],
-   "ref": 1663336
+   "ref": 1663336,
+   "marks": [
+    "Very long rhinophores and oral tentacles, as P. longicornis",
+    "A raised rim around the mantle edge, and no papillae on the back"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Pelagella longicornis species page, Description and Etymology",
+     "u": "https://en.seaslug.world/species/pelagella_longicornis"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Pelagella longicornis species page, Description",
+     "u": "https://en.seaslug.world/species/pelagella_longicornis"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   }
  ],
  "species": [

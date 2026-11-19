@@ -576,8 +576,10 @@ test("treeBoardTree is the app's own score tree (app.js UNITS tree), with and wi
   );
   [CUR, cur(MOVES), PAIRS].forEach(c => {
     const A = C.contentApply(S, F, c);
-    // the species level's tree (app.js treeSp): the sheet that holds this code replays the species units
-    assert.deepStrictEqual(C.treeBoardTree(A), ctx.treeGenera(C.treeGen(A, {}), A).treeSp);
+    // the species level's tree (app.js treeSp) with the scientific species on (treeScoreTree sci, SCI_SHEET; their app
+    // PR makes it the app's own): the sheet that holds this code replays both species levels
+    const X = ctx.treeGenera(C.treeGen(A, {}), A);
+    assert.deepStrictEqual(C.treeBoardTree(A), C.treeScoreTree(X, A, true, true));
   });
   // the subject's own declaration, which the sheet reads (no subject named there: rule S1)
   assert.deepStrictEqual(S.replayed.tree(F), C.treeBoardTree(F));
@@ -625,7 +627,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   assert.strictEqual(board(), p0);
   // The sheet's tree not cached (evicted): the apps' tree; made again at the next read.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree3:'))
+    .filter(k => k.startsWith('stree4:'))
     .forEach(k => delete s.cache[k]);
   save(T1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
@@ -636,7 +638,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   // A tree the sheet could not make or refused is kept as 0: no tree of its own (the apps'), and fish.json is not read
   // again at every call for it.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree3:'))
+    .filter(k => k.startsWith('stree4:'))
     .forEach(k => (s.cache[k] = '0'));
   s.ctx.subjStRefresh_();
   s.ctx.subjStRefresh_();
@@ -652,7 +654,7 @@ test('the sheet: the replay units over one cache value are kept in parts; the st
     s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
     st1 = C.structStamp(S, F, PAIRS),
     gen1 = C.treeReplayGen(C.contentApply(S, F, PAIRS)),
-    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen4:fish:') && !k.includes('#'));
+    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen5:fish:') && !k.includes('#'));
   assert.ok(JSON.stringify({gen: gen1, st: st1}).length > 100 * 1024, 'over one cache value');
   assert.strictEqual(s.ctx.subjStKept_('fish'), null, 'nothing cached yet: no stamp, nothing fetched');
   assert.strictEqual(m.n.fish, 0);
