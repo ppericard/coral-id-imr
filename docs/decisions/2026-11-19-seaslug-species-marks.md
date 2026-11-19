@@ -1,6 +1,6 @@
 # Sea slug species sheets: sourced ID marks, shown as drafts until Pierre validates them
 
-Date: 2026-11-19. PR: #0000. Rules or docs touched: C1, C2, C3, C5, C6, S1; docs/spec/seaslugs.md, docs/spec/tools.md,
+Date: 2026-11-19. PR: #1263. Rules or docs touched: C1, C2, C3, C5, C6, S1; docs/spec/seaslugs.md, docs/spec/tools.md,
 ROADMAP "More subjects".
 
 ## Context
