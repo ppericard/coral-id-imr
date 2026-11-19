@@ -71,8 +71,7 @@ test('the species units: the worlds of before unchanged, opened from their famil
   Object.keys(W0.mu).forEach(n => assert.strictEqual(W.mu[n], W0.mu[n], n));
   U.sp.forEach(n => assert.ok(n in W.mu && X.gen[n].from === X.gen[n].parent, n));
   // 1,200 answers: the rank share (model.js SHARE) keeps the species out until some of the families are at Advanced. The
-  // first species comes after 70 to 740 answers, by seed: a mechanism check, never a rate (seed 1's comes after about
-  // 740 with the reference level read from the photo alone).
+  // first species comes after a few hundred answers, varying widely by seed: a mechanism check, never a rate.
   const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 1200, cps: [1200]}),
     first = {};
   r.expo.forEach((e, i) => r.kinds[e[0]] === 'species' && !(e[0] in first) && (first[e[0]] = i + 1));

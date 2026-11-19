@@ -42,6 +42,10 @@ margin 0.03, the bar moving up toward true knowledge (Q421).
   swap) are rebuilt with their tools; `fish-game.json` follows at the Candidate photos workflow's next run after the
   merge (the ease of 1,184 photos in play, the covers and first photos of the 1,555 that change level, one surprise-only
   photo).
-- No progress rule moves (no rules version, rule D5); the sheet script's copy of `core.js` changes, with no gate (rule D4).
+- `core.js` `refLevel` serves every subject (rule P1 says the same for all): the sea slugs' game photos judged 4 with
+  the reference look (a lateral view) join their reference level too, 133 of 3,014 photos in 97 species, none leaving.
+  No simulator plays the sea slugs, so no learning check measures that part.
+- No progress rule moves (no rules version, rule D5): a replay reads each answer's logged scoring record, never the
+  photo's current ease or level. The sheet script's copy of `core.js` changes, with no gate (rule D4).
 - Left on the route, as Next work (rule P1): the held-out set's `rep` exclusion (`tools/holdout.py`, which the per-player
   reserve of #1099 replaces) and the admin's Coverage "reference" count and tile badge (`autosort.js` `fishCov`).
