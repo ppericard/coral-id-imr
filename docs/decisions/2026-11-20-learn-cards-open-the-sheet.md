@@ -1,6 +1,6 @@
 # A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there
 
-Date: 2026-11-20. PR: #0. Rules or docs touched: S1, P5, C2, U3, U4; docs/spec/front-end.md "Learn › Genera",
+Date: 2026-11-20. PR: #1290. Rules or docs touched: S1, P5, C2, U3, U4; docs/spec/front-end.md "Learn › Genera",
 docs/DESIGN.md "Components", docs/spec/fish-sheets.md, docs/spec/fish-game.md.
 
 ## Context

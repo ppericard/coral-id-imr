@@ -1401,4 +1401,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   que on fait en sorte que l'utilisateur, ça soit très clair qu'il y a un truc à cliquer et qu'il peut ouvrir une fiche
   sans forcément explicitement avoir un lien». A unit's card on a Learn list opens its sheet, photo and name included,
   plainly tappable, with no "Open the sheet" line, no ID marks heading and no sources there (they stay on the sheet).
-  Applied: docs/decisions/2026-11-20-learn-cards-open-the-sheet.md, docs/spec/front-end.md, DESIGN.md, #0.
+  Applied: docs/decisions/2026-11-20-learn-cards-open-the-sheet.md, docs/spec/front-end.md, DESIGN.md, #1290.
