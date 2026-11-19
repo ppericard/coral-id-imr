@@ -555,6 +555,29 @@ test('every decision record has its date, its PR, a decision, working links and 
     assert.ok(fs.existsSync(path.join(dir, m[1])), 'docs/decisions/README.md: the index names ' + m[1] + ', which does not exist');
 });
 
+// The index is written from the records (tools/decisions_index.py), sorted by date then file name, so parallel PRs add
+// their rows at different places; a conflict there is resolved by --fix, never by hand.
+test('the decisions index is what tools/decisions_index.py writes from the records', () => {
+  const {spawnSync} = require('child_process');
+  const r = spawnSync('python3', ['-B', path.join(ROOT, 'tools', 'decisions_index.py'), '--check'], {encoding: 'utf8', timeout: 10000});
+  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+});
+
+// Every answer reaches its doc (AGENTS.md "Every answer reaches its doc, and the answers ledger"): each ledger entry from
+// 2026-11-19 names where it is applied, and no ROADMAP or reviews index status waits on an answered question.
+test('every answer in the ledger names its doc, and nothing answered is cited as waiting (tools/answers_check.py)', () => {
+  const {spawnSync} = require('child_process');
+  const r = spawnSync('python3', ['-B', path.join(ROOT, 'tools', 'answers_check.py'), '--check'], {encoding: 'utf8', timeout: 10000});
+  assert.strictEqual(
+    r.status,
+    0,
+    r.stdout
+      .split('\n')
+      .filter(l => /^FAIL/.test(l))
+      .join('\n') + r.stderr
+  );
+});
+
 // Size and line-length budgets: every living doc is bounded in bytes and in its longest line, so a doc cannot grow back
 // without a PR saying so. Each budget is the doc's size a little above its size on main when the budget was set (about 5 %
 // in bytes, rounded up to the KB; about 5 % in the longest line, rounded up to ten), so today's docs pass and growth is
@@ -566,7 +589,7 @@ const DOC_BUDGET = {
   'CONTRIBUTING.md': [5, 130],
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
-  'docs/LEARNING.md': [175, 320],
+  'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
   'docs/ROADMAP.md': [117, 1360],
   'docs/HANDOVER.md': [23, 3140],
   'docs/INTEGRATOR.md': [22, 210],
@@ -602,13 +625,14 @@ const DOC_BUDGET = {
   'docs/spec/seaslugs.md': [12, 130],
   'docs/spec/tools.md': [47, 130],
   'docs/spec/analyses.md': [26, 130],
+  'docs/spec/analyses-method.md': [34, 130], // moved from LEARNING.md, 2026-11-19
   'docs/spec/loading.md': [16, 130],
   'docs/spec/site.md': [7, 130],
   'docs/spec/storage.md': [11, 240],
   'docs/spec/photos.md': [17, 130],
   'docs/spec/player-reports.md': [8, 130],
   'docs/spec/deploy.md': [6, 130],
-  'docs/decisions/README.md': [10, 200], // the index grows by a row per record
+  'docs/decisions/README.md': [12, 200], // the index grows by a row per record (about 150 bytes): 12 KB from #1199
   'docs/rules/README.md': [1, 150],
   'docs/rules/admin.md': [5, 230],
   'docs/rules/content.md': [9, 220],

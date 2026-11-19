@@ -46,6 +46,9 @@ Conventions that hold across them:
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `sed -i`…) |
 | `night.py` | The night report: what the agents did from 17:30 to 04:00 Manila (PRs merged with their agent time, trains, PRs left open, the night queue) |
 | `effort.py` | Measures the agent time of merged PRs, so an estimate cites comparable ones; `--check FILE.md` checks a study |
+| `asked.py` | Searches the answers ledger, the rules and the decision records before any question to Pierre |
+| `answers_check.py` | Every ledger answer names its doc; nothing answered is cited as waiting (the docs test) |
+| `decisions_index.py` | Writes the decisions index from the records (`--fix`, `--check`) |
 | `slot.py` | The machine-slot guard for heavy Python tools (`tests/slot.js` is the lock) |
 | `health.py`, `infra.json` | The hourly Health workflow: the live site, the sheet script, the infrastructure numbers against their free-tier limits |
 
