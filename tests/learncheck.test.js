@@ -21,7 +21,7 @@ test('the learning check runs by hand only, reads only, and keeps the inputs out
   assert.ok(runs.length >= 4, String(runs.length));
   runs.forEach(r => assert.doesNotMatch(r, /\$\{\{/, r.slice(0, 80)));
   // Each free-text input is checked against a pattern before use.
-  ['after', 'before', 'seeds', 'questions', 'answers', 'primary', 'looks', 'args'].forEach(k =>
+  ['after', 'before', 'seeds', 'questions', 'answers', 'primary', 'looks', 'args', 'pierre_go'].forEach(k =>
     assert.match(Y, new RegExp(`ok ${k} "\\$`), k)
   );
 });

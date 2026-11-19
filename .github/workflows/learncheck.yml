@@ -57,6 +57,10 @@ on:
         description: 'More learnsim options for both arms and worlds (e.g. --profiles beginner,expert --dist tail)'
         default: ''
         type: string
+      pierre_go:
+        description: "Level 3 only (over 20 seeds, or over 10,000 answers): Pierre's go, his words and their date; learnsim refuses level 3 without it (rule L11)"
+        default: ''
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -78,6 +82,7 @@ jobs:
       PRIMARY_WORLD: ${{ inputs.primary_world }}
       LOOKS: ${{ inputs.looks }}
       ARGS: ${{ inputs.args }}
+      PIERRE_GO: ${{ inputs.pierre_go }}
     steps:
       - name: Check the inputs
         run: |
@@ -90,6 +95,7 @@ jobs:
           ok primary "$PRIMARY" '^([A-Za-z][A-Za-z0-9]*@([0-9]+|run):(up|down))?$' # learncmp's MEASURE@CHECKPOINT (c3@run)
           ok looks "$LOOKS" '^[1-9]$'
           ok args "$ARGS" '^[A-Za-z0-9 ,.:@_=-]{0,200}$'
+          ok pierre_go "$PIERRE_GO" '^[A-Za-z0-9 ,.:@_=/-]{0,200}$'
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.after }}
@@ -124,7 +130,7 @@ jobs:
               echo "::group::$w world, $side"
               # shellcheck disable=SC2086 # ARGS: several options, checked above
               (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
-                --seeds "$SEEDS" --questions "$n" --workers 4 $ARGS --out "$out/$w-$side.json")
+                --seeds "$SEEDS" --questions "$n" --workers 4 ${PIERRE_GO:+--pierre-go "$PIERRE_GO"} $ARGS --out "$out/$w-$side.json")
               echo "::endgroup::"
             done
           done

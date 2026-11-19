@@ -11,6 +11,12 @@
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none]
 //                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
+//                          [--budget MIN] [--per-job SEC] [--pierre-go "his words, their date"]
+// --budget MIN (rule L11, tools/checkbudget.js): minutes of compute, 40 at most and by default, in either world: the run
+// plans its jobs, estimates their time from one short calibration run (or --per-job SEC, a job's time at the full
+// length), refuses to start over the budget (saying which options would fit), and stops at the budget with the runs it
+// has, marked cut. Level 3 (over 20 seeds, or over 10,000 answers in the rated world) never runs on this machine: only
+// with --pierre-go on a GitHub runner (GITHUB_ACTIONS=true); elsewhere the command to dispatch it is printed.
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
 // --ach: the answer at which each achievement first came, median per profile (rule L8).
@@ -84,6 +90,7 @@ const http = require('http'),
   path = require('path');
 const {chromium} = require('playwright');
 const {memStorage} = require('./memstorage.js');
+const CB = require('./checkbudget.js'); // the 40-minute cap and level 3's gate (rule L11)
 const ROOT = path.join(__dirname, '..');
 
 // Profiles: tools/learnprof.js, the same list for both subjects and both worlds; also loaded in the page (an init
@@ -211,6 +218,14 @@ const SEEDS = Number(arg('seeds', 5)),
   // difficulty on the question (the real log: -0.22, LEARNING.md "Response time: genus and photo"); 0 by default.
   GAPX = Number(arg('gap', 0));
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
+// --budget MIN (rule L11): minutes of compute, 40 at most (the default), the run stopping there with what it has, marked
+// cut; --per-job SEC: a job's measured time at the full length, instead of the short calibration run that estimates it;
+// --pierre-go "his words, their date": level 3 (over 20 seeds, or over 10,000 answers in the rated world) runs only with
+// it, and only on a GitHub runner (tools/checkbudget.js).
+const BUDGET_MIN = CB.parseBudget(arg('budget', undefined)),
+  PERJOB = arg('per-job', null) === null ? null : Number(arg('per-job', null)),
+  PIERRE_GO = arg('pierre-go', '');
+if (PERJOB !== null && !(PERJOB > 0)) throw new Error('--per-job SEC: seconds a job takes at the full length, above 0');
 if (OPENALL && !/^\d+$/.test(OPENALL)) throw new Error('--openall N: the question at which all genera open (the offer card went, Q337)');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
 if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
@@ -1224,7 +1239,7 @@ function play(cfg) {
 // A simulated player's anonymous id (sync.js anonId's form: 10 of a-z0-9) from its profile and seed.
 const simId = (name, seed) =>
   Array.from(require('crypto').createHash('sha256').update(`sim ${name} ${seed}`).digest().subarray(0, 10), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
-async function run(browser, base, name, seed) {
+async function run(browser, base, name, seed, n = QN) {
   const ctx = await browser.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
   await ctx.route(
     u => !u.href.startsWith(base),
@@ -1271,8 +1286,8 @@ async function run(browser, base, name, seed) {
   const r = await p.evaluate(play, {
     prof: profOf(name, SUBJECT),
     seed,
-    N: QN,
-    cps: CPS,
+    N: n,
+    cps: n === QN ? CPS : [...CPS.filter(q => q < n), n], // a shorter run: the budget's calibration
     L: LEARNER,
     breaks: BREAKS,
     after: AFTER,
@@ -1617,8 +1632,31 @@ function openTable(runs) {
 }
 
 (async () => {
+  // Level 3 first, before any slot or browser: refused on this machine, and without Pierre's go (rule L11).
+  const refusal = CB.level3Gate({
+    reason: CB.level3Reason({world: WORLD, seeds: SEEDS, N: QN}),
+    go: PIERRE_GO,
+    runner: process.env.GITHUB_ACTIONS === 'true',
+    subject: SUBJECT,
+    world: WORLD,
+    seeds: SEEDS,
+    N: QN
+  });
+  if (refusal) {
+    console.error(refusal);
+    process.exit(2);
+  }
+  // A measured --per-job needs no calibration run: a plan over the budget is refused here, before the slot's queue.
+  if (PERJOB !== null) {
+    const perSeed = WORLD === 'rated' && APPK === 'sheet' ? 1 : NAMES.length, // the sheet's population: one job a seed
+      pl = CB.plan({budget: new CB.Budget(BUDGET_MIN), jobs: perSeed * SEEDS, workers: WORKERS, perJobSec: PERJOB, P: NAMES.length, S: SEEDS, N: QN, perSeed, source: '--per-job'});
+    if (!pl.ok) {
+      console.error(pl.text);
+      process.exit(2);
+    }
+  }
   if (WORLD === 'rated') {
-    require('../tests/slot.js').guard('tools/learnsim.js'); // heavy at level 3 (40 seeds x 30,000 answers): in a machine slot
+    require('../tests/slot.js').guard('tools/learnsim.js'); // in a machine slot (the clock below starts once it is held)
     const commit = (() => {
       try {
         return require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], {cwd: ROOT}).toString().trim();
@@ -1626,28 +1664,59 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX, calib: CALIBX, spknow: SPKNOW, live: LIVEN, liveOff: LIVEOFF});
+    return require('./ratedworld.js').main({budget: new CB.Budget(BUDGET_MIN), perJob: PERJOB, go: PIERRE_GO, subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, every: EVERY, gap: GAPX, calib: CALIBX, spknow: SPKNOW, live: LIVEN, liveOff: LIVEOFF});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
+  const budget = new CB.Budget(BUDGET_MIN), // the clock starts with the compute (the slot is held), the calibration included
+    t0 = Date.now();
   if (STATS === 'live') STATS_JSON = await liveStats();
-  const t0 = Date.now();
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch();
   const jobs = [];
   for (let s = SEED0 + 1; s <= SEED0 + SEEDS; s++) for (const name of NAMES) jobs.push([name, s]);
-  const runs = [];
-  let done = 0;
-  await Promise.all(
-    Array.from({length: WORKERS}, async () => {
-      for (let j; (j = jobs.shift());) {
-        runs.push(await run(browser, base, ...j));
-        if (++done % 10 === 0 || !jobs.length) process.stderr.write(`\r${done} runs, ${Math.round((Date.now() - t0) / 1000)} s`);
-      }
-    })
-  );
-  await browser.close();
+  const planned = jobs.length,
+    runs = [];
+  // The plan: a job's time from --per-job, else from one short run (100 questions at most; its time scaled to QN); when
+  // the run is already the full length it is the first result. Over the budget: refused, with the options that fit.
+  let perJob = PERJOB,
+    source = '--per-job';
+  if (perJob === null) {
+    const n0 = Math.min(QN, 100),
+      tc = Date.now(),
+      first = jobs[0],
+      r0 = await run(browser, base, ...first, n0),
+      sec = (Date.now() - tc) / 1000;
+    perJob = CB.scaled(sec, n0, QN);
+    source = `calibration: ${first.join(' seed ')}, ${n0} questions in ${sec.toFixed(1)} s`;
+    if (n0 === QN) (runs.push(r0), jobs.shift());
+  }
+  const pl = CB.plan({budget, jobs: jobs.length, workers: WORKERS, perJobSec: perJob, P: NAMES.length, S: SEEDS, N: QN, source});
+  console.error(pl.text);
+  if (!pl.ok) {
+    await browser.close();
+    server.close();
+    process.exit(2);
+  }
+  await CB.runPool({
+    jobs,
+    workers: WORKERS,
+    budget,
+    exec: j => run(browser, base, ...j),
+    onCut: () => browser.close().catch(() => {}), // the runs in flight go with it
+    onResult: r => {
+      runs.push(r);
+      if (runs.length % 10 === 0 || !jobs.length) process.stderr.write(`\r${runs.length} runs, ${Math.round((Date.now() - t0) / 1000)} s`);
+    }
+  });
+  await browser.close().catch(() => {});
   server.close();
+  const cut = CB.cutInfo(budget, planned, runs.length);
+  if (cut) {
+    console.log('\n' + CB.cutBanner(cut));
+    if (!runs.length) process.exit(3);
+    NAMES.splice(0, NAMES.length, ...NAMES.filter(n => runs.some(r => r.profile === n))); // the profiles that have a run
+  }
   const secs = (Date.now() - t0) / 1000,
     S = summary(runs),
     errs = [...new Set(runs.flatMap(r => r.errs))];
@@ -1791,6 +1860,8 @@ function openTable(runs) {
           stats: STATS || null,
           truth: TRUTH || null,
           seconds: secs,
+          budgetMin: BUDGET_MIN,
+          ...(cut ? {cut} : {}), // a run stopped by the budget: learncmp says so
           summary: S,
           byPhotos: GS,
           breaks: BS,
@@ -1802,6 +1873,7 @@ function openTable(runs) {
     );
     console.log(`\nWritten: ${OUT}`);
   }
+  if (cut) console.log('\n' + CB.cutBanner(cut));
 })().catch(e => {
   console.error(e);
   process.exit(1);
