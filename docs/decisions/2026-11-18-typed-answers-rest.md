@@ -1,7 +1,7 @@
 # Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs
 
 Date: 2026-11-18 (Manila). PR: #1116. Docs touched: LEARNING.md "Confusions", the notebook ("Typed mix-ups in the
-pooled pairs"), docs/spec/admin-players.md (Pairs), ROADMAP "Typed answers, what is left"; sheet vNEXT; coral rules
+pooled pairs"), docs/spec/admin-players.md (Pairs), ROADMAP "Typed answers, what is left"; sheet v191; coral rules
 version 11.
 
 ## Context
