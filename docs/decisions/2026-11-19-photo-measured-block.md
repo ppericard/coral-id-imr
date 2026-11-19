@@ -1,6 +1,6 @@
 # The measured block: photo values computed once from the pixels, in measured.json
 
-Date: 2026-11-19. PR: #0. Rules or docs touched: L13, S1, A5; docs/spec/measured.md (new), docs/ARCHITECTURE.md
+Date: 2026-11-19. PR: #1229. Rules or docs touched: L13, S1, A5; docs/spec/measured.md (new), docs/ARCHITECTURE.md
 "Photos", docs/spec/tools.md, docs/spec/analyses.md, docs/DATA.md, tools/README.md, ROADMAP "Measured photo block: the
 full run", "Contrast correction on the Learn sheets' photos".
 
