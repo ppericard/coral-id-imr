@@ -1697,6 +1697,10 @@ async function freshSeed(b, base, errs, seed, fresh) {
     // wrong choices are scientific names, a choice answered logs |sc or |so at the rank species, its genus alone typed is a
     // smaller fault (Q394: the scoring record's z), its unit opens its species' sheet.
     {
+      // the scientific names on and the Spadefishes at Advanced: their genera in play
+      const q0 = Q.sci;
+      Q.sci = true;
+      pgAt('f:Spadefishes', 0.9);
       const S2 = SETS().find(S => S.k === 'ssp'),
         v0 = store.get(SHEETV, 0),
         g = pool().find(n => rankOf(n) === 'genus' && TREEU.ssl.some(u => GX(u).parent === n && photoAny(u))),
@@ -1741,6 +1745,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
         );
         ok(treeSheets(TREEF).go(t) === 's:' + GX(t).name, 'sci species: its unit opens its species sheet');
       }
+      Q.sci = q0;
       store.set(SHEETV, v0);
       dropPlans();
       route();
