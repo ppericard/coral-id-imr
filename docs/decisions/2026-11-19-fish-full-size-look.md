@@ -33,7 +33,8 @@ some entries were not real doubts.
 - **Applied**: the codes were written into each photo's single judgement (`judging/fish/<species>.json`, else
   `tools/fish_judge.json`; `judging/seaslug/` for the 4 sea slugs). Then `judging_fish.py watermark`, `codes`, `rep`
   and `one` ran, plus `--subject seaslug codes`, and `seaslug-game.json` was rebuilt. `one --check` and
-  `watermark --check` both show 0.
+  `watermark --check` both show 0. `fish-game.json` takes only the `w` flag on the 56 newly tagged records, as a
+  watermark pass does; the rest waits for the photos workflow.
 
 ## Results
 
