@@ -300,10 +300,10 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3,
   );
   const [E1, entries, E2, E3, E4] = out;
   assert.deepStrictEqual(E1, []);
-  // The caps of tools/fish_judge.py: a juvenile of a class-C entry at most 2, strong colour loss at most 3; the phase
-  // flag p of a dimorph entry added, capping nothing.
+  // The caps of tools/fish_judge.py: a juvenile capped nothing (Q435, even in a class-C entry), strong colour loss at
+  // most 3; the phase flag p of a dimorph entry added, capping nothing.
   assert.deepStrictEqual(entries, [
-    {jt: 'p1g0sm1jp', e: 2, k: 'best', ph: 'female'},
+    {jt: 'p1g0sm1jp', e: 5, k: 'best', ph: 'female'},
     {jt: 'o1g2sm1p', e: 3, k: 'alt', c: [0.2, 0.1, 0.8, 0.9], bb: [0.3, 0.2, 0.7, 0.8]}, // the crop as proposed, as the game photos'
     {jt: 'p1g0sl1p', e: 5, k: 'best', u: ['crop'], n: 'tail cut?'}
   ]);

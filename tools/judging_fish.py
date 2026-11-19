@@ -53,7 +53,7 @@ import urllib.request
 from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fish_judge import RUBRICS, cap, juv_early  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
+from fish_judge import RUBRICS, cap  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
 from fish_game import box_in, box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -88,7 +88,7 @@ SP = {s["id"]: s for s in FISH["species"]}
 CAND = (load("fish-cand.json", {}) or {}).get("cand", {})
 CUR = (load("curation.json", {}) or {}).get("fish") or {}
 TEACH = {t["id"]: t for t in FISH["teach"]}
-# The teaching entry of each species (its first level-1 entry): the dimorph flag and the juvenile classes of the caps.
+# The teaching entry of each species (its first level-1 entry): its dimorph flag, which adds the phase flag.
 ENTRY = {}
 for _t in FISH["teach"]:
     if _t.get("level") == 1:
@@ -104,7 +104,7 @@ FIELDS = CFG["fields"]
 def use(subject):
     """Points the pass at a subject of SUBJECTS: its candidates, species, judging files, rubric and fields. Sea slugs:
     seaslug-cand.json keyed by iNaturalist taxon id, the species of tools/seaslugs.json, no teaching entry (no phase, no
-    juvenile class: every juvenile keeps the cap), their own curation.json key (none yet), never the fish's."""
+    juvenile class: every juvenile at most 2, RUBRICS juv2), their own curation.json key (none yet), never the fish's."""
     global SUBJECT, CFG, JDIR, CODE, NEW_COUNT, SP, CAND, CUR, TEACH, ENTRY, FIELDS
     if subject not in SUBJECTS:
         sys.exit(f"Unknown subject {subject!r}: one of {', '.join(SUBJECTS)}")
@@ -356,16 +356,14 @@ def check(sid):
 
 def entry(sid, x, rep=None):
     """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
-    (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry, and the
-    reference flag r, which leaves the ease as judged, for a candidate whose fish-cand.json record carries `rep`). A sea slug's: its
+    (tools/fish_judge.py cap: the phase flag for a dimorph entry, and the reference flag r, which leaves the ease as
+    judged, for a candidate whose fish-cand.json record carries `rep`; a fish juvenile caps nothing). A sea slug's: its
     rubric's caps (no entry: no phase, every juvenile capped), keep best when the judgement names none, and an egg-mass
     photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
         return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
     t = ENTRY.get(sid) or {}
-    s = SP.get(sid) or {}
-    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))), rep,
-                     subject=SUBJECT)
+    ease, tags = cap(x["code"], bool(t.get("dimorph")), rep, subject=SUBJECT)
     e = {"jt": tags, "e": ease, "k": x.get("keep", CFG["keep"])}
     if x.get("phase"):
         e["ph"] = x["phase"]

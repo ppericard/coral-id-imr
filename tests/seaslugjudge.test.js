@@ -1,7 +1,8 @@
 require('./slot.js').testGuard();
 // Sea slug photo judging (judging/SEASLUG.md, its egg rule included): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
-// left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, the juvenile cap, f and w
+// left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, the juvenile cap (the
+// fish's juveniles cap nothing: Q435), f and w
 // capping nothing), the judging files' check (keep optional, the egg rule, no phase or box), the import into suggest.json
 // "seaslug" beside the fish's. Offline: made-up fixtures in a temporary folder; nothing is downloaded. Needs python3.
 const test = require('node:test'),
@@ -39,7 +40,7 @@ print(json.dumps({
     [3, 'v1g0sl1'], // ventral (the foot)
     [3, 'h1g0sl1'],
     [3, 'd0g0sl1'], // partial
-    [2, 'd1g0sl1j'], // a juvenile: no juvenile class for sea slugs
+    [2, 'd1g0sl1j'], // a juvenile: at most 2 for sea slugs (RUBRICS juv2; the fish's went with Q435)
     [5, 'd1g0sl1f'], // rhinophores or gills hidden: the ease scale's, not a cap
     [5, 'd1g0sl1w'], // watermark
     [3, 'd1g0sl1c'],
@@ -53,10 +54,10 @@ print(json.dumps({
     out.fish,
     [
       [3, 'd1g0sl1'],
-      [2, 'p1g0sl1j'],
+      [5, 'p1g0sl1j'],
       [2, 'p1g0bl1']
     ],
-    'the fish caps: a top view at most 3, strong blur at most 2'
+    'the fish caps: a top view at most 3, a juvenile nothing (Q435), strong blur at most 2'
   );
   // No night livery, no legacy count m, no tool flag typed for sea slugs; the fish never take v or f.
   assert.deepStrictEqual(out.codes, [true, false, false, false, false, false, true]);
