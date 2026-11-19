@@ -1880,7 +1880,8 @@ const choiceApart = (L, taken = []) => {
 // species by its scientific name apart from one by its common name); its rank alone (rankOf) where app.js is not loaded.
 // mimUnit, mimMix and groupsNow, above, read it too (once the file is in).
 const rankKind = n => (typeof kindRank === 'function' ? kindRank(n) : typeof rankOf === 'function' ? rankOf(n) : '');
-function distractors(t, list, traps = trapsFor(t), known = introduced) {
+// wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
+function distractors(t, list, traps = trapsFor(t), known = introduced, wide = true) {
   // Choices of the target's class only (rankKind: its rank and kind of name): a fish scientific genus among genera, an
   // entry among entries, a species by its scientific name among the scientific names.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
@@ -1890,7 +1891,7 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   const rk = rankKind(t),
     tk = choiceKeys(t);
   list = list.filter(n => rankKind(n) === rk);
-  if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
+  if (rk && wide) list = [...new Set([...list, ...rankUnits(rk)])];
   list = list.filter(n => n === t || !tk.has(choiceKey(n)));
   const ranked = list
     .filter(n => n !== t)
@@ -1977,7 +1978,14 @@ function mimTrap(t, ch, u) {
 //   path, so a genus not met yet is asked at once, its first-meeting card shown with that question (quiz.js);
 // - the wrong choices (customChoices): from the selection first, with the photo quiz's rules (distractors), so a selected
 //   look-alike group drills itself; a selection under 4 genera is topped up from the other genera in play.
-const CUSTOM = {KEY: 'reefid-sync-coral-custom', MIN: 2};
+// KEY: the subject on screen's selection (core.js subjKey: reefid-sync-<subject>-custom, the corals' the key they always
+// had, so their saved selections stay); sync.js merges and clears each subject's own (rule D7).
+const CUSTOM = {
+  get KEY() {
+    return sKey('custom');
+  },
+  MIN: 2
+};
 const customOf = (saved, play) => {
   const S = new Set(Array.isArray(saved) ? saved : []),
     L = play.filter(n => S.has(n));
@@ -1985,19 +1993,21 @@ const customOf = (saved, play) => {
 };
 const customDraw = sel => wpick(sel, weight);
 function customChoices(t, sel, play, traps, known) {
-  const own = distractors(t, sel, traps, known);
+  // Inside the selection alone (not wide: a ranked unit's rank-wide fallback is the photo quiz's), then topped up.
+  const own = distractors(t, sel, traps, known, false);
   if (own.length >= 3) return own;
   const got = own.filter(n => known(n) && confusable(t, n)).length;
   // Never a label twice across the two (choiceApart).
-  return choiceApart([
-    ...own,
-    ...distractors(
-      t,
-      play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
-      Math.max(0, traps - got),
-      known
-    )
-  ]).slice(0, 3);
+  const rest = play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
+    out = choiceApart([
+      ...own,
+      ...distractors(t, rest, Math.max(0, traps - got), known, false) // the units in play only
+    ]);
+  // Only when the whole pool in play of the rank is short does the photo quiz's rank-wide fallback fill the three.
+  return (out.length >= 3 ? out : choiceApart([...out, ...distractors(t, [...rest, ...out], Math.max(0, traps - got), known)], [t])).slice(
+    0,
+    3
+  );
 }
 // The custom quiz's "My mix-ups" view: the genera in play grouped by the player's own confusions, most confused first.
 // mixEdges: each pair of genera in play the player mixed up, weighed by how often, both ways (s.conf: the genus given
@@ -2020,7 +2030,9 @@ const mixEdges = play => {
 };
 const lookEdges = play => {
   const E = [];
-  play.forEach((a, i) => play.slice(i + 1).forEach(b => isLook(a, b) && E.push([a, b, pooledConf(a, b)])));
+  // The declared pairs only (`declared`: a record's `decl`, else its `look`), never the siblings a fish genus's `look`
+  // holds by construction: the view names their source (rule C2).
+  play.forEach((a, i) => play.slice(i + 1).forEach(b => declared(a, b) && E.push([a, b, pooledConf(a, b)])));
   return E;
 };
 function mixClusters(edges, cap = CUSTOM.CLUSTER) {
