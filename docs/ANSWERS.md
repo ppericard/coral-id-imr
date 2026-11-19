@@ -1231,14 +1231,48 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
   tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
   bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
+- **15:40, fish genus marks beside IMR cues.** On the rule keeping our sourced marks away from a genus with IMR cues:
+  «Mouais bof». Decides (integrator's call): the genera IMR describes take our sourced marks under its cues, as the
+  families. Applied: spec/fish-sheets.md "Genus presentation and ID marks", decisions/2026-11-19-genus-marks-beside-imr-cues.md (#1231).
 - **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
   juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
   with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
-- **20:34, Q437 (open the coral-only modes to fish and sea slugs: Compare, the pairs, the custom quiz, the duel).**
-  «évidemment oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est
-  du code commun.» Every game mode opens to every subject, in shared code. Applied: ROADMAP "Every game mode for every
-  subject", `SUBJECTS` `closed`, docs/decisions/2026-11-19-modes-every-subject.md (the Duel tab first); the plan,
+- **20:40, model and effort combinations.** «C'est pas forcément un écart à la règle de mettre Opus Medium sur des
+  tâches. C'est toi en fait qui s'est mis toute seule hein, la règle. Moi j'ai jamais dit que Opus c'était forcément en
+  high. [...] Il y a clairement d'autres combinaisons possibles. Il faut voir ce que Anthropic recommande». Applied:
+  docs/reviews/2026-11-19-model-effort-combinations.md (a study: a replacement for INTEGRATOR's table, for the
+  integrator; the AGENTS.md bullet's new wording, for Pierre's OK).
+- **20:34, Q437 (open Compare, pairs, the custom quiz and the duel to fish and sea slugs, in shared code).** «évidemment
+  oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est du code
+  commun». Every game mode opens to every subject, in shared code. Applied: the modes PR(s).
+- **20:34, Q438 (about 694 fish candidates the auto-sort rejected as `k`, confusion possible: a route back when a newer
+  judgement saves one by a crop, like any auto-sort proposal, undoable).** «OK pour ta recommandation». Applied: the
+  route-back PR.
+- **20:34, the doc size limits.** «Alors tu parles d'alléger la roadmap, en l'occurrence la roadmap, il faut augmenter
+  sa taille limite hein, s'il y a besoin. La roadmap, elle peut très bien devenir très longue. Ça serait dommage, enfin
+  en tout cas il ne faut pas que les infos qui sont censées dans la roadmap soient ailleurs. Ça n'est pas une bonne
+  réaction que de déplacer de l'historique vers les fiches de décision pour pouvoir recharger la roadmap. Là pour le
+  coup je suis pas d'accord, c'est pas la bonne stratégie. La roadmap elle n'a pas forcément de raison d'avoir une
+  taille limite si elle est bien tenue et que ça se retrouve pas, elle se retrouve pas avec un historique, avec des
+  versions, avec à l'intérieur. Si elle est bien tenue, elle n'a pas de raison d'avoir une taille limite. […] De
+  manière générale, les tailles limites, elles ne sont pas là pour être fixées, parce qu'elles ont été fixées de
+  manière complètement arbitraire. Donc, elles ne sont pas là pour empêcher de bien travailler. Elles sont là pour
+  lever des warnings en disant « Attention, on est en train de remplir ces documents-là, est-ce que vraiment on est sûr
+  qu'on veut les remplir ?» Et si vraiment on est sûr qu'on veut les remplir et qu'on les remplit proprement et qu'on
+  fait un job qui soit propre et qui est cohérent, sans venir juste remplir avec des trucs qui n'ont rien à faire
+  dedans, alors il faut augmenter les limites. Donc là, typiquement, à nouveau, l'index des décisions qui a dépassé sa
+  taille limite. La question, c'est est-ce que ça méritait de dépasser sa taille limite? Et la taille limite, comment
+  elle a été fixée? Je suis quasiment sûr que la taille limite, elle est fixée de manière purement arbitraire. […] Mais
+  le mécanisme, il a apparu parce qu'il y avait une raison, parce qu'il est venu compenser une faiblesse par ailleurs.
+  Donc il faut essayer de réfléchir à ça, à comprendre, mais en tout cas on ne peut pas juste dire de manière
+  arbitraire, ben, ces fichiers-là, ils ne dépasseront jamais cette taille-là, et puis même si il y a réellement des
+  choses à y mettre dedans, qui sont importantes à mettre dedans.» A doc's size limit is a warning mark, raised when
+  the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
+  `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
+  docs/decisions/2026-11-19-doc-size-marks.md).
+- **Applied in #1265:** Q437: ROADMAP "Every game mode for every subject", `SUBJECTS` `closed`,
+  docs/decisions/2026-11-19-modes-every-subject.md (the Duel tab first); the plan,
   docs/reviews/2026-11-19-modes-every-subject.md.

@@ -814,7 +814,8 @@ function recordAnswer({
   holdStep(ans.e, good);
   startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   if (warm) comebackStep(q.R, th0, dm, k, good);
-  answeredAt(s, good);
+  // When it was given: a live answer recorded later (live.js liveFlush) keeps its own time, never one after now.
+  answeredAt(s, good, Math.min(Date.now(), Date.parse(at) || Infinity));
   // Every subject's answers go to the sheet. A subject the
   // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
   // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
@@ -1417,7 +1418,7 @@ const allMetTok = k => `allmet:${SUBJ.id}-${k}`;
 const allMetSeen = k => !!store.get(subjDev(SUBJ.id, ALLMET.KEY + k), null) || toldHas(allMetTok(k));
 function allMetDue() {
   const U = UNITS[SUBJ.id];
-  if (!U.done || noOpen() || !noticesReady() || !allMetNone(pool(), introduced, asked, mayOpen)) return null;
+  if (!U.done || noOpen() || !noticesReady() || !allMetNone(pool(), introduced, askedOpen, mayOpen)) return null;
   if (backDue() || openOfferDue() || bonusOfferDue() || bonusBackDue()) return null;
   const r = U.done();
   return r && !allMetSeen(r.k) ? r : null;
@@ -2451,7 +2452,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   // With the first cards, the question is on one of them; with a card of its own, on a genus already met. A genus opened
   // in the last OPEN.WIN answers and not asked yet is asked once ready (due), so the opening's pace is the ceiling's
   // (openPace holds the next card until then), not the luck of the draw.
-  const due = start || warm ? [] : openRecent(at).filter(n => !asked(n) && !soon.includes(n) && introReady(n) && list.includes(n));
+  const due = start || warm ? [] : openDue(at, list, soon);
   const t = sel
     ? nextTarget(warm ? warmL : sel, customDraw)
     : nextTarget(start ? cards : warm ? warmL : due.length ? due : met.length ? met : list);

@@ -22,8 +22,10 @@ reserved ([LICENSE](LICENSE)).
    `node tests/run.js`; the Playwright smokes are `tests/*.smoke.js`. The commands are in README "Test".
 3. **Before each push, run the fast tier** (rule W14): Prettier on the JS and CSS you changed (rule W13),
    `node --check`, `python3 tools/check_versions.py`, `python3 tools/datajson.py --check`,
-   `python3 tools/sync_core.py --check`, `node tests/run.js`, and the one smoke part your change touches. A heavy run
-   takes a machine slot (rule W24).
+   `python3 tools/sync_core.py --check`, `node tests/run.js` (without the slow statistical tests, which carry
+   `// @slow: <why>` after their first line; `node tests/run.js --all` runs them, as CI and the merge train do), and the
+   one smoke part your change touches. A heavy run takes a machine slot (rule W24). A test you add that takes more than
+   about 10 s of CPU alone gets the `// @slow` line.
 4. **Leave the generated and the owned things alone**:
    - never edit `?v=N`, `LAB_V` or the service worker's `V`: the deploy stamps them (rule W15);
    - write `data.json` only with `tools/datajson.py` (rule W16);

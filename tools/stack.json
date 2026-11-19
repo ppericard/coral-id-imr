@@ -86,6 +86,15 @@
       "why": "Writes every WebP size (tools/photos.py). Dependabot (pip) proposes the next one; check the WebP output stays byte-identical."
     },
     {
+      "id": "numpy",
+      "name": "numpy (photo measures)",
+      "version": "2.5.5",
+      "pins": [{"files": ["tools/requirements.txt"], "pattern": "numpy=={v}"}],
+      "latest": {"kind": "pypi", "package": "numpy", "compare": "exact"},
+      "lookup": "https://numpy.org/news/",
+      "why": "The measured block of the game photos (tools/photo_measure.py, tests/photomeasure.test.js) and tools/photo_metrics.py. Dependabot (pip) proposes the next one."
+    },
+    {
       "id": "rclone",
       "name": "rclone (photos to R2)",
       "version": "1.76.0",

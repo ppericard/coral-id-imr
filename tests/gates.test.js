@@ -70,6 +70,9 @@ const GATES = {
   // The scientific genera of circles 2 and 3 (sync.js generaOn: they open and count among the genera a question offers
   // once the sheet replays them, core.js treeGenSets; app.js sciNow reads it): from the version that holds them.
   GENERA_SHEET: (v, N) => fn('sync.js', 'const generaOn = ', '\n', 'generaOn', {sheetV: () => v, GENERA_SHEET: N})(),
+  // The species by their scientific names, fish and sea slugs (sync.js sciOn: they open and count once the sheet replays
+  // them, a smaller fault included, core.js treeReplayGen, PART; its app PR reads it): from the version that replays them.
+  SCI_SHEET: (v, N) => fn('sync.js', 'const sciOn = ', '\n', 'sciOn', {sheetV: () => v, SCI_SHEET: N})(),
   // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
   // serves it; before, an older script answers 'input' and the page names the version it waits for.
   ALERTS_SHEET: (v, N) =>

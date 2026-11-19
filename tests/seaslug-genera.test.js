@@ -191,7 +191,7 @@ test('treeGate on the sea slugs’ genera: circle 2 after every circle-1 genus a
     g = {
       TREEU: X,
       GX: n => X.gen[n],
-      asked: n => st.asked.has(n),
+      askedOpen: n => st.asked.has(n), // asked since its card (model.js)
       introduced: n => st.asked.has(n),
       headScore: () => null,
       SUBJECTS: C.SUBJECTS,

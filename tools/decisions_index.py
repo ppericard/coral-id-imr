@@ -8,10 +8,10 @@
 A row is | date | [title](file) | #PR |: the title is the record's first line, the date and the PR its "Date: … PR: #N"
 line (docs/decisions/README.md "What a record holds"). Rows are sorted by date, newest first, then by file name, so a
 PR's new row lands at its topic's place in its day's block, not at the top where every other PR of the day adds
-one: two PRs collide only when their topics sort next to each other. The README holds the newest KEEP rows only, so
-it stays within its size budget however many records come; the older rows go, in the same format, to OLDER.md (no
-size budget: it only grows). A conflict in either index is never hand-merged: merge main, then run --fix.
-Offline, standard library only.
+one: two PRs collide only when their topics sort next to each other. The whole index is in README.md, one row per
+record: it grows by a row per record, and its size mark only warns (docs/decisions/2026-11-19-doc-size-marks.md).
+The retired OLDER.md (the split index of #1246) is never a record: --check fails while it exists, --fix deletes it.
+A conflict in the index is never hand-merged: merge main, then run --fix. Offline, standard library only.
 """
 import argparse
 import os
@@ -21,12 +21,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEADER = '| Date | Record | PR |\n|---|---|---|\n'
 NAME = re.compile(r'^\d{4}-\d\d-\d\d-[a-z0-9]+(-[a-z0-9]+)*\.md$')
-KEEP = 40  # rows in README.md; the rest are in OLDER.md
-NOT_RECORDS = ('README.md', 'OLDER.md')
-OLDER_TEMPLATE = (
-    '# Older decision records\n\nThe index of the records older than the newest rows of [README.md](README.md), in the same format,\n'
-    'written by `tools/decisions_index.py --fix`.\n\n' + HEADER
-)
+RETIRED = 'OLDER.md'  # the older rows of the split index; the whole index is back in README.md
+NOT_RECORDS = ('README.md', RETIRED)
 
 
 def records(folder):
@@ -54,12 +50,6 @@ def table(recs):
     return ''.join('| %s | [%s](%s) | #%s |\n' % (d, t.replace('|', '\\|'), f, pr) for d, f, t, pr in rows)
 
 
-def tables(recs, keep):
-    """(README's rows, OLDER.md's rows): the newest `keep` rows, then the rest."""
-    rows = table(recs).splitlines(True)
-    return ''.join(rows[:keep]), ''.join(rows[keep:])
-
-
 def split(readme):
     """README.md as (before the rows, the rows, after them). The rows include a merge's conflict markers, so --fix
     rewrites a conflicted index whole."""
@@ -77,35 +67,31 @@ def main(argv=None):
     g.add_argument('--check', action='store_true', help='exit 1 when the index differs from the records')
     g.add_argument('--fix', action='store_true', help='rewrite the index from the records')
     ap.add_argument('--root', default=ROOT, help=argparse.SUPPRESS)
-    ap.add_argument('--keep', type=int, default=KEEP, help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
     folder = os.path.join(a.root, 'docs', 'decisions')
-    recs = records(folder)
+    want = table(records(folder))
     if not (a.check or a.fix):
-        sys.stdout.write(table(recs))
+        sys.stdout.write(want)
         return 0
-    want, want_older = tables(recs, a.keep)
     path = os.path.join(folder, 'README.md')
     with open(path, encoding='utf-8') as f:
         readme = f.read()
     before, rows, after = split(readme)
-    opath = os.path.join(folder, 'OLDER.md')
-    older = open(opath, encoding='utf-8').read() if os.path.exists(opath) else None
-    obefore, orows, oafter = split(older) if older is not None else (OLDER_TEMPLATE, '', '')
-    if rows == want and orows == want_older and (older is not None or not want_older):
-        return 0
+    retired = os.path.join(folder, RETIRED)
     if a.fix:
+        if os.path.exists(retired):
+            os.remove(retired)
+            print('docs/decisions/%s: deleted (the whole index is in README.md)' % RETIRED)
         if rows != want:
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(before + want + after)
             print('docs/decisions/README.md: index rewritten (%d rows)' % want.count('\n'))
-        if want_older or older is not None:
-            with open(opath, 'w', encoding='utf-8') as f:
-                f.write(obefore + want_older + oafter)
-            print('docs/decisions/OLDER.md: index rewritten (%d rows)' % want_older.count('\n'))
         return 0
-    if rows == want:  # only OLDER.md differs
-        rows, want = orows, want_older
+    if os.path.exists(retired):
+        print('docs/decisions/%s is retired: the whole index is in README.md; run python3 tools/decisions_index.py --fix' % RETIRED)
+        return 1
+    if rows == want:
+        return 0
     have, need = rows.splitlines(), want.splitlines()
     k = next((i for i in range(max(len(have), len(need))) if i >= len(have) or i >= len(need) or have[i] != need[i]), 0)
     print('docs/decisions/README.md: the index is not what the records give; run python3 tools/decisions_index.py --fix')

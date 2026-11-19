@@ -1,5 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
+// @slow: the rated world simulated (tools/ratedworld.js, learncmp.js shape): runs of simulated players
 // tools/ratedworld.js (rule L11; docs/LEARNING.md "Validating a learning change", "The two worlds"): the rated world's
 // distributions, the app told the truth, and a short run in the shape tools/learncmp.js reads.
 const test = require('node:test'),
@@ -231,6 +232,28 @@ test('a run: the same seed gives the same run, and learncmp reads every measure 
   assert.deepStrictEqual(a.knows.sort(), X.c1.slice().sort());
 });
 
+test('the profiles’ species on the real units: the cheatsheet’s 24, the first of the families known; off as before', () => {
+  const U = RW.unitsOf('fish'),
+    run = (profile, o = {}) => RW.runOne(X, {profile, seed: 1, N: 1, cps: [1], ...o}).spKnows.sort(),
+    cs = U.sp.filter(n => (X.sps[U.rec(n).sp] || {}).cs > 0).sort(),
+    byFam = {};
+  U.sp.forEach(n => (byFam[U.rec(n).parent] = byFam[U.rec(n).parent] || []).push(n));
+  assert.strictEqual(cs.length, 24);
+  assert.deepStrictEqual(run('lectureRA'), cs);
+  // The strong RA: the cheatsheet's and the first 3 of each circle-1 family, in its order; the families with more keep
+  // species it does not know (a species starting from its family's ability is still tested), and circles 2-3 none.
+  const strong = new Set(run('strongRA'));
+  assert.deepStrictEqual([...strong].sort(), [...new Set([...cs, ...X.c1.flatMap(f => (byFam[f] || []).slice(0, 3))])].sort());
+  X.c1
+    .filter(f => (byFam[f] || []).length > 3 && !byFam[f].some(n => cs.includes(n)))
+    .forEach(f => assert.strictEqual(byFam[f].filter(n => strong.has(n)).length, 3, f));
+  assert.ok([...strong].every(n => X.c1.includes(U.rec(n).parent)));
+  assert.deepStrictEqual(run('beginner'), []);
+  assert.strictEqual(run('expert').length, U.sp.length);
+  // --spknow off: none, as before.
+  assert.deepStrictEqual(run('strongRA', {spknow: false}), []);
+});
+
 test('the corals: the slate and the bonus genera as the app builds them, a run with its kinds', () => {
   const U = RW.unitsOf('coral');
   assert.strictEqual(U.slate.length, 40);
@@ -306,6 +329,49 @@ test('the last two observations shown are recorded, as photoSet reads them', () 
   const run = RW.runOne(X, {profile: 'expert', seed: 6, N: 60, cps: [60], keep: true});
   const ro = Object.values(run.P).filter(x => x && Array.isArray(x.ro));
   assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
+});
+
+// Rule L4 (--live): live answers on units the path has not opened count and open nothing; once the path cards such a
+// unit, its question comes as any card's (model.js openDue, askedOpen): not before INTRO.GAP answers, then first.
+test("live answers before a unit's card: its card's question comes as any card's, INTRO.GAP answers after it", () => {
+  const U = RW.unitsOf('coral'),
+    pl = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]}),
+    {M, ctx} = pl,
+    closedNow = () => Object.keys(ctx.P).filter(n => n !== '~level' && M.asked(n) && (M.introMap()[n] || [])[3] === 'b');
+  pl.liveRun(8);
+  assert.ok(closedNow().length >= 5, 'answered live, closed: ' + closedNow().length);
+  assert.ok(closedNow().every(n => !M.introduced(n) && !M.introReady(n)));
+  // The first cards and their questions, until no card's question is left to come.
+  let i = 0;
+  const left = () => M.openRecent().some(n => !M.askedOpen(n));
+  for (; i < 40 && (i < 6 || left()); i++) pl.step(i);
+  assert.ok(!left(), 'the cards asked');
+  const u = closedNow()[0],
+    g = M.INTRO.GAP;
+  assert.ok(u, 'a unit answered live still closed');
+  M.introAdd([u], false); // its card on the path
+  assert.ok(M.asked(u) && !M.askedOpen(u) && !M.introReady(u) && !M.openPace());
+  for (let j = 0; j < g; j++) assert.notStrictEqual(pl.step(i++).t, u, 'not asked before INTRO.GAP answers');
+  assert.strictEqual(pl.step(i++).t, u, "then its card's question first");
+  assert.ok(M.askedOpen(u));
+  // --liveoff: the same answers, recorded nowhere (Codex review #1234).
+  const off = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+  off.liveRun(8, true);
+  assert.ok(
+    off.result().live.n === 8 && off.result().live.rec === 0 && !Object.keys(off.ctx.P).some(n => n !== '~level' && off.M.asked(n))
+  );
+  // The trainer's questions do not depend on the student's arm: recorded or not, the same 40 questions, photos and
+  // choices, and the same answers (Codex review #1234).
+  const arm = o => {
+    const p = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+    p.liveRun(40, o);
+    return p;
+  };
+  const on = arm(false),
+    no = arm(true);
+  assert.ok(on.result().live.rec > 0 && no.result().live.rec === 0);
+  assert.deepStrictEqual(on.liveQs, no.liveQs);
+  assert.strictEqual(on.result().live.ok, no.result().live.ok);
 });
 
 // The judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
