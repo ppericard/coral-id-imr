@@ -425,7 +425,13 @@ no source declares that qualifies as a look-alike from the data (`core.js` `data
 `CONF.TRAP` or more) says "look-alike from the data" in its Starts as column, counted in a KPI: the duels, the Again and
 the genus sheets treat it as declared. Then the photos, colonies (iNaturalist observation `o`) and species (`t`) most
 often answered wrongly, with what they were taken for. Counts come from `confusionOf()` (`core.js`) over `?answers=1`
-rows; answers logged before choices were (no choices) only appear under "Before v10". The typed mix-ups are kept apart.
+rows; answers logged before choices were (no choices) only appear under "Before v10". A typed mix-up (no choices
+either) is listed under "Typed" and also counts in its pair as offered once and mixed up (`core.js` `confAdd`, the one
+rule of `confusionOf` and of `Code.gs` `statsStep_`, so the pairs and scores shown are the `?stats=1` `conf` the game
+plays with; A→B and B→A count the choices only). The "Typed text" card lists the typed near-misses as typed
+(`admin.js` `typedText`, `readAnswers`' Typed and Retyped right): a typo of the unit shown with its spelling step (✓
+retyped exactly, ✗ not) or another unit's name, with a KPI of the spelling steps retyped exactly; trusted players only,
+a removed account's answers never; the raw text shows live only, never in a stored report.
 
 ### Heatmap
 

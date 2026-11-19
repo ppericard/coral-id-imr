@@ -10,12 +10,12 @@ const test = require('node:test'),
   block = require('./block');
 const ROOT = path.join(__dirname, '..'),
   C = require('../core.js');
-const {logConds, pairPrior, fishUnitRec, noChoiceMixups} = new Function(
+const {logConds, pairPrior, fishUnitRec, noChoiceMixups, typedText} = new Function(
   'fmtOf',
   'trustOf',
   'CONF',
   block(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'), '// answerlog: begin', '// answerlog: end', {file: 'admin.js'}) +
-    '\nreturn {logConds, pairPrior, fishUnitRec, noChoiceMixups};'
+    '\nreturn {logConds, pairPrior, fishUnitRec, noChoiceMixups, typedText};'
 )(C.fmtOf, C.trustOf, C.CONF);
 const CORAL = C.SUBJECTS.find(S => !S.sheets),
   TREEU = C.SUBJECTS.find(S => S.sheets);
@@ -160,4 +160,39 @@ test('noChoiceMixups: typed mix-ups apart from those logged before v10, trusted 
   // together they are confusionOf's old, which counts both alike
   const all = C.confusionOf(R).old;
   assert.deepStrictEqual(JSON.parse(JSON.stringify(all)), {'g:Chromis|g:Amphiprion': 2, 'f:Wrasses|f:Damselfishes': 1});
+  // and the typed mix-ups count in the pooled pairs too, as offered once and mixed up each (core.js confAdd)
+  assert.deepStrictEqual(C.confusionOf(R).pair['g:Amphiprion|g:Chromis'], [2, 2]);
+});
+
+test('typedText: the typed near-misses as typed and the spelling steps, trusted players only', () => {
+  // the readAnswers row with the typed text (15) and the spelling step (16): 1 retyped exactly, 0 not, null none
+  const ty = (id, shown, answered, ok, text, sp = null, m = 'quiz|t') => {
+    const r = row(id, shown, answered, ok, m);
+    r[15] = text;
+    r[16] = sp;
+    return r;
+  };
+  const R = [...Array(12)].map(() => row('a', 'Porites', 'Porites', 1, 'quiz', 'p1', 'Porites Favites Montipora Pavona'));
+  R.push(
+    ty('a', 'Pocillopora', 'Pocillopora', 1, 'Pocillopora'), // exact: no near-miss
+    ty('a', 'Pocillopora', 'Pocillopora', 1, 'Pocilopora ', 1), // a typo, retyped exactly
+    ty('a', 'Pocillopora', 'Pocillopora', 1, 'pocilopora', 1, 'quiz|t|x'), // the same typo, in the exam
+    ty('a', 'Seriatopora', 'Seriatopora', 1, 'Seriatpora', 0), // a typo, not retyped exactly
+    ty('a', 'Stylophora', 'Seriatopora', 0, 'Seriatopora'), // another unit's name
+    ty('a', 'Stylophora', '', 0, ''), // "I don't know"
+    row('a', 'Pavona', 'Porites', 0, 'quiz', 'p1', 'Pavona Porites Favites Montipora'), // not typed
+    ty('z', 'Galaxea', 'Goniopora', 0, 'Goniopora') // untrusted
+  );
+  const T = typedText(R);
+  assert.strictEqual(T.n, 6);
+  assert.deepStrictEqual(T.step, [3, 2]);
+  assert.deepStrictEqual(T.near, [
+    ['Pocillopora', 'pocilopora', 'Pocillopora', 1, 2],
+    ['Seriatopora', 'seriatpora', 'Seriatopora', 0, 1],
+    ['Stylophora', 'seriatopora', 'Seriatopora', null, 1]
+  ]);
+  assert.deepStrictEqual(typedText(R.slice(0, 12)), {n: 0, step: [0, 0], near: []}, 'nothing typed');
+  // A removed account's answers (anonymous flag 2: deleted or archived) never show, its text nor its steps (rule D7).
+  const gone = R.map(r => (r[0] === 'a' && C.TYPED_RE.test(r[5]) ? Object.assign([...r], {11: 2}) : r));
+  assert.deepStrictEqual(typedText(gone), {n: 0, step: [0, 0], near: []}, 'a removed account');
 });
