@@ -1137,6 +1137,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **08:57, the order of work.** "Mon seul input c'est quand j'ai besoin de mettre des choses en priorité": the
   integrator sets the order of development and never asks Pierre "now or later"; Pierre steps in only to raise a
   priority (AGENTS.md "Questions to Pierre": never the order).
+- **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
+  the transient lag: «ok». Applied: #1093.
 - **09:04, priority.** On the rules overhaul (Q425 B: the AGENTS.md loading, the rest of the approved audit, the search
   before any question and the ledger check, a short core with topic files and guards, fewer index conflicts): «ça c'est
   une priorité. Parce qu'en attendant on continue de développer avec les anciennes règles». Applied: the integrator's
