@@ -296,8 +296,9 @@ def refined(mine, passed):
     return mine
 
 
-# autosort.js fishParse: a fish log code; its fields (t tags, e ease, p phase, c crop) are the ones the auto-sort wrote.
-LOG = re.compile(r'^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$')
+# autosort.js fishParse: a fish log code (a in, b brought back, r set aside); its fields (t tags, e ease, p phase, c crop)
+# are the ones the auto-sort wrote.
+LOG = re.compile(r'^([?-]?)([abr])([tepc]*)(?:@([0-9a-z]+))?$')
 FLAGORD = 'jcawfpr'  # autosort.js FFLAGORD: the flags in the rubrics' order (the sea slugs' f too)
 
 
@@ -308,7 +309,7 @@ def tags_auto(F):
     for day in sorted((F or {}).get('auto') or {}):
         for f, c in ((F['auto'][day]) or {}).items():
             m = LOG.match(str(c))
-            if m and not (m.group(3) and (m.group(2) != 'a' or m.group(1) == '?')):
+            if m and not ((m.group(3) and (m.group(2) == 'r' or m.group(1) == '?')) or (m.group(2) == 'b' and m.group(1) == '?')):
                 last[f] = m.group(3)
     return {f for f, w in last.items() if 't' in w}
 
@@ -345,6 +346,92 @@ def cand_sure(j):
     if not j or unsure(j) or j.get('k') not in ('best', 'alt'):
         return False
     return judged_sure(j.get('jt'), j.get('e'))
+
+
+def copy_of(p, j, mine=False):
+    """autosort.js fishCopy with no tags of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
+    the pass's, with the source's life stage (p st) when the pass gives no phase: the j flag for a juvenile, else its
+    phase word; never when he chose the photo's phase himself (mine: No phase included)."""
+    tags, ph = j.get('jt'), j.get('ph') or None
+    if mine or PHASE_WORD.get(ph) or not TAGS.match(tags or '') or 'j' in tags[7:]:
+        return tags, ph
+    src = phase(p or {}, '', {}, {})
+    if src == 'juvenile':
+        fl = set(tags[7:]) | {'j'}
+        return tags[:7] + ''.join(x for x in FLAGORD if x in fl), ph
+    return tags, src or ph
+
+
+WROTE = {'t': 'tags', 'e': 'ease', 'p': 'phase', 'c': 'crop'}  # autosort.js FISHW: a log code's letters
+
+
+def read_cur(cur, cand, sug, by=None, key='fish'):
+    """The curation as the build reads it (Pierre, 2026-11-19 20:57 and 20:59: what the auto-sort proposed and he only let
+    through is no curation of his; a newer judgement goes into the game, his own decisions keep priority; rule A1:
+    curation.json itself is never written). What his log marks as the auto-sort's (autosort.js fishIdx: a photo's latest
+    code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (suggest.json "fish", sug):
+    - the fields it wrote (the code's letters: t tags, e ease, p phase, c crop; his own edit takes its letter off,
+      autosort.js fishOwn) read the pass's values when its judgement is a sure add (cand_sure: tags and phase as the
+      auto-sort copies them, copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal
+      Keep mine (kept); a newer sure rejection stays a proposal;
+    - its reject, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by:
+      suggest.json "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again
+      when the pass now puts it in (cand_sure), unless he gave it tags or a crop.
+    Tags read anew bring the judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a
+    photo he moved with Not this is his, skipped whole. Everything else is his, or cannot be told from his (a value with
+    no log: docs/decisions/2026-11-19-auto-proposals-newer-judgement.md), and stands. Returns cur itself when nothing
+    reads differently."""
+    F = (cur or {}).get(key) or {}
+    if not F.get('auto'):
+        return cur
+    last = {}
+    for day in sorted(F['auto']):
+        for f, c in (F['auto'][day] or {}).items():
+            m = LOG.match(str(c))
+            if m and not ((m.group(3) and (m.group(2) == 'r' or m.group(1) == '?')) or (m.group(2) == 'b' and m.group(1) == '?')):
+                last[f] = (day, m)
+    rec = {p['f']: (p, s) for s, L in ((cand or {}).get('cand') or {}).items() for p in L if p.get('f')}
+    N = dict(F)
+
+    def put(k, f, v):
+        N[k] = dict(N.get(k) or {})
+        if v is None:
+            N[k].pop(f, None)
+        else:
+            N[k][f] = v
+    for f, (day, m) in last.items():
+        j = (sug or {}).get(f)
+        # A photo he moved with Not this is his: the judgement was of it as its first species' candidate.
+        if m.group(1) or not j or f not in rec or (F.get('out') or {}).get(f):
+            continue
+        p, sid = rec[f]
+        # A newer sure rejection of the auto-sort's add stays a proposal (honouring Keep mine): its fields are read anew
+        # only from a judgement that keeps it in play.
+        sure = cand_sure(j)
+        w = m.group(3)
+        tags, ph = copy_of(p, j, f in (F.get('phase') or {}) and 'p' not in w)
+        new = {'tags': tags, 'ease': j.get('e'), 'phase': ph, 'crop': j.get('c')}
+        # The crop goes with the code (judging/FISH.md "A crop that saves a photo"): tags read anew bring the judge's
+        # crop along when the photo has none (a crop of his stands).
+        if 't' in w and 'c' not in w and f not in (F.get('crop') or {}) and j.get('c'):
+            w += 'c'
+        # A sure judgement only (an unsure one, or other species not sorted yet, waits for him), and never on a photo
+        # whose re-judge proposal he answered Keep mine (kept).
+        for x in (w if sure and f not in (F.get('kept') or {}) else ''):
+            k = WROTE[x]
+            if (N.get(k) or {}).get(f) != new[k] and (new[k] is not None or k in ('crop', 'phase')):
+                put(k, f, new[k])
+        at = (((by or {}).get(sid) or {}).get(key) or {}).get('at')
+        if m.group(4) or not at or at < day:
+            continue
+        add, seen = (N.get('add') or {}).get(f), (N.get('seen') or {}).get(f)
+        his = (N.get('exclude') or {}).get(f) or (N.get('out') or {}).get(f)
+        if m.group(2) == 'r' and seen == 1 and not add and not his and f not in (F.get('tags') or {}) \
+                and f not in (F.get('crop') or {}) and cand_sure(j):
+            put('seen', f, None)
+    if N == F:
+        return cur
+    return {**cur, key: N}
 
 
 TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # autosort.js FISH_TAGS (v, f: the sea slugs')
@@ -487,7 +574,9 @@ def tier(fish):
 # A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
 # photos in play, its very good reference photos, in the game data as in the admin's target (autosort.js FISHT.wink).
 WINK_KEEP = 5
-AUTO_ADD = re.compile(r'^a')  # autosort.js fish log code: an add the auto-sort applied itself (never a Check, ?a, nor undone, -a)
+# autosort.js fish log code: an add the auto-sort applied itself, or a photo it brought back (b); never a Check (?a) nor
+# undone (-a, -b)
+AUTO_ADD = re.compile(r'^[ab]')
 
 
 def wink_species(fish):
@@ -674,12 +763,15 @@ def load(root, name, default=None):
 
 def inputs(root=ROOT):
     """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops, reference keeps):
-    what plan reads. One judgement per photo (Pierre, 2026-11-15; tools/fish_judge.py one_judgement): a reference photo
-    that is also a candidate is read with its candidate judgement (judging/fish/<species>.json: code and keep; none while
-    it is unsure; its crop when it gives one, fish_judge.py one_crops), never its copy in tools/fish_judge.json."""
+    what plan reads, the curation as the build reads it (read_cur). One judgement per photo (Pierre, 2026-11-15;
+    tools/fish_judge.py one_judgement): a reference photo that is also a candidate is read with its candidate judgement
+    (judging/fish/<species>.json: code and keep; none while it is unsure; its crop when it gives one, fish_judge.py
+    one_crops), never its copy in tools/fish_judge.json."""
     import fish_judge as FJ
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
-    cand, sug = load(root, 'fish-cand.json', {'cand': {}}), (load(root, 'suggest.json', {}) or {}).get('fish') or {}
+    S = load(root, 'suggest.json', {}) or {}
+    cand, sug = load(root, 'fish-cand.json', {'cand': {}}), S.get('fish') or {}
+    cur = read_cur(cur, cand, sug, S.get('by'))  # the auto-sort's proposals read the newer judgement; his decisions stand
     refs = (load(root, os.path.join('tools', 'fish_refs.json'), {}) or {}).get('photos') or {}
     J = load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}
     codes = {f: c for m in (J.get('photos') or {}).values() for f, c in m.items()}

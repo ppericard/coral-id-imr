@@ -38,6 +38,7 @@ const ROUTES = [
   'tools',
   'tools/samediff',
   'tools/oddone',
+  'tools/matrixgame',
   'learn/basics/walls',
   'learn/basics/words',
   'about',
@@ -5177,6 +5178,7 @@ async function onePath(b, base) {
     ['lab-type', null, '.tystage img', null],
     ['lab-samediff', null, '.sdq .qph img', null],
     ['lab-oddone', null, '.ooq .fxt img', null],
+    ['lab-matrixgame', null, '.mxq .fxt img', null],
     ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
     ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
     ['lab-anatomy|drill', null, '#a2q img', '#a2next'],
@@ -6045,6 +6047,28 @@ const PARTS = [
       await oddOneCheck(po, w, fails);
       if (es.length) fails.push(`${w}px Odd one out: ${es.slice(0, 3).join(' | ')}`);
       await co.close();
+    }
+    // Matrix (Tools), the same way: tests/matrixgame.check.js plays its rounds (the fish's and the sea slugs' run in their own smokes).
+    {
+      const cm = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'}),
+        es = [],
+        PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+      await cm.route(
+        u => !u.href.startsWith(base),
+        r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+      );
+      await cm.addInitScript(() => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      });
+      const pm = await cm.newPage();
+      pm.on('pageerror', e => es.push(e.message));
+      await pm.goto(base);
+      await pm.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await require('./matrixgame.check.js')(pm, w, fails, '', 6);
+      if (es.length) fails.push(`${w}px Matrix: ${es.slice(0, 3).join(' | ')}`);
+      await cm.close();
     }
     // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
     // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open

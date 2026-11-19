@@ -1,5 +1,11 @@
 # Backlog inventory: everything parked, started, planned or only considered (2026-11-18)
 
+**A dated snapshot of 2026-11-18, superseded: [the ROADMAP](../ROADMAP.md) is the one list of work to come.** Its
+states are not kept up to date. A recount on 2026-11-19 against Pierre's words (every past STATUS, the ROADMAP, the PR
+bodies, the answers ledger) found 35 of its open rows answered or decided: 18 of the 28 "Waiting for Pierre", 11
+"Idea only" and 6 "Waiting" rows. Their answers are in the ROADMAP rows and [the ledger](../ANSWERS.md) (2026-11-19,
+from 20:34). Before acting on a row here, read its ROADMAP row.
+
 **Status: inventory, read-only.** Nothing in the app, the data or the other docs was changed. Pierre asked on 2026-11-18:
 "refaire un point complet sur l'ensemble des taches en standby, sur la roadmap à court moyen et long terme, sur tous les
 trucs qui ont été commencé ou initié ou juste envisagé mais jamais fini ou formalisés". Then: cover every study in

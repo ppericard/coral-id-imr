@@ -4564,3 +4564,67 @@ body:has(.ikstart:not([hidden])) main {
     display: flex;
   }
 }
+
+/* Matrix (proto/matrixgame.js): Find the X's tiles (as Odd one out's above, a blurred copy of the photo behind each) with the
+   five names beside them as the quiz's answers (app.css .ans). The tile and the name taken wait ringed in the accent colour; a
+   pair that is right keeps its tile named and ringed in --good (app.css .fxt.fok), its name ticked; a wrong one shows its
+   cross on the tile and the name until the next tap. The pair's line sits under the names, the round's end is the quiz's own
+   sheet. */
+.q.mxq .fxt::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background: var(--qbg, var(--photo-bg)) center/cover;
+  filter: blur(22px) brightness(0.55);
+}
+.q.mxq .fxt > button[data-c] {
+  position: relative;
+}
+.q.mxq .fxt.fsel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 4px solid var(--accent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.mxans button.sel {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.mxans button.ok:disabled {
+  opacity: 1;
+}
+.mxans > button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1024px) {
+  .mxans > button:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+.mxst:empty {
+  display: none;
+}
+.mxst .fb {
+  padding: 8px 12px;
+}
+.mxst .fb h3 {
+  margin-bottom: 2px;
+  font-size: var(--fs-l);
+}
+/* Round over, on a phone or tablet: the sheet is at the bottom and the stage takes the space above it, so the prompt and the
+   names would only peek out above the sheet. */
+.q.mxq.done .qtop,
+.q.mxq.done .mxans {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .q.mxq.done .qtop {
+    display: flex;
+  }
+  .q.mxq.done .mxans {
+    display: flex;
+  }
+}

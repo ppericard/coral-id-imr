@@ -34,6 +34,9 @@ const LAB_ICONS = {
   // Three squares and a circle: three of a kind and the odd one out.
   oddone:
     '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><circle cx="17.25" cy="17.25" r="4.25"/>',
+  // Four photos over a row of names (Matrix, the game: the Feature matrix keeps `matrix`).
+  matrixgame:
+    '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><path d="M3 15h4M9 15h4M15 15h6M3 19.5h6M11 19.5h4M17 19.5h4"/>',
   // A card over a dimmed screen (the cards and pop-ups mock-up).
   cards:
     '<rect x="2.5" y="3.5" width="19" height="17" rx="2"/><rect x="6.5" y="7" width="11" height="10" rx="1.5"/><path d="M9 10.5h6M9 13.5h4"/>'
@@ -62,6 +65,7 @@ const LAB = {
     'pairs',
     'samediff',
     'oddone',
+    'matrixgame',
     'gallery',
     'cards'
   ],
